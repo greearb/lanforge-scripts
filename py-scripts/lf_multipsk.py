@@ -20,7 +20,7 @@ INCLUDE_IN_README
     -Nikita Yadav
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
-    
+
 """
 import argparse
 import os
@@ -300,9 +300,9 @@ class MultiPsk(Realm):
                 if x[0] == y[0] and x[1] == y[1]:
                     print("station got ip from upstream")
                     result1 = "Pass"
-            else:
-                print("station did not got ip from upstream")
-                result1 = "Fail"
+                else:
+                    print("station did not got ip from upstream")
+                    result1 = "Fail"
         return result1
 
     def postcleanup(self):
@@ -335,6 +335,13 @@ def main():
         {
             "password": "lanforge2",
             "upstream": "eth2.200",
+            "mac": "",
+            "num_station": 1,
+            "radio": "wiphy4"
+        },
+        {
+            "password": "lanforge2",
+            "upstream": "eth2.300",
             "mac": "",
             "num_station": 1,
             "radio": "wiphy4"
