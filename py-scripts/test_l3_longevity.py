@@ -801,7 +801,9 @@ class L3VariableTime(Realm):
                                             if xtop_reported:
                                                 try:
                                                     xtop = split_row[7]
-                                                    channel_utilization = 100 - int(xtop)
+                                                    print("xtop {xtop}".format(xtop=xtop))
+                                                    channel_utilization = 100 - float(xtop)
+                                                    print("channel_utilization {utilization}".format(utilization=channel_utilization))
                                                 except:
                                                     print("detected chanspec with reading chanim_stats, failed reading xtop")
                                                 # should be only one channel utilization    
@@ -903,7 +905,9 @@ class L3VariableTime(Realm):
                                             if xtop_reported:
                                                 try:
                                                     xtop = split_row[7]
-                                                    channel_utilization = 100 - int(xtop)
+                                                    print("xtop {xtop}".format(xtop=xtop))
+                                                    channel_utilization = 100 - float(xtop)
+                                                    print("channel_utilization {utilization}".format(utilization=channel_utilization))
                                                 except:
                                                     print("detected chanspec with reading chanim_stats, failed reading xtop")
                                                 # should be only one channel utilization    
