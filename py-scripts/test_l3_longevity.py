@@ -1240,7 +1240,9 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
     parser.add_argument('--ap_port', help='--ap_port \'/dev/ttyUSB0\'',default='/dev/ttyUSB0')
     parser.add_argument('--ap_baud', help='--ap_baud \'115200\'',default='115200')
+    # note wl1 is the 5G interface , check the MAC ifconfig -a of the interface to the AP BSSID connection (default may be eth7)
     parser.add_argument('--ap_cmd_5g', help='ap_cmd_5g \'wl -i wl1 bs_data\'', default="wl -i wl1 bs_data")
+    # note wl1 is the 2.4G interface , check the MAC ifconfig -a of the interface to the AP BSSID connection
     parser.add_argument('--ap_cmd_2g', help='ap_cmd_2g \'wl -i wl0 bs_data\'', default="wl -i wl0 bs_data")
     parser.add_argument('--ap_chanim_cmd_5g', help='ap_chanim_cmd_5g \'wl -i wl1 chanim_stats\'', default="wl -i wl1 chanim_stats")
     parser.add_argument('--ap_chanim_cmd_2g', help='ap_chanim_cmd_2g \'w1 -i wl0 chanim_stats\'', default="wl -i wl0 chanim_stats")
