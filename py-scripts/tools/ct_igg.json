@@ -14,7 +14,7 @@
         "database_config": "True",
         "database_host": "192.168.100.153",
         "database_port": "8086",
-        "database_token": "-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ==",
+        "database_token": "XpHtoEFNEPixL6kXjgR4ct_Wj6ake3z-2qruGELU2sSd0_4Sghw5nv5mmsm005TU-q6S8PhTaqzJ0Nz7_bn3Yg==",
         "database_org": "Candela",
         "database_bucket": "lanforge_qa_testing",
         "database_tag": "testbed CT-US-001",
@@ -23,7 +23,7 @@
     "test_dashboard":{
         "dashboard_config": "True",
         "dashboard_host": "192.168.100.153",
-        "dashboard_token": "eyJrIjoiS1NGRU8xcTVBQW9lUmlTM2dNRFpqNjFqV05MZkM0dzciLCJuIjoibWF0dGhldyIsImlkIjoxfQ=="
+        "dashboard_token": "eyJrIjoid1hpM0pwZFRSc3c0bGU2TEpITEVscHh4T0pPMVdZRzEiLCJuIjoiY2h1Y2siLCJpZCI6MX0="
     },
     "test_blog":{
         "blog_config": "True",
