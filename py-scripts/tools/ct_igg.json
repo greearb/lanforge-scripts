@@ -16,7 +16,7 @@
         "database_port": "8086",
         "database_token": "XpHtoEFNEPixL6kXjgR4ct_Wj6ake3z-2qruGELU2sSd0_4Sghw5nv5mmsm005TU-q6S8PhTaqzJ0Nz7_bn3Yg==",
         "database_org": "Candela",
-        "database_bucket": "lanforge_qa_testing",
+        "database_bucket": "candela",
         "database_tag": "testbed CT-US-001",
         "test_rig": "CT-US-001"
     },
