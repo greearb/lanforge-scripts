@@ -6,12 +6,13 @@
             "from the json file. so LF_MGR_IP in the test below is replaced by the json lf_mgr_ip",
             "The replacement is loosely coupled so the upper and lower case convention is used",
             "to identify replaced strings in the lf_check.py code.",
-            "this file contains the Influx, Grafana and Ghost configuration"  
+            "this file contains the Influx, Grafana and Ghost configuration",  
+            "Influx, Ghost, and Grafana are up and running on v-centos8s 192.168.100.153"
         ]  
     },
     "test_database":{
         "database_config": "True",
-        "database_host": "192.168.100.201",
+        "database_host": "192.168.100.153",
         "database_port": "8086",
         "database_token": "-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ==",
         "database_org": "Candela",
@@ -21,7 +22,7 @@
     },
     "test_dashboard":{
         "dashboard_config": "True",
-        "dashboard_host": "192.168.100.201",
+        "dashboard_host": "192.168.100.153",
         "dashboard_token": "eyJrIjoiS1NGRU8xcTVBQW9lUmlTM2dNRFpqNjFqV05MZkM0dzciLCJuIjoibWF0dGhldyIsImlkIjoxfQ=="
     },
     "test_blog":{
@@ -36,6 +37,3 @@
     }
 }
 			
-	
-		
-	
