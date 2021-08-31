@@ -34,6 +34,9 @@ if sys.version_info[0] != 3:
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('../..'), 'py-json'))
 
+if 'py-dashboard' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath('../..'), 'py-dashboard'))
+
 import argparse
 from LANforge import LFUtils
 from realm import Realm
@@ -442,7 +445,7 @@ python3 ./test_ipv4_variable_time.py
     #    manager = args.influx_mgr
 
     if args.influx_org is not None:
-        from influx2 import RecordInflux
+        from InfluxRequest import RecordInflux
         grapher = RecordInflux(  # _influx_host=manager,
             _influx_port=args.influx_port,
             _influx_org=args.influx_org,

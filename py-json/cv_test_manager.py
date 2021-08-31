@@ -4,6 +4,11 @@ Note: This script is working as library for chamberview tests.
 """
 
 import time
+import sys
+import os
+
+if 'py-dashboard' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
 
 from LANforge.lfcli_base import LFCliBase
 from realm import Realm
@@ -11,7 +16,7 @@ import json
 from pprint import pprint
 import argparse
 from cv_test_reports import lanforge_reports as lf_rpt
-from csv_to_influx import *
+from InfluxRequest import *
 import os.path
 
 
@@ -414,18 +419,15 @@ class cv_test(Realm):
         # lf_wifi_capacity_test.py may be run / initiated by a remote system against a lanforge
         # the local_lf_report_dir is data is stored,  if there is no local_lf_report_dir then the test is run directly on lanforge
         if self.local_lf_report_dir == "":
-            path = "%s/kpi.csv" % (self.lf_report_dir)
+            csv_path = "%s/kpi.csv" % (self.lf_report_dir)
         else:
             kpi_location = self.local_lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
             # the local_lf_report_dir is the parent directory,  need to get the directory name
-            path = "%s/kpi.csv" % (kpi_location)
+            csv_path = "%s/kpi.csv" % (kpi_location)
         
-        print("Attempt to submit kpi: ", path)
-        csvtoinflux = CSVtoInflux(influxdb=influxdb,
-                                  target_csv=path,
-                                  _influx_tag=args.influx_tag)
+        print("Attempt to submit kpi: ", csv_path)
         print("Posting to influx...\n")
-        csvtoinflux.post_to_influx()
+        influxdb.csv_to_influx(csv_path)
 
         print("All done posting to influx.\n")
 

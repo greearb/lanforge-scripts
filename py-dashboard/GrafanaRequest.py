@@ -435,7 +435,7 @@ class GrafanaRequest:
         print('create snapshot')
         grafanajson_url = self.grafanajson_url + '/api/snapshots'
         data = self.get_dashboard(title)
-        data['expires'] = 360000
+        data['expires'] = False
         data['external'] = False
         data['timeout'] = 15
         if self.debug:

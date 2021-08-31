@@ -47,15 +47,9 @@ INCLUDE_IN_README
 
 '''
 
+
 import sys
 import os
-from pprint import pprint
-from csv_to_influx import *
-import re
-import serial
-import pexpect
-from pexpect_serial import SerialSpawn
-from lf_report import lf_report
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -63,15 +57,20 @@ if sys.version_info[0] != 3:
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+if 'py-dashboard' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
 
+from pprint import pprint
+from InfluxRequest import *
+import serial
+import pexpect
+from pexpect_serial import SerialSpawn
+from lf_report import lf_report
 import argparse
-#from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-#import realm
 from realm import Realm
 import time
 import datetime
-import subprocess
 import csv
 
 # This class handles running the test and generating reports.

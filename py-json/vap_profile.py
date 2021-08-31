@@ -214,13 +214,13 @@ class VAPProfile(LFCliBase):
     def create(self, resource, radio, channel=None, up_=None, debug=False, use_ht40=True, use_ht80=True,
                use_ht160=False, country=0,
                suppress_related_commands_=True, use_radius=False, hs20_enable=False, bridge=True):
-        port_list = self.local_realm.json_get("port/1/1/list")
-        if port_list is not None:
-            port_list = port_list['interfaces']
-            for port in port_list:
-                for k, v in port.items():
-                    if v['alias'] == self.vap_name:
-                        self.local_realm.rm_port(v['port'], check_exists=True)
+        #port_list = self.local_realm.json_get("port/1/1/list")
+        #if port_list is not None:
+        #    port_list = port_list['interfaces']
+        #    for port in port_list:
+        #        for k, v in port.items():
+        #            if v['alias'] == self.vap_name:
+        #                self.local_realm.rm_port(v['port'], check_exists=True)
         if use_ht160:
             self.desired_add_vap_flags.append("enable_80211d")
             self.desired_add_vap_flags_mask.append("enable_80211d")

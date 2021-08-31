@@ -12,19 +12,19 @@ if sys.version_info[0] != 3:
     exit()
 
 import requests
-
 import jwt
 from datetime import datetime
 import json
 import subprocess
 from scp import SCPClient
 import paramiko
-from GrafanaRequest import GrafanaRequest
-from influx2 import RecordInflux
 import time
 from collections import Counter
 import shutil
 import itertools
+
+from GrafanaRequest import GrafanaRequest
+from InfluxRequest import RecordInflux
 
 
 class CSVReader:
@@ -439,7 +439,12 @@ class GhostRequest:
         # create Grafana Dashboard
         target_files = []
         for folder in target_folders:
-            target_files.append(folder.split('/')[-1] + '/kpi.csv')
+            target_file=folder.split('/')[-1] + '/kpi.csv'
+            try:
+                open(target_file)
+                target_files.append(target_file)
+            except:
+                pass
         if self.debug:
             print('Target files: %s' % target_files)
 

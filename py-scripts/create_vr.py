@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-    Script for creating a variable number of bridges.
+    Script for creating a variable number of virtual routers.
 """
 
 import os
@@ -171,9 +171,9 @@ Command example:
     create_vr.clean()
     create_vr.build()
     create_vr.start()
-    # create_vr.monitor()
-    create_vr.stop()
-    create_vr.clean()
+    create_vr.monitor()
+    #create_vr.stop()
+    #create_vr.clean()
     print('Created Virtual Router')
 
 if __name__ == "__main__":

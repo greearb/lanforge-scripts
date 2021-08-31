@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# DEPRECATED, PLEASE USE InfluxRequest.py INSTEAD
+
 # Copies the data from a CSV file from the KPI file generated from a Wifi Capacity test to an Influx database
 
 # The CSV requires three columns in order to work: Date, test details, and numeric-score.
