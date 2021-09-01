@@ -1174,11 +1174,16 @@ http://{blog}:2368""".format(blog=self.blog_host)
                     self.html_results += """</tr>"""
                     #TODO - plase copy button at end and selectable , so individual sections may be copied
                     if command != short_cmd:
-                        self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
+                        '''self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
                             <span class='copybtn'>Copy</span>
                              <tt onclick='copyTextToClipboard(this)'>{command}</tt>
                              </td></tr>
+                             """.format(command=command)'''
+                        self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
+                             <tt onclick='copyTextToClipboard(this)'>{command}</tt>
+                             </td></tr>
                              """.format(command=command)
+
                         #nocopy
                         '''
                         self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
