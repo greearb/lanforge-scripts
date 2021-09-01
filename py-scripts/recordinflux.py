@@ -20,6 +20,9 @@ if sys.version_info[0] != 3:
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
+if 'py-dashboard' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
+
 from LANforge.lfcli_base import LFCliBase
 import argparse
 
@@ -58,7 +61,7 @@ def main():
     tags = dict()
     tags['script'] = 'recordinflux'
     if args.influx_user is None:
-        from influx2 import RecordInflux
+        from InfluxRequest import RecordInflux
         grapher = RecordInflux(_influx_host=args.mgr,
                                _influx_port=args.influx_port,
                                _influx_bucket=args.influx_db,
