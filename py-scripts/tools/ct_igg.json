@@ -14,7 +14,7 @@
         "database_config": "True",
         "database_host": "192.168.100.153",
         "database_port": "8086",
-        "database_token": "XpHtoEFNEPixL6kXjgR4ct_Wj6ake3z-2qruGELU2sSd0_4Sghw5nv5mmsm005TU-q6S8PhTaqzJ0Nz7_bn3Yg==",
+        "database_token": "PwYwrDjUSpLyUa8-0QeJGuf9p6KgPgmTVs0Zz0BZiyele74pNasBMJR-dKiF3LE8Qft5tADHtPSIS0WcVXHc_g==",
         "database_org": "Candela",
         "database_bucket": "candela",
         "database_tag": "testbed CT-US-001",

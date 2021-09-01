@@ -1382,11 +1382,17 @@ Example :
                 #print("key {}".format(key))
                 #print("lanforge_radio_json[{}]: {}".format(key,lanforge_radio_json[key]))
                 driver = lanforge_radio_json[key]['driver'].split('Driver:',maxsplit=1)[-1].split(maxsplit=1)[0]
+                try:
+                    firmware_version = lanforge_radio_json[key]['firmware version']
+                except:
+                    print("5.4.3 radio fw version not in /radiostatus/all")
+                    firmware_version = "5.4.3 N/A"
+
                 lf_radio_df = lf_radio_df.append(
                     {'Radio':lanforge_radio_json[key]['entity id'],
                     'WIFI-Radio Driver': driver,
                     'Radio Capabilities':lanforge_radio_json[key]['capabilities'],
-                    'Firmware Version':lanforge_radio_json[key]['firmware version'],
+                    'Firmware Version':firmware_version,
                     'max_sta':lanforge_radio_json[key]['max_sta'],
                     'max_vap':lanforge_radio_json[key]['max_vap'],
                     'max_vifs':lanforge_radio_json[key]['max_vifs']}, ignore_index = True)
@@ -1394,7 +1400,7 @@ Example :
 
     except:
         lf_radio_df = pd.DataFrame()
-        print("get_lanforge_radio_json excption, no radio data")
+        print("get_lanforge_radio_json exception, no radio data")
 
     # LANforge and scripts config for results
     lf_test_setup = pd.DataFrame()
