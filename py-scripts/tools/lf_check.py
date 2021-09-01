@@ -1174,17 +1174,12 @@ http://{blog}:2368""".format(blog=self.blog_host)
                     self.html_results += """</tr>"""
                     #TODO - plase copy button at end and selectable , so individual sections may be copied
                     if command != short_cmd:
-                        '''self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
+                        self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
                             <span class='copybtn'>Copy</span>
                              <tt onclick='copyTextToClipboard(this)'>{command}</tt>
                              </td></tr>
                              """.format(command=command)
-                        '''
-                        self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
-                            <tt <button onclick='copyTextToClipboard(this)>Copy</button>'>{command}</tt>
-                             </td></tr>
-                             """.format(command=command)
-
+                        #nocopy
                         '''
                         self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
                              <tt>{command}</tt>
@@ -1369,33 +1364,32 @@ Example :
         print("lanforge_gui_version exception, tests aborted check lanforge ip")
         exit(1)
 
-    #try:
-    lanforge_radio_json, lanforge_radio_text = check.get_lanforge_radio_information()
-    lanforge_radio_formatted_str = json.dumps(lanforge_radio_json, indent = 2)
-    print("lanforge_radio_json: {lanforge_radio_json}".format(lanforge_radio_json=lanforge_radio_formatted_str))
+    try:
+        lanforge_radio_json, lanforge_radio_text = check.get_lanforge_radio_information()
+        lanforge_radio_formatted_str = json.dumps(lanforge_radio_json, indent = 2)
+        print("lanforge_radio_json: {lanforge_radio_json}".format(lanforge_radio_json=lanforge_radio_formatted_str))
 
-    # note put into the meta data
-    lf_radio_df = pd.DataFrame(columns = ['Radio(entity id)','driver','capabilities','firmware version','max_sta','max_vap','max_vifs'])
+        # note put into the meta data
+        lf_radio_df = pd.DataFrame(columns = ['Radio','WIFI-Radio Driver','Radio Capabilities','Firmware Version','max_sta','max_vap','max_vifs'])
 
-    for key in lanforge_radio_json:
-        if 'wiphy' in key: 
-            #print("key {}".format(key))
-            #print("lanforge_radio_json[{}]: {}".format(key,lanforge_radio_json[key]))
-            lf_radio_df = lf_radio_df.append(
-                {'Radio(entity id)':lanforge_radio_json[key]['entity id'],
-                'driver':lanforge_radio_json[key]['driver'],
-                'capabilities':lanforge_radio_json[key]['capabilities'],
-                'firmware version':lanforge_radio_json[key]['firmware version'],
-                'max_sta':lanforge_radio_json[key]['max_sta'],
-                'max_vap':lanforge_radio_json[key]['max_vap'],
-                'max_vifs':lanforge_radio_json[key]['max_vifs']}, ignore_index = True)
-            #print("lf_radio_df intermediate {lf_radio_df}".format(lf_radio_df=lf_radio_df))
-    print("lf_radio_df:: {lf_radio_df}".format(lf_radio_df=lf_radio_df))
+        for key in lanforge_radio_json:
+            if 'wiphy' in key: 
+                #print("key {}".format(key))
+                #print("lanforge_radio_json[{}]: {}".format(key,lanforge_radio_json[key]))
+                driver = lanforge_radio_json[key]['driver'].split('Driver:',maxsplit=1)[-1].split(maxsplit=1)[0]
+                lf_radio_df = lf_radio_df.append(
+                    {'Radio':lanforge_radio_json[key]['entity id'],
+                    'WIFI-Radio Driver': driver,
+                    'Radio Capabilities':lanforge_radio_json[key]['capabilities'],
+                    'Firmware Version':lanforge_radio_json[key]['firmware version'],
+                    'max_sta':lanforge_radio_json[key]['max_sta'],
+                    'max_vap':lanforge_radio_json[key]['max_vap'],
+                    'max_vifs':lanforge_radio_json[key]['max_vifs']}, ignore_index = True)
+        print("lf_radio_df:: {lf_radio_df}".format(lf_radio_df=lf_radio_df))
 
-    #except:
-    #    print("get_lanforge_radio_json excption, no radio data")
-
-    #check.get_radio_status()
+    except:
+        lf_radio_df = pd.DataFrame()
+        print("get_lanforge_radio_json excption, no radio data")
 
     # LANforge and scripts config for results
     lf_test_setup = pd.DataFrame()
@@ -1418,15 +1412,15 @@ Example :
     report.build_table_title()
     report.set_table_dataframe(lf_test_setup)
     report.build_table()
+    report.set_table_title("LANForge Radios")
+    report.build_table_title()
+    report.set_table_dataframe(lf_radio_df)
+    report.build_table()
     report.set_table_title("LF Check Test Results")
     report.build_table_title()
     html_results = check.get_html_results()
     report.set_custom_html(html_results)
     report.build_custom()
-    report.set_table_title("LANForge Radios")
-    report.build_table_title()
-    report.set_table_dataframe(lf_radio_df)
-    report.build_table()
     report.build_footer()
     report.copy_js()
     html_report = report.write_html_with_timestamp()
