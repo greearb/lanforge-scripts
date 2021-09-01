@@ -233,6 +233,9 @@ class lf_check():
 
         self.test_run = ""
 
+    def get_test_rig(self):
+        return self.test_rig
+
     def check_if_port_exists(self,json_igg):
         queries = dict()
         queries['LANforge Manager'] = 'http://%s:%s' % (self.lf_mgr_ip, self.lf_mgr_port)
@@ -1368,15 +1371,26 @@ Example :
 
     #try:
     lanforge_radio_json, lanforge_radio_text = check.get_lanforge_radio_information()
-    #lanforge_radio_obj = json.loads(lanforge_radio_json)
     lanforge_radio_formatted_str = json.dumps(lanforge_radio_json, indent = 2)
     print("lanforge_radio_json: {lanforge_radio_json}".format(lanforge_radio_json=lanforge_radio_formatted_str))
 
+    # note put into the meta data
+    lf_radio_df = pd.DataFrame(columns = ['Radio(entity id)','driver','capabilities','firmware version','max_sta','max_vap','max_vifs'])
 
     for key in lanforge_radio_json:
         if 'wiphy' in key: 
-            print("key {}".format(key))
-            print("lanforge_radio_json[{}]: {}".format(key,lanforge_radio_json[key]))
+            #print("key {}".format(key))
+            #print("lanforge_radio_json[{}]: {}".format(key,lanforge_radio_json[key]))
+            lf_radio_df = lf_radio_df.append(
+                {'Radio(entity id)':lanforge_radio_json[key]['entity id'],
+                'driver':lanforge_radio_json[key]['driver'],
+                'capabilities':lanforge_radio_json[key]['capabilities'],
+                'firmware version':lanforge_radio_json[key]['firmware version'],
+                'max_sta':lanforge_radio_json[key]['max_sta'],
+                'max_vap':lanforge_radio_json[key]['max_vap'],
+                'max_vifs':lanforge_radio_json[key]['max_vifs']}, ignore_index = True)
+            #print("lf_radio_df intermediate {lf_radio_df}".format(lf_radio_df=lf_radio_df))
+    print("lf_radio_df:: {lf_radio_df}".format(lf_radio_df=lf_radio_df))
 
     #except:
     #    print("get_lanforge_radio_json excption, no radio data")
@@ -1394,7 +1408,8 @@ Example :
     check.run_script_test()
 
     # generate output reports
-    report.set_title("LF Check: lf_check.py")
+    test_rig = check.get_test_rig()
+    report.set_title("LF Check: {test_rig} lf_check.py".format(test_rig=test_rig))
     report.build_banner_left()
     report.start_content_div2()
     report.set_obj_html("Objective", "Run QA Tests")
@@ -1408,6 +1423,10 @@ Example :
     html_results = check.get_html_results()
     report.set_custom_html(html_results)
     report.build_custom()
+    report.set_table_title("LANForge Radios")
+    report.build_table_title()
+    report.set_table_dataframe(lf_radio_df)
+    report.build_table()
     report.build_footer()
     report.copy_js()
     html_report = report.write_html_with_timestamp()
