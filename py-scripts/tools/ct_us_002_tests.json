@@ -12,14 +12,14 @@
                     " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"
                 ]
             },
-            "CT-US-001_QA":{
+            "CT-US-002_QA":{
                 "enabled":"TRUE",
                 "timeout":"600",
                 "load_db":"skip",
                 "command":"./tools/lf_qa.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --store --png --database ./tools/qa_001_test_db"
+                    " --path REPORT_PATH --store --png --database ./tools/qa_002_test_db"
                 ]
             }
         },
@@ -71,14 +71,14 @@
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG "
                 ]
             },
-            "CT-US-001_QA":{
+            "CT-US-002_QA":{
                 "enabled":"TRUE",
                 "timeout":"600",
                 "load_db":"skip",
                 "command":"./tools/lf_qa.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --store --png --database ./tools/qa_001_test_db"
+                    " --path REPORT_PATH --store --png --database ./tools/qa_002_test_db"
                 ]
             },
             "GHOST":{
@@ -291,14 +291,14 @@
                     " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG"
                 ]
             },
-            "CT-US-001_QA":{
+            "CT-US-002_QA":{
                 "enabled":"TRUE",
                 "timeout":"600",
                 "load_db":"skip",
                 "command":"./tools/lf_qa.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --store --png --database ./tools/qa_001_test_db"
+                    " --path REPORT_PATH --store --png --database ./tools/qa_002_test_db"
                 ]
             },
             "GHOST":{"enabled":"TRUE","load_db":"skip","command":"ghost_profile.py","args":"",
