@@ -21,9 +21,11 @@ Starting LANforge:
 
 NOTES: getting radio information:
 1. (Using Curl) curl -H 'Accept: application/json' http://localhost:8080/radiostatus/all | json_pp 
-2. curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/radiostatus/all | json_pp  , where --user "USERNAME:PASSWORD"
+2.  , where --user "USERNAME:PASSWORD"
 # https://itnext.io/curls-just-want-to-have-fun-9267432c4b55
 3. (using Python) response = self.json_get("/radiostatus/all"), Currently lf_check.py is independent of py-json libraries
+
+4. if the connection to 8080 is rejected check : pgrep -af java  , to see the number of GUI instances running
 
 GENERIC NOTES: 
 Starting LANforge:
@@ -59,6 +61,7 @@ Starting LANforge:
 '''
 import datetime
 import sys
+import traceback
 
 if sys.version_info[0] != 3:
     print("This script requires Python3")
@@ -1398,7 +1401,9 @@ Example :
                     'max_vifs':lanforge_radio_json[key]['max_vifs']}, ignore_index = True)
         print("lf_radio_df:: {lf_radio_df}".format(lf_radio_df=lf_radio_df))
 
-    except:
+    except Exception as error:
+        print("print_exc():")
+        traceback.print_exc(file=sys.stdout)
         lf_radio_df = pd.DataFrame()
         print("get_lanforge_radio_json exception, no radio data")
 
