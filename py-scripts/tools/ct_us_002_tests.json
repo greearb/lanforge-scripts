@@ -1,5 +1,29 @@
 {
     "test_suites":{
+        "suite_l3":{
+            "test_l3_longevity":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"test_l3_longevity.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --test_duration 60s --polling_interval 15s --upstream_port eth2 ",
+                    " --radio 'radio==wiphy1,stations==4,ssid==NETGEAR59,ssid_pw==crispynest798,security==wpa2' ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"
+                ]
+            },
+            "CT-US-001_QA":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --store --png --database ./tools/qa_001_test_db"
+                ]
+            }
+        },
+
         "suite_two":{
                 "test_l3_longevity":{"enabled":"TRUE","command":"test_l3_longevity.py","args":"--test_duration 15s --polling_interval 5s --upstream_port UPSTREAM_PORT --radio 'radio==wiphy1,stations==4,ssid==ct523c-vap,ssid_pw==ct523c-vap,security==wpa2' --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"}
         },
@@ -11,7 +35,7 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=NETGEAR59 security=WPA2 password=crispynest798 bssid=DUT_BSSID_2G'",
                     " --ssid 'ssid_idx=1 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
@@ -42,8 +66,19 @@
                     " --set 'Multi Band Performance' 0 --set 'Stability' 0 --set 'Multi-Station Throughput vs Pkt Size'  0,",
                     " --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Band-Steering' 0 --set 'Skip 2.4 Ghz Tests' 1",
                     " --pull_report --local_lf_report_dir REPORT_PATH",
+                    " --set DUT_SET_NAME",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
-                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG "
+                ]
+            },
+            "CT-US-001_QA":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --store --png --database ./tools/qa_001_test_db"
                 ]
             },
             "GHOST":{
@@ -68,7 +103,7 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=NETGEAR59 security=WPA2 password=crispynest798 bssid=DUT_BSSID_2G'",
                     " --ssid 'ssid_idx=1 ssid=NETGEAR59-5G security=WPA2 password=crispynest798 bssid=DUT_BSSID_5G'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
@@ -94,7 +129,8 @@
                     " --upstream UPSTREAM_PORT --batch_size 1,5,25 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)'",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
-                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME                    ",
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG "
                 ]
             },
             "CT-US-002_create_chamberview_dut_ATH10K_wan1":{
@@ -131,8 +167,9 @@
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20' ",
                     " --raw_line 'spatial_streams: 4' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)' ",
+                    " --set DUT_SET_NAME",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
-                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG "
                 ]
             },
             "CT-US-002_create_chamberview_dut_2":{
@@ -167,8 +204,9 @@
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-wct",
                     " --upstream UPSTREAM_PORT --batch_size 1,5,25 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --stations 1.1.wlan4 --test_tag 'ATH10K(9984)' ",
+                    " --set DUT_SET_NAME",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
-                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG"
                 ]
             },
             "CT-US-002_create_chamberview_dut_AX200_wan1":{
@@ -205,8 +243,9 @@
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20'",
                     " --raw_line 'spatial_streams: 4' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AX200'",
+                    " --set DUT_SET_NAME",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
-                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG "
                 ]
             },
             "CT-US-002_create_chamberview_dut_auto":{
@@ -247,8 +286,19 @@
                     " --set 'Multi Band Performance' 0 --set 'Stability' 0 --set 'Multi-Station Throughput vs Pkt Size'  0,",
                     " --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Band-Steering' 0 --set 'Skip 2.4 Ghz Tests' 1",
                     " --pull_report --local_lf_report_dir REPORT_PATH  --test_tag 'AX200'",
+                    " --set DUT_SET_NAME",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
-                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG --set DUT_SET_NAME"
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG"
+                ]
+            },
+            "CT-US-001_QA":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --store --png --database ./tools/qa_001_test_db"
                 ]
             },
             "GHOST":{"enabled":"TRUE","load_db":"skip","command":"ghost_profile.py","args":"",

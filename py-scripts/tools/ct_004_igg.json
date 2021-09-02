@@ -17,8 +17,8 @@
         "database_token": "PwYwrDjUSpLyUa8-0QeJGuf9p6KgPgmTVs0Zz0BZiyele74pNasBMJR-dKiF3LE8Qft5tADHtPSIS0WcVXHc_g==",
         "database_org": "Candela",
         "database_bucket": "candela",
-        "database_tag": "testbed CT-US-001",
-        "test_rig": "CT-US-001"
+        "database_tag": "testbed CT-US-004",
+        "test_rig": "CT-US-004"
     },
     "test_dashboard":{
         "dashboard_config": "True",

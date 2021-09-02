@@ -14,7 +14,7 @@ if 'py-json' not in sys.path:
 
 from LANforge.lfcli_base import LFCliBase
 import json
-from influx2 import RecordInflux
+from InfluxRequest import RecordInflux
 from csv_to_influx import CSVtoInflux, influx_add_parser_args
 from grafana_profile import UseGrafana
 import random
