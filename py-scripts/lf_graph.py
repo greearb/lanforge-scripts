@@ -346,7 +346,7 @@ class lf_line_graph():
                  _graph_image_name="image_name",
                  _label=["bi-downlink", "bi-uplink", 'uplink'],
                  _font_weight='bold',
-                 _color=['forestgreen', 'y', 'r', 'g', 'b', 'p'],
+                 _color=['forestgreen', 'c', 'r', 'g', 'b', 'p'],
                  _figsize=(10, 5),
                  _xaxis_step = 5,
                  _xticks_font = None,
