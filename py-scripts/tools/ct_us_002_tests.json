@@ -112,7 +112,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name wct_ath10k",
-                    " --upstream UPSTREAM_PORT --batch_size 1,5,25 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
+                    " --upstream UPSTREAM_PORT --batch_size 1,5,15 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)'",
                     " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
                     " --set DUT_SET_NAME "
@@ -147,7 +147,7 @@
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-dpt",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd_dpt_ATH10k",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut DUT_NAME --duration 30s --station 1.1.wlan1",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20' ",
@@ -219,7 +219,7 @@
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-dpt",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd_dpt_AX210",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut DUT_NAME --duration 30s --station 1.1.wlan4",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20'",
