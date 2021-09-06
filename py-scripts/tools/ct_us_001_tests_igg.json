@@ -215,7 +215,9 @@
                     " --upstream 1.1.eth2 --batch_size 1,5,25 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)'",
                     " --test_rig TEST_RIG ",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG" 
                 ]
             },
             "CT-US-001_create_chamberview_ATH10K(9984)_sta1":{
@@ -245,7 +247,9 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)' ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG" 
                 ]
             },
             "CT-US-001_create_chamberview_dut_for_AX210":{
@@ -283,7 +287,9 @@
                     " --upstream 1.1.eth2 --batch_size 1,5,25 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --stations 1.1.wlan3  --test_tag 'AX210'",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG" 
                 ]
             },
             "CT-US-001_dataplane_wiphy3_AX210_sta1":{
@@ -299,7 +305,9 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AX210'",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG" 
                 ]
             },
             "CT-US-001_create_chamberview_dut_for_mt7915e":{
@@ -338,7 +346,9 @@
                     " --upstream 1.1.eth2 --batch_size 1,5,10,15,19 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7915e'",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG" 
                 ]
             },
             "CT-US-001_create_chamberview_mt7915e_sta1":{
@@ -366,7 +376,9 @@
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
                     " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7915e' ",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG" 
                 ]
             },
             "CT-US-001_create_chamberview_dut_2":{
@@ -409,7 +421,9 @@
                     " --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Band-Steering' 0 --set 'Skip 2.4 Ghz Tests' 1",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)'",
                     " --test_rig TEST_RIG",
-                    " --set DUT_SET_NAME"
+                    " --set DUT_SET_NAME",
+                    " --test_rig TEST_RIG --influx_host DATABASE_HOST --influx_port DATABASE_PORT --influx_org DATABASE_ORG",
+                    " --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET --influx_tag DATABASE_TAG" 
                 ]
             },
             "CT-US-001_QA":{
@@ -421,7 +435,17 @@
                 "args_list":[
                     " --path REPORT_PATH --store --png --database ./tools/qa_001_test_db"
                 ]
+            },
+            "GHOST":{"enabled":"TRUE","load_db":"skip","command":"ghost_profile.py","args":"",
+                "args_list":[
+                    " --ghost_token BLOG_TOKEN --ghost_host BLOG_HOST --authors BLOG_AUTHORS --customer BLOG_CUSTOMER",
+                    " --user_push BLOG_USER_PUSH --password BLOG_PASSWORD_PUSH BLOG_FLAG --grafana_token DASHBOARD_TOKEN",
+                    " --grafana_host DASHBOARD_HOST --grafana_bucket DATABASE_BUCKET --parent_folder REPORT_PATH",
+                    " --influx_host DATABASE_HOST --influx_org DATABASE_ORG --influx_token=DATABASE_TOKEN --influx_bucket DATABASE_BUCKET",
+                    " --influx_tag DATABASE_TAG "
+                ]
             }
+
         }
     }   
 }
