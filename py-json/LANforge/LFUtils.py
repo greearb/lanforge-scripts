@@ -16,7 +16,7 @@ import ipaddress
 
 seed(int(round(time.time() * 1000)))
 from random import randint
-import LFRequest
+from LANforge import LFRequest
 
 debug_printer = pprint.PrettyPrinter(indent=2)
 
