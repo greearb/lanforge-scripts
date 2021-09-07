@@ -12,14 +12,10 @@
     "test_parameters":{
         "test_bed": "CT-US-001",
         "test_rig": "CT-US-001",
+        "database_sqlite": "./tools/qa_001_test_db",
         "database_tag": "testbed CT-US-001",        
         "lf_mgr_ip": "192.168.100.116",
         "lf_mgr_port": "8080",
-        "dut_set_name": "DUT_NAME ASUSRT-AX88U",
-        "dut_name": "ASUSRT-AX88U",
-        "dut_bssid_2g": "3c:7c:3f:55:4d:60",
-        "dut_bssid_5g": "3c:7c:3f:55:4d:64",
-        "dut_sw": "3.0.0.4.386_44266",
         "test_timeout": 600,
         "load_blank_db": false,
         "load_factory_default_db": true,
@@ -39,9 +35,6 @@
     },
     "test_generic":{
         "radio_used": "wiphy1",
-        "ssid_used": "asus11ax-5",
-        "ssid_pw_used": "hello123",
-        "security_used": "wpa2",
         "num_sta": 1,
         "col_names": "name,tx_byptes,rx_bytes,dropped",
         "upstream_port": "eth2"

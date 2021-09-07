@@ -464,6 +464,7 @@ class csv_sqlite_dash():
             # host = '0.0.0.0'  allows for remote access,  local debug host = '127.0.0.1'
             # app.run_server(host= '0.0.0.0', debug=True) 
 
+# Feature, Sum up the subtests passed/failed from the kpi files for each run, poke those into the database, and generate a kpi graph for them.
 def main():
 
     parser = argparse.ArgumentParser(

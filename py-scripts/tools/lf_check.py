@@ -141,6 +141,8 @@ class lf_check():
         # meta.txt
         self.meta_data_path = ""
 
+
+
         # lanforge configuration 
         self.lf_mgr_ip = "192.168.0.102"
         self.lf_mgr_port = "8080"
@@ -148,6 +150,7 @@ class lf_check():
         self.lf_mgr_pass = "lanforge"
 
         # results
+        self.database_sqlite = ""
         self.test_start_time = ""
         self.test_end_time = ""
         self.duration = ""
@@ -156,11 +159,34 @@ class lf_check():
         self.ftp_test_ip = ""
         self.test_ip = ""
 
+        # section DUT
+        # dut selection 
+        self.dut_set_name = 'DUT_NAME ASUSRT-AX88U'  # note the name will be set as --set DUT_NAME ASUSRT-AX88U, this is not dut_name (see above)
+
+        # dut configuration 
+        self.dut_name = "DUT_NAME_NA"  # "ASUSRT-AX88U" note this is not dut_set_name
+        self.dut_hw = "DUT_HW_NA"
+        self.dut_sw = "DUT_SW_NA"
+        self.dut_model = "DUT_MODEL_NA"
+        self.dut_serial = "DUT_SERIAL_NA"
+        self.dut_bssid_2g = "BSSID_2G_NA"  # "3c:7c:3f:55:4d:64" - this is the mac for the 2.4G radio this may be seen with a scan
+        self.dut_bssid_5g = "BSSID_5G_NA"  # "3c:7c:3f:55:4d:64" - this is the mac for the 5G radio this may be seen with a scan
+        self.dut_bssid_6g = "BSSID_6G_NA"  # "3c:7c:3f:55:4d:64" - this is the mac for the 6G radio this may be seen with a scan
+
+        self.ssid_2g = ""
+        self.ssid_2g_pw = ""
+        self.security_2g = ""
+
+        self.ssid_5g = ""
+        self.ssid_5g_pw = ""
+        self.security_5g = ""
+
+        self.ssid_6g = ""
+        self.ssid_6g_pw = ""
+        self.security_6g = ""
+
         # section TEST_GENERIC 
         self.radio_lf = ""
-        self.ssdi = ""
-        self.ssid_pw = ""
-        self.security = ""
         self.num_sta = ""
         self.col_names = ""
         self.upstream_port = ""
@@ -183,18 +209,6 @@ class lf_check():
         self.email_title_txt = ""
         self.email_txt = ""
 
-        # dut selection 
-        self.dut_set_name = 'DUT_NAME ASUSRT-AX88U'  # note the name will be set as --set DUT_NAME ASUSRT-AX88U, this is not dut_name (see above)
-
-        # dut configuration 
-        self.dut_name = "DUT_NAME_NA"  # "ASUSRT-AX88U" note this is not dut_set_name
-        self.dut_hw = "DUT_HW_NA"
-        self.dut_sw = "DUT_SW_NA"
-        self.dut_model = "DUT_MODEL_NA"
-        self.dut_serial = "DUT_SERIAL_NA"
-        self.dut_bssid_2g = "BSSID_2G_NA"  # "3c:7c:3f:55:4d:64" - this is the mac for the 2.4G radio this may be seen with a scan
-        self.dut_bssid_5g = "BSSID_5G_NA"  # "3c:7c:3f:55:4d:64" - this is the mac for the 5G radio this may be seen with a scan
-        self.dut_bssid_6g = "BSSID_6G_NA"  # "3c:7c:3f:55:4d:64" - this is the mac for the 6G radio this may be seen with a scan
         # NOTE:  My influx token is unlucky and starts with a '-', but using the syntax below # with '=' right after the argument keyword works as hoped.
         # --influx_token=
 
@@ -490,6 +504,16 @@ http://{blog}:2368""".format(blog=self.blog_host)
         else:
             self.logger.info("EXITING radio_dict not in json {}".format(self.json_rig))
             exit(1)
+
+    # read dut configuration
+    def read_json_dut(self):
+        if "test_dut" in self.json_dut:
+            self.logger.info("json: read test_dut")
+            self.read_test_dut()
+        else:
+            self.logger.info("EXITING test_dut not in json {}".format(self.json_dut))
+            exit(1)
+
     # Top Level for reading the tests to run
     def read_json_test(self):
         if "test_suites" in self.json_test:
@@ -536,6 +560,10 @@ http://{blog}:2368""".format(blog=self.blog_host)
             self.test_rig = self.json_rig["test_parameters"]["test_rig"]
         else:
             self.logger.info("test_rig not in test_parameters json")
+        if "database_sqlite" in self.json_rig["test_parameters"]:
+            self.database_sqlite = self.json_rig["test_parameters"]["database_sqlite"]
+        else:
+            self.logger.info("database_sqlite not in test_parameters json")
         if "test_timeout" in self.json_rig["test_parameters"]:
             self.test_timeout = self.json_rig["test_parameters"]["test_timeout"]
             self.test_timeout_default = self.test_timeout
@@ -599,45 +627,99 @@ http://{blog}:2368""".format(blog=self.blog_host)
             self.lf_mgr_port = self.json_rig["test_parameters"]["lf_mgr_port"]
         else:
             self.logger.info("lf_mgr_port not in test_parameters json")
+
         # dut_set_name selectes the DUT to test against , it is different then dut_name
         # this value gets set in the test
-        if "dut_set_name" in self.json_rig["test_parameters"]:
-            self.dut_set_name = self.json_rig["test_parameters"]["dut_set_name"]
+    def read_dut_parameters(self):
+        if "dut_set_name" in self.json_dut["test_dut"]:
+            self.dut_set_name = self.json_dut["test_dut"]["dut_set_name"]
         else:
-           self.logger.info("dut_set_name not in test_database json")
+           self.logger.info("dut_set_name not in test_dut json")
         # dut name will set a chamberview scenerio for a DUT which can be selected with dut_set_name
-        if "dut_name" in self.json_rig["test_parameters"]:
-            self.dut_name = self.json_rig["test_parameters"]["dut_name"]
+        if "dut_name" in self.json_dut["test_dut"]:
+            self.dut_name = self.json_dut["test_dut"]["dut_name"]
         else:
-            self.logger.info("dut_name not in test_parameters json")
-        if "dut_hw" in self.json_rig["test_parameters"]:
-            self.dut_hw = self.json_rig["test_parameters"]["dut_hw"]
+            self.logger.info("dut_name not in test_dut json")
+
+        if "dut_hw" in self.json_dut["test_dut"]:
+            self.dut_hw = self.json_dut["test_dut"]["dut_hw"]
         else:
-            self.logger.info("dut_hw not in test_parameters json")
-        if "dut_sw" in self.json_rig["test_parameters"]:
-            self.dut_sw = self.json_rig["test_parameters"]["dut_sw"]
+            self.logger.info("dut_hw not in test_dut json")
+
+        if "dut_sw" in self.json_dut["test_dut"]:
+            self.dut_sw = self.json_dut["test_dut"]["dut_sw"]
         else:
             self.logger.info("dut_sw not in test_parameters json")
-        if "dut_model" in self.json_rig["test_parameters"]:
-            self.dut_model = self.json_rig["test_parameters"]["dut_model"]
+
+        if "dut_model" in self.json_dut["test_dut"]:
+            self.dut_model = self.json_dut["test_dut"]["dut_model"]
         else:
-            self.logger.info("dut_model not in test_parameters json")
-        if "dut_serial" in self.json_rig["test_parameters"]:
-            self.dut_serial = self.json_rig["test_parameters"]["dut_serial"]
+            self.logger.info("dut_model not in test_dut json")
+
+        if "dut_serial" in self.json_dut["test_dut"]:
+            self.dut_serial = self.json_dut["test_dut"]["dut_serial"]
         else:
-            self.logger.info("dut_serial not in test_parameters json")
-        if "dut_bssid_2g" in self.json_rig["test_parameters"]:
-            self.dut_bssid_2g = self.json_rig["test_parameters"]["dut_bssid_2g"]
+            self.logger.info("dut_serial not in test_dut json")
+
+        if "dut_bssid_2g" in self.json_dut["test_dut"]:
+            self.dut_bssid_2g = self.json_dut["test_dut"]["dut_bssid_2g"]
         else:
-            self.logger.info("dut_bssid_2G not in test_parameters json")
-        if "dut_bssid_5g" in self.json_rig["test_parameters"]:
-            self.dut_bssid_5g = self.json_rig["test_parameters"]["dut_bssid_5g"]
+            self.logger.info("dut_bssid_2G not in test_dut json")
+
+        if "dut_bssid_5g" in self.json_dut["test_dut"]:
+            self.dut_bssid_5g = self.json_dut["test_dut"]["dut_bssid_5g"]
         else:
-            self.logger.info("dut_bssid_5g not in test_parameters json")
-        if "dut_bssid_6g" in self.json_rig["test_parameters"]:
-            self.dut_bssid_6g = self.json_rig["test_parameters"]["dut_bssid_6g"]
+            self.logger.info("dut_bssid_5g not in test_dut json")
+
+        if "dut_bssid_6g" in self.json_dut["test_dut"]:
+            self.dut_bssid_6g = self.json_dut["test_dut"]["dut_bssid_6g"]
         else:
-            self.logger.info("dut_bssid_6g not in test_parameters json")
+            self.logger.info("dut_bssid_6g not in test_dut json")
+
+        if "ssid_6g_used" in self.json_dut["test_dut"]:
+            self.ssid_6g = self.json_dut["test_dut"]["ssid_5g_used"]
+        else:
+            self.logger.info("ssid_6g_used not in test_dut json")
+
+        if "ssid_6g_pw_used" in self.json_dut["test_dut"]:
+            self.ssid_6g_pw = self.json_dut["test_dut"]["ssid_6g_pw_used"]
+        else:
+            self.logger.info("ssid_6g_pw_used not in test_dut json")
+
+        if "security_6g_used" in self.json_dut["test_dut"]:
+            self.security_6g = self.json_rig["test_dut"]["security_6g_used"]
+        else:
+            self.logger.info("security_6g_used not in test_dut json")
+
+        if "ssid_5g_used" in self.json_dut["test_dut"]:
+            self.ssid_5g = self.json_dut["test_dut"]["ssid_5g_used"]
+        else:
+            self.logger.info("ssid_5g_used not in test_dut json")
+
+        if "ssid_5g_pw_used" in self.json_dut["test_dut"]:
+            self.ssid_5g_pw = self.json_dut["test_dut"]["ssid_5g_pw_used"]
+        else:
+            self.logger.info("ssid_5g_pw_used not in test_dut json")
+
+        if "security_5g_used" in self.json_dut["test_dut"]:
+            self.security_5g = self.json_rig["test_dut"]["security_5g_used"]
+        else:
+            self.logger.info("security_5g_used not in test_dut json")
+
+        if "ssid_2g_used" in self.json_dut["test_dut"]:
+            self.ssid_2g = self.json_dut["test_dut"]["ssid_2g_used"]
+        else:
+            self.logger.info("ssid_2g_used not in test_dut json")
+
+        if "ssid_2g_pw_used" in self.json_dut["test_dut"]:
+            self.ssid_2g_pw = self.json_dut["test_dut"]["ssid_2g_pw_used"]
+        else:
+            self.logger.info("ssid_2g_pw_used not in test_dut json")
+
+        if "security_2g_used" in self.json_dut["test_dut"]:
+            self.security_2g = self.json_rig["test_dut"]["security_2g_used"]
+        else:
+            self.logger.info("security_2g_used not in test_dut json")
 
     def read_test_network(self):
         if "http_test_ip" in self.json_rig["test_network"]:
@@ -661,21 +743,6 @@ http://{blog}:2368""".format(blog=self.blog_host)
             self.radio_lf = self.json_rig["test_generic"]["radio_used"]
         else:
             self.logger.info("radio_used not in test_generic json")
-            exit(1)
-        if "ssid_used" in self.json_rig["test_generic"]:
-            self.ssid = self.json_rig["test_generic"]["ssid_used"]
-        else:
-            self.logger.info("ssid_used not in test_generic json")
-            exit(1)
-        if "ssid_pw_used" in self.json_rig["test_generic"]:
-            self.ssid_pw = self.json_rig["test_generic"]["ssid_pw_used"]
-        else:
-            self.logger.info("ssid_pw_used not in test_generic json")
-            exit(1)
-        if "security_used" in self.json_rig["test_generic"]:
-            self.security = self.json_rig["test_generic"]["security_used"]
-        else:
-            self.logger.info("security_used not in test_generic json")
             exit(1)
         if "num_sta" in self.json_rig["test_generic"]:
             self.num_sta = self.json_rig["test_generic"]["num_sta"]
@@ -876,9 +943,10 @@ http://{blog}:2368""".format(blog=self.blog_host)
                                         self.radio_dict[radio]['PASSWD'], self.radio_dict[radio]['SECURITY'],
                                         self.radio_dict[radio]['STATIONS']))
 
+                    if 'DATABASE_SQLITE' in self.test_dict[test]['args']:
+                        self.text_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_SQLITE', self.database_sqlite)
                     if 'HTTP_TEST_IP' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('HTTP_TEST_IP',
-                                                                                            self.http_test_ip)
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('HTTP_TEST_IP', self.http_test_ip)
                     if 'FTP_TEST_IP' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('FTP_TEST_IP', self.ftp_test_ip)
                     if 'TEST_IP' in self.test_dict[test]['args']:
@@ -889,6 +957,10 @@ http://{blog}:2368""".format(blog=self.blog_host)
                     if 'LF_MGR_PORT' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR_PORT', self.lf_mgr_port)
 
+                    if 'RADIO_USED' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('RADIO_USED', self.radio_lf)
+
+                    # DUT Configuration
                     if 'DUT_NAME' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_NAME', self.dut_name)
                     if 'DUT_HW' in self.test_dict[test]['args']:
@@ -899,24 +971,35 @@ http://{blog}:2368""".format(blog=self.blog_host)
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_MODEL', self.dut_model)
                     if 'DUT_SERIAL' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_SERIAL', self.dut_serial)
-                    if 'DUT_BSSID_2G' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_2G',
-                                                                                            self.dut_bssid_2g)
-                    if 'DUT_BSSID_5G' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_5G',
-                                                                                            self.dut_bssid_5g)
-                    if 'DUT_BSSID_6G' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_6G',
-                                                                                            self.dut_bssid_6g)
 
-                    if 'RADIO_USED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('RADIO_USED', self.radio_lf)
-                    if 'SSID_USED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_USED', self.ssid)
-                    if 'SSID_PW_USED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_PW_USED', self.ssid_pw)
-                    if 'SECURITY_USED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SECURITY_USED', self.security)
+                    if 'DUT_BSSID_2G' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_2G', self.dut_bssid_2g)
+                    if 'SSID_2G_USED' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_2G_USED', self.ssid_2g)
+                    if 'SSID_2G_PW_USED' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_2G_PW_USED', self.ssid_2g_pw)
+                    if 'SECURITY_2G_USED' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SECURITY_2G_USED', self.security_2g)
+
+                    if 'DUT_BSSID_5G' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_5G', self.dut_bssid_5g)
+                    if 'SSID_5G_USED' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_5G_USED', self.ssid_5g)
+                    if 'SSID_5G_PW_USED' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_5G_PW_USED', self.ssid_5g_pw)
+                    if 'SECURITY_5G_USED' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SECURITY_5G_USED', self.security_5g)
+
+                    if 'DUT_BSSID_6G' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_6G', self.dut_bssid_6g)
+                    if 'SSID_6G_USED' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_6G_USED', self.ssid_6g)
+                    if 'SSID_6G_PW_USED' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_6G_PW_USED', self.ssid_6g_pw)
+                    if 'SECURITY_6G_USED' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SECURITY_6G_USED', self.security_6g)
+
+
                     if 'NUM_STA' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('NUM_STA', self.num_sta)
                     if 'COL_NAMES' in self.test_dict[test]['args']:
@@ -934,7 +1017,7 @@ http://{blog}:2368""".format(blog=self.blog_host)
                     if 'TEST_BED' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('TEST_BED', self.database_tag)
 
-                    # database configuration 
+                    # Influx database configuration 
                     if 'DATABASE_HOST' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_HOST',
                                                                                             self.database_host)
