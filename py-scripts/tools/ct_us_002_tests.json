@@ -151,7 +151,7 @@
                     " --config_name test_con --upstream UPSTREAM_PORT --dut DUT_NAME --duration 30s --station 1.1.wlan1",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;88;120;256;512;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20' ",
-                    " --raw_line 'spatial_streams: 4' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)' ",
+                    " --raw_line 'spatial_streams: 2' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)' ",
                     " --set DUT_SET_NAME"
                 ]
             },
