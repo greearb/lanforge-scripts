@@ -1059,7 +1059,10 @@ http://{blog}:2368""".format(blog=self.blog_host)
                                                    universal_newlines=True)
                         # if there is a better solution please propose,  the TIMEOUT Result is different then FAIL
                         try:
-                            process.wait(timeout=int(self.test_timeout))
+                            if int(self.test_timeout != 0):
+                                process.wait(timeout=int(self.test_timeout))
+                            else:
+                                process.wait()
                         except subprocess.TimeoutExpired:
                             process.terminate()
                             self.test_result = "TIMEOUT"
@@ -1418,7 +1421,7 @@ Example :
         print("lf_radio_df:: {lf_radio_df}".format(lf_radio_df=lf_radio_df))
 
     except Exception as error:
-        print("print_exc():")
+        print("print_exc(): {error}".format(error=error))
         traceback.print_exc(file=sys.stdout)
         lf_radio_df = pd.DataFrame()
         print("get_lanforge_radio_json exception, no radio data")
