@@ -98,6 +98,7 @@ FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 class lf_check():
     def __init__(self,
                 _json_rig,
+                _json_dut,
                 _json_test,
                 _test_suite,
                 _json_igg,
@@ -108,6 +109,7 @@ class lf_check():
                 _report_path,
                 _log_path):
         self.json_rig = _json_rig
+        self.json_dut = _json_dut
         self.json_test = _json_test
         self.test_suite = _test_suite
         self.json_igg = _json_igg
@@ -447,9 +449,13 @@ http://{blog}:2368""".format(blog=self.blog_host)
                 <br>
                 """
 
-    # there is probably a more efficient way to do this in python
-    # Keeping it obvious for now, may be refactored later
-    # Top level for reading the test rig configuration
+    # Read the json configuration 
+    # Read the test rig configuration, which is the LANforge system configuration
+    # Read the dut configuration, which is the specific configuration for the AP / VAP or other device under test
+    # Read the test configuration, replace the wide card parameters
+    # Read igg configuration is for Influx, Grafana and Ghost
+
+    # Reading the test rig configuration
     def read_json_rig(self):
         # self.logger.info("read_config_json_contents {}".format(self.json_rig))
         if "test_parameters" in self.json_rig:
@@ -1231,6 +1237,7 @@ Example :
     parser.add_argument('--dir', help="--dir <results directory>", default="lf_check")
     parser.add_argument('--path', help="--path <results path>", default="/home/lanforge/html-results")
     parser.add_argument('--json_rig', help="--json_rig <rig json config> ", default="")
+    parser.add_argument('--json_dut', help="--json_dut <dut json config> ", default="")
     parser.add_argument('--json_test', help="--json_test <test json config> ", default="")
     parser.add_argument('--json_igg', help="--json_igg <influx grafana ghost json config> ", default="")
     parser.add_argument('--suite', help="--suite <suite name>  default TEST_DICTIONARY", default="TEST_DICTIONARY")
@@ -1251,6 +1258,14 @@ Example :
             json_rig = json.load(json_rig_config)
     except:
         print("Error reading {}".format(args.json_rig))        
+
+    json_dut = ""
+    try:
+        print("args.json_dut {dut}".format(dut=args.json_dut))
+        with open(args.json_dut, 'r') as json_dut_config:
+            json_dut = json.load(json_dut_config)
+    except:
+        print("Error reading {}".format(args.json_dut))        
 
     json_test = ""
     try:
@@ -1304,6 +1319,7 @@ Example :
 
     # lf_check() class created
     check = lf_check(_json_rig=json_rig,
+                     _json_dut=json_dut,
                      _json_test=json_test,
                      _test_suite=test_suite,
                      _json_igg=json_igg,
