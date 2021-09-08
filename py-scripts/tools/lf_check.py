@@ -1322,9 +1322,9 @@ Example :
 
     parser.add_argument('--dir', help="--dir <results directory>", default="lf_check")
     parser.add_argument('--path', help="--path <results path>", default="/home/lanforge/html-results")
-    parser.add_argument('--json_rig', help="--json_rig <rig json config> ", default="")
-    parser.add_argument('--json_dut', help="--json_dut <dut json config> ", default="")
-    parser.add_argument('--json_test', help="--json_test <test json config> ", default="")
+    parser.add_argument('--json_rig', help="--json_rig <rig json config> ", default="", required=True)
+    parser.add_argument('--json_dut', help="--json_dut <dut json config> ", default="", required=True)
+    parser.add_argument('--json_test', help="--json_test <test json config> ", default="", required=True)
     parser.add_argument('--json_igg', help="--json_igg <influx grafana ghost json config> ", default="")
     parser.add_argument('--suite', help="--suite <suite name>  default TEST_DICTIONARY", default="TEST_DICTIONARY")
     parser.add_argument('--production', help="--production  stores true, sends email results to production email list",
