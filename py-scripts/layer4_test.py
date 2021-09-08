@@ -17,17 +17,13 @@ if sys.version_info[0] != 3:
 if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 from LANforge import LFUtils
-from LANforge import lfcli_base
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
-import realm
-from realm import PortUtils
+from realm import PortUtils, Realm
 import argparse
 import datetime
 import time
-from test_utility import CreateHTML
-from test_utility import RuntimeUpdates
-import pdfkit
+from test_utility import CreateHTML, RuntimeUpdates
 import json
 import re
 import os
@@ -60,7 +56,7 @@ class HTTPTest(LFCliBase):
         self.urls_ps = url_ps
         self.test_update =_test_update
         self.test_update.send_update({"test_status": '1', "duration_left": "initializing...", "data": 'None'})
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.test_duration = self.local_realm.parse_time(duration)
         self.station_profile = self.local_realm.new_station_profile()
         self.port_util = PortUtils(self.local_realm)

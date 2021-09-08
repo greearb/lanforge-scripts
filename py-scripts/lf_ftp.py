@@ -15,12 +15,10 @@ if 'py-json' not in sys.path:
 from LANforge import LFUtils
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
-import realm
+from realm import Realm, PortUtils
 import argparse
-import datetime
 from datetime import datetime
 import time
-import os
 import matplotlib.patches as mpatches
 from lf_report import *
 from lf_graph import *
@@ -52,10 +50,10 @@ class FtpTest(LFCliBase):
         self.duration = duration
         self.traffic_duration = traffic_duration
         self.ssh_port = ssh_port
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
         self.cx_profile = self.local_realm.new_http_profile()
-        self.port_util = realm.PortUtils(self.local_realm)
+        self.port_util = PortUtils(self.local_realm)
         self.cx_profile.requests_per_ten = self.requests_per_ten
 
         print("Test is Initialized")

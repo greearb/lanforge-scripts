@@ -32,10 +32,9 @@ if sys.version_info[0] != 3:
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-import LANforge
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-import realm
+from realm import Realm
 import time
 import pprint
 
@@ -61,7 +60,7 @@ class ConnectTest(LFCliBase):
         super().__init__(_host,
                          _port,
                          _proxy_str=_proxy_str,
-                         _local_realm=realm.Realm(lfclient_host=_host,
+                         _local_realm=Realm(lfclient_host=_host,
                                                   lfclient_port=_port,
                                                   _exit_on_error=_exit_on_error,
                                                   _exit_on_fail=_exit_on_fail,

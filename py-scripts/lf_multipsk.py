@@ -33,9 +33,7 @@ if sys.version_info[0] != 3:
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-import realm
 from realm import Realm
 
 
@@ -66,7 +64,7 @@ class MultiPsk(Realm):
         self.resource = resource
         self.sta_prefix = sta_prefix
         self.debug = debug_
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
 
     def build(self):

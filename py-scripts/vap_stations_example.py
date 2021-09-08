@@ -8,12 +8,9 @@ if sys.version_info[0] != 3:
     exit(1)
 if 'py-json' not in sys.path:
     sys.path.append('../py-json')
-import traceback
 
-from LANforge import LFUtils
 from LANforge.LFUtils import *
 from LANforge.lfcli_base import LFCliBase
-from generic_cx import GenericCx
 
 mgrURL = "http://localhost:8080/"
 staName = "sta0"

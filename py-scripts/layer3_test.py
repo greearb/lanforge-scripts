@@ -9,10 +9,8 @@ if sys.version_info[0] != 3:
 if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 from LANforge import LFUtils
-from LANforge import lfcli_base
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
-import realm
 from realm import Realm
 import argparse
 import datetime
@@ -42,7 +40,7 @@ class Layer3Test(LFCliBase):
         self.traffic_type = traffic_type
         self.side_a_speed = side_a_speed
         self.side_b_speed = side_b_speed
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
         self.cx_profile = self.local_realm.new_l3_cx_profile()
 

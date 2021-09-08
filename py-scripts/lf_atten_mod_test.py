@@ -32,16 +32,14 @@ if 'py-json' not in sys.path:
 import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
-from LANforge import LFUtils
-import realm
-import time
+from realm import Realm
 
 class CreateAttenuator(LFCliBase):
     def __init__(self, host, port, serno, idx, val,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _local_realm=realm.Realm(host, port), _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, _local_realm=Realm(host, port), _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.serno = serno

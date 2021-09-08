@@ -13,7 +13,7 @@ if 'py-json' not in sys.path:
 import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-import realm
+from realm import Realm
 import time
 import datetime
 
@@ -42,7 +42,7 @@ class VRTest(LFCliBase):
         self.debug = _debug_on
         self.name_prefix = name_prefix
         self.test_duration = test_duration
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
         self.cx_profile = self.local_realm.new_l3_cx_profile()
         self.vr_profile = self.local_realm.new_vr_profile()

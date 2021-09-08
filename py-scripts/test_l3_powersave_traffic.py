@@ -10,12 +10,10 @@ if sys.version_info[0] != 3:
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
-import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
-from LANforge import LFUtils
-import l3_cxprofile
-import realm
+from l3_cxprofile import L3CXProfile
+from realm import StationProfile, WifiMonitor, Realm
 import time
 import datetime
 
@@ -36,28 +34,28 @@ class L3PowersaveTraffic(LFCliBase):
         self.sta_list = station_list
         self.prefix = prefix
         self.debug = _debug_on
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=False)
+        self.local_realm = Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=False)
         # upload
-        self.cx_prof_upload = l3_cxprofile.L3CXProfile(self.host, self.port, self.local_realm,
+        self.cx_prof_upload = L3CXProfile(self.host, self.port, self.local_realm,
                                                 side_a_min_bps=side_a_min_rate, side_b_min_bps=0,
                                                 side_a_max_bps=side_a_max_rate, side_b_max_bps=0,
                                                 side_a_min_pdu=pdu_size, side_a_max_pdu=pdu_size,
                                                 side_b_min_pdu=0, side_b_max_pdu=0, debug_=False)
 
         # download
-        self.cx_prof_download = l3_cxprofile.L3CXProfile(self.host, self.port, self.local_realm,
+        self.cx_prof_download = L3CXProfile(self.host, self.port, self.local_realm,
                                                   side_a_min_bps=0, side_b_min_bps=side_b_min_rate,
                                                   side_a_max_bps=0, side_b_max_bps=side_b_max_rate,
                                                   side_a_min_pdu=0, side_a_max_pdu=0,
                                                   side_b_min_pdu=pdu_size, side_b_max_pdu=pdu_size, debug_=False)
         self.test_duration = test_duration
-        self.station_profile = realm.StationProfile(self.lfclient_url, self.local_realm, ssid=self.ssid,
+        self.station_profile = StationProfile(self.lfclient_url, self.local_realm, ssid=self.ssid,
                                                     ssid_pass=self.password,
                                                     security=self.security, number_template_=self.prefix, mode=0,
                                                     up=True,
                                                     dhcp=True,
                                                     debug_=False)
-        self.new_monitor = realm.WifiMonitor(self.lfclient_url, self.local_realm, debug_=_debug_on)
+        self.new_monitor = WifiMonitor(self.lfclient_url, self.local_realm, debug_=_debug_on)
 
     def build(self):
         self.station_profile.use_security("open", ssid=self.ssid, passwd=self.password)

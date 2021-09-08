@@ -13,7 +13,7 @@ if 'py-json' not in sys.path:
 import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-import realm
+from realm import Realm, WifiMonitor
 import time
 import datetime
 
@@ -40,12 +40,12 @@ class IPV4VariableTime(LFCliBase):
         self.debug = _debug_on
         self.name_prefix = name_prefix
         self.test_duration = test_duration
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
         self.cx_profile = self.local_realm.new_l3_cx_profile()
         self.vap_profile = self.local_realm.new_vap_profile()
         self.vap_profile.vap_name = "vap0000"
-        self.monitor = realm.WifiMonitor(self.lfclient_url, self.local_realm, debug_=_debug_on)
+        self.monitor = WifiMonitor(self.lfclient_url, self.local_realm, debug_=_debug_on)
 
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid

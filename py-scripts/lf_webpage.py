@@ -17,9 +17,7 @@ if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 from LANforge import LFUtils
 from LANforge.LFUtils import *
-import realm
-from realm import Realm
-from realm import PortUtils
+from realm import Realm, PortUtils
 
 from lf_report import *
 from lf_graph import *
@@ -44,7 +42,7 @@ class HttpDownload(Realm):
         self.debug = _debug_on
         print(bands)
 
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
         self.http_profile = self.local_realm.new_http_profile()
         self.http_profile.requests_per_ten = self.target_per_ten

@@ -12,19 +12,19 @@ import os
 
 from pip._internal.utils import logging
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-import wlan_theoretical_sta
+if 'py_json' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath('..'), 'py_json'))
+from wlan_theoretical_sta import abg11_calculator, n11_calculator, ac11_calculator
 
 # main method
 
 def main():
 
-    parse = wlan_theoretical_sta.abg11_calculator.create_argparse( prog='wlan_capacity_calculator.py',
-        formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''\
+    parse = abg11_calculator.create_argparse( prog='wlan_capacity_calculator.py',
+                                              formatter_class=argparse.RawTextHelpFormatter,
+                                              epilog='''\
              This python script calculates the theoretical value of three different stations( 11abg/11n/11ac)''',
-        description='''\
+                                              description='''\
         wlan_capacity_calculator.py
         ---------------------------------------------------------------------------
 
@@ -226,20 +226,20 @@ def main():
     # Select station(802.11a/b/g/n/ac standards)
 
     if "11abg" in Calculator_name:
-        Station1 = wlan_theoretical_sta.abg11_calculator(traffic_name, phy_name, encryption_name, qos_name, mac_name, basic_name,
+        Station1 = abg11_calculator(traffic_name, phy_name, encryption_name, qos_name, mac_name, basic_name,
                                     preamble_name, slot_name, codec_name, rts_name, cts_name)
         Station1.calculate()
         Station1.get_result()
 
     if "11n" in Calculator_name:
-        Station2 = wlan_theoretical_sta.n11_calculator(traffic_name, data_name, channel_name, guard_name, highest_name, encryption_name,
+        Station2 = n11_calculator(traffic_name, data_name, channel_name, guard_name, highest_name, encryption_name,
                                   qos_name, ip_name,
                                   mc_name, basic_name, mac_name,
                                   codec_name, plcp_name, cwin_name, rts_name, cts_name)
         Station2.calculate()
         Station2.get_result()
     if "11ac" in Calculator_name:
-        Station3 = wlan_theoretical_sta.ac11_calculator(traffic_name, data_name, spatial_name, channel_name, guard_name, highest_name,
+        Station3 = ac11_calculator(traffic_name, data_name, spatial_name, channel_name, guard_name, highest_name,
                                    encryption_name
                                    , qos_name, ip_name, mc_name, basic_name, mac_name,
                                    codec_name, cwin_name, rtscts_name)

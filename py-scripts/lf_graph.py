@@ -19,11 +19,8 @@ INCLUDE_IN_README
 '''
 
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 import numpy as np
-import pandas as pd
 import pdfkit
-import math
 from matplotlib.colors import ListedColormap
 from lf_csv import lf_csv
 

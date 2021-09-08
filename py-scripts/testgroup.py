@@ -10,9 +10,8 @@ if 'py-json' not in sys.path:
 
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
-from LANforge import LFUtils
 import argparse
-import realm
+from realm import Realm
 
 class TestGroup(LFCliBase):
     def __init__(self, host, port,
@@ -24,7 +23,7 @@ class TestGroup(LFCliBase):
                  list_groups=None,
                  show_group=None):
 
-        self.local_realm = realm.Realm(lfclient_host=host, lfclient_port=port)
+        self.local_realm = Realm(lfclient_host=host, lfclient_port=port)
         self.tg_profile = self.local_realm.new_test_group_profile()
         if group_name is None and list_groups is None and (tg_action is not None or cx_action is not None or
                                    add_cx_list is not None or rm_cx_list is not None or show_group is not None):

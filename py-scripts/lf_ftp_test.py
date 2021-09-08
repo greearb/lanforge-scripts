@@ -38,7 +38,7 @@ if 'py-json' not in sys.path:
 from LANforge import LFUtils
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
-import realm
+from realm import Realm, PortUtils
 import argparse
 from datetime import datetime
 import time
@@ -64,10 +64,10 @@ class ftp_test(LFCliBase):
         self.band=band
         self.file_size=file_size
         self.direction=direction
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
         self.cx_profile = self.local_realm.new_http_profile()
-        self.port_util = realm.PortUtils(self.local_realm)
+        self.port_util = PortUtils(self.local_realm)
         self.cx_profile.requests_per_ten = self.requests_per_ten
 
         print("Test is Initialized")

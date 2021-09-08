@@ -14,7 +14,7 @@ import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
 from LANforge import LFUtils
-import realm
+from realm import Realm, PacketFilter
 import time
 import datetime
 
@@ -69,8 +69,8 @@ class TIPStationPowersave(LFCliBase):
         self.powersave_sta_radio = powersave_station_radio_
         self.sta_mac_map = {}
         self.debug = debug_on_
-        self.packet_filter = realm.PacketFilter()
-        self.local_realm = realm.Realm(lfclient_host=self.host,
+        self.packet_filter = PacketFilter()
+        self.local_realm = Realm(lfclient_host=self.host,
                                        lfclient_port=self.port,
                                        debug_=self.debug)
 

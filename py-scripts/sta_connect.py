@@ -16,11 +16,8 @@ if 'py-json' not in sys.path:
 
 import argparse
 from LANforge import LFUtils
-# from LANforge import LFCliBase
-from LANforge import lfcli_base
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
-import realm
 from realm import Realm
 import time
 
