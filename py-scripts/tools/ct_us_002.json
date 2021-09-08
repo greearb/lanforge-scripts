@@ -15,6 +15,8 @@
         "database_tag": "testbed CT-US-002",        
         "lf_mgr_ip": "192.168.100.200",
         "lf_mgr_port": "8080",
+        "lf_mgr_user": "lanforge",
+        "lf_mgr_pass": "lanforge",
         "upstream_port": "1.1.eth2",
         "dut_set_name": "DUT_NAME NETGEAR59-5G",
         "dut_name": "NETGEAR-AX12",
@@ -45,7 +47,7 @@
         "1.1.wiphy4":{"KEY":"1.1.wiphy4","RADIO":"1.1.wiphy4","DRIVER":"iwlwifi(AX200)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"},
         "1.1.wiphy5":{"KEY":"1.1.wiphy5","RADIO":"1.1.wiphy5","DRIVER":"iwlwifi(AX200)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"},
         "1.1.wiphy6":{"KEY":"1.1.wiphy6","RADIO":"1.1.wiphy6","DRIVER":"iwlwifi(AX200)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"},
-        "1.1.wiphy7":{"KEY":"1.1.wiphy7","RADIO":"1.1.wiphy7","DRIVER":"iwlwifi(AX200)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"},
+        "1.1.wiphy7":{"KEY":"1.1.wiphy7","RADIO":"1.1.wiphy7","DRIVER":"iwlwifi(AX200)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"}
     }
 }
 			

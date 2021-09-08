@@ -16,6 +16,8 @@
         "database_tag_influx": "testbed CT-US-001",        
         "lf_mgr_ip": "192.168.100.116",
         "lf_mgr_port": "8080",
+        "lf_mgr_user": "lanforge",
+        "lf_mgr_pass": "lanforge",
         "upstream_port":"1.1.eth2",
         "test_timeout": 600,
         "load_blank_db": false,

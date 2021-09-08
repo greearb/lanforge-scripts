@@ -560,6 +560,14 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
             self.lf_mgr_port = self.json_rig["test_parameters"]["lf_mgr_port"]
         else:
             self.logger.info("lf_mgr_port not in test_parameters json")
+        if "lf_mgr_user" in self.json_rig["test_parameters"]:
+            self.lf_mgr_user = self.json_rig["test_parameters"]["lf_mgr_user"]
+        else:
+            self.logger.info("lf_mgr_user not in test_parameters json")
+        if "lf_mgr_pass" in self.json_rig["test_parameters"]:
+            self.lf_mgr_pass = self.json_rig["test_parameters"]["lf_mgr_pass"]
+        else:
+            self.logger.info("lf_mgr_pass not in test_parameters json")
         if "upstream_port" in self.json_rig["test_parameters"]:
             self.upstream_port = self.json_rig["test_parameters"]["upstream_port"]
         else:

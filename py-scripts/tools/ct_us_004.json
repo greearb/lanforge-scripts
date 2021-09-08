@@ -16,6 +16,8 @@
         "database_tag_influx": "testbed CT-US-004",        
         "lf_mgr_ip": "192.168.100.194",
         "lf_mgr_port": "8080",
+        "lf_mgr_user": "lanforge",
+        "lf_mgr_pass": "lanforge",
         "upstream_port": "1.1.eth2",
         "dut_set_name": "DUT_NAME Asus-RT-AX88U",
         "dut_name": "Asus-RT-AX88U",
