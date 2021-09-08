@@ -36,7 +36,7 @@
     },
     "radio_dict":{
         "1.1.wiphy0":{"KEY":"1.1.wiphy0","RADIO":"1.1.wiphy0","DRIVER":"ath10k(9984)","CAPABILITIES":"802.11bgn-AC","MAX_STA":"128","MAX_VAP":"24","MAX_VIFS":"64"},
-        "1.1.wiphy1":{"KEY":"1.1.wiphy1","RADIO":"1.1.wiphy1","DRIVER":"ath10k(9984)","CAPABILITIES":"802.11bgn-AC","MAX_STA":"128","MAX_VAP":"24","MAX_VIFS":"64"},
+        "1.1.wiphy1":{"KEY":"1.1.wiphy1","RADIO":"1.1.wiphy1","DRIVER":"ath10k(9984)","CAPABILITIES":"802.11an-AC","MAX_STA":"128","MAX_VAP":"24","MAX_VIFS":"64"},
         "1.1.wiphy2":{"KEY":"1.1.wiphy2","RADIO":"1.1.wiphy2","DRIVER":"ath9k()","CAPABILITIES":"802.11abgn","MAX_STA":"2048","MAX_VAP":"24","MAX_VIFS":"64"},
         "1.1.wiphy3":{"KEY":"1.1.wiphy3","RADIO":"1.1.wiphy3","DRIVER":"ath10k(998x)","CAPABILITIES":"802.11abgn-AC","MAX_STA":"127","MAX_VAP":"24","MAX_VIFS":"64"},
         "1.1.wiphy4":{"KEY":"1.1.wiphy4","RADIO":"1.1.wiphy4","DRIVER":"iwlwifi(AX200)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"},

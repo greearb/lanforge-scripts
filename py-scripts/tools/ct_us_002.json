@@ -38,8 +38,14 @@
         "test_ip": "192.168.0.104"
     },
     "radio_dict":{
-        "RADIO_0_CFG":{"KEY":"RADIO_0_CFG","RADIO":"wiphy0","STATIONS":"4","SSID":"NETGEAR59-5G","PASSWD":"crispynest798","SECURITY":"wpa2"},
-        "RADIO_1_CFG":{"KEY":"RADIO_1_CFG","RADIO":"wiphy1","STATIONS":"4","SSID":"NETGEAR59-5G","PASSWD":"crispynest798","SECURITY":"wpa2"}        
+        "1.1.wiphy0":{"KEY":"1.1.wiphy0","RADIO":"1.1.wiphy0","DRIVER":"ath10k(9984)","CAPABILITIES":"802.11an-AC","MAX_STA":"128","MAX_VAP":"24","MAX_VIFS":"64"},
+        "1.1.wiphy1":{"KEY":"1.1.wiphy1","RADIO":"1.1.wiphy1","DRIVER":"ath10k(9984)","CAPABILITIES":"802.11an-AC","MAX_STA":"128","MAX_VAP":"24","MAX_VIFS":"64"},
+        "1.1.wiphy2":{"KEY":"1.1.wiphy2","RADIO":"1.1.wiphy2","DRIVER":"ath10k(9984)","CAPABILITIES":"802.11an-AC","MAX_STA":"128","MAX_VAP":"24","MAX_VIFS":"64"},
+        "1.1.wiphy3":{"KEY":"1.1.wiphy3","RADIO":"1.1.wiphy3","DRIVER":"ath10k(9984)","CAPABILITIES":"802.11an-AC","MAX_STA":"128","MAX_VAP":"24","MAX_VIFS":"64"},
+        "1.1.wiphy4":{"KEY":"1.1.wiphy4","RADIO":"1.1.wiphy4","DRIVER":"iwlwifi(AX200)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"},
+        "1.1.wiphy5":{"KEY":"1.1.wiphy5","RADIO":"1.1.wiphy5","DRIVER":"iwlwifi(AX200)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"},
+        "1.1.wiphy6":{"KEY":"1.1.wiphy6","RADIO":"1.1.wiphy6","DRIVER":"iwlwifi(AX200)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"},
+        "1.1.wiphy7":{"KEY":"1.1.wiphy7","RADIO":"1.1.wiphy7","DRIVER":"iwlwifi(AX200)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"},
     }
 }
 			
