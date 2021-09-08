@@ -12,7 +12,6 @@ import time
 from time import sleep
 from urllib import error
 import pprint
-LANforge=importlib.import_module("lanforge-scripts.py-json.create_wanlink")
 from LANforge import LFRequest
 from LANforge import LFUtils
 from LANforge.LFUtils import NA
