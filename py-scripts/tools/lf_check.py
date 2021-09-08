@@ -222,32 +222,32 @@ class lf_check():
         self.table_qa = ""
 
         # database configuration  # database
-        self.database_json = ""
-        self.database_config = "True"  # default to False once testing done
-        self.database_host = "192.168.100.201"  # "c7-grafana.candelatech.com" # influx and grafana have the same host "192.168.100.201"
-        self.database_port = "8086"
-        self.database_token = "-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ=="
-        self.database_org = "Candela"
-        self.database_bucket = "lanforge_qa_testing"
-        self.database_tag = 'testbed CT-US-001'  # the test_rig needs to match
+        self.influx_database_json = ""
+        self.influx_database_config = "True"  # default to False once testing done
+        self.influx_database_host = "192.168.100.201"  # "c7-grafana.candelatech.com" # influx and grafana have the same host "192.168.100.201"
+        self.influx_database_port = "8086"
+        self.influx_database_token = "-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ=="
+        self.influx_database_org = "Candela"
+        self.influx_database_bucket = "lanforge_qa_testing"
+        self.influx_database_tag = 'testbed CT-US-001'  # the test_rig needs to match
 
         # grafana configuration  #dashboard
-        self.dashboard_json = ""
-        self.dashboard_config = "True"  # default to False once testing done
-        self.dashboard_host = "192.168.100.201"  # "c7-grafana.candelatech.com" # 192.168.100.201
-        self.dashboard_port = "3000"
-        self.dashboard_token = "eyJrIjoiS1NGRU8xcTVBQW9lUmlTM2dNRFpqNjFqV05MZkM0dzciLCJuIjoibWF0dGhldyIsImlkIjoxfQ=="
+        self.dashboard_json_grafana = ""
+        self.dashboard_config_grafana = "True"  # default to False once testing done
+        self.dashboard_host_grafana = "192.168.100.201"  # "c7-grafana.candelatech.com" # 192.168.100.201
+        self.dashboard_port_grafana = "3000"
+        self.dashboard_token_grafana = "eyJrIjoiS1NGRU8xcTVBQW9lUmlTM2dNRFpqNjFqV05MZkM0dzciLCJuIjoibWF0dGhldyIsImlkIjoxfQ=="
 
         # ghost configuration 
-        self.blog_json = ""
-        self.blog_config = False
-        self.blog_host = "192.168.100.153"
-        self.blog_port = "2368"
-        self.blog_token = "60df4b0175953f400cd30650:d50e1fabf9a9b5d3d30fe97bc3bf04971d05496a89e92a169a0d72357c81f742"
-        self.blog_authors = "Matthew"
-        self.blog_customer = "candela"
-        self.blog_user_push = "lanforge"
-        self.blog_password_push = "lanforge"
+        self.blog_json_ghost = ""
+        self.blog_config_ghost = False
+        self.blog_host_ghost = "192.168.100.153"
+        self.blog_port_ghost = "2368"
+        self.blog_token_ghost = "60df4b0175953f400cd30650:d50e1fabf9a9b5d3d30fe97bc3bf04971d05496a89e92a169a0d72357c81f742"
+        self.blog_authors_ghost = "Matthew"
+        self.blog_customer_ghost = "candela"
+        self.blog_user_push_ghost = "lanforge"
+        self.blog_password_push_ghost = "lanforge"
         self.blog_flag = "--kpi_to_ghost"
 
         self.test_run = ""
@@ -260,9 +260,9 @@ class lf_check():
         queries['LANforge Manager'] = 'http://%s:%s' % (self.lf_mgr_ip, self.lf_mgr_port)
         # Frame work not required to use specific databases or presentation
         if json_igg != "":
-            queries['Blog Host'] = 'http://%s:%s' % (self.blog_host, self.blog_port)
-            queries['Influx Host'] = 'http://%s:%s' % (self.database_host, self.database_port)
-            queries['Grafana Host'] = 'http://%s:%s' % (self.dashboard_host, self.dashboard_port)
+            queries['Blog Host'] = 'http://%s:%s' % (self.blog_host_ghost, self.blog_port_ghost)
+            queries['Influx Host'] = 'http://%s:%s' % (self.influx_database_host, self.influx_database_port)
+            queries['Grafana Host'] = 'http://%s:%s' % (self.dashboard_host_grafana, self.dashboard_port_grafana)
         results = dict()
         for key, value in queries.items():
             try:
@@ -391,7 +391,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             message_txt += """
             
 Ghost Blog:
-http://{blog}:2368""".format(blog=self.blog_host)
+http://{blog}:2368""".format(blog=self.blog_host_ghost)
         
         if (self.email_title_txt != ""):
             mail_subject = "{} [{hostname}] {date}".format(self.email_title_txt, hostname=hostname,
@@ -763,88 +763,88 @@ http://{blog}:2368""".format(blog=self.blog_host)
     # Optional from --json_igg switch 
     # kpi.csv and meta.txt can be read after test run performed holds same data
     def read_test_database(self):
-        if "database_config" in self.json_igg["test_database"]:
-            self.database_config = self.json_igg["test_database"]["database_config"]
+        if "influx_database_config" in self.json_igg["test_database"]:
+            self.influx_database_config = self.json_igg["test_database"]["influx_database_config"]
         else:
-            self.logger.info("database_config not in test_database json")
-        if "database_host" in self.json_igg["test_database"]:
-            self.database_host = self.json_igg["test_database"]["database_host"]
+            self.logger.info("influx_database_config not in test_database json")
+        if "influx_database_host" in self.json_igg["test_database"]:
+            self.influx_database_host = self.json_igg["test_database"]["influx_database_host"]
         else:
-            self.logger.info("database_host not in test_database json")
-        if "database_port" in self.json_igg["test_database"]:
-            self.database_port = self.json_igg["test_database"]["database_port"]
+            self.logger.info("influx_database_host not in test_database json")
+        if "influx_database_port" in self.json_igg["test_database"]:
+            self.influx_database_port = self.json_igg["test_database"]["influx_database_port"]
         else:
-            self.logger.info("database_port not in test_database json")
-        if "database_token" in self.json_igg["test_database"]:
-            self.database_token = self.json_igg["test_database"]["database_token"]
+            self.logger.info("influx_database_port not in test_database json")
+        if "influx_database_token" in self.json_igg["test_database"]:
+            self.influx_database_token = self.json_igg["test_database"]["influx_database_token"]
         else:
-            self.logger.info("database_token not in test_database json")
-        if "database_org" in self.json_igg["test_database"]:
-            self.database_org = self.json_igg["test_database"]["database_org"]
+            self.logger.info("influx_database_token not in test_database json")
+        if "influx_database_org" in self.json_igg["test_database"]:
+            self.influx_database_org = self.json_igg["test_database"]["influx_database_org"]
         else:
-            self.logger.info("database_org not in test_database json")
-        if "database_bucket" in self.json_igg["test_database"]:
-            self.database_bucket = self.json_igg["test_database"]["database_bucket"]
+            self.logger.info("influx_database_org not in test_database json")
+        if "influx_database_bucket" in self.json_igg["test_database"]:
+            self.influx_database_bucket = self.json_igg["test_database"]["influx_database_bucket"]
         else:
-            self.logger.info("database_bucket not in test_database json")
-        if "database_tag" in self.json_igg["test_database"]:
-            self.database_tag = self.json_igg["test_database"]["database_tag"]
+            self.logger.info("influx_database_bucket not in test_database json")
+        if "influx_database_tag" in self.json_igg["test_database"]:
+            self.influx_database_tag = self.json_igg["test_database"]["influx_database_tag"]
         else:
-            self.logger.info("database_tag not in test_database json")
+            self.logger.info("influx_database_tag not in test_database json")
 
     # Optional only if --json_igg switch 
     def read_test_dashboard(self):
-        if "dashboard_config" in self.json_igg["test_dashboard"]:
-            self.dashboard_config = self.json_igg["test_dashboard"]["dashboard_config"]
+        if "dashboard_config_grafana" in self.json_igg["test_dashboard"]:
+            self.dashboard_config_grafana = self.json_igg["test_dashboard"]["dashboard_config_grafana"]
         else:
-            self.logger.info("dashboard_config not in test_dashboard json")
+            self.logger.info("dashboard_config_grafana not in test_dashboard json")
 
-        if "dashboard_host" in self.json_igg["test_dashboard"]:
-            self.dashboard_host = self.json_igg["test_dashboard"]["dashboard_host"]
+        if "dashboard_host_grafana" in self.json_igg["test_dashboard"]:
+            self.dashboard_host_grafana = self.json_igg["test_dashboard"]["dashboard_host_grafana"]
         else:
-            self.logger.info("dashboard_host not in test_dashboard json")
+            self.logger.info("dashboard_host_grafana not in test_dashboard json")
 
-        if "dashboard_token" in self.json_igg["test_dashboard"]:
-            self.dashboard_token = self.json_igg["test_dashboard"]["dashboard_token"]
+        if "dashboard_token_grafana" in self.json_igg["test_dashboard"]:
+            self.dashboard_token_grafana = self.json_igg["test_dashboard"]["dashboard_token_grafana"]
         else:
-            self.logger.info("dashboard_token not in test_dashboard json")
+            self.logger.info("dashboard_token_grafana not in test_dashboard json")
 
     # Optional on if --json_igg switch
     def read_test_blog(self):
-        if "blog_config" in self.json_igg["test_blog"]:
-            self.blog_config = self.json_igg["test_blog"]["blog_config"]
+        if "blog_config_ghost" in self.json_igg["test_blog"]:
+            self.blog_config_ghost = self.json_igg["test_blog"]["blog_config_ghost"]
         else:
-            self.logger.info("blog_config not in test_blog json")
+            self.logger.info("blog_config_ghost not in test_blog json")
 
-        if "blog_host" in self.json_igg["test_blog"]:
-            self.blog_host = self.json_igg["test_blog"]["blog_host"]
+        if "blog_host_ghost" in self.json_igg["test_blog"]:
+            self.blog_host_ghost = self.json_igg["test_blog"]["blog_host_ghost"]
         else:
-            self.logger.info("blog_host not in test_blog json")
+            self.logger.info("blog_host_ghost not in test_blog json")
 
-        if "blog_token" in self.json_igg["test_blog"]:
-            self.blog_token = self.json_igg["test_blog"]["blog_token"]
+        if "blog_token_ghost" in self.json_igg["test_blog"]:
+            self.blog_token_ghost = self.json_igg["test_blog"]["blog_token_ghost"]
         else:
-            self.logger.info("blog_token not in test_blog json")
+            self.logger.info("blog_token_ghost not in test_blog json")
 
-        if "blog_authors" in self.json_igg["test_blog"]:
-            self.blog_authors = self.json_igg["test_blog"]["blog_authors"]
+        if "blog_authors_ghost" in self.json_igg["test_blog"]:
+            self.blog_authors_ghost = self.json_igg["test_blog"]["blog_authors_ghost"]
         else:
-            self.logger.info("blog_authors not in test_blog json")
+            self.logger.info("blog_authors_ghost not in test_blog json")
 
-        if "blog_customer" in self.json_igg["test_blog"]:
-            self.blog_customer = self.json_igg["test_blog"]["blog_customer"]
+        if "blog_customer_ghost" in self.json_igg["test_blog"]:
+            self.blog_customer_ghost = self.json_igg["test_blog"]["blog_customer_ghost"]
         else:
-            self.logger.info("blog_customer not in test_blog json")
+            self.logger.info("blog_customer_ghost not in test_blog json")
 
-        if "blog_user_push" in self.json_igg["test_blog"]:
-            self.blog_user_push = self.json_igg["test_blog"]["blog_user_push"]
+        if "blog_user_push_ghost" in self.json_igg["test_blog"]:
+            self.blog_user_push_ghost = self.json_igg["test_blog"]["blog_user_push_ghost"]
         else:
-            self.logger.info("blog_user_push not in test_blog json")
+            self.logger.info("blog_user_push_ghost not in test_blog json")
 
-        if "blog_password_push" in self.json_igg["test_blog"]:
-            self.blog_password_push = self.json_igg["test_blog"]["blog_password_push"]
+        if "blog_password_push_ghost" in self.json_igg["test_blog"]:
+            self.blog_password_push_ghost = self.json_igg["test_blog"]["blog_password_push_ghost"]
         else:
-            self.logger.info("blog_password_push not in test_blog json")
+            self.logger.info("blog_password_push_ghost not in test_blog json")
 
         if "blog_flag" in self.json_igg["test_blog"]:
             self.blog_flag = self.json_igg["test_blog"]["blog_flag"]
@@ -1015,27 +1015,27 @@ http://{blog}:2368""".format(blog=self.blog_host)
 
                     # The TEST_BED is the database tag
                     if 'TEST_BED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('TEST_BED', self.database_tag)
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('TEST_BED', self.influx_database_tag)
 
                     # Influx database configuration 
-                    if 'DATABASE_HOST' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_HOST',
-                                                                                            self.database_host)
-                    if 'DATABASE_PORT' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_PORT',
-                                                                                            self.database_port)
-                    if 'DATABASE_TOKEN' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_TOKEN',
-                                                                                            self.database_token)
-                    if 'DATABASE_ORG' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_ORG',
-                                                                                            self.database_org)
-                    if 'DATABASE_BUCKET' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_BUCKET',
-                                                                                            self.database_bucket)
-                    if 'DATABASE_TAG' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_TAG',
-                                                                                            self.database_tag)
+                    if 'influx_database_host' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('influx_database_host',
+                                                                                            self.influx_database_host)
+                    if 'influx_database_port' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('influx_database_port',
+                                                                                            self.influx_database_port)
+                    if 'influx_database_token' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('influx_database_token',
+                                                                                            self.influx_database_token)
+                    if 'influx_database_org' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('influx_database_org',
+                                                                                            self.influx_database_org)
+                    if 'influx_database_bucket' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('influx_database_bucket',
+                                                                                            self.influx_database_bucket)
+                    if 'influx_database_tag' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('influx_database_tag',
+                                                                                            self.influx_database_tag)
                     if 'DUT_SET_NAME' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_SET_NAME',
                                                                                             self.dut_set_name)
@@ -1044,31 +1044,31 @@ http://{blog}:2368""".format(blog=self.blog_host)
                     # end of database configuration                        
 
                     # dashboard configuration
-                    if 'DASHBOARD_HOST' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DASHBOARD_HOST',
-                                                                                            self.dashboard_host)
-                    if 'DASHBOARD_TOKEN' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DASHBOARD_TOKEN',
-                                                                                            self.dashboard_token)
+                    if 'dashboard_host_grafana' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('dashboard_host_grafana',
+                                                                                            self.dashboard_host_grafana)
+                    if 'dashboard_token_grafana' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('dashboard_token_grafana',
+                                                                                            self.dashboard_token_grafana)
                     # end of dashboard configuraiton
 
                     # blog configuration
-                    if 'BLOG_HOST' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_HOST', self.blog_host)
-                    if 'BLOG_TOKEN' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_TOKEN', self.blog_token)
-                    if 'BLOG_AUTHORS' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_AUTHORS',
-                                                                                            self.blog_authors)
-                    if 'BLOG_CUSTOMER' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_CUSTOMER',
-                                                                                            self.blog_customer)
-                    if 'BLOG_USER_PUSH' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_USER_PUSH',
-                                                                                            self.blog_user_push)
-                    if 'BLOG_PASSWORD_PUSH' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_PASSWORD_PUSH',
-                                                                                            self.blog_password_push)
+                    if 'blog_host_ghost' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('blog_host_ghost', self.blog_host_ghost)
+                    if 'blog_token_ghost' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('blog_token_ghost', self.blog_token_ghost)
+                    if 'blog_authors_ghost' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('blog_authors_ghost',
+                                                                                            self.blog_authors_ghost)
+                    if 'blog_customer_ghost' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('blog_customer_ghost',
+                                                                                            self.blog_customer_ghost)
+                    if 'blog_user_push_ghost' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('blog_user_push_ghost',
+                                                                                            self.blog_user_push_ghost)
+                    if 'blog_password_push_ghost' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('blog_password_push_ghost',
+                                                                                            self.blog_password_push_ghost)
                     if 'BLOG_FLAG' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('BLOG_FLAG', self.blog_flag)
                     # end of blog configruation

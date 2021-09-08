@@ -13,7 +13,7 @@
         "test_bed": "CT-US-001",
         "test_rig": "CT-US-001",
         "database_sqlite": "./tools/qa_001_test_db",
-        "database_tag": "testbed CT-US-001",        
+        "database_tag_influx": "testbed CT-US-001",        
         "lf_mgr_ip": "192.168.100.116",
         "lf_mgr_port": "8080",
         "test_timeout": 600,

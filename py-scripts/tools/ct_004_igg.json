@@ -11,29 +11,29 @@
         ]  
     },
     "test_database":{
-        "database_config": "True",
-        "database_host": "192.168.100.153",
-        "database_port": "8086",
-        "database_token": "PwYwrDjUSpLyUa8-0QeJGuf9p6KgPgmTVs0Zz0BZiyele74pNasBMJR-dKiF3LE8Qft5tADHtPSIS0WcVXHc_g==",
-        "database_org": "Candela",
-        "database_bucket": "candela",
-        "database_tag": "testbed CT-US-004",
-        "test_rig": "CT-US-004"
+        "database_config_influx": "True",
+        "database_host_influx": "192.168.100.153",
+        "database_port_influx": "8086",
+        "database_token_influx": "PwYwrDjUSpLyUa8-0QeJGuf9p6KgPgmTVs0Zz0BZiyele74pNasBMJR-dKiF3LE8Qft5tADHtPSIS0WcVXHc_g==",
+        "database_org_influx": "Candela",
+        "database_bucket_influx": "candela",
+        "database_tag_influx": "testbed CT-US-004",
+        "test_rig_influx": "CT-US-004"
     },
     "test_dashboard":{
-        "dashboard_config": "True",
-        "dashboard_host": "192.168.100.153",
-        "dashboard_token": "eyJrIjoid1hpM0pwZFRSc3c0bGU2TEpITEVscHh4T0pPMVdZRzEiLCJuIjoiY2h1Y2siLCJpZCI6MX0="
+        "dashboard_config_grafana": "True",
+        "dashboard_host_grafana": "192.168.100.153",
+        "dashboard_token_grafana": "eyJrIjoid1hpM0pwZFRSc3c0bGU2TEpITEVscHh4T0pPMVdZRzEiLCJuIjoiY2h1Y2siLCJpZCI6MX0="
     },
     "test_blog":{
-        "blog_config": "True",
-        "blog_host": "192.168.100.153",
-        "blog_token": "60df4b0175953f400cd30650:d50e1fabf9a9b5d3d30fe97bc3bf04971d05496a89e92a169a0d72357c81f742",
-        "blog_authors": "Matthew",
-        "blog_customer": "candela",
-        "blog_user_push": "lanforge",
-        "blog_password_push": "lanforge",
-        "blog_flag": "--kpi_to_ghost"
+        "blog_config_ghost": "True",
+        "blog_host_ghost": "192.168.100.153",
+        "blog_token_ghost": "60df4b0175953f400cd30650:d50e1fabf9a9b5d3d30fe97bc3bf04971d05496a89e92a169a0d72357c81f742",
+        "blog_authors_ghost": "Matthew",
+        "blog_customer_ghost": "candela",
+        "blog_user_push_ghost": "lanforge",
+        "blog_password_push_ghost": "lanforge",
+        "blog_flag_ghost": "--kpi_to_ghost"
     }
 }
 			
