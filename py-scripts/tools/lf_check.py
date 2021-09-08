@@ -876,6 +876,14 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
         self.start_csv_results()
         print(self.test_dict)
 
+        # loop through radios (For future functionality based on radio)
+        for radio in self.radio_dict:
+            # This has been changed to reflect the Radio configuriaton of LANforge, for now print
+            print("rig json config: RADIO: {radio} DRIVER: {driver} CAPABILITIES {cap} MAX_STA {max_sta} MAX_VAP {max_vap} MAX_VIF {max_vif}"
+                .format(radio=self.radio_dict[radio]['RADIO'],driver=self.radio_dict[radio]['DRIVER'],cap=self.radio_dict[radio]['CAPABILITIES'],
+                max_sta=self.radio_dict[radio]['MAX_STA'],max_vap=self.radio_dict[radio]['MAX_VAP'],max_vif=self.radio_dict[radio['MAX_VIF']]))
+
+        # Configure Tests
         for test in self.test_dict:
             if self.test_dict[test]['enabled'] == "FALSE":
                 self.logger.info("test: {}  skipped".format(test))
@@ -899,19 +907,6 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.test_dict[test]['args'],
                                                                                             ''.join(self.test_dict[test][
                                                                                                         'args_list']))
-                    # Configure Tests
-                    # loop through radios
-                    for radio in self.radio_dict:
-                        # replace RADIO, SSID, PASSWD, SECURITY with actual config values (e.g. RADIO_0_CFG to values)
-                        # not "KEY" is just a word to refer to the RADIO define (e.g. RADIO_0_CFG) to get the vlaues
-                        # --num_stations needs to be int not string (no double quotes)
-                        if self.radio_dict[radio]["KEY"] in self.test_dict[test]['args']:
-                            self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(
-                                self.radio_dict[radio]["KEY"],
-                                '--radio {} --ssid {} --passwd {} --security {} --num_stations {}'
-                                .format(self.radio_dict[radio]['RADIO'], self.radio_dict[radio]['SSID'],
-                                        self.radio_dict[radio]['PASSWD'], self.radio_dict[radio]['SECURITY'],
-                                        self.radio_dict[radio]['STATIONS']))
 
                     if 'DATABASE_SQLITE' in self.test_dict[test]['args']:
                         self.text_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_SQLITE', self.database_sqlite)
