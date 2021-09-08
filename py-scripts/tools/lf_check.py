@@ -148,6 +148,8 @@ class lf_check():
         self.lf_mgr_port = "8080"
         self.lf_mgr_user = "lanforge"
         self.lf_mgr_pass = "lanforge"
+        self.upstream_port = ""
+
 
         # results
         self.database_sqlite = ""
@@ -184,12 +186,6 @@ class lf_check():
         self.ssid_6g = ""
         self.ssid_6g_pw = ""
         self.security_6g = ""
-
-        # section TEST_GENERIC 
-        self.radio_lf = ""
-        self.num_sta = ""
-        self.col_names = ""
-        self.upstream_port = ""
 
         self.csv_results = _csv_results
         self.csv_results_file = ""
@@ -488,14 +484,6 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
             self.logger.info("EXITING test_network not in json {}".format(self.json_rig))
             exit(1)
 
-        if "test_generic" in self.json_rig:
-            self.logger.info("json: read test_generic")
-            # self.logger.info("test_generic {}".format(self.json_rig["test_generic"]))
-            self.read_test_generic()
-        else:
-            self.logger.info("EXITING test_generic not in json {}".format(self.json_rig))
-            exit(1)
-
         if "radio_dict" in self.json_rig:
             self.logger.info("json: read radio_dict")
             # self.logger.info("radio_dict {}".format(self.json_rig["radio_dict"]))
@@ -564,6 +552,18 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
             self.database_sqlite = self.json_rig["test_parameters"]["database_sqlite"]
         else:
             self.logger.info("database_sqlite not in test_parameters json")
+        if "lf_mgr_ip" in self.json_rig["test_parameters"]:
+            self.lf_mgr_ip = self.json_rig["test_parameters"]["lf_mgr_ip"]
+        else:
+            self.logger.info("lf_mgr_ip not in test_parameters json")
+        if "lf_mgr_port" in self.json_rig["test_parameters"]:
+            self.lf_mgr_port = self.json_rig["test_parameters"]["lf_mgr_port"]
+        else:
+            self.logger.info("lf_mgr_port not in test_parameters json")
+        if "upstream_port" in self.json_rig["test_parameters"]:
+            self.upstream_port = self.json_rig["test_parameters"]["upstream_port"]
+        else:
+            self.logger.info("upstream_port not in test_parameters json")
         if "test_timeout" in self.json_rig["test_parameters"]:
             self.test_timeout = self.json_rig["test_parameters"]["test_timeout"]
             self.test_timeout_default = self.test_timeout
@@ -619,15 +619,7 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
             self.email_txt = self.json_rig["test_parameters"]["email_txt"]
         else:
             self.logger.info("email_txt not in test_parameters json")
-        if "lf_mgr_ip" in self.json_rig["test_parameters"]:
-            self.lf_mgr_ip = self.json_rig["test_parameters"]["lf_mgr_ip"]
-        else:
-            self.logger.info("lf_mgr_ip not in test_parameters json")
-        if "lf_mgr_port" in self.json_rig["test_parameters"]:
-            self.lf_mgr_port = self.json_rig["test_parameters"]["lf_mgr_port"]
-        else:
-            self.logger.info("lf_mgr_port not in test_parameters json")
-
+            
         # dut_set_name selectes the DUT to test against , it is different then dut_name
         # this value gets set in the test
     def read_dut_parameters(self):
@@ -736,28 +728,6 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
             self.ftp_test_ip = self.json_rig["test_network"]["test_ip"]
         else:
             self.logger.info("test_ip not in test_network json")
-            exit(1)
-
-    def read_test_generic(self):
-        if "radio_used" in self.json_rig["test_generic"]:
-            self.radio_lf = self.json_rig["test_generic"]["radio_used"]
-        else:
-            self.logger.info("radio_used not in test_generic json")
-            exit(1)
-        if "num_sta" in self.json_rig["test_generic"]:
-            self.num_sta = self.json_rig["test_generic"]["num_sta"]
-        else:
-            self.logger.info("num_sta not in test_generic json")
-            exit(1)
-        if "col_names" in self.json_rig["test_generic"]:
-            self.num_sta = self.json_rig["test_generic"]["col_names"]
-        else:
-            self.logger.info("col_names not in test_generic json")
-            exit(1)
-        if "upstream_port" in self.json_rig["test_generic"]:
-            self.upstream_port = self.json_rig["test_generic"]["upstream_port"]
-        else:
-            self.logger.info("upstream_port not in test_generic json")
             exit(1)
 
     # Optional from --json_igg switch 

@@ -18,15 +18,6 @@
         "ftp_test_ip": "10.40.0.10",
         "test_ip": "192.168.0.104"
     },
-    "test_generic":{
-        "radio_used": "wiphy1",
-        "ssid_used": "asus11ax-5",
-        "ssid_pw_used": "hello123",
-        "security_used": "wpa2",
-        "num_sta": 4,
-        "col_names": "name,tx_byptes,rx_bytes,dropped",
-        "upstream_port": "eth1"
-    },
     "radio_dict":{
         "RADIO_0_CFG":{"KEY":"RADIO_0_CFG","RADIO":"wiphy0","STATIONS":"4","SSID":"ct523c-vap","PASSWD":"ct523c-vap","SECURITY":"wpa2"},
         "RADIO_1_CFG":{"KEY":"RADIO_1_CFG","RADIO":"wiphy1","STATIONS":"4","SSID":"ct523c-vap","PASSWD":"ct523c-vap","SECURITY":"wpa2"}        

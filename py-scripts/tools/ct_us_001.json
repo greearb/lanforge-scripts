@@ -16,6 +16,7 @@
         "database_tag_influx": "testbed CT-US-001",        
         "lf_mgr_ip": "192.168.100.116",
         "lf_mgr_port": "8080",
+        "upstream_port":"1.1.eth2",
         "test_timeout": 600,
         "load_blank_db": false,
         "load_factory_default_db": true,
@@ -32,12 +33,6 @@
         "http_test_ip": "10.40.0.10",
         "ftp_test_ip": "10.40.0.10",
         "test_ip": "192.168.0.104"
-    },
-    "test_generic":{
-        "radio_used": "wiphy1",
-        "num_sta": 1,
-        "col_names": "name,tx_byptes,rx_bytes,dropped",
-        "upstream_port": "eth2"
     },
     "radio_dict":{
         "RADIO_0_CFG":{"KEY":"RADIO_0_CFG","RADIO":"wiphy0","STATIONS":"1","SSID":"asus11ax-5","PASSWD":"hello123","SECURITY":"wpa2"},

@@ -15,6 +15,7 @@
         "database_tag": "testbed CT-US-002",        
         "lf_mgr_ip": "192.168.100.200",
         "lf_mgr_port": "8080",
+        "upstream_port": "1.1.eth2",
         "dut_set_name": "DUT_NAME NETGEAR59-5G",
         "dut_name": "NETGEAR-AX12",
         "dut_bssid_2g": "94:a6:7e:54:d4:31",
@@ -35,15 +36,6 @@
         "http_test_ip": "10.40.0.10",
         "ftp_test_ip": "10.40.0.10",
         "test_ip": "192.168.0.104"
-    },
-    "test_generic":{
-        "radio_used": "wiphy1",
-        "ssid_used": "NETGEAR59-5G",
-        "ssid_pw_used": "crispynest798",
-        "security_used": "wpa2",
-        "num_sta": 4,
-        "col_names": "name,tx_byptes,rx_bytes,dropped",
-        "upstream_port": "1.1.eth2"
     },
     "radio_dict":{
         "RADIO_0_CFG":{"KEY":"RADIO_0_CFG","RADIO":"wiphy0","STATIONS":"4","SSID":"NETGEAR59-5G","PASSWD":"crispynest798","SECURITY":"wpa2"},

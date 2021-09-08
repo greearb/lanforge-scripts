@@ -14,6 +14,7 @@
         "test_rig": "CT-US-004",
         "lf_mgr_ip": "192.168.100.194",
         "lf_mgr_port": "8080",
+        "upstream_port": "1.1.eth2",
         "dut_set_name": "DUT_NAME Asus-RT-AX88U",
         "dut_name": "Asus-RT-AX88U",
         "dut_bssid_2g": "d4:5d:64:a0:7f:78",
@@ -35,15 +36,6 @@
         "http_test_ip": "10.40.0.10",
         "ftp_test_ip": "10.40.0.10",
         "test_ip": "192.168.0.104"
-    },
-    "test_generic":{
-        "radio_used": "wiphy1",
-        "ssid_used": "asus11ax-5",
-        "ssid_pw_used": "hello123",
-        "security_used": "wpa2",
-        "num_sta": 1,
-        "col_names": "name,tx_byptes,rx_bytes,dropped",
-        "upstream_port": "eth2"
     },
     "radio_dict":{
         "RADIO_0_CFG":{"KEY":"RADIO_0_CFG","RADIO":"wiphy0","STATIONS":"1","SSID":"asus11ax-5","PASSWD":"hello123","SECURITY":"wpa2"},
