@@ -45,8 +45,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=asus11ax-5 security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
-                    " --ssid 'ssid_idx=1 ssid=asus11ax-5 security=WPA2 password=hello123 bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]
             },
@@ -71,7 +71,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-wct",
-                    " --upstream 1.1.eth2 --batch_size 1,10,19 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
+                    " --upstream UPSTREAM_PORT --batch_size 1,10,19 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7915e'",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
