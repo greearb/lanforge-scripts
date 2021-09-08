@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 from LANforge.lfcli_base import LFCliBase
-import pprint
-from pprint import pprint
 import time
 
-# Class: FIOEndpProfile(LFCliBase) 
-# 
 
 # Written by Candela Technologies Inc.
 #  Updated by:

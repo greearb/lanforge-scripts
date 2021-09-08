@@ -2,9 +2,7 @@
 """ ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
     internal test driving LFUtils.expand_endp_histogram
 ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- """
-import LANforge
 from LANforge import LFUtils
-import pprint
 
 distrib_load = {
     "histo_category_width" : 3,

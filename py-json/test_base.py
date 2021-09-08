@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-from lfdata import LFDataCollection
-#import lfreporting
 
 class TestBase:
     def __init__(self):

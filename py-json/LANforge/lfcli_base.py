@@ -1,11 +1,9 @@
 #!env /usr/bin/python
 
 import sys
-import signal
 import traceback
 # Extend this class to use common set of debug and request features for your script
 from pprint import pprint
-import time
 import random
 import string
 import datetime
@@ -14,7 +12,6 @@ import LANforge.LFUtils
 from LANforge.LFUtils import *
 from LANforge import LFRequest
 import LANforge.LFRequest
-import csv
 import pandas as pd
 import os
 
