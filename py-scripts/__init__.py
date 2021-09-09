@@ -64,7 +64,7 @@ from .test_l3_unicast_traffic_gen import L3VariableTimeLongevity
 from .test_l3_WAN_LAN import VRTest
 from .test_l4 import IPV4L4
 from .test_status_msg import TestStatusMessage
-from .test_wanlink import LANtoWAN
+#from .test_wanlink import LANtoWAN
 from .test_wpa_passphrases import WPAPassphrases
 from .testgroup import TestGroup
 from .testgroup2 import TestGroup2
