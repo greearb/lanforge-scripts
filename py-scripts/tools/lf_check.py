@@ -919,7 +919,7 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
                                                                                                         'args_list']))
 
                     if 'DATABASE_SQLITE' in self.test_dict[test]['args']:
-                        self.text_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_SQLITE', self.database_sqlite)
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_SQLITE', self.database_sqlite)
                     if 'HTTP_TEST_IP' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('HTTP_TEST_IP', self.http_test_ip)
                     if 'FTP_TEST_IP' in self.test_dict[test]['args']:
