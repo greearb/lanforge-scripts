@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 from LANforge.lfcli_base import LFCliBase
+import pprint
+from pprint import pprint
+import time
 
 
 class TestGroupProfile(LFCliBase):

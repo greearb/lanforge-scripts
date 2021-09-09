@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFRequest
+from LANforge import LFUtils
 import time
 
 

@@ -1,3 +1,5 @@
+import time
+
 # !/usr/bin/env python3
 # ---- ---- ---- ---- LANforge Base Imports ---- ---- ---- ----
 from LANforge.lfcli_base import LFCliBase

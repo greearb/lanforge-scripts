@@ -1,5 +1,10 @@
 # !/usr/bin/env python3
-from LANforge import LFRequest, LFUtils, set_port, add_sta
+from LANforge.lfcli_base import LFCliBase
+from LANforge import LFRequest
+from LANforge import LFUtils
+from LANforge import set_port
+from LANforge import add_sta
+import pprint
 from pprint import pprint
 import time
 # Uncomment below to include autogen library.
