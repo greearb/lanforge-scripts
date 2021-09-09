@@ -8,20 +8,18 @@ sample command:
 """
 
 import sys
-import os
-import importlib
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+import os
+import importlib
 import argparse
-lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
-realm = importlib.import_module("lanforge-scripts.py-json.realm")
-Realm = realm.Realm
-create_wanlink = importlib.import_module("lanforge-scripts.py-json.create_wanlink")
+sys.path.append("../py-json")
+import LANforge
+from LANforge.lfcli_base import LFCliBase
+from realm import Realm
+import create_wanlink
 
 
 class LANtoWAN(Realm):
@@ -66,12 +64,12 @@ def main():
         optional_args.add_argument('--jitter', help='The max jitter of both ports (ms)', default=None)
         optional_args.add_argument('--jitter_A', help='The max jitter of port A (ms)', default=None)
         optional_args.add_argument('--jitter_B', help='The max jitter of port B (ms)', default=None)
-        optional_args.add_argument('--jitter_freq', help='The jitter frequency of both ports (%)', default=None)
-        optional_args.add_argument('--jitter_freq_A', help='The jitter frequency of port A (%)', default=None)
-        optional_args.add_argument('--jitter_freq_B', help='The jitter frequency of port B (%)', default=None)
-        optional_args.add_argument('--drop', help='The drop frequency of both ports (%)', default=None)
-        optional_args.add_argument('--drop_A', help='The drop frequency of port A (%)', default=None)
-        optional_args.add_argument('--drop_B', help='The drop frequency of port B (%)', default=None)
+        optional_args.add_argument('--jitter_freq', help='The jitter frequency of both ports (%%)', default=None)
+        optional_args.add_argument('--jitter_freq_A', help='The jitter frequency of port A (%%)', default=None)
+        optional_args.add_argument('--jitter_freq_B', help='The jitter frequency of port B (%%)', default=None)
+        optional_args.add_argument('--drop', help='The drop frequency of both ports (%%)', default=None)
+        optional_args.add_argument('--drop_A', help='The drop frequency of port A (%%)', default=None)
+        optional_args.add_argument('--drop_B', help='The drop frequency of port B (%%)', default=None)
         # todo: packet loss A and B
         # todo: jitter A and B
         for group in parser._action_groups:
