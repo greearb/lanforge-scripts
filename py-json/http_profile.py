@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 from LANforge.lfcli_base import LFCliBase
+import port_utils
 from port_utils import PortUtils
+from pprint import pprint
+import pprint
 import time
 
 class HTTPProfile(LFCliBase):

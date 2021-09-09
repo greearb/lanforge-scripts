@@ -1,11 +1,15 @@
 
 #!/usr/bin/env python3
 from LANforge.lfcli_base import LFCliBase
+import pprint
+from pprint import pprint
 import requests
 import pandas as pd
 import time
 import datetime
 import ast
+import csv
+import os
 
 class L4CXProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
