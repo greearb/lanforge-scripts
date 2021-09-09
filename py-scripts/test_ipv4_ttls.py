@@ -11,9 +11,10 @@ if sys.version_info[0] != 3:
 
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+import LANforge
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-from realm import Realm
+import realm
 import time
 import pprint
 from test_ip_variable_time import IPVariableTime
@@ -108,7 +109,7 @@ class TTLSTest(LFCliBase):
         self.timeout = 120
         self.number_template = number_template
         self.debug = _debug_on
-        self.local_realm = Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
         self.vap = vap
         self.upstream_port = "eth1"

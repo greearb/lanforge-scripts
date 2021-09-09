@@ -7,8 +7,6 @@ Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
  '''
 
-import sys
-import os
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")

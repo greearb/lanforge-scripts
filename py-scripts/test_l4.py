@@ -65,9 +65,11 @@ if 'py-json' not in sys.path:
 import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
+import realm
 import time
 import datetime
-from realm import Realm, PortUtils
+from realm import TestGroupProfile
+from port_utils import PortUtils
 
 
 class IPV4L4(LFCliBase):
@@ -117,7 +119,7 @@ class IPV4L4(LFCliBase):
         self.num_tests = int(num_tests)
         self.target_requests_per_ten = int(target_requests_per_ten)
 
-        self.local_realm = Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
         self.cx_profile = self.local_realm.new_l4_cx_profile()
 

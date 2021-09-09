@@ -13,7 +13,7 @@ if 'py-json' not in sys.path:
 import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
-from realm import Realm
+import realm
 import time
 import datetime
 
@@ -44,7 +44,7 @@ class L3VariableTimeLongevity(LFCliBase):
         self.radios = radios # from the command line
         self.radio_list = radio_name_list
         self.number_of_stations_per_radio_list =  number_of_stations_per_radio_list
-        self.local_realm = Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.cx_profile = self.local_realm.new_l3_cx_profile()
         self.station_profiles = []
         

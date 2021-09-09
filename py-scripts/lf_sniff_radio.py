@@ -25,6 +25,7 @@ import argparse
 import time
 from LANforge.LFUtils import *
 from realm import Realm
+import realm
 
 
 class SniffRadio(Realm):
@@ -41,7 +42,7 @@ class SniffRadio(Realm):
         self.lfclient_host = lfclient_host
         self.lfclient_port = lfclient_port
         self.debug = debug_on_
-        self.local_realm = Realm(lfclient_host=self.lfclient_host,
+        self.local_realm = realm.Realm(lfclient_host=self.lfclient_host,
                                        lfclient_port=self.lfclient_port,
                                        debug_=self.debug)
         self.monitor = self.local_realm.new_wifi_monitor_profile()

@@ -40,11 +40,13 @@ if 'py-json' not in sys.path:
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
 from LANforge import LFUtils
+from LANforge import add_file_endp
 from LANforge.add_file_endp import *
 import argparse
-from realm import Realm
+import realm
 import time
 import datetime
+import pprint
 import os
 
 
@@ -136,7 +138,7 @@ class FileIOTest(LFCliBase):
         # self.min_write_rate_bps = self.parse_size_bps(min_write_rate_bps)
         #self.max_write_rate_bps = self.parse_size_bps(max_write_rate_bps)
 
-        self.local_realm = Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.wo_profile = self.local_realm.new_fio_endp_profile()
         self.mvlan_profile = self.local_realm.new_mvlan_profile()
 
