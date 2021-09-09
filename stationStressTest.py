@@ -5,6 +5,7 @@ import time
 
 sys.path.append('py-json')
 import datetime
+from LANforge import LFRequest
 from LANforge import LFUtils
 import argparse
 import re
