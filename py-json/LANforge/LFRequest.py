@@ -286,6 +286,11 @@ class LFRequest:
         self.add_post_data(data=data)
 
     def add_post_data(self, data):
+        """
+        TODO: this is a setter and should be named 'set_post_data'
+        :param data: dictionary of parameters for post
+        :return: nothing
+        """
         self.post_data = data
 
     def has_errors(self):
