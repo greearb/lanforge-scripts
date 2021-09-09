@@ -50,6 +50,8 @@ Starting LANforge:
 # Capture the LANforge client output sdtout and stdwrr
 /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR command > >(tee -a stdout.log) 2> >(tee -a stderr.log >&2)
 
+# To get the --raw_line commands
+# Build Chamber View Scenario in the GUI and then # copy/tweak what it shows in the 'Text Output' tab after saving and re-opening # the scenario
 
 # issue a shutdown command on the lanforge(s)
 #  ssh root@lanforge reboot (need to verify)  or do a shutdown 
