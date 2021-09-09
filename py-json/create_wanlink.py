@@ -3,22 +3,24 @@
 # Written by Candela Technologies Inc.
 # Updated by: Erin Grimes
 import sys
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit(1)
+
 import os
 import importlib
 import time
 from time import sleep
 import urllib
 from urllib import error
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit()
 import pprint
+
 if 'lanforge-scripts' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('../..'), 'lanforge-scripts'))
 LANforge = importlib.import_module("lanforge-scripts.py-json.LANforge")
 LFRequest = importlib.import_module("lanforge-scripts.py-json.LANforge.LFRequest")
 LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
-# NA=importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils.NA")
 
 j_printer = pprint.PrettyPrinter(indent=2)
 # todo: this needs to change
@@ -56,14 +58,14 @@ def main(base_url, args={}):
 
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/rm_endp")
         lf_r.addPostData({
-           'endp_name': args['name']+"_A"
+           'endp_name': args['name']+"-A"
         })
         lf_r.jsonPost()
         sleep(0.05)
 
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/rm_endp")
         lf_r.addPostData({
-           'endp_name': args['name']+"_B"
+           'endp_name': args['name']+"-B"
         })
         lf_r.jsonPost()
         sleep(0.05)
@@ -71,7 +73,7 @@ def main(base_url, args={}):
     # create wanlink endpoint A
     lf_r = LFRequest.LFRequest(base_url+"/cli-json/add_wl_endp")
     lf_r.addPostData({
-        'alias': args['name']+"_A",
+        'alias': args['name']+"-A",
         'shelf': 1,
         'resource': '1',
         'port': args['port_A'],
@@ -84,7 +86,7 @@ def main(base_url, args={}):
     # create wanlink endpoint B
     lf_r = LFRequest.LFRequest(base_url+"/cli-json/add_wl_endp")
     lf_r.addPostData({
-        'alias': args['name']+"_B",
+        'alias': args['name']+"-B",
         'shelf': 1,
         'resource': '1',
         'port': args['port_B'],
@@ -99,8 +101,8 @@ def main(base_url, args={}):
     lf_r.addPostData({
        'alias': args['name'],
        'test_mgr': 'default_tm',
-       'tx_endp': args['name']+"_A",
-       'rx_endp': args['name']+"_B",
+       'tx_endp': args['name']+"-A",
+       'rx_endp': args['name']+"-B",
     })
     lf_r.jsonPost()
     sleep(0.05)
@@ -108,7 +110,7 @@ def main(base_url, args={}):
     # modify wanlink endpoint A
     lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_wanlink_info")
     lf_r.addPostData({
-        'name': args['name']+"_A",
+        'name': args['name']+"-A",
         'max_jitter': args['jitter_A'],
         'jitter_freq': args['jitter_freq_A'],
         'drop_freq': args['drop_A']
@@ -119,7 +121,7 @@ def main(base_url, args={}):
     # modify wanlink endpoint B
     lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_wanlink_info")
     lf_r.addPostData({
-        'name': args['name']+"_B",
+        'name': args['name']+"-B",
         'max_jitter': args['jitter_B'],
         'jitter_freq': args['jitter_freq_B'],
         'drop_freq': args['drop_B']
