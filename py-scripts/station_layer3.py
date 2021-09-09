@@ -9,8 +9,10 @@ import time
 if 'py-json' not in sys.path:
     sys.path.append('../py-json')
 from LANforge import LFUtils
+from LANforge import lfcli_base
 from LANforge.lfcli_base import LFCliBase
 from LANforge.LFUtils import *
+import realm
 from realm import Realm
 
 class STATION(LFCliBase):
@@ -26,7 +28,7 @@ class STATION(LFCliBase):
         self.name_prefix = name_prefix
         self.upstream = upstream
 
-        self.local_realm = Realm(lfclient_host=self.host, lfclient_port=self.port)
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.station_profile = self.local_realm.new_station_profile()
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.paswd,
