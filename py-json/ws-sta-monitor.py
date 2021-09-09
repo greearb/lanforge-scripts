@@ -16,7 +16,6 @@ if sys.version_info[0] != 3:
 import argparse
 import json
 import logging
-import pprint
 import traceback
 import time
 from time import sleep

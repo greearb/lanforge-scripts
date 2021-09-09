@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 
 from LANforge.lfcli_base import LFCliBase
-from LANforge import LFRequest
-from LANforge import add_vap, set_wifi_radio
-from LANforge import set_port
-from LANforge import LFUtils
-import pprint
+from LANforge import add_vap, set_wifi_radio, set_port, LFUtils, LFRequest
 from pprint import pprint
 import time
 

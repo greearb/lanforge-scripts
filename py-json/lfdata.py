@@ -1,17 +1,6 @@
 #!/usr/bin/env python3
-import re
-import time
-import pprint
-from pprint import pprint
-import os
-import datetime
-import base64
-import xlsxwriter
-import pandas as pd
-import requests
-import ast
-import csv
 
+import datetime
 
 # LFData class actions:
 # - Methods to collect data/store data (use from monitor instance) - used by Profile class.
@@ -97,6 +86,3 @@ class LFDataCollection:
                     temp_list.append(merge[name])
                 return temp_list
 
-
-#class WebSocket():
-     

@@ -1,10 +1,7 @@
 
 #!/usr/bin/env python3
 from LANforge.lfcli_base import LFCliBase
-from LANforge import LFRequest
-from LANforge import LFUtils
-from LANforge import set_port
-import pprint
+from LANforge import LFRequest, LFUtils, set_port
 from pprint import pprint
 import time
 
