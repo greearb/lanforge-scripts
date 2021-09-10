@@ -68,19 +68,19 @@ sed -i -- 's/from test_utility/from .test_utility/g' *.py
 # shellcheck disable=SC2039
 realmfiles=("l3_cxprofile"
             "l4_cxprofile"
-            "lf_attenmod"
-            "multicast_profile"
-            "http_profile"
-            "station_profile"
-            "fio_endp_profile"
-            "test_group_profile"
-            "dut_profile"
-            "vap_profile"
-            "mac_vlan_profile"
-            "wifi_monitor_profile"
-            "gen_cxprofile"
-            "qvlan_profile"
-            "lfdata")
+               "lf_attenmod"
+               "multicast_profile"
+               "http_profile"
+               "station_profile"
+               "fio_endp_profile"
+               "test_group_profile"
+               "dut_profile"
+               "vap_profile"
+               "mac_vlan_profile"
+               "wifi_monitor_profile"
+               "gen_cxprofile"
+               "qvlan_profile"
+               "lfdata")
 # shellcheck disable=SC2039
 for i in "${realmfiles[@]}"; do
   str="s/from ${i}/from .${i}/g"
