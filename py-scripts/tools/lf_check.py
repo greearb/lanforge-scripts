@@ -499,7 +499,7 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
     def read_json_dut(self):
         if "test_dut" in self.json_dut:
             self.logger.info("json: read test_dut")
-            self.read_test_dut()
+            self.read_dut_parameters()
         else:
             self.logger.info("EXITING test_dut not in json {}".format(self.json_dut))
             exit(1)
