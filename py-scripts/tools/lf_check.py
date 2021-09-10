@@ -679,7 +679,7 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
             self.logger.info("dut_bssid_6g not in test_dut json")
 
         if "ssid_6g_used" in self.json_dut["test_dut"]:
-            self.ssid_6g = self.json_dut["test_dut"]["ssid_5g_used"]
+            self.ssid_6g = self.json_dut["test_dut"]["ssid_6g_used"]
         else:
             self.logger.info("ssid_6g_used not in test_dut json")
 
