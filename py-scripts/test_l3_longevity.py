@@ -44,34 +44,35 @@ COPYRIGHT:
 Copyright 2021 Candela Technologies Inc
 
 INCLUDE_IN_README
-
 '''
-
-
 import sys
 import os
+import importlib
+from pprint import pprint
+import serial
+import pexpect
+from pexpect_serial import SerialSpawn
+import argparse
+import time
+import datetime
+import csv
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-if 'py-dashboard' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-from pprint import pprint
 from InfluxRequest import *
-import serial
-import pexpect
-from pexpect_serial import SerialSpawn
-from lf_report import lf_report
-import argparse
+InfluxRequest = importlib.import_module("lanforge-scripts.py-dashboard.InfluxRequest")
 from LANforge import LFUtils
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
 from realm import Realm
-import time
-import datetime
-import csv
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
+from lf_report import lf_report
+lf_report = importlib.import_module("lanforge-scripts.py-scripts.lf_report")
 
 # This class handles running the test and generating reports.
 class L3VariableTime(Realm):
