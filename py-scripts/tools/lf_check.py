@@ -689,7 +689,7 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
             self.logger.info("ssid_6g_pw_used not in test_dut json")
 
         if "security_6g_used" in self.json_dut["test_dut"]:
-            self.security_6g = self.json_rig["test_dut"]["security_6g_used"]
+            self.security_6g = self.json_dut["test_dut"]["security_6g_used"]
         else:
             self.logger.info("security_6g_used not in test_dut json")
 
@@ -704,7 +704,7 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
             self.logger.info("ssid_5g_pw_used not in test_dut json")
 
         if "security_5g_used" in self.json_dut["test_dut"]:
-            self.security_5g = self.json_rig["test_dut"]["security_5g_used"]
+            self.security_5g = self.json_dut["test_dut"]["security_5g_used"]
         else:
             self.logger.info("security_5g_used not in test_dut json")
 
@@ -719,7 +719,7 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
             self.logger.info("ssid_2g_pw_used not in test_dut json")
 
         if "security_2g_used" in self.json_dut["test_dut"]:
-            self.security_2g = self.json_rig["test_dut"]["security_2g_used"]
+            self.security_2g = self.json_dut["test_dut"]["security_2g_used"]
         else:
             self.logger.info("security_2g_used not in test_dut json")
 
