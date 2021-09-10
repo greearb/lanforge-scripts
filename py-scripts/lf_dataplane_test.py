@@ -108,8 +108,6 @@ if sys.version_info[0] != 3:
 if 'lanforge-scripts' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-# from cv_test_manager import cv_test
-# from cv_test_manager import *
 cv_test_manager = importlib.import_module("lanforge-scripts.py-json.cv_test_manager")
 cv_test = cv_test_manager.cv_test
 cv_add_base_parser = cv_test_manager.cv_add_base_parser
