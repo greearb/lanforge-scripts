@@ -14,6 +14,19 @@ sed -i -- 's/from LANforge/from py_json.LANforge/g' *.py
 sed -i -- 's/from py_json/from .py_json/g' *.py
 
 cd py_scripts
+# Clean up bad code in py_scripts
+sed -i -- 's/import realm/ /g' create_vap.py lf_dut_sta_vap_test.py lf_sniff_radio.py run_cv_scenario.py sta_connect.py station_layer3.py test_client_admission.py
+sed -i -- 's/import realm/from realm import Realm/g' layer4_test.py lf_atten_mod_test.py lf_multipsk.py test_fileio.py test_ip_connection.py test_ipv4_ttls.py test_l3_WAN_LAN.py test_l3_unicast_traffic_gen.py test_l4.py testgroup.py
+sed -i -- 's/realm.Realm/Realm/g' layer4_test.py lf_atten_mod_test.py lf_multipsk.py lf_sniff_radio.py station_layer3.py test_client_admission.py test_fileio.py test_ip_connection.py
+sed -i -- 's/import realm/from realm import Realm, PortUtils/g' lf_ftp.py lf_ftp_test.py lf_webpage.py
+sed -i -- 's/import realm/from realm import Realm, WifiMonitor/g' test_ipv4_ps.py
+sed -i -- 's/import l3_cxprofile/from l3_cxprofile import L3CXProfile/g' test_l3_powersave_traffic.py
+sed -i -- 's/import realm/from realm import Realm, StationProfile, WifiMonitor/g' test_l3_powersave_traffic.py
+sed -i -- 's/import realm/from realm import Realm, PacketFilter/g' tip_station_powersave.py
+sed -i -- 's/from generic_cx import GenericCx/ /g' *.py
+sed -i -- 's/import wlan_theoretical_sta/from wlan_theoretical_sta import abg11_calculator, n11_calculator, ac11_calculator/g' wlan_capacity_calculator.py
+
+
 sed -i -- 's/from influxdb/from .influxdb/g' *.py
 sed -i -- 's/py-scripts/py_scripts/g' *.py
 sed -i -- 's/py-json/py_json/g' *.py
@@ -49,8 +62,13 @@ sed -i -- 's/from l3_cxprofile/from ..py_json.l3_cxprofile/g' *.py
 sed -i -- 's/from create_wanlink/from ..py_json.create_wanlink/g' *.py
 sed -i -- 's/from wlan_theoretical_sta/from ..py_json.wlan_theoretical_sta/g' *.py
 sed -i -- 's/from ws_generic_monitor/from ..py_json.ws_generic_monitor/g' *.py
+sed -i -- 's/from port_utils/from ..py_json.port_utils/g' *.py
 
 cd ../py_json
+#Clean up bad code in py_json
+sed -i -- 's/import port_utils/from port_utils import PortUtils/g' http_profile.py
+sed -i -- 's/import realm/from realm import PortUtils/g' test_utility.py
+
 # fix py_dashboard files
 sed -i -- 's/from GrafanaRequest/from ..py_dashboard.GrafanaRequest/g' *.py
 sed -i -- 's/from InfluxRequest/from ..py_dashboard.InfluxRequest/g' *.py
