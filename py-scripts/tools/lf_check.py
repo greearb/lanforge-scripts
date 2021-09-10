@@ -1407,6 +1407,7 @@ Example :
 
     # read config and run tests
     check.read_json_rig()  #check.read_config
+    check.read_json_dut()
     check.read_json_test()
     
     if args.json_igg != "":
