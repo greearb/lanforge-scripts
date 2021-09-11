@@ -2,25 +2,21 @@
 # Define useful common methods                                  -
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 import sys
-import os
-import importlib
-import pprint
-import time
-from time import sleep
-from random import seed
-from random import randint
-import re
-import ipaddress
-seed(int(round(time.time() * 1000)))
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
+import os
+import pprint
+import time
+from time import sleep
+from random import seed
+import re
+import ipaddress
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../../")))
-
-LFRequest = importlib.import_module("lanforge-scripts.py-json.LANforge.LFRequest")
+seed(int(round(time.time() * 1000)))
+from random import randint
+from LANforge import LFRequest
 
 debug_printer = pprint.PrettyPrinter(indent=2)
 
@@ -30,8 +26,6 @@ REPORT_TIMER_MS_FAST = 1500
 REPORT_TIMER_MS_SLOW = 3000
 
 #Used for Speed
-
-
 def parse_size_bps(size_val):
     if isinstance(size_val, str):
         size_val.upper()
