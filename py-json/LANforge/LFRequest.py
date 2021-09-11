@@ -2,22 +2,18 @@
 # Class holds default settings for json requests                -
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 import sys
-import os
-import importlib
-import urllib
-from urllib import request
-from urllib import error
-from urllib import parse
-import json
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../../")))
+import urllib
+from urllib import request
+from urllib import error
+from urllib import parse
 
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+import json
+from . import LFUtils
 
 
 class LFRequest:
