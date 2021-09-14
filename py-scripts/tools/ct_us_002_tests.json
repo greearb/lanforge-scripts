@@ -19,7 +19,7 @@
                 "command":"./tools/lf_qa.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --store --png --database ./tools/qa_002_test_db"
+                    " --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
             }
         },
@@ -76,7 +76,7 @@
                 "command":"./tools/lf_qa.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --store --png --database ./tools/qa_002_test_db"
+                    " --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
             }
         },
@@ -275,7 +275,7 @@
                 "command":"./tools/lf_qa.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --store --png --database ./tools/qa_002_test_db"
+                    " --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
             }
         }
