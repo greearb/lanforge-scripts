@@ -451,7 +451,7 @@
             "CT-US-001_lf_ap_auto_test": {
                 "enabled": "TRUE",
                 "command": "lf_ap_auto_test.py",
-                "timeout":"1200",
+                "timeout":"300",
                 "iterations":"1",
                 "args": "",
                 "args_list":[
