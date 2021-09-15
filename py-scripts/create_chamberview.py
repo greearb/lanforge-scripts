@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Note: To Run this script gui should be opened with
 
@@ -30,11 +29,10 @@ Output:
     You should see build scenario with the given arguments at the end of this script.
     To verify this:
         open Chamber View -> Manage scenario
-
 """
-
 import sys
 import os
+import importlib
 import argparse
 import time
 import re
@@ -43,10 +41,12 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-from cv_test_manager import cv_test as cv
+cv_test_manager = importlib.import_module("lanforge-scripts.py-json.cv_test_manager")
+cv = cv_test_manager.cv_test
+
 
 class CreateChamberview(cv):
     def __init__(self,

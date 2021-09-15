@@ -4,13 +4,19 @@
 # the syntax of the request is /port/<shelf=1>/<resource=1>/<list|all|portid>       -
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 import sys
+import os
+import importlib
+import json
+import pprint
+
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
-import json
-import pprint
-from LANforge import LFRequest
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+LFRequest = importlib.import_module("lanforge-scripts.py-json.LANforge.LFRequest")
 
 
 def main():

@@ -1,18 +1,17 @@
-
+import os
+import sys
 import base64
 import urllib.request
 from bs4 import BeautifulSoup
 import ssl
-import subprocess, os
+import subprocess
 from artifactory import ArtifactoryPath
 import tarfile
 import paramiko
 from paramiko import SSHClient
 from scp import SCPClient
-import os
 import pexpect
 from pexpect import pxssh
-import sys
 import paramiko
 from scp import SCPClient
 import pprint

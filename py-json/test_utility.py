@@ -1,25 +1,15 @@
-
 """
 Candela Technologies Inc.
 
 Info : Standard Script for Webconsole Test Utility
 Date :
 
-
 """
-
 import sys
+import os
+import importlib
 from pprint import pprint
 from uuid import uuid1
-
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-from LANforge import LFUtils
-from LANforge import lfcli_base
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
-from realm import PortUtils
 import argparse
 import datetime
 import time
@@ -27,7 +17,16 @@ import matplotlib.pyplot as plt
 import threading
 import re
 import json
-import os
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+PortUtils = realm.PortUtils
+
 webconsole_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 updates_path = webconsole_dir + "/web_json/updates.js"
 

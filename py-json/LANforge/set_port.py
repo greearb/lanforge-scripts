@@ -1,7 +1,19 @@
+import sys
 import os
+import importlib
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit()
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../../")))
+
+lf_json_autogen = importlib.import_module("lanforge-scripts.py-json.LANforge.lf_json_autogen")
+LFJsonPost = lf_json_autogen.LFJsonPost
+
+
 if os.environ.get("LF_USE_AUTOGEN") == 1:
-    import lf_json_autogen
-    from lf_json_autogen import LFJsonPost
     set_port_current_flags = LFJsonPost.SetPortCurrentFlags.__members__
     set_port_cmd_flags = LFJsonPost.SetPortCmdFlags.__members__
     set_port_interest_flags = LFJsonPost.SetPortInterest.__members__

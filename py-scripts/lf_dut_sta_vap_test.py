@@ -22,26 +22,12 @@
   This Script is intended to automate the testing of DUT that has stations as well as AP.
   To automate the simultaenous testing and check the DUT Temperature
 '''
-
 import sys
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit(1)
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-
-
+import os
+import importlib
 import argparse
 import time
-from LANforge import LFUtils
-from LANforge import lfcli_base
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
-
-from realm import Realm
 import logging
-
 import paramiko as pm
 from paramiko.ssh_exception import NoValidConnectionsError as exception
 import xlsxwriter
@@ -50,6 +36,19 @@ from bokeh.plotting import figure
 from bokeh.models import LinearAxis, Range1d
 from bokeh.models import HoverTool
 from bokeh.layouts import row
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit(1)
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
 
 
 # Specifically for Measuring CPU Core Temperatures

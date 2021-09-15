@@ -1,6 +1,14 @@
 #!/usr/bin/env python3
-from lfdata import LFDataCollection
-#import lfreporting
+import sys
+import os
+import importlib
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+lfdata = importlib.import_module("lanforge-scripts.py-json.lfdata")
+LFDataCollection = lfdata.LFDataCollection
+
 
 class TestBase:
     def __init__(self):

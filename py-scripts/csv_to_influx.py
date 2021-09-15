@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
-
-
 import sys
 import os
-
-if 'py-dashboard' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
-
-from InfluxRequest import *
-from cv_test_manager import *
+import importlib
 from pathlib import Path
 import argparse
 
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+cv_test_manager = importlib.import_module("lanforge-scripts.py-json.cv_test_manager")
+cv_add_base_parser = cv_test_manager.cv_add_base_parser
+cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
+InfluxRequest = importlib.import_module("lanforge-scripts.py-dashboard.InfluxRequest")
+RecordInflux = InfluxRequest.RecordInflux
+influx_add_parser_args = InfluxRequest.influx_add_parser_args
 
 class CSVtoInflux:
     def __init__(self,
@@ -39,7 +41,7 @@ def main():
     parser = argparse.ArgumentParser()
     cv_add_base_parser(parser)
 
-    parser.add_argument('--path', append=True)
+    parser.add_argument('--path', action='append')
 
     args = parser.parse_args()
 

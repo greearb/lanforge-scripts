@@ -1,6 +1,7 @@
-
 #!/usr/bin/env python3
-from LANforge.lfcli_base import LFCliBase
+import sys
+import os
+import importlib
 import pprint
 from pprint import pprint
 import requests
@@ -9,7 +10,13 @@ import time
 import datetime
 import ast
 import csv
-import os
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+
 
 class L4CXProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):

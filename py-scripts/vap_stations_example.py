@@ -3,17 +3,22 @@
 This is an outdated example. Please see modern py-scripts/test_X example scripts.
 """
 import sys
+import os
+import importlib
+import traceback
+
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-import traceback
 
-from LANforge import LFUtils
-from LANforge.LFUtils import *
-from LANforge.lfcli_base import LFCliBase
-from generic_cx import GenericCx
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+# from generic_cx import GenericCx
 
 mgrURL = "http://localhost:8080/"
 staName = "sta0"

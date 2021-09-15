@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 
 """ 
-
 NAME: ftp_test.py 
 
-PURPOSE: 
+PURPOSE:
     will create stations and endpoints to generate and verify layer-4 traffic over an ftp connection.
     find out download/upload time of each client according to file size.
     This script will monitor the bytes-rd attribute of the endpoints.
 
-SETUP:  
+SETUP:
 
     Create a file to be downloaded    linux:  fallocate -l <size> <name>    example fallocate -l 2M ftp_test.txt
 
 
-EXAMPLE:  
+EXAMPLE:
     './ftp_test.py --ssid "jedway-wap2-x2048-5-3" --passwd "jedway-wpa2-x2048-5-3" --security wpa2 --bands "5G" --direction "Download" \
     --file_size "2MB" --num_stations 2
 
@@ -24,25 +23,29 @@ INCLUDE_IN_README
     -Jitendrakumar Kushavah
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
-
 """
 import sys
-from ftp_html import *
+import os
+import importlib
 import paramiko
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit(1)
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-
-from LANforge import LFUtils
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
 import argparse
 from datetime import datetime
 import time
-import os
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit(1)
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
+ftp_html = importlib.import_module("lanforge-scripts.py-scripts.ftp_html")
+
 
 class ftp_test(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, radio = "wiphy0", sta_prefix="sta", start_id=0, num_sta= None,

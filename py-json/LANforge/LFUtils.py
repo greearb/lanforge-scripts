@@ -2,24 +2,28 @@
 # Define useful common methods                                  -
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 import sys
-
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit()
 import os
+import importlib
 import pprint
 import time
 from time import sleep
 from random import seed
+from random import randint
 import re
 import ipaddress
 
-seed(int(round(time.time() * 1000)))
-from random import randint
-from LANforge import LFRequest
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit()
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../../")))
+
+LFRequest = importlib.import_module("lanforge-scripts.py-json.LANforge.LFRequest")
 
 debug_printer = pprint.PrettyPrinter(indent=2)
 
+seed(int(round(time.time() * 1000)))
 NA = "NA"  # used to indicate parameter to skip
 ADD_STA_FLAGS_DOWN_WPA2 = 68719477760
 REPORT_TIMER_MS_FAST = 1500

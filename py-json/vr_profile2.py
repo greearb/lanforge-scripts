@@ -1,9 +1,16 @@
+import sys
+import os
+import importlib
 import time
 from pprint import pprint
 from random import randint
 
-from LANforge import LFUtils
-from base_profile import BaseProfile
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+base_profile = importlib.import_module("lanforge-scripts.py-json.base_profile")
+BaseProfile = base_profile.BaseProfile
 
 
 class VRProfile(BaseProfile):

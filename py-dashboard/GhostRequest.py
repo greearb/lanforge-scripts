@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Class holds default settings for json requests to Ghost     -
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-import os
 import sys
-
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit()
-
+import os
+import importlib
 import requests
 import jwt
 from datetime import datetime
@@ -23,8 +17,16 @@ from collections import Counter
 import shutil
 import itertools
 
-from GrafanaRequest import GrafanaRequest
-from InfluxRequest import RecordInflux
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit()
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+GrafanaRequest = importlib.import_module("lanforge-scripts.py-dashboard.GrafanaRequest")
+InfluxRequest = importlib.import_module("lanforge-scripts.py-dashboard.InfluxRequest")
+RecordInflux = InfluxRequest.RecordInflux
 
 
 class CSVReader:

@@ -1,21 +1,23 @@
 #!/usr/bin/env python3
-
 """
     Script for modifying VAPs.
 """
-
 import sys
 import os
+import importlib
 import argparse
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-from LANforge.lfcli_base import LFCliBase
-from realm import Realm
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
 
 
 class ModifyVAP(Realm):

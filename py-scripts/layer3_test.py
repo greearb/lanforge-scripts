@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
-
 import sys
+import os
+import importlib
+import argparse
+import datetime
+import time
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-from LANforge import LFUtils
-from LANforge import lfcli_base
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
-from realm import Realm
-import argparse
-import datetime
-import time
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
+
 
 class Layer3Test(LFCliBase):
 

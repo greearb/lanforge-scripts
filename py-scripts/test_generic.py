@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 NAME: test_generic.py
 
@@ -32,25 +31,28 @@ Use './test_generic.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
-
-import pprint
 import sys
 import os
+import importlib
+import pprint
+import argparse
+import time
+import datetime
+import json
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-import argparse
-from LANforge.lfcli_base import LFCliBase
-from LANforge import LFUtils
-from realm import Realm
-import time
-import datetime
-import json
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
+
 
 class GenTest(LFCliBase):
     def __init__(self, ssid, security, passwd, sta_list, client, name_prefix, upstream, host="localhost", port=8080,

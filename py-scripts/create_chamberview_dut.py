@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Note: To Run this script gui should be opened with
 
@@ -45,9 +44,9 @@ How to Run this:
 
 Output : DUT will be created in Chamber View
 """
-
 import sys
 import os
+import importlib
 import argparse
 import time
 
@@ -55,11 +54,15 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-from cv_dut_profile import cv_dut as dut
-from cv_test_manager import cv_test as cvtest
+# from cv_dut_profile import cv_dut as dut
+cv_dut_profile = importlib.import_module("lanforge-scripts.py-json.cv_dut_profile")
+dut = cv_dut_profile.cv_dut
+# from cv_test_manager import cv_test as cvtest
+cv_test_manager = importlib.import_module("lanforge-scripts.py-json.cv_test_manager")
+cvtest = cv_test_manager.cv_test
 
 
 class DUT(dut):

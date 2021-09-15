@@ -1,19 +1,23 @@
-'''this script creates 1 station on given arguments
-how to run - [lanforge@LF4-Node2 py-scripts]$ python3 station_banao.py -hst localhost -s TestAP22 -pwd [BLANK] -sec open -rad wiphy0
-
+#!/usr/bin/env python3
 '''
-
+this script creates 1 station on given arguments
+how to run - [lanforge@LF4-Node2 py-scripts]$ python3 station_banao.py -hst localhost -s TestAP22 -pwd [BLANK] -sec open -rad wiphy0
+'''
 import sys
+import os
+import importlib
 import argparse
 import time
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-from LANforge import LFUtils
-from LANforge import lfcli_base
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
-from realm import Realm
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
+
 
 class STATION(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, ssid, paswd, security, radio, sta_list=None, name_prefix="L3Test", upstream="eth2"):
@@ -97,7 +101,6 @@ def main():
     obj.precleanup(station_list)
     obj.build()
     obj.start(station_list)
-
 
 if __name__ == '__main__':
     main()

@@ -10,7 +10,7 @@ SETUP:
 /lanforge/html-reports directory needs to be present or output generated in local file
 
 EXAMPLE:
-see: /py-scritps/lf_report_test.py for example
+see: /py-scripts/lf_report_test.py for example
 
 COPYWRITE
     Copyright 2021 Candela Technologies Inc

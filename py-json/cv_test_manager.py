@@ -3,21 +3,30 @@ Note: This script is working as library for chamberview tests.
     It holds different commands to automate test.
 """
 
-import time
 import sys
 import os
-
-if 'py-dashboard' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
-
-from LANforge.lfcli_base import LFCliBase
-from realm import Realm
+import importlib
+import time
 import json
 from pprint import pprint
 import argparse
-from cv_test_reports import lanforge_reports as lf_rpt
-from InfluxRequest import *
-import os.path
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit()
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
+cv_test_reports = importlib.import_module("lanforge-scripts.py-json.cv_test_reports")
+lf_rpt = cv_test_reports.lanforge_reports
+InfluxRequest = importlib.import_module("lanforge-scripts.py-dashboard.InfluxRequest")
+influx_add_parser_args = InfluxRequest.influx_add_parser_args
+RecordInflux = InfluxRequest.RecordInflux
 
 
 def cv_base_adjust_parser(args):

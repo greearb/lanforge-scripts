@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
-
-from LANforge.lfcli_base import LFCliBase
-from LANforge import LFRequest
-from LANforge import add_vap, set_wifi_radio
-from LANforge import set_port
-from LANforge import LFUtils
+import sys
+import os
+import importlib
 import pprint
 from pprint import pprint
 import time
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFRequest = importlib.import_module("lanforge-scripts.py-json.LANforge.LFRequest")
+add_vap = importlib.import_module("lanforge-scripts.py-json.LANforge.add_vap")
+set_port = importlib.import_module("lanforge-scripts.py-json.LANforge.set_port")
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
 
 
 class VAPProfile(LFCliBase):
@@ -212,15 +219,15 @@ class VAPProfile(LFCliBase):
         return result
 
     def create(self, resource, radio, channel=None, up_=None, debug=False, use_ht40=True, use_ht80=True,
-               use_ht160=False, country=0,
+               use_ht160=False,
                suppress_related_commands_=True, use_radius=False, hs20_enable=False, bridge=True):
-        #port_list = self.local_realm.json_get("port/1/1/list")
-        #if port_list is not None:
-        #    port_list = port_list['interfaces']
-        #    for port in port_list:
-        #        for k, v in port.items():
-        #            if v['alias'] == self.vap_name:
-        #                self.local_realm.rm_port(v['port'], check_exists=True)
+        port_list = self.local_realm.json_get("port/1/1/list")
+        if port_list is not None:
+            port_list = port_list['interfaces']
+            for port in port_list:
+                for k, v in port.items():
+                    if v['alias'] == self.vap_name:
+                        self.local_realm.rm_port(k, check_exists=True)
         if use_ht160:
             self.desired_add_vap_flags.append("enable_80211d")
             self.desired_add_vap_flags_mask.append("enable_80211d")
@@ -249,10 +256,10 @@ class VAPProfile(LFCliBase):
             raise ValueError("No radio %s.%s found" % (resource, radio))
 
         eid = "1.%s.%s" % (resource, radio)
+        frequency = 0
+        country = 0
         if eid in jr:
             country = jr[eid]["country"]
-
-        self.mode = set_wifi_radio.set_radio_mode[self.mode]
 
         data = {
             "shelf": 1,
@@ -263,7 +270,6 @@ class VAPProfile(LFCliBase):
             "country": country,
             "frequency": self.local_realm.channel_freq(channel_=channel)
         }
-        print(data)
         self.local_realm.json_post("/cli-json/set_wifi_radio", _data=data)
         if up_ is not None:
             self.up = up_
@@ -351,22 +357,6 @@ class VAPProfile(LFCliBase):
 
         if (self.up):
             self.admin_up(resource)
-
-    def modify(self, radio):
-        self.add_vap_data["flags"] = self.add_named_flags(self.desired_add_vap_flags, add_vap.add_vap_flags)
-        self.add_vap_data["flags_mask"] = self.add_named_flags(self.desired_add_vap_flags_mask, add_vap.add_vap_flags)
-        self.add_vap_data["radio"] = radio
-        self.add_vap_data["ap_name"] = self.vap_name
-        self.add_vap_data["ssid"] = 'NA'
-        self.add_vap_data["key"] = 'NA'
-        self.add_vap_data['mac'] = 'NA'
-
-        add_vap_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_vap")
-        if self.debug:
-            print(self.add_vap_data)
-        add_vap_r.addPostData(self.add_vap_data)
-        json_response = add_vap_r.jsonPost(self.debug)
-
 
     def cleanup(self, resource, delay=0.03):
         print("Cleaning up VAPs")

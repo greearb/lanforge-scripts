@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 NAME: ghost_profile.py
 PURPOSE: modify ghost database from the command line.
@@ -27,17 +26,18 @@ this script uses pyjwt. If you get the issue module 'jwt' has no attribute 'enco
 """
 import sys
 import os
+import importlib
 import argparse
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-from GhostRequest import GhostRequest
+# from GhostRequest import GhostRequest
+GhostRequest = importlib.import_module("lanforge-scripts.py-dashboard.GhostRequest")
 
 
 class UseGhost(GhostRequest):

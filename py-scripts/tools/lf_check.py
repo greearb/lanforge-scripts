@@ -143,8 +143,6 @@ class lf_check():
         # meta.txt
         self.meta_data_path = ""
 
-
-
         # lanforge configuration 
         self.lf_mgr_ip = "192.168.0.102"
         self.lf_mgr_port = "8080"

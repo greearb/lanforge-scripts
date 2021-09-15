@@ -15,17 +15,18 @@
                         --radio_mode AUTO
 
 """
-
 import sys
-
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-
+import os
+import importlib
 import argparse
 import time
-from LANforge.LFUtils import *
-from realm import Realm
-import realm
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
 
 
 class SniffRadio(Realm):

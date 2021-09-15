@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 # This program is used to read in a LANforge Dataplane CSV file and output
 # a csv file that works with a customer's RvRvO visualization tool.
 #
@@ -13,18 +12,17 @@
 
 # Second part:
 # Step Index,Position [Deg],Attenuation [dB],Traffic Pair 1 Throughput [Mbps]
-
 import sys
 import os
-
 import argparse
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
 
 class CSVParcer():
     def __init__(self,csv_infile=None,csv_outfile=None):

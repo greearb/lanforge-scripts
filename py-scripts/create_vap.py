@@ -1,26 +1,26 @@
 #!/usr/bin/env python3
-
 """
     Script for creating a variable number of VAPs.
 """
-
 import sys
 import os
+import importlib
 import argparse
+import time
+import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-import LANforge
-from LANforge.lfcli_base import LFCliBase
-from LANforge import LFUtils
-import realm
-from realm import Realm
-import time
-import pprint
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
 
 
 class CreateVAP(Realm):

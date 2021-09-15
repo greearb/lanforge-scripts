@@ -1,9 +1,19 @@
-import time
-
 # !/usr/bin/env python3
-# ---- ---- ---- ---- LANforge Base Imports ---- ---- ---- ----
-from LANforge.lfcli_base import LFCliBase
-from LANforge.add_dut import add_dut_flags
+import sys
+import os
+import importlib
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit()
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+add_dut = importlib.import_module("lanforge-scripts.py-json.LANforge.add_dut")
+add_dut_flags = add_dut.add_dut_flags
 
 
 class cv_dut(LFCliBase):

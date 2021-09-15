@@ -4,31 +4,37 @@
 #  and verify whether traffic was sent and received.  It also verifies the station connected
 #  to the requested BSSID if bssid is specified as an argument.
 #  The script will clean up the station and connections at the end of the test.
-
 import sys
+import os
+import importlib
+import argparse
+import pprint
+import time
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-import argparse
-from LANforge import LFUtils
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-from realm import Realm
-import pprint
-from influx import RecordInflux
-import time
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+removeCX = LFUtils.removeCX
+removeEndps = LFUtils.removeEndps
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
+influx = importlib.import_module("lanforge-scripts.py-scripts.influx")
+RecordInflux = influx.RecordInflux
 
-OPEN="open"
-WEP="wep"
-WPA="wpa"
-WPA2="wpa2"
+OPEN = "open"
+WEP = "wep"
+WPA = "wpa"
+WPA2 = "wpa2"
 WPA3 = "wpa3"
-MODE_AUTO=0
+MODE_AUTO = 0
+
 
 class StaConnect2(LFCliBase):
     def __init__(self, host, port, _dut_ssid="jedway-open-1", _dut_passwd="NA", _dut_bssid="",

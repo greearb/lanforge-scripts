@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 NAME: test_ip_variable_time.py
 
@@ -24,24 +23,22 @@ Use './test_ip_variable_time.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
-
 import sys
 import os
+import importlib
+import argparse
+import datetime
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-if 'py-dashboard' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
-
-import argparse
-from LANforge import LFUtils
-from realm import Realm
-import datetime
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
 
 
 class IPVariableTime(Realm):

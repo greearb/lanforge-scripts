@@ -1,15 +1,19 @@
-
 #!/usr/bin/env python3
-from LANforge.lfcli_base import LFCliBase
-from LANforge import LFRequest
-from LANforge import LFUtils
-from LANforge import set_port
+import sys
+import os
+import importlib
 import pprint
 from pprint import pprint
 import time
 
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFRequest = importlib.import_module("lanforge-scripts.py-json.LANforge.LFRequest")
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+set_port = importlib.import_module("lanforge-scripts.py-json.LANforge.set_port")
 
 
 class MACVLANProfile(LFCliBase):

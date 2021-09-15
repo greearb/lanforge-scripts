@@ -62,6 +62,7 @@ DUT syntax is somewhat tricky:  DUT-name SSID BSID (bssid-idx), example: linksys
 '''
 import sys
 import os
+import importlib
 import argparse
 import time
 
@@ -69,17 +70,20 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-from lf_wifi_capacity_test import WiFiCapacityTest
-from cv_test_manager import *
-from create_chamberview_dut import DUT
-from create_chamberview import CreateChamberview
-from lf_dataplane_test import DataplaneTest
-from grafana_profile import UseGrafana
-from lf_ap_auto_test import ApAutoTest
+lf_wifi_capacity_test = importlib.import_module("lanforge-scripts.py-scripts.lf_wifi_capacity_test")
+WiFiCapacityTest = lf_wifi_capacity_test.WiFiCapacityTest
+cv_test_manager = importlib.import_module("lanforge-scripts.py-scripts.cv_test_manager")
+create_chamberview = importlib.import_module("lanforge-scripts.py-scripts.create_chamberview")
+CreateChamberview = create_chamberview.CreateChamberview
+DUT = create_chamberview.DUT
+lf_dataplane_test = importlib.import_module("lanforge-scripts.py-scripts.lf_dataplane_test")
+DataplaneTest = lf_dataplane_test.DataplaneTest
+grafana_profile = importlib.import_module("lanforge-scripts.py-scripts.grafana_profile")
+UseGrafana = grafana_profile.UseGrafana
+lf_ap_auto_test = importlib.import_module("lanforge-scripts.py-scripts.lf_ap_auto_test")
 
 
 def main():

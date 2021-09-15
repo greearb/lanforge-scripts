@@ -17,15 +17,27 @@ COPYWRITE
 
 INCLUDE_IN_README
 '''
-
+import sys
+import os
+import importlib
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
 import pdfkit
-from lf_report import lf_report
-from lf_graph import lf_bar_graph, lf_scatter_graph, lf_stacked_graph, lf_horizontal_stacked_graph
 import random
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+lf_report = importlib.import_module("lanforge-scripts.py-scripts.lf_report")
+lf_report = lf_report.lf_report
+lf_graph = importlib.import_module("lanforge-scripts.py-scripts.lf_graph")
+lf_bar_graph = lf_graph.lf_bar_graph
+lf_scatter_graph = lf_graph.lf_scatter_graph
+lf_stacked_graph = lf_graph.lf_stacked_graph
+lf_horizontal_stacked_graph = lf_graph.lf_horizontal_stacked_graph
+
 
 # Unit Test
 if __name__ == "__main__":

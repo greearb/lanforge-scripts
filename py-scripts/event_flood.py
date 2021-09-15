@@ -5,22 +5,27 @@ problems in the /events/ URL handler by inserting events rapidly.
 Please concurrently use with event_breaker.py.
 """
 import sys
-
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit(1)
-
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-
+import os
+import importlib
 import argparse
-from LANforge.lfcli_base import LFCliBase
-from realm import Realm
 import datetime
 from datetime import datetime
 import time
 from time import sleep
 import pprint
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit(1)
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
+
 
 class EventBreaker(Realm):
     def __init__(self,  host, port,

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-'''
+"""
 NAME: lf_graph.py
 
-PURPOSE: 
+PURPOSE:
 Common Library for generating graphs for LANforge output
 
-SETUP:  
+SETUP:
 /lanforge/html-reports directory needs to be present or output generated in local file
 
-EXAMPLE:  
+EXAMPLE:
 see: /py-scritps/lf_report_test.py for example
 
 COPYWRITE
@@ -16,8 +16,10 @@ COPYWRITE
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README
-'''
-
+"""
+import sys
+import os
+import importlib
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
@@ -25,8 +27,12 @@ import pandas as pd
 import pdfkit
 import math
 from matplotlib.colors import ListedColormap
-from lf_csv import lf_csv
 
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+lf_csv = importlib.import_module("lanforge-scripts.py-scripts.lf_csv")
+lf_csv = lf_csv.lf_csv
 
 # internal candela references included during intial phases, to be deleted at future date
 

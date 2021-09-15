@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 '''
 NAME: lf_snp_test.py  snp == Scaling and Performance
 
@@ -140,31 +139,35 @@ COPYWRITE
 '''
 import sys
 import os
+import importlib
 import itertools
 from pprint import pprint
-
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit(1)
-
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-
 import argparse
-from LANforge import LFUtils
-from realm import Realm
 import time
 import datetime
 import subprocess
 import csv
 import random
 import logging
-from lf_report import lf_report
-#from lf_graph import lf_bar_graph
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit(1)
+
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
+lf_report = importlib.import_module("lanforge-scripts.py-scripts.lf_report")
+# lf_graph = importlib.import_module("lanforge-scripts.py-scripts.lf_graph")
+# lf_bar_graph = lf_graph.lf_bar_graph
 
 FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
-
 # see https://stackoverflow.com/a/13306095/11014343
+
+
 class FileAdapter(object):
     def __init__(self, logger):
         self.logger = logger

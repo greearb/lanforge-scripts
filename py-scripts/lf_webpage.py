@@ -7,22 +7,23 @@ python3 lf_webpage.py --mgr 192.168.200.29 --mgr_port 8080   --upstream_port eth
 Copyright 2021 Candela Technologies Inc
 04 - April - 2021
 """
-
 import sys
+import os
+import importlib
 import time
 import argparse
 import paramiko
 
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-from LANforge import LFUtils
-from LANforge.LFUtils import *
-import realm
-from realm import Realm
-from realm import PortUtils
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-from lf_report import *
-from lf_graph import *
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
+PortUtils = realm.PortUtils
+lf_report = importlib.import_module("lanforge-scripts.py-scripts.lf_report")
+lf_graph = importlib.import_module("lanforge-scripts.py-scripts.lf_graph")
+
 
 class HttpDownload(Realm):
     def __init__(self, lfclient_host, lfclient_port, upstream, num_sta, security, ssid, password,

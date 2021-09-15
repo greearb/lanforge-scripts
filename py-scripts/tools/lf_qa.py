@@ -4,12 +4,11 @@ File: read kpi.csv place in sql database, create png of historical kpi and prese
 Usage: kpi_csv_sq.py --store --png --show --path <path to directories to traverse> --database <name of database> 
 Example: kpi_csv_sq.py --show  (show dashboard generated from database)
 Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read kpi.csv store to database, write png, show dashboard )
-
 '''
 # visit http://127.0.0.1:8050/ in your web browser.
-
 import sys
 import os
+import importlib
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -20,13 +19,11 @@ import argparse
 from  pathlib import Path
 import time
 
-# lf_report is from the parent of the current file
-dir_path = os.path.dirname(os.path.realpath(__file__))
-parent_dir_path = os.path.abspath(os.path.join(dir_path, os.pardir))
-sys.path.insert(0, parent_dir_path)
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../../")))
 
-from lf_report import lf_report
-sys.path.append('/')
+lf_report = importlib.import_module("lanforge-scripts.py-scripts.lf_report")
+lf_report = lf_report.lf_report
 
 # Any style components can be used
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 NAME: test_ip_connection.py
 This script combines functionality of test_ipv4_connection.py and test_ipv6_connection.py.
@@ -21,23 +20,26 @@ Use './test_ip_connection.py' --help to see command line usage and options
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
-
 import sys
 import os
+import importlib
 import argparse
+import time
+import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-import LANforge
-from LANforge.lfcli_base import LFCliBase
-from LANforge import LFUtils
-import realm
-import time
-import pprint
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
+
 
 class ConnectTest(LFCliBase):
     def __init__(self,

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Note: To Run this script gui should be opened with
 
@@ -303,9 +302,9 @@ show_4way: 1
 show_latency: 1
 
 """
-
 import sys
 import os
+import importlib
 import argparse
 import time
 import json
@@ -315,11 +314,14 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-from cv_test_manager import *
-from LANforge import LFUtils
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+cv_test_manager = importlib.import_module("lanforge-scripts.py-json.cv_test_manager")
+cv_test = cv_test_manager.cv_test
+cv_add_base_parser = cv_test_manager.cv_add_base_parser
+cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
 
 
 class WiFiCapacityTest(cv_test):

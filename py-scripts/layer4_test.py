@@ -1,39 +1,41 @@
 #!/usr/bin/env python3
-
 """
 Candela Technologies Inc.
 
 Info : Standard Script for Layer 4  Testing
 Date :
 Author : Shivam Thakur
-
 """
-
 import sys
+import os
+import importlib
+import argparse
+import datetime
+import time
+import pdfkit
+import json
+import re
+
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-from LANforge import LFUtils
-from LANforge import lfcli_base
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
-from realm import PortUtils
-import argparse
-import datetime
-import time
-from test_utility import CreateHTML
-from test_utility import RuntimeUpdates
-import pdfkit
-import json
-import re
-import os
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
+PortUtils = realm.PortUtils
+test_utility = importlib.import_module("lanforge-scripts.py-json.test_utility")
+CreateHTML = test_utility.CreateHTML
+RuntimeUpdates = test_utility.RuntimeUpdates
 
 webconsole_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 print(webconsole_dir)
+
 
 class HTTPTest(LFCliBase):
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Note: To Run this script gui should be opened with
 
@@ -98,11 +97,10 @@ mconn: 1
 mpkt: 1000
 tos: 0
 loop_iterations: 1
-
 """
-
 import sys
 import os
+import importlib
 import argparse
 import time
 import json
@@ -112,11 +110,13 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-from cv_test_manager import cv_test as cvtest
-from cv_test_manager import *
+cv_test_manager = importlib.import_module("lanforge-scripts.py-json.cv_test_manager")
+cvtest = cv_test_manager.cv_test
+cv_add_base_parser = cv_test_manager.cv_add_base_parser
+cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
 
 
 class RvrTest(cvtest):

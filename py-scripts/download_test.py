@@ -2,19 +2,23 @@
 """download_test.py will do lf_report::add_kpi(tags, 'throughput-download-bps', $my_value);"""
 import sys
 import os
-
+import importlib
+import argparse
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+if 'lanforge-scripts' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-from LANforge.lfcli_base import LFCliBase
-from influx import RecordInflux
-from realm import Realm
-import argparse
+lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+influx = importlib.import_module("lanforge-scripts.py-scripts.influx")
+RecordInflux = influx.RecordInflux
+realm = importlib.import_module("lanforge-scripts.py-json.realm")
+Realm = realm.Realm
+
 
 class DownloadTest(Realm):
     def __init__(self,
