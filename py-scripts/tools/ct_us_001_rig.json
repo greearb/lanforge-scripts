@@ -26,7 +26,7 @@
         "custom_db": "DFLT_ETH1_GEN",
         "email_list_production": "konikofi@candelatech.com,greearb@candelatech.com,erin.grimes@candelatech.com,logan.lipke@candelatech.com,dipti.dhond@candelatech.com,chuck.rekiere@candelatech.com,matthew@candelatech.com,iain.davidson@candelatech.com,jreynolds@candelatech.com",
         "host_ip_production": "192.168.100.153",
-        "email_list_test": "erin.grimes@candelatech.com,chuck.rekiere@candelatech.com",
+        "email_list_test": "chuck.rekiere@candelatech.com",
         "host_ip_test": "192.168.100.153",
         "email_title_txt": "Lanforge QA Testing CT-US-001",
         "email_txt": "Lanforge QA Testing CT-US-001 "
