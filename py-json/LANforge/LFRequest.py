@@ -381,6 +381,7 @@ def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, er
                     xerrors.append("%s: %s" % (headername, err_headers.get(headername)))
         if len(xerrors) > 0:
             print(" = = LANforge Error Messages = =")
+            print(" = = URL: %s" % err_full_url)
             for xerr in xerrors:
                 print(xerr)
                 if (error_list_ is not None) and isinstance(error_list_, list):
