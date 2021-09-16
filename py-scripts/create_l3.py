@@ -97,7 +97,9 @@ def main():
             optional_args = group
             break;
     if optional_args is not None:
-        optional_args.add_argument('--mode', help='Used to force mode of stations')
+        optional_args.add_argument('--mode', help='Used to force mode of stations', default=0)
+        optional_args.add_argument('--ap', help='Used to force a connection to a particular AP')
+        optional_args.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000', default=0000)
     args = parser.parse_args()
 
     num_sta = 2

@@ -19,14 +19,17 @@ import pprint
 sys.path.append("../py-json")
 from LANforge import LFRequest
 from LANforge import LFUtils
-
+from LANforge.lfcli_base import LFCliBase
 
 j_printer = pprint.PrettyPrinter(indent=2)
 # todo: this needs to change
 resource_id = 1
 
 
-def main(base_url, args=()):
+def main():
+    parser = LFCliBase.create_basic_argparse()
+    args = parser.parse_args()
+    base_url = 'http://%s:%s' % (args.mgr, args.mgr_port)
     print(base_url)
     json_post = ""
     json_response = ""
@@ -305,4 +308,4 @@ def main(base_url, args=()):
 
 
 if __name__ == '__main__':
-    main(base_url="http://localhost:8080")
+    main()

@@ -395,9 +395,9 @@ class GenCXProfile(LFCliBase):
     def choose_iperf3_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
         if gen_results['endpoints'] is not None:
-            pprint.pprint(gen_results['endpoints'])
+            pprint(gen_results['endpoints'])
             #for name in gen_results['endpoints']:
-               # pprint.pprint(name.items)
+               # pprint(name.items)
                 #for k,v in name.items():
         exit(1)
 

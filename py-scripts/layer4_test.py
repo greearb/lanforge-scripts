@@ -165,13 +165,13 @@ class HTTPTest(LFCliBase):
 
 def main():
     # This has --mgr, --mgr_port and --debug
-    parser = LFCliBase.create_bare_argparse(prog="layer3_test.py", formatter_class=argparse.RawTextHelpFormatter, epilog="About This Script")
+    parser = LFCliBase.create_basic_argparse(prog="layer4_test.py", formatter_class=argparse.RawTextHelpFormatter, epilog="About This Script")
 
     # Adding More Arguments for custom use
-    parser.add_argument('--ssid', help='--ssid of DUT', default="WebAP")
-    parser.add_argument('--passwd', help='--passwd of dut', default="[BLANK]")
-    parser.add_argument('--radio', help='--radio to use on LANforge', default="wiphy1")
-    parser.add_argument('--security', help='--security of dut', default="open")
+    #parser.add_argument('--ssid', help='--ssid of DUT', default="WebAP")
+    #parser.add_argument('--passwd', help='--passwd of dut', default="[BLANK]")
+    #parser.add_argument('--radio', help='--radio to use on LANforge', default="wiphy1")
+    #parser.add_argument('--security', help='--security of dut', default="open")
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="1m")
     parser.add_argument('--session_id', help='--session_id is for websocket', default="local")
     parser.add_argument('--num_client', type=int, help='--num_sta is number of stations you want to create', default=2)

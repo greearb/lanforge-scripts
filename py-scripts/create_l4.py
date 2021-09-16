@@ -151,7 +151,7 @@ python3 ./layer4.py
             optional_args=group
             break;
     if optional_args is not None:
-        optional_args.add_argument('--mode',help='Used to force mode of stations')
+        optional_args.add_argument('--mode',help='Used to force mode of stations', default=0)
         optional_args.add_argument('--ap',help='Used to force a connection to a particular AP')
     args = parser.parse_args()
 
