@@ -925,13 +925,15 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
                     if 'TEST_IP' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('TEST_IP', self.test_ip)
 
+                    if 'LF_MGR_USER' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR_USER', self.lf_mgr_user)
+                    if 'LF_MGR_PASS' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR_PASS', self.lf_mgr_pass)
+
                     if 'LF_MGR_IP' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR_IP', self.lf_mgr_ip)
                     if 'LF_MGR_PORT' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR_PORT', self.lf_mgr_port)
-
-                    if 'RADIO_USED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('RADIO_USED', self.radio_lf)
 
                     # DUT Configuration
                     if 'DUT_NAME' in self.test_dict[test]['args']:
