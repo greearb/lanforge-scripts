@@ -14,15 +14,15 @@ import time
 import argparse
 import paramiko
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
-realm = importlib.import_module("lanforge-scripts.py-json.realm")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 PortUtils = realm.PortUtils
-lf_report = importlib.import_module("lanforge-scripts.py-scripts.lf_report")
-lf_graph = importlib.import_module("lanforge-scripts.py-scripts.lf_graph")
+lf_report = importlib.import_module("py-scripts.lf_report")
+lf_graph = importlib.import_module("py-scripts.lf_graph")
 
 
 class HttpDownload(Realm):

@@ -7,10 +7,10 @@ import sys
 import os
 import importlib
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lf_cv_base = importlib.import_module("lanforge-scripts.py-json.lf_cv_base")
+lf_cv_base = importlib.import_module("py-json.lf_cv_base")
 ChamberViewBase = lf_cv_base.ChamberViewBase
 
 

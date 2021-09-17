@@ -4,7 +4,7 @@
     PURPOSE:    THis script will sniff a Radio after changing the Radio settings.
 
                 Radio settings: channel radio mode  AUTO, 802.11a, 802.11b, etc... refer
-                                        lanforge-scripts/py-json/LANforge/set_wifi_radio.py for different modes
+                                        py-json/LANforge/set_wifi_radio.py for different modes
 
     EXAMPLE:    python3 lf_sniff_radio.py
                         --mgr localhost
@@ -21,11 +21,11 @@ import importlib
 import argparse
 import time
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
-realm = importlib.import_module("lanforge-scripts.py-json.realm")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 

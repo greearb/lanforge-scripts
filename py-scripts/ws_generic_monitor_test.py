@@ -9,12 +9,12 @@ import os
 import importlib
 import json
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-ws_generic_monitor = importlib.import_module("lanforge-scripts.py-json.ws_generic_monitor")
+ws_generic_monitor = importlib.import_module("py-json.ws_generic_monitor")
 WS_Listener = ws_generic_monitor.WS_Listener
-realm = importlib.import_module("lanforge-scripts.py-json.realm")
+realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 reference = "test_ipv4_connection.py"

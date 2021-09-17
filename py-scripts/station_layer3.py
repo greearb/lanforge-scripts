@@ -9,13 +9,13 @@ import importlib
 import argparse
 import time
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
-lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
-realm = importlib.import_module("lanforge-scripts.py-json.realm")
+realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 

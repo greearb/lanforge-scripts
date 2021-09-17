@@ -5,11 +5,11 @@ import time
 from pprint import pprint
 from random import randint
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
-base_profile = importlib.import_module("lanforge-scripts.py-json.base_profile")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+base_profile = importlib.import_module("py-json.base_profile")
 BaseProfile = base_profile.BaseProfile
 
 

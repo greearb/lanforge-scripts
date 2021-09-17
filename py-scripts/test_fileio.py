@@ -38,15 +38,15 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
-add_file_endp = importlib.import_module("lanforge-scripts.py-json.LANforge.add_file_endp")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+add_file_endp = importlib.import_module("py-json.LANforge.add_file_endp")
 fe_fstype = add_file_endp.fe_fstype
-realm = importlib.import_module("lanforge-scripts.py-json.realm")
+realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 

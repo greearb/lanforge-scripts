@@ -11,19 +11,19 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
-csv_to_influx = importlib.import_module("lanforge-scripts.py-scripts.csv_to_influx")
+csv_to_influx = importlib.import_module("py-scripts.csv_to_influx")
 CSVtoInflux = csv_to_influx.CSVtoInflux
 influx_add_parser_args = csv_to_influx.influx_add_parser_args
-grafana_profile = importlib.import_module("lanforge-scripts.py-scripts.grafana_profile")
+grafana_profile = importlib.import_module("py-scripts.grafana_profile")
 UseGrafana = grafana_profile.UseGrafana
-influx = importlib.import_module("lanforge-scripts.py-scripts.influx")
+influx = importlib.import_module("py-scripts.influx")
 RecordInflux = influx.RecordInflux
-InfluxRequest = importlib.import_module("lanforge-scripts.py-dashboard.InfluxRequest")
+InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")
 influx_add_parser_args = InfluxRequest.influx_add_parser_args
 
 

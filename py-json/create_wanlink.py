@@ -15,11 +15,11 @@ from time import sleep
 from urllib import error
 import pprint
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-LFRequest = importlib.import_module("lanforge-scripts.py-json.LANforge.LFRequest")
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 j_printer = pprint.PrettyPrinter(indent=2)
 # todo: this needs to change

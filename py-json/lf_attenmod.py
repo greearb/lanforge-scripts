@@ -4,13 +4,13 @@ import os
 import importlib
 import time
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
-LFRequest = importlib.import_module("lanforge-scripts.py-json.LANforge.LFRequest")
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 
 class ATTENUATORProfile(LFCliBase):

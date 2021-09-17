@@ -6,12 +6,12 @@ from pprint import pprint
 import pprint
 import time
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-port_utils = importlib.import_module("lanforge-scripts.py-json.port_utils")
+port_utils = importlib.import_module("py-json.port_utils")
 PortUtils = port_utils.PortUtils
-lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 
 

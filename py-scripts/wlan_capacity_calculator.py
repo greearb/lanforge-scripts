@@ -11,10 +11,10 @@ import importlib
 import argparse
 from pip._internal.utils import logging
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-wlan_theoretical_sta = importlib.import_module("lanforge-scripts.py-json.wlan_theoretical_sta")
+wlan_theoretical_sta = importlib.import_module("py-json.wlan_theoretical_sta")
 
 
 def main():

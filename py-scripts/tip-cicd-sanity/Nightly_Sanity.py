@@ -41,23 +41,22 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../../")))
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../../")))
 
-sta_connect2 = importlib.import_module("lanforge-scripts.py-scripts.sta_connect2")
+sta_connect2 = importlib.import_module("py-scripts.sta_connect2")
 StaConnect2 = sta_connect2.StaConnect2
-testrail_api = importlib.import_module("lanforge-scripts.py-scripts.tip-cicd-sanity.testrail_api")
+testrail_api = importlib.import_module("py-scripts.tip-cicd-sanity.testrail_api")
 APIClient = testrail_api.APIClient
-eap_connect = importlib.import_module("lanforge-scripts.py-scripts.tip-cicd-sanity.eap_connect")
+eap_connect = importlib.import_module("py-scripts.tip-cicd-sanity.eap_connect")
 EAPConnect = eap_connect.EAPConnect
-cloudsdk = importlib.import_module("lanforge-scripts.py-scripts.tip-cicd-sanity.cloudsdk")
+cloudsdk = importlib.import_module("py-scripts.tip-cicd-sanity.cloudsdk")
 CloudSDK = cloudsdk.CloudSDK
-ap_ssh = importlib.import_module("lanforge-scripts.py-scripts.tip-cicd-sanity.ap_ssh")
+ap_ssh = importlib.import_module("py-scripts.tip-cicd-sanity.ap_ssh")
 ssh_cli_active_fw = ap_ssh.ssh_cli_active_fw
 iwinfo_status = ap_ssh.iwinfo_status
 
 ##Import info for lab setup and APs under test
-lab_ap_info = importlib.import_module("lanforge-scripts.py-scripts.tip-cicd-sanity.lab_ap_info")
+lab_ap_info = importlib.import_module("py-scripts.tip-cicd-sanity.lab_ap_info")
 equipment_id_dict = lab_ap_info.equipment_id_dict
 profile_info_dict = lab_ap_info.profile_info_dict
 cloud_sdk_models = lab_ap_info.cloud_sdk_models

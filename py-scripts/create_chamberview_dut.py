@@ -54,14 +54,14 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 # from cv_dut_profile import cv_dut as dut
-cv_dut_profile = importlib.import_module("lanforge-scripts.py-json.cv_dut_profile")
+cv_dut_profile = importlib.import_module("py-json.cv_dut_profile")
 dut = cv_dut_profile.cv_dut
 # from cv_test_manager import cv_test as cvtest
-cv_test_manager = importlib.import_module("lanforge-scripts.py-json.cv_test_manager")
+cv_test_manager = importlib.import_module("py-json.cv_test_manager")
 cvtest = cv_test_manager.cv_test
 
 

@@ -44,13 +44,13 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
-realm = importlib.import_module("lanforge-scripts.py-json.realm")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 
@@ -343,7 +343,7 @@ python3 ./test_generic.py
                                     sta_list=station_list,
                                     #port_mgr_cols=port_mgr_cols,
                                     report_file=report_f,
-                                    systeminfopath=systeminfopath,
+                                systeminfopath=systeminfopath,
                                     duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
                                     monitor_interval_ms=monitor_interval,
                                     created_cx=genconnections,

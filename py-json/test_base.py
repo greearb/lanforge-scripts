@@ -3,10 +3,10 @@ import sys
 import os
 import importlib
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfdata = importlib.import_module("lanforge-scripts.py-json.lfdata")
+lfdata = importlib.import_module("py-json.lfdata")
 LFDataCollection = lfdata.LFDataCollection
 
 

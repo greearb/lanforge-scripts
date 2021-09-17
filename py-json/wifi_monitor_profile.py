@@ -6,14 +6,14 @@ import pprint
 from pprint import pprint
 import time
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
-add_monitor = importlib.import_module("lanforge-scripts.py-json.LANforge.add_monitor")
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
-set_wifi_radio = importlib.import_module("lanforge-scripts.py-json.LANforge.set_wifi_radio")
+add_monitor = importlib.import_module("py-json.LANforge.add_monitor")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+set_wifi_radio = importlib.import_module("py-json.LANforge.set_wifi_radio")
 set_radio_mode = set_wifi_radio.set_radio_mode
 
 

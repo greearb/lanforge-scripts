@@ -18,16 +18,16 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
-lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
-realm = importlib.import_module("lanforge-scripts.py-json.realm")
+realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-lf_report = importlib.import_module("lanforge-scripts.py-scripts.lf_report")
-lf_graph = importlib.import_module("lanforge-scripts.py-scripts.lf_graph")
+lf_report = importlib.import_module("py-scripts.lf_report")
+lf_graph = importlib.import_module("py-scripts.lf_graph")
 
 
 class FtpTest(LFCliBase):

@@ -21,11 +21,10 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-GrafanaRequest = importlib.import_module("lanforge-scripts.py-dashboard.GrafanaRequest")
-InfluxRequest = importlib.import_module("lanforge-scripts.py-dashboard.InfluxRequest")
+GrafanaRequest = importlib.import_module("py-dashboard.GrafanaRequest")
+InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")
 RecordInflux = InfluxRequest.RecordInflux
 
 

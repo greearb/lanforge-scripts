@@ -14,11 +14,11 @@ import random
 import string
 import datetime
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfdata = importlib.import_module("lanforge-scripts.py-json.lfdata")
-base_profile = importlib.import_module("lanforge-scripts.py-json.base_profile")
+lfdata = importlib.import_module("py-json.lfdata")
+base_profile = importlib.import_module("py-json.base_profile")
 BaseProfile = base_profile.BaseProfile
 
 

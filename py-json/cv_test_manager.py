@@ -15,16 +15,16 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
-realm = importlib.import_module("lanforge-scripts.py-json.realm")
+realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-cv_test_reports = importlib.import_module("lanforge-scripts.py-json.cv_test_reports")
+cv_test_reports = importlib.import_module("py-json.cv_test_reports")
 lf_rpt = cv_test_reports.lanforge_reports
-InfluxRequest = importlib.import_module("lanforge-scripts.py-dashboard.InfluxRequest")
+InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")
 influx_add_parser_args = InfluxRequest.influx_add_parser_args
 RecordInflux = InfluxRequest.RecordInflux
 

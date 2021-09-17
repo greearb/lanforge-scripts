@@ -17,49 +17,49 @@ from pprint import pprint
 
 # ---- ---- ---- ---- LANforge Base Imports ---- ---- ---- ----
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-LANforge = importlib.import_module("lanforge-scripts.py-json.LANforge")
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
-lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+LANforge = importlib.import_module("py-json.LANforge")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 
 # ---- ---- ---- ---- Profile Imports ---- ---- ---- ----
 
-l3_cxprofile = importlib.import_module("lanforge-scripts.py-json.l3_cxprofile")
+l3_cxprofile = importlib.import_module("py-json.l3_cxprofile")
 L3CXProfile = l3_cxprofile.L3CXProfile
-l3_cxprofile2 = importlib.import_module("lanforge-scripts.py-json.l3_cxprofile2")
+l3_cxprofile2 = importlib.import_module("py-json.l3_cxprofile2")
 L3CXProfile2 = l3_cxprofile2.L3CXProfile2
-l4_cxprofile = importlib.import_module("lanforge-scripts.py-json.l4_cxprofile")
+l4_cxprofile = importlib.import_module("py-json.l4_cxprofile")
 L4CXProfile = l4_cxprofile.L4CXProfile
-lf_attenmod = importlib.import_module("lanforge-scripts.py-json.lf_attenmod")
+lf_attenmod = importlib.import_module("py-json.lf_attenmod")
 ATTENUATORProfile = lf_attenmod.ATTENUATORProfile
-multicast_profile = importlib.import_module("lanforge-scripts.py-json.multicast_profile")
+multicast_profile = importlib.import_module("py-json.multicast_profile")
 MULTICASTProfile = multicast_profile.MULTICASTProfile
-http_profile = importlib.import_module("lanforge-scripts.py-json.http_profile")
+http_profile = importlib.import_module("py-json.http_profile")
 HTTPProfile = http_profile.HTTPProfile
-station_profile = importlib.import_module("lanforge-scripts.py-json.station_profile")
+station_profile = importlib.import_module("py-json.station_profile")
 StationProfile = station_profile.StationProfile
-fio_endp_profile = importlib.import_module("lanforge-scripts.py-json.fio_endp_profile")
+fio_endp_profile = importlib.import_module("py-json.fio_endp_profile")
 FIOEndpProfile = fio_endp_profile.FIOEndpProfile
-test_group_profile = importlib.import_module("lanforge-scripts.py-json.test_group_profile")
+test_group_profile = importlib.import_module("py-json.test_group_profile")
 TestGroupProfile = test_group_profile.TestGroupProfile
-dut_profile = importlib.import_module("lanforge-scripts.py-json.dut_profile")
+dut_profile = importlib.import_module("py-json.dut_profile")
 DUTProfile = dut_profile.DUTProfile
-vap_profile = importlib.import_module("lanforge-scripts.py-json.vap_profile")
+vap_profile = importlib.import_module("py-json.vap_profile")
 VAPProfile = vap_profile.VAPProfile
-mac_vlan_profile = importlib.import_module("lanforge-scripts.py-json.mac_vlan_profile")
+mac_vlan_profile = importlib.import_module("py-json.mac_vlan_profile")
 MACVLANProfile = mac_vlan_profile.MACVLANProfile
-wifi_monitor_profile = importlib.import_module("lanforge-scripts.py-json.wifi_monitor_profile")
+wifi_monitor_profile = importlib.import_module("py-json.wifi_monitor_profile")
 WifiMonitor = wifi_monitor_profile.WifiMonitor
-gen_cxprofile = importlib.import_module("lanforge-scripts.py-json.gen_cxprofile")
+gen_cxprofile = importlib.import_module("py-json.gen_cxprofile")
 GenCXProfile = gen_cxprofile.GenCXProfile
-qvlan_profile = importlib.import_module("lanforge-scripts.py-json.qvlan_profile")
+qvlan_profile = importlib.import_module("py-json.qvlan_profile")
 QVLANProfile = qvlan_profile.QVLANProfile
-port_utils = importlib.import_module("lanforge-scripts.py-json.port_utils")
+port_utils = importlib.import_module("py-json.port_utils")
 PortUtils = port_utils.PortUtils
-lfdata = importlib.import_module("lanforge-scripts.py-json.lfdata")
+lfdata = importlib.import_module("py-json.lfdata")
 LFDataCollection = lfdata.LFDataCollection
 
 

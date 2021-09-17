@@ -20,10 +20,10 @@ if sys.version_info[0] != 3:
     exit(1)
 
 if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
 if 'py-dashboard' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
+sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
 
 import argparse
 from LANforge import LFUtils

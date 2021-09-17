@@ -6,26 +6,26 @@ import pprint
 from pprint import pprint
 import time
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
-LFRequest = importlib.import_module("lanforge-scripts.py-json.LANforge.LFRequest")
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
-set_port = importlib.import_module("lanforge-scripts.py-json.LANforge.set_port")
-add_sta = importlib.import_module("lanforge-scripts.py-json.LANforge.add_sta")
+LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+set_port = importlib.import_module("py-json.LANforge.set_port")
+add_sta = importlib.import_module("py-json.LANforge.add_sta")
 
 # Uncomment below to include autogen library.
 # if os.environ.get("LF_USE_AUTOGEN") == 1:
-#         lf_json_autogen = importlib.import_module("lanforge-scripts.py-json.LANforge.lf_json_autogen")
+#         lf_json_autogen = importlib.import_module("py-json.LANforge.lf_json_autogen")
 #         LFJsonPost = jf_json_autogen.LFJsonPost
 
 # use the station profile to set the combination of features you want on your stations
 # once this combination is configured, build the stations with the build(resource, radio, number) call
 # build() calls will fail if the station already exists. Please survey and clean your resource
 # before calling build()
-#         realm = importlib.import_module("lanforge-scripts.py-json.realm")
+#         realm = importlib.import_module("py-json.realm")
 #         Realm = realm.Realm
 #         survey = Realm.findStations(resource=1)
 #         Realm.removeStations(survey)

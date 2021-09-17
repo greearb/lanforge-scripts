@@ -70,20 +70,20 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lf_wifi_capacity_test = importlib.import_module("lanforge-scripts.py-scripts.lf_wifi_capacity_test")
+lf_wifi_capacity_test = importlib.import_module("py-scripts.lf_wifi_capacity_test")
 WiFiCapacityTest = lf_wifi_capacity_test.WiFiCapacityTest
-cv_test_manager = importlib.import_module("lanforge-scripts.py-scripts.cv_test_manager")
-create_chamberview = importlib.import_module("lanforge-scripts.py-scripts.create_chamberview")
+cv_test_manager = importlib.import_module("py-scripts.cv_test_manager")
+create_chamberview = importlib.import_module("py-scripts.create_chamberview")
 CreateChamberview = create_chamberview.CreateChamberview
 DUT = create_chamberview.DUT
-lf_dataplane_test = importlib.import_module("lanforge-scripts.py-scripts.lf_dataplane_test")
+lf_dataplane_test = importlib.import_module("py-scripts.lf_dataplane_test")
 DataplaneTest = lf_dataplane_test.DataplaneTest
-grafana_profile = importlib.import_module("lanforge-scripts.py-scripts.grafana_profile")
+grafana_profile = importlib.import_module("py-scripts.grafana_profile")
 UseGrafana = grafana_profile.UseGrafana
-lf_ap_auto_test = importlib.import_module("lanforge-scripts.py-scripts.lf_ap_auto_test")
+lf_ap_auto_test = importlib.import_module("py-scripts.lf_ap_auto_test")
 
 
 def main():

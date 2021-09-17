@@ -46,7 +46,7 @@ if sys.version_info[0] != 3:
        print("This script requires Python 3")
        exit(1)
 if 'py-json' not in sys.path:
-       sys.path.append('../py-json')
+   sys.path.append('../py-json')
 
 from LANforge.LFUtils import *
 # if you lack __init__.py in this directory you will not find sta_connect module#

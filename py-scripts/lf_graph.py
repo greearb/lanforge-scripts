@@ -28,10 +28,10 @@ import pdfkit
 import math
 from matplotlib.colors import ListedColormap
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lf_csv = importlib.import_module("lanforge-scripts.py-scripts.lf_csv")
+lf_csv = importlib.import_module("py-scripts.lf_csv")
 lf_csv = lf_csv.lf_csv
 
 # internal candela references included during intial phases, to be deleted at future date

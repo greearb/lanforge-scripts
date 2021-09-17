@@ -6,12 +6,12 @@ import pprint
 import time
 from pprint import pprint
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-realm = importlib.import_module("lanforge-scripts.py-json.realm")
+realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 
 localrealm = Realm("localhost", 8080, True)

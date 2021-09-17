@@ -18,13 +18,13 @@ import threading
 import re
 import json
 
-if 'lanforge-scripts' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
-LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")
-realm = importlib.import_module("lanforge-scripts.py-json.realm")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+realm = importlib.import_module("py-json.realm")
 PortUtils = realm.PortUtils
 
 webconsole_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
