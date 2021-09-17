@@ -1355,9 +1355,9 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
     # Create report, when running with the test framework (lf_check.py) results need to be in the same directory
     if local_lf_report_dir != "":
-        report = lf_report(_path=local_lf_report_dir, _results_dir_name = "test_l3_longevity",_output_html="test_l3_longevity.html",_output_pdf="test_l3_longevity.pdf")
+        report = lf_report.lf_report(_path=local_lf_report_dir, _results_dir_name = "test_l3_longevity",_output_html="test_l3_longevity.html",_output_pdf="test_l3_longevity.pdf")
     else:
-        report = lf_report(_results_dir_name = "test_l3_longevity",_output_html="test_l3_longevity.html",_output_pdf="test_l3_longevity.pdf")
+        report = lf_report.lf_report(_results_dir_name = "test_l3_longevity",_output_html="test_l3_longevity.html",_output_pdf="test_l3_longevity.pdf")
 
 
 
