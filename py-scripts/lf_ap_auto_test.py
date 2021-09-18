@@ -189,6 +189,7 @@ class ApAutoTest(cvtest):
                  lf_port=8080,
                  lf_user="lanforge",
                  lf_password="lanforge",
+                 ssh_port=22,
                  local_lf_report_dir="",
                  instance_name="ap_auto_instance",
                  config_name="ap_auto_config",
@@ -233,6 +234,7 @@ class ApAutoTest(cvtest):
         self.raw_lines = raw_lines
         self.raw_lines_file = raw_lines_file
         self.sets = sets
+        self.ssh_port = ssh_port
         self.graph_groups = graph_groups
         self.local_lf_report_dir = local_lf_report_dir
 
@@ -287,7 +289,8 @@ class ApAutoTest(cvtest):
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
-                                 cv_cmds, graph_groups_file=self.graph_groups, local_lf_report_dir=self.local_lf_report_dir)
+                                 cv_cmds, ssh_port=self.ssh_port, local_lf_report_dir=self.local_lf_report_dir,
+                                 graph_groups_file=self.graph_groups)
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
