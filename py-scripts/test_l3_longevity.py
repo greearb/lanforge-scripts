@@ -574,7 +574,7 @@ class L3VariableTime(Realm):
             ss.sendline(str(self.ap_chanim_cmd_5g))
             ss.expect([pexpect.TIMEOUT], timeout=1) # do not detete line, waits for output
             ap_chanim_stats_5g = ss.before.decode('utf-8','ignore')
-            print("ap_stats {}".format(ap_chanim_stats_5g))
+            print("read_ap_chanim_stats_5g {}".format(ap_chanim_stats_5g))
 
         except:
             print("WARNING unable to read AP")
@@ -591,7 +591,7 @@ class L3VariableTime(Realm):
             ss.sendline(str(self.ap_chanim_cmd_2g))
             ss.expect([pexpect.TIMEOUT], timeout=1) # do not detete line, waits for output
             ap_chanim_stats_2g = ss.before.decode('utf-8','ignore')
-            print("ap_stats {}".format(ap_chanim_stats_2g))
+            print("read_ap_chanim_stats_2g {}".format(ap_chanim_stats_2g))
 
         except:
             print("WARNING unable to read AP")
@@ -738,7 +738,8 @@ class L3VariableTime(Realm):
                                 "version: 3\n",
                                 "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
                                 #`"0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
-                                "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
+                                '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
+                                #"0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
 
                             else:
                                 # read from the AP
@@ -749,7 +750,7 @@ class L3VariableTime(Realm):
                             print("From AP stats: ap_stats_5g_rows {}".format(ap_stats_5g_rows))
 
                             ap_chanim_stats_rows_5g = ap_chanim_stats_5g.splitlines()
-                            print("From AP chanim: ap_chanim_stats_rows {}".format(ap_chanim_stats_rows_5g))
+                            print("From AP chanim: ap_chanim_stats_rows_5g {}".format(ap_chanim_stats_rows_5g))
                             channel_utilization = 0
     
                             # Query all of our ports
@@ -802,18 +803,25 @@ class L3VariableTime(Realm):
                                         for row in ap_chanim_stats_rows_5g:
                                             split_row = row.split()
                                             if xtop_reported:
+                                                print("xtop_reported 5g row: {row}".format(row=row))
+                                                print("xtop_reported 5g split_row: {split_row}".format(split_row=split_row))
                                                 try:
                                                     xtop = split_row[7]
-                                                    print("xtop 5g {xtop}".format(xtop=xtop))
-                                                    channel_utilization = float(100) - float(xtop)
-                                                    print("channel_utilization {utilization}".format(utilization=channel_utilization))
+                                                    print("5g xtop {xtop}".format(xtop=xtop))
                                                 except:
-                                                    print("detected chanspec with reading chanim_stats, failed reading xtop")
+                                                    print("5g detected chanspec with reading chanim_stats, exception reading xtop")
+
+                                                try:                                                    
+                                                    channel_utilization = float(100) - float(xtop)
+                                                    print("5g channel_utilization {utilization}".format(utilization=channel_utilization))
+                                                except:
+                                                    print("5g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
                                                 # should be only one channel utilization    
                                                 break                                                
                                             else:
                                                 try:
                                                     if split_row[0].lower() == 'chanspec':
+                                                        print("5g chanspec found xtop_reported = True")
                                                         xtop_reported = True
                                                 except:
                                                     print("Error reading xtop")
@@ -843,7 +851,8 @@ class L3VariableTime(Realm):
                                 "version: 3\n",
                                 "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
                                 #"0xe06a  62      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
-                                "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
+                                '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
+                                #"0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
                             else:
                                 # read from the AP
                                 ap_stats_2g = self.read_ap_stats_2g()
@@ -906,18 +915,25 @@ class L3VariableTime(Realm):
                                         for row in ap_chanim_stats_rows_2g:
                                             split_row = row.split()
                                             if xtop_reported:
+                                                print("xtop_reported 2g row: {row}".format(row=row))
+                                                print("xtop_reported 2g split_row: {split_row}".format(split_row=split_row))
                                                 try:
                                                     xtop = split_row[7]
-                                                    print("xtop 2g {xtop}".format(xtop=xtop))
-                                                    channel_utilization = float(100) - float(xtop)
-                                                    print("channel_utilization 2g {utilization}".format(utilization=channel_utilization))
+                                                    print("2g xtop {xtop}".format(xtop=xtop))
                                                 except:
-                                                    print("detected chanspec with reading chanim_stats, failed reading xtop")
+                                                    print("2g detected chanspec with reading chanim_stats, exception reading xtop")
+
+                                                try:
+                                                    channel_utilization = float(100) - float(xtop)
+                                                    print("2g channel_utilization {utilization}".format(utilization=channel_utilization))
+                                                except:
+                                                    print("2g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
                                                 # should be only one channel utilization    
                                                 break                                                
                                             else:
                                                 try:
                                                     if split_row[0].lower() == 'chanspec':
+                                                        print("2g chanspec found xtop_reported = True")
                                                         xtop_reported = True
                                                 except:
                                                     print("Error reading xtop")
@@ -958,10 +974,16 @@ class L3VariableTime(Realm):
 
                     # At end of test if requested store upload and download stats
                     if self.ap_scheduler_stats:
-                        # get the (UL) Upload scheduler statistics
-                        self.ap_umsched += self.ap_custom_cmd('wl -i wl1 dump umsched')
-                        # get the (DL) Download schduler staticstics
-                        self.ap_msched += self.ap_custom_cmd('wl -i wl1 dump msched')
+                        # get the (UL) Upload 5g scheduler statistics
+                        self.ap_5g_umsched += self.ap_custom_cmd('wl -i wl1 dump umsched')
+                        # get the (DL) Download 5g schduler staticstics
+                        self.ap_5g_msched += self.ap_custom_cmd('wl -i wl1 dump msched')
+
+                        # get the (UL) Upload 24g scheduler statistics
+                        self.ap_24g_umsched += self.ap_custom_cmd('wl -i wl0 dump umsched')
+                        # get the (DL) Download 24g schduler staticstics
+                        self.ap_24g_msched += self.ap_custom_cmd('wl -i wl0 dump msched')
+
 
                     if self.ap_ofdma_stats:
                         # provide OFDMA stats 5GHz

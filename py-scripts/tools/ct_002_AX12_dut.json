@@ -15,12 +15,12 @@
         "dut_bssid_2g": "94:a6:7e:54:d4:31",
         "dut_bssid_5g": "94:a6:7e:54:d4:33",
         "dut_sw": "3.0.0.4.386_44266",
-        "ssid_5g_used": "NETGEAR59",
-        "ssid_5g_pw_used": "crispynest798",
-        "security_5g_used": "wpa2",
-        "ssid_2g_used": "NETGEAR59-5G",
+        "ssid_2g_used": "NETGEAR59",
         "ssid_2g_pw_used": "crispynest798",
-        "security_2g_used": "wpa2"
+        "security_2g_used": "wpa2",
+        "ssid_5g_used": "NETGEAR59-5G",
+        "ssid_5g_pw_used": "crispynest798",
+        "security_5g_used": "wpa2"
     }
 }
 			
