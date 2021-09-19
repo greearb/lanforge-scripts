@@ -3,14 +3,22 @@
 '''
 NAME: lf_check.py 
 
-PURPOSE: lf_check.py run tests based on test rig json input and test command line inputs 
+PURPOSE: lf_check.py run tests based on test rig json input, test dut json input,  and test command line inputs 
 
 EXAMPLE: 
-lf_check.py --json_rig <test rig json> --json_test <tests json> --test_suite <suite_name> --path <path to results and db, db table>
-lf_check.py --json_rig <test rig json> --json_test <tests json> --test_suite <suite_name> --path <path to results>  --production
+
+./lf_check.py --json_rig <test rig json> --json_dut <dut_json> --json_test <tests json> --test_suite <suite_name> --path <path to results and db, db table>
+./lf_check.py --json_rig <test rig json> --json_dut <dut_json> --json_test <tests json> --test_suite <suite_name> --path <path to results>  --production
+
+./lf_check.py  --json_rig ct_us_001_rig.json --json_dut ct_001_AX88U_dut.json  --json_test ct_us_001_tests.json  --suite "suite_wc_dp"  --path '/home/lanforge/html-reports/ct-us-001'
+
+
+rig is the LANforge
+dut is the device under test
+NOTE : if all json data (rig,dut,tests)  in same json file pass same json in for all 3 inputs
 
 NOTES:
-Create two json file one for the description of the test-rig and other for the description of the tests
+Create three json files: 1. discribes rig (lanforge), dut (device under test) and other for the description of the tests
 
 Starting LANforge:
     On local or remote system: /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR 
@@ -1291,7 +1299,8 @@ Summary :
 running scripts 
 
 Example :  
-./lf_check.py --json_rig ct_us_001.json --json_test tests.json --suite suite_test
+./lf_check.py --json_rig rig.json --json_dut dut.json --json_test tests.json --suite suite_test
+note if all json data (rig,dut,tests)  in same json file pass same json in for all 3 inputs
 ---------
             ''')
 

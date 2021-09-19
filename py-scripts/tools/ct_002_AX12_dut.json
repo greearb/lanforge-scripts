@@ -6,7 +6,9 @@
             "from the json file. so LF_MGR_IP in the test below is replaced by the json lf_mgr_ip",
             "The replacement is loosely coupled so the upper and lower case convention is used",
             "to identify replaced strings in the lf_check.py code.",
-            "The dut related configuration is contained in this file"
+            "The dut related configuration is contained in this file",
+            "NOTE: create_chamberview_dut starts ssid-idx at 0 ",
+            "NOTE: create_chamberview starts counting at Radio-1 which is dut ssid-idx 0"
         ]  
     },
     "test_dut":{
