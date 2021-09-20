@@ -1,5 +1,5 @@
-""" ftp_test.py will verify that N clients connected on specified band and can simultaneously download/upload some amount of file from FTP server and measuring the time taken by client to download/upload the file.
-    cli- python3 ftp_test.py --mgr localhost --mgr_port 8080 --upstream_port eth1 --ssid FTP --security open --passwd BLANK --ap_name WAC505 --ap_ip 192.168.213.90 --bands Both --directions Download --twog_radio wiphy1 --fiveg_radio wiphy0 --file_size 2MB --num_stations 40 --Both_duration 1 --traffic_duration 2 --ssh_port 22_
+""" lf_ftp.py will verify that N clients connected on specified band and can simultaneously download/upload some amount of file from FTP server and measuring the time taken by client to download/upload the file.
+    cli- python3 lf_ftp.py --mgr localhost --mgr_port 8080 --upstream_port eth1 --ssid FTP --security open --passwd BLANK --ap_name WAC505 --ap_ip 192.168.213.90 --bands Both --directions Download --twog_radio wiphy1 --fiveg_radio wiphy0 --file_size 2MB --num_stations 40 --Both_duration 1 --traffic_duration 2 --ssh_port 22_
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 """

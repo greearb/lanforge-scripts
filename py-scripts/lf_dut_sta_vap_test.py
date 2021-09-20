@@ -370,7 +370,7 @@ def main():
       # Password (if Security is not Open)
       if (args.password is not None):
          password = args.password
-      if (args.password is 'open'):
+      if (args.password == 'open'):
          password = "[Blank]"
       if (args.password is None):
          password = "[Blank]"
@@ -397,9 +397,9 @@ def main():
 
       if (args.min_mbps is not None):
          min_bps = int(args.min_mbps)*1000000
-      if (args.max_mbps is not None and args.max_mbps is not "same"):
+      if (args.max_mbps is not None and args.max_mbps != "same"):
          max_bps = int(args.max_mbps)*1000000
-      if (args.max_mbps is not None and args.max_mbps is "same"):
+      if (args.max_mbps is not None and args.max_mbps == "same"):
          max_bps = args.min_mbps
       if (args.duration is not None):
          duration = (args.duration * 60)/5

@@ -193,8 +193,10 @@ if [[ $MGRLEN -gt 0 ]]; then
           --influx_tag testbed Ferndale-01"
       #./lf_dfs_test
       #./lf_dut_sta_vap_test
-      #./lf_ftp
-      #./lf_ftp_test
+      #"./lf_ftp.py --mgr $MGR --mgr_port 8080 --upstream_port $UPSTREAM --ssid $SSID --security $SECURITY --passwd $PASSWD_USED \
+      # --ap_name WAC505 --ap_ip 192.168.213.90 --bands Both --directions Download --twog_radio wiphy1 --fiveg_radio wiphy0 --file_size 2MB --num_stations 40 --Both_duration 1 --traffic_duration 2 --ssh_port 22_"
+      "./lf_ftp_test.py --mgr $MGR --ssid $SSID --passwd $PASSWD_USED --security $SECURITY --bands 5G --direction Download \
+           --file_size 2MB --num_stations 2"
       #./lf_graph
       #./lf_influx_db
       #./lf_mesh_test
