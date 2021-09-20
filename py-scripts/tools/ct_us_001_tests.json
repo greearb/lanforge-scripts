@@ -128,6 +128,18 @@
                     " --set DUT_SET_NAME"
                 ]
             },
+            "CT-US-001_create_chamberview_dut_for_ATH10K":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_2G_USED security=SECURITY_2G_USED password=SSID_2G_PW_USED bssid=DUT_BSSID_2G'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                ]
+            },
             "CT-US-001_create_chamberview_ATH10K(9984)_sta1":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -136,7 +148,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ct-us-001-ATH10K-scenario ",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
@@ -178,7 +190,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ct-us-001-AX210-scenario ",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: DUT_NAME Radio-2' NA wiphy3,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AX 1 'DUT: DUT_NAME Radio-2' NA wiphy3,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\" "                    
                 ]
             },    
@@ -196,6 +208,30 @@
                     " --set DUT_SET_NAME"
                 ]
             },
+            "CT-US-001_create_chamberview_dut_for_AX210_dp":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    "--lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_2G_USED security=SECURITY_2G_USED password=SSID_2G_PW_USED bssid=DUT_BSSID_2G'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                ]
+            },
+            "CT-US-001_create_chamberview_wiphy3_AX210_sta1_dp":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario ct-us-001-AX210-scenario ",
+                    " --raw_line \"profile_link 1.1 STA-AX 1 'DUT: DUT_NAME Radio-2' NA wiphy3,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\" "                    
+                ]
+            },    
             "CT-US-001_dataplane_wiphy3_AX210_sta1":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -252,6 +288,18 @@
                     " --set DUT_SET_NAME"
                 ]
             },
+            "CT-US-001_create_chamberview_dut_for_mt7915e_dp":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_2G_USED security=SECURITY_2G_USED password=SSID_2G_PW_USED bssid=DUT_BSSID_2G'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                ]
+            },
             "CT-US-001_create_chamberview_mt7915e_sta1":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -282,7 +330,7 @@
                 ]
             },
             "CT-US-001_create_chamberview_dut_2":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
                 "args":"",
@@ -293,7 +341,7 @@
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
             "CT-US-001_create_chamberview_ap":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
                 "args":"",
@@ -306,7 +354,7 @@
                 ]
             },
             "CT-US-001_lf_ap_auto_test": {
-                "enabled": "TRUE",
+                "enabled": "FALSE",
                 "command": "lf_ap_auto_test.py",
                 "timeout":"25200",
                 "iterations":"1",
