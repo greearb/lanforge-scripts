@@ -21,20 +21,20 @@
         "upstream_port":"1.1.eth2",
         "test_timeout": 600,
         "load_blank_db": false,
-        "load_factory_default_db": true,
+        "load_factory_default_db": false,
         "load_custom_db": false,
         "custom_db": "DFLT_ETH1_GEN",
         "email_list_production": "konikofi@candelatech.com,greearb@candelatech.com,,jreynolds@candelatech.com,matthew@candelatech.com,iain.davidson@candelatech.com,erin.grimes@candelatech.com,logan.lipke@candelatech.com,dipti.dhond@candelatech.com,chuck.rekiere@candelatech.com",
-        "host_ip_production": "192.168.100.153",
+        "host_ip_production": "192.168.95.6",
         "email_list_test": "chuck.rekiere@candelatech.com",
-        "host_ip_test": "192.168.100.153",
+        "host_ip_test": "192.168.95.6",
         "email_title_txt": "Lanforge QA Testing CT-US-001",
         "email_txt": "Lanforge QA Testing CT-US-001 "
     },
     "test_network":{
-        "http_test_ip": "10.40.0.10",
-        "ftp_test_ip": "10.40.0.10",
-        "test_ip": "192.168.0.104"
+        "http_test_ip": "192.168.50.1",
+        "ftp_test_ip": "192.168.50.1",
+        "test_ip": "192.168.50.1"
     },
     "radio_dict":{
         "1.1.wiphy0":{"KEY":"1.1.wiphy0","RADIO":"1.1.wiphy0","DRIVER":"ath10k(9984)","CAPABILITIES":"802.11bgn-AC","MAX_STA":"128","MAX_VAP":"24","MAX_VIFS":"64"},
