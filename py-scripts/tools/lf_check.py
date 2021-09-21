@@ -225,35 +225,6 @@ class lf_check():
         self.database_qa = ""
         self.table_qa = ""
 
-        # database configuration  # database
-        self.influx_database_json = ""
-        self.influx_database_config = "True"  # default to False once testing done
-        self.influx_database_host = "192.168.100.201"  # "c7-grafana.candelatech.com" # influx and grafana have the same host "192.168.100.201"
-        self.influx_database_port = "8086"
-        self.influx_database_token = "-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ=="
-        self.influx_database_org = "Candela"
-        self.influx_database_bucket = "lanforge_qa_testing"
-        self.influx_database_tag = 'testbed CT-US-001'  # the test_rig needs to match
-
-        # grafana configuration  #dashboard
-        self.dashboard_json_grafana = ""
-        self.dashboard_config_grafana = "True"  # default to False once testing done
-        self.dashboard_host_grafana = "192.168.100.201"  # "c7-grafana.candelatech.com" # 192.168.100.201
-        self.dashboard_port_grafana = "3000"
-        self.dashboard_token_grafana = "eyJrIjoiS1NGRU8xcTVBQW9lUmlTM2dNRFpqNjFqV05MZkM0dzciLCJuIjoibWF0dGhldyIsImlkIjoxfQ=="
-
-        # ghost configuration 
-        self.blog_json_ghost = ""
-        self.blog_config_ghost = False
-        self.blog_host_ghost = "192.168.100.153"
-        self.blog_port_ghost = "2368"
-        self.blog_token_ghost = "60df4b0175953f400cd30650:d50e1fabf9a9b5d3d30fe97bc3bf04971d05496a89e92a169a0d72357c81f742"
-        self.blog_authors_ghost = "Matthew"
-        self.blog_customer_ghost = "candela"
-        self.blog_user_push_ghost = "lanforge"
-        self.blog_password_push_ghost = "lanforge"
-        self.blog_flag = "--kpi_to_ghost"
-
         self.test_run = ""
 
     def get_test_rig(self):
@@ -471,7 +442,6 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
     # Read the test rig configuration, which is the LANforge system configuration
     # Read the dut configuration, which is the specific configuration for the AP / VAP or other device under test
     # Read the test configuration, replace the wide card parameters
-    # Read igg configuration is for Influx, Grafana and Ghost
 
     # Reading the test rig configuration
     def read_json_rig(self):
@@ -526,29 +496,6 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
         else:
             self.logger.info("EXITING test_suites not in json {}".format(self.json_test))
             exit(1)
-
-    # Top Level for Influx, Grafana, Ghost configuration
-    def read_json_igg(self):
-        if "test_database" in self.json_igg:
-            self.logger.info("json: read test_database")
-            # self.logger.info("test_database {}".format(self.json_rig["test_database"]))
-            self.read_test_database()
-        else:
-            self.logger.info("NOTE: test_database not found in json")
-
-        if "test_dashboard" in self.json_igg:
-            self.logger.info("json: read test_dashboard")
-            # self.logger.info("test_dashboard {}".format(self.json_rig["test_dashboard"]))
-            self.read_test_dashboard()
-        else:
-            self.logger.info("NOTE: test_dashboard not found in json")
-
-        if "test_blog" in self.json_igg:
-            self.logger.info("json: read test_blog")
-            # self.logger.info("test_blog {}".format(self.json_rig["test_blog"]))
-            self.read_test_blog()
-        else:
-            self.logger.info("NOTE: test_blog not found in json")
 
     #TODO change code so if parameter is not present then implied to be false
     def read_test_parameters(self):
@@ -745,98 +692,6 @@ http://{blog}:2368""".format(blog=self.blog_host_ghost)
         else:
             self.logger.info("test_ip not in test_network json")
             exit(1)
-
-    # Optional from --json_igg switch 
-    # kpi.csv and meta.txt can be read after test run performed holds same data
-    def read_test_database(self):
-        if "influx_database_config" in self.json_igg["test_database"]:
-            self.influx_database_config = self.json_igg["test_database"]["influx_database_config"]
-        else:
-            self.logger.info("influx_database_config not in test_database json")
-        if "influx_database_host" in self.json_igg["test_database"]:
-            self.influx_database_host = self.json_igg["test_database"]["influx_database_host"]
-        else:
-            self.logger.info("influx_database_host not in test_database json")
-        if "influx_database_port" in self.json_igg["test_database"]:
-            self.influx_database_port = self.json_igg["test_database"]["influx_database_port"]
-        else:
-            self.logger.info("influx_database_port not in test_database json")
-        if "influx_database_token" in self.json_igg["test_database"]:
-            self.influx_database_token = self.json_igg["test_database"]["influx_database_token"]
-        else:
-            self.logger.info("influx_database_token not in test_database json")
-        if "influx_database_org" in self.json_igg["test_database"]:
-            self.influx_database_org = self.json_igg["test_database"]["influx_database_org"]
-        else:
-            self.logger.info("influx_database_org not in test_database json")
-        if "influx_database_bucket" in self.json_igg["test_database"]:
-            self.influx_database_bucket = self.json_igg["test_database"]["influx_database_bucket"]
-        else:
-            self.logger.info("influx_database_bucket not in test_database json")
-        if "influx_database_tag" in self.json_igg["test_database"]:
-            self.influx_database_tag = self.json_igg["test_database"]["influx_database_tag"]
-        else:
-            self.logger.info("influx_database_tag not in test_database json")
-
-    # Optional only if --json_igg switch 
-    def read_test_dashboard(self):
-        if "dashboard_config_grafana" in self.json_igg["test_dashboard"]:
-            self.dashboard_config_grafana = self.json_igg["test_dashboard"]["dashboard_config_grafana"]
-        else:
-            self.logger.info("dashboard_config_grafana not in test_dashboard json")
-
-        if "dashboard_host_grafana" in self.json_igg["test_dashboard"]:
-            self.dashboard_host_grafana = self.json_igg["test_dashboard"]["dashboard_host_grafana"]
-        else:
-            self.logger.info("dashboard_host_grafana not in test_dashboard json")
-
-        if "dashboard_token_grafana" in self.json_igg["test_dashboard"]:
-            self.dashboard_token_grafana = self.json_igg["test_dashboard"]["dashboard_token_grafana"]
-        else:
-            self.logger.info("dashboard_token_grafana not in test_dashboard json")
-
-    # Optional on if --json_igg switch
-    def read_test_blog(self):
-        if "blog_config_ghost" in self.json_igg["test_blog"]:
-            self.blog_config_ghost = self.json_igg["test_blog"]["blog_config_ghost"]
-        else:
-            self.logger.info("blog_config_ghost not in test_blog json")
-
-        if "blog_host_ghost" in self.json_igg["test_blog"]:
-            self.blog_host_ghost = self.json_igg["test_blog"]["blog_host_ghost"]
-        else:
-            self.logger.info("blog_host_ghost not in test_blog json")
-
-        if "blog_token_ghost" in self.json_igg["test_blog"]:
-            self.blog_token_ghost = self.json_igg["test_blog"]["blog_token_ghost"]
-        else:
-            self.logger.info("blog_token_ghost not in test_blog json")
-
-        if "blog_authors_ghost" in self.json_igg["test_blog"]:
-            self.blog_authors_ghost = self.json_igg["test_blog"]["blog_authors_ghost"]
-        else:
-            self.logger.info("blog_authors_ghost not in test_blog json")
-
-        if "blog_customer_ghost" in self.json_igg["test_blog"]:
-            self.blog_customer_ghost = self.json_igg["test_blog"]["blog_customer_ghost"]
-        else:
-            self.logger.info("blog_customer_ghost not in test_blog json")
-
-        if "blog_user_push_ghost" in self.json_igg["test_blog"]:
-            self.blog_user_push_ghost = self.json_igg["test_blog"]["blog_user_push_ghost"]
-        else:
-            self.logger.info("blog_user_push_ghost not in test_blog json")
-
-        if "blog_password_push_ghost" in self.json_igg["test_blog"]:
-            self.blog_password_push_ghost = self.json_igg["test_blog"]["blog_password_push_ghost"]
-        else:
-            self.logger.info("blog_password_push_ghost not in test_blog json")
-
-        if "blog_flag" in self.json_igg["test_blog"]:
-            self.blog_flag = self.json_igg["test_blog"]["blog_flag"]
-        else:
-            self.logger.info("blog_flag not in test_blog json")
-
 
     def load_factory_default_db(self):
         # self.logger.info("file_wd {}".format(self.scripts_wd))
