@@ -109,7 +109,7 @@ from .lf_rvr_test import RvrTest
 from .lf_rx_sensitivity_test import RxSensitivityTest
 from .lf_sniff_radio import SniffRadio
 #from .lf_snp_test import  SAME CLASS NAMES AS LF_DFS_TEST
-#from .lf_tr398_test import DataPlaneTest
+from .lf_tr398_test import TR398Test
 from .lf_webpage import HttpDownload
 from .lf_wifi_capacity_test import WiFiCapacityTest
 from .measure_station_time_up import MeasureTimeUp
@@ -159,63 +159,63 @@ sed -i -- 's/from generic_cx import GenericCx/ /g' *.py
 sed -i -- 's/import wlan_theoretical_sta/from wlan_theoretical_sta import abg11_calculator, n11_calculator, ac11_calculator/g' wlan_capacity_calculator.py
 
 #Change importlib to pip compliant method
-sed -i -- 's/import importlib/ /g' *.py
-sed -i -- 's/l3_cxprofile2 = importlib.import_module("lanforge-scripts.py-json.l3_cxprofile2")/from ..py_json import l3_cxprofile2/g' *.py
-sed -i -- 's/add_dut = importlib.import_module("lanforge-scripts.py-json.LANforge.add_dut")/from ..py_json.LANforge import add_dut/g' *.py
-sed -i -- 's/ftp_html = importlib.import_module("lanforge-scripts.py-scripts.ftp_html")/from ..py_scripts import ftp_html/g' *.py
-sed -i -- 's/l3_cxprofile = importlib.import_module("lanforge-scripts.py-json.l3_cxprofile")/from ..py_json import l3_cxprofile/g' *.py
-sed -i -- 's/sta_connect = importlib.import_module("lanforge-scripts.py-scripts.sta_connect")/from ..py_scripts import sta_connect/g' *.py
-sed -i -- 's/test_ip_variable_time = importlib.import_module("lanforge-scripts.py-scripts.test_ip_variable_time")/from ..py_scripts import test_ip_variable_time/g' *.py
-sed -i -- 's/add_sta = importlib.import_module("lanforge-scripts.py-json.LANforge.add_sta")/from ..py_json.LANforge import add_sta/g' *.py
-sed -i -- 's/cv_dut_profile = importlib.import_module("lanforge-scripts.py-json.cv_dut_profile")/from ..py_json import cv_dut_profile/g' *.py
-sed -i -- 's/wlan_theoretical_sta = importlib.import_module("lanforge-scripts.py-json.wlan_theoretical_sta")/from ..py_json import wlan_theoretical_sta/g' *.py
-sed -i -- 's/port_utils = importlib.import_module("lanforge-scripts.py-json.port_utils")/from ..py_json import port_utils/g' *.py
-sed -i -- 's/http_profile = importlib.import_module("lanforge-scripts.py-json.http_profile")/from ..py_json import http_profile/g' *.py
-sed -i -- 's/LANforge = importlib.import_module("lanforge-scripts.py-json.LANforge")/from ..py_json import LANforge/g' *.py
-sed -i -- 's/vap_profile = importlib.import_module("lanforge-scripts.py-json.vap_profile")/from ..py_json import vap_profile/g' *.py
-sed -i -- 's/create_chamberview = importlib.import_module("lanforge-scripts.py-scripts.create_chamberview")/from ..py_scripts import create_chamberview/g' *.py
-sed -i -- 's/lf_ap_auto_test = importlib.import_module("lanforge-scripts.py-scripts.lf_ap_auto_test")/from ..py_scripts import lf_ap_auto_test/g' *.py
-sed -i -- 's/add_monitor = importlib.import_module("lanforge-scripts.py-json.LANforge.add_monitor")/from ..py_json.LANforge import add_monitor/g' *.py
-sed -i -- 's/lf_json_autogen = importlib.import_module("lanforge-scripts.py-json.LANforge.lf_json_autogen")/from ..py_json.LANforge import lf_json_autogen/g' *.py
-sed -i -- 's/InfluxRequest = importlib.import_module("lanforge-scripts.py-dashboard.InfluxRequest")/from ..py_dashboard import InfluxRequest/g' *.py
-sed -i -- 's/qvlan_profile = importlib.import_module("lanforge-scripts.py-json.qvlan_profile")/from ..py_json import qvlan_profile/g' *.py
-sed -i -- 's/cv_test_manager = importlib.import_module("lanforge-scripts.py-json.cv_test_manager")/from ..py_json import cv_test_manager/g' *.py
-sed -i -- 's/add_vap = importlib.import_module("lanforge-scripts.py-json.LANforge.add_vap")/from ..py_json.LANforge import add_vap/g' *.py
-sed -i -- 's/realm = importlib.import_module("lanforge-scripts.py-json.realm")/from ..py_json.realm import Realm,PortUtils/g' *.py
-sed -i -- 's/lf_wifi_capacity_test = importlib.import_module("lanforge-scripts.py-scripts.lf_wifi_capacity_test")/from ..py_scripts import lf_wifi_capacity_test/g' *.py
-sed -i -- 's/lf_attenmod = importlib.import_module("lanforge-scripts.py-json.lf_attenmod")/from ..py_json import lf_attenmod/g' *.py
-sed -i -- 's/lf_csv = importlib.import_module("lanforge-scripts.py-scripts.lf_csv")/from ..py_scripts import lf_csv/g' *.py
-sed -i -- 's/test_utility = importlib.import_module("lanforge-scripts.py-json.test_utility")/from ..py_json import test_utility/g' *.py
-sed -i -- 's/lf_dataplane_test = importlib.import_module("lanforge-scripts.py-scripts.lf_dataplane_test")/from ..py_scripts import lf_dataplane_test/g' *.py
-sed -i -- 's/ws_generic_monitor = importlib.import_module("lanforge-scripts.py-json.ws_generic_monitor")/from ..py_json import ws_generic_monitor/g' *.py
-sed -i -- 's/grafana_profile = importlib.import_module("lanforge-scripts.py-scripts.grafana_profile")/from ..py_scripts import grafana_profile/g' *.py
-sed -i -- 's/csv_to_influx = importlib.import_module("lanforge-scripts.py-scripts.csv_to_influx")/from ..py_scripts import csv_to_influx/g' *.py
-sed -i -- 's/gen_cxprofile = importlib.import_module("lanforge-scripts.py-json.gen_cxprofile")/from ..py_json import gen_cxprofile/g' *.py
-sed -i -- 's/lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")/from ..py_json.LANforge import lfcli_base/g' *.py
-sed -i -- 's/LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")/from ..py_json.LANforge import LFUtils/g' *.py
-sed -i -- 's/lfdata = importlib.import_module("lanforge-scripts.py-json.lfdata")/from ..py_json import lfdata/g' *.py
-sed -i -- 's/cv_test_reports = importlib.import_module("lanforge-scripts.py-json.cv_test_reports")/from ..py_json import cv_test_reports/g' *.py
-sed -i -- 's/LFRequest = importlib.import_module("lanforge-scripts.py-json.LANforge.LFRequest")/from ..py_json.LANforge import LFRequest/g' *.py
-sed -i -- 's/lf_cv_base = importlib.import_module("lanforge-scripts.py-json.lf_cv_base")/from ..py_json import lf_cv_base/g' *.py
-sed -i -- 's/base_profile = importlib.import_module("lanforge-scripts.py-json.base_profile")/from ..py_json import base_profile/g' *.py
-sed -i -- 's/add_file_endp = importlib.import_module("lanforge-scripts.py-json.LANforge.add_file_endp")/from ..py_json.LANforge import add_file_endp/g' *.py
-sed -i -- 's/lf_graph = importlib.import_module("lanforge-scripts.py-scripts.lf_graph")/from ..py_scripts import lf_graph/g' *.py
-sed -i -- 's/GrafanaRequest = importlib.import_module("lanforge-scripts.py-dashboard.GrafanaRequest")/from ..py_dashboard import GrafanaRequest/g' *.py
-sed -i -- 's/station_profile = importlib.import_module("lanforge-scripts.py-json.station_profile")/from ..py_json import station_profile/g' *.py
-sed -i -- 's/cv_test_manager = importlib.import_module("lanforge-scripts.py-scripts.cv_test_manager")/from ..py_scripts import cv_test_manager/g' *.py
-sed -i -- 's/lf_report = importlib.import_module("lanforge-scripts.py-scripts.lf_report")/from ..py_scripts import lf_report/g' *.py
-sed -i -- 's/wifi_monitor_profile = importlib.import_module("lanforge-scripts.py-json.wifi_monitor_profile")/from ..py_json import wifi_monitor_profile/g' *.py
-sed -i -- 's/GhostRequest = importlib.import_module("lanforge-scripts.py-dashboard.GhostRequest")/from ..py_dashboard.GhostRequest import GhostRequest/g' *.py
-sed -i -- 's/l4_cxprofile = importlib.import_module("lanforge-scripts.py-json.l4_cxprofile")/from ..py_json import l4_cxprofile/g' *.py
-sed -i -- 's/influx = importlib.import_module("lanforge-scripts.py-scripts.influx")/from ..py_scripts import influx/g' *.py
-sed -i -- 's/mac_vlan_profile = importlib.import_module("lanforge-scripts.py-json.mac_vlan_profile")/from ..py_json import mac_vlan_profile/g' *.py
-sed -i -- 's/create_wanlink = importlib.import_module("lanforge-scripts.py-json.create_wanlink")/from ..py_json import create_wanlink/g' *.py
-sed -i -- 's/set_port = importlib.import_module("lanforge-scripts.py-json.LANforge.set_port")/from ..py_json.LANforge import set_port/g' *.py
-sed -i -- 's/dut_profile = importlib.import_module("lanforge-scripts.py-json.dut_profile")/from ..py_json import dut_profile/g' *.py
-sed -i -- 's/test_group_profile = importlib.import_module("lanforge-scripts.py-json.test_group_profile")/from ..py_json import test_group_profile/g' *.py
-sed -i -- 's/multicast_profile = importlib.import_module("lanforge-scripts.py-json.multicast_profile")/from ..py_json import multicast_profile/g' *.py
-sed -i -- 's/set_wifi_radio = importlib.import_module("lanforge-scripts.py-json.LANforge.set_wifi_radio")/from ..py_json.LANforge import set_wifi_radio/g' *.py
-sed -i -- 's/fio_endp_profile = importlib.import_module("lanforge-scripts.py-json.fio_endp_profile")/from ..py_json import fio_endp_profile/g' *.py
+#sed -i -- 's/import importlib/ /g' *.py
+sed -i -- 's/l3_cxprofile2 = importlib.import_module("py-json.l3_cxprofile2")/from ..py_json import l3_cxprofile2/g' *.py
+sed -i -- 's/add_dut = importlib.import_module("py-json.LANforge.add_dut")/from ..py_json.LANforge import add_dut/g' *.py
+sed -i -- 's/ftp_html = importlib.import_module("py-scripts.ftp_html")/from ..py_scripts import ftp_html/g' *.py
+sed -i -- 's/l3_cxprofile = importlib.import_module("py-json.l3_cxprofile")/from ..py_json import l3_cxprofile/g' *.py
+sed -i -- 's/sta_connect = importlib.import_module("py-scripts.sta_connect")/from ..py_scripts import sta_connect/g' *.py
+sed -i -- 's/test_ip_variable_time = importlib.import_module("py-scripts.test_ip_variable_time")/from ..py_scripts import test_ip_variable_time/g' *.py
+sed -i -- 's/add_sta = importlib.import_module("py-json.LANforge.add_sta")/from ..py_json.LANforge import add_sta/g' *.py
+sed -i -- 's/cv_dut_profile = importlib.import_module("py-json.cv_dut_profile")/from ..py_json import cv_dut_profile/g' *.py
+sed -i -- 's/wlan_theoretical_sta = importlib.import_module("py-json.wlan_theoretical_sta")/from ..py_json import wlan_theoretical_sta/g' *.py
+sed -i -- 's/port_utils = importlib.import_module("py-json.port_utils")/from ..py_json import port_utils/g' *.py
+sed -i -- 's/http_profile = importlib.import_module("py-json.http_profile")/from ..py_json import http_profile/g' *.py
+sed -i -- 's/LANforge = importlib.import_module("py-json.LANforge")/from ..py_json import LANforge/g' *.py
+sed -i -- 's/vap_profile = importlib.import_module("py-json.vap_profile")/from ..py_json import vap_profile/g' *.py
+sed -i -- 's/create_chamberview = importlib.import_module("py-scripts.create_chamberview")/from ..py_scripts import create_chamberview/g' *.py
+sed -i -- 's/lf_ap_auto_test = importlib.import_module("py-scripts.lf_ap_auto_test")/from ..py_scripts import lf_ap_auto_test/g' *.py
+sed -i -- 's/add_monitor = importlib.import_module("py-json.LANforge.add_monitor")/from ..py_json.LANforge import add_monitor/g' *.py
+sed -i -- 's/lf_json_autogen = importlib.import_module("py-json.LANforge.lf_json_autogen")/from ..py_json.LANforge import lf_json_autogen/g' *.py
+sed -i -- 's/InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")/from ..py_dashboard import InfluxRequest/g' *.py
+sed -i -- 's/qvlan_profile = importlib.import_module("py-json.qvlan_profile")/from ..py_json import qvlan_profile/g' *.py
+sed -i -- 's/cv_test_manager = importlib.import_module("py-json.cv_test_manager")/from ..py_json import cv_test_manager/g' *.py
+sed -i -- 's/add_vap = importlib.import_module("py-json.LANforge.add_vap")/from ..py_json.LANforge import add_vap/g' *.py
+sed -i -- 's/realm = importlib.import_module("py-json.realm")/from ..py_json.realm import Realm,PortUtils/g' *.py
+sed -i -- 's/lf_wifi_capacity_test = importlib.import_module("py-scripts.lf_wifi_capacity_test")/from ..py_scripts import lf_wifi_capacity_test/g' *.py
+sed -i -- 's/lf_attenmod = importlib.import_module("py-json.lf_attenmod")/from ..py_json import lf_attenmod/g' *.py
+sed -i -- 's/lf_csv = importlib.import_module("py-scripts.lf_csv")/from ..py_scripts import lf_csv/g' *.py
+sed -i -- 's/test_utility = importlib.import_module("py-json.test_utility")/from ..py_json import test_utility/g' *.py
+sed -i -- 's/lf_dataplane_test = importlib.import_module("py-scripts.lf_dataplane_test")/from ..py_scripts import lf_dataplane_test/g' *.py
+sed -i -- 's/ws_generic_monitor = importlib.import_module("py-json.ws_generic_monitor")/from ..py_json import ws_generic_monitor/g' *.py
+sed -i -- 's/grafana_profile = importlib.import_module("py-scripts.grafana_profile")/from ..py_scripts import grafana_profile/g' *.py
+sed -i -- 's/csv_to_influx = importlib.import_module("py-scripts.csv_to_influx")/from ..py_scripts import csv_to_influx/g' *.py
+sed -i -- 's/gen_cxprofile = importlib.import_module("py-json.gen_cxprofile")/from ..py_json import gen_cxprofile/g' *.py
+sed -i -- 's/lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")/from ..py_json.LANforge import lfcli_base/g' *.py
+sed -i -- 's/LFUtils = importlib.import_module("py-json.LANforge.LFUtils")/from ..py_json.LANforge import LFUtils/g' *.py
+sed -i -- 's/lfdata = importlib.import_module("py-json.lfdata")/from ..py_json import lfdata/g' *.py
+sed -i -- 's/cv_test_reports = importlib.import_module("py-json.cv_test_reports")/from ..py_json import cv_test_reports/g' *.py
+sed -i -- 's/LFRequest = importlib.import_module("py-json.LANforge.LFRequest")/from ..py_json.LANforge import LFRequest/g' *.py
+sed -i -- 's/lf_cv_base = importlib.import_module("py-json.lf_cv_base")/from ..py_json import lf_cv_base/g' *.py
+sed -i -- 's/base_profile = importlib.import_module("py-json.base_profile")/from ..py_json import base_profile/g' *.py
+sed -i -- 's/add_file_endp = importlib.import_module("py-json.LANforge.add_file_endp")/from ..py_json.LANforge import add_file_endp/g' *.py
+sed -i -- 's/lf_graph = importlib.import_module("py-scripts.lf_graph")/from ..py_scripts import lf_graph/g' *.py
+sed -i -- 's/GrafanaRequest = importlib.import_module("py-dashboard.GrafanaRequest")/from ..py_dashboard import GrafanaRequest/g' *.py
+sed -i -- 's/station_profile = importlib.import_module("py-json.station_profile")/from ..py_json import station_profile/g' *.py
+sed -i -- 's/cv_test_manager = importlib.import_module("py-scripts.cv_test_manager")/from ..py_scripts import cv_test_manager/g' *.py
+sed -i -- 's/lf_report = importlib.import_module("py-scripts.lf_report")/from ..py_scripts import lf_report/g' *.py
+sed -i -- 's/wifi_monitor_profile = importlib.import_module("py-json.wifi_monitor_profile")/from ..py_json import wifi_monitor_profile/g' *.py
+sed -i -- 's/GhostRequest = importlib.import_module("py-dashboard.GhostRequest")/from ..py_dashboard.GhostRequest import GhostRequest/g' *.py
+sed -i -- 's/l4_cxprofile = importlib.import_module("py-json.l4_cxprofile")/from ..py_json import l4_cxprofile/g' *.py
+sed -i -- 's/influx = importlib.import_module("py-scripts.influx")/from ..py_scripts import influx/g' *.py
+sed -i -- 's/mac_vlan_profile = importlib.import_module("py-json.mac_vlan_profile")/from ..py_json import mac_vlan_profile/g' *.py
+sed -i -- 's/create_wanlink = importlib.import_module("py-json.create_wanlink")/from ..py_json import create_wanlink/g' *.py
+sed -i -- 's/set_port = importlib.import_module("py-json.LANforge.set_port")/from ..py_json.LANforge import set_port/g' *.py
+sed -i -- 's/dut_profile = importlib.import_module("py-json.dut_profile")/from ..py_json import dut_profile/g' *.py
+sed -i -- 's/test_group_profile = importlib.import_module("py-json.test_group_profile")/from ..py_json import test_group_profile/g' *.py
+sed -i -- 's/multicast_profile = importlib.import_module("py-json.multicast_profile")/from ..py_json import multicast_profile/g' *.py
+sed -i -- 's/set_wifi_radio = importlib.import_module("py-json.LANforge.set_wifi_radio")/from ..py_json.LANforge import set_wifi_radio/g' *.py
+sed -i -- 's/fio_endp_profile = importlib.import_module("py-json.fio_endp_profile")/from ..py_json import fio_endp_profile/g' *.py
 sed -i -- 's/PortUtils = realm.PortUtils/ /g' *.py
 sed -i -- 's/Realm = realm.Realm/ /g' *.py
 sed -i -- 's/lf_csv = lf_csv.lf_csv/ /g' *.py
@@ -259,55 +259,55 @@ cd ../py_json
 sed -i -- 's/import realm/from realm import PortUtils/g' test_utility.py
 
 #Change importlib to pip compliant method
-sed -i -- 's/mac_vlan_profile = importlib.import_module("lanforge-scripts.py-json.mac_vlan_profile")/from ..py_json import mac_vlan_profile/g' *.py
-sed -i -- 's/dut_profile = importlib.import_module("lanforge-scripts.py-json.dut_profile")/from ..py_json import dut_profile/g' *.py
-sed -i -- 's/l4_cxprofile = importlib.import_module("lanforge-scripts.py-json.l4_cxprofile")/from ..py_json import l4_cxprofile/g' *.py
-sed -i -- 's/http_profile = importlib.import_module("lanforge-scripts.py-json.http_profile")/from ..py_json import http_profile/g' *.py
-sed -i -- 's/port_utils = importlib.import_module("lanforge-scripts.py-json.port_utils")/from ..py_json.port_utils import PortUtils/g' *.py
-sed -i -- 's/wifi_monitor_profile = importlib.import_module("lanforge-scripts.py-json.wifi_monitor_profile")/from ..py_json import wifi_monitor_profile/g' *.py
-sed -i -- 's/fio_endp_profile = importlib.import_module("lanforge-scripts.py-json.fio_endp_profile")/from ..py_json import fio_endp_profile/g' *.py
-sed -i -- 's/lfdata = importlib.import_module("lanforge-scripts.py-json.lfdata")/from ..py_json import lfdata/g' *.py
-sed -i -- 's/multicast_profile = importlib.import_module("lanforge-scripts.py-json.multicast_profile")/from ..py_json import multicast_profile/g' *.py
-sed -i -- 's/lf_attenmod = importlib.import_module("lanforge-scripts.py-json.lf_attenmod")/from ..py_json import lf_attenmod/g' *.py
-sed -i -- 's/l3_cxprofile2 = importlib.import_module("lanforge-scripts.py-json.l3_cxprofile2")/from ..py_json import l3_cxprofile2/g' *.py
-sed -i -- 's/l3_cxprofile = importlib.import_module("lanforge-scripts.py-json.l3_cxprofile")/from ..py_json import l3_cxprofile/g' *.py
-sed -i -- 's/gen_cxprofile = importlib.import_module("lanforge-scripts.py-json.gen_cxprofile")/from ..py_json import gen_cxprofile/g' *.py
-sed -i -- 's/test_group_profile = importlib.import_module("lanforge-scripts.py-json.test_group_profile")/from ..py_json import test_group_profile/g' *.py
-sed -i -- 's/qvlan_profile = importlib.import_module("lanforge-scripts.py-json.qvlan_profile")/from ..py_json import qvlan_profile/g' *.py
-sed -i -- 's/vap_profile = importlib.import_module("lanforge-scripts.py-json.vap_profile")/from ..py_json import vap_profile/g' *.py
-sed -i -- 's/station_profile = importlib.import_module("lanforge-scripts.py-json.station_profile")/from ..py_json import station_profile/g' *.py
-sed -i -- 's/mac_vlan_profile = importlib.import_module("lanforge-scripts.py-json.mac_vlan_profile")/from ..py_json import mac_vlan_profile/g' *.py
-sed -i -- 's/add_monitor = importlib.import_module("lanforge-scripts.py-json.LANforge.add_monitor")/from ..py_json.LANforge import add_monitor/g' *.py
-sed -i -- 's/dut_profile = importlib.import_module("lanforge-scripts.py-json.dut_profile")/from ..py_json import dut_profile/g' *.py
-sed -i -- 's/set_port = importlib.import_module("lanforge-scripts.py-json.LANforge.set_port")/from ..py_json.LANforge import set_port/g' *.py
-sed -i -- 's/l4_cxprofile = importlib.import_module("lanforge-scripts.py-json.l4_cxprofile")/from ..py_json import l4_cxprofile/g' *.py
-sed -i -- 's/set_wifi_radio = importlib.import_module("lanforge-scripts.py-json.LANforge.set_wifi_radio")/from ..py_json.LANforge import set_wifi_radio/g' *.py
-sed -i -- 's/http_profile = importlib.import_module("lanforge-scripts.py-json.http_profile")/from ..py_json import http_profile/g' *.py
-sed -i -- 's/cv_test_reports = importlib.import_module("lanforge-scripts.py-json.cv_test_reports")/from ..py_json import cv_test_reports/g' *.py
-sed -i -- 's/add_sta = importlib.import_module("lanforge-scripts.py-json.LANforge.add_sta")/from ..py_json.LANforge import add_sta/g' *.py
-sed -i -- 's/port_utils = importlib.import_module("lanforge-scripts.py-json.port_utils")/from ..py_json import port_utils/g' *.py
-sed -i -- 's/lf_cv_base = importlib.import_module("lanforge-scripts.py-json.lf_cv_base")/from ..py_json import lf_cv_base/g' *.py
-sed -i -- 's/lf_json_autogen = importlib.import_module("lanforge-scripts.py-json.LANforge.lf_json_autogen")/from ..py_json.LANforge import lf_json_autogen/g' *.py
-sed -i -- 's/wifi_monitor_profile = importlib.import_module("lanforge-scripts.py-json.wifi_monitor_profile")/from ..py_json import wifi_monitor_profile/g' *.py
-sed -i -- 's/InfluxRequest = importlib.import_module("lanforge-scripts.py-dashboard.InfluxRequest")/from ..py_dashboard import InfluxRequest/g' *.py
-sed -i -- 's/fio_endp_profile = importlib.import_module("lanforge-scripts.py-json.fio_endp_profile")/from ..py_json import fio_endp_profile/g' *.py
-sed -i -- 's/add_dut = importlib.import_module("lanforge-scripts.py-json.LANforge.add_dut")/from ..py_json.LANforge import add_dut/g' *.py
-sed -i -- 's/base_profile = importlib.import_module("lanforge-scripts.py-json.base_profile")/from ..py_json import base_profile/g' *.py
-sed -i -- 's/lfcli_base = importlib.import_module("lanforge-scripts.py-json.LANforge.lfcli_base")/from ..py_json.LANforge.lfcli_base import LFCliBase/g' *.py
-sed -i -- 's/lfdata = importlib.import_module("lanforge-scripts.py-json.lfdata")/from ..py_json import lfdata/g' *.py
-sed -i -- 's/LFRequest = importlib.import_module("lanforge-scripts.py-json.LANforge.LFRequest")/from ..py_json.LANforge import LFRequest/g' *.py
-sed -i -- 's/multicast_profile = importlib.import_module("lanforge-scripts.py-json.multicast_profile")/from ..py_json import multicast_profile/g' *.py
-sed -i -- 's/add_vap = importlib.import_module("lanforge-scripts.py-json.LANforge.add_vap")/from ..py_json.LANforge import add_vap/g' *.py
-sed -i -- 's/lf_attenmod = importlib.import_module("lanforge-scripts.py-json.lf_attenmod")/from ..py_json import lf_attenmod/g' *.py
-sed -i -- 's/LFUtils = importlib.import_module("lanforge-scripts.py-json.LANforge.LFUtils")/from ..py_json.LANforge import LFUtils/g' *.py
-sed -i -- 's/gen_cxprofile = importlib.import_module("lanforge-scripts.py-json.gen_cxprofile")/from ..py_json import gen_cxprofile/g' *.py
-sed -i -- 's/LANforge = importlib.import_module("lanforge-scripts.py-json.LANforge")/from ..py_json import LANforge/g' *.py
-sed -i -- 's/= importlib.import_module("lanforge-scripts.py-json. )/from ..py_json import  /g' *.py
-sed -i -- 's/realm = importlib.import_module("lanforge-scripts.py-json.realm")/from ..py_json import realm/g' *.py
-sed -i -- 's/test_group_profile = importlib.import_module("lanforge-scripts.py-json.test_group_profile")/from ..py_json import test_group_profile/g' *.py
-sed -i -- 's/qvlan_profile = importlib.import_module("lanforge-scripts.py-json.qvlan_profile")/from ..py_json import qvlan_profile/g' *.py
-sed -i -- 's/vap_profile = importlib.import_module("lanforge-scripts.py-json.vap_profile")/from ..py_json import vap_profile/g' *.py
-sed -i -- 's/station_profile = importlib.import_module("lanforge-scripts.py-json.station_profile")/from ..py_json import station_profile/g' *.py
+sed -i -- 's/mac_vlan_profile = importlib.import_module("py-json.mac_vlan_profile")/from ..py_json import mac_vlan_profile/g' *.py
+sed -i -- 's/dut_profile = importlib.import_module("py-json.dut_profile")/from ..py_json import dut_profile/g' *.py
+sed -i -- 's/l4_cxprofile = importlib.import_module("py-json.l4_cxprofile")/from ..py_json import l4_cxprofile/g' *.py
+sed -i -- 's/http_profile = importlib.import_module("py-json.http_profile")/from ..py_json import http_profile/g' *.py
+sed -i -- 's/port_utils = importlib.import_module("py-json.port_utils")/from ..py_json.port_utils import PortUtils/g' *.py
+sed -i -- 's/wifi_monitor_profile = importlib.import_module("py-json.wifi_monitor_profile")/from ..py_json import wifi_monitor_profile/g' *.py
+sed -i -- 's/fio_endp_profile = importlib.import_module("py-json.fio_endp_profile")/from ..py_json import fio_endp_profile/g' *.py
+sed -i -- 's/lfdata = importlib.import_module("py-json.lfdata")/from ..py_json import lfdata/g' *.py
+sed -i -- 's/multicast_profile = importlib.import_module("py-json.multicast_profile")/from ..py_json import multicast_profile/g' *.py
+sed -i -- 's/lf_attenmod = importlib.import_module("py-json.lf_attenmod")/from ..py_json import lf_attenmod/g' *.py
+sed -i -- 's/l3_cxprofile2 = importlib.import_module("py-json.l3_cxprofile2")/from ..py_json import l3_cxprofile2/g' *.py
+sed -i -- 's/l3_cxprofile = importlib.import_module("py-json.l3_cxprofile")/from ..py_json import l3_cxprofile/g' *.py
+sed -i -- 's/gen_cxprofile = importlib.import_module("py-json.gen_cxprofile")/from ..py_json import gen_cxprofile/g' *.py
+sed -i -- 's/test_group_profile = importlib.import_module("py-json.test_group_profile")/from ..py_json import test_group_profile/g' *.py
+sed -i -- 's/qvlan_profile = importlib.import_module("py-json.qvlan_profile")/from ..py_json import qvlan_profile/g' *.py
+sed -i -- 's/vap_profile = importlib.import_module("py-json.vap_profile")/from ..py_json import vap_profile/g' *.py
+sed -i -- 's/station_profile = importlib.import_module("py-json.station_profile")/from ..py_json import station_profile/g' *.py
+sed -i -- 's/mac_vlan_profile = importlib.import_module("py-json.mac_vlan_profile")/from ..py_json import mac_vlan_profile/g' *.py
+sed -i -- 's/add_monitor = importlib.import_module("py-json.LANforge.add_monitor")/from ..py_json.LANforge import add_monitor/g' *.py
+sed -i -- 's/dut_profile = importlib.import_module("py-json.dut_profile")/from ..py_json import dut_profile/g' *.py
+sed -i -- 's/set_port = importlib.import_module("py-json.LANforge.set_port")/from ..py_json.LANforge import set_port/g' *.py
+sed -i -- 's/l4_cxprofile = importlib.import_module("py-json.l4_cxprofile")/from ..py_json import l4_cxprofile/g' *.py
+sed -i -- 's/set_wifi_radio = importlib.import_module("py-json.LANforge.set_wifi_radio")/from ..py_json.LANforge import set_wifi_radio/g' *.py
+sed -i -- 's/http_profile = importlib.import_module("py-json.http_profile")/from ..py_json import http_profile/g' *.py
+sed -i -- 's/cv_test_reports = importlib.import_module("py-json.cv_test_reports")/from ..py_json import cv_test_reports/g' *.py
+sed -i -- 's/add_sta = importlib.import_module("py-json.LANforge.add_sta")/from ..py_json.LANforge import add_sta/g' *.py
+sed -i -- 's/port_utils = importlib.import_module("py-json.port_utils")/from ..py_json import port_utils/g' *.py
+sed -i -- 's/lf_cv_base = importlib.import_module("py-json.lf_cv_base")/from ..py_json import lf_cv_base/g' *.py
+sed -i -- 's/lf_json_autogen = importlib.import_module("py-json.LANforge.lf_json_autogen")/from ..py_json.LANforge import lf_json_autogen/g' *.py
+sed -i -- 's/wifi_monitor_profile = importlib.import_module("py-json.wifi_monitor_profile")/from ..py_json import wifi_monitor_profile/g' *.py
+sed -i -- 's/InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")/from ..py_dashboard import InfluxRequest/g' *.py
+sed -i -- 's/fio_endp_profile = importlib.import_module("py-json.fio_endp_profile")/from ..py_json import fio_endp_profile/g' *.py
+sed -i -- 's/add_dut = importlib.import_module("py-json.LANforge.add_dut")/from ..py_json.LANforge import add_dut/g' *.py
+sed -i -- 's/base_profile = importlib.import_module("py-json.base_profile")/from ..py_json import base_profile/g' *.py
+sed -i -- 's/lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")/from ..py_json.LANforge.lfcli_base import LFCliBase/g' *.py
+sed -i -- 's/lfdata = importlib.import_module("py-json.lfdata")/from ..py_json import lfdata/g' *.py
+sed -i -- 's/LFRequest = importlib.import_module("py-json.LANforge.LFRequest")/from ..py_json.LANforge import LFRequest/g' *.py
+sed -i -- 's/multicast_profile = importlib.import_module("py-json.multicast_profile")/from ..py_json import multicast_profile/g' *.py
+sed -i -- 's/add_vap = importlib.import_module("py-json.LANforge.add_vap")/from ..py_json.LANforge import add_vap/g' *.py
+sed -i -- 's/lf_attenmod = importlib.import_module("py-json.lf_attenmod")/from ..py_json import lf_attenmod/g' *.py
+sed -i -- 's/LFUtils = importlib.import_module("py-json.LANforge.LFUtils")/from ..py_json.LANforge import LFUtils/g' *.py
+sed -i -- 's/gen_cxprofile = importlib.import_module("py-json.gen_cxprofile")/from ..py_json import gen_cxprofile/g' *.py
+sed -i -- 's/LANforge = importlib.import_module("py-json.LANforge")/from ..py_json import LANforge/g' *.py
+sed -i -- 's/= importlib.import_module("py-json. )/from ..py_json import  /g' *.py
+sed -i -- 's/realm = importlib.import_module("py-json.realm")/from ..py_json import realm/g' *.py
+sed -i -- 's/test_group_profile = importlib.import_module("py-json.test_group_profile")/from ..py_json import test_group_profile/g' *.py
+sed -i -- 's/qvlan_profile = importlib.import_module("py-json.qvlan_profile")/from ..py_json import qvlan_profile/g' *.py
+sed -i -- 's/vap_profile = importlib.import_module("py-json.vap_profile")/from ..py_json import vap_profile/g' *.py
+sed -i -- 's/station_profile = importlib.import_module("py-json.station_profile")/from ..py_json import station_profile/g' *.py
 sed -i -- 's/PortUtils = port_utils.PortUtils/ /g' *.py
 sed -i -- 's/LFCliBase = lfcli_base.LFCliBase/ /g' *.py
 
@@ -371,15 +371,15 @@ sed -i -- 's/import .LFUtils/from . import LFUtils/g' *.py
 sed -i -- 's/LANforge.LFUtils./LFUtils./g' *.py
 
 #Convert from importlib to pip compliant method
-sed -i -- 's/LFUtils = importlib.import_module("lanforge-scripts.py-json.LFUtils.)/from .LFUtils import debug_printer/g' *.py
+sed -i -- 's/LFUtils = importlib.import_module("py-json.LFUtils.)/from .LFUtils import debug_printer/g' *.py
 sed -i -- 's/LFUtils.debug_printer/debug_printer/g' *.py
-sed -i -- 's/LFRequest = importlib.import_module("lanforge-scripts.py-json.LFRequest.)/from .LFRequest import debug_printer/g' *.py
+sed -i -- 's/LFRequest = importlib.import_module("py-json.LFRequest.)/from .LFRequest import debug_printer/g' *.py
 sed -i -- 's/lanforge-scripts/lanforge_scripts/g' *.py
 sed -i -- 's/LFUtils.debug_printer/debug_printer/g' *.py
 
 cd ../../py_dashboard
-sed -i -- 's/GrafanaRequest = importlib.import_module("lanforge-scripts.py-dashboard.GrafanaRequest")/from .GrafanaRequest import GrafanaRequest/g' *.py
-sed -i -- 's/InfluxRequest = importlib.import_module("lanforge-scripts.py-dashboard.InfluxRequest")/from .InfluxRequest import RecordInflux/g' *.py
+sed -i -- 's/GrafanaRequest = importlib.import_module("py-dashboard.GrafanaRequest")/from .GrafanaRequest import GrafanaRequest/g' *.py
+sed -i -- 's/InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")/from .InfluxRequest import RecordInflux/g' *.py
 sed -i -- 's/RecordInflux = InfluxRequest.RecordInflux/ /g' *.py
 
 if [[ ${ARCHIVE} -eq 0 ]]; then
