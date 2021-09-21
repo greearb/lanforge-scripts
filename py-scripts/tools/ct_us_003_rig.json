@@ -9,7 +9,7 @@
             "to identify replaced strings in the lf_check.py code."  
         ]  
     },
-    "test_parameters":{
+    "test_rig_parameters":{
         "test_bed": "CT-US-003",
         "test_rig": "CT-US-003",
         "database_sqlite": "qa_003_test_db",
