@@ -111,7 +111,6 @@ class lf_check():
                 _json_dut,
                 _json_test,
                 _test_suite,
-                _json_igg,
                 _production,
                 _csv_results,
                 _outfile,
@@ -122,7 +121,6 @@ class lf_check():
         self.json_dut = _json_dut
         self.json_test = _json_test
         self.test_suite = _test_suite
-        self.json_igg = _json_igg
         self.production_run = _production
         self.report_path = _report_path
         self.log_path = _log_path
@@ -1148,7 +1146,6 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                      _json_dut=json_dut,
                      _json_test=json_test,
                      _test_suite=test_suite,
-                     _json_igg=json_igg,
                      _production=production,
                      _csv_results=csv_results,
                      _outfile=outfile,
