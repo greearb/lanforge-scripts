@@ -1111,16 +1111,6 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     except:
         print("Error reading {}".format(args.json_test))
 
-    json_igg = ""
-    if args.json_igg != "":
-        try:
-            print("args.json_igg {}".format(args.json_igg))
-            with open(args.json_igg, 'r') as json_igg_config:
-                json_igg = json.load(json_igg_config)
-        except:
-            print("Error reading {}".format(args.json_igg))
-
-
     # Test-rig information information
     lanforge_system_node_version = 'NO_LF_NODE_VER'
     scripts_git_sha = 'NO_GIT_SHA'
