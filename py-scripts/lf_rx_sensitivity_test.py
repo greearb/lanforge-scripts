@@ -222,7 +222,10 @@ class RxSensitivityTest(cv_test):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="""
+    parser = argparse.ArgumentParser(
+        prog='lf_rx_sensitivity_test.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="""
 
     IMPORTANT: Start lanforge with socket 3990 :  ./lfclient.bash -cli-socket 3990
         lfclient.bash is located in the LANforgeGUI_X.X.X directory

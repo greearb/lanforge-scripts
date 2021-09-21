@@ -103,7 +103,10 @@ class LoadLayer3(Realm):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Client Admission Test Script")
+    parser = argparse.ArgumentParser(
+        prog="test_client_admission.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="Client Admission Test Script")
     parser.add_argument('-hst', '--host', type=str, help='host name')
     parser.add_argument('-s', '--ssid', type=str, help='ssid for client')
     parser.add_argument('-pwd', '--passwd', type=str, help='password to connect to ssid')

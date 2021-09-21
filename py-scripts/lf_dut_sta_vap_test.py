@@ -308,7 +308,10 @@ class VAP_Measure(LFCliBase):
 # main method
 def main():
 
-    parser = argparse.ArgumentParser(description="Test Scenario of DUT Temperature measurement along with simultaneous throughput on VAP as well as stations")
+    parser = argparse.ArgumentParser(
+        prog='lf_dut_sta_vap_test.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="Test Scenario of DUT Temperature measurement along with simultaneous throughput on VAP as well as stations")
     
     parser.add_argument("-m", "--manager", type=str, help="Enter the address of Lanforge Manager (By default localhost)")
     parser.add_argument("-sc", "--scenario", type=str, help="Enter the Name of the Scenario you want to load (by Default DFLT)")

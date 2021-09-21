@@ -700,7 +700,10 @@ class FtpTest(LFCliBase):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="FTP Test Script")
+    parser = argparse.ArgumentParser(
+        prog='lf_ftp.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="FTP Test Script")
     parser.add_argument('--mgr', help='hostname for where LANforge GUI is running', default='localhost')
     parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on', default=8080)
     parser.add_argument('--upstream_port', help='non-station port that generates traffic: eg: eth1', default='eth1')

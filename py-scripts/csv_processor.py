@@ -124,7 +124,7 @@ def main():
 
     #debug_on = False
     parser = argparse.ArgumentParser(
-        prog='quick_test.py',
+        prog='csv_processor.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
  Useful Information:

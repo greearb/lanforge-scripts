@@ -38,7 +38,9 @@ class CSVtoInflux:
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog='csv_to_influx.py'
+    )
     cv_add_base_parser(parser)
 
     parser.add_argument('--path', action='append')

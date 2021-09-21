@@ -274,7 +274,10 @@ def PortUtility(host, port, duration, report_name, scenario, detail):
 def main():
 
 
-    parser = argparse.ArgumentParser(description="Test Scenario of DUT Temperature measurement along with simultaneous throughput on VAP as well as stations")
+    parser = argparse.ArgumentParser(
+        prog="test_l3_scenario_throughput.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="Test Scenario of DUT Temperature measurement along with simultaneous throughput on VAP as well as stations")
 
     parser.add_argument("-m", "--manager", type=str, help="Enter the address of Lanforge Manager (By default localhost)")
     parser.add_argument("-sc", "--scenario", type=str, help="Enter the Name of the Scenario you want to load (by Default DFLT)")

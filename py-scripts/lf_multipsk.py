@@ -318,7 +318,10 @@ class MultiPsk(Realm):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="lanforge webpage download Test Script")
+    parser = argparse.ArgumentParser(
+        prog="lf_multipsk.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="lanforge webpage download Test Script")
     parser.add_argument('--mgr', help='hostname for where LANforge GUI is running', default='localhost')
     parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on', default=8080)
     parser.add_argument('--ssid', help='WiFi SSID for client to associate to')

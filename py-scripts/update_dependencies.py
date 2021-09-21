@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-# INCLUDE_IN_README
-'''
-NAME: update_dependencies.py
-
-PURPOSE:  Installs python3 script package dependencies
-
-OUTPUT: List of successful and unsuccessful installs
-
-NOTES: Install as root
-'''
 
 import subprocess
 import argparse
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog="update_dependencies.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        description='''
+        NAME: update_dependencies.py
+        
+        PURPOSE:  Installs python3 script package dependencies
+        
+        OUTPUT: List of successful and unsuccessful installs
+        
+        NOTES: Install as root
+        '''
+    )
     parser.add_argument('--pyjwt', help='Install PyJWT which is necessary for GhostRequest', action="store_true")
 
     args = parser.parse_args()

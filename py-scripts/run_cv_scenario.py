@@ -153,10 +153,12 @@ def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
     parser = argparse.ArgumentParser(
+        prog="run_cv_scenario.py",
+        formatter_class=argparse.RawTextHelpFormatter,
         description="""LANforge Reporting Script:  Load a scenario and run a RvR report
-Example:
-./load_ap_scenario.py --lfmgr 127.0.0.1 --scenario_db 'handsets' --cv_test  --test_scenario 'test-20'
-""")
+            Example:
+            ./load_ap_scenario.py --lfmgr 127.0.0.1 --scenario_db 'handsets' --cv_test  --test_scenario 'test-20'
+            """)
     parser.add_argument("-m", "--lfmgr", type=str, help="address of the LANforge GUI machine (localhost is default)")
     parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)")
     parser.add_argument("-d", "--lanforge_db", type=str, help="Name of test scenario database (see Status Tab)")

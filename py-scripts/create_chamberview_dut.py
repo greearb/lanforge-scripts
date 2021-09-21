@@ -145,6 +145,8 @@ class DUT(dut):
 
 def main():
     parser = argparse.ArgumentParser(
+        prog='create_chamberview_dut.py',
+        formatter_class=argparse.RawTextHelpFormatter,
         description="""
         ./create_chamberview_dut -m "localhost" -o "8080" -d "dut_name" 
                 --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41" 

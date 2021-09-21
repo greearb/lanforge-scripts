@@ -159,6 +159,8 @@ def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
     parser = argparse.ArgumentParser(
+        prog="rvr_scenario.py",
+        formatter_class=argparse.RawTextHelpFormatter,
         description="""LANforge Reporting Script:  Load a scenario and run a RvR report
 Example:
 ./load_ap_scenario.py --lfmgr 127.0.0.1 --lanforge_db 'handsets' --cv_test  --test_scenario 'test-20'

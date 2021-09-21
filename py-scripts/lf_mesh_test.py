@@ -218,7 +218,10 @@ class MeshTest(cvtest):
 
 def main():
 
-    parser = argparse.ArgumentParser("""
+    parser = argparse.ArgumentParser(
+        prog="lf_mesh_test.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="""
     Open this file in an editor and read the top notes for more details.
 
     Example:

@@ -171,6 +171,8 @@ class CreateChamberview(cv):
 
 def main():
     parser = argparse.ArgumentParser(
+        prog='create_chamberview.py',
+        formatter_class=argparse.RawTextHelpFormatter,
         description="""
         For Two line scenario use --line twice as shown in example, for multi line scenario
         use --line argument to create multiple lines

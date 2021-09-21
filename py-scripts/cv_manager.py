@@ -30,7 +30,10 @@ class CVManager(cv_test):
         self.build_cv_scenario()
 
 def main():
-    parser = argparse.ArgumentParser(description='''This is a simple driver script to load a CV Scenario''')
+    parser = argparse.ArgumentParser(
+        prog='cv_manager.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        description='''This is a simple driver script to load a CV Scenario''')
     parser.add_argument('--scenario', help='Scenario you wish to build')
     parser.add_argument('--debug', help='Enable debugging', default=False, action="store_true")
     parser.add_argument('--mgr', default='localhost')

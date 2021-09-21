@@ -83,7 +83,10 @@ class STATION(LFCliBase):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Netgear AP DFS Test Script")
+    parser = argparse.ArgumentParser(
+        prog='station_layer3.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="Netgear AP DFS Test Script")
     parser.add_argument('-hst', '--host', type=str, help='host name')
     parser.add_argument('-s', '--ssid', type=str, help='ssid for client')
     parser.add_argument('-pwd', '--passwd', type=str, help='password to connect to ssid')

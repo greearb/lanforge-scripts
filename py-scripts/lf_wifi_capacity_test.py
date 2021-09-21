@@ -487,6 +487,8 @@ class WiFiCapacityTest(cv_test):
 
 def main():
     parser = argparse.ArgumentParser(
+        prog="lf_wifi_capacity_test.py",
+        formatter_class=argparse.RawTextHelpFormatter,
         description="""
         ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
              --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 \

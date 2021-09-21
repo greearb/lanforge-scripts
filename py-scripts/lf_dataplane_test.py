@@ -219,7 +219,10 @@ class DataplaneTest(cv_test):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="""
+    parser = argparse.ArgumentParser(
+        prog='lf_dataplane_test',
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="""
 
     IMPORTANT: Start lanforge with socket 3990 :  ./lfclient.bash -cli-socket 3990
         lfclient.bash is located in the LANforgeGUI_X.X.X directory

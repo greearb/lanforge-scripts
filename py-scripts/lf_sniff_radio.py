@@ -77,8 +77,11 @@ class SniffRadio(Realm):
 
 
 def main():
-    parser = argparse.ArgumentParser(usage=
-                                     """./lf_sniff_radio.py 
+    parser = argparse.ArgumentParser(
+        prog="lf_sniff_radio.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        usage=
+        """./lf_sniff_radio.py 
         --mgr localhost
         --mgr_port 8080 
         --radio wiphy0  
