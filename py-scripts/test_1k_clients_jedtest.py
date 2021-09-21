@@ -5,7 +5,6 @@ import importlib
 import argparse
 import time
 import datetime
-import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")

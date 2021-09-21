@@ -5,7 +5,6 @@ This is an outdated example. Please see modern py-scripts/test_X example scripts
 import sys
 import os
 import importlib
-import traceback
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")

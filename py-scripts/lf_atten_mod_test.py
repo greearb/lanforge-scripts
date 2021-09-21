@@ -22,7 +22,6 @@ import sys
 import os
 import importlib
 import argparse
-import time
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")

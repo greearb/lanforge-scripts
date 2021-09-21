@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
-import re
-import time
-import pprint
-import csv
 import datetime
 import random
 import string
-import pprint
 from pprint import pprint
 
 class BaseProfile:

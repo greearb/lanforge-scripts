@@ -426,7 +426,7 @@ class cv_test(Realm):
                                 _influx_bucket=args.influx_bucket)
 
         # lf_wifi_capacity_test.py may be run / initiated by a remote system against a lanforge
-        # the local_lf_report_dir is data is stored,  if there is no local_lf_report_dir then the test is run directly on lanforge
+        # the local_lf_report_dir is where data is stored,  if there is no local_lf_report_dir then the test is run directly on lanforge
         if self.local_lf_report_dir == "":
             csv_path = "%s/kpi.csv" % (self.lf_report_dir)
         else:

@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-# This program is used to read in a LANforge Dataplane CSV file and output
-# a csv file that works with a customer's RvRvO visualization tool.
-#
-# Example use case:
-#
-# Read in ~/text-csv-0-candela.csv, output is stored at outfile.csv
-# ./py-scripts/csv_convert.py -i ~/text-csv-0-candela.csv
-#
-# Output is csv file with mixxed columns, top part:
-# Test Run,Position [Deg],Attenuation 1 [dB], Pal Stats Endpoint 1 Control Rssi [dBm],  Pal Stats Endpoint 1 Data Rssi [dBm]
+"""
 
-# Second part:
-# Step Index,Position [Deg],Attenuation [dB],Traffic Pair 1 Throughput [Mbps]
+ This program is used to read in a LANforge Dataplane CSV file and output
+ a csv file that works with a customer's RvRvO visualization tool.
+
+ Example use case:
+
+ Read in ~/text-csv-0-candela.csv, output is stored at outfile.csv
+ ./py-scripts/csv_convert.py -i ~/text-csv-0-candela.csv
+
+ Output is csv file with mixxed columns, top part:
+ Test Run,Position [Deg],Attenuation 1 [dB], Pal Stats Endpoint 1 Control Rssi [dBm],  Pal Stats Endpoint 1 Data Rssi [dBm]
+
+ Second part:
+ Step Index,Position [Deg],Attenuation [dB],Traffic Pair 1 Throughput [Mbps]
+"""
 import sys
 import os
 import argparse

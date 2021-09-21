@@ -307,8 +307,6 @@ import os
 import importlib
 import argparse
 import time
-import json
-from os import path
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")

@@ -10,7 +10,6 @@ if sys.version_info[0] != 3:
     exit(1)
 
 import os
-import time
 from time import sleep
 from urllib import error
 import pprint

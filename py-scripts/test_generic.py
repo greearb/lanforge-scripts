@@ -38,7 +38,6 @@ import pprint
 import argparse
 import time
 import datetime
-import json
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")

@@ -7,7 +7,6 @@ This script when running, will monitor the events triggered by test_ipv4_connect
 import sys
 import os
 import importlib
-import json
 
  
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))

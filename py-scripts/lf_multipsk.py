@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 NAME: lf_multipsk.py
 

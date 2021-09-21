@@ -5,7 +5,6 @@ import sys
 import os
 import importlib
 import argparse
-import pprint
 from pprint import pprint
 from time import sleep
 

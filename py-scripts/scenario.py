@@ -2,7 +2,6 @@
 import sys
 import os
 import importlib
-import pprint
 import argparse
 
 if sys.version_info[0] != 3:

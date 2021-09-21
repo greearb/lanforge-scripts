@@ -49,14 +49,12 @@ import sys
 import os
 import importlib
 from pprint import pprint
-import re
 import serial
 import pexpect
 from pexpect_serial import SerialSpawn
 import argparse
 import time
 import datetime
-import subprocess
 import csv
 
 if sys.version_info[0] != 3:
@@ -67,8 +65,6 @@ if sys.version_info[0] != 3:
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lf_report = importlib.import_module("py-scripts.lf_report")
-# lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-# LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm

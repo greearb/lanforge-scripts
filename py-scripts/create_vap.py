@@ -6,7 +6,6 @@ import sys
 import os
 import importlib
 import argparse
-import time
 import pprint
 
 if sys.version_info[0] != 3:

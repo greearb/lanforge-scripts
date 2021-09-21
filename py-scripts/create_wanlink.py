@@ -1,7 +1,11 @@
 #!/usr/bin/python3
-# Create and modify WAN Links Using LANforge JSON AP : http://www.candelatech.com/cookbook.php?vol=cli&book=JSON:+Managing+WANlinks+using+JSON+and+Python
-# Written by Candela Technologies Inc.
-# Updated by: Erin Grimes
+"""
+
+ Create and modify WAN Links Using LANforge JSON AP : http://www.candelatech.com/cookbook.php?vol=cli&book=JSON:+Managing+WANlinks+using+JSON+and+Python
+ Written by Candela Technologies Inc.
+ Updated by: Erin Grimes
+
+"""
 import sys
 
 if sys.version_info[0] != 3:
@@ -13,7 +17,6 @@ if sys.version_info[0] != 3:
 
 from time import sleep
 import urllib
-from urllib import error
 import pprint
 
 sys.path.append("../py-json")

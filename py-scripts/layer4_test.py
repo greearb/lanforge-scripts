@@ -12,7 +12,6 @@ import importlib
 import argparse
 import datetime
 import time
-import pdfkit
 import json
 import re
 

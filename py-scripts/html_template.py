@@ -3,12 +3,7 @@
     date - 11- feb - 2021
     -Nikita Yadav
 """
-
-from matplotlib import pyplot as plt
-from datetime import datetime
-import numpy as np
 import os.path
-from os import path
 import sys
 
 print(sys.path)

@@ -197,9 +197,8 @@ if [[ $MGRLEN -gt 0 ]]; then
       # --ap_name WAC505 --ap_ip 192.168.213.90 --bands Both --directions Download --twog_radio wiphy1 --fiveg_radio wiphy0 --file_size 2MB --num_stations 40 --Both_duration 1 --traffic_duration 2 --ssh_port 22_"
       "./lf_ftp_test.py --mgr $MGR --ssid $SSID --passwd $PASSWD_USED --security $SECURITY --bands 5G --direction Download \
            --file_size 2MB --num_stations 2"
-      #./lf_graph
-      #./lf_influx_db
-      #./lf_mesh_test
+      "./lf_graph.py --mgr $MGR"
+      #"./lf_mesh_test.py --mgr $MGR --upstream $UPSTREAM --raw_line 'selected_dut2 RootAP wactest $BSSID'"
       #./lf_multipsk
       #./lf_report
       #./lf_report_test
@@ -207,7 +206,7 @@ if [[ $MGRLEN -gt 0 ]]; then
       #./lf_rx_sensitivity_test.py
       #./lf_sniff_radio
       #./lf_snp_test
-      #./lf_tr398_test
+      "./lf_tr398_test.py --mgr $MGR"
       #./lf_webpage
       "./lf_wifi_capacity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
              --instance_name this_inst --config_name test_con --upstream 1.1.eth2 --batch_size 1,5,25,50,100 --loop_iter 1 \

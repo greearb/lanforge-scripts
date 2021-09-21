@@ -1,14 +1,4 @@
 #!/usr/bin/env python3
-import sys
-import os
-import importlib
-
- 
-sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
-
-lfdata = importlib.import_module("py-json.lfdata")
-LFDataCollection = lfdata.LFDataCollection
-
 
 class TestBase:
     def __init__(self):

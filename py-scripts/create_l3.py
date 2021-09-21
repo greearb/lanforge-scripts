@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-# Create Layer-3 Cross Connection Using LANforge JSON AP : https://www.candelatech.com/cookbook.php?vol=fire&book=scripted+layer-3+test
-# Written by Candela Technologies Inc.
-# Updated by: Erin Grimes
 """
-Example Command:
-./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
+
+ Create Layer-3 Cross Connection Using LANforge JSON AP : https://www.candelatech.com/cookbook.php?vol=fire&book=scripted+layer-3+test
+ Written by Candela Technologies Inc.
+ Updated by: Erin Grimes
+ Example Command:
+  ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
 """
 import sys
 import os
 import importlib
 import argparse
-import time
-import datetime
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")

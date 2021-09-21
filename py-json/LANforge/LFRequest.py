@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Class holds default settings for json requests                -
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -6,8 +8,6 @@ import os
 import importlib
 import urllib
 from urllib import request
-from urllib import error
-from urllib import parse
 import json
 
 if sys.version_info[0] != 3:

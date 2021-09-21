@@ -7,10 +7,7 @@ Please use concurrently with event_flood.py.
 import sys
 import os
 import importlib
-import datetime
 from datetime import datetime
-import time
-from time import sleep
 import pprint
 import argparse
 

@@ -3,8 +3,6 @@
 import sys
 import os
 import importlib
-import pprint
-from pprint import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")

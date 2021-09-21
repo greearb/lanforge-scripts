@@ -8,11 +8,8 @@ import sys
 import os
 import importlib
 import argparse
-import datetime
 from datetime import datetime
-import time
 from time import sleep
-import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")

@@ -33,11 +33,9 @@ import logging
 import paramiko as pmgo
 from paramiko.ssh_exception import NoValidConnectionsError as exception
 import xlsxwriter
-from bokeh.io import output_file, show
+from bokeh.io import show
 from bokeh.plotting import figure
 from bokeh.models import LinearAxis, Range1d
-from bokeh.models import HoverTool, Range1d
-from bokeh.layouts import row
 from datetime import datetime
 import socket
 

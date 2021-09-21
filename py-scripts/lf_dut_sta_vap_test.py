@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 '''
-  This Scrip has two classes :
+  This Script has two classes :
           1. LoadScenario : It will load the existing saved scenario to the Lanforge (Here used for Loading Bridged VAP)
           2. CreateSTA_CX : It will create stations and L3 Cross connects and start them
           3. Login_DUT : This class is specifically used to test the Linux based DUT that has SSH Server. It is used to read the CPU Core temperature during testing
@@ -31,11 +31,9 @@ import logging
 import paramiko as pm
 from paramiko.ssh_exception import NoValidConnectionsError as exception
 import xlsxwriter
-from bokeh.io import output_file, show
+from bokeh.io import show
 from bokeh.plotting import figure
 from bokeh.models import LinearAxis, Range1d
-from bokeh.models import HoverTool
-from bokeh.layouts import row
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")

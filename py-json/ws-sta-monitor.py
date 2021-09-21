@@ -14,9 +14,7 @@ import importlib
 import argparse
 import json
 import logging
-import pprint
 import traceback
-import time
 from time import sleep
 import websocket
 import re
@@ -329,7 +327,7 @@ def m_error(wsock, err):
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 def m_open(wsock):
     def run(*args):
-        time.sleep(0.1)
+        sleep(0.1)
         # ping = json.loads();
         wsock.send('{"text":"ping"}')
 

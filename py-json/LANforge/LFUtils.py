@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Define useful common methods                                  -
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -7,8 +9,7 @@ import importlib
 import pprint
 import time
 from time import sleep
-from random import seed
-from random import randint
+from random import seed, randint
 import re
 import ipaddress
 

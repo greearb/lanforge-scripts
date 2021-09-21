@@ -28,9 +28,7 @@ sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
 import argparse
 from LANforge import LFUtils
 from realm import Realm
-import datetime
 import time
-import pprint
 
 
 class StaScan(Realm):

@@ -11,9 +11,7 @@ import importlib
 import argparse
 import datetime
 import time
-from test_utility import CreateHTML
-# from test_utility import RuntimeUpdates
-from test_utility import StatusMsg
+from test_utility import CreateHTML, StatusMsg
 import pdfkit
 
 if sys.version_info[0] != 3:
