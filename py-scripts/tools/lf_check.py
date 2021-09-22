@@ -35,6 +35,20 @@ NOTES: getting radio information:
 
 4. if the connection to 8080 is rejected check : pgrep -af java  , to see the number of GUI instances running
 
+5. getting the lanforge GUI version 
+curl -H 'Accept: application/json' http://localhost:8080/ | json_pp 
+{
+   "VersionInfo" : {
+      "BuildDate" : "Sun 19 Sep 2021 02:36:51 PM PDT",
+      "BuildMachine" : "v-f30-64",
+      "BuildVersion" : "5.4.4",
+      "Builder" : "greearb",
+      "GitVersion" : "a98d7fbb8ca4e5c4f736a70e5cc3759e44aba636",
+      "JsonVersion" : "1.0.25931"
+   },
+
+curl -u 'user:pass' -H 'Accept: application/json' http://<lanforge ip>:8080 | json_pp  | grep -A 7 "VersionInfo"   
+
 GENERIC NOTES: 
 Starting LANforge:
     On local or remote system: /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR 
@@ -145,6 +159,10 @@ class lf_check():
         self.lanforge_kernel_version = ""
         self.lanforge_server_version_full = ""
         self.lanforge_server_version = ""
+        self.lanforge_gui_version_full = ""
+        self.lanforge_gui_version = ""
+        self.lanforge_gui_build_date = ""
+        self.lanforge_gui_git_sha = ""
 
         # meta.txt
         self.meta_data_path = ""
@@ -295,11 +313,35 @@ class lf_check():
         time.sleep(1)
         return self.lanforge_server_version_full
 
-    def get_radio_status(self):
-        radio_status = self.json_get("/radiostatus/all")
-        print("radio status {radio_status}".format(radio_status=radio_status))
+    def get_lanforge_gui_version(self):
+        ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
+        ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass,
+                    allow_agent=False, look_for_keys=False, banner_timeout=600)
+        stdin, stdout, stderr = ssh.exec_command('curl -H "Accept: application/json" http://{lanforge_ip}:8080 | json_pp  | grep -A 7 "VersionInfo"'.format(lanforge_ip=self.lf_mgr_ip))
+        self.lanforge_gui_version_full = stdout.readlines()
+        #print("lanforge_gui_version_full pre: {lanforge_gui_version_full}".format(lanforge_gui_version_full=self.lanforge_gui_version_full))
+        self.lanforge_gui_version_full = [line.replace('\n', '') for line in self.lanforge_gui_version_full]
+        #print("lanforge_gui_version_full: {lanforge_gui_version_full}".format(lanforge_gui_version_full=self.lanforge_gui_version_full))
+        for element in self.lanforge_gui_version_full:
+            if "BuildVersion" in element:
+                ver_str = str(element)
+                self.lanforge_gui_version = ver_str.split(':',maxsplit=1)[-1].replace(',','')               
+                print("BuildVersion {}".format(self.lanforge_gui_version))
+            if "BuildDate" in element:
+                gui_str = str(element)
+                self.lanforge_gui_build_date = gui_str.split(':',maxsplit=1)[-1].replace(',','') 
+                print("BuildDate {}".format(self.lanforge_gui_build_date))
+            if "GitVersion" in element:
+                git_sha_str = str(element)
+                self.lanforge_gui_git_sha = git_sha_str.split(':',maxsplit=1)[-1].replace(',','')                 
+                print("GitVersion {}".format(self.lanforge_gui_git_sha))
 
-    # NOT complete : will send the email results
+        ssh.close()
+        time.sleep(1)
+        return self.lanforge_gui_version_full, self.lanforge_gui_version, self.lanforge_gui_build_date, self.lanforge_gui_git_sha
+
+
     def send_results_email(self, report_file=None):
         if (report_file is None):
             print("No report file, not sending email.")
@@ -1201,6 +1243,13 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         exit(1)
 
     try:
+        lanforge_gui_version_full, lanforge_gui_version, lanforge_gui_build_date, lanforge_gui_git_sha  = check.get_lanforge_gui_version()
+        print("lanforge_gui_version_full {lanforge_gui_version_full}".format(lanforge_gui_version_full=lanforge_gui_version_full))
+    except:
+        print("lanforge_gui_version exception, tests aborted check lanforge ip")
+        exit(1)
+
+    try:
         lanforge_radio_json, lanforge_radio_text = check.get_lanforge_radio_information()
         lanforge_radio_formatted_str = json.dumps(lanforge_radio_json, indent = 2)
         print("lanforge_radio_json: {lanforge_radio_json}".format(lanforge_radio_json=lanforge_radio_formatted_str))
@@ -1239,7 +1288,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     lf_test_setup = pd.DataFrame()
     lf_test_setup['LANforge'] = lanforge_system_node_version
     lf_test_setup['kernel version'] = lanforge_kernel_version
-    lf_test_setup['Server version'] = lanforge_server_version_full
+    lf_test_setup['server version'] = lanforge_server_version_full
+    lf_test_setup['gui version'] = lanforge_gui_version
+    lf_test_setup['gui build date'] = lanforge_gui_build_date
+    lf_test_setup['gui git sha'] = lanforge_gui_git_sha
     lf_test_setup['scripts git sha'] = scripts_git_sha
 
     # Successfully gathered LANforge information Run Tests
