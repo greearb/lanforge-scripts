@@ -21,32 +21,34 @@
 #   3. TCP Downstream (AP to STA)
 #   4. TCP Upstream (STA to AP)
 #  The script will clean up the station and connections at the end of the test.
-
 import sys
+import os
+import importlib
 import csv
+import argparse
+import pprint
+import time
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append('../../py-json')
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-import argparse
-from LANforge import LFUtils
-# from LANforge import LFCliBase
-from LANforge import lfcli_base
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
-from realm import Realm
-import pprint
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+removeCX = LFUtils.removeCX
+removeEndps = LFUtils.removeEndps
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 
-OPEN="open"
-WEP="wep"
-WPA="wpa"
-WPA2="wpa2"
-MODE_AUTO=0
+OPEN = "open"
+WEP = "wep"
+WPA = "wpa"
+WPA2 = "wpa2"
+MODE_AUTO = 0
+
 
 class SingleClient(LFCliBase):
     def __init__(self, host, port, _dut_ssid="jedway-open-1", _dut_passwd="NA", _dut_bssid="",

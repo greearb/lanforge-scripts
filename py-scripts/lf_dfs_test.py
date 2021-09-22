@@ -1,21 +1,8 @@
 #!/usr/bin/env python3
-
 import sys
 import os
+import importlib
 import pexpect
-
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit(1)
-
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-
-import argparse
-#from LANforge.lfcli_base import LFCliBase
-from LANforge import LFUtils
-#import realm
-from realm import Realm
 import time
 import datetime
 import subprocess
@@ -23,6 +10,18 @@ import re
 import csv
 import random
 import logging
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit(1)
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+import argparse
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 
 # Check for the logs channel switching time and radar detected
 

@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-
-
 """
     This script will create a variable number of layer4 stations each with their own set of cross-connects and endpoints.
 
@@ -8,21 +6,23 @@
 """
 import sys
 import os
+import importlib
+import argparse
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-import argparse
-from LANforge.lfcli_base import LFCliBase
-from LANforge import LFUtils
-from realm import Realm
-import time
-import datetime
-from realm import TestGroupProfile
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
+TestGroupProfile = realm.TestGroupProfile
+
 
 class CreateL4(Realm):
     def __init__(self,
@@ -149,7 +149,7 @@ python3 ./layer4.py
             optional_args=group
             break;
     if optional_args is not None:
-        optional_args.add_argument('--mode',help='Used to force mode of stations')
+        optional_args.add_argument('--mode',help='Used to force mode of stations', default=0)
         optional_args.add_argument('--ap',help='Used to force a connection to a particular AP')
     args = parser.parse_args()
 

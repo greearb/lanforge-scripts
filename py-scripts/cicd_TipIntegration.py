@@ -1,18 +1,17 @@
-#
+# import os
+# import sys
 # import base64
 # import urllib.request
 # from bs4 import BeautifulSoup
 # import ssl
-# import subprocess, os
+# import subprocess
 # from artifactory import ArtifactoryPath
 # import tarfile
 # import paramiko
 # from paramiko import SSHClient
 # from scp import SCPClient
-# import os
 # import pexpect
 # from pexpect import pxssh
-# import sys
 # import paramiko
 # from scp import SCPClient
 # import pprint
@@ -23,31 +22,29 @@
 # # For finding files
 # # https://stackoverflow.com/questions/3207219/how-do-i-list-all-files-of-a-directory
 # import glob
-# external_results_dir=/var/tmp/lanforge
 #
-# local_dir=os.getenv('LOG_DIR')
+# external_results_dir = / var / tmp / lanforge
+#
+# local_dir = os.getenv('LOG_DIR')
 # print("Local Directory where all files will be copied and logged", local_dir)
-# cicd_user=os.getenv('CICD_USER')
+# cicd_user = os.getenv('CICD_USER')
 # print("cicd_user = ", cicd_user)
-# cicd_pw=os.getenv('CICD_PW')
-# print("cicd pw =",cicd_pw)
-# ap_pw=os.getenv('AP_PW')
-# ap_user=os.getenv('AP_USER')
-# tr_user=os.getenv('TR_USER')
+# cicd_pw = os.getenv('CICD_PW')
+# print("cicd pw =", cicd_pw)
+# ap_pw = os.getenv('AP_PW')
+# ap_user = os.getenv('AP_USER')
+# tr_user = os.getenv('TR_USER')
 # print("Testrail user id = ", tr_user)
-# tr_pw=os.getenv('TR_PW')
-# print ("Testrail password =", tr_pw)
-# aws_host='3.96.56.0'
-# aws_user='ubuntu'
-#
-#
-#
+# tr_pw = os.getenv('TR_PW')
+# print("Testrail password =", tr_pw)
+# aws_host = '3.96.56.0'
+# aws_user = 'ubuntu'
 #
 # if sys.version_info[0] != 3:
-#        print("This script requires Python 3")
-#        exit(1)
+#     print("This script requires Python 3")
+#     exit(1)
 # if 'py-json' not in sys.path:
-#        sys.path.append('../py-json')
+#     sys.path.append('../py-json')
 #
 # from LANforge.LFUtils import *
 # # if you lack __init__.py in this directory you will not find sta_connect module#
@@ -60,8 +57,8 @@
 # client.user = tr_user
 # client.password = tr_pw
 #
-#
 # print('Beginning file download with requests')
+#
 #
 # class GetBuild:
 #     def __init__(self):
@@ -69,11 +66,11 @@
 #         self.password = cicd_pw
 #         ssl._create_default_https_context = ssl._create_unverified_context
 #
-#     def get_latest_image(self,url):
+#     def get_latest_image(self, url):
 #
 #         auth = str(
 #             base64.b64encode(
-#                 bytes('%s:%s' % (cicd_user,cicd_pw ), 'utf-8')
+#                 bytes('%s:%s' % (cicd_user, cicd_pw), 'utf-8')
 #             ),
 #             'ascii'
 #         ).strip()
@@ -86,21 +83,21 @@
 #         html = response.read()
 #         soup = BeautifulSoup(html, features="html.parser")
 #         last_link = soup.find_all('a', href=True)[-1]
-#         latest_file=last_link['href']
+#         latest_file = last_link['href']
 #
 #         filepath = local_dir
 #         os.chdir(filepath)
-#         #file_url = url + latest_file
+#         # file_url = url + latest_file
 #
 #         ''' Download the binary file from Jfrog'''
-#         path = ArtifactoryPath(url,auth=(cicd_user, cicd_pw))
+#         path = ArtifactoryPath(url, auth=(cicd_user, cicd_pw))
 #         path.touch()
 #         for file in path:
 #             print('File =', file)
 #
 #         path = ArtifactoryPath(file, auth=(cicd_user, cicd_pw))
-#         print("file to be downloaded :" ,latest_file)
-#         print("File Path:",file)
+#         print("file to be downloaded :", latest_file)
+#         print("File Path:", file)
 #         with path.open() as des:
 #             with open(latest_file, "wb") as out:
 #                 out.write(des.read())
@@ -111,9 +108,9 @@
 #         housing_tgz.close()
 #         return "pass"
 #         print("Extract the tar file, and copying the file to  Linksys AP directory")
-#         #with open("/Users/syamadevi/Desktop/syama/ea8300/ap_sysupgrade_output.log", "a") as output:
-#          #   subprocess.call("scp /Users/syamadevi/Desktop/syama/ea8300/openwrt-ipq40xx-generic-linksys_ea8300-squashfs-sysupgrade.bin root@192.100.1.1:/tmp/openwrt-ipq40xx-generic-linksys_ea8300-squashfs-sysupgrade.bin",shell=True, stdout=output,
-#           #                 stderr=output)
+#         # with open("/Users/syamadevi/Desktop/syama/ea8300/ap_sysupgrade_output.log", "a") as output:
+#         #   subprocess.call("scp /Users/syamadevi/Desktop/syama/ea8300/openwrt-ipq40xx-generic-linksys_ea8300-squashfs-sysupgrade.bin root@192.100.1.1:/tmp/openwrt-ipq40xx-generic-linksys_ea8300-squashfs-sysupgrade.bin",shell=True, stdout=output,
+#         #                 stderr=output)
 #
 #         print('SSH to Linksys and upgrade the file')
 #
@@ -149,18 +146,22 @@
 #         '''
 #
 #     def run_opensyncgw_in_docker(self):
-#         #user_password = 'fepv6nj9guCPeEHC'
-#         #my_env = os.environ.copy()
-#         #my_env["userpass"] = user_password
-#         #my_command = 'python --version'
-#         #subprocess.Popen('echo', env=my_env)
-#         with open(local_dir +"docker_jfrog_login.log", "a") as output:
-#             subprocess.call("docker login --username" + cicd_user + "--password" + cicd_pw + " https://tip-tip-wlan-cloud-docker-repo.jfrog.io", shell=True, stdout=output,
-#                            stderr=output)
-#         with open(local_dir +"opensyncgw_upgrade.log", "a") as output:
-#             subprocess.call("docker pull tip-tip-wlan-cloud-docker-repo.jfrog.io/opensync-gateway-and-mqtt:0.0.1-SNAPSHOT", shell=True, stdout=output,
-#                             stderr=output)
-#         with open(local_dir+"opensyncgw.log", "a") as output:
+#         # user_password = 'fepv6nj9guCPeEHC'
+#         # my_env = os.environ.copy()
+#         # my_env["userpass"] = user_password
+#         # my_command = 'python --version'
+#         # subprocess.Popen('echo', env=my_env)
+#         with open(local_dir + "docker_jfrog_login.log", "a") as output:
+#             subprocess.call(
+#                 "docker login --username" + cicd_user + "--password" + cicd_pw + " https://tip-tip-wlan-cloud-docker-repo.jfrog.io",
+#                 shell=True, stdout=output,
+#                 stderr=output)
+#         with open(local_dir + "opensyncgw_upgrade.log", "a") as output:
+#             subprocess.call(
+#                 "docker pull tip-tip-wlan-cloud-docker-repo.jfrog.io/opensync-gateway-and-mqtt:0.0.1-SNAPSHOT",
+#                 shell=True, stdout=output,
+#                 stderr=output)
+#         with open(local_dir + "opensyncgw.log", "a") as output:
 #             subprocess.call("docker run --rm -i -p 1883:1883 -p 6640:6640 -p 6643:6643 -p 4043:4043 \
 #   -v ~/mosquitto/data:/mosquitto/data \
 #   -v ~/mosquitto/log:/mosquitto/log \
@@ -168,7 +169,7 @@
 #   -v ~/app/log:/app/logs \
 #   -v ~//app/config:/app/config \
 #   -e OVSDB_CONFIG_FILE='/app/config/config_2_ssids.json' \
-#   tip-tip-wlan-cloud-docker-repo.jfrog.io/opensync-gateway-and-mqtt:0.0.1-SNAPSHOT",shell=True, stdout=output,
+#   tip-tip-wlan-cloud-docker-repo.jfrog.io/opensync-gateway-and-mqtt:0.0.1-SNAPSHOT", shell=True, stdout=output,
 #                             stderr=output)
 #             print("opensync Gateway is running")
 #             return "pass"
@@ -207,7 +208,7 @@
 #
 # class openwrt_ap:
 #
-#     def ap_upgrade(src,user2,host2,tgt,pwd,opts='', timeout=60):
+#     def ap_upgrade(src, user2, host2, tgt, pwd, opts='', timeout=60):
 #         ''' Performs the scp command. Transfers file(s) from local host to remote host '''
 #         print("AP Model getting upgarded is :", apModel)
 #         if apModel == "ecw5410":
@@ -218,18 +219,18 @@
 #                 ap_firmware = 'openwrt-ipq40xx-generic-linksys_ea8300-squashfs-sysupgrade.bin'
 #                 AP_IP = '10.10.10.208'
 #         host2 = AP_IP
-#         src = src+ ap_firmware
+#         src = src + ap_firmware
 #         print("src =", src)
 #         print("AP IP ", AP_IP)
 #         print("AP USER =", ap_user)
 #         print("AP PASSWORD =", ap_pw)
 #         cmd = f'''/bin/bash -c "scp {opts} {src} {user2}@{AP_IP}:{tgt}"'''
-#         print("Executing the following cmd:",cmd,sep='\n')
+#         print("Executing the following cmd:", cmd, sep='\n')
 #
 #         tmpFl = '/tmp/scp.log'
-#         fp = open(tmpFl,'wb')
+#         fp = open(tmpFl, 'wb')
 #         print(tmpFl)
-#         childP = pexpect.spawn(cmd,timeout=timeout)
+#         childP = pexpect.spawn(cmd, timeout=timeout)
 #         try:
 #             childP.sendline(cmd)
 #             childP.expect([f"{user2}@{host2}'s password:"])
@@ -238,7 +239,7 @@
 #             childP.expect(pexpect.EOF)
 #             childP.close()
 #             fp.close()
-#             fp = open(tmpFl,'r')
+#             fp = open(tmpFl, 'r')
 #             stdout = fp.read()
 #             fp.close()
 #
@@ -253,26 +254,27 @@
 #         try:
 #             s = pxssh.pxssh()
 #             s.login(host2, user2, pwd)
-#             #s.sendline('sysupgrade /tmp/openwrt-ipq40xx-generic-linksys_ea8300-squashfs-sysupgrade.bin&')
+#             # s.sendline('sysupgrade /tmp/openwrt-ipq40xx-generic-linksys_ea8300-squashfs-sysupgrade.bin&')
 #             s.sendline('sysupgrade /tmp/openwrt-ipq806x-generic-edgecore_ecw5410-squashfs-nand-sysupgrade.bin&')
-#             #s.logout()
-#             #s.prompt()  # match the prompt
+#             # s.logout()
+#             # s.prompt()  # match the prompt
 #             print(s.before)  # print everything before the prompt.
 #             sleep(100)
-#             #s.login(host2, user2, pwd)
+#             # s.login(host2, user2, pwd)
 #             s.prompt()
-#             #os.system(f"scp {local_dir}/cacert.pem root@10.10.10.207:/usr/plume/certs/ca.pem")
-#             #os.system(f"scp {local_dir}/clientcert.pem root@10.10.10.207:/usr/plume/certs/client.pem")
-#             #os.system(f"scp {local_dir}/clientkey_dec.pem  root@10.10.10.207:/usr/plume/certs/client_dec.key")
-#             #s.sendline('service opensync restart')
-#             #s.prompt()  # match the prompt
-#             #print(s.before)  # print everything before the prompt.
+#             # os.system(f"scp {local_dir}/cacert.pem root@10.10.10.207:/usr/plume/certs/ca.pem")
+#             # os.system(f"scp {local_dir}/clientcert.pem root@10.10.10.207:/usr/plume/certs/client.pem")
+#             # os.system(f"scp {local_dir}/clientkey_dec.pem  root@10.10.10.207:/usr/plume/certs/client_dec.key")
+#             # s.sendline('service opensync restart')
+#             # s.prompt()  # match the prompt
+#             # print(s.before)  # print everything before the prompt.
 #             s.logout()
 #             return "pass"
 #         except pxssh.ExceptionPxssh as e:
 #             print("ALERT !!!!!! pxssh failed on login.")
 #             print(e)
-#     def apCopyCert(src,user2,host2,tgt,pwd,opts='', timeout=60):
+#
+#     def apCopyCert(src, user2, host2, tgt, pwd, opts='', timeout=60):
 #
 #         print("Copying the AP Certs")
 #         '''
@@ -291,19 +293,19 @@
 #         print(s.before)  # print everything before the prompt.
 #         s.logout()
 #         '''
-#         cacert=src+"ca.pem"
-#         clientcert = src+"client.pem"
-#         clientkey=src+"client_dec.key"
-#         tgt ="/usr/plume/certs"
+#         cacert = src + "ca.pem"
+#         clientcert = src + "client.pem"
+#         clientkey = src + "client_dec.key"
+#         tgt = "/usr/plume/certs"
 #         ap_pw
 #
 #         print("src =", src)
 #         print("AP IP ", host2)
 #         print("AP USER =", ap_user)
 #         print("AP PASSWORD =", ap_pw)
-#         #cmd = f'''/bin/bash -c "scp {opts} {src} {user2}@{AP_IP}:{tgt}"'''
-#         #cmd = f'''/bin/bash -c "scp {opts} {cacert} {user2}@{AP_IP}:{tgt}"'''
-#         #cmd = f'''/bin/bash -c "scp {opts} {clientcert} {user2}@{AP_IP}:{tgt}"'''
+#         # cmd = f'''/bin/bash -c "scp {opts} {src} {user2}@{AP_IP}:{tgt}"'''
+#         # cmd = f'''/bin/bash -c "scp {opts} {cacert} {user2}@{AP_IP}:{tgt}"'''
+#         # cmd = f'''/bin/bash -c "scp {opts} {clientcert} {user2}@{AP_IP}:{tgt}"'''
 #         cmd = f'''/bin/bash -c "scp {opts} {cacert} {clientcert} {clientkey} {user2}@{host2}:{tgt}"'''
 #         print("Executing the following cmd:", cmd, sep='\n')
 #         tmpFl = '/tmp/cert.log'
@@ -317,19 +319,20 @@
 #             childP.logfile = fp
 #             childP.expect(pexpect.EOF)
 #             fp.close()
-#             fp = open(tmpFl,'r')
+#             fp = open(tmpFl, 'r')
 #             stdout = fp.read()
 #             fp.close()
 #
 #             if childP.exitstatus != 0:
-#                 #raise Exception(stdout)
+#                 # raise Exception(stdout)
 #                 print("there is an excess status non 0")
 #         except KeyboardInterrupt:
 #             childP.close()
 #             fp.close()
 #             return
 #         print(stdout)
-#     def restartGw(src,user2,host2,tgt,pwd,opts='', timeout=60):
+#
+#     def restartGw(src, user2, host2, tgt, pwd, opts='', timeout=60):
 #         print("Restarting opensync GW")
 #         s = pxssh.pxssh()
 #         s.login(host2, user2, pwd)
@@ -352,7 +355,7 @@
 #         staConnect.radio = "wiphy1"
 #         staConnect.resource = 1
 #         staConnect.dut_ssid = "autoProvisionedSsid-5u"
-#         #staConnect.dut_passwd = "4C0nnectUS!"
+#         # staConnect.dut_passwd = "4C0nnectUS!"
 #         staConnect.dut_passwd = "12345678"
 #         staConnect.dut_security = "wpa2"
 #         staConnect.station_names = ["sta01010"]
@@ -362,15 +365,17 @@
 #         run_results = staConnect.get_result_list()
 #         for result in run_results:
 #             print("test result: " + result)
-#         #result = 'pass'
-#         print("Single Client Connectivity :",staConnect.passes)
+#         # result = 'pass'
+#         print("Single Client Connectivity :", staConnect.passes)
 #         if staConnect.passes() == True:
-#             client.update_testrail(case_id=938, run_id=rid, status_id=1, msg='client Connectivity to 5GHZ Open SSID is Passed ')
+#             client.update_testrail(case_id=938, run_id=rid, status_id=1,
+#                                    msg='client Connectivity to 5GHZ Open SSID is Passed ')
 #         else:
-#             client.update_testrail(case_id=938, run_id=rid, status_id=5, msg='client connectivity to 5GHZ OPEN SSID is Failed')
+#             client.update_testrail(case_id=938, run_id=rid, status_id=5,
+#                                    msg='client connectivity to 5GHZ OPEN SSID is Failed')
 #
 #     def TestCase_941(self, rid):
-#         #MULTI CLIENT CONNECTIVITY
+#         # MULTI CLIENT CONNECTIVITY
 #         staConnect = StaConnect("10.10.10.201", 8080, _debugOn=False)
 #         staConnect.sta_mode = 0
 #         staConnect.upstream_resource = 1
@@ -397,19 +402,19 @@
 #
 #     # Check for externally run test case results.
 #     def TestCase_LF_External(self, rid):
-#         #https://stackoverflow.com/questions/3207219/how-do-i-list-all-files-of-a-directory
-#         results = glob.glob("%s/*_CICD_RESULTS.txt"%external_results_dir)
+#         # https://stackoverflow.com/questions/3207219/how-do-i-list-all-files-of-a-directory
+#         results = glob.glob("%s/*_CICD_RESULTS.txt" % external_results_dir)
 #         for r in results:
 #             rfile = open(r, 'r')
 #             lines = rfile.readlines()
 #
 #             # File contents looks something like:
-#             #CASE_ID 9999
-#             #RUN_ID 15
-#             #STATUS 1
-#             #MSG Test passed nicely
-#             #MSG Build ID:  deadbeef
-#             #MSG Results:  http://cicd.telecominfraproject.com
+#             # CASE_ID 9999
+#             # RUN_ID 15
+#             # STATUS 1
+#             # MSG Test passed nicely
+#             # MSG Build ID:  deadbeef
+#             # MSG Results:  http://cicd.telecominfraproject.com
 #
 #             _case_id = -1
 #             _status_id = 1  # Default to pass
@@ -434,7 +439,7 @@
 #                         _msg += "\n"
 #                         _msg += v
 #             if _case_id != -1:
-#                client.update_testrail(case_id=_case_id, run_id=_rid, status_id=_status_id, msg=_msg)
+#                 client.update_testrail(case_id=_case_id, run_id=_rid, status_id=_status_id, msg=_msg)
 #             os.unlink(r)
 #
 #     def TestCase_939(self, rid):
@@ -442,18 +447,18 @@
 #         try:
 #             print("Counting clients in MQTT")
 #             s = pxssh.pxssh()
-#             #aws_host = os.getenv(AWS_HOST)
-#             #aws_user=os.getenv(AWS_USER)
+#             # aws_host = os.getenv(AWS_HOST)
+#             # aws_user=os.getenv(AWS_USER)
 #             os.chdir(local_dir)
 #             # makesure the client key file is in the fame directory to login to AWS VM
-#             s.login(aws_host,aws_user,ssh_key='id_key.pem')
+#             s.login(aws_host, aws_user, ssh_key='id_key.pem')
 #             s.sendline('kubectl cp tip-wlan-opensync-gw-static-f795d45-ctb5z:/app/logs/mqttData.log mqttData.log')
 #             # run a command
 #             s.prompt()  # match the prompt
 #             print(s.before)  # print everything before the prompt.
 #             s.sendline()
 #             s.logout()
-#             #return "pass"
+#             # return "pass"
 #             print(aws_host, aws_user)
 #             ssh = paramiko.SSHClient()
 #             ssh.load_system_host_keys()
@@ -487,15 +492,14 @@
 #     'pwd': ap_pw,
 #     'opts': ''
 # }
-# apModel= "ecw5410"
-#
+# apModel = "ecw5410"
 #
 # url = 'https://tip.jfrog.io/artifactory/tip-wlan-ap-firmware/'
 # url = url + apModel
-# projId = client.get_project_id(project_name= 'WLAN')
+# projId = client.get_project_id(project_name='WLAN')
 # print("TIP WLAN Project ID Is :", projId)
 #
-# rid = client.get_run_id(test_run_name= 'TIP-DEMO4')
+# rid = client.get_run_id(test_run_name='TIP-DEMO4')
 # print(rid)
 # Test: RunTest = RunTest()
 # Build: GetBuild = GetBuild()

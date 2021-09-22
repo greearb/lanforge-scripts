@@ -1,34 +1,35 @@
 #!/usr/bin/env python3
-
 #  This will create a station, create TCP and UDP traffic, run it a short amount of time,
 #  and verify whether traffic was sent and received.  It also verifies the station connected
 #  to the requested BSSID if bssid is specified as an argument.
 #  The script will clean up the station and connections at the end of the test.
-
 import sys
+import os
+import importlib
+import argparse
+import time
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-import argparse
-from LANforge import LFUtils
-# from LANforge import LFCliBase
-from LANforge import lfcli_base
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
-from realm import Realm
-import time
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+removeCX = LFUtils.removeCX
+removeEndps = LFUtils.removeEndps
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 
-OPEN="open"
-WEP="wep"
-WPA="wpa"
-WPA2="wpa2"
-MODE_AUTO=0
+OPEN = "open"
+WEP = "wep"
+WPA = "wpa"
+WPA2 = "wpa2"
+MODE_AUTO = 0
+
 
 class StaConnect(LFCliBase):
     def __init__(self, host, port, _dut_ssid="MyAP", _dut_passwd="NA", _dut_bssid="",
@@ -478,6 +479,8 @@ def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
     parser = argparse.ArgumentParser(
+        prog="sta_connect.py",
+        formatter_class=argparse.RawTextHelpFormatter,
         description="""LANforge Unit Test:  Connect Station to AP
 Example:
 ./sta_connect.py --dest 192.168.100.209 --dut_ssid OpenWrt-2 --dut_bssid 24:F5:A2:08:21:6C

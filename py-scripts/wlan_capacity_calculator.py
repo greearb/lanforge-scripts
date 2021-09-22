@@ -5,18 +5,17 @@ Info : Standard Script for WLAN Capacity Calculator
 Date :
 Author : Anjali Rahamatkar
 '''
-
-import argparse
 import sys
 import os
-
+import importlib
+import argparse
 from pip._internal.utils import logging
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-import wlan_theoretical_sta
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-# main method
+wlan_theoretical_sta = importlib.import_module("py-json.wlan_theoretical_sta")
+
 
 def main():
 

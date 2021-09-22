@@ -3,8 +3,15 @@
 Library to Run Dataplane Test: Using lf_cv_base class
 
 """
+import sys
+import os
+import importlib
 
-from lf_cv_base import ChamberViewBase
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lf_cv_base = importlib.import_module("py-json.lf_cv_base")
+ChamberViewBase = lf_cv_base.ChamberViewBase
 
 
 class DataPlaneTest(ChamberViewBase):

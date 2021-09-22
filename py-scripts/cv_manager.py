@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-
 import sys
 import os
+import importlib
 import argparse
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-from cv_test_manager import cv_test
-from cv_test_manager import *
+cv_test_manager = importlib.import_module("py-json.cv_test_manager")
+cv_test = cv_test_manager.cv_test
 
 
 class CVManager(cv_test):
@@ -31,7 +30,10 @@ class CVManager(cv_test):
         self.build_cv_scenario()
 
 def main():
-    parser = argparse.ArgumentParser(description='''This is a simple driver script to load a CV Scenario''')
+    parser = argparse.ArgumentParser(
+        prog='cv_manager.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        description='''This is a simple driver script to load a CV Scenario''')
     parser.add_argument('--scenario', help='Scenario you wish to build')
     parser.add_argument('--debug', help='Enable debugging', default=False, action="store_true")
     parser.add_argument('--mgr', default='localhost')

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 '''
-  This Scrip has two classes :
+  This Script has two classes :
           1. LoadScenario : It will load the existing saved scenario to the Lanforge (Here used for Loading Bridged VAP)
           2. CreateSTA_CX : It will create stations and L3 Cross connects and start them
           3. Login_DUT : This class is specifically used to test the Linux based DUT that has SSH Server. It is used to read the CPU Core temperature during testing
@@ -22,34 +22,31 @@
   This Script is intended to automate the testing of DUT that has stations as well as AP.
   To automate the simultaenous testing and check the DUT Temperature
 '''
-
 import sys
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit(1)
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-
-
+import os
+import importlib
 import argparse
 import time
-from LANforge import LFUtils
-from LANforge import lfcli_base
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
-
-from realm import Realm
 import logging
-
 import paramiko as pm
 from paramiko.ssh_exception import NoValidConnectionsError as exception
 import xlsxwriter
-from bokeh.io import output_file, show
+from bokeh.io import show
 from bokeh.plotting import figure
 from bokeh.models import LinearAxis, Range1d
-from bokeh.models import HoverTool
-from bokeh.layouts import row
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit(1)
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 
 
 # Specifically for Measuring CPU Core Temperatures
@@ -311,7 +308,10 @@ class VAP_Measure(LFCliBase):
 # main method
 def main():
 
-    parser = argparse.ArgumentParser(description="Test Scenario of DUT Temperature measurement along with simultaneous throughput on VAP as well as stations")
+    parser = argparse.ArgumentParser(
+        prog='lf_dut_sta_vap_test.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="Test Scenario of DUT Temperature measurement along with simultaneous throughput on VAP as well as stations")
     
     parser.add_argument("-m", "--manager", type=str, help="Enter the address of Lanforge Manager (By default localhost)")
     parser.add_argument("-sc", "--scenario", type=str, help="Enter the Name of the Scenario you want to load (by Default DFLT)")
@@ -371,7 +371,7 @@ def main():
       # Password (if Security is not Open)
       if (args.password is not None):
          password = args.password
-      if (args.password is 'open'):
+      if (args.password == 'open'):
          password = "[Blank]"
       if (args.password is None):
          password = "[Blank]"
@@ -398,9 +398,9 @@ def main():
 
       if (args.min_mbps is not None):
          min_bps = int(args.min_mbps)*1000000
-      if (args.max_mbps is not None and args.max_mbps is not "same"):
+      if (args.max_mbps is not None and args.max_mbps != "same"):
          max_bps = int(args.max_mbps)*1000000
-      if (args.max_mbps is not None and args.max_mbps is "same"):
+      if (args.max_mbps is not None and args.max_mbps == "same"):
          max_bps = args.min_mbps
       if (args.duration is not None):
          duration = (args.duration * 60)/5

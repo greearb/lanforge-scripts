@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 '''
-
   This Script Loads the Existing Scenario and Run the Simultaenous Throughput over time and Generate Report and Plot the Graph
   This Script has three classes :
           1. LoadScenario : It will load the existing saved scenario to the Lanforge (Here used for Loading Bridged VAP)
@@ -25,36 +24,34 @@
     This Script is intended to automate the testing of DUT That has stations as well as AP.
     To automate the simultaenous testing and check the DUT Temperature
 '''
-
 import sys
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit(1)
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-
-
+import os
+import importlib
 import argparse
 import time
-from LANforge import LFUtils
-from LANforge import lfcli_base
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
-
-from realm import Realm
 import logging
-
 import paramiko as pmgo
 from paramiko.ssh_exception import NoValidConnectionsError as exception
 import xlsxwriter
-from bokeh.io import output_file, show
+from bokeh.io import show
 from bokeh.plotting import figure
 from bokeh.models import LinearAxis, Range1d
-from bokeh.models import HoverTool, Range1d
-from bokeh.layouts import row
 from datetime import datetime
 import socket
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit(1)
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
+
 
 # Specifically for Measuring CPU Core Temperatures
 class Login_DUT:
@@ -277,7 +274,10 @@ def PortUtility(host, port, duration, report_name, scenario, detail):
 def main():
 
 
-    parser = argparse.ArgumentParser(description="Test Scenario of DUT Temperature measurement along with simultaneous throughput on VAP as well as stations")
+    parser = argparse.ArgumentParser(
+        prog="test_l3_scenario_throughput.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="Test Scenario of DUT Temperature measurement along with simultaneous throughput on VAP as well as stations")
 
     parser.add_argument("-m", "--manager", type=str, help="Enter the address of Lanforge Manager (By default localhost)")
     parser.add_argument("-sc", "--scenario", type=str, help="Enter the Name of the Scenario you want to load (by Default DFLT)")

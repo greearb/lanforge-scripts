@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Note: To Run this script gui should be opened with
 
@@ -30,11 +29,10 @@ Output:
     You should see build scenario with the given arguments at the end of this script.
     To verify this:
         open Chamber View -> Manage scenario
-
 """
-
 import sys
 import os
+import importlib
 import argparse
 import time
 import re
@@ -43,10 +41,12 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-from cv_test_manager import cv_test as cv
+cv_test_manager = importlib.import_module("py-json.cv_test_manager")
+cv = cv_test_manager.cv_test
+
 
 class CreateChamberview(cv):
     def __init__(self,
@@ -143,7 +143,6 @@ class CreateChamberview(cv):
                                             );  # To manage scenario
         if not line and not raw_line:
             raise Exception("scenario creation failed")
-            return False
 
         return True
 
@@ -170,10 +169,10 @@ class CreateChamberview(cv):
         print("completed building %s scenario" %scenario_name)
 
 
-
 def main():
-
     parser = argparse.ArgumentParser(
+        prog='create_chamberview.py',
+        formatter_class=argparse.RawTextHelpFormatter,
         description="""
         For Two line scenario use --line twice as shown in example, for multi line scenario
         use --line argument to create multiple lines
@@ -203,7 +202,6 @@ def main():
                         help="delete scenario (by default: False)")
     args = parser.parse_args()
 
-
     Create_Chamberview = CreateChamberview(lfmgr=args.lfmgr,
                                            port=args.port,
                                            )
@@ -214,7 +212,6 @@ def main():
                              line=args.line,
                              raw_line=args.raw_line)
     Create_Chamberview.build(args.create_scenario)
-
 
 
 if __name__ == "__main__":

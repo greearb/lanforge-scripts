@@ -1,20 +1,24 @@
 #!/usr/bin/env python3
 import sys
+import os
+import importlib
+import argparse
+import time
+import datetime
+
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-import os
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-from realm import Realm
-from LANforge.lfcli_base import LFCliBase
-from LANforge import LFUtils
-import argparse
-import time
-import datetime
-import pprint
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
+
 
 class Test1KClients(LFCliBase):
     def __init__(self,

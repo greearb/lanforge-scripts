@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 NAME: test_ip_variable_time.py
 
@@ -24,22 +23,22 @@ Use './test_ip_variable_time.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
-
 import sys
 import os
+import importlib
+import argparse
+import datetime
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-import argparse
-from LANforge import LFUtils
-from realm import Realm
-import time
-import datetime
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 
 
 class IPVariableTime(Realm):
@@ -471,7 +470,7 @@ python3 ./test_ip_variable_time.py
     #    manager = args.influx_mgr
 
     if args.influx_org is not None:
-        from influx2 import RecordInflux
+        from InfluxRequest import RecordInflux
         grapher = RecordInflux(_influx_host=args.influx_host,
                                _influx_port=args.influx_port,
                                _influx_org=args.influx_org,
@@ -494,7 +493,7 @@ python3 ./test_ip_variable_time.py
                                    sta_list=station_list,
                                    # port_mgr_cols=port_mgr_cols,
                                    report_file=report_f,
-                                   systeminfopath=systeminfopath,
+                               systeminfopath=systeminfopath,
                                    duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
                                    monitor_interval_ms=monitor_interval,
                                    created_cx=layer3connections,

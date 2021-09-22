@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 
 """ 
-
 NAME: ftp_test.py 
 
-PURPOSE: 
+PURPOSE:
     will create stations and endpoints to generate and verify layer-4 traffic over an ftp connection.
     find out download/upload time of each client according to file size.
     This script will monitor the bytes-rd attribute of the endpoints.
 
-SETUP:  
+SETUP:
 
     Create a file to be downloaded    linux:  fallocate -l <size> <name>    example fallocate -l 2M ftp_test.txt
 
 
-EXAMPLE:  
-    './ftp_test.py --ssid "jedway-wap2-x2048-5-3" --passwd "jedway-wpa2-x2048-5-3" --security wpa2 --bands "5G" --direction "Download" \
+EXAMPLE:
+    './lf_ftp_test.py --ssid "jedway-wap2-x2048-5-3" --passwd "jedway-wpa2-x2048-5-3" --security wpa2 --bands "5G" --direction "Download" \
     --file_size "2MB" --num_stations 2
 
 INCLUDE_IN_README
@@ -24,30 +23,34 @@ INCLUDE_IN_README
     -Jitendrakumar Kushavah
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
-
 """
 import sys
-from ftp_html import *
+import os
+import importlib
 import paramiko
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit(1)
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-
-from LANforge import LFUtils
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
 import argparse
 from datetime import datetime
 import time
-import os
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit(1)
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
+ftp_html = importlib.import_module("py-scripts.ftp_html")
+
 
 class ftp_test(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, radio = "wiphy0", sta_prefix="sta", start_id=0, num_sta= None,
                  dut_ssid=None,dut_security=None, dut_passwd=None, file_size=None, band=None,
-                 upstream="eth1",_debug_on=False, _exit_on_error=False,  _exit_on_fail=False, direction= None):
+                 upstream="eth1",_debug_on=False, _exit_on_error=False,  _exit_on_fail=False, direction= None,user='lanforge'):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         print("Test is about to start")
         self.host = lfclient_host
@@ -69,6 +72,7 @@ class ftp_test(LFCliBase):
         self.cx_profile = self.local_realm.new_http_profile()
         self.port_util = realm.PortUtils(self.local_realm)
         self.cx_profile.requests_per_ten = self.requests_per_ten
+        self.user = user
 
         print("Test is Initialized")
 
@@ -461,6 +465,7 @@ def main():
     parser.add_argument('--directions', nargs="+", help='--directions defaults ["Download","Upload"]', default=["Download","Upload"])
     parser.add_argument('--file_sizes', nargs="+", help='--File Size defaults ["2MB","500MB","1000MB"]', default=["2MB","500MB","1000MB"])
     parser.add_argument('--num_stations', type=int, help='--num_client is number of stations', default=40)
+    parser.add_argument('--user', default='lanforge')
     
     args = parser.parse_args()
 
@@ -486,7 +491,8 @@ def main():
                     num_sta= args.num_stations,
                     band=band,
                     file_size=file_size,
-                    direction=direction                      
+                    direction=direction,
+                               user=args.user
                    )
 
                 iteraration_num=iteraration_num+1
@@ -539,11 +545,11 @@ def main():
         "user": "root",
         "Contact": "support@candelatech.com"
     }
-    generate_report(ftp_data,
+    ftp_html.generate_report(ftp_data,
                     date,
                     test_setup_info,
                     input_setup_info,
-                    graph_path="/home/lanforge/html-reports/FTP-Test")
+                    graph_path="/home/%s/html-reports/FTP-Test" % args.user)
 
 
 if __name__ == '__main__':

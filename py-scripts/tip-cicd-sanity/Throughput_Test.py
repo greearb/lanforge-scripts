@@ -1,3 +1,6 @@
+import sys
+import os
+import importlib
 import csv
 import sys
 import time
@@ -7,11 +10,18 @@ import json
 import os
 import logging
 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
 import single_client_throughput
+single_client_throughput = importlib.import_module("py-scripts.tip-cicd-sanity.single_client_throughput")
 import cloudsdk
+cloudsdk = importlib.import_module("py-scripts.tip-cicd-sanity.cloudsdk")
 from cloudsdk import CloudSDK
+CloudSDK = cloudsdk.CloudSDK
 import lab_ap_info
+lab_ap_info = importlib.import_module("py-scripts.tip-cicd-sanity.lab_ap_info")
 import throughput_profiles
+throughput_profiles = importlib.import_module("py-scripts.tip-cicd-sanity.throughput_profiles")
 
 cloudSDK_url=os.getenv('CLOUD_SDK_URL')
 station = ["tput5000"]

@@ -1,22 +1,24 @@
 #!/usr/bin/env python3
-
 import sys
+import os
+import importlib
+import argparse
+import datetime
+import time
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-from LANforge import LFUtils
-from LANforge import lfcli_base
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
-from realm import Realm
-import argparse
-import datetime
-import time
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
+
 
 class Layer3Test(LFCliBase):
 
@@ -135,13 +137,12 @@ class Layer3Test(LFCliBase):
 
 def main():
     # This has --mgr, --mgr_port and --debug
-    parser = LFCliBase.create_bare_argparse(prog="layer3_test.py", formatter_class=argparse.RawTextHelpFormatter, epilog="About This Script")
+    parser = LFCliBase.create_basic_argparse(
+        prog="layer3_test.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog="About This Script")
 
     # Adding More Arguments for custom use
-    parser.add_argument('--ssid', help='--ssid of DUT', default="lexusdut")
-    parser.add_argument('--passwd', help='--passwd of dut', default="[BLANK]")
-    parser.add_argument('--radio', help='--radio to use on LANforge', default="wiphy1")
-    parser.add_argument('--security', help='--security of dut', default="open")
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="1m")
     parser.add_argument('--session_id', help='--session_id is for websocket', default="local")
     parser.add_argument('--num_client', type=int, help='--num_sta is number of stations you want to create', default=2)

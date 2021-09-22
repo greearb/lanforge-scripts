@@ -17,15 +17,27 @@ COPYWRITE
 
 INCLUDE_IN_README
 '''
-
+import sys
+import os
+import importlib
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import pandas as pd
 import pdfkit
-from lf_report import lf_report
-from lf_graph import lf_bar_graph, lf_scatter_graph, lf_stacked_graph, lf_horizontal_stacked_graph
 import random
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lf_report = importlib.import_module("py-scripts.lf_report")
+lf_report = lf_report.lf_report
+lf_graph = importlib.import_module("py-scripts.lf_graph")
+lf_bar_graph = lf_graph.lf_bar_graph
+lf_scatter_graph = lf_graph.lf_scatter_graph
+lf_stacked_graph = lf_graph.lf_stacked_graph
+lf_horizontal_stacked_graph = lf_graph.lf_horizontal_stacked_graph
+
 
 # Unit Test
 if __name__ == "__main__":
@@ -107,7 +119,8 @@ if __name__ == "__main__":
                          _legend_loc="best",
                          _legend_box=(1,1),
                          _legend_ncol=1,
-                         _legend_fontsize=None)
+                         _legend_fontsize=None,
+                         _enable_csv=True)
 
     graph_png = graph.build_bar_graph()
 
@@ -116,7 +129,9 @@ if __name__ == "__main__":
     report.set_graph_image(graph_png)
     # need to move the graph image to the results 
     report.move_graph_image()
-
+    if graph.enable_csv:
+        report.set_csv_filename(graph_png)
+        report.move_csv_file()
     report.build_graph()
     set1 = [1, 2, 3, 4]
     set2 = [[45, 67, 45, 34], [34, 56, 45, 34], [45, 78, 23, 45]]

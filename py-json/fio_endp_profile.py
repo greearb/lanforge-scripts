@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
-from LANforge.lfcli_base import LFCliBase
-import pprint
-from pprint import pprint
-import time
-
-# Class: FIOEndpProfile(LFCliBase) 
-# 
+# Class: FIOEndpProfile(LFCliBase)
 
 # Written by Candela Technologies Inc.
 #  Updated by:
-#
+import sys
+import os
+import importlib
+import time
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+
 
 class FIOEndpProfile(LFCliBase):
     """

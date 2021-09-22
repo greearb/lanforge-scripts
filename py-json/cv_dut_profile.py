@@ -1,8 +1,19 @@
-import time
-
 # !/usr/bin/env python3
-# ---- ---- ---- ---- LANforge Base Imports ---- ---- ---- ----
-from LANforge.lfcli_base import LFCliBase
+import sys
+import os
+import importlib
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit()
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+add_dut = importlib.import_module("py-json.LANforge.add_dut")
+add_dut_flags = add_dut.add_dut_flags
 
 
 class cv_dut(LFCliBase):
@@ -13,6 +24,8 @@ class cv_dut(LFCliBase):
                  hw_version="NA",
                  serial_num="NA",
                  model_num="NA",
+                 desired_dut_flags=None,
+                 desired_dut_flags_mask=None
                  ):
         super().__init__(_lfjson_host=lfclient_host,
                          _lfjson_port=lfclient_port)
@@ -27,6 +40,30 @@ class cv_dut(LFCliBase):
         self.lan_port = "[BLANK]"
         self.api_id = "0"
         self.flags_mask = "NA"
+        if desired_dut_flags is not None:
+            self.dut_flags = desired_dut_flags
+            self.dut_flags_mask = desired_dut_flags_mask
+
+    def add_named_flags(self, desired_list, command_ref):
+        if desired_list is None:
+            raise ValueError("addNamedFlags wants a list of desired flag names")
+        if len(desired_list) < 1:
+            print("addNamedFlags: empty desired list")
+            return 0
+        if (command_ref is None) or (len(command_ref) < 1):
+            raise ValueError("addNamedFlags wants a maps of flag values")
+
+        result = 0
+        for name in desired_list:
+            if (name is None) or (name == ""):
+                continue
+            if name not in command_ref:
+                if self.debug:
+                    print(command_ref)
+                raise ValueError("flag %s not in map" % name)
+            result += command_ref[name]
+
+        return result
 
     def create_dut(self,
                    ssid1="[BLANK]",
@@ -43,6 +80,11 @@ class cv_dut(LFCliBase):
                    top_left_x="NA",
                    top_left_y="NA",
                    ):
+        try:
+            self.flags = self.add_named_flags(self.dut_flags, add_dut_flags)
+            self.flags_mask = self.add_named_flags(self.dut_flags_mask, add_dut_flags)
+        except:
+            pass
         response_json = []
         req_url = "/cli-json/add_dut"
         data = {

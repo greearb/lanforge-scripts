@@ -15,28 +15,22 @@ Example:
     --mac 04:f0:21:89:3e:ea,04:f0:21:89:4e:ea #mac
     --bss_trans #flag to set BSS transition on all stations
 """
-
 import sys
 import os
-import argparse
-import time
-import json
-from os import path
+import importlib
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-import argparse
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-from LANforge import LFUtils
-from realm import Realm
-import time
-import datetime
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 
 
 class client_connect(Realm):

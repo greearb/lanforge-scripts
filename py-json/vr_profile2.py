@@ -1,11 +1,18 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+import importlib
 import time
 from pprint import pprint
 from random import randint
 
-from geometry import Rect, Group
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-from LANforge import LFUtils
-from base_profile import BaseProfile
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+base_profile = importlib.import_module("py-json.base_profile")
+BaseProfile = base_profile.BaseProfile
 
 
 class VRProfile(BaseProfile):
@@ -64,31 +71,6 @@ class VRProfile(BaseProfile):
         occupied_area = self.get_occupied_area(resource=resource, debug=debug)
         return Rect(x=0, y=0, height=occupied_area.height, width=occupied_area.width)
 
-    def get_all_vrcx_bounds(self, resource=None, debug=False):
-        """
-        Computes bounds of all free vrcx ports but omits Virtual Routers
-        :param resource:
-        :param debug:
-        :return: rectangle encompasing all free vrcx ports or None
-        """
-        if (resource is None) or (resource < 1):
-            raise ValueError("get_netsmith_bounds wants resource id")
-        vrcx_map = self.vrcx_list(resource=resource, debug=debug)
-        rect_list = []
-        for eid,item in vrcx_map.items():
-            rect_list.append(self.vr_to_rect(item))
-        if len(rect_list) < 1:
-            return None
-        bounding_group = Group()
-        for item in rect_list:
-            bounding_group.append(item)
-
-        bounding_group.update()
-
-        return Rect(x=bounding_group.x,
-                    y=bounding_group.y,
-                    width=bounding_group.width,
-                    height=bounding_group.height)
 
     def vr_eid_to_url(self, eid_str=None, debug=False):
         debug |= self.debug

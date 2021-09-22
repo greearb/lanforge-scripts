@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
-
-from LANforge.lfcli_base import LFCliBase
-from LANforge import LFRequest
-from LANforge import add_vap
-from LANforge import set_port
-from LANforge import LFUtils
-import pprint
+import sys
+import os
+import importlib
 from pprint import pprint
 import time
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
+add_vap = importlib.import_module("py-json.LANforge.add_vap")
+set_port = importlib.import_module("py-json.LANforge.set_port")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 
 class VAPProfile(LFCliBase):

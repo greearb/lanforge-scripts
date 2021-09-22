@@ -1,25 +1,38 @@
-
-#!/usr/bin/env python3
-from LANforge.lfcli_base import LFCliBase
-from LANforge import LFRequest
-from LANforge import LFUtils
-from LANforge import set_port
-from LANforge import add_sta
-import pprint
+# !/usr/bin/env python3
+import sys
+import os
+import importlib
 from pprint import pprint
 import time
 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+set_port = importlib.import_module("py-json.LANforge.set_port")
+add_sta = importlib.import_module("py-json.LANforge.add_sta")
+
+
+# Uncomment below to include autogen library.
+# if os.environ.get("LF_USE_AUTOGEN") == 1:
+#         lf_json_autogen = importlib.import_module("py-json.LANforge.lf_json_autogen")
+#         LFJsonPost = jf_json_autogen.LFJsonPost
 
 # use the station profile to set the combination of features you want on your stations
 # once this combination is configured, build the stations with the build(resource, radio, number) call
 # build() calls will fail if the station already exists. Please survey and clean your resource
 # before calling build()
-#       survey = Realm.findStations(resource=1)
-#       Realm.removeStations(survey)
-#       profile = Realm.newStationProfile()
-#       profile.set...
-#       profile.build(resource, radio, 64)
-#
+#         realm = importlib.import_module("py-json.realm")
+#         Realm = realm.Realm
+#         survey = Realm.findStations(resource=1)
+#         Realm.removeStations(survey)
+#         profile = Realm.newStationProfile()
+#         profile.set...
+#         profile.build(resource, radio, 64)
+
+
 class StationProfile:
     def __init__(self, lfclient_url, local_realm,
                  ssid="NA",
@@ -60,6 +73,7 @@ class StationProfile:
             "mode": 0,
             "mac": "xx:xx:xx:xx:*:xx",
             "flags": 0,  # (0x400 + 0x20000 + 0x1000000000)  # create admin down
+            "flags_mask": 0
         }
         self.desired_set_port_cmd_flags = []
         self.desired_set_port_current_flags = ["if_down"]
@@ -88,6 +102,20 @@ class StationProfile:
             "realm": None,
             "domain": None
         }
+        self.wifi_txo_data_modified = False
+        self.wifi_txo_data = {
+            "shelf": 1,
+            "resource": 1,
+            "port": None,
+            "txo_enable": None,
+            "txo_txpower": None,
+            "txo_pream": None,
+            "txo_mcs": None,
+            "txo_nss": None,
+            "txo_bw": None,
+            "txo_retries": None,
+            "txo_sgi": None
+        }
 
         self.reset_port_extra_data = {
             "shelf": 1,
@@ -101,6 +129,24 @@ class StationProfile:
             "port_to_reset": 0,
             "seconds_till_reset": 0
         }
+
+    def set_wifi_txo(self, txo_ena=1,
+                     tx_power=255,
+                     pream=0,
+                     mcs=0,
+                     nss=0,
+                     bw=0,
+                     retries=1,
+                     sgi=0):
+        self.wifi_txo_data_modified = True
+        self.wifi_txo_data["txo_enable"] = txo_ena
+        self.wifi_txo_data["txo_txpower"] = tx_power
+        self.wifi_txo_data["txo_pream"] = pream
+        self.wifi_txo_data["txo_mcs"] = mcs
+        self.wifi_txo_data["txo_nss"] = nss
+        self.wifi_txo_data["txo_bw"] = bw
+        self.wifi_txo_data["txo_retries"] = retries
+        self.wifi_txo_data["txo_sgi"] = sgi
 
     def set_wifi_extra(self, key_mgmt="WPA-EAP",
                        pairwise="CCMP TKIP",
@@ -193,7 +239,7 @@ class StationProfile:
                 self.set_command_param("add_sta", "ieee80211w", 2)
             # self.add_sta_data["key"] = passwd
 
-    def station_mode_to_number(self,mode):
+    def station_mode_to_number(self, mode):
         modes = ['a', 'b', 'g', 'abg', 'an', 'abgn', 'bgn', 'bg', 'abgn-AC', 'bgn-AC', 'an-AC']
         return modes.index(mode) + 1
 
@@ -383,6 +429,8 @@ class StationProfile:
                                                               set_port.set_port_interest_flags)
         self.wifi_extra_data["resource"] = radio_resource
         self.wifi_extra_data["shelf"] = radio_shelf
+        self.wifi_txo_data["resource"] = radio_resource
+        self.wifi_txo_data["shelf"] = radio_shelf
         self.reset_port_extra_data["resource"] = radio_resource
         self.reset_port_extra_data["shelf"] = radio_shelf
 
@@ -391,6 +439,7 @@ class StationProfile:
         add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta", debug_=debug)
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port", debug_=debug)
         wifi_extra_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra", debug_=debug)
+        wifi_txo_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_txo", debug_=debug)
         my_sta_names = []
         # add radio here
         if (num_stations > 0) and (len(sta_names_) < 1):
@@ -466,9 +515,14 @@ class StationProfile:
 
             self.wifi_extra_data["resource"] = radio_resource
             self.wifi_extra_data["port"] = name
+            self.wifi_txo_data["resource"] = radio_resource
+            self.wifi_txo_data["port"] = name
             if self.wifi_extra_data_modified:
                 wifi_extra_r.addPostData(self.wifi_extra_data)
                 json_response = wifi_extra_r.jsonPost(debug)
+            if self.wifi_txo_data_modified:
+                wifi_txo_r.addPostData(self.wifi_txo_data)
+                json_response = wifi_txo_r.jsonPost(debug)
 
             # append created stations to self.station_names
             self.station_names.append("%s.%s.%s" % (radio_shelf, radio_resource, name))
@@ -491,4 +545,24 @@ class StationProfile:
         if self.debug:
             print("created %s stations" % num)
 
-#
+    def modify(self, radio):
+        for station in self.station_names:
+            print(station)
+            self.add_sta_data["flags"] = self.add_named_flags(self.desired_add_sta_flags, add_sta.add_sta_flags)
+            self.add_sta_data["flags_mask"] = self.add_named_flags(self.desired_add_sta_flags_mask,
+                                                                   add_sta.add_sta_flags)
+            self.add_sta_data["radio"] = radio
+            self.add_sta_data["sta_name"] = station
+            self.add_sta_data["ssid"] = 'NA'
+            self.add_sta_data["key"] = 'NA'
+            self.add_sta_data['mac'] = 'NA'
+            self.add_sta_data['mode'] = 'NA'
+            self.add_sta_data['suppress_preexec_cli'] = 'NA'
+            self.add_sta_data['suppress_preexec_method'] = 'NA'
+
+            add_sta_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_sta")
+            if self.debug:
+                print(self.lfclient_url + "/cli_json/add_sta")
+                print(self.add_sta_data)
+            add_sta_r.addPostData(self.add_sta_data)
+            json_response = add_sta_r.jsonPost(self.debug)

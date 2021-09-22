@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from matplotlib import pyplot as plt
-from datetime import datetime
 import numpy as np
 import os.path
 from os import path

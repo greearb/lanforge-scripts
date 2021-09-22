@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-'''
+"""
 NAME: lf_graph.py
 
-PURPOSE: 
+PURPOSE:
 Common Library for generating graphs for LANforge output
 
-SETUP:  
+SETUP:
 /lanforge/html-reports directory needs to be present or output generated in local file
 
-EXAMPLE:  
+EXAMPLE:
 see: /py-scritps/lf_report_test.py for example
 
 COPYWRITE
@@ -16,17 +16,20 @@ COPYWRITE
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README
-'''
-
+"""
+import sys
+import os
+import importlib
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 import numpy as np
-import pandas as pd
 import pdfkit
-import math
 from matplotlib.colors import ListedColormap
-from lf_csv import lf_csv
 
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lf_csv = importlib.import_module("py-scripts.lf_csv")
+lf_csv = lf_csv.lf_csv
 
 # internal candela references included during intial phases, to be deleted at future date
 
@@ -35,8 +38,8 @@ class lf_bar_graph():
     def __init__(self, _data_set=[[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]],
                  _xaxis_name="x-axis",
                  _yaxis_name="y-axis",
-                 _xaxis_categories=[1, 2, 3, 4, 5],
-                 _xaxis_label=["a", "b", "c", "d", "e"],
+                 _xaxis_categories=[1, 2, 3, 4],
+                 _xaxis_label=["a", "b", "c", "d"],
                  _graph_title="",
                  _title_size=16,
                  _graph_image_name="image_name",
@@ -48,8 +51,9 @@ class lf_bar_graph():
                  _color_name=['lightcoral', 'darkgrey', 'r', 'g', 'b', 'y'],
                  _figsize=(10, 5),
                  _show_bar_value=False,
-                 _xaxis_step=5,
+                 _xaxis_step=1,
                  _xticks_font = None,
+                 _xaxis_value_location = 0,
                  _text_font=None,
                  _text_rotation=None,
                  _grp_title = "",
@@ -79,6 +83,7 @@ class lf_bar_graph():
         self.show_bar_value = _show_bar_value
         self.xaxis_step = _xaxis_step
         self.xticks_font = _xticks_font
+        self._xaxis_value_location = _xaxis_value_location
         self.text_font = _text_font
         self.text_rotation = _text_rotation
         self.grp_title = _grp_title
@@ -129,8 +134,8 @@ class lf_bar_graph():
         if self.xaxis_categories[0] == 0:
             plt.xticks(np.arange(0, len(self.xaxis_categories), step=self.xaxis_step),fontsize = self.xticks_font)
         else:
-            plt.xticks(np.arange(0, len(self.data_set[0]), step=self.xaxis_step), self.xaxis_categories,
-                       fontsize = self.xticks_font)
+            plt.xticks([i + self._xaxis_value_location for i in np.arange(0, len(self.data_set[0]), step=self.xaxis_step)],
+                self.xaxis_categories, fontsize=self.xticks_font)
         plt.legend(handles=self.legend_handles, loc=self.legend_loc, bbox_to_anchor=self.legend_box, ncol=self.legend_ncol, fontsize=self.legend_fontsize)
         plt.suptitle(self.title, fontsize=self.title_size)
         plt.title(self.grp_title)
@@ -139,11 +144,18 @@ class lf_bar_graph():
         plt.close()
         print("{}.png".format(self.graph_image_name))
         if self.enable_csv:
-            if self.data_set is not None:
-                self.lf_csv.columns = self.label
-                self.lf_csv.rows = self.data_set
-                self.lf_csv.filename = f"{self.graph_image_name}.csv"
-                self.lf_csv.generate_csv()
+            if self.data_set is not None and self.xaxis_categories is not None:
+                if len(self.xaxis_categories) == len(self.data_set[0]):
+                    self.lf_csv.columns = []
+                    self.lf_csv.rows = []
+                    self.lf_csv.columns.append(self.xaxis_name)
+                    self.lf_csv.columns.extend(self.label)
+                    self.lf_csv.rows.append(self.xaxis_categories)
+                    self.lf_csv.rows.extend(self.data_set)
+                    self.lf_csv.filename = f"{self.graph_image_name}.csv"
+                    self.lf_csv.generate_csv()
+                else:
+                    raise ValueError("Length and x-axis values and y-axis values should be same.")
             else:
                 print("No Dataset Found")
         print("{}.csv".format(self.graph_image_name))
@@ -326,6 +338,80 @@ class lf_horizontal_stacked_graph():
         return "%s.png" % self.graph_image_name
 
 
+class lf_line_graph():
+    def __init__(self,_data_set=[[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]],
+                 _xaxis_name="x-axis",
+                 _yaxis_name="y-axis",
+                 _xaxis_categories=[1, 2, 3, 4, 5],
+                 _xaxis_label=["a", "b", "c", "d", "e"],
+                 _graph_title="",
+                 _title_size=16,
+                 _graph_image_name="image_name",
+                 _label=["bi-downlink", "bi-uplink", 'uplink'],
+                 _font_weight='bold',
+                 _color=['forestgreen', 'c', 'r', 'g', 'b', 'p'],
+                 _figsize=(10, 5),
+                 _xaxis_step = 5,
+                 _xticks_font = None,
+                 _text_font=None,
+                 _legend_handles=None,
+                 _legend_loc="best",
+                 _legend_box=None,
+                 _legend_ncol=1,
+                 _legend_fontsize=None,
+                 _marker=None,
+                 _dpi=96,
+                 _enable_csv=False):
+        self.data_set = _data_set
+        self.xaxis_name = _xaxis_name
+        self.yaxis_name = _yaxis_name
+        self.xaxis_categories = _xaxis_categories
+        self.xaxis_label = _xaxis_label
+        self.grp_title = _graph_title
+        self.title_size = _title_size
+        self.graph_image_name = _graph_image_name
+        self.label = _label
+        self.color = _color
+        self.font_weight = _font_weight
+        self.figsize = _figsize
+        self.xaxis_step = _xaxis_step
+        self.xticks_font = _xticks_font
+        self.text_font = _text_font
+        self.marker = _marker
+        self.enable_csv = _enable_csv
+        self.lf_csv = lf_csv()
+        self.legend_handles = _legend_handles
+        self.legend_loc = _legend_loc
+        self.legend_box = _legend_box
+        self.legend_ncol = _legend_ncol
+        self.legend_fontsize = _legend_fontsize
+
+    def build_line_graph(self):
+        fig = plt.subplots(figsize=self.figsize)
+        i = 0
+        for data in self.data_set:
+            plt.plot(self.xaxis_categories, data, color=self.color[i], label=self.label[i], marker = self.marker)
+            i += 1
+
+        plt.xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
+        plt.ylabel(self.yaxis_name, fontweight='bold', fontsize=15)
+        plt.legend(handles=self.legend_handles, loc=self.legend_loc, bbox_to_anchor=self.legend_box, ncol=self.legend_ncol, fontsize=self.legend_fontsize)
+        plt.suptitle(self.grp_title, fontsize=self.title_size)
+        fig = plt.gcf()
+        plt.savefig("%s.png" % self.graph_image_name, dpi=96)
+        plt.close()
+        print("{}.png".format(self.graph_image_name))
+        if self.enable_csv:
+            if self.data_set is not None:
+                self.lf_csv.columns = self.label
+                self.lf_csv.rows = self.data_set
+                self.lf_csv.filename = f"{self.graph_image_name}.csv"
+                self.lf_csv.generate_csv()
+            else:
+                print("No Dataset Found")
+        print("{}.csv".format(self.graph_image_name))
+        return "%s.png" % self.graph_image_name
+
 # Unit Test
 if __name__ == "__main__":
     output_html_1 = "graph_1.html"
@@ -364,7 +450,8 @@ if __name__ == "__main__":
                          _graph_image_name="Bi-single_radio_2.4GHz",
                          _label=["bi-downlink", "bi-uplink", 'uplink'],
                          _color=None,
-                         _color_edge='red')
+                         _color_edge='red',
+                         _enable_csv=True)
     graph_html_obj = """
         <img align='center' style='padding:15;margin:5;width:1000px;' src=""" + "%s" % (graph.build_bar_graph()) + """ border='1' />
         <br><br>

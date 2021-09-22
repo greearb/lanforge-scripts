@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """TestRail API binding for Python 3.x.
 
 """

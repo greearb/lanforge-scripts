@@ -44,35 +44,32 @@ COPYRIGHT:
 Copyright 2021 Candela Technologies Inc
 
 INCLUDE_IN_README
-
 '''
-
 import sys
 import os
+import importlib
 from pprint import pprint
-from csv_to_influx import *
-import re
 import serial
 import pexpect
 from pexpect_serial import SerialSpawn
-from lf_report import lf_report
+import argparse
+import time
+import datetime
+import csv
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-import argparse
-# from LANforge.lfcli_base import LFCliBase
-from LANforge import LFUtils
-# import realm
-from realm import Realm
-import time
-import datetime
-import subprocess
-import csv
+lf_report = importlib.import_module("py-scripts.lf_report")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
+csv_to_influx = importlib.import_module("py-scripts.csv_to_influx")
+InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")
+influx_add_parser_args = InfluxRequest.influx_add_parser_args
 
 
 # This class handles running the test and generating reports.
@@ -288,52 +285,84 @@ class L3VariableTime(Realm):
     def get_endp_stats_for_port(self, eid_name, endps):
         lat = 0
         jit = 0
-        tput = 0
+        total_dl_rate = 0
+        total_dl_rate_ll = 0
+        total_dl_pkts_ll = 0
+        total_ul_rate = 0
+        total_ul_rate_ll = 0
+        total_ul_pkts_ll = 0
         count = 0
+        sta_name = 'no_station'
 
         # print("endp-stats-for-port, port-eid: {}".format(eid_name))
         eid = self.name_to_eid(eid_name)
+        print("eid_name: {eid_name} eid: {eid}".format(eid_name=eid_name, eid=eid))
 
         # Convert all eid elements to strings
         eid[0] = str(eid[0])
         eid[1] = str(eid[1])
         eid[2] = str(eid[2])
 
-        for e in endps:
-            # pprint(e)
-            eid_endp = e["eid"].split(".")
-            print("Comparing eid: ", eid, " to endp-id: ", eid_endp)
+        for endp in endps:
+            pprint(endp)
+            eid_endp = endp["eid"].split(".")
+            print("Comparing eid:{eid} to endp-id {eid_endp}".format(eid=eid, eid_endp=eid_endp))
             # Look through all the endpoints (endps), to find the port the eid_name is using.
             # The eid_name that has the same Shelf, Resource, and Port as the eid_endp (looking at all the endps)
             # Then read the eid_endp to get the delay, jitter and rx rate
             # Note: the endp eid is shelf.resource.port.endp-id, the eid can be treated somewhat as
             # child class of port-eid , and look up the port the eid is using.
             if eid[0] == eid_endp[0] and eid[1] == eid_endp[1] and eid[2] == eid_endp[2]:
-                lat += int(e["delay"])
-                jit += int(e["jitter"])
-                tput += int(e["rx rate"])
+                lat += int(endp["delay"])
+                jit += int(endp["jitter"])
+                name = endp["name"]
+                print("endp name {name}".format(name=name))
+                sta_name = name.replace('-A', '')
+                # only the -A endpoint will be found so need to look
+
                 count += 1
-                print("matched: ")
+                print("Matched: name: {name} eid:{eid} to endp-id {eid_endp}".format(name=name, eid=eid,
+                                                                                     eid_endp=eid_endp))
             else:
-                print("Did not match")
+                name = endp["name"]
+                print("No Match: name: {name} eid:{eid} to endp-id {eid_endp}".format(name=name, eid=eid,
+                                                                                      eid_endp=eid_endp))
 
         if count > 1:
             lat = int(lat / count)
             jit = int(jit / count)
 
-        return lat, jit, tput
+        # need to loop though again to find the upload and download per station if the name matched
+        for endp in endps:
+            if sta_name in endp["name"]:
+                name = endp["name"]
+                if name.endswith("-A"):
+                    print("name has -A")
+                    total_dl_rate += int(endp["rx rate"])
+                    total_dl_rate_ll += int(endp["rx rate ll"])
+                    total_dl_pkts_ll += int(endp["rx pkts ll"])
+                # -B upload side
+                else:
+                    total_ul_rate += int(endp["rx rate"])
+                    total_ul_rate_ll += int(endp["rx rate ll"])
+                    total_ul_pkts_ll += int(endp["rx pkts ll"])
+
+        return lat, jit, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll
 
     # Query all endpoints to generate rx and other stats, returned
     # as an array of objects.
     def __get_rx_values(self):
-        endp_list = self.json_get("endp?fields=name,eid,delay,jitter,rx+rate,rx+bytes,rx+drop+%25", debug_=False)
+        endp_list = self.json_get(
+            "endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll", debug_=False)
         endp_rx_drop_map = {}
         endp_rx_map = {}
         our_endps = {}
         endps = []
 
         total_ul = 0
+        total_ul_ll = 0
         total_dl = 0
+        total_dl_ll = 0
 
         for e in self.multicast_profile.get_mc_names():
             our_endps[e] = e;
@@ -350,6 +379,12 @@ class L3VariableTime(Realm):
                         for value_name, value in value.items():
                             if value_name == 'rx bytes':
                                 endp_rx_map[item] = value
+                            if value_name == 'rx rate':
+                                endp_rx_map[item] = value
+                            if value_name == 'rx rate ll':
+                                endp_rx_map[item] = value
+                            if value_name == 'rx pkts ll':
+                                endp_rx_map[item] = value
                             if value_name == 'rx drop %':
                                 endp_rx_drop_map[item] = value
                             if value_name == 'rx rate':
@@ -359,9 +394,15 @@ class L3VariableTime(Realm):
                                     total_dl += int(value)
                                 else:
                                     total_ul += int(value)
+                            if value_name == 'rx rate ll':
+                                # This hack breaks for mcast or if someone names endpoints weirdly.
+                                if item.endswith("-A"):
+                                    total_dl_ll += int(value)
+                                else:
+                                    total_ul_ll += int(value)
 
         # print("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
-        return endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul
+        return endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
 
     # Common code to generate timestamp for CSV files.
     def time_stamp(self):
@@ -497,7 +538,7 @@ class L3VariableTime(Realm):
             ss.sendline(str(self.ap_cmd_5g))
             ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
             ap_stats_5g = ss.before.decode('utf-8', 'ignore')
-            print("ap_stats_5g {}".format(ap_stats_5g))
+            print("ap_stats_5g from AP: {}".format(ap_stats_5g))
 
         except:
             print("WARNING unable to read AP")
@@ -513,8 +554,8 @@ class L3VariableTime(Realm):
             ss = SerialSpawn(ser)
             ss.sendline(str(self.ap_cmd_2g))
             ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
-            ap_stats = ss.before.decode('utf-8', 'ignore')
-            print("ap_stats_2g {}".format(ap_stats_2g))
+            ap_stats_2g = ss.before.decode('utf-8', 'ignore')
+            print("ap_stats_2g from AP: {}".format(ap_stats_2g))
 
         except:
             print("WARNING unable to read AP")
@@ -531,7 +572,7 @@ class L3VariableTime(Realm):
             ss.sendline(str(self.ap_chanim_cmd_5g))
             ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
             ap_chanim_stats_5g = ss.before.decode('utf-8', 'ignore')
-            print("ap_stats {}".format(ap_chanim_stats_5g))
+            print("read_ap_chanim_stats_5g {}".format(ap_chanim_stats_5g))
 
         except:
             print("WARNING unable to read AP")
@@ -548,7 +589,7 @@ class L3VariableTime(Realm):
             ss.sendline(str(self.ap_chanim_cmd_2g))
             ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
             ap_chanim_stats_2g = ss.before.decode('utf-8', 'ignore')
-            print("ap_stats {}".format(ap_chanim_stats_2g))
+            print("read_ap_chanim_stats_2g {}".format(ap_chanim_stats_2g))
 
         except:
             print("WARNING unable to read AP")
@@ -645,7 +686,7 @@ class L3VariableTime(Realm):
 
                     cur_time = datetime.datetime.now()
                     print("Getting initial values.")
-                    old_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps = self.__get_rx_values()
+                    old_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
 
                     end_time = self.parse_time(self.test_duration) + cur_time
 
@@ -656,6 +697,8 @@ class L3VariableTime(Realm):
                     expected_passes = 0
                     total_dl_bps = 0
                     total_ul_bps = 0
+                    total_dl_ll_bps = 0
+                    total_ul_ll_bps = 0
                     endps = []
                     ap_row = []
                     ap_stats_col_titles = []
@@ -672,9 +715,10 @@ class L3VariableTime(Realm):
                             time.sleep(.2)
 
                         self.epoch_time = int(time.time())
-                        new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps = self.__get_rx_values()
+                        new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
 
-                        # print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps)
+                        print("main loop, total-dl: ", total_dl_bps, " total-ul: ", total_ul_bps, " total-dl-ll: ",
+                              total_dl_ll_bps, " total-ul-ll: ", total_ul_ll_bps)
 
                         # AP OUTPUT
                         if self.ap_read:
@@ -694,7 +738,10 @@ class L3VariableTime(Realm):
                                     "root@Docsis-Gateway:~# wl -i wl1 chanim_stats\n",
                                     "version: 3\n",
                                     "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
-                                    "0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
+                                    # `"0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
+                                    '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
+                                # "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
+
                             else:
                                 # read from the AP
                                 ap_stats_5g = self.read_ap_stats_5g()
@@ -704,7 +751,7 @@ class L3VariableTime(Realm):
                             print("From AP stats: ap_stats_5g_rows {}".format(ap_stats_5g_rows))
 
                             ap_chanim_stats_rows_5g = ap_chanim_stats_5g.splitlines()
-                            print("From AP chanim: ap_chanim_stats_rows {}".format(ap_chanim_stats_rows_5g))
+                            print("From AP chanim: ap_chanim_stats_rows_5g {}".format(ap_chanim_stats_rows_5g))
                             channel_utilization = 0
 
                             # Query all of our ports
@@ -722,7 +769,7 @@ class L3VariableTime(Realm):
                                     # print("response".format(response))
                                     pprint(response)
                                     p = response['interface']
-                                    # print("#### From LANforge: p, response['insterface']:{}".format(p))
+                                    print("#### From LANforge: p, response['insterface']:{}".format(p))
                                     mac = p['mac']
                                     # print("#### From LANforge: p['mac']: {mac}".format(mac=mac))
 
@@ -751,24 +798,37 @@ class L3VariableTime(Realm):
                                         print("selected ap_row (from split_row): {}".format(ap_row))
 
                                         # Find latency, jitter for connections using this port.
-                                        latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
+                                        latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
+                                            p["port"], endps)
 
                                         # now report the ap_chanim_stats along side of the ap_stats_5g
                                         xtop_reported = False
                                         for row in ap_chanim_stats_rows_5g:
                                             split_row = row.split()
                                             if xtop_reported:
+                                                print("xtop_reported 5g row: {row}".format(row=row))
+                                                print("xtop_reported 5g split_row: {split_row}".format(
+                                                    split_row=split_row))
                                                 try:
                                                     xtop = split_row[7]
-                                                    channel_utilization = 100 - int(xtop)
+                                                    print("5g xtop {xtop}".format(xtop=xtop))
                                                 except:
                                                     print(
-                                                        "detected chanspec with reading chanim_stats, failed reading xtop")
+                                                        "5g detected chanspec with reading chanim_stats, exception reading xtop")
+
+                                                try:
+                                                    channel_utilization = float(100) - float(xtop)
+                                                    print("5g channel_utilization {utilization}".format(
+                                                        utilization=channel_utilization))
+                                                except:
+                                                    print(
+                                                        "5g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
                                                 # should be only one channel utilization
                                                 break
                                             else:
                                                 try:
                                                     if split_row[0].lower() == 'chanspec':
+                                                        print("5g chanspec found xtop_reported = True")
                                                         xtop_reported = True
                                                 except:
                                                     print("Error reading xtop")
@@ -784,7 +844,9 @@ class L3VariableTime(Realm):
 
                                         self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str,
                                                             atten_val, eid_name, p,
-                                                            latency, jitter, tput, ap_row,
+                                                            latency, jitter, total_ul_rate, total_ul_rate_ll,
+                                                            total_ul_pkts_ll,
+                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row,
                                                             ap_stats_5g_col_titles)  # ap_stats_5g_col_titles used as a length
                             if self.ap_test_mode:
                                 # Create the test data as a continuous string
@@ -802,7 +864,9 @@ class L3VariableTime(Realm):
                                     "root@Docsis-Gateway:~# wl -i wl1 chanim_stats\n",
                                     "version: 3\n",
                                     "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
-                                    "0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
+                                    # "0xe06a  62      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
+                                    '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
+                                # "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
                             else:
                                 # read from the AP
                                 ap_stats_2g = self.read_ap_stats_2g()
@@ -859,24 +923,37 @@ class L3VariableTime(Realm):
                                         print("selected ap_row (from split_row): {}".format(ap_row))
 
                                         # Find latency, jitter for connections using this port.
-                                        latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
+                                        latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
+                                            p["port"], endps)
 
                                         # now report the ap_chanim_stats along side of the ap_stats_2g
                                         xtop_reported = False
                                         for row in ap_chanim_stats_rows_2g:
                                             split_row = row.split()
                                             if xtop_reported:
+                                                print("xtop_reported 2g row: {row}".format(row=row))
+                                                print("xtop_reported 2g split_row: {split_row}".format(
+                                                    split_row=split_row))
                                                 try:
                                                     xtop = split_row[7]
-                                                    channel_utilization = 100 - int(xtop)
+                                                    print("2g xtop {xtop}".format(xtop=xtop))
                                                 except:
                                                     print(
-                                                        "detected chanspec with reading chanim_stats, failed reading xtop")
+                                                        "2g detected chanspec with reading chanim_stats, exception reading xtop")
+
+                                                try:
+                                                    channel_utilization = float(100) - float(xtop)
+                                                    print("2g channel_utilization {utilization}".format(
+                                                        utilization=channel_utilization))
+                                                except:
+                                                    print(
+                                                        "2g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
                                                 # should be only one channel utilization
                                                 break
                                             else:
                                                 try:
                                                     if split_row[0].lower() == 'chanspec':
+                                                        print("2g chanspec found xtop_reported = True")
                                                         xtop_reported = True
                                                 except:
                                                     print("Error reading xtop")
@@ -892,7 +969,9 @@ class L3VariableTime(Realm):
 
                                         self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str,
                                                             atten_val, eid_name, p,
-                                                            latency, jitter, tput, ap_row,
+                                                            latency, jitter, total_ul_rate, total_ul_rate_ll,
+                                                            total_ul_pkts_ll,
+                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row,
                                                             ap_stats_2g_col_titles)  # ap_stats_2g_col_titles used as a length
 
                         else:
@@ -909,23 +988,31 @@ class L3VariableTime(Realm):
                                     pprint(response)
                                 else:
                                     p = response['interface']
-                                    latency, jitter, tput = self.get_endp_stats_for_port(p["port"], endps)
+                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
+                                        p["port"], endps)
 
                                     self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str,
                                                         atten_val, eid_name, p,
-                                                        latency, jitter, tput, ap_row,
+                                                        latency, jitter, total_ul_rate, total_ul_rate_ll,
+                                                        total_ul_pkts_ll,
+                                                        total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row,
                                                         ap_stats_col_titles)  # ap_stats_col_titles used as a length
 
-                    # At end of test step, record KPI information.
+                    # At end of test step, record KPI information. This is different the kpi.csv
                     self.record_kpi(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, total_dl_bps,
-                                    total_ul_bps)
+                                    total_ul_bps, total_dl_ll_bps, total_ul_ll_bps)
 
                     # At end of test if requested store upload and download stats
                     if self.ap_scheduler_stats:
-                        # get the (UL) Upload scheduler statistics
-                        self.ap_umsched += self.ap_custom_cmd('wl -i wl1 dump umsched')
-                        # get the (DL) Download schduler staticstics
-                        self.ap_msched += self.ap_custom_cmd('wl -i wl1 dump msched')
+                        # get the (UL) Upload 5g scheduler statistics
+                        self.ap_5g_umsched += self.ap_custom_cmd('wl -i wl1 dump umsched')
+                        # get the (DL) Download 5g schduler staticstics
+                        self.ap_5g_msched += self.ap_custom_cmd('wl -i wl1 dump msched')
+
+                        # get the (UL) Upload 24g scheduler statistics
+                        self.ap_24g_umsched += self.ap_custom_cmd('wl -i wl0 dump umsched')
+                        # get the (DL) Download 24g schduler staticstics
+                        self.ap_24g_msched += self.ap_custom_cmd('wl -i wl0 dump msched')
 
                     if self.ap_ofdma_stats:
                         # provide OFDMA stats 5GHz
@@ -944,15 +1031,17 @@ class L3VariableTime(Realm):
                         self._pass("PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" % (
                         ul, dl, ul_pdu, dl_pdu), print_pass)
 
-    def write_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data, latency, jitter, tput,
-                       ap_row, ap_stats_col_titles):
+    def write_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data, latency, jitter,
+                       total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
+                       total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row, ap_stats_col_titles):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, eid_name
                ]
 
         row = row + [port_data['bps rx'], port_data['bps tx'], port_data['rx-rate'], port_data['tx-rate'],
-                     port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter, tput]
+                     port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter, total_ul_rate,
+                     total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll]
 
         # Add in info queried from AP. NOTE: do not need to pass in the ap_stats_col_titles
         # print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
@@ -969,7 +1058,8 @@ class L3VariableTime(Realm):
         self.port_csv_files[eid_name].flush()
 
     # Submit data to the influx db if configured to do so.
-    def record_kpi(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps):
+    def record_kpi(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps, total_dl_ll_bps,
+                   total_ul_ll_bps):
 
         tags = dict()
         tags['requested-ul-bps'] = ul
@@ -998,7 +1088,8 @@ class L3VariableTime(Realm):
             row = [self.epoch_time, self.time_stamp(), sta_count,
                    ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                    atten,
-                   total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)
+                   total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps),
+                   total_dl_ll_bps, total_ul_ll_bps, (total_ul_ll_bps + total_dl_ll_bps)
                    ]
             # Add values for any user specified tags
             for k in self.user_tags:
@@ -1035,7 +1126,8 @@ class L3VariableTime(Realm):
                           'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested', 'DL-Max-Requested',
                           'UL-Min-PDU', 'UL-Max-PDU', 'DL-Min-PDU', 'DL-Max-PDU', 'Attenuation',
                           'Name', 'Rx-Bps', 'Tx-Bps', 'Rx-Link-Rate', 'Tx-Link-Rate', 'RSSI', 'AP', 'Mode',
-                          'Rx-Latency', 'Rx-Jitter', 'Rx-Goodput-Bps'
+                          'Rx-Latency', 'Rx-Jitter', 'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll',
+                          'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll'
                           ]
         # Add in columns we are going to query from the AP
         for col in self.ap_stats_col_titles:
@@ -1047,7 +1139,8 @@ class L3VariableTime(Realm):
         csv_rx_headers = ['Time epoch', 'Time', 'Station-Count',
                           'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested', 'DL-Max-Requested',
                           'UL-Min-PDU', 'UL-Max-PDU', 'DL-Min-PDU', 'DL-Max-PDU', 'Attenuation',
-                          'Total-Download-Bps', 'Total-Upload-Bps', 'Total-UL/DL-Bps'
+                          'Total-Download-Bps', 'Total-Upload-Bps', 'Total-UL/DL-Bps',
+                          'Total-Download-LL-Bps', 'Total-Upload-LL-Bps', 'Total-UL/DL-LL-Bps'
                           ]
         for k in self.user_tags:
             csv_rx_headers.append(k[0])
@@ -1200,7 +1293,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument('--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ',
                         default="10 30")
 
-    parser.add_argument('--mgr', help='--mgr <hostname for where LANforge GUI is running>', default='localhost')
+    parser.add_argument('--lfmgr', help='--lfmgr <hostname for where LANforge GUI is running>', default='localhost')
     parser.add_argument('--test_duration',
                         help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',
                         default='3m')
@@ -1223,7 +1316,9 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
     parser.add_argument('--ap_port', help='--ap_port \'/dev/ttyUSB0\'', default='/dev/ttyUSB0')
     parser.add_argument('--ap_baud', help='--ap_baud \'115200\'', default='115200')
+    # note wl1 is the 5G interface , check the MAC ifconfig -a of the interface to the AP BSSID connection (default may be eth7)
     parser.add_argument('--ap_cmd_5g', help='ap_cmd_5g \'wl -i wl1 bs_data\'', default="wl -i wl1 bs_data")
+    # note wl1 is the 2.4G interface , check the MAC ifconfig -a of the interface to the AP BSSID connection
     parser.add_argument('--ap_cmd_2g', help='ap_cmd_2g \'wl -i wl0 bs_data\'', default="wl -i wl0 bs_data")
     parser.add_argument('--ap_chanim_cmd_5g', help='ap_chanim_cmd_5g \'wl -i wl1 chanim_stats\'',
                         default="wl -i wl1 chanim_stats")
@@ -1326,8 +1421,8 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     if args.endp_type:
         endp_types = args.endp_type
 
-    if args.mgr:
-        lfjson_host = args.mgr
+    if args.lfmgr:
+        lfjson_host = args.lfmgr
 
     if args.upstream_port:
         side_b = args.upstream_port
@@ -1344,11 +1439,11 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
     # Create report, when running with the test framework (lf_check.py) results need to be in the same directory
     if local_lf_report_dir != "":
-        report = lf_report(_path=local_lf_report_dir, _results_dir_name="test_l3_longevity",
-                           _output_html="test_l3_longevity.html", _output_pdf="test_l3_longevity.pdf")
+        report = lf_report.lf_report(_path=local_lf_report_dir, _results_dir_name="test_l3_longevity",
+                                     _output_html="test_l3_longevity.html", _output_pdf="test_l3_longevity.pdf")
     else:
-        report = lf_report(_results_dir_name="test_l3_longevity", _output_html="test_l3_longevity.html",
-                           _output_pdf="test_l3_longevity.pdf")
+        report = lf_report.lf_report(_results_dir_name="test_l3_longevity", _output_html="test_l3_longevity.html",
+                                     _output_pdf="test_l3_longevity.pdf")
 
     if args.csv_outfile != None:
         current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
@@ -1358,7 +1453,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
     influxdb = None
     if args.influx_bucket is not None:
-        from influx2 import RecordInflux
+        from InfluxRequest import RecordInflux
         influxdb = RecordInflux(_influx_host=args.influx_host,
                                 _influx_port=args.influx_port,
                                 _influx_org=args.influx_org,

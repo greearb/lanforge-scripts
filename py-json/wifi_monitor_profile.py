@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-from LANforge.lfcli_base import LFCliBase
-from LANforge import add_monitor
-from LANforge.add_monitor import *
-from LANforge import LFUtils
-import pprint
-from pprint import pprint
+
+import sys
+import os
+import importlib
 import time
-from LANforge.set_wifi_radio import set_radio_mode
 
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+add_monitor = importlib.import_module("py-json.LANforge.add_monitor")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+set_wifi_radio = importlib.import_module("py-json.LANforge.set_wifi_radio")
+set_radio_mode = set_wifi_radio.set_radio_mode
 
 
 class WifiMonitor:

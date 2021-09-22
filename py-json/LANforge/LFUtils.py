@@ -1,25 +1,30 @@
+#!/usr/bin/env python3
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Define useful common methods                                  -
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 import sys
+import os
+import importlib
+import pprint
+import time
+from time import sleep
+from random import seed, randint
+import re
+import ipaddress
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
-import os
-import pprint
-import time
-from time import sleep
-from random import seed
-import re
-import ipaddress
 
-seed(int(round(time.time() * 1000)))
-from random import randint
-from LANforge import LFRequest
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+
+LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
 
 debug_printer = pprint.PrettyPrinter(indent=2)
 
+seed(int(round(time.time() * 1000)))
 NA = "NA"  # used to indicate parameter to skip
 ADD_STA_FLAGS_DOWN_WPA2 = 68719477760
 REPORT_TIMER_MS_FAST = 1500
@@ -276,10 +281,10 @@ def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000, r
     the padding_number is added to the start and end numbers and the resulting sum
     has the first digit trimmed, so f(0, 1, 10000) => {"0000", "0001"}
     @deprecated -- please use port_name_series
-    :param prefix_: defaults to 'sta'
-    :param start_id_: beginning id
-    :param end_id_: ending_id
-    :param padding_number_: used for width of resulting station number
+    :param prefix: defaults to 'sta'
+    :param start_id: beginning id
+    :param end_id: ending_id
+    :param padding_number: used for width of resulting station number
     :return: list of stations
     """
 
@@ -478,10 +483,10 @@ def wait_until_ports_admin_up(resource_id=1, base_url="http://localhost:8080", p
         sleep(1)
     return None
 
-def waitUntilPortsDisappear(base_url="http://localhost:8080", port_list=[], debug=False):
+def waitUntilPortsDisappear(base_url="http://localhost:8080", port_list=(), debug=False):
     wait_until_ports_disappear(base_url, port_list, debug)
 
-def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=[], debug=False):
+def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), debug=False):
     if (port_list is None) or (len(port_list) < 1):
         if debug:
             print("LFUtils: wait_until_ports_disappear: empty list, zipping back")
@@ -520,7 +525,7 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=[], d
             lf_r = LFRequest.LFRequest(base_url, check_url, debug_=debug)
             json_response = lf_r.get_as_json(debug_=debug, die_on_error_=False)
             if (json_response == None):
-                print("Request returned None")
+                print("LFUtils::wait_until_ports_disappear:: Request returned None: [{}]".format(base_url + check_url))
             else:
                 if debug:
                     pprint.pprint(("wait_until_ports_disappear json_response:", json_response))
@@ -559,7 +564,7 @@ def name_to_eid(input, non_port=False):
 
     info = input.split('.')
     if len(info) == 1:
-        rv[2] = info[0]; # just port name
+        rv[2] = info[0] # just port name
         return rv
 
     if (len(info) == 2) and info[0].isnumeric() and not info[1].isnumeric(): # resource.port-name
@@ -596,7 +601,7 @@ def name_to_eid(input, non_port=False):
         rv[1] = int(info[1])
         rv[2] = info[2]+"."+info[3]
 
-    return rv;
+    return rv
 
 def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debug=False):
     """
@@ -647,7 +652,7 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
     """
 
     :param base_url:
-    :param port_list:
+    :param endp_list:
     :param debug:
     :return:
     """
@@ -658,7 +663,7 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
     if base_url.endswith('/'):
         port_url = port_url[1:]
         ncshow_url = ncshow_url[1:]
-
+    found_stations = []
     while len(found_stations) < len(endp_list):
         found_stations = []
         for port_eid in endp_list:

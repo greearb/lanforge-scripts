@@ -1,15 +1,8 @@
-
 #!/usr/bin/env python3
-import re
-import time
-import pprint
-import csv
 import datetime
 import random
 import string
-import pprint
 from pprint import pprint
-#from LANforge.lfcriteria import LFCriteria
 
 class BaseProfile:
     def __init__(self, local_realm, debug=False):

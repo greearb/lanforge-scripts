@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
-
 # This script will set the LANforge to a BLANK database then it will load the specified database
 # and start a graphical report
-
 import sys
+import os
+import importlib
+import argparse
+from time import sleep
+import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-import argparse
-from LANforge import LFUtils
-from LANforge import lfcli_base
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
-from realm import Realm
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 
 """
     cvScenario.scenario_db = args.scenario_db
@@ -152,24 +153,29 @@ def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
     parser = argparse.ArgumentParser(
+        prog="run_cv_scenario.py",
+        formatter_class=argparse.RawTextHelpFormatter,
         description="""LANforge Reporting Script:  Load a scenario and run a RvR report
-Example:
-./load_ap_scenario.py --lfmgr 127.0.0.1 --scenario_db 'handsets' --cv_test  --test_scenario 'test-20'
-""")
+            Example:
+            ./load_ap_scenario.py --lfmgr 127.0.0.1 --scenario_db 'handsets' --cv_test  --test_scenario 'test-20'
+            """)
     parser.add_argument("-m", "--lfmgr", type=str, help="address of the LANforge GUI machine (localhost is default)")
     parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)")
     parser.add_argument("-d", "--lanforge_db", type=str, help="Name of test scenario database (see Status Tab)")
     parser.add_argument("-c", "--cv_scenario", type=str, help="Name of Chamber View test scenario (see CV Manage Scenarios)")
     parser.add_argument("-n", "--cv_test", type=str, help="Chamber View test")
     parser.add_argument("-s", "--test_profile", type=str, help="Name of the saved CV test profile")
+    parser.add_argument("--debug", help='Enable debugging', default=False, action="store_true")
 
     args = parser.parse_args()
     if args.lfmgr is not None:
         lfjson_host = args.lfmgr
     if args.port is not None:
         lfjson_port = args.port
-
-    run_cv_scenario = RunCvScenario(lfjson_host, lfjson_port)
+    debug = False
+    if args.debug is not None:
+        debug = args.debug
+    run_cv_scenario = RunCvScenario(lfjson_host, lfjson_port, debug_=debug)
 
     if args.lanforge_db is not None:
         run_cv_scenario.lanforge_db = args.lanforge_db

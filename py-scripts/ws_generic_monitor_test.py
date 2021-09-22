@@ -4,16 +4,20 @@ This example is to demonstrate ws_generic_monitor to monitor events triggered by
 This script when running, will monitor the events triggered by test_ipv4_connection.py
 
 """
-
-
 import sys
-import json
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-from ws_generic_monitor import WS_Listener
-from realm import Realm
+import os
+import importlib
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+ws_generic_monitor = importlib.import_module("py-json.ws_generic_monitor")
+WS_Listener = ws_generic_monitor.WS_Listener
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 
 reference = "test_ipv4_connection.py"
+
 
 class GenericMonitorTest(Realm):
     def __init__(self,

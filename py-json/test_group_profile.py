@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
-from LANforge.lfcli_base import LFCliBase
-import pprint
-from pprint import pprint
-import time
+import sys
+import os
+import importlib
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
 
 
 class TestGroupProfile(LFCliBase):

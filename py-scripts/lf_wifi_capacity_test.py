@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Note: To Run this script gui should be opened with
 
@@ -303,29 +302,31 @@ show_4way: 1
 show_latency: 1
 
 """
-
 import sys
 import os
+import importlib
 import argparse
 import time
-import json
-from os import path
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-from cv_test_manager import *
-from LANforge import LFUtils
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+cv_test_manager = importlib.import_module("py-json.cv_test_manager")
+cv_test = cv_test_manager.cv_test
+cv_add_base_parser = cv_test_manager.cv_add_base_parser
+cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
 
 
 class WiFiCapacityTest(cv_test):
     def __init__(self,
                  lfclient_host="localhost",
                  lf_port=8080,
+                 ssh_port=22,
                  lf_user="lanforge",
                  lf_password="lanforge",
                  instance_name="wct_instance",
@@ -384,6 +385,7 @@ class WiFiCapacityTest(cv_test):
         self.security = security
         self.ssid = ssid
         self.paswd = paswd
+        self.ssh_port = ssh_port
         self.radio = radio
         self.enables = enables
         self.disables = disables
@@ -476,7 +478,7 @@ class WiFiCapacityTest(cv_test):
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lfclient_host, self.lf_user, self.lf_password,
-                                 cv_cmds, graph_groups_file=self.graph_groups, local_lf_report_dir=self.local_lf_report_dir)
+                                 cv_cmds, ssh_port=self.ssh_port, graph_groups_file=self.graph_groups, local_lf_report_dir=self.local_lf_report_dir)
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
@@ -485,6 +487,8 @@ class WiFiCapacityTest(cv_test):
 
 def main():
     parser = argparse.ArgumentParser(
+        prog="lf_wifi_capacity_test.py",
+        formatter_class=argparse.RawTextHelpFormatter,
         description="""
         ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
              --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 \

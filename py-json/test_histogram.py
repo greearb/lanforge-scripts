@@ -2,9 +2,15 @@
 """ ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
     internal test driving LFUtils.expand_endp_histogram
 ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- """
-import LANforge
-from LANforge import LFUtils
-import pprint
+import sys
+import os
+import importlib
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+
 
 distrib_load = {
     "histo_category_width" : 3,

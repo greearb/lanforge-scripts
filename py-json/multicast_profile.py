@@ -1,8 +1,14 @@
-
 #!/usr/bin/env python3
-from LANforge.lfcli_base import LFCliBase
-import pprint
+import sys
+import os
+import importlib
 from pprint import pprint
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
 
 
 class MULTICASTProfile(LFCliBase):

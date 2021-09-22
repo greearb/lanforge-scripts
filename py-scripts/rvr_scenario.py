@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
-
 # This script will set the LANforge to a BLANK database then it will load the specified database
 # and start a graphical report
-
 import sys
+import os
+import importlib
+import argparse
+from pprint import pprint
+from time import sleep
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-import argparse
-from LANforge import LFUtils
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-from realm import Realm
-import pprint
-from pprint import pprint
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 
 """
     cvScenario.lanforge_db = args.lanforge_db
@@ -158,6 +159,8 @@ def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
     parser = argparse.ArgumentParser(
+        prog="rvr_scenario.py",
+        formatter_class=argparse.RawTextHelpFormatter,
         description="""LANforge Reporting Script:  Load a scenario and run a RvR report
 Example:
 ./load_ap_scenario.py --lfmgr 127.0.0.1 --lanforge_db 'handsets' --cv_test  --test_scenario 'test-20'

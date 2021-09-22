@@ -1,5 +1,7 @@
 #!/usr/bin/python3
-
+import sys
+import os
+import importlib
 import base64
 import urllib.request
 from bs4 import BeautifulSoup
@@ -10,7 +12,6 @@ import tarfile
 import paramiko
 from paramiko import SSHClient
 from scp import SCPClient
-import os
 import pexpect
 from pexpect import pxssh
 import sys
@@ -39,40 +40,33 @@ import glob
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
-if 'py-json' not in sys.path:
-    sys.path.append('../../py-json')
 
-from LANforge.LFUtils import *
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../../")))
 
-# if you lack __init__.py in this directory you will not find sta_connect module#
-
-if 'py-json' not in sys.path:
-    sys.path.append('../../py-scripts')
-
-import sta_connect2
-from sta_connect2 import StaConnect2
-import testrail_api
-from testrail_api import APIClient
-import eap_connect
-from eap_connect import EAPConnect
-import cloudsdk
-from cloudsdk import CloudSDK
-import ap_ssh
-from ap_ssh import ssh_cli_active_fw
-from ap_ssh import iwinfo_status
+sta_connect2 = importlib.import_module("py-scripts.sta_connect2")
+StaConnect2 = sta_connect2.StaConnect2
+testrail_api = importlib.import_module("py-scripts.tip-cicd-sanity.testrail_api")
+APIClient = testrail_api.APIClient
+eap_connect = importlib.import_module("py-scripts.tip-cicd-sanity.eap_connect")
+EAPConnect = eap_connect.EAPConnect
+cloudsdk = importlib.import_module("py-scripts.tip-cicd-sanity.cloudsdk")
+CloudSDK = cloudsdk.CloudSDK
+ap_ssh = importlib.import_module("py-scripts.tip-cicd-sanity.ap_ssh")
+ssh_cli_active_fw = ap_ssh.ssh_cli_active_fw
+iwinfo_status = ap_ssh.iwinfo_status
 
 ##Import info for lab setup and APs under test
-import lab_ap_info
-from lab_ap_info import equipment_id_dict
-from lab_ap_info import profile_info_dict
-from lab_ap_info import cloud_sdk_models
-from lab_ap_info import equipment_ip_dict
-from lab_ap_info import eqiupment_credentials_dict
-from lab_ap_info import ap_models
-from lab_ap_info import customer_id
-from lab_ap_info import cloud_type
-from lab_ap_info import test_cases
-from lab_ap_info import radius_info
+lab_ap_info = importlib.import_module("py-scripts.tip-cicd-sanity.lab_ap_info")
+equipment_id_dict = lab_ap_info.equipment_id_dict
+profile_info_dict = lab_ap_info.profile_info_dict
+cloud_sdk_models = lab_ap_info.cloud_sdk_models
+equipment_ip_dict = lab_ap_info.equipment_ip_dict
+eqiupment_credentials_dict = lab_ap_info.eqiupment_credentials_dict
+ap_models = lab_ap_info.ap_models
+customer_id = lab_ap_info.customer_id
+cloud_type = lab_ap_info.cloud_type
+test_cases = lab_ap_info.test_cases
+radius_info = lab_ap_info.radius_info
 
 ### Set CloudSDK URL ###
 cloudSDK_url = os.getenv('CLOUD_SDK_URL')

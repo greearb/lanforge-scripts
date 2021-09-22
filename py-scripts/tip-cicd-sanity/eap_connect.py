@@ -11,32 +11,34 @@
 #  and verify whether traffic was sent and received.  It also verifies the station connected
 #  to the requested BSSID if bssid is specified as an argument.
 #  The script will clean up the station and connections at the end of the test.
-
 import sys
+import os
+import importlib
+import time
+import argparse
+import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append('../../py-json')
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-import argparse
-import LANforge
-from LANforge import LFUtils
-# from LANforge import LFCliBase
-from LANforge import lfcli_base
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
-from realm import Realm
-import pprint
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+removeCX = LFUtils.removeCX
+removeEndps = LFUtils.removeEndps
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 
-OPEN="open"
-WEP="wep"
-WPA="wpa"
-WPA2="wpa2"
-MODE_AUTO=0
+OPEN = "open"
+WEP = "wep"
+WPA = "wpa"
+WPA2 = "wpa2"
+MODE_AUTO = 0
+
 
 class EAPConnect(LFCliBase):
     def __init__(self, host, port, security=None, ssid=None, sta_list=None, number_template="00000", _debug_on=False, _dut_bssid="",

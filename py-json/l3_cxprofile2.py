@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-import re
-import time
-import pprint
-from lfdata import LFDataCollection
-from base_profile import BaseProfile
+import sys
 import os
-import datetime
-import base64
+import importlib
 import csv
 from pprint import pprint
 import time
-import random
-import string
 import datetime
 
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfdata = importlib.import_module("py-json.lfdata")
+LFDataCollection = lfdata.LFDataCollection
+base_profile = importlib.import_module("py-json.base_profile")
+BaseProfile = base_profile.BaseProfile
 
 
 class L3CXProfile2(BaseProfile):
@@ -668,7 +668,7 @@ class L3CXProfile2(BaseProfile):
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
 
         #create lf data object
-        lf_data_collection= LFDataCollection(local_realm=self.local_realm,debug=self.debug)
+        lf_data_collection = LFDataCollection(local_realm=self.local_realm,debug=self.debug)
         while datetime.datetime.now() < end_time:
             csvwriter.writerow(lf_data_collection.monitor_interval(start_time_=start_time,sta_list_=sta_list_edit, created_cx_=created_cx, layer3_fields_=layer3_fields,port_mgr_fields_=",".join(port_mgr_cols)))
             time.sleep(monitor_interval_ms)

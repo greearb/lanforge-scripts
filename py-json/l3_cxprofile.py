@@ -1,11 +1,19 @@
 # !/usr/bin/env python3
-import pprint
+import sys
+import os
+import importlib
 from pprint import pprint
-from LANforge.lfcli_base import LFCliBase
 import csv
 import pandas as pd
 import time
 import datetime
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+pandas_extensions = importlib.import_module("py-json.LANforge.pandas_extensions")
 
 
 class L3CXProfile(LFCliBase):
@@ -280,15 +288,15 @@ class L3CXProfile(LFCliBase):
 
         # comparison to last report / report inputted
         if compared_report is not None:
-            compared_df = self.compare_two_df(dataframe_one=self.file_to_df(report_file),
-                                              dataframe_two=self.file_to_df(compared_report))
+            compared_df = pandas_extensions.compare_two_df(dataframe_one=pandas_extensions.file_to_df(report_file),
+                                                           dataframe_two=pandas_extensions.file_to_df(compared_report))
             exit(1)
             # append compared df to created one
             if output_format.lower() != 'csv':
-                self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
+                pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
         else:
             if output_format.lower() != 'csv':
-                self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
+                pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
 
     def refresh_cx(self):
         for cx_name in self.created_cx.keys():

@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
-
 import sys
+import os
+import importlib
+import argparse
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-from LANforge import LFUtils
-from LANforge.add_file_endp import *
-import argparse
-from realm import Realm
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+add_file_endp = importlib.import_module("py-json.LANforge.add_file_endp")
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 
 
 class CreateMacVlan(Realm):

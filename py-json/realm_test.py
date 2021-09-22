@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
-import pprint
+import sys
+import os
+import importlib
 import time
 from pprint import pprint
-import realm
-from realm import Realm
-import LANforge
-from LANforge import LFUtils
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+
 
 localrealm = Realm("localhost", 8080, True)
 

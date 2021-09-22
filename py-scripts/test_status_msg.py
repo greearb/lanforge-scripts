@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-
-import os
 import sys
+import os
+import importlib
+import argparse
+from uuid import uuid1
+from pprint import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-import argparse
-from LANforge.lfcli_base import LFCliBase
-# import time
-from uuid import uuid1
-import pprint
-from pprint import pprint
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+
 
 class TestStatusMessage(LFCliBase):
     def __init__(self, host, port,

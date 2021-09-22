@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
-
 """
     Script for creating a variable number of stations.
 """
-
 import sys
 import os
+import importlib
 import argparse
+import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-from LANforge.lfcli_base import LFCliBase
-from LANforge import LFUtils
-from realm import Realm
-import pprint
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 
 
 class CreateStation(Realm):
@@ -29,6 +31,7 @@ class CreateStation(Realm):
                  _port=None,
                  _mode=0,
                  _sta_list=None,
+                 _sta_flags=None,
                  _number_template="00000",
                  _radio="wiphy0",
                  _proxy_str=None,
@@ -46,6 +49,7 @@ class CreateStation(Realm):
         self.password = _password
         self.mode = _mode
         self.sta_list = _sta_list
+        self.sta_flags = _sta_flags
         self.radio = _radio
         self.timeout = 120
         self.number_template = _number_template
@@ -59,6 +63,10 @@ class CreateStation(Realm):
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
         self.station_profile.mode = self.mode
+        if self.sta_flags is not None:
+            self.station_profile.desired_add_sta_flags = self.sta_flags
+            self.station_profile.desired_add_sta_mask = self.sta_flags
+
         if self.debug:
             print("----- Station List ----- ----- ----- ----- ----- ----- \n")
             pprint.pprint(self.sta_list)
@@ -99,22 +107,23 @@ def main():
 
         description='''\
         create_station.py
---------------------
-Command example:
-./create_station.py
-    --radio wiphy0
-    --start_id 2
-    --num_stations 3
-    --security open
-    --ssid netgear
-    --passwd BLANK
-    --debug
+        --------------------
+        Command example:
+        ./create_station.py
+            --radio wiphy0
+            --start_id 2
+            --num_stations 3
+            --security open
+            --ssid netgear
+            --passwd BLANK
+            --debug
             ''')
     required = parser.add_argument_group('required arguments')
     required.add_argument('--start_id', help='--start_id <value> default 0', default=0)
 
     optional = parser.add_argument_group('Optional arguments')
     optional.add_argument('--mode', help='Mode for your station (as a number)',default=0)
+    optional.add_argument('--station_flag', help='station flags to add', required=False, default=None, action='append')
 
     args = parser.parse_args()
     # if args.debug:
@@ -156,6 +165,7 @@ Command example:
                                    _password=args.passwd,
                                    _security=args.security,
                                    _sta_list=station_list,
+                                   _sta_flags=args.station_flag,
                                    _mode=args.mode,
                                    _radio=args.radio,
                                    _set_txo_data=None,

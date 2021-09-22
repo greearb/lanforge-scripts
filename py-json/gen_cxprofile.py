@@ -1,15 +1,21 @@
-
 #!/usr/bin/env python3
-
-from LANforge.lfcli_base import LFCliBase
-import pprint
+import sys
+import os
+import importlib
 from pprint import pprint
-from LANforge.lfcli_base import LFCliBase
 import csv
 import pandas as pd
 import time
 import datetime
 import json
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+pandas_extensions = importlib.import_module("py-json.LANforge.pandas_extensions")
+
 
 class GenCXProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
@@ -389,9 +395,9 @@ class GenCXProfile(LFCliBase):
     def choose_iperf3_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
         if gen_results['endpoints'] is not None:
-            pprint.pprint(gen_results['endpoints'])
+            pprint(gen_results['endpoints'])
             #for name in gen_results['endpoints']:
-               # pprint.pprint(name.items)
+               # pprint(name.items)
                 #for k,v in name.items():
         exit(1)
 
@@ -591,12 +597,12 @@ class GenCXProfile(LFCliBase):
 
         # comparison to last report / report inputted
         if compared_report is not None:
-            compared_df = self.compare_two_df(dataframe_one=self.file_to_df(report_file),
-                                              dataframe_two=self.file_to_df(compared_report))
+            compared_df = pandas_extensions.compare_two_df(dataframe_one=pandas_extensions.file_to_df(report_file),
+                                                           dataframe_two=pandas_extensions.file_to_df(compared_report))
             exit(1)
             # append compared df to created one
             if output_format.lower() != 'csv':
-                self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
+                pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
         else:
             if output_format.lower() != 'csv':
-                self.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
+                pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)

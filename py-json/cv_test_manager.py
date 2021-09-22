@@ -3,16 +3,30 @@ Note: This script is working as library for chamberview tests.
     It holds different commands to automate test.
 """
 
+import sys
+import os
+import importlib
 import time
-
-from LANforge.lfcli_base import LFCliBase
-from realm import Realm
 import json
 from pprint import pprint
 import argparse
-from cv_test_reports import lanforge_reports as lf_rpt
-from csv_to_influx import *
-import os.path
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit()
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
+cv_test_reports = importlib.import_module("py-json.cv_test_reports")
+lf_rpt = cv_test_reports.lanforge_reports
+InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")
+influx_add_parser_args = InfluxRequest.influx_add_parser_args
+RecordInflux = InfluxRequest.RecordInflux
 
 
 def cv_base_adjust_parser(args):
@@ -412,20 +426,17 @@ class cv_test(Realm):
                                 _influx_bucket=args.influx_bucket)
 
         # lf_wifi_capacity_test.py may be run / initiated by a remote system against a lanforge
-        # the local_lf_report_dir is data is stored,  if there is no local_lf_report_dir then the test is run directly on lanforge
+        # the local_lf_report_dir is where data is stored,  if there is no local_lf_report_dir then the test is run directly on lanforge
         if self.local_lf_report_dir == "":
-            path = "%s/kpi.csv" % (self.lf_report_dir)
+            csv_path = "%s/kpi.csv" % (self.lf_report_dir)
         else:
             kpi_location = self.local_lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
             # the local_lf_report_dir is the parent directory,  need to get the directory name
-            path = "%s/kpi.csv" % (kpi_location)
+            csv_path = "%s/kpi.csv" % (kpi_location)
         
-        print("Attempt to submit kpi: ", path)
-        csvtoinflux = CSVtoInflux(influxdb=influxdb,
-                                  target_csv=path,
-                                  _influx_tag=args.influx_tag)
+        print("Attempt to submit kpi: ", csv_path)
         print("Posting to influx...\n")
-        csvtoinflux.post_to_influx()
+        influxdb.csv_to_influx(csv_path)
 
         print("All done posting to influx.\n")
 

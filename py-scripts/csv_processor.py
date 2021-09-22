@@ -1,19 +1,8 @@
 #!/usr/bin/env python3
-
 import sys
 import os
-
 import argparse
-#import time
-#import datetime
-#import subprocess
-#import re
-#import csv
-#import time
-#import operator
 import pandas as pd
-#import matplotlib.pyplot as plt
-#import numpy as np
 
 #https://pandas.pydata.org/pandas-docs/stable/user_guide/visualization.html
 #https://queirozf.com/entries/pandas-dataframe-plot-examples-with-matplotlib-pyplot
@@ -23,8 +12,8 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 class L3CSVParcer():
     def __init__(self,csv_file):
@@ -135,7 +124,7 @@ def main():
 
     #debug_on = False
     parser = argparse.ArgumentParser(
-        prog='quick_test.py',
+        prog='csv_processor.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
  Useful Information:

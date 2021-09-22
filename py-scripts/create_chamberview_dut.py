@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Note: To Run this script gui should be opened with
 
@@ -45,9 +44,9 @@ How to Run this:
 
 Output : DUT will be created in Chamber View
 """
-
 import sys
 import os
+import importlib
 import argparse
 import time
 
@@ -55,11 +54,15 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-from cv_dut_profile import cv_dut as dut
-from cv_test_manager import cv_test as cvtest
+# from cv_dut_profile import cv_dut as dut
+cv_dut_profile = importlib.import_module("py-json.cv_dut_profile")
+dut = cv_dut_profile.cv_dut
+# from cv_test_manager import cv_test as cvtest
+cv_test_manager = importlib.import_module("py-json.cv_test_manager")
+cvtest = cv_test_manager.cv_test
 
 
 class DUT(dut):
@@ -72,6 +75,7 @@ class DUT(dut):
                  hw_version="NA",
                  serial_num="NA",
                  model_num="NA",
+                 dut_flags=None,
                  ):
         super().__init__(
             lfclient_host=lfmgr,
@@ -80,11 +84,14 @@ class DUT(dut):
             hw_version=hw_version,
             serial_num=serial_num,
             model_num=model_num,
+            desired_dut_flags=dut_flags,
+            desired_dut_flags_mask=dut_flags
         )
         self.cv_dut_name = dut_name
         self.cv_test = cvtest(lfmgr, port)
         self.dut_name = dut_name
         self.ssid = ssid
+
 
     def setup(self):
         self.create_dut()
@@ -138,6 +145,8 @@ class DUT(dut):
 
 def main():
     parser = argparse.ArgumentParser(
+        prog='create_chamberview_dut.py',
+        formatter_class=argparse.RawTextHelpFormatter,
         description="""
         ./create_chamberview_dut -m "localhost" -o "8080" -d "dut_name" 
                 --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41" 
@@ -156,6 +165,7 @@ def main():
     parser.add_argument("--hw_version", default="NA", help="DUT Hardware version.")
     parser.add_argument("--serial_num", default="NA", help="DUT Serial number.")
     parser.add_argument("--model_num", default="NA", help="DUT Model Number.")
+    parser.add_argument('--dut_flag', help='station flags to add', default=None, action='append')
 
     args = parser.parse_args()
     new_dut = DUT(lfmgr=args.lfmgr,
@@ -166,6 +176,7 @@ def main():
                   hw_version = args.hw_version,
                   serial_num = args.serial_num,
                   model_num = args.model_num,
+                  dut_flags=args.dut_flag
                   )
 
     new_dut.setup()

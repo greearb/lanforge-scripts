@@ -6,17 +6,19 @@
     -date: 23-02-2021
 """
 import sys
+import os
+import importlib
 import argparse
 import time
 
-if 'py-json' not in sys.path:
-    sys.path.append('../py-json')
-from LANforge import LFUtils
-from LANforge import lfcli_base
-from LANforge.lfcli_base import LFCliBase
-from LANforge.LFUtils import *
-import realm
-from realm import Realm
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
 
 
 class LoadLayer3(Realm):
@@ -101,7 +103,10 @@ class LoadLayer3(Realm):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Client Admission Test Script")
+    parser = argparse.ArgumentParser(
+        prog="test_client_admission.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="Client Admission Test Script")
     parser.add_argument('-hst', '--host', type=str, help='host name')
     parser.add_argument('-s', '--ssid', type=str, help='ssid for client')
     parser.add_argument('-pwd', '--passwd', type=str, help='password to connect to ssid')

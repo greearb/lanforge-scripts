@@ -2,6 +2,22 @@
 from enum import Enum
 from collections import namedtuple
 
+add_dut_flags = {
+    'STA_MODE'      : 0x1,      # (1) DUT acts as Station.,
+    'AP_MODE'       : 0x2,      # (2) DUT acts as AP.
+    'INACTIVE'      : 0x4,      # (3) Ignore this in ChamberView, etc
+    'WEP'           : 0x8,      # Use WEP encryption on all ssids, deprecated, see add_dut_ssid.
+    'WPA'           : 0x10,     # Use WPA encryption on all ssids, deprecated, see add_dut_ssid.
+    'WPA2'          : 0x20,     # Use WPA2 encryption on all ssids, deprecated, see add_dut_ssid.
+    'DHCPD-LAN'     : 0x40,     # Provides DHCP server on LAN port
+    'DHCPD-WAN'     : 0x80,     # Provides DHCP server on WAN port
+    'WPA3'          : 0x100,    # Use WPA3 encryption on all ssids, deprecated, see add_dut_extras.
+    '11r'           : 0x200,    # Use .11r connection logic on all ssids, deprecated, see add_dut_ssid.
+    'EAP-TTLS'      : 0x400,    # Use EAP-TTLS connection logic on all ssids, deprecated, see add_dut_ssid.
+    'EAP-PEAP'      : 0x800,    # Use EAP-PEAP connection logic on all ssids, deprecated, see add_dut_ssid.
+    'NOT-DHCPCD'    : 0x1000,   # Station/edge device that is NOT using DHCP.
+     # Otherwise, automation logic assumes it is using dhcp client.'
+}
 class dut_params(namedtuple("dut_params", "key maxlen"), Enum):
     name            = "name",           48
     flags           = "flags",          256

@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-'''
+"""
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 #                                                                             -
 # Example of how to filter messages from the :8081 websocket                  -
@@ -7,18 +7,14 @@
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 You will need websocket-client:
 apt install python3-websocket
-'''
-
+"""
 import sys
-if sys.version_info[0] != 3:
-    print("This script requires Python 3")
-    exit()
+import os
+import importlib
 import argparse
 import json
 import logging
-import pprint
 import traceback
-import time
 from time import sleep
 import websocket
 import re
@@ -26,7 +22,16 @@ try:
     import thread
 except ImportError:
     import _thread as thread
-from LANforge import LFUtils
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit()
+
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+
 
 cre={
     "phy":              re.compile(r'^(1\.\d+):\s+(\S+)\s+\(phy', re.I),
@@ -322,7 +327,7 @@ def m_error(wsock, err):
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 def m_open(wsock):
     def run(*args):
-        time.sleep(0.1)
+        sleep(0.1)
         # ping = json.loads();
         wsock.send('{"text":"ping"}')
 

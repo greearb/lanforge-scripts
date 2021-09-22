@@ -6,7 +6,6 @@
 
 import ast
 import os
-import pprint
 
 
 class DocstringCollector:

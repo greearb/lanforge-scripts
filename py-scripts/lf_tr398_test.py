@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 """
 Note: To Run this script gui should be opened with
 
@@ -14,6 +13,8 @@ the options and how best to input data.
     ./lf_tr398_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name tr398-instance --config_name test_con \
       --upstream 1.2.eth2 \
+      --test_rig Testbed-01 --pull_report \
+      --local_lf_report_dir=/tmp/my_report \
       --dut5 'TR398-DUT ruckus750-5 4c:b1:cd:18:e8:ec (1)' \
       --dut2 'TR398-DUT ruckus750-2 4c:b1:cd:18:e8:e8 (2)' \
       --raw_lines_file example-configs/tr398-ferndale-ac-cfg.txt \
@@ -152,11 +153,10 @@ reset: 0
 mu_mimo: 0
 stability: 0
 ap_coex: 0
-
 """
-
 import sys
 import os
+import importlib
 import argparse
 import time
 import json
@@ -166,13 +166,16 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-from cv_test_manager import cv_test as cvtest
-from cv_test_manager import *
+cv_test_manager = importlib.import_module("py-json.cv_test_manager")
+cvtest = cv_test_manager.cv_test
+cv_add_base_parser = cv_test_manager.cv_add_base_parser
+cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
 
-class DataplaneTest(cvtest):
+
+class TR398Test(cvtest):
     def __init__(self,
                  lf_host="localhost",
                  lf_port=8080,
@@ -181,6 +184,8 @@ class DataplaneTest(cvtest):
                  instance_name="tr398_instance",
                  config_name="tr398_config",
                  upstream="1.2.eth2",
+                 test_rig="",
+                 local_lf_report_dir="",
                  pull_report=False,
                  load_old_cfg=False,
                  raw_lines_file="",
@@ -210,6 +215,8 @@ class DataplaneTest(cvtest):
         self.disables = disables
         self.raw_lines = raw_lines
         self.sets = sets
+        self.local_lf_report_dir = local_lf_report_dir
+        self.test_rig = test_rig
 
     def setup(self):
         # Nothing to do at this time.
@@ -238,6 +245,8 @@ class DataplaneTest(cvtest):
             cfg_options.append("selected_dut5: " + self.dut5)
         if self.dut2 != "":
             cfg_options.append("selected_dut2: " + self.dut2)
+        if self.test_rig != "":
+            cfg_options.append("test_rig: " + self.test_rig)
 
         # We deleted the scenario earlier, now re-build new one line at a time.
 
@@ -247,36 +256,46 @@ class DataplaneTest(cvtest):
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
-                                 cv_cmds)
+                                 cv_cmds, local_lf_report_dir=self.local_lf_report_dir)
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
 
 def main():
 
-    parser = argparse.ArgumentParser("""
+    parser = argparse.ArgumentParser(
+        prog="lf_tr398_test.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="""
     Open this file in an editor and read the top notes for more details.
 
     Example:
 
-  ./lf_tr398_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
-      --instance_name tr398-instance --config_name test_con \
-      --upstream 1.2.eth2 \
-      --dut5 'TR398-DUT ruckus750-5 4c:b1:cd:18:e8:ec (1)' \
-      --dut2 'TR398-DUT ruckus750-2 4c:b1:cd:18:e8:e8 (2)' \
-      --raw_lines_file example-configs/tr398-ferndale-ac-cfg.txt \
-      --set 'Calibrate Attenuators' 0 \
-      --set 'Receiver Sensitivity' 0 \
-      --set 'Maximum Connection' 1 \
-      --set 'Maximum Throughput' 1 \
-      --set 'Airtime Fairness' 0 \
-      --set 'Range Versus Rate' 0 \
-      --set 'Spatial Consistency' 0 \
-      --set 'Multiple STAs Performance' 0 \
-      --set 'Multiple Assoc Stability' 0 \
-      --set 'Downlink MU-MIMO' 0 \
-      --set 'AP Coexistence' 0 \
+  ./lf_tr398_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \\
+      --instance_name tr398-instance --config_name test_con \\
+      --upstream 1.2.eth2 \\
+      --test_rig Testbed-01 --pull_report \\
+      --local_lf_report_dir /tmp/my-report \\
+      --dut5 'TR398-DUT-r750 ruckus-r750-5g 4c:b1:cd:18:e8:ec (1)' \\
+      --dut2 'TR398-DUT-r750 ruckus-r750-2g 4c:b1:cd:18:e8:e8 (2)' \\
+      --raw_lines_file example-configs/tr398-ferndale-ac-cfg.txt \\
+      --set 'Calibrate Attenuators' 0 \\
+      --set 'Receiver Sensitivity' 0 \\
+      --set 'Maximum Connection' 1 \\
+      --set 'Maximum Throughput' 1 \\
+      --set 'Airtime Fairness' 0 \\
+      --set 'Range Versus Rate' 0 \\
+      --set 'Spatial Consistency' 0 \\
+      --set 'Multiple STAs Performance' 0 \\
+      --set 'Multiple Assoc Stability' 0 \\
+      --set 'Downlink MU-MIMO' 0 \\
+      --set 'AP Coexistence' 0 \\
       --set 'Long Term Stability' 0
+
+   The contents of the 'raw_lines_file' argument can be obtained by manually configuring the
+   TR398 test in the LANforge GUI, then select 'Show Config' on the Advanced configuration tab,
+   select that config text, and paste it into a file.  That file is the argument to the
+   --raw_lines_file argument.
 
       """
                                      )
@@ -287,31 +306,36 @@ def main():
                         help="Upstream port for wifi capacity test ex. 1.1.eth2")
 
     parser.add_argument("--dut2", default="",
-                        help="Specify 2Ghz DUT used by this test, example: 'TR398-DUT ruckus750-2 4c:b1:cd:18:e8:e8 (2)'")
+                        help="Specify 2Ghz DUT used by this test, example: 'TR398-DUT-r750 ruckus-r750-2g 4c:b1:cd:18:e8:e8 (2)'")
     parser.add_argument("--dut5", default="",
-                        help="Specify 5Ghz DUT used by this test, example: 'TR398-DUT ruckus750-5 4c:b1:cd:18:e8:ec (1)'")
+                        help="Specify 5Ghz DUT used by this test, example: 'TR398-DUT-r750 ruckus-r750-5g 4c:b1:cd:18:e8:ec (1)'")
+    parser.add_argument("--local_lf_report_dir",
+                        help="--local_lf_report_dir <where to pull reports to>  default '' means put in current working directory",
+                        default="")
 
     args = parser.parse_args()
 
     cv_base_adjust_parser(args)
 
-    CV_Test = DataplaneTest(lf_host = args.mgr,
-                            lf_port = args.port,
-                            lf_user = args.lf_user,
-                            lf_password = args.lf_password,
-                            instance_name = args.instance_name,
-                            config_name = args.config_name,
-                            upstream = args.upstream,
-                            pull_report = args.pull_report,
-                            load_old_cfg = args.load_old_cfg,
-                            dut2 = args.dut2,
-                            dut5 = args.dut5,
-                            raw_lines_file = args.raw_lines_file,
-                            enables = args.enable,
-                            disables = args.disable,
-                            raw_lines = args.raw_line,
-                            sets = args.set
-                            )
+    CV_Test = TR398Test(lf_host = args.mgr,
+                        lf_port = args.port,
+                        lf_user = args.lf_user,
+                        lf_password = args.lf_password,
+                        instance_name = args.instance_name,
+                        config_name = args.config_name,
+                        upstream = args.upstream,
+                        pull_report = args.pull_report,
+                        local_lf_report_dir = args.local_lf_report_dir,
+                        load_old_cfg = args.load_old_cfg,
+                        dut2 = args.dut2,
+                        dut5 = args.dut5,
+                        raw_lines_file = args.raw_lines_file,
+                        enables = args.enable,
+                        disables = args.disable,
+                        raw_lines = args.raw_line,
+                        sets = args.set,
+                        test_rig=args.test_rig
+                        )
     CV_Test.setup()
     CV_Test.run()
 

@@ -1,19 +1,23 @@
 #!/usr/bin/env python3
-
 # pip3 install influxdb
-
 import sys
+import os
+import importlib
+import requests
+import json
+from influxdb import InfluxDBClient
+import datetime
+import time
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-import requests
-import json
-from influxdb import InfluxDBClient
-import datetime
-from LANforge.lfcli_base import LFCliBase
-import time
+ 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
 
 
 class RecordInflux(LFCliBase):

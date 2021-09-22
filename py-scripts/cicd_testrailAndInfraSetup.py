@@ -1,14 +1,12 @@
+#!/usr/bin/env python3
 
 import base64
 import urllib.request
 from bs4 import BeautifulSoup
 import ssl
-import subprocess, os
+import subprocess
 from artifactory import ArtifactoryPath
 import tarfile
-import paramiko
-from paramiko import SSHClient
-from scp import SCPClient
 import os
 import pexpect
 from pexpect import pxssh
@@ -34,7 +32,7 @@ if sys.version_info[0] != 3:
        print("This script requires Python 3")
        exit(1)
 if 'py-json' not in sys.path:
-       sys.path.append('../py-json')
+   sys.path.append('../py-json')
 
 from LANforge.LFUtils import *
 # if you lack __init__.py in this directory you will not find sta_connect module#
