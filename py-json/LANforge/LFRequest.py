@@ -5,7 +5,7 @@
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 import sys
 import os
-import importlib
+import pprint
 import urllib
 from urllib import request
 import json
@@ -17,8 +17,7 @@ if sys.version_info[0] != 3:
  
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
-
+debug_printer = pprint.PrettyPrinter(indent=2)
 
 class LFRequest:
     Default_Base_URL = "http://localhost:8080"
@@ -180,7 +179,7 @@ class LFRequest:
                 print("----- LFRequest::json_post:128 debug: --------------------------------------------")
                 print("URL: %s :%d "% (self.requested_url, resp.status))
                 if resp.status != 200:
-                    LFUtils.debug_printer.pprint(resp.getheaders())
+                    debug_printer.pprint(resp.getheaders())
                 print("----- resp_data:128 -------------------------------------------------")
                 print(resp_data)
                 print("-------------------------------------------------")
@@ -191,7 +190,7 @@ class LFRequest:
                 j = json.loads(resp_data)
                 if debug:
                     print("----- LFRequest::json_post:140 debug: --------------------------------------------")
-                    LFUtils.debug_printer.pprint(j)
+                    debug_printer.pprint(j)
                     print("-------------------------------------------------")
                 response_json_list_.append(j)
             return responses[0]
@@ -348,7 +347,7 @@ def plain_get(url_=None, debug_=False, die_on_error_=False, proxies_=None):
 def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, error_list_=None, debug_=False):
     if debug_:
         print("LFRequest::print_diagnostics: error_.__class__: %s"%error_.__class__)
-        LFUtils.debug_printer.pprint(error_)
+        debug_printer.pprint(error_)
 
     if url_ is None:
         print("WARNING LFRequest::print_diagnostics: url_ is None")
@@ -402,7 +401,7 @@ def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, er
 
             if hasattr(request_, "data") and (request_.data is not None):
                 print("  Data:")
-                LFUtils.debug_printer.pprint(request_.data)
+                debug_printer.pprint(request_.data)
             elif debug_:
                 print("    <no request data>")
 
@@ -414,7 +413,7 @@ def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, er
 
         if len(responses_) > 0:
             print("----- Response: --------------------------------------------------------")
-            LFUtils.debug_printer.pprint(responses_[0].reason)
+            debug_printer.pprint(responses_[0].reason)
         if debug_:
             print("------------------------------------------------------------------------")
         return

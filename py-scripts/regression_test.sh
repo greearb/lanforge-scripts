@@ -14,10 +14,12 @@ Help()
   echo "MGR is the IP address of the device which has LANforge installed, if different from the system you are using."
   echo "A is used to call to test a specific command based on"
   echo "F is used to pass in an RC file which can store the credentials for running regression multiple times on your system"
+  echo "H is used to test the help feature of each script, to make sure it renders properly."
   echo "Example command: ./regression_test.sh -s SSID -p PASSWD -w SECURITY -m MGR"
+  echo "If using the help flag, put the H flag at the end of the command after other flags."
 }
 
-while getopts ":h:s:p:w:m:A:r:F:B:U:" option; do
+while getopts ":h:s:p:w:m:A:r:F:B:U:H:" option; do
   case "${option}" in
     h) # display Help
       Help
@@ -48,7 +50,10 @@ while getopts ":h:s:p:w:m:A:r:F:B:U:" option; do
       BSSID=${OPTARG}
       ;;
     U)
-      UPSTREAM=$OPTARG
+      UPSTREAM=${OPTARG}
+      ;;
+    H)
+      HELP=1
       ;;
     *)
 
@@ -129,13 +134,107 @@ function testgroup_delete_group() {
   ./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003
   ./testgroup.py --group_name group1--del_group --debug --mgr "$MGR"
 }
-if [[ $MGRLEN -gt 0 ]]; then
+if [[ $HELP -eq 1 ]]; then
+  testCommands=(
+       "./create_bond.py --help --mgr $MGR"
+        "./create_bridge.py --help --mgr $MGR"
+        "./create_chamberview.py --help -m $MGR"
+        "./create_chamberview_dut.py --help --lfmgr $MGR"
+        "./create_l3.py --help --mgr $MGR"
+        "./create_l4.py --help --mgr $MGR"
+        "./create_macvlan.py --help --mgr $MGR"
+        "./create_qvlan.py --help --mgr $MGR"
+        "./create_station.py --help --mgr $MGR"
+        "./create_vap.py --help --mgr $MGR"
+        "./create_vr.py --help --mgr $MGR"
+        "./create_wanlink.py --help --mgr $MGR"
+        "./csv_convert.py --help --mgr $MGR"
+        "./csv_processor.py --help --mgr $MGR"
+        "./csv_to_grafana.py --help --mgr $MGR"
+        "./csv_to_influx.py --help --mgr $MGR"
+        "./cv_manager.py --help --mgr $MGR"
+        "./cv_to_grafana.py --help --mgr $MGR"
+        "./docstrings.py --help --mgr $MGR"
+        "./event_breaker --help --mgr $MGR"
+        "./event_flood --help --mgr $MGR"
+        "./example_security_connection.py --help --mgr $MGR"
+        "./ftp_html.py --help --mgr $MGR"
+        "./ghost_profile.py --help --mgr $MGR"
+        "./grafana_profile.py --help --mgr $MGR"
+        "./html_template.py --help --mgr $MGR"
+        "./influx.py --help --mgr $MGR"
+        "./layer3_test.py --help --mgr $MGR"
+        "./layer4_test.py --help --mgr $MGR"
+        "./lf_ap_auto_test.py --help --mgr $MGR"
+        "./lf_atten_mod_test.py --help --mgr $MGR"
+        "./lf_csv.py --help --mgr $MGR"
+        "./lf_dataplane_config.py --help --mgr $MGR"
+        "./lf_dataplane_test.py --help --mgr $MGR"
+        "./lf_dfs_test.py --help --mgr $MGR"
+        "./lf_dut_sta_vap_test.py --help --mgr $MGR"
+        "./lf_ftp.py --help --mgr $MGR"
+        "./lf_ftp_test.py --help --mgr $MGR"
+        "./lf_graph.py --help --mgr $MGR"
+        "./lf_mesh_test.py --help --mgr $MGR"
+        "./lf_multipsk.py --help --mgr $MGR"
+        "./lf_report.py --help --mgr $MGR"
+        "./lf_report_test.py --help --mgr $MGR"
+        "./lf_rvr_test.py --help --mgr $MGR"
+        "./lf_rx_sensitivity_test.py --help --mgr $MGR"
+        "./lf_sniff_radio.py --help --mgr $MGR"
+        "./lf_snp_test.py -0-help --mgr $MGR"
+        "./lf_tr398_test.py --help --mgr $MGR"
+        "./lf_webpage.py --help --mgr $MGR"
+        "./lf_wifi_capacity_test.py --help --mgr $MGR"
+        "./measure_station_time_up.py --help --mgr $MGR"
+        "./modify_station.py --help --mgr $MGR"
+        "./modify_vap.py --help --mgr $MGR"
+        "./recordinflux.py --help --mgr $MGR"
+        "./run_cv_scenario.py --help --mgr $MGR"
+        "./rvr_scenario.py --help --mgr $MGR"
+        "./scenario.py --help --mgr $MGR"
+        "./sta_connect.py --help --mgr $MGR"
+        "./sta_connect2.py --help --mgr $MGR"
+        "./sta_connect_bssid_mac.py --help --mgr $MGR"
+        "./sta_connect_example.py --help --mgr $MGR"
+        "./sta_connect_multi_example.py --help --mgr $MGR"
+        "./sta_scan_test.py --help --mgr $MGR"
+        "./station_layer3.py --help --mgr $MGR"
+        "./stations_connected.py --help --mgr $MGR"
+        "./test_1k_clients_jedtest.py --help --mgr $MGR"
+        "./test_client_admission.py --help --mgr $MGR"
+        "./test_fileio.py --help --mgr $MGR"
+        "./test_generic.py --help --mgr $MGR"
+        "./test_ip_connection.py --help --mgr $MGR"
+        "./test_ip_variable_time.py --help --mgr $MGR"
+        "./test_ipv4_ps.py --help --mgr $MGR"
+        "./test_ipv4_ttls.py --help --mgr $MGR"
+        "./test_l3_WAN_LAN.py --help --mgr $MGR"
+        "./test_l3_longevity.py --help --mgr $MGR"
+        "./test_l3_scenario_throughput.py -h -m $MGR"
+        "./test_l3_unicast_traffic_gen.py --help --mgr $MGR"
+        "./test_l4.py --help --mgr $MGR"
+        "./test_status_msg.py --help --mgr $MGR"
+        "./test_wanlink.py --help --mgr $MGR"
+        "./test_wpa_passphrases.py --help --mgr $MGR"
+        "./testgroup.py --help --mgr $MGR"
+        "./testgroup2.py --help --mgr $MGR"
+        "./testgroup_delete_group --mgr $MGR"
+        "./testgroup_list_connections --help --mgr $MGR"
+        "./testgroup_list_groups.py --help --mgr $MGR"
+        "./tip_station_powersave.py --help --mgr $MGR"
+        "./video_rates.py --help --mgr $MGR"
+        "./wlan_capacity_calculator.py -h --mgr $MGR"
+        "./ws_generic_monitor_test.py --help --mgr $MGR"
+  )
+elif [[ $MGRLEN -gt 0 ]]; then
   testCommands=(
       #"./create_bond.py --network_dev_list eth0,eth1 --debug --mgr $MGR"
       #"./create_bridge.py --radio $RADIO_USED --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR"
       "./create_chamberview.py -m $MGR -cs \"regression_test\" --line \"Resource=1.1 Profile=STA-AC Amount=1 Uses-1 $RADIO_USED Freq=-1 DUT=TEST DUT_RADIO=$RADIO_USED Traffic=http\" --line \"Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 DUT=Test DUT_RADIO=$RADIO_USED Traffic=http\""
-      "./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut --ssid \"ssid_idx=0 ssid=$SSID_USED security=$SECURITY password=$PASSWD_USED bssid=04:f0:21:2c:41:84\""
-      #"./create_l3.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
+      "./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut \
+      --ssid \"ssid_idx=0 ssid=\"$SSID_USED\" security=\"$SECURITY\" password=\"$PASSWD_USED\" bssid=04:f0:21:2c:41:84\""
+      "./create_l3.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       #"./create_l4.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       #"./create_macvlan.py --radio 1.$RADIO_USED --macvlan_parent eth1 --debug --mgr $MGR"
       #"./create_qvlan.py --first_qvlan_ip 192.168.1.50 --mgr $MGR"
@@ -152,7 +251,8 @@ if [[ $MGRLEN -gt 0 ]]; then
       #"./docstrings.py --mgr $MGR"
       #"./event_breaker --mgr $MGR"
       #"./event_flood --mgr $MGR"
-      "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --radio $RADIO_USED --security wpa2 --debug --mgr $MGR"
+      "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED \
+      --passwd $PASSWD_USED --radio 1.1.$RADIO_USED --security wpa2 --debug --mgr $MGR"
       #./ftp_html.py
       #./ghost_profile
       #./grafana_profile
@@ -182,10 +282,6 @@ if [[ $MGRLEN -gt 0 ]]; then
           --instance_name dataplane-instance --config_name test_con --upstream 1.1.$UPSTREAM \
           --dut linksys-8450 --duration 15s --station 1.1.sta01500 \
           --download_speed 85% --upload_speed 0 \
-          --raw_line \"pkts: Custom;60;142;256;512;1024;MTU\" \
-          --raw_line \"cust_pkt_sz: 88 1200\" \
-          --raw_line \"directions: DUT Transmit;DUT Receive\" \
-          --raw_line \"traffic_types: UDP;TCP\" \
           --test_rig Testbed-01 --pull_report \
           --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
           --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
@@ -195,7 +291,7 @@ if [[ $MGRLEN -gt 0 ]]; then
       #./lf_dut_sta_vap_test
       #"./lf_ftp.py --mgr $MGR --mgr_port 8080 --upstream_port $UPSTREAM --ssid $SSID --security $SECURITY --passwd $PASSWD_USED \
       # --ap_name WAC505 --ap_ip 192.168.213.90 --bands Both --directions Download --twog_radio wiphy1 --fiveg_radio wiphy0 --file_size 2MB --num_stations 40 --Both_duration 1 --traffic_duration 2 --ssh_port 22_"
-      "./lf_ftp_test.py --mgr $MGR --ssid $SSID --passwd $PASSWD_USED --security $SECURITY --bands 5G --direction Download \
+      "./lf_ftp_test.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --bands 5G --direction Download \
            --file_size 2MB --num_stations 2"
       "./lf_graph.py --mgr $MGR"
       #"./lf_mesh_test.py --mgr $MGR --upstream $UPSTREAM --raw_line 'selected_dut2 RootAP wactest $BSSID'"
@@ -210,8 +306,8 @@ if [[ $MGRLEN -gt 0 ]]; then
       #./lf_webpage
       "./lf_wifi_capacity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
              --instance_name this_inst --config_name test_con --upstream 1.1.eth2 --batch_size 1,5,25,50,100 --loop_iter 1 \
-             --protocol UDP-IPv4 --duration 6000 --pull_report \
-             --test_rig Testbed-01"
+             --protocol UDP-IPv4 --duration 6000 --pull_report --ssid $SSID_USED --paswd $PASSWD_USED --security $SECURITY\
+             --test_rig Testbed-01 --create_stations --stations 1.1.sta0000,1.1.sta0001"
              #--influx_host c7-graphana --influx_port 8086 --influx_org Candela \
              #--influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
              #--influx_bucket ben \
@@ -266,7 +362,6 @@ if [[ $MGRLEN -gt 0 ]]; then
       #"./test_wanlink.py --name my_wanlink4 --latency_A 20 --latency_B 69 --rate 1000 --jitter_A 53 --jitter_B 73 --jitter_freq 6 --drop_A 12 --drop_B 11 --debug --mgr $MGR"
       #./test_wpa_passphrases
       #./tip_station_powersave
-      #./vap_stations_example
       #./video_rates
       "./wlan_capacity_calculator.py -sta 11abg -t Voice -p 48 -m 106 -e WEP -q Yes -b 1 2 5.5 11 -pre Long -s N/A -co G.711 -r Yes -c Yes -m $MGR"
       "./wlan_capacity_calculator.py -sta 11n -t Voice -d 17 -ch 40 -gu 800 -high 9 -e WEP -q Yes -ip 5 -mc 42 -b 6 9 12 24 -m 1538 -co G.729 -pl Greenfield -cw 15 -r Yes -c Yes -m $MGR"
@@ -463,11 +558,13 @@ function test() {
   chmod 664 "${TEST_DIR}/${NAME}.txt"
   FILESIZE=$(stat -c%s "${TEST_DIR}/${NAME}_stderr.txt") || 0
   if (( FILESIZE > 0)); then
+    echo "Errors detected"
       results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                 <td class='failure'>Failure</td>
                 <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
                 <td><a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
   else
+    echo "No errors detected"
       results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                 <td class='success'>Success</td>
                 <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>

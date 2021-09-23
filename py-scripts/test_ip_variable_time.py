@@ -33,7 +33,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -56,11 +55,21 @@ class IPVariableTime(Realm):
                  mode=0,
                  ap=None,
                  traffic_type=None,
-                 side_a_min_rate=56, side_a_max_rate=0,
-                 side_b_min_rate=56, side_b_max_rate=0,
+                 side_a_min_rate=256000, side_a_max_rate=0,
+                 side_b_min_rate=256000, side_b_max_rate=0,
                  number_template="00000",
                  test_duration="5m",
                  use_ht160=False,
+                 report_file=None,
+                 output_format=None,
+                 layer3_cols=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'],
+                 monitor_interval='10s',
+                 influx_host=None,
+                 influx_port=None,
+                 influx_org=None,
+                 influx_token=None,
+                 influx_bucket=None,
+                 compared_report=None,
                  ipv6=False,
                  _debug_on=False,
                  _exit_on_error=False,
@@ -109,6 +118,16 @@ class IPVariableTime(Realm):
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
         self.ipv6 = ipv6
+        self.report_file = report_file
+        self.output_format = output_format
+        self.layer3_cols = layer3_cols
+        self.monitor_interval = monitor_interval
+        self.influx_host = influx_host
+        self.influx_port = influx_port
+        self.influx_org = influx_org
+        self.influx_token = influx_token
+        self.influx_bucket = influx_bucket
+        self.compared_report = compared_report
         self.cx_profile.name_prefix = self.name_prefix
         self.cx_profile.side_a_min_bps = side_a_min_rate
         self.cx_profile.side_a_max_bps = side_a_max_rate
@@ -160,6 +179,144 @@ class IPVariableTime(Realm):
         self.cx_profile.create(endp_type=self.traffic_type, side_a=self.sta_list,
                                side_b=self.upstream,
                                sleep_time=0)
+
+    def run(self):
+        if self.report_file is None:
+            new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
+                                                                                                     '-') + '_test_ip_variable_time'  # create path name
+            try:
+                path = os.path.join('/home/lanforge/report-data/', new_file_path)
+                os.mkdir(path)
+            except:
+                curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                path = os.path.join(curr_dir_path, new_file_path)
+                os.mkdir(path)
+            systeminfopath = str(path) + '/systeminfo.txt'
+
+            if self.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'parquet',
+                                      'xlsx']:
+                report_f = str(path) + '/data.' + self.output_format
+                output = self.output_format
+            else:
+                print(
+                    'Not supporting this report format or cannot find report format provided. Defaulting to csv data file '
+                    'output type, naming it data.csv.')
+                report_f = str(path) + '/data.csv'
+                output = 'csv'
+        else:
+            systeminfopath = str(self.report_file).split('/')[-1]
+            report_f = self.report_file
+            if self.output_format is None:
+                output = str(self.report_file).split('.')[-1]
+            else:
+                output = self.output_format
+        self.pre_cleanup()
+
+        self.build()
+        # exit()
+        if self.create_sta:
+            if not self.passes():
+                print(self.get_fail_message())
+                self.exit_fail()
+
+        try:
+            layer3connections = ','.join([[*x.keys()][0] for x in self.json_get('endp')['endpoint']])
+        except:
+            raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
+
+        if type(self.layer3_cols) is not list:
+            layer3_cols = list(self.layer3_cols.split(","))
+            # send col names here to file to reformat
+        else:
+            layer3_cols = self.layer3_cols
+            # send col names here to file to reformat
+        #if type(self.port_mgr_cols) is not list:
+            #port_mgr_cols = list(self.port_mgr_cols.split(","))
+            # send col names here to file to reformat
+        #else:
+            #port_mgr_cols = self.port_mgr_cols
+            # send col names here to file to reformat
+        if self.debug:
+            print("Layer 3 Endp column names are...")
+            print(layer3_cols)
+            print("Port Manager column names are...")
+            #print(port_mgr_cols)
+
+        print("Layer 3 Endp column names are...")
+        print(layer3_cols)
+        print("Port Manager column names are...")
+        #print(port_mgr_cols)
+
+        try:
+            monitor_interval = Realm.parse_time(self.monitor_interval).total_seconds()
+        except ValueError as error:
+            print(str(error))
+            print(ValueError(
+                "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. "))
+            exit(1)
+        self.start(False, False)
+
+        # if self.influx_mgr is None:
+        #    manager = self.mgr
+        # else:
+        #    manager = self.influx_mgr
+
+        if self.influx_org is not None:
+            from InfluxRequest import RecordInflux
+            grapher = RecordInflux(_influx_host=self.influx_host,
+                                   _influx_port=self.influx_port,
+                                   _influx_org=self.influx_org,
+                                   _influx_token=self.influx_token,
+                                   _influx_bucket=self.influx_bucket)
+            devices = [station.split('.')[-1] for station in station_list]
+            tags = dict()
+            tags['script'] = 'test_ip_variable_time'
+            try:
+                for k in self.influx_tag:
+                    tags[k[0]] = k[1]
+            except:
+                pass
+            grapher.monitor_port_data(longevity=Realm.parse_time(self.test_duration).total_seconds(),
+                                      devices=devices,
+                                      monitor_interval=Realm.parse_time(self.monitor_interval).total_seconds(),
+                                      tags=tags)
+
+
+        # Retrieve last data file
+        compared_rept = None
+        if self.compared_report:
+            compared_report_format = self.compared_report.split('.')[-1]
+            # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
+            if compared_report_format != 'csv':
+                print(ValueError("Cannot process this file type. Please select a different file and re-run script."))
+                exit(1)
+            else:
+                compared_rept = self.compared_report
+
+        self.cx_profile.monitor(layer3_cols=layer3_cols,
+                                sta_list=self.sta_list,
+                                # port_mgr_cols=port_mgr_cols,
+                                report_file=report_f,
+                                systeminfopath=systeminfopath,
+                                duration_sec=Realm.parse_time(self.test_duration).total_seconds(),
+                                monitor_interval_ms=monitor_interval,
+                                created_cx=layer3connections,
+                                output_format=output,
+                                compared_report=compared_rept,
+                                script_name='test_ip_variable_time',
+                                debug=self.debug)
+
+        self.stop()
+        if self.create_sta:
+            if not self.passes():
+                print(self.get_fail_message())
+                self.exit_fail()
+            LFUtils.wait_until_ports_admin_up(port_list=self.sta_list)
+
+            if self.passes():
+                self.success()
+        self.cleanup()
+        print("IP Variable Time Test Report Data: {}".format(report_f))
 
 
 def main():
@@ -324,61 +481,17 @@ python3 ./test_ip_variable_time.py
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_sta = int(args.num_stations)
-
+    if args.create_sta:
+        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1,
+                                               padding_number_=10000,
+                                               radio=args.radio)
+    else:
+        station_list = args.sta_names.split(",")
     # Create directory
 
     # if file path with output file extension is not given...
     # check if home/lanforge/report-data exists. if not, save
     # in new folder based in current file's directory
-
-    if args.report_file is None:
-        new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
-                                                                                                 '-') + '_test_ip_variable_time'  # create path name
-        try:
-            path = os.path.join('/home/lanforge/report-data/', new_file_path)
-            os.mkdir(path)
-        except:
-            curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            path = os.path.join(curr_dir_path, new_file_path)
-            os.mkdir(path)
-        systeminfopath = str(path) + '/systeminfo.txt'
-
-        if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'parquet',
-                                  'xlsx']:
-            report_f = str(path) + '/data.' + args.output_format
-            output = args.output_format
-        else:
-            print(
-                'Not supporting this report format or cannot find report format provided. Defaulting to csv data file '
-                'output type, naming it data.csv.')
-            report_f = str(path) + '/data.csv'
-            output = 'csv'
-
-    else:
-        systeminfopath = str(args.report_file).split('/')[-1]
-        report_f = args.report_file
-        if args.output_format is None:
-            output = str(args.report_file).split('.')[-1]
-        else:
-            output = args.output_format
-    print("IP Test Report Data: {}".format(report_f))
-
-    # Retrieve last data file
-    compared_rept = None
-    if args.compared_report:
-        compared_report_format = args.compared_report.split('.')[-1]
-        # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
-        if compared_report_format != 'csv':
-            print(ValueError("Cannot process this file type. Please select a different file and re-run script."))
-            exit(1)
-        else:
-            compared_rept = args.compared_report
-
-    if create_sta:
-        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
-                                              radio=args.radio)
-    else:
-        station_list = args.sta_names.split(",")
 
     CX_TYPES = ("tcp", "udp", "lf_tcp", "lf_udp")
 
@@ -414,106 +527,21 @@ python3 ./test_ip_variable_time.py
                                  side_b_min_rate=args.b_min,
                                  mode=args.mode,
                                  ap=args.ap,
+                                 report_file=args.report_file,
+                                 output_format=args.output_format,
+                                 layer3_cols=args.layer3_cols,
+                                 monitor_interval=args.monitor_interval,
+                                 influx_host=args.influx_host,
+                                 influx_port=args.influx_port,
+                                 influx_org=args.influx_org,
+                                 influx_token=args.influx_token,
+                                 influx_bucket=args.influx_bucket,
+                                 compared_report=args.compared_report,
                                  ipv6=args.ipv6,
                                  traffic_type=args.traffic_type,
                                  _debug_on=args.debug)
 
-    ip_var_test.pre_cleanup()
-
-    ip_var_test.build()
-    # exit()
-    if create_sta:
-        if not ip_var_test.passes():
-            print(ip_var_test.get_fail_message())
-            ip_var_test.exit_fail()
-
-    try:
-        layer3connections = ','.join([[*x.keys()][0] for x in ip_var_test.json_get('endp')['endpoint']])
-    except:
-        raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
-
-    if type(args.layer3_cols) is not list:
-        layer3_cols = list(args.layer3_cols.split(","))
-        # send col names here to file to reformat
-    else:
-        layer3_cols = args.layer3_cols
-        # send col names here to file to reformat
-    if type(args.port_mgr_cols) is not list:
-        port_mgr_cols = list(args.port_mgr_cols.split(","))
-        # send col names here to file to reformat
-    else:
-        port_mgr_cols = args.port_mgr_cols
-        # send col names here to file to reformat
-    if args.debug:
-        print("Layer 3 Endp column names are...")
-        print(layer3_cols)
-        print("Port Manager column names are...")
-        print(port_mgr_cols)
-
-    print("Layer 3 Endp column names are...")
-    print(layer3_cols)
-    print("Port Manager column names are...")
-    print(port_mgr_cols)
-
-    try:
-        monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
-    except ValueError as error:
-        print(str(error))
-        print(ValueError(
-            "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. "))
-        exit(1)
-    ip_var_test.start(False, False)
-
-    # if args.influx_mgr is None:
-    #    manager = args.mgr
-    # else:
-    #    manager = args.influx_mgr
-
-    if args.influx_org is not None:
-        from InfluxRequest import RecordInflux
-        grapher = RecordInflux(_influx_host=args.influx_host,
-                               _influx_port=args.influx_port,
-                               _influx_org=args.influx_org,
-                               _influx_token=args.influx_token,
-                               _influx_bucket=args.influx_bucket)
-        devices = [station.split('.')[-1] for station in station_list]
-        tags = dict()
-        tags['script'] = 'test_ip_variable_time'
-        try:
-            for k in args.influx_tag:
-                tags[k[0]] = k[1]
-        except:
-            pass
-        grapher.monitor_port_data(longevity=Realm.parse_time(args.test_duration).total_seconds(),
-                                  devices=devices,
-                                  monitor_interval=Realm.parse_time(args.monitor_interval).total_seconds(),
-                                  tags=tags)
-
-    ip_var_test.cx_profile.monitor(layer3_cols=layer3_cols,
-                                   sta_list=station_list,
-                                   # port_mgr_cols=port_mgr_cols,
-                                   report_file=report_f,
-                               systeminfopath=systeminfopath,
-                                   duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
-                                   monitor_interval_ms=monitor_interval,
-                                   created_cx=layer3connections,
-                                   output_format=output,
-                                   compared_report=compared_rept,
-                                   script_name='test_ip_variable_time',
-                                   arguments=args,
-                                   debug=args.debug)
-
-    ip_var_test.stop()
-    if create_sta:
-        if not ip_var_test.passes():
-            print(ip_var_test.get_fail_message())
-            ip_var_test.exit_fail()
-        LFUtils.wait_until_ports_admin_up(port_list=station_list)
-
-        if ip_var_test.passes():
-            ip_var_test.success()
-    ip_var_test.cleanup()
-    print("IP Variable Time Test Report Data: {}".format(report_f))
+    ip_var_test.run()
 
 
 if __name__ == "__main__":

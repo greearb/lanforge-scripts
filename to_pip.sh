@@ -8,7 +8,14 @@ Help()
   echo "ip_var=lanforge_scripts.IPVariableTime(host='192.168.1.239',port='8080',radio='wiphy0',sta_list=['1.1.sta0000','1.1.sta0001'],ssid='lanforge',password='password',security='wpa2',upstream='eth1',name_prefix='VT',traffic_type='lf_udp',_debug_on=True)"
   echo "ip_var.build()"
   echo "ip_var.start(False,False)"
+  echo ""
+  echo "EXPORT TO TAR FILE"
+  echo "./to_pip.sh -a -t TARGET_DIR"
+  echo "The 't' flag tells to_pip where to store the tar file, -a tells it to make a tar file."
 }
+
+ARCHIVE=0
+TARGET_DIR='..'
 
 while getopts ":h:a:t:" option; do
   case "${option}" in
@@ -357,6 +364,14 @@ sed -i -- 's/from create_station/from ..py_scripts.create_station/g' *.py
 sed -i -- 's/from cv_test_reports/from .cv_test_reports/g' *.py
 
 cd LANforge
+echo "
+from .add_dut import dut_params, dut_flags
+from .add_file_endp import fe_fstype, fe_payload_list, fe_fio_flags, fe_base_endpoint_types
+from .lf_json_autogen import LFJsonGet, LFJsonPost
+from .lfcli_base import LFCliBase
+from .LFRequest import LFRequest
+from .LFUtils import *
+from .pandas_extensions import pandas_extensions" > __init__.py
 sed -i -- 's/from LFRequest import LFRequest/from .LFRequest import LFRequest/g' *.py
 sed -i -- 's/from LFRequest/from .LFRequest/g' *.py
 sed -i -- 's/from LANforge import LFRequest/import .LFRequest/g' LFUtils.py
@@ -382,11 +397,12 @@ sed -i -- 's/GrafanaRequest = importlib.import_module("py-dashboard.GrafanaReque
 sed -i -- 's/InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")/from .InfluxRequest import RecordInflux/g' *.py
 sed -i -- 's/RecordInflux = InfluxRequest.RecordInflux/ /g' *.py
 
-if [[ ${ARCHIVE} -eq 0 ]]; then
-  Archive()
-  {
-    cd ../..
-    tar cvzf lanforge_scripts.tar.gz ${TARGET_DIR}
-    zip lanforge_scripts.zip ${TARGET_DIR}
-  }
+echo "${ARCHIVE}"
+if [[ $ARCHIVE -eq 1 ]]; then
+  echo "Saving archive to ${TARGET_DIR}"
+  cd ../
+  tar cvzf ${TARGET_DIR}/lanforge_scripts.tar.gz .
+  zip ${TARGET_DIR}/lanforge_scripts.zip .
+else
+  echo "Not saving archive"
 fi

@@ -10,6 +10,7 @@ import random
 import string
 import datetime
 import argparse
+import re
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
