@@ -148,7 +148,6 @@ from .test_status_msg import TestStatusMessage
 from .testgroup import TestGroup
 from .testgroup2 import TestGroup2
 from .tip_station_powersave import TIPStationPowersave
-from .vap_stations_example import VapStations
 from .video_rates import VideoRates
 from .wlan_capacity_calculator import main as WlanCapacityCalculator
 from .ws_generic_monitor_test import WS_Listener" > __init__.py
