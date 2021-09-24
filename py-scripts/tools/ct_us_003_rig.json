@@ -36,8 +36,12 @@
         "test_ip": "192.168.50.1"
     },
     "radio_dict":{
-        "RADIO_0_CFG":{"KEY":"RADIO_0_CFG","RADIO":"wiphy0","STATIONS":"4","SSID":"ct523c-vap","PASSWD":"ct523c-vap","SECURITY":"wpa2"},
-        "RADIO_1_CFG":{"KEY":"RADIO_1_CFG","RADIO":"wiphy1","STATIONS":"4","SSID":"ct523c-vap","PASSWD":"ct523c-vap","SECURITY":"wpa2"}        
+        "1.1.wiphy0":{"KEY":"1.1.wiphy0","RADIO":"1.1.wiphy0","DRIVER":"iwlwifi(AX210)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"},
+        "1.1.wiphy1":{"KEY":"1.1.wiphy1","RADIO":"1.1.wiphy1","DRIVER":"mt7915e()","CAPABILITIES":"802.11abgn-AX","MAX_STA":"19","MAX_VAP":"16","MAX_VIFS":"19"},
+        "1.2.wiphy0":{"KEY":"1.1.wiphy0","RADIO":"1.1.wiphy0","DRIVER":"iwlwifi(AX210)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"},
+        "1.2.wiphy1":{"KEY":"1.1.wiphy1","RADIO":"1.1.wiphy1","DRIVER":"iwlwifi(AX210)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"},
+        "1.3.wiphy0":{"KEY":"1.1.wiphy0","RADIO":"1.1.wiphy0","DRIVER":"iwlwifi(AX210)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"},
+        "1.3.wiphy1":{"KEY":"1.1.wiphy1","RADIO":"1.1.wiphy1","DRIVER":"iwlwifi(AX210)","CAPABILITIES":"802.11abgn-AX","MAX_STA":"1","MAX_VAP":"1","MAX_VIFS":"1"}
     }
 }
 			
