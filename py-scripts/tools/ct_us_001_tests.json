@@ -371,7 +371,7 @@
                 ]
             },
             "CT-US-001_create_chamberview_dut_2":{
-                "enabled":"FALSE",
+                "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
                 "args":"",
@@ -382,7 +382,7 @@
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
             "CT-US-001_create_chamberview_ap":{
-                "enabled":"FALSE",
+                "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
                 "args":"",
@@ -395,7 +395,7 @@
                 ]
             },
             "CT-US-001_lf_ap_auto_test": {
-                "enabled": "FALSE",
+                "enabled": "TRUE",
                 "command": "lf_ap_auto_test.py",
                 "timeout":"25200",
                 "iterations":"1",
