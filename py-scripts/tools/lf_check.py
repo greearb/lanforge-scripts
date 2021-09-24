@@ -49,6 +49,9 @@ curl -H 'Accept: application/json' http://localhost:8080/ | json_pp
 
 curl -u 'user:pass' -H 'Accept: application/json' http://<lanforge ip>:8080 | json_pp  | grep -A 7 "VersionInfo"   
 
+6. for Fedora you can do a:  dnf group list  , to see what all is installed
+    dnf group install "Development Tools" for example,  to install a group
+
 GENERIC NOTES: 
 Starting LANforge:
     On local or remote system: /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR 

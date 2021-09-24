@@ -1,0 +1,56 @@
+{
+    "ct_tests_003":{
+        "Notes":[
+            "The json is used to orchastrate the tests to be run on testbed ct_us_003",
+            "This json file is used as an input to the ./lf_check.py file",
+            "The variables that are all capitalized below are replaced with configuration",
+            "from the json file. so LF_MGR_IP in the test below is replaced by the json lf_mgr_ip",
+            "The replacement is loosely coupled so the upper and lower case convention is used",
+            "to identify replaced strings in the lf_check.py code."  
+        ]  
+    },
+    "test_suites": {
+        "suite_vap": {
+            "CT-US-003_VAP": {
+                "enabled": "TRUE",
+                "command": "create_vap.py",
+                "args": "",
+                "args_list": [
+                    " --mgr LF_MGR_IP",
+                    " --resource 3",
+                    " --ssid SSID_5G_USED",
+                    " --password SSID_5G_PW_USED",
+                    " --security wpa2",
+                    " --radio wiphy1",
+                    " --upstream_port UPSTREAM_PORT",
+                    " --mode 802.11anAC"
+                ]
+            },
+            "test_l3_longevity":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"test_l3_longevity.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --test_duration 15s --polling_interval 5s --upstream_port eth2 ",
+                    " --radio 'radio==wiphy1,stations==4,ssid==SSID_5G_USED,ssid_pw==SSID_5G_PW_USED,security==SECURITY_5G_USED' ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"
+                ]
+            },
+            "CT-US-001_QA":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+                ]
+            }
+        }
+    }
+}
+			
+	
+		
+	
