@@ -481,8 +481,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             self.radio_dict = self.json_rig["radio_dict"]
             self.logger.info("self.radio_dict {}".format(self.radio_dict))
         else:
-            self.logger.info("EXITING radio_dict not in json {}".format(self.json_rig))
-            exit(1)
+            self.logger.info("radio_dict not in json {}".format(self.json_rig))
 
     # read dut configuration
     def read_json_dut(self):
