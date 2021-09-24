@@ -760,9 +760,10 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
         print(self.test_dict)
 
         # loop through radios (For future functionality based on radio)
-        for radio in self.radio_dict:
-            # This has been changed to reflect the Radio configuriaton of LANforge, for now print
-            print("rig json config: RADIO: {radio} DRIVER: {driver} CAPABILITIES {cap} MAX_STA {max_sta} MAX_VAP {max_vap} MAX_VIFS {max_vif}".format(
+        if self.radio_dict:
+            for radio in self.radio_dict:
+                # This has been changed to reflect the Radio configuriaton of LANforge, for now print
+                print("rig json config: RADIO: {radio} DRIVER: {driver} CAPABILITIES {cap} MAX_STA {max_sta} MAX_VAP {max_vap} MAX_VIFS {max_vif}".format(
                 radio=self.radio_dict[radio]['RADIO'],driver=self.radio_dict[radio]['DRIVER'],cap=self.radio_dict[radio]['CAPABILITIES'],
                 max_sta=self.radio_dict[radio]['MAX_STA'],max_vap=self.radio_dict[radio]['MAX_VAP'],max_vif=self.radio_dict[radio]['MAX_VIFS']))
 

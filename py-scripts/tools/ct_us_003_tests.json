@@ -17,7 +17,7 @@
                 "args": "",
                 "args_list": [
                     " --mgr LF_MGR_IP",
-                    " --resource 3",
+                    " --resource 1",
                     " --ssid SSID_5G_USED",
                     " --password SSID_5G_PW_USED",
                     " --security wpa2",
