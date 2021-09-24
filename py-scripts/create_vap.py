@@ -89,7 +89,6 @@ class CreateVAP(Realm):
         self.vap_profile.create(resource = self.resource,
                                 radio = self.radio,
                                 channel = self.channel,
-                                country=self.country_code,
                                 up_ = True,
                                 debug = False,
                                 use_ht40=True,
