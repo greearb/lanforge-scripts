@@ -1,7 +1,7 @@
 #! /bin/bash
 Help()
 {
-  echo "This script modifies lanforge scripts so that it can be imported into python as a library"
+  echo "This script modifies lanforge scripts so that it can be imported into python as a library from the tar.gz file it creates"
   echo "store this repository in your python path, and then import lanforge_scripts from anywhere on your machine"
   echo "An example of how to run this in python is like so:"
   echo "import lanforge_scripts"
@@ -12,6 +12,7 @@ Help()
   echo "EXPORT TO TAR FILE"
   echo "./to_pip.sh -a -t TARGET_DIR"
   echo "The 't' flag tells to_pip where to store the tar file, -a tells it to make a tar file."
+  echo "When the archive is made, you can install it on any computer with `pip install lanforge_scripts.tar.gz`"
 }
 
 ARCHIVE=0
@@ -38,9 +39,9 @@ cd ..
 mv lanforge-scripts lanforge_scripts
 cd lanforge_scripts
 
-ln -s py-scripts/ py_scripts
-ln -s py-json/ py_json
-ln -s py-dashboard/ py_dashboard
+mv py-scripts/ py_scripts
+mv py-json/ py_json
+mv py-dashboard/ py_dashboard
 
 
 echo "#Automate LANforge devices with lanforge-scripts
@@ -206,7 +207,8 @@ sed -i -- 's/lf_cv_base = importlib.import_module("py-json.lf_cv_base")/from ..p
 sed -i -- 's/base_profile = importlib.import_module("py-json.base_profile")/from ..py_json import base_profile/g' *.py
 sed -i -- 's/add_file_endp = importlib.import_module("py-json.LANforge.add_file_endp")/from ..py_json.LANforge import add_file_endp/g' *.py
 sed -i -- 's/lf_graph = importlib.import_module("py-scripts.lf_graph")/from ..py_scripts import lf_graph/g' *.py
-sed -i -- 's/GrafanaRequest = importlib.import_module("py-dashboard.GrafanaRequest")/from ..py_dashboard import GrafanaRequest/g' *.py
+sed -i -- 's/GrafanaRequest = importlib.import_module("py-dashboard.GrafanaRequest")/from ..py_dashboard.GrafanaRequest import GrafanaRequest/g' *.py
+sed -i -- 's/GrafanaRequest = GrafanaRequest.GrafanaRequest/ /g' *.py
 sed -i -- 's/station_profile = importlib.import_module("py-json.station_profile")/from ..py_json import station_profile/g' *.py
 sed -i -- 's/cv_test_manager = importlib.import_module("py-scripts.cv_test_manager")/from ..py_scripts import cv_test_manager/g' *.py
 sed -i -- 's/lf_report = importlib.import_module("py-scripts.lf_report")/from ..py_scripts import lf_report/g' *.py
@@ -316,6 +318,8 @@ sed -i -- 's/vap_profile = importlib.import_module("py-json.vap_profile")/from .
 sed -i -- 's/station_profile = importlib.import_module("py-json.station_profile")/from ..py_json import station_profile/g' *.py
 sed -i -- 's/PortUtils = port_utils.PortUtils/ /g' *.py
 sed -i -- 's/LFCliBase = lfcli_base.LFCliBase/ /g' *.py
+sed -i -- 's/pandas_extensions = importlib.import_module("py-json.LANforge.pandas_extensions")/from .LANforge.pandas_extensions import pandas_extensions/g' *.py
+sed -i -- 's/pandas_extensions.pandas_extensions/pandas_extensions/g' *.py
 
 # fix py_dashboard files
 sed -i -- 's/from GrafanaRequest/from ..py_dashboard.GrafanaRequest/g' *.py
@@ -383,6 +387,10 @@ sed -i -- 's/import LANforge.LFRequest/ /g' lfcli_base.py
 sed -i -- 's/import .LFRequest/from . import LFRequest/g' *.py
 sed -i -- 's/import .LFUtils/from . import LFUtils/g' *.py
 sed -i -- 's/LANforge.LFUtils./LFUtils./g' *.py
+sed -i -- 's/lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")/from .lfcli_base import LFCliBase/g' *.py
+sed -i -- 's/LFRequest = importlib.import_module("py-json.LANforge.LFRequest")/from .LFRequest import LFRequest/g' *.py
+sed -i -- 's/LFRequest.LFRequest/LFRequest/g' *.py
+sed -i -- 's/LFCliBase = lfcli_base.LFCliBase/from .lfcli_base import LFCliBase/g' *.py
 
 #Convert from importlib to pip compliant method
 sed -i -- 's/LFUtils = importlib.import_module("py-json.LFUtils.)/from .LFUtils import debug_printer/g' *.py
@@ -390,18 +398,56 @@ sed -i -- 's/LFUtils.debug_printer/debug_printer/g' *.py
 sed -i -- 's/LFRequest = importlib.import_module("py-json.LFRequest.)/from .LFRequest import debug_printer/g' *.py
 sed -i -- 's/lanforge-scripts/lanforge_scripts/g' *.py
 sed -i -- 's/LFUtils.debug_printer/debug_printer/g' *.py
+sed -i -- 's/lf_json_autogen = importlib.import_module("py-json.LANforge.lf_json_autogen")/from .lf_json_autogen import LFJsonPost/g' *.py
+sed -i -- 's/LFJsonPost = lf_json_autogen.LFJsonPost/ /g' *.py
 
 cd ../../py_dashboard
+echo "
+from .GrafanaRequest import GrafanaRequest
+from .InfluxRequest import RecordInflux
+from .GhostRequest import GhostRequest" > __init__.py
 sed -i -- 's/GrafanaRequest = importlib.import_module("py-dashboard.GrafanaRequest")/from .GrafanaRequest import GrafanaRequest/g' *.py
 sed -i -- 's/InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")/from .InfluxRequest import RecordInflux/g' *.py
 sed -i -- 's/RecordInflux = InfluxRequest.RecordInflux/ /g' *.py
 
 echo "${ARCHIVE}"
+py_modules=(        'ap_ctl'
+                    'emailHelper'
+                    'lf_mail'
+                    'lf_tos_plus_test'
+                    'lf_tx_power'
+                    'tos_plus_auto'
+                    'auto_install_gui'
+                    'cpu_stats'
+                    'lf_sniff'
+                    'lf_tos_test'
+                    'openwrt_ctl'
+                    'stationStressTest'
+                    'wifi_ctl_9800_3504')
 if [[ $ARCHIVE -eq 1 ]]; then
   echo "Saving archive to ${TARGET_DIR}"
-  cd ../
-  tar cvzf ${TARGET_DIR}/lanforge_scripts.tar.gz .
-  zip ${TARGET_DIR}/lanforge_scripts.zip .
+  cd ..
+  mkdir lanforge_scripts
+  mv py_json lanforge_scripts
+  mv py_dashboard lanforge_scripts
+  mv py_scripts lanforge_scripts
+  mv label-printer lanforge_scripts/label_printer
+  for i in "${py_modules[@]}"; do
+    mv $i lanforge_scripts
+  done
+  rm *.pl
+  rm *.bash
+  rm -r gui
+  rm -r json
+  rm -r LANforge
+  rm -r __pycache__
+  mv *.py lanforge_scripts
+  mv lanforge_scripts/setup.py .
+  rm speedtest-cli
+  rm WlanPro.desktop
+  mv wifi_diag lanforge_scripts
+  tar -zcvf ${TARGET_DIR}/lanforge_scripts.tar.gz *
+  zip ${TARGET_DIR}/lanforge_scripts.zip *
 else
   echo "Not saving archive"
 fi

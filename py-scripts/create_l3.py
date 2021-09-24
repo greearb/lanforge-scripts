@@ -69,37 +69,7 @@ class CreateL3(Realm):
         self._pass("PASS: Cross-connect build finished")
 
 
-def main():
-    parser = LFCliBase.create_basic_argparse(
-        prog='create_l3.py',
-        formatter_class=argparse.RawTextHelpFormatter,
-        epilog='''\
-            Generate traffic between ports
-            ''',
-        description='''\
-        ''')
-
-    required_args = None
-    for group in parser._action_groups:
-        if group.title == "required arguments":
-            required_args = group
-            break
-    if required_args is not None:
-        required_args.add_argument('--min_rate_a', help='--min_rate_a bps rate minimum for side_a', default=56000)
-        required_args.add_argument('--min_rate_b', help='--min_rate_b bps rate minimum for side_b', default=56000)
-        required_args.add_argument('--endp_a', help='--endp_a station list', default=["eth1"], action="append")
-        required_args.add_argument('--endp_b', help='--upstream port', default="eth2")
-
-    optional_args = None
-    for group in parser._action_groups:
-        if group.title == "optional arguments":
-            optional_args = group
-            break;
-    if optional_args is not None:
-        optional_args.add_argument('--mode', help='Used to force mode of stations', default=0)
-        optional_args.add_argument('--ap', help='Used to force a connection to a particular AP')
-        optional_args.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000', default=0000)
-    args = parser.parse_args()
+def main(args):
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
@@ -126,4 +96,21 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = LFCliBase.create_basic_argparse(
+        prog='create_l3.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+            Generate traffic between ports
+            ''',
+        description='''\
+        ''')
+    parser.add_argument('--min_rate_a', help='--min_rate_a bps rate minimum for side_a', default=56000)
+    parser.add_argument('--min_rate_b', help='--min_rate_b bps rate minimum for side_b', default=56000)
+    parser.add_argument('--endp_a', help='--endp_a station list', default=["eth1"], action="append", required=True)
+    parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=True)
+    parser.add_argument('--mode', help='Used to force mode of stations', default=0)
+    parser.add_argument('--ap', help='Used to force a connection to a particular AP')
+    parser.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000', default=0000)
+    args = parser.parse_args()
+
+    main(args)
