@@ -240,7 +240,7 @@ def main():
     parser.add_argument("--dut", default="",
                         help="Specify DUT used by this test, example: linksys-8450")
     parser.add_argument("--download_speed", default="",
-                        help="Specify requested download speed.  Percentage of theoretical is also supported.  Default: 85%")
+                        help="Specify requested download speed.  Percentage of theoretical is also supported.  Default: 85")
     parser.add_argument("--upload_speed", default="",
                         help="Specify requested upload speed.  Percentage of theoretical is also supported.  Default: 0")
     parser.add_argument("--duration", default="",
