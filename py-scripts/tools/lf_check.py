@@ -1013,16 +1013,6 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                         self.test_result = "Time Out"
                         background = self.background_purple
 
-                    # Ghost will put data in stderr 
-                    if 'ghost' in command or 'lf_qa' in command:
-                        if self.test_result != "TIMEOUT":
-                            text = open(stderr_log_txt).read()
-                            if 'Error' in text:
-                                self.test_result = "Failure"
-                                background = self.background_red
-                            else:
-                                self.test_result = "Success"
-                                background = self.background_blue
                     if 'lf_qa' in command:
                         line_list = open(stdout_log_txt).readlines()
                         for line in line_list:
