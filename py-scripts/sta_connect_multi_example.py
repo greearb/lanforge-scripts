@@ -32,7 +32,8 @@ def main():
         description='''\
 Example of how to instantiate StaConnect and run the test
         ''')
-    args = parser.parse_args()
+    #args = parser.parse_args() - add this line if adding arguments
+    parser.parse_args()
 
     # create multiple OPEN stations
     station_names = LFUtils.port_name_series(start_id=0, end_id=1)

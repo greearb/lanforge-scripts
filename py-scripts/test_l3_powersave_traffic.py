@@ -4,6 +4,8 @@ import os
 import importlib
 import time
 import datetime
+import argparse
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -153,6 +155,19 @@ class L3PowersaveTraffic(LFCliBase):
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        prog='test_l3_powersave_traffic.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+        test_l3_powersave_traffic.py
+
+            ''',
+        description='''\
+Example of creating traffic on an l3 connection
+        ''')
+    #args = parser.parse_args() - add this line if adding arguments
+    parser.parse_args()
+
     lfjson_host = "localhost"
     lfjson_port = 8080
     # station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)
