@@ -3,6 +3,8 @@
 import sys
 import os
 import importlib
+import argparse
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -20,6 +22,18 @@ StaConnect = sta_connect.StaConnect
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        prog='sta_connected_multip_example.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+        sta_connected_multip_example.py
+
+            ''',
+        description='''\
+Example of how to instantiate StaConnect and run the test
+        ''')
+    args = parser.parse_args()
+
     # create multiple OPEN stations
     station_names = LFUtils.port_name_series(start_id=0, end_id=1)
 
