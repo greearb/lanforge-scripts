@@ -246,9 +246,9 @@ def main():
 
     parser.add_argument("-u", "--upstream", type=str, default="",
                         help="Upstream port for wifi capacity test ex. 1.1.eth2")
-
+    # argparse uses the % formatting so use %%
     parser.add_argument("--download_speed", default="",
-                        help="Specify requested download speed.  Percentage of theoretical is also supported.  Default: 85%")
+                        help="Specify requested download speed.  Percentage of theoretical is also supported.  Default: 85%%")
     parser.add_argument("--upload_speed", default="",
                         help="Specify requested upload speed.  Percentage of theoretical is also supported.  Default: 0")
     parser.add_argument("--duration", default="",
