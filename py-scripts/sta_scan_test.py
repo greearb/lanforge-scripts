@@ -14,21 +14,22 @@ License: Free to distribute and modify. LANforge systems must be licensed.
 
 import sys
 import os
+import importlib
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-
-if 'py-dashboard' not in sys.path:
-sys.path.append(os.path.join(os.path.abspath('..'), 'py-dashboard'))
-
 import argparse
-from LANforge import LFUtils
-from realm import Realm
 import time
+
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 
 class StaScan(Realm):
