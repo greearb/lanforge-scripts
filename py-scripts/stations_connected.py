@@ -3,6 +3,7 @@
 import sys
 import os
 import importlib
+import argparse
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -46,6 +47,20 @@ class StationsConnected(LFCliBase):
         return counter
 
 def main():
+    parser = argparse.ArgumentParser(
+        prog='stations_connected.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+        stations_connected.py
+
+            ''',
+        description='''\
+Contains examples of using realm to query stations and get specific information from them
+        ''')
+    # if args are added  args=parser.parse_args() swap out next line
+    parser.parse_args()
+
+
     qstationsx = StationsConnected("localhost", 8080)
     bssid = "00:0E:8E:7B:DF:9B"
     if qstationsx.run():
