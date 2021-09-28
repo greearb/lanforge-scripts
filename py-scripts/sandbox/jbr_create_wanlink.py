@@ -56,6 +56,7 @@ def main():
                         connection_timeout_sec=2.0,
                         stream_errors=True,
                         stream_warnings=True,
+                        require_session=True,
                         exit_on_error=True)
     command: LFJsonCommand
     command = session.get_command()
