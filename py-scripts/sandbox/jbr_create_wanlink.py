@@ -63,38 +63,37 @@ def main():
     query: LFJsonQuery
     query = session.get_query()
 
-
     command.post_add_rdd(resource=args.resource,
                          port="rd0a",
                          peer_ifname="rd0b",
-                         report_timer=1000,
-                         shelf=1,
-                         debug_=args.debug)
+                         report_timer="1000",
+                         shelf="1",
+                         debug=args.debug)
 
     command.post_add_rdd(resource=args.resource,
                          port="rd1a",
                          peer_ifname="rd1b",
                          report_timer=1000,
                          shelf=1,
-                         debug_=args.debug)
+                         debug=args.debug)
 
     endp_a = args.wl_name + "-A"
     endp_b = args.wl_name + "-B"
     command.post_add_wl_endp(alias=endp_a,
                              resource=args.resource,
                              port="rd0a",
-                             shelf=1,
-                             debug_=args.debug)
+                             shelf="1",
+                             debug=args.debug)
     command.post_add_wl_endp(alias=endp_b,
                              resource=args.resource,
                              port="rd1a",
-                             shelf=1,
-                             debug_=args.debug)
+                             shelf="1",
+                             debug=args.debug)
     command.post_add_cx(alias=args.wl_name,
                         rx_endp=endp_a,
                         tx_endp=endp_b,
                         test_mgr="default_tm",
-                        debug_=args.debug)
+                        debug=args.debug)
     ewarn_list = []
     result = query.get_wl(eid_list=(args.wl_name),
                           wait_sec=0.2,
@@ -103,6 +102,8 @@ def main():
                           debug=args.debug)
     pprint.pprint(result)
     result = query.get_wl_endp(eid_list=(args.wl_name+"-A", args.wl_name+"-B"),
+                               wait_sec=0.2,
+                               timeout_sec=15.0,
                                debug=args.debug)
     pprint.pprint(result)
 
