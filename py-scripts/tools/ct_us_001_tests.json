@@ -10,6 +10,17 @@
         ]  
     },
     "test_suites":{
+        "suite_hc":{
+            "CT-US-001_lf_help_check":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"lf_help_check.bash",
+                "args":"",
+                "args_list":[
+                    " "
+                ]
+            }
+        },
         "suite_l3":{
             "test_l3_longevity":{
                 "enabled":"TRUE",
@@ -130,6 +141,15 @@
             }
         },
         "suite_wc_dp":{
+            "CT-US-001_lf_help_check":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"lf_help_check.bash",
+                "args":"",
+                "args_list":[
+                    " "
+                ]
+            },
             "CT-US-001_create_chamberview_dut_for_ATH10K":{
                 "enabled":"TRUE",
                 "load_db":"skip",
