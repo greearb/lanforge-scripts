@@ -75,15 +75,19 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lf_wifi_capacity_test = importlib.import_module("py-scripts.lf_wifi_capacity_test")
 WiFiCapacityTest = lf_wifi_capacity_test.WiFiCapacityTest
-cv_test_manager = importlib.import_module("py-scripts.cv_test_manager")
+cv_test_manager = importlib.import_module("py-json.cv_test_manager")
 create_chamberview = importlib.import_module("py-scripts.create_chamberview")
 CreateChamberview = create_chamberview.CreateChamberview
-DUT = create_chamberview.DUT
+create_chamberview_dut = importlib.import_module("py-scripts.create_chamberview_dut")
+DUT = create_chamberview_dut.DUT 
 lf_dataplane_test = importlib.import_module("py-scripts.lf_dataplane_test")
 DataplaneTest = lf_dataplane_test.DataplaneTest
 grafana_profile = importlib.import_module("py-scripts.grafana_profile")
 UseGrafana = grafana_profile.UseGrafana
 lf_ap_auto_test = importlib.import_module("py-scripts.lf_ap_auto_test")
+
+cv_add_base_parser = cv_test_manager.cv_add_base_parser
+
 
 
 def main():
