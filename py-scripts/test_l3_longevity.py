@@ -117,8 +117,10 @@ class L3VariableTime(Realm):
                  ap_read=False,
                  ap_port='/dev/ttyUSB0',
                  ap_baud='115200',
+                 ap_cmd_6g='wl -i wl2 bs_data',
                  ap_cmd_5g='wl -i wl1 bs_data',
                  ap_cmd_2g='wl -i wl0 bs_data',
+                 ap_chanim_cmd_6g='wl -i wl2 chanim_stats',
                  ap_chanim_cmd_5g='wl -i wl1 chanim_stats',
                  ap_chanim_cmd_2g='wl -i wl0 chanim_stats',
                  ap_test_mode=False,
@@ -202,15 +204,20 @@ class L3VariableTime(Realm):
         self.ap_read = ap_read
         self.ap_port = ap_port
         self.ap_baud = ap_baud
+        self.ap_cmd_6g = ap_cmd_6g
         self.ap_cmd_5g = ap_cmd_5g
         self.ap_cmd_2g = ap_cmd_2g
+        self.ap_chanim_cmd_6g = ap_chanim_cmd_6g
         self.ap_chanim_cmd_5g = ap_chanim_cmd_5g
         self.ap_chanim_cmd_2g = ap_chanim_cmd_2g
         self.ap_test_mode = ap_test_mode
+        self.ap_6g_umsched = ""
+        self.ap_6g_msched = ""
         self.ap_5g_umsched = ""
         self.ap_5g_msched = ""
         self.ap_24g_umsched = ""
         self.ap_24g_msched = ""
+        self.ap_ofdma_6g = ""
         self.ap_ofdma_5g = ""
         self.ap_ofdma_24g = ""
 
@@ -261,6 +268,12 @@ class L3VariableTime(Realm):
         self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
 
+    def get_ap_6g_umsched(self):
+        return self.ap_6g_umsched
+
+    def get_ap_6g_msched(self):
+        return self.ap_6g_msched
+
     def get_ap_5g_umsched(self):
         return self.ap_5g_umsched
 
@@ -272,6 +285,9 @@ class L3VariableTime(Realm):
 
     def get_ap_24g_msched(self):
         return self.ap_5g_msched
+
+    def get_ap_ofdma_6g(self):
+        return self.ap_ofdma_6g
 
     def get_ap_ofdma_5g(self):
         return self.ap_ofdma_5g
@@ -524,7 +540,24 @@ class L3VariableTime(Realm):
             print("ap_custom_cmd: {} WARNING unable to read AP ".format(ap_custom_cmd))
 
         return ap_results
+
+    def read_ap_stats_6g(self):
+        #  6ghz:  wl -i wl2 bs_data  
+        ap_stats_6g = ""
+        try:
+            # configure the serial interface
+            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+            ss = SerialSpawn(ser)
+            ss.sendline(str(self.ap_cmd_6g))
+            ss.expect([pexpect.TIMEOUT], timeout=1) # do not detete line, waits for output
+            ap_stats_6g = ss.before.decode('utf-8','ignore')
+            print("ap_stats_6g from AP: {}".format(ap_stats_6g))
+
+        except:
+            print("WARNING: ap_stats_6g unable to read AP")
         
+        return ap_stats_6g
+
     def read_ap_stats_5g(self):
         #  5ghz:  wl -i wl1 bs_data  
         ap_stats_5g = ""
@@ -538,7 +571,7 @@ class L3VariableTime(Realm):
             print("ap_stats_5g from AP: {}".format(ap_stats_5g))
 
         except:
-            print("WARNING unable to read AP")
+            print("WARNING: ap_stats_5g unable to read AP")
         
         return ap_stats_5g
 
@@ -555,9 +588,26 @@ class L3VariableTime(Realm):
             print("ap_stats_2g from AP: {}".format(ap_stats_2g))
 
         except:
-            print("WARNING unable to read AP")
+            print("WARNING: ap_stats_2g unable to read AP")
         
         return ap_stats_2g
+
+    def read_ap_chanim_stats_6g(self):
+        #  5ghz:  wl -i wl1 chanim_stats  
+        ap_chanim_stats_6g = ""
+        try:
+            # configure the serial interface
+            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+            ss = SerialSpawn(ser)
+            ss.sendline(str(self.ap_chanim_cmd_6g))
+            ss.expect([pexpect.TIMEOUT], timeout=1) # do not detete line, waits for output
+            ap_chanim_stats_6g = ss.before.decode('utf-8','ignore')
+            print("read_ap_chanim_stats_6g {}".format(ap_chanim_stats_6g))
+
+        except:
+            print("WARNING: read_ap_chanim_stats_6g unable to read AP")
+
+        return ap_chanim_stats_6g
 
 
     def read_ap_chanim_stats_5g(self):
@@ -573,7 +623,7 @@ class L3VariableTime(Realm):
             print("read_ap_chanim_stats_5g {}".format(ap_chanim_stats_5g))
 
         except:
-            print("WARNING unable to read AP")
+            print("WARNING: read_ap_chanim_stats_5g unable to read AP")
         
         return ap_chanim_stats_5g
 
@@ -590,7 +640,7 @@ class L3VariableTime(Realm):
             print("read_ap_chanim_stats_2g {}".format(ap_chanim_stats_2g))
 
         except:
-            print("WARNING unable to read AP")
+            print("WARNING: read_ap_chanim_stats_2g unable to read AP")
         
         return ap_chanim_stats_2g
 
@@ -666,6 +716,7 @@ class L3VariableTime(Realm):
                 self.build(rebuild=True)
 
                 if self.ap_scheduler_stats or self.ap_ofdma_stats:
+                    self.ap_custom_cmd('wl -i wl2 dump_clear')
                     self.ap_custom_cmd('wl -i wl1 dump_clear')
                     self.ap_custom_cmd('wl -i wl0 dump_clear')
 
@@ -718,16 +769,131 @@ class L3VariableTime(Realm):
 
                         # AP OUTPUT
                         if self.ap_read:
+                            # 6G test mode
                             if self.ap_test_mode:
                                 # Create the test data as a continuous string
-                                ap_stats_5g="{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 bs_data\n",
+                                ap_stats_6g="{}{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl2 bs_data\n",
                                 "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
                                 "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
                                 "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
                                 "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
                                 "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n",
                                 "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
-                                print("ap_stats {}".format(ap_stats_5g))
+                                print("ap_stats 6g{}".format(ap_stats_6g))
+
+                                # Create the test data as a continuous string
+                                ap_chanim_stats_6g = "{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl2 chanim_stats\n",
+                                "version: 3\n",
+                                "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
+                                #`"0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
+                                '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
+                                #"0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
+
+                            else:
+                                # read from the AP 6g
+                                ap_stats_6g = self.read_ap_stats_6g()
+                                ap_chanim_stats_6g = self.read_ap_chanim_stats_6g()
+
+                            ap_stats_6g_rows = ap_stats_6g.splitlines()
+                            print("From AP stats: ap_stats_6g_rows {}".format(ap_stats_6g_rows))
+
+                            ap_chanim_stats_rows_6g = ap_chanim_stats_6g.splitlines()
+                            print("From AP chanim: ap_chanim_stats_rows_6g {}".format(ap_chanim_stats_rows_6g))
+                            channel_utilization = 0
+
+                            # Query all of our ports
+                            # Note: the endp eid is the shelf.resource.port.endp-id
+                            port_eids = self.gather_port_eids()
+                            for eid_name in port_eids:
+                                eid = self.name_to_eid(eid_name)
+                                url = "/port/%s/%s/%s"%(eid[0], eid[1], eid[2])
+                                # read LANforge to get the mac
+                                response = self.json_get(url)
+                                if (response is None) or ("interface" not in response):
+                                    print("6g query-port: %s: incomplete response:"%(url))
+                                    pprint(response)
+                                else:
+                                    # print("response".format(response))
+                                    pprint(response)
+                                    p = response['interface']
+                                    print("#### 6g From LANforge: p, response['insterface']:{}".format(p))
+                                    mac = p['mac']
+                                    #print("#### From LANforge: p['mac']: {mac}".format(mac=mac))
+
+                                    # Parse the ap stats to find the matching mac then use that row for reporting
+                                    for row in ap_stats_6g_rows:
+                                        split_row = row.split()
+                                        #print("split_row {}".format(split_row))
+                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        if self.ap_test_mode:
+                                            if split_row[0].lower() != mac.lower():
+                                                ap_row = split_row
+                                                mac_found_6g = True
+                                        else:
+                                            try:
+                                                # split_row[0].lower() , mac from AP 
+                                                # mac.lower() , mac from LANforge
+                                                if split_row[0].lower() == mac.lower():
+                                                    ap_row = split_row
+                                                    mac_found_6g = True
+                                            except:
+                                                print("6g 'No stations are currently associated.'? from AP")
+                                                print(" since possibly no stations: excption on compare split_row[0].lower() ")
+                                    if mac_found_6g == True:
+                                        mac_found_6g = False
+                                        print("6g selected ap_row (from split_row): {}".format(ap_row))
+
+                                        # Find latency, jitter for connections using this port.
+                                        latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(p["port"], endps)
+
+                                        # now report the ap_chanim_stats along side of the ap_stats_6g
+                                        xtop_reported = False
+                                        for row in ap_chanim_stats_rows_6g:
+                                            split_row = row.split()
+                                            if xtop_reported:
+                                                print("6g xtop_reported row: {row}".format(row=row))
+                                                print("6g xtop_reported split_row: {split_row}".format(split_row=split_row))
+                                                try:
+                                                    xtop = split_row[7]
+                                                    print("6g xtop {xtop}".format(xtop=xtop))
+                                                except:
+                                                    print("6g detected chanspec with reading chanim_stats, exception reading xtop")
+
+                                                try:
+                                                    channel_utilization = float(100) - float(xtop)
+                                                    print("6g channel_utilization {utilization}".format(utilization=channel_utilization))
+                                                except:
+                                                    print("6g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
+                                                # should be only one channel utilization
+                                                break
+                                            else:
+                                                try:
+                                                    if split_row[0].lower() == 'chanspec':
+                                                        print("6g chanspec found xtop_reported = True")
+                                                        xtop_reported = True
+                                                except:
+                                                    print("6g Error reading xtop")
+                                        # ap information is passed with ap_row so all information needs to be contained in ap_row
+                                        ap_row.append(str(channel_utilization))
+                                        print("6g channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
+                                        print("6g ap_row {ap_row}".format(ap_row=ap_row))
+
+                                        ap_stats_6g_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo','channel_utilization']
+
+                                        self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
+                                                            latency, jitter, total_ul_rate,  total_ul_rate_ll, total_ul_pkts_ll, 
+                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll , ap_row, ap_stats_6g_col_titles) #ap_stats_5g_col_titles used as a length
+                            # 5G test mode
+                            if self.ap_test_mode:
+                                # Create the test data as a continuous string
+                                ap_stats_5g="{}{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 bs_data\n",
+                                "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
+                                "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
+                                "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
+                                "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
+                                "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n",
+                                "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
+                                print("ap_stats 5g {}".format(ap_stats_5g))
 
                                 # Create the test data as a continuous string
                                 ap_chanim_stats_5g = "{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 chanim_stats\n",
@@ -758,7 +924,7 @@ class L3VariableTime(Realm):
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
                                 if (response is None) or ("interface" not in response):
-                                    print("query-port: %s: incomplete response:"%(url))
+                                    print("query-port 5g: %s: incomplete response:"%(url))
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
@@ -785,11 +951,11 @@ class L3VariableTime(Realm):
                                                     ap_row = split_row
                                                     mac_found_5g = True
                                             except:
-                                                print(" 'No stations are currently associated.'? from AP")
-                                                print(" since possibly no stations: excption on compare split_row[0].lower() ")    
+                                                print("5g 'No stations are currently associated.'? from AP")
+                                                print("5g since possibly no stations: excption on compare split_row[0].lower() ")
                                     if mac_found_5g == True:
                                         mac_found_5g = False                                                
-                                        print("selected ap_row (from split_row): {}".format(ap_row))
+                                        print("5g selected ap_row (from split_row): {}".format(ap_row))
 
                                         # Find latency, jitter for connections using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(p["port"], endps)
@@ -820,20 +986,21 @@ class L3VariableTime(Realm):
                                                         print("5g chanspec found xtop_reported = True")
                                                         xtop_reported = True
                                                 except:
-                                                    print("Error reading xtop")
+                                                    print("5g Error reading xtop")
                                         # ap information is passed with ap_row so all information needs to be contained in ap_row
                                         ap_row.append(str(channel_utilization))
-                                        print("channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
-                                        print("ap_row {ap_row}".format(ap_row=ap_row))
+                                        print("5g channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
+                                        print("5g ap_row {ap_row}".format(ap_row=ap_row))
 
                                         ap_stats_5g_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo','channel_utilization']
 
                                         self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                                             latency, jitter, total_ul_rate,  total_ul_rate_ll, total_ul_pkts_ll, 
                                                             total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll , ap_row, ap_stats_5g_col_titles) #ap_stats_5g_col_titles used as a length
+                            # 2g test mode
                             if self.ap_test_mode:
                                 # Create the test data as a continuous string
-                                ap_stats_2g="{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 bs_data\n",
+                                ap_stats_2g="{}{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl0 bs_data\n",
                                 "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
                                 "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
                                 "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
@@ -870,7 +1037,7 @@ class L3VariableTime(Realm):
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
                                 if (response is None) or ("interface" not in response):
-                                    print("query-port: %s: incomplete response:"%(url))
+                                    print("2g query-port: %s: incomplete response:"%(url))
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
@@ -897,11 +1064,11 @@ class L3VariableTime(Realm):
                                                     ap_row = split_row
                                                     mac_found_2g = True
                                             except:
-                                                print(" 'No stations are currently associated.'? from AP")
-                                                print(" since possibly no stations: excption on compare split_row[0].lower() ")  
+                                                print("2g 'No stations are currently associated.'? from AP")
+                                                print("2g since possibly no stations: excption on compare split_row[0].lower() ")
                                     if mac_found_2g == True:
                                         mac_found_2g = False                                                  
-                                        print("selected ap_row (from split_row): {}".format(ap_row))
+                                        print("2g selected ap_row (from split_row): {}".format(ap_row))
 
                                         # Find latency, jitter for connections using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(p["port"], endps)
@@ -911,8 +1078,8 @@ class L3VariableTime(Realm):
                                         for row in ap_chanim_stats_rows_2g:
                                             split_row = row.split()
                                             if xtop_reported:
-                                                print("xtop_reported 2g row: {row}".format(row=row))
-                                                print("xtop_reported 2g split_row: {split_row}".format(split_row=split_row))
+                                                print("2g xtop_reported row: {row}".format(row=row))
+                                                print("2g xtop_reported split_row: {split_row}".format(split_row=split_row))
                                                 try:
                                                     xtop = split_row[7]
                                                     print("2g xtop {xtop}".format(xtop=xtop))
@@ -932,11 +1099,11 @@ class L3VariableTime(Realm):
                                                         print("2g chanspec found xtop_reported = True")
                                                         xtop_reported = True
                                                 except:
-                                                    print("Error reading xtop")
+                                                    print("2g Error reading xtop")
                                         # ap information is passed with ap_row so all information needs to be contained in ap_row
                                         ap_row.append(str(channel_utilization))
-                                        print("channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
-                                        print("ap_row {ap_row}".format(ap_row=ap_row))
+                                        print("2g channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
+                                        print("2g ap_row {ap_row}".format(ap_row=ap_row))
 
                                         ap_stats_2g_col_titles = ['Station Address','PHY Mbps','Data Mbps','Air Use','Data Use','Retries','bw','mcs','Nss','ofdma','mu-mimo','channel_utilization']
 
@@ -970,6 +1137,11 @@ class L3VariableTime(Realm):
 
                     # At end of test if requested store upload and download stats
                     if self.ap_scheduler_stats:
+                        # get the (UL) Upload 6g scheduler statistics
+                        self.ap_6g_umsched += self.ap_custom_cmd('wl -i wl2 dump umsched')
+                        # get the (DL) Download 6g schduler staticstics
+                        self.ap_6g_msched += self.ap_custom_cmd('wl -i wl2 dump msched')
+
                         # get the (UL) Upload 5g scheduler statistics
                         self.ap_5g_umsched += self.ap_custom_cmd('wl -i wl1 dump umsched')
                         # get the (DL) Download 5g schduler staticstics
@@ -982,6 +1154,9 @@ class L3VariableTime(Realm):
 
 
                     if self.ap_ofdma_stats:
+                        # provide OFDMA stats 6GHz
+                        self.ap_ofdma_6g += self.ap_custom_cmd('wl -i wl2 muinfo -v')
+
                         # provide OFDMA stats 5GHz
                         self.ap_ofdma_5g += self.ap_custom_cmd('wl -i wl1 muinfo -v')
 
@@ -989,8 +1164,8 @@ class L3VariableTime(Realm):
                         self.ap_ofdma_24g += self.ap_custom_cmd('wl -i wl0 muinfo -v')
 
                     # Stop connections.
-                    self.cx_profile.stop_cx();
-                    self.multicast_profile.stop_mc();
+                    self.cx_profile.stop_cx()
+                    self.multicast_profile.stop_mc()
 
                     cur_time = datetime.datetime.now()
 
@@ -1011,7 +1186,6 @@ class L3VariableTime(Realm):
         #print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
         #print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
         if len(ap_row) == len(self.ap_stats_col_titles):
-            i = 0
             #print("ap_row {}".format(ap_row))
             for col in ap_row:
                 #print("col {}".format(col))
@@ -1265,10 +1439,13 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
     parser.add_argument('--ap_port', help='--ap_port \'/dev/ttyUSB0\'',default='/dev/ttyUSB0')
     parser.add_argument('--ap_baud', help='--ap_baud \'115200\'',default='115200')
+    # note wl2 is the 6G interface , check the MAC ifconfig -a of the interface to the AP BSSID connection (default may be eth8)
+    parser.add_argument('--ap_cmd_6g', help='ap_cmd_5g \'wl -i wl2 bs_data\'', default="wl -i wl2 bs_data")
     # note wl1 is the 5G interface , check the MAC ifconfig -a of the interface to the AP BSSID connection (default may be eth7)
     parser.add_argument('--ap_cmd_5g', help='ap_cmd_5g \'wl -i wl1 bs_data\'', default="wl -i wl1 bs_data")
-    # note wl1 is the 2.4G interface , check the MAC ifconfig -a of the interface to the AP BSSID connection
+    # note wl1 is the 2.4G interface , check the MAC ifconfig -a of the interface to the AP BSSID connection (default may be eth6)
     parser.add_argument('--ap_cmd_2g', help='ap_cmd_2g \'wl -i wl0 bs_data\'', default="wl -i wl0 bs_data")
+    parser.add_argument('--ap_chanim_cmd_6g', help='ap_chanim_cmd_6g \'wl -i wl2 chanim_stats\'', default="wl -i wl2 chanim_stats")
     parser.add_argument('--ap_chanim_cmd_5g', help='ap_chanim_cmd_5g \'wl -i wl1 chanim_stats\'', default="wl -i wl1 chanim_stats")
     parser.add_argument('--ap_chanim_cmd_2g', help='ap_chanim_cmd_2g \'w1 -i wl0 chanim_stats\'', default="wl -i wl0 chanim_stats")
     parser.add_argument('--ap_scheduler_stats', help='--ap_scheduler_stats flag to clear stats run test then dump ul and dl stats to file', action='store_true')
@@ -1334,11 +1511,17 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     if args.ap_baud:
         ap_baud = args.ap_baud
 
+    if args.ap_cmd_6g:
+        ap_cmd_6g = args.ap_cmd_6g
+
     if args.ap_cmd_5g:
         ap_cmd_5g = args.ap_cmd_5g
 
     if args.ap_cmd_2g:
         ap_cmd_2g = args.ap_cmd_2g
+
+    if args.ap_chanim_cmd_6g:
+        ap_chanim_cmd_6g = args.ap_chanim_cmd_6g
 
     if args.ap_chanim_cmd_5g:
         ap_chanim_cmd_5g = args.ap_chanim_cmd_5g
@@ -1516,8 +1699,10 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
                                     ap_read=ap_read,
                                     ap_port=ap_port,
                                     ap_baud=ap_baud,
+                                    ap_cmd_6g=ap_cmd_6g,
                                     ap_cmd_5g=ap_cmd_5g,
                                     ap_cmd_2g=ap_cmd_2g,
+                                    ap_chanim_cmd_6g=ap_chanim_cmd_6g,
                                     ap_chanim_cmd_5g=ap_chanim_cmd_5g,
                                     ap_chanim_cmd_2g=ap_chanim_cmd_2g,
                                     ap_test_mode=ap_test_mode)
@@ -1558,6 +1743,20 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
         print("getting umsched and msched ap data and writing to a file")
         file_date = report.get_date()
 
+        ap_6g_umsched_data = ip_var_test.get_ap_6g_umsched()
+        ap_6g_umsched =  "{}-{}".format(file_date,"ap_6g_umsched.txt")
+        ap_6g_umsched =  report.file_add_path(ap_6g_umsched)
+        ap_6g_umsched_file = open(ap_6g_umsched, "w")
+        ap_6g_umsched_file.write(str(ap_6g_umsched_data))
+        ap_6g_umsched_file.close()
+
+        ap_6g_msched_data = ip_var_test.get_ap_6g_msched()
+        ap_6g_msched =  "{}-{}".format(file_date,"ap_6g_msched.txt")
+        ap_6g_msched =  report.file_add_path(ap_6g_msched)
+        ap_6g_msched_file = open(ap_6g_msched, "w")
+        ap_6g_msched_file.write(str(ap_6g_msched_data))
+        ap_6g_msched_file.close()
+
         ap_5g_umsched_data = ip_var_test.get_ap_5g_umsched()
         ap_5g_umsched =  "{}-{}".format(file_date,"ap_5g_umsched.txt")
         ap_5g_umsched =  report.file_add_path(ap_5g_umsched)
@@ -1591,6 +1790,13 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     if ap_ofdma_stats:
         print("getting ofdma ap data and writing to a file")
         file_date = report.get_date()
+
+        ap_ofdma_6g_data = ip_var_test.get_ap_ofdma_6g()
+        ap_ofdma_6g =  "{}-{}".format(file_date,"ap_ofdma_6g_data.txt")
+        ap_ofdma_6g =  report.file_add_path(ap_ofdma_6g)
+        ap_ofdma_6g_data = open(ap_ofdma_6g, "w")
+        ap_ofdma_6g_data.write(str(ap_ofdma_6g_data))
+        ap_ofdma_6g_data.close()
 
         ap_ofdma_5g_data = ip_var_test.get_ap_ofdma_5g()
         ap_ofdma_5g =  "{}-{}".format(file_date,"ap_ofdma_5g_data.txt")
