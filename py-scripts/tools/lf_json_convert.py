@@ -14,7 +14,7 @@ class file_convert():
     def __init__(self,
                 _file = ''):
         self.file = _file
-        self.file2 = "{}_edit".format(_file)
+        self.file2 = "cookbook_{}".format(_file)
 
     # Helper methods
     def json_file(self):
