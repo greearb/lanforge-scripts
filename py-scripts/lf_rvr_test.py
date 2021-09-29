@@ -226,6 +226,21 @@ def main():
 
     Example:
 
+    ./lf_rvr_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \\
+      --instance_name rvr-instance --config_name test_con --upstream 1.1.eth1 \\
+      --dut RootAP --duration 15s --station 1.1.wlan0 \\
+      --download_speed 85% --upload_speed 56Kbps \\
+      --raw_line 'pkts: MTU' \\
+      --raw_line 'directions: DUT Transmit' \\
+      --raw_line 'traffic_types: TCP' \\
+      --test_rig Ferndale-Mesh-01 --pull_report \\
+      --raw_line 'attenuator: 1.1.1040' \\
+      --raw_line 'attenuations: 0..+50..950' \\
+      --raw_line 'attenuator_mod: 3' \\
+      --influx_host c7-graphana --influx_port 8086 --influx_org Candela \\
+      --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \\
+      --influx_bucket ben \\
+      --influx_tag testbed Ferndale-Mesh
 
       """
                                      )
