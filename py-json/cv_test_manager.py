@@ -372,12 +372,13 @@ class cv_test(Realm):
                 self.lf_report_dir = location
                 if pull_report:
                     try:
-                        print(lf_host)
+                        print("Pulling report to directory: %s from %s@%s/%s" %
+                              (local_lf_report_dir, lf_user, lf_host, location))
                         report.pull_reports(hostname=lf_host, username=lf_user, password=lf_password,
                                             port=ssh_port, report_dir=local_lf_report_dir,
                                             report_location=location)
                     except Exception as e:
-                        print("SCP failed, user %s, password %s, dest %s", (lf_user, lf_password, lf_host))
+                        print("SCP failed, user %s, password %s, dest %s" % (lf_user, lf_password, lf_host))
                         raise e  # Exception("Could not find Reports")
                     break
 

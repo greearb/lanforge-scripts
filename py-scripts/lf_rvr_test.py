@@ -242,6 +242,24 @@ def main():
       --influx_bucket ben \\
       --influx_tag testbed Ferndale-Mesh
 
+    ./lf_rvr_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \\
+      --instance_name rvr-instance --config_name test_con --upstream 1.1.eth1 \\
+      --dut RootAP --duration 15s --station 1.1.wlan0 \\
+      --download_speed 85% --upload_speed 56Kbps \\
+      --raw_line 'pkts: MTU' \\
+      --raw_line 'directions: DUT Transmit' \\
+      --raw_line 'traffic_types: TCP' \\
+      --test_rig Ferndale-Mesh-01 --pull_report \\
+      --raw_line 'attenuator: 1.1.1040' \\
+      --raw_line 'attenuations: 0..+50..950' \\
+      --raw_line 'attenuator_mod: 3' \\
+      --pull_report \\
+      --local_lf_report_dir /tmp/rvr-report \\
+      --raw_line 'notes0: my rvr notes' \\
+      --raw_line 'notes1: are here.' \\
+      --raw_line 'rvr_bringup_wait: 30000' \\
+      --raw_line 'first_byte_wait: 30000'
+
       """
                                      )
 
@@ -276,6 +294,7 @@ def main():
                       config_name=args.config_name,
                       upstream=args.upstream,
                       pull_report=args.pull_report,
+                      local_lf_report_dir = args.local_lf_report_dir,
                       load_old_cfg=args.load_old_cfg,
                       download_speed=args.download_speed,
                       upload_speed=args.upload_speed,
