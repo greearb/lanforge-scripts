@@ -21,11 +21,13 @@ class file_convert():
         file_fd = open(self.file, 'r')
         file2_fd = open(self.file2, 'w+')
         file2_fd.write('{\n')
-        file2_fd.write('"text": [ "<pre>{",')
+        file2_fd.write('"text": [ "<pre>**{}**\\n",'.format(self.file))
         for line in file_fd:
-            #print(line)
             line = line.replace('"','&quot;').replace('\n','')
+            # to avoid --raw_line \"  issues the \" it creates a \& which the reader does not like
+            line = line.replace('\&','\\\&')
             line = '"' + line + '\\n",'
+
             file2_fd.write('{}\n'.format(line))
         file2_fd.write('"</pre>"]\n')
         file2_fd.write('},')
@@ -40,6 +42,7 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
         lf_json_convert.py converts json for cookbook the output is <file>_edit
+        NOTE: CANNOT have extra blank lines at the end of the json to display correctly.
 
             ''',
         description='''\
