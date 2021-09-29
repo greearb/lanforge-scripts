@@ -302,22 +302,22 @@ def main():
     Open this file in an editor and read the top notes for more details.
     
     Example:
-    ./lf_ap_auto_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
-      --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth2 \
-      --dut5_0 'linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:25 (2)' \
-      --dut2_0 'linksys-8450 Default-SSID-2g c4:41:1e:f5:3f:24 (1)' \
-      --max_stations_2 100 --max_stations_5 100 --max_stations_dual 200 \
-      --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 \
-      --radio5 1.1.wiphy1 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 \
-      --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7 \
-      --set 'Basic Client Connectivity' 1 --set 'Multi Band Performance' 1 \
-      --set 'Skip 2.4Ghz Tests' 1 --set 'Skip 5Ghz Tests' 1 \
-      --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Stability' 0 --set 'Band-Steering' 0 \
-      --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0 \
-      --test_rig Testbed-01 --test_tag ATH10K --pull_report \
-      --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
-      --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-      --influx_bucket ben \
+    ./lf_ap_auto_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \\
+      --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth2 \\
+      --dut5_0 'linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:25 (2)' \\
+      --dut2_0 'linksys-8450 Default-SSID-2g c4:41:1e:f5:3f:24 (1)' \\
+      --max_stations_2 100 --max_stations_5 100 --max_stations_dual 200 \\
+      --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 \\
+      --radio5 1.1.wiphy1 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 \\
+      --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7 \\
+      --set 'Basic Client Connectivity' 1 --set 'Multi Band Performance' 1 \\
+      --set 'Skip 2.4Ghz Tests' 1 --set 'Skip 5Ghz Tests' 1 \\
+      --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Stability' 0 --set 'Band-Steering' 0 \\
+      --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0 \\
+      --test_rig Testbed-01 --test_tag ATH10K --pull_report \\
+      --influx_host c7-graphana --influx_port 8086 --influx_org Candela \\
+      --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \\
+      --influx_bucket ben \\
       --influx_tag testbed Ferndale-01
       """
                                      )
