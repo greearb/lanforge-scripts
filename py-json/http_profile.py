@@ -27,6 +27,7 @@ class HTTPProfile(LFCliBase):
         self.dest = "/dev/null"
         self.port_util = PortUtils(self.local_realm)
         self.max_speed = 0 #infinity
+        self.quiesce_after = 0  # infinity
 
     def check_errors(self, debug=False):
         fields_list = ["!conn", "acc.+denied", "bad-proto", "bad-url", "other-err", "total-err", "rslv-p", "rslv-h",
@@ -164,7 +165,8 @@ class HTTPProfile(LFCliBase):
                     "timeout": 10,
                     "url_rate": self.requests_per_ten,
                     "url": url,
-                    "proxy_auth_type": 0x200
+                    "proxy_auth_type": 0x200,
+                    "quiesce_after": self.quiesce_after
                 }
             else:
                 endp_data = {
@@ -179,7 +181,8 @@ class HTTPProfile(LFCliBase):
                     "ssl_cert_fname": "ca-bundle.crt",
                     "proxy_port": 0,
                     "max_speed": self.max_speed,
-                    "proxy_auth_type": 0x200
+                    "proxy_auth_type": 0x200,
+                    "quiesce_after": self.quiesce_after
                 }
             url = "cli-json/add_l4_endp"
             self.local_realm.json_post(url, endp_data, debug_=debug_,
