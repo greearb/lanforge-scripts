@@ -166,7 +166,8 @@ class HTTPProfile(LFCliBase):
                     "url_rate": self.requests_per_ten,
                     "url": url,
                     "proxy_auth_type": 0x200,
-                    "quiesce_after": self.quiesce_after
+                    "quiesce_after": self.quiesce_after,
+                    "max_speed": self.max_speed
                 }
             else:
                 endp_data = {
