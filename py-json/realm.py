@@ -60,7 +60,8 @@ port_utils = importlib.import_module("py-json.port_utils")
 PortUtils = port_utils.PortUtils
 lfdata = importlib.import_module("py-json.lfdata")
 LFDataCollection = lfdata.LFDataCollection
-
+vr_profile2 = importlib.import_module("py-json.vr_profile2")
+VRProfile = vr_profile2.VRProfile
 
 def wpa_ent_list():
     return [
@@ -932,12 +933,10 @@ class Realm(LFCliBase):
         #                       debug_=self.debug)
         return vap_prof
 
-    def new_vr_profile(self, ver=2):
-        if ver == 2:
-            from vr_profile2 import VRProfile
-            vap_prof = VRProfile(local_realm=self,
-                                 debug=self.debug)
-        return vap_prof
+    def new_vr_profile(self):
+        vr_prof = VRProfile(local_realm=self,
+                            debug=self.debug)
+        return vr_prof
 
     def new_http_profile(self, ver = 1):
         if ver == 1:
