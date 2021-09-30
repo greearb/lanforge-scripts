@@ -114,7 +114,7 @@ def main():
                     and args.qvlan_parent in args.first_port:
                 start_num = int(args.first_port[args.first_port.index('#') + 1:])
                 num_ports = int(args.num_ports)
-                port_list = LFUtils.port_name_series(prefix=args.qvlan_parent + "#", start_id=start_num,
+                port_list = LFUtils.port_name_series(prefix=str(args.qvlan_parent) + "#", start_id=start_num,
                                                      end_id=start_num + num_ports - 1, padding_number=10000,
                                                      radio=args.radio)
                 print(2)
@@ -125,7 +125,7 @@ def main():
     else:
         if args.use_ports is None:
             num_ports = int(args.num_ports)
-            port_list = LFUtils.port_name_series(prefix=args.qvlan_parent + "#", start_id=1,
+            port_list = LFUtils.port_name_series(prefix=str(args.qvlan_parent) + "#", start_id=1,
                                                  end_id=num_ports, padding_number=10000,
                                                  radio=args.radio)
             print(3)

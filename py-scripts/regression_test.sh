@@ -19,7 +19,7 @@ Help()
   echo "If using the help flag, put the H flag at the end of the command after other flags."
 }
 
-while getopts ":h:s:p:w:m:A:r:F:B:U:H:" option; do
+while getopts ":h:s:p:w:m:A:r:F:B:U:D:H:" option; do
   case "${option}" in
     h) # display Help
       Help
@@ -51,6 +51,10 @@ while getopts ":h:s:p:w:m:A:r:F:B:U:H:" option; do
       ;;
     U)
       UPSTREAM=${OPTARG}
+      ;;
+    D)
+      DUT5=${OPTARG}
+      DUT2=${OPTARG}
       ;;
     H)
       HELP=1
@@ -103,6 +107,10 @@ TEST_HTTP_IP=${TEST_HTTP_IP:-10.40.0.1}
 MGRLEN=${#MGR}
 COL_NAMES="name,tx_bytes,rx_bytes,dropped"
 
+if [[ ${#DUT2} -eq 0 ]]; then
+  DUT5="linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:25"
+  DUT2="linksys-8450 Default-SSID-2g c4:41:1e:f5:3f:24"
+fi
 #CURR_TEST_NUM=0
 CURR_TEST_NAME="BLANK"
 
@@ -231,16 +239,19 @@ elif [[ $MGRLEN -gt 0 ]]; then
   testCommands=(
       #"./create_bond.py --network_dev_list eth0,eth1 --debug --mgr $MGR"
       #"./create_bridge.py --radio $RADIO_USED --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR"
-      "./create_chamberview.py -m $MGR -cs \"regression_test\" --line \"Resource=1.1 Profile=STA-AC Amount=1 Uses-1 $RADIO_USED Freq=-1 DUT=TEST DUT_RADIO=$RADIO_USED Traffic=http\" --line \"Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 DUT=Test DUT_RADIO=$RADIO_USED Traffic=http\""
+      "./create_chamberview.py -m $MGR -cs \"regression_test\" \
+      --line \"Resource=1.1 Profile=STA-AC Amount=1 Uses-1 $RADIO_USED Freq=-1 DUT=TEST DUT_RADIO=$RADIO_USED Traffic=http\" \
+      --line \"Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 DUT=Test DUT_RADIO=$RADIO_USED Traffic=http\""
       "./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut \
       --ssid \"ssid_idx=0 ssid=\"$SSID_USED\" security=\"$SECURITY\" password=\"$PASSWD_USED\" bssid=04:f0:21:2c:41:84\""
-      "./create_l3.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
+      "./create_l3.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR --endp_a wiphy0 --endp_b wiphy1"
+      #"./create_l3_stations.py --mgr $MGR --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug"
       #"./create_l4.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       #"./create_macvlan.py --radio 1.$RADIO_USED --macvlan_parent eth1 --debug --mgr $MGR"
       #"./create_qvlan.py --first_qvlan_ip 192.168.1.50 --mgr $MGR"
       #"./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./create_vap.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
-      "./create_vr.py --vr_name 2.vr0 --ports 2.br0,2.vap2 --services 1.br0=dhcp,nat --services 1.vr0=radvd"
+      "./create_vr.py --mgr $MGR --vr_name 2.vr0 --ports 2.br0,2.vap2 --services 1.br0=dhcp,nat --services 1.vr0=radvd --debug"
       #./create_wanlink
       #./csv_convert
       #./csv_processor
@@ -262,19 +273,13 @@ elif [[ $MGRLEN -gt 0 ]]; then
       #./layer4_test --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY
       "./lf_ap_auto_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth2 \
-      --dut5_0 \"linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:25 (2)\" \
-      --dut2_0 \"linksys-8450 Default-SSID-2g c4:41:1e:f5:3f:24 (1)\" \
-      --max_stations_2 100 --max_stations_5 100 --max_stations_dual 200 \
-      --radio2 1.1.wiphy0 --radio2 1.1.wiphy1 \
-      --set \"Basic Client Connectivity\" 1 --set \"Multi Band Performance\" 1 \
-      --set \"Skip 2.4Ghz Tests\" 1 --set \"Skip 5Ghz Tests\" 1 \
-      --set \"Throughput vs Pkt Size\" 0 --set 'Capacity' 0 --set 'Stability' 0 --set 'Band-Steering' 0 \
-      --set \"Multi-Station Throughput vs Pkt Size\" 0 --set \"Long-Term\" 0 \
-      --pull_report \
-      --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
+      --dut5_0 \"$DUT5 (2)\" --dut2_0 \"$DUT2 (1)\" --max_stations_2 100 --max_stations_5 100 --max_stations_dual 200 \
+      --radio2 1.1.wiphy0 --radio2 1.1.wiphy1 --set \"Basic Client Connectivity\" 1 --set \"Multi Band Performance\" 1 \
+      --set \"Skip 2.4Ghz Tests\" 1 --set \"Skip 5Ghz Tests\" 1 --set \"Throughput vs Pkt Size\" 0 --set 'Capacity' 0 \
+      --set 'Stability' 0 --set 'Band-Steering' 0 --set \"Multi-Station Throughput vs Pkt Size\" 0 \
+      --set \"Long-Term\" 0 --pull_report --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
       --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-      --influx_bucket ben \
-      --influx_tag testbed Ferndale-01"
+      --influx_bucket ben --influx_tag testbed Ferndale-01"
       #./lf_atten_mod_test
       #./lf_csv
       #./lf_dataplane_config
@@ -291,10 +296,10 @@ elif [[ $MGRLEN -gt 0 ]]; then
       #./lf_dut_sta_vap_test
       #"./lf_ftp.py --mgr $MGR --mgr_port 8080 --upstream_port $UPSTREAM --ssid $SSID --security $SECURITY --passwd $PASSWD_USED \
       # --ap_name WAC505 --ap_ip 192.168.213.90 --bands Both --directions Download --twog_radio wiphy1 --fiveg_radio wiphy0 --file_size 2MB --num_stations 40 --Both_duration 1 --traffic_duration 2 --ssh_port 22_"
-      "./lf_ftp_test.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --bands 5G --direction Download \
-           --file_size 2MB --num_stations 2"
+      #"./lf_ftp.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --bands 5G --direction Download \
+      #     --file_size 2MB --num_stations 2"
       "./lf_graph.py --mgr $MGR"
-      #"./lf_mesh_test.py --mgr $MGR --upstream $UPSTREAM --raw_line 'selected_dut2 RootAP wactest $BSSID'"
+      "./lf_mesh_test.py --mgr $MGR --upstream $UPSTREAM --raw_line 'selected_dut2 RootAP wactest $BSSID'"
       #./lf_multipsk
       #./lf_report
       #./lf_report_test
