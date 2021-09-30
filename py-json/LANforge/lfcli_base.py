@@ -4,7 +4,7 @@ import os
 import importlib
 import traceback
 # Extend this class to use common set of debug and request features for your script
-from pprint import pprint
+import pprint
 import time
 import random
 import string
