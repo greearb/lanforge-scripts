@@ -877,23 +877,23 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                         if str(self.test_dict[test]['load_db']).lower() != "none" and str(
                                 self.test_dict[test]['load_db']).lower() != "skip":
                             try:
-                                self.load_custom_db(self.test_dict[test]['load_db'])
+                                self.load_custom_database(self.test_dict[test]['load_db'])
                             except:
                                 self.logger.info("custom database failed to load check existance and location: {}".format(
                                     self.test_dict[test]['load_db']))
                     else:
                         self.logger.info("no load_db present in dictionary, load db normally")
                         if self.use_factory_default_db == "TRUE":
-                            self.load_factory_default_db()
+                            self.load_FACTORY_DFLT_database()
                             sleep(3)
                             self.logger.info("FACTORY_DFLT loaded between tests with scenario.py --load FACTORY_DFLT")
                         if self.use_blank_db == "TRUE":
-                            self.load_blank_db()
+                            self.load_BLANK_database()
                             sleep(1)
                             self.logger.info("BLANK loaded between tests with scenario.py --load BLANK")
                         if self.use_custom_db == "TRUE":
                             try:
-                                self.load_custom_db(self.custom_db)
+                                self.load_custom_database(self.custom_db)
                                 sleep(1)
                                 self.logger.info("{} loaded between tests with scenario.py --load {}".format(self.custom_db,
                                                                                                              self.custom_db))
