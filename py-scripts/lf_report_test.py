@@ -26,6 +26,7 @@ import numpy as np
 import pandas as pd
 import pdfkit
 import random
+import argparse
 
  
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
@@ -42,6 +43,17 @@ lf_horizontal_stacked_graph = lf_graph.lf_horizontal_stacked_graph
 # Unit Test
 if __name__ == "__main__":
     # Testing: generate data frame
+
+    parser = argparse.ArgumentParser(
+        prog="lf_report_test.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="Tests reporting library")
+    parser.add_argument('--lfmgr', help='sample argument: where LANforge GUI is running', default='localhost')    
+    # the args parser is not really used , this is so the report is not generated when testing 
+    # the imports with --help
+    args = parser.parse_args()
+    print("LANforge manager {lfmgr}".format(lfmgr=args.lfmgr))
+
     dataframe = pd.DataFrame({
         'product': ['CT521a-264-1ac-1n', 'CT521a-1ac-1ax', 'CT522-264-1ac2-1n', 'CT523c-2ac2-db-10g-cu',
                     'CT523c-3ac2-db-10g-cu', 'CT523c-8ax-ac10g-cu', 'CT523c-192-2ac2-1ac-10g'],
