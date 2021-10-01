@@ -31,6 +31,7 @@ import datetime
 
 import pandas as pd
 import pdfkit
+import argparse
 
 # internal candela references included during intial phases, to be deleted at future date
 # https://candelatech.atlassian.net/wiki/spaces/LANFORGE/pages/372703360/Scripting+Data+Collection+March+2021
@@ -41,14 +42,14 @@ class lf_report():
                 _path = "/home/lanforge/html-reports",
                 _alt_path = "",
                 _date = "",
-                _title="LANForge Test Run Heading",
+                _title="LANForge Unit Test Run Heading",
                 _table_title="LANForge Table Heading",
                 _graph_title="LANForge Graph Title",
                 _obj = "",
                 _obj_title = "",
                 _output_html="outfile.html",
                 _output_pdf="outfile.pdf",
-                _results_dir_name = "LANforge_Test_Results",
+                _results_dir_name = "LANforge_Test_Results_Unit_Test",
                 _output_format = 'html',  # pass in on the write functionality, current not used
                 _dataframe="",
                 _path_date_time="",
@@ -559,6 +560,16 @@ function copyTextToClipboard(ele) {
 
 # Unit Test
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog="lf_report.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="Reporting library Unit Test")
+    parser.add_argument('--lfmgr', help='sample argument: where LANforge GUI is running', default='localhost')    
+    # the args parser is not really used , this is so the report is not generated when testing 
+    # the imports with --help
+    args = parser.parse_args()
+    print("LANforge manager {lfmgr}".format(lfmgr=args.lfmgr))
+
 
     # Testing: generate data frame 
     dataframe = pd.DataFrame({
