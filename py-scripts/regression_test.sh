@@ -237,19 +237,19 @@ if [[ $HELP -eq 1 ]]; then
   )
 elif [[ $MGRLEN -gt 0 ]]; then
   testCommands=(
-      #"./create_bond.py --network_dev_list eth0,eth1 --debug --mgr $MGR"
-      #"./create_bridge.py --radio $RADIO_USED --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR"
+      "./create_bond.py --network_dev_list eth0,eth1 --debug --mgr $MGR"
+      "./create_bridge.py --radio $RADIO_USED --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR"
       "./create_chamberview.py -m $MGR -cs \"regression_test\" \
       --line \"Resource=1.1 Profile=STA-AC Amount=1 Uses-1 $RADIO_USED Freq=-1 DUT=TEST DUT_RADIO=$RADIO_USED Traffic=http\" \
       --line \"Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 DUT=Test DUT_RADIO=$RADIO_USED Traffic=http\""
       "./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut \
       --ssid \"ssid_idx=0 ssid=\"$SSID_USED\" security=\"$SECURITY\" password=\"$PASSWD_USED\" bssid=04:f0:21:2c:41:84\""
       "./create_l3.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR --endp_a wiphy0 --endp_b wiphy1"
-      #"./create_l3_stations.py --mgr $MGR --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug"
-      #"./create_l4.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
-      #"./create_macvlan.py --radio 1.$RADIO_USED --macvlan_parent eth1 --debug --mgr $MGR"
-      #"./create_qvlan.py --first_qvlan_ip 192.168.1.50 --mgr $MGR"
-      #"./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
+      "./create_l3_stations.py --mgr $MGR --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug"
+      "./create_l4.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
+      "./create_macvlan.py --radio 1.$RADIO_USED --macvlan_parent eth1 --debug --mgr $MGR"
+      "./create_qvlan.py --first_qvlan_ip 192.168.1.50 --mgr $MGR"
+      "./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./create_vap.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./create_vr.py --mgr $MGR --vr_name 2.vr0 --ports 2.br0,2.vap2 --services 1.br0=dhcp,nat --services 1.vr0=radvd --debug"
       #./create_wanlink
@@ -269,8 +269,8 @@ elif [[ $MGRLEN -gt 0 ]]; then
       #./grafana_profile
       #./html_template
       #./influx
-      #./layer3_test.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY
-      #./layer4_test --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY
+      "./layer3_test.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+      "./layer4_test --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
       "./lf_ap_auto_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth2 \
       --dut5_0 \"$DUT5 (2)\" --dut2_0 \"$DUT2 (1)\" --max_stations_2 100 --max_stations_5 100 --max_stations_dual 200 \
@@ -280,7 +280,7 @@ elif [[ $MGRLEN -gt 0 ]]; then
       --set \"Long-Term\" 0 --pull_report --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
       --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
       --influx_bucket ben --influx_tag testbed Ferndale-01"
-      #./lf_atten_mod_test
+      "./lf_atten_mod_test.py -hst $MGR --debug"
       #./lf_csv
       #./lf_dataplane_config
       "./lf_dataplane_test.py --mgr $MGR --lf_user lanforge --lf_password lanforge \
@@ -293,19 +293,40 @@ elif [[ $MGRLEN -gt 0 ]]; then
           --influx_bucket ben \
           --influx_tag testbed Ferndale-01"
       #./lf_dfs_test
-      #./lf_dut_sta_vap_test
+      #"./lf_dut_sta_vap_test.py "
       #"./lf_ftp.py --mgr $MGR --mgr_port 8080 --upstream_port $UPSTREAM --ssid $SSID --security $SECURITY --passwd $PASSWD_USED \
       # --ap_name WAC505 --ap_ip 192.168.213.90 --bands Both --directions Download --twog_radio wiphy1 --fiveg_radio wiphy0 --file_size 2MB --num_stations 40 --Both_duration 1 --traffic_duration 2 --ssh_port 22_"
       #"./lf_ftp.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --bands 5G --direction Download \
       #     --file_size 2MB --num_stations 2"
       "./lf_graph.py --mgr $MGR"
-      "./lf_mesh_test.py --mgr $MGR --upstream $UPSTREAM --raw_line 'selected_dut2 RootAP wactest $BSSID'"
-      #./lf_multipsk
-      #./lf_report
-      #./lf_report_test
-      #./lf_rvr_test
-      #./lf_rx_sensitivity_test.py
-      #./lf_sniff_radio
+      "./lf_mesh_test.py --mgr $MGR --upstream $UPSTREAM --raw_line 'selected_dut2 RootAP wactest $BSSID' --debug"
+      #"./lf_multipsk.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --debug"
+      "./lf_report.py"
+      "./lf_report_test.py"
+      "./lf_rvr_test.py"
+      "./lf_rx_sensitivity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
+             --instance_name rx-sensitivity-instance --config_name test_con --upstream 1.1.eth2 \
+             --dut linksys-8450 --duration 15s --station 1.1.sta01500 \
+             --download_speed 85% --upload_speed 0 \
+             --raw_line 'txo_preamble: VHT' \
+             --raw_line 'txo_mcs: 4 OFDM, HT, VHT;5 OFDM, HT, VHT;6 OFDM, HT, VHT;7 OFDM, HT, VHT' \
+             --raw_line 'spatial_streams: 3' \
+             --raw_line 'bandw_options: 80' \
+             --raw_line 'txo_sgi: ON' \
+             --raw_line 'txo_retries: No Retry' \
+             --raw_line 'txo_txpower: 17' \
+             --test_rig Testbed-01 --pull_report \
+             --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
+             --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
+             --influx_bucket ben \
+             --influx_tag testbed Ferndale-01"
+      "lf_sniff_radio.py
+                               --mgr $MGR
+                               --mgr_port 8080
+                               --outfile /home/lanforge/test_sniff.pcap
+                               --duration 20
+                               --channel 52
+                               --radio_mode AUTO"
       #./lf_snp_test
       "./lf_tr398_test.py --mgr $MGR"
       #./lf_webpage
@@ -334,10 +355,10 @@ elif [[ $MGRLEN -gt 0 ]]; then
       #test_1k_clients_jedtest.py
       #test_client_admission.py
       "./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1 --test_duration 30s --mgr $MGR" # Better tested on Kelly, where VRF is turned off
-      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest $TEST_HTTP_IP --debug --mgr $MGR"
-      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug --mgr $MGR"
-      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type iperf3 --debug --mgr $MGR"
-      "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest $TEST_HTTP_IP --file_output ${HOMEPATH}/Documents/lfcurl_output.txt --debug --mgr $MGR"
+      #"./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest $TEST_HTTP_IP --debug --mgr $MGR"
+      #"./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug --mgr $MGR"
+      #"./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type iperf3 --debug --mgr $MGR"
+      #"./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest $TEST_HTTP_IP --file_output ${HOMEPATH}/Documents/lfcurl_output.txt --debug --mgr $MGR"
       "./testgroup.py --group_name group1 --add_group --list_groups --debug --mgr $MGR"
       #testgroup_list_groups
       #testgroup_list_connections
