@@ -246,7 +246,7 @@ def main(args={}):
 
 if __name__ == '__main__':
     parser = LFCliBase.create_basic_argparse(
-        prog='test_wanlink.py',
+        prog='create_wanlink.py',
         formatter_class=argparse.RawTextHelpFormatter)
     for group in parser._action_groups:
         if group.title == "required arguments":
