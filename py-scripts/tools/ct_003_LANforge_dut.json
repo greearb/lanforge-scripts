@@ -10,17 +10,17 @@
         ]  
     },
     "test_dut":{
-        "dut_set_name": "DUT_NAME lanforge-dut",
-        "dut_name": "lanforge",
-        "dut_bssid_2g": "94:a6:7e:54:d4:31",
-        "dut_bssid_5g": "94:a6:7e:54:d4:33",
-        "dut_sw": "lanforge_GUI",
-        "ssid_5g_used": "ct-us-003-r3-5g",
-        "ssid_5g_pw_used": "ct-us-003-r3-5g",
-        "security_5g_used": "wpa2",
-        "ssid_2g_used": "ct-us-003-r3-2g",
-        "ssid_2g_pw_used": "ct-us-003-r3-2g",
-        "security_2g_used": "wpa2"
+        "DUT_SET_NAME": "DUT_NAME lanforge-dut",
+        "DUT_NAME": "lanforge",
+        "DUT_BSSID_2G": "94:a6:7e:54:d4:31",
+        "DUT_BSSID_5G": "94:a6:7e:54:d4:33",
+        "DUT_SW": "lanforge_GUI",
+        "SSID_5G_USED": "ct-us-003-r3-5g",
+        "SSID_5G_PW_USED": "ct-us-003-r3-5g",
+        "SECURITY_5G_USED": "wpa2",
+        "SSID_2G_USED": "ct-us-003-r3-2g",
+        "SSID_2G_PW_USED": "ct-us-003-r3-2g",
+        "SECURITY_2G_USED": "wpa2"
     }
 }
 			
