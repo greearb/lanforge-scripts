@@ -447,6 +447,8 @@ class Realm(LFCliBase):
 
         return not wait_more
 
+    #def wait_until_database_loaded(self):
+
     # Returns map of all stations with port+type == WIFI-STATION
     # Key is the EID, value is the map of key/values for the port values.
     def station_map(self):
@@ -893,7 +895,7 @@ class Realm(LFCliBase):
         return cx_prof
     def new_attenuator_profile(self, ver=1):
         if ver == 1:
-            atten_prof = ATTENUATORProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+            atten_prof = ATTENUATORProfile(self.lfclient_host, self.lfclient_port, debug_=self.debug)
         return  atten_prof
     def new_generic_endp_profile(self, ver=1):
         if ver == 1 :

@@ -14,9 +14,8 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 
 class ATTENUATORProfile(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port, local_realm, debug_=False):
+    def __init__(self, lfclient_host, lfclient_port, debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_)
-        self.local_realm = local_realm
         self.lfclient_host = lfclient_host
         self.COMMANDS = ["show_attenuators", "set_attenuator"]
         self.atten_serno = ""
@@ -34,6 +33,7 @@ class ATTENUATORProfile(LFCliBase):
             "pulse_count": None,
             "pulse_time_ms": None
         }
+        self.debug = debug_
 
     def set_command_param(self, command_name, param_name, param_value):
         # we have to check what the param name is
@@ -46,7 +46,7 @@ class ATTENUATORProfile(LFCliBase):
         if command_name == "set_attenuator":
             self.atten_data[param_name] = param_value
 
-    def show(self, debug=False):
+    def show(self):
         print("Show Attenuators.........")
         response = self.json_get("/attenuators/")
         time.sleep(0.01)
@@ -54,25 +54,26 @@ class ATTENUATORProfile(LFCliBase):
             print(response)
             raise ValueError("Cannot find any endpoints")
         else:
-            attenuator_resp = response["attenuator"]
-            for key, val in attenuator_resp.items():
-                if key == "entity id":
-                    serial_num = val.split(".")
-                    print("Serial-num : %s" % serial_num[-1])
+            attenuator_resp = response["attenuators"]
+            for attenuator in attenuator_resp:
+                for key, val in attenuator.items():
+                    if key == "entity id":
+                        serial_num = val.split(".")
+                        print("Serial-num : %s" % serial_num[-1])
                 print("%s : %s" % (key, val))
         print("\n")
 
-    def create(self, debug=False):
-        if len(self.atten_serno) == 0 or len(self.atten_idx) == 0 or len(self.atten_val) == 0:
+    def create(self):
+        if type(self.atten_serno) == str or len(self.atten_idx) == 0 or type(self.atten_val) == str:
             print("ERROR:  Must specify atten_serno, atten_idx, and atten_val when setting attenuator.\n")
         print("Setting Attenuator...")
         self.set_command_param("set_attenuator", "serno", self.atten_serno)
         self.set_command_param("set_attenuator", "atten_idx", self.atten_idx)
         self.set_command_param("set_attenuator", "val", self.atten_val)
-        set_attenuators = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_attenuator", debug_=debug)
+        set_attenuators = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_attenuator", debug_=self.debug)
         set_attenuators.addPostData(self.atten_data)
         time.sleep(0.01)
-        json_response = set_attenuators.jsonPost(debug)
+        json_response = set_attenuators.jsonPost(self.debug)
         time.sleep(10)
         print("\n")
 
