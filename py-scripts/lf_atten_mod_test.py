@@ -30,25 +30,22 @@ if sys.version_info[0] != 3:
  
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
-LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 
-class CreateAttenuator(LFCliBase):
+class CreateAttenuator(Realm):
     def __init__(self, host, port, serno, idx, val,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _local_realm=realm.Realm(host, port), _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, debug_=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.serno = serno
         self.idx = idx
         self.val = val
-        self.attenuator_profile = self.local_realm.new_attenuator_profile()
+        self.attenuator_profile = self.new_attenuator_profile()
         self.attenuator_profile.atten_idx = self.idx
         self.attenuator_profile.atten_val = self.val
         self.attenuator_profile.atten_serno = self.serno
@@ -58,7 +55,7 @@ class CreateAttenuator(LFCliBase):
         self.attenuator_profile.show()
 
 def main():
-    parser = LFCliBase.create_basic_argparse(
+    parser = Realm.create_basic_argparse(
         prog='lf_atten_mod_test.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog=None,

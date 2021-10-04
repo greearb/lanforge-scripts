@@ -715,7 +715,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
 
         # no spaces after FACTORY_DFLT
         command = "./{} {}".format("scenario.py", "--load FACTORY_DFLT")
-        process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        process = subprocess.Popen(command.split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    universal_newlines=True)
         # wait for the process to terminate
         out, err = process.communicate()

@@ -68,7 +68,7 @@ def main():
         ---------------------
         Generic command ''')
     parser.add_argument('--radio', help='radio EID, e.g: 1.wiphy2')
-    parser.add_argument('--qvlan_parent', help='specifies parent port for qvlan creation', default=None)
+    parser.add_argument('--qvlan_parent', help='specifies parent port for qvlan creation', default=None, required=True)
     parser.add_argument('--first_port', help='specifies name of first port to be used', default=None)
     parser.add_argument('--num_ports', help='number of ports to create', default=1)
     parser.add_argument('--first_qvlan_ip', help='specifies first static ip address to be used or dhcp', default=None)
