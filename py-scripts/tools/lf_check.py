@@ -141,6 +141,7 @@ class lf_check():
         self.production_run = _production
         self.report_path = _report_path
         self.log_path = _log_path
+        self.ssid_dict = {}
         self.radio_dict = {}
         self.test_dict = {}
         path_parent = os.path.dirname(os.getcwd())
@@ -1279,7 +1280,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         print("print_exc(): {error}".format(error=error))
         traceback.print_exc(file=sys.stdout)
         lf_radio_df = pd.DataFrame()
-        print("get_lanforge_radio_json exception, no radio data")
+        print("get_lanforge_radio_json exception, no radio data, check for LANforge GUI running")
+        exit(1)
 
     # LANforge and scripts config for results
     lf_test_setup = pd.DataFrame()
