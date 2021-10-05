@@ -52,7 +52,7 @@ class RunCvScenario(LFCliBase):
             "clean_chambers": "yes"
         }
         self.json_post("/cli-json/load", data)
-        self.refresh()
+        self.wait_for_db_load_and_sync()
 
         port_counter = 0;
         attempts = 6
@@ -82,11 +82,11 @@ class RunCvScenario(LFCliBase):
             "clean_chambers": "yes"
         }
         self.json_post("/cli-json/load", data)
-        self.refresh()
+        self.wait_for_db_load_and_sync()
         self._pass("Loaded scenario %s" % self.lanforge_db, True)
         return True
 
-    def refresh(self):
+    def wait_for_db_load_and_sync(self):
         events_response = self.json_get("/events/last")
         if "event" not in events_response:
             raise ValueError("Unable to find last event")
