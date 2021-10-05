@@ -1,0 +1,73 @@
+<Driver Description="Describe the purpose of your CloudShell shell" MainClass="driver.LanforgeResourceDriver" Name="LanforgeResourceDriver" Version="1.0.0" PythonVersion="3">
+    <Layout>
+	<Category Name="Hidden Commands">
+		<Command Description="" 
+			 DisplayName="Orchestration Save" 
+			 Name="orchestration_save" />
+		<Command Description="" 
+			 DisplayName="Orchestration Restore" 
+			 Name="orchestration_restore" />
+	</Category>
+	<Category Name="Example Commands">
+		<Command Description="Example Command from Demo"
+			 DisplayName="Example Command"
+			 Name="example_command"/>
+	</Category>
+	<Category Name="ICE">
+		<Command Description="Create a virtual wanlink with custom impairments."
+			 DisplayName="Create Wanlink"
+			 Name="create_wanlink">
+			<Parameters>
+				<Parameter Name="name"
+				 Type="String" 
+				 Mandatory="False" 
+				 DefaultValue="wl_eg1" 
+				 Description="Enter a name for the wanlink."/>
+				<Parameter Name="latency"
+				 Type="String"
+				 Mandatory="False"
+				 DefaultValue="20"
+				 Description="Latency of both endpoints"/>
+				<Parameter Name="rate"
+				 Type="String"
+				 Mandatory="False"
+				 DefaultValue="1000"
+				 Description="The total throughput capacity of the wanlink."/>
+			</Parameters>
+		</Command>	
+	</Category>
+	<Category Name="FIRE">
+	  <Command Description="Generate traffic between two existing ports"
+		   DisplayName="Create Layer-3"
+		   Name="create_l3">
+	    <Parameters>
+	      <Parameter Name="name"
+			 Type="String"
+			 Mandatory="False"
+			 DefaultValue="scr-test-1"
+			 Description="Enter a name for the connection"/>
+	      <Parameter Name="min_rate_a"
+			 Type="String"
+			 Mandatory="False"
+			 DefaultValue="56000"
+			 Description="Minimum transfer rate of side a"/>
+	      <Parameter Name="min_rate_b"
+			 Type="String"
+			 Mandatory="False"
+			 DefaultValue="56000"
+			 Description="Minimum transfer rate of side b"/>
+	      <Parameter Name="endp_a"
+			 Type="String"
+			 Mandatory="False"
+			 DefaultValue="eth1"
+			 Description="Station list"/>
+	      <Parameter Name="endp_b"
+			 Type="String"
+			 Mandatory="False"
+			 DefaultValue="eth2"
+			 Description="Upstream port"/>
+	    </Parameters>
+	  </Command>
+	</Category>
+    </Layout>
+</Driver>
