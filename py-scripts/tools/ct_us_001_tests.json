@@ -56,8 +56,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
-                    " --ssid 'ssid_idx=1 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]
             },
@@ -95,8 +95,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=SSID_2G_USED security=SECURITY_2G_USED password=SSID_2G_PW_USED bssid=DUT_BSSID_2G'",
-                    " --ssid 'ssid_idx=1 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]
             },
@@ -157,8 +157,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=SSID_2G_USED security=SECURITY_2G_USED password=SSID_2G_PW_USED bssid=DUT_BSSID_2G'",
-                    " --ssid 'ssid_idx=1 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]
             },
@@ -196,8 +196,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=SSID_2G_USED security=SECURITY_2G_USED password=SSID_2G_PW_USED bssid=DUT_BSSID_2G'",
-                    " --ssid 'ssid_idx=1 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]
             },
@@ -238,8 +238,8 @@
                 "args":"",
                 "args_list":[
                     "--lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=SSID_2G_USED security=SECURITY_2G_USED password=SSID_2G_PW_USED bssid=DUT_BSSID_2G'",
-                    " --ssid 'ssid_idx=1 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]
             },
@@ -276,8 +276,8 @@
                 "args":"",
                 "args_list":[
                     "--lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=SSID_2G_USED security=SECURITY_2G_USED password=SSID_2G_PW_USED bssid=DUT_BSSID_2G'",
-                    " --ssid 'ssid_idx=1 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]
             },
@@ -317,8 +317,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=SSID_2G_USED security=SECURITY_2G_USED password=SSID_2G_PW_USED bssid=DUT_BSSID_2G'",
-                    " --ssid 'ssid_idx=1 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]
             },
@@ -356,8 +356,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=SSID_2G_USED security=SECURITY_2G_USED password=SSID_2G_PW_USED bssid=DUT_BSSID_2G'",
-                    " --ssid 'ssid_idx=1 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]
             },
@@ -397,8 +397,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=SSID_2G_USED security=SECURITY_2G_USED password=SSID_2G_PW_USED bssid=DUT_BSSID_2G'",
-                    " --ssid 'ssid_idx=1 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
             "CT-US-001_create_chamberview_ap":{
@@ -459,8 +459,8 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
-                    " --ssid 'ssid_idx=0 ssid=SSID_2G_USED security=SECURITY_2G_USED password=SSID_2G_PW_USED bssid=DUT_BSSID_2G'",
-                    " --ssid 'ssid_idx=1 ssid=SSID_5G_USED security=SECURITY_5G_USED password=SSID_5G_PW_USED bssid=DUT_BSSID_5G'",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
             "CT-US-001_create_chamberview_ap":{

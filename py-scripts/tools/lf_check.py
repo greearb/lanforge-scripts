@@ -141,7 +141,6 @@ class lf_check():
         self.production_run = _production
         self.report_path = _report_path
         self.log_path = _log_path
-        self.ssid_dict = {}
         self.radio_dict = {}
         self.test_dict = {}
         path_parent = os.path.dirname(os.getcwd())
@@ -199,6 +198,9 @@ class lf_check():
         self.dut_sw = "DUT_SW_NA"
         self.dut_model = "DUT_MODEL_NA"
         self.dut_serial = "DUT_SERIAL_NA"
+
+        self.dut_wireless_network_dict = {}
+
         self.dut_bssid_2g = "BSSID_2G_NA"  # "3c:7c:3f:55:4d:64" - this is the mac for the 2.4G radio this may be seen with a scan
         self.dut_bssid_5g = "BSSID_5G_NA"  # "3c:7c:3f:55:4d:64" - this is the mac for the 5G radio this may be seen with a scan
         self.dut_bssid_6g = "BSSID_6G_NA"  # "3c:7c:3f:55:4d:64" - this is the mac for the 6G radio this may be seen with a scan
@@ -493,7 +495,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             self.read_dut_parameters()
         else:
             self.logger.info("EXITING test_dut not in json {}".format(self.json_dut))
-            self.logger.info("EXITING ERROR test_dut not in dug json {}")
+            self.logger.info("EXITING ERROR test_dut not in dut json {}")
             exit(1)
 
     # Top Level for reading the tests to run
@@ -632,10 +634,12 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
         else:
             self.logger.info("DUT_SERIAL not in test_dut json")
 
-        if "DUT_BSSID_2G" in self.json_dut["test_dut"]:
-            self.dut_bssid_2g = self.json_dut["test_dut"]["DUT_BSSID_2G"]
+        if "wireless_network_dict" in self.json_dut["test_dut"]:
+            self.wireless_network_dict = self.json_dut["test_dut"]["wireless_network_dict"]
+            self.logger.info("self.wireless_network_dict {}".format(self.wireless_network_dict))
         else:
-            self.logger.info("DUT_BSSID_2G not in test_dut json")
+            self.logger.info("wireless_network_ict not in test_dut json")
+            exit(1)
 
         if "DUT_BSSID_5G" in self.json_dut["test_dut"]:
             self.dut_bssid_5g = self.json_dut["test_dut"]["DUT_BSSID_5G"]
@@ -761,7 +765,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
     def run_script_test(self):
         self.start_html_results()
         self.start_csv_results()
-        print(self.test_dict)
+        #print(self.test_dict)
 
         # loop through radios (For future functionality based on radio)
         if self.radio_dict:
@@ -788,14 +792,37 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                 for iteration in range(self.test_iterations):
                     iteration += 1
 
-                    # if args key has a value of an empty string then need to manipulate the args_list to args 
-                    # list does not have replace only stings do to args_list will be joined and  converted to a string and placed
-                    # in args.  Then the replace below will work.
+                    # The network arguments need to be changed when in a list
+                    for index, args_list_element in enumerate(self.test_dict[test]['args_list']):
+                        if 'ssid_idx=' in args_list_element:
+                            #print("args_list_element {}".format(args_list_element))
+                            # get ssid_idx used in the test as an index for the dictionary
+                            ssid_idx_number =  args_list_element.split('ssid_idx=')[-1].split()[0]
+                            print("ssid_idx_number: {}".format(ssid_idx_number))
+                            idx = "ssid_idx={}".format(ssid_idx_number) # index into the DUT network index
+                            print("idx: {}".format(idx))
+                            if 'SSID_USED' in args_list_element:
+                                #args_list_element = args_list_element.replace('SSID_USED', self.wireless_network_dict[idx]['SSID_USED'])
+                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace('SSID_USED', self.wireless_network_dict[idx]['SSID_USED'])
+                            if 'SECURITY_USED' in args_list_element:
+                                #args_list_element = args_list_element.replace('SECURITY_USED', self.wireless_network_dict[idx]['SECURITY_USED'])
+                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace('SECURITY_USED', self.wireless_network_dict[idx]['SECURITY_USED'])
+                            if 'SSID_PW_USED' in args_list_element:
+                                #args_list_element = args_list_element.replace('SSID_PW_USED', self.wireless_network_dict[idx]['SSID_PW_USED'])
+                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace('SSID_PW_USED', self.wireless_network_dict[idx]['SSID_PW_USED'])
+                            if 'BSSID' in args_list_element:
+                                #args_list_element = args_list_element.replace('BSSID', self.wireless_network_dict[idx]['BSSID'])
+                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace('BSSID', self.wireless_network_dict[idx]['BSSID'])
+
+                            #print("args_list_element: {}".format(args_list_element))                                    
+                            #print("self.test_dict[test]['args_list']: {}".format(self.test_dict[test]['args_list']))                                    
+
+
+                    # Walk all the args in the args list then construct the arguments
                     if self.test_dict[test]['args'] == "":
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.test_dict[test]['args'],
                                                                                             ''.join(self.test_dict[test][
                                                                                                         'args_list']))
-
                     if 'DATABASE_SQLITE' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_SQLITE', self.database_sqlite)
                     if 'HTTP_TEST_IP' in self.test_dict[test]['args']:
@@ -868,6 +895,14 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                                                                                             self.dut_set_name)
                     if 'TEST_RIG' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('TEST_RIG', self.test_rig)
+
+
+                    # END of command line arg processing
+                    if self.test_dict[test]['args'] == "":
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.test_dict[test]['args'],
+                                                                                            ''.join(self.test_dict[test][
+                                                                                                        'args_list']))
+
                     # end of database configuration                        
 
                     if 'timeout' in self.test_dict[test]:
@@ -936,7 +971,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     start_time = datetime.datetime.now()
                     try:
                         process = subprocess.Popen(command_to_run, shell=False, stdout=stdout_log, stderr=stderr_log,
-                                                   universal_newlines=True)
+                                                  universal_newlines=True)
                         # if there is a better solution please propose,  the TIMEOUT Result is different then FAIL
                         try:
                             if int(self.test_timeout != 0):
