@@ -10,17 +10,17 @@
         ]  
     },
     "test_dut":{
-        "dut_set_name": "DUT_NAME ASUSRT-AX88U",
-        "dut_name": "ASUSRT-AX88U",
-        "dut_bssid_2g": "3c:7c:3f:55:4d:60",
-        "dut_bssid_5g": "3c:7c:3f:55:4d:64",
-        "dut_sw": "3.0.0.4.386_44266",
-        "ssid_5g_used": "asus11ax-5",
-        "ssid_5g_pw_used": "hello123",
-        "security_5g_used": "wpa2",
-        "ssid_2g_used": "asus11ax-2",
-        "ssid_2g_pw_used": "hello123",
-        "security_2g_used": "wpa2"
+        "DUT_SET_NAME": "DUT_NAME ASUSRT-AX88U",
+        "DUT_NAME": "ASUSRT-AX88U",
+        "DUT_BSSID_2G": "3c:7c:3f:55:4d:60",
+        "DUT_BSSID_5G": "3c:7c:3f:55:4d:64",
+        "DUT_SW": "3.0.0.4.386_44266",
+        "SSID_5G_USED": "asus11ax-5",
+        "SSID_5G_PW_USED": "hello123",
+        "SECURITY_5G_USED": "wpa2",
+        "SSID_2G_USED": "asus11ax-2",
+        "SSID_2G_PW_USED": "hello123",
+        "SECURITY_2G_USED": "wpa2"
     }
 }
 			
