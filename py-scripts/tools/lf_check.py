@@ -638,7 +638,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             self.wireless_network_dict = self.json_dut["test_dut"]["wireless_network_dict"]
             self.logger.info("self.wireless_network_dict {}".format(self.wireless_network_dict))
         else:
-            self.logger.info("wireless_network_ict not in test_dut json")
+            self.logger.info("wireless_network_dict not in test_dut json")
             exit(1)
 
         if "DUT_BSSID_5G" in self.json_dut["test_dut"]:
