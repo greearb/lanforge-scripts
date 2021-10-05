@@ -225,14 +225,14 @@ def main():
     Open this file in an editor and read the top notes for more details.
 
     Example:
-    ./lf_mesh_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
-      --instance_name mesh-instance --config_name test_con --upstream 1.1.eth1 \
-      --raw_line 'selected_dut2: RootAP wactest 08:36:c9:19:47:40 (1)' \
-      --raw_line 'selected_dut5: RootAP wactest 08:36:c9:19:47:50 (2)' \
-      --duration 15s \
-      --download_speed 85% --upload_speed 56Kbps \
-      --raw_line 'velocity: 100' \
-      --raw_lines_file example-configs/mesh-ferndale-cfg.txt \
+    ./lf_mesh_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \\
+      --instance_name mesh-instance --config_name test_con --upstream 1.1.eth1 \\
+      --raw_line 'selected_dut2: RootAP wactest 08:36:c9:19:47:40 (1)' \\
+      --raw_line 'selected_dut5: RootAP wactest 08:36:c9:19:47:50 (2)' \\
+      --duration 15s \\
+      --download_speed 85% --upload_speed 56Kbps \\
+      --raw_line 'velocity: 100' \\
+      --raw_lines_file example-configs/mesh-ferndale-cfg.txt \\
       --test_rig Ferndale-Mesh-01 --pull_report
 
       NOTE:  There is quite a lot of config needed, see example-configs/mesh-ferndale-cfg.txt
