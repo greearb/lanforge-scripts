@@ -16,7 +16,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LANforge = importlib.import_module("py-json.LANforge")
@@ -87,7 +86,7 @@ def main(args):
                            mode=args.mode,
                            _debug_on=args.debug)
 
-    ip_var_test.pre_cleanup()
+    # ip_var_test.pre_cleanup()
     ip_var_test.build()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())

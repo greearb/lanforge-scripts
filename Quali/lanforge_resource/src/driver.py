@@ -2,6 +2,9 @@ from cloudshell.shell.core.resource_driver_interface import ResourceDriverInterf
 from cloudshell.shell.core.driver_context import InitCommandContext, ResourceCommandContext, AutoLoadResource, \
     AutoLoadAttribute, AutoLoadDetails, CancellationContext
 from cloudshell.shell.core.session.cloudshell_session import CloudShellSessionContext
+from cloudshell.api.cloudshell_api import CloudShellAPISession
+# from cloudshell.shell.core.resource_driver_interface import ResourceDriverInterface
+# from cloudshell.shell.core.context import InitCommandContext, ResourceCommandContext
 import mock
 from data_model import *
 # run 'shellfoundry generate' to generate data model classes
@@ -146,6 +149,36 @@ class LanforgeResourceDriver (ResourceDriverInterface):
         return saved_details_object[u'saved_artifact'][u'identifier']
         '''
         pass
+    
+    def send_command(self, context, cmd):
+        
+        msg = ""
+        resource = LanforgeResource.create_from_context(context)
+        session = CloudShellAPISession(host=context.connectivity.server_address,
+                                       token_id=context.connectivity.admin_auth_token,
+                                       domain=context.reservation.domain)
+        resource_model_name = resource.cloudshell_model_name
+        terminal_ip = context.resource.address
+        terminal_user = context.resource.attributes[f'{resource_model_name}.User']
+        terminal_pass = session.DecryptPassword(context.resource.attributes[f'{resource_model_name}.Password']).Value
+
+        msg += f"Initializing SSH connection to {terminal_ip}, with user {terminal_user} and password {terminal_pass}\n"
+        s = paramiko.SSHClient()
+        s.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        s.connect(hostname=terminal_ip, username=terminal_user, password=terminal_pass)
+
+        print(f"running:[{cmd}]")
+        (stdin, stdout, stderr) = s.exec_command(cmd)
+
+        output = ''
+        errors = ''
+        for line in stdout.readlines():
+            output += line
+        for line in stderr.readlines():
+            errors += line
+        msg += output + errors
+        s.close()
+        return msg
 
     def example_command(self, context):
         """
@@ -154,22 +187,22 @@ class LanforgeResourceDriver (ResourceDriverInterface):
         :return: str
         """
         resource = LanforgeResource.create_from_context(context)
-        msg = "My resource: " + resource.name
-        msg += ", at address: " + context.resource.address
+        session = CloudShellAPISession(host=context.connectivity.server_address,
+                                       token_id=context.connectivity.admin_auth_token,
+                                       domain=context.reservation.domain)
+
+        resource_model_name = resource.cloudshell_model_name
+        password = session.DecryptPassword(context.resource.attributes[f'{resource_model_name}.Password']).Value
+        username = context.resource.attributes[f'{resource_model_name}.User']
+
+        msg = f"My resource {resource.name} at address {context.resource.address} has model name {resource_model_name}. "
+        msg += f"The username is {username} and password is {password}."
         return msg
 
-    def create_wanlink(self, context, name, latency, rate):
-        resource = LanforgeResource.create_from_context(context)
-        terminal_ip = context.resource.address
-        terminal_user = context.resource.attributes["{}User".format(shell_name)] = "lanforge"
-        terminal_pass = context.resource.attributes["{}Password".format(shell_name)] = "lanforge"
 
-        print("Initializing SSH connection to {ip}, with user {user} and password {password}".format(ip=terminal_ip, user=terminal_user, password=terminal_pass))
-        s = paramiko.SSHClient()
-        s.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        s.connect(hostname=terminal_ip, username=terminal_user, password=terminal_pass)
+    def create_wanlink(self, context, name, latency, rate):
         
-        command = "/home/lanforge/lanforge-scripts/py-json/create_wanlink.py --host {host} --port_A {port_A} --port_B {port_B} --name \"{name}\" --latency \"{latency}\" --latency_A \"{latency_A}\" --latency_B \"{latency_B}\" --rate {rate} --rate_A {rate_A} --rate_B {rate_B} --jitter {jitter} --jitter_A {jitter_A} --jitter_B {jitter_B} --jitter_freq_A {jitter_freq_A} --jitter_freq_B {jitter_freq_B} --drop_A {drop_A} --drop_B {drop_B}".format(
+        cmd = "/home/lanforge/lanforge-scripts/py-json/create_wanlink.py --host {host} --port_A {port_A} --port_B {port_B} --name \"{name}\" --latency \"{latency}\" --latency_A \"{latency_A}\" --latency_B \"{latency_B}\" --rate {rate} --rate_A {rate_A} --rate_B {rate_B} --jitter {jitter} --jitter_A {jitter_A} --jitter_B {jitter_B} --jitter_freq_A {jitter_freq_A} --jitter_freq_B {jitter_freq_B} --drop_A {drop_A} --drop_B {drop_B}".format(
             host="localhost",
             port_A="eth1",
             port_B="eth2",
@@ -189,97 +222,27 @@ class LanforgeResourceDriver (ResourceDriverInterface):
             drop_B="0"
         )
         
-        (stdin, stdout, stderr) = s.exec_command(command)
-        output = ''
-        errors = ''
-        for line in stdout.readlines():
-            output += line
-        for line in stderr.readlines():
-            errors += line
-        print(errors)
-        # if errors != '':
-        print(errors)
-        # else:
+        output = self.send_command(context, cmd)
         print(output)
-        s.close()
-
-        # print(args)
-        # command = "./lanforge-scripts/py-json/create_wanlink.py --host \"{host}\" --name my_wanlink4 --latency \"{latency}\" --rate \"{rate}\"".format(
-        #     host = context.resource.address,
-        #     name=args['name'],
-        #     latency=args['latency'],
-        #     rate=args['rate']
-        # )
-        # print("running:[{}]".format(command))
-        # process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-        # outs, errs = process.communicate()
-        # print(outs)
-        # print(errs)
-
+        return output
+      
     def create_l3(self, context, name, min_rate_a, min_rate_b, endp_a, endp_b):
-        # api_session = CloudShellSessionContext(context)
-        resource = LanforgeResource.create_from_context(context)
-        args = {
-            "host": context.resource.address,
-            "name_prefix": name,
-            "min_rate_a": min_rate_a,
-            "min_rate_b": min_rate_b,
-            "endp_a": endp_a,
-            "endp_b": endp_b
-        }
-        # ip_var_test = CreateL3(
-        #     host=context.resource.address,
-        #     name_prefix=name,
-        #     endp_a=[endp_a],
-        #     endp_b=endp_b,
-        #     min_rate_a=min_rate_a,
-        #     min_rate_b=min_rate_b
-        # )
 
-        print(args)
-        terminal_ip = context.resource.address
-        terminal_user = context.resource.attributes["{}.User".format(shell_name)] = "lanforge"
-        terminal_pass = context.resource.attributes["{}.Password".format(shell_name)] = "lanforge"
+        # args = {
+        #     "host": context.resource.address,
+        #     "name_prefix": name,
+        #     "min_rate_a": min_rate_a,
+        #     "min_rate_b": min_rate_b,
+        #     "endp_a": endp_a,
+        #     "endp_b": endp_b
+        # }
         
-        print("Initializing SSH connection to {ip}, with user {user} and password {password}".format(ip=terminal_ip, user=terminal_user, password=terminal_pass))
-        s = paramiko.SSHClient()
-        s.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        s.connect(hostname=terminal_ip, username=terminal_user, password=terminal_pass)
-        
-        command = "/home/lanforge/lanforge-scripts/py-scripts/create_l3.py --endp_a \"{endp_a}\" --endp_b \"{endp_b}\" --min_rate_a \"{min_rate_a}\" --min_rate_b \"{min_rate_b}\"".format(
-            endp_a=args['endp_a'],
-            endp_b=args['endp_b'],
-            min_rate_a=args['min_rate_a'],
-            min_rate_b=args['min_rate_b']
-        )
-        
-        (stdin, stdout, stderr) = s.exec_command(command)
-        output = ''
-        errors = ''
-        for line in stdout.readlines():
-            output += line
-        for line in stderr.readlines():
-            errors += line
-        print(errors)
-        if errors != '':
-            print(errors)
-        else:
-            print(output)
-        s.close()
-        
-        # print("running:[{}]".format(command))
-        # process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-        # outs, errs = process.communicate()
-        # print(outs)
-        # print(errs)
+        cmd = f"/home/lanforge/lanforge-scripts/py-scripts/create_l3.py --endp_a \"{endp_a}\" --endp_b \"{endp_b}\" --min_rate_a \"{min_rate_a}\" --min_rate_b \"{min_rate_b}\""
 
-        # num_sta = 2
-        # ip_var_test.pre_cleanup()
-        # ip_var_test.build()
-        # if not ip_var_test.passes():
-        #     print(ip_var_test.get_fail_message())
-        #     ip_var_test.exit_fail()
-        # print('Created %s stations and connections' % num_sta)
+        output = self.send_command(context, cmd)
+        print(output)
+        return output
+                
 
 if __name__ == "__main__":
     # setup for mock-debug environment
