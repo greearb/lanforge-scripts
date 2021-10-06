@@ -44,7 +44,6 @@ class csv_sql():
         self.plot_figure = []
         self.html_results =""
         self.test_rig_list = []
-        self.server_started = False
         self.dut_model_num_list = "NA"
         self.dut_model_num = "NA"
         self.dut_sw_version_list = "NA"
@@ -422,11 +421,8 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         print("if --png set to create png files then --store must also be set, exiting")
         exit(1)
 
-    if(args.png == True and args.show == True):
-        print("generating png files will effect initial display performance")
-
-    if args.store == False and args.png == False and args.show == False:
-        print("Need to enter an action of --store --png --show ")
+    if args.store == False and args.png == False:
+        print("Need to enter an action of --store --png ")
 
     # create report class for reporting
     report = lf_report(_path = __path,
