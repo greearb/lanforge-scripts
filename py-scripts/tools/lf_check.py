@@ -1040,12 +1040,26 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                             self.text_result = "Failure"
                             background = self.background_red
                         else:
-                            self.test_result = "Success"
+                            self.text_result = "Success"
                             background = self.background_green
                     else:
                         self.logger.info("File: {} is empty: {}".format(stderr_log_txt, str(stderr_log_size)))
                         self.test_result = "Success"
                         background = self.background_green
+
+                    # Check to see if there is an error in stdout_log
+                    if stdout_log_size > 0:
+                        text = open(stdout_log_txt).read()
+                        if 'error' in text.lower():
+                            self.test_result = "Failure"
+                            background = self.background_red
+                        else:
+                            self.test_result = "Success"
+                            background = self.background_green
+                    else:
+                        # if stdout empty that is a failure also
+                        self.test_resut = "Failure"
+                        background = self.background_red
 
                     # if there was a                     
                     if self.test_result == "TIMEOUT":
