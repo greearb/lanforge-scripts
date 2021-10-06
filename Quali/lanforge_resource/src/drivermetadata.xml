@@ -31,7 +31,7 @@
 				<Parameter Name="rate"
 				 Type="String"
 				 Mandatory="False"
-				 DefaultValue="1000"
+				 DefaultValue="1000000"
 				 Description="The total throughput capacity of the wanlink."/>
 			</Parameters>
 		</Command>	
