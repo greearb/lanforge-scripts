@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 '''
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
-Usage: lf_qa.py --store --png --show --path <path to directories to traverse> --database <name of database> 
+Usage: kpi_csv_sq.py --store --png --show --path <path to directories to traverse> --database <name of database> 
+Example: kpi_csv_sq.py --show  (show dashboard generated from database)
+Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read kpi.csv store to database, write png, show dashboard )
 '''
+# visit http://127.0.0.1:8050/ in your web browser.
 import sys
 import os
 import importlib
+import dash
+import dash_core_components as dcc
+import dash_html_components as html
 import plotly.express as px
 import pandas as pd
 import sqlite3
@@ -20,7 +26,7 @@ lf_report = lf_report.lf_report
 
 # Any style components can be used
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-class csv_sql():
+class csv_sqlite_dash():
     def __init__(self,
                 _path = '.',
                 _file = 'kpi.csv',
@@ -42,8 +48,10 @@ class csv_sql():
         self.conn = None
         self.df = pd.DataFrame()
         self.plot_figure = []
+        self.children_div = []
         self.html_results =""
         self.test_rig_list = []
+        self.server_html_reports = self.server + 'html-reports/' #TODO : hard coded - is this needed? have server
         self.server_started = False
         self.dut_model_num_list = "NA"
         self.dut_model_num = "NA"
@@ -53,6 +61,12 @@ class csv_sql():
         self.dut_hw_version = "NA"
         self.dut_serial_num_list = "NA"
         self.dut_serial_num = "NA"
+
+        self.app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+        # https://community.plotly.com/t/putting-a-dash-instance-inside-a-class/6097/3
+        #https://dash.plotly.com/dash-html-components/button
+        #self.app.callback(dash.dependencies.Output('container-button-basic', 'children'),
+        #                [dash.dependencies.Input(component_id ='submit-val', component_property ='n_clicks')])(self.show)
 
     # Helper methods
     def get_test_rig_list(self):
@@ -111,6 +125,8 @@ class csv_sql():
             print("test_tag from meta.txt _kpi_path: {kpi_path}".format(kpi_path=_kpi_path))
         return test_id , test_tag
 
+    # could enter on the command line, except there may be other exceptions
+    # may need an exception file
     def get_test_tag_from_meta(self,_kpi_path):
         test_tag = "NA"
         use_meta_test_tag = False
@@ -143,6 +159,8 @@ class csv_sql():
 
         return use_meta_test_tag, test_tag
 
+    #TODO pass in list to lf_report
+    #  <table border="1" class="dataframe">
     def get_suite_html(self):
         suite_html_results =  """ 
             <table class="dataframe" border="1">
@@ -273,16 +291,24 @@ class csv_sql():
         print("graph_group_list: {}".format(graph_group_list))
 
         # prior to 5.4.3 there was not test-tag
-        #print("dataframe df3 {df3}".format(df3=df3))
+        #try:
+        print("dataframe df3 {df3}".format(df3=df3))
         test_tag_list = list(df3['test-tag'])
         test_tag_list = list(set(test_tag_list))
-        #print("test_tag_list: {}".format(test_tag_list) )
+        print("test_tag_list: {}".format(test_tag_list) )
+        #except:
+        #test_tag_list = ['NO_TAG_PRE_5.4.4']            
+        #print("exception when creating test_tag_list: {}".format(test_tag_list) )
+        #print("Check database, exception when creating test_tag_list: {}".format(test_tag_list) )
+
+
         
         test_rig_list = list(df3['test-rig'])
         test_rig_list = list(set(test_rig_list))
         self.test_rig_list = test_rig_list
         print("test_rig_list: {}".format(test_rig_list) )
 
+        self.children_div.append(html.A('html_reports', href=self.server_html_reports, target='_blank'))
         for test_rig in test_rig_list:
             for test_tag in test_tag_list:
                 for group in graph_group_list:
@@ -345,8 +371,12 @@ class csv_sql():
                                     kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
                                 except:
                                     print("ERROR: {database} Was correct database passed in, moved or duplicates of same name?".format(database=self.database))
+                                #https://plotly.com/python/interactive-html-export/
                                 # generate html image (interactive)
                                 kpi_fig.write_html(html_path)
+                                # generate link for dashboard
+                                self.children_div.append(html.Img(src=png_server_img))
+                                #HERE add clickable link
                                 img_kpi_html_path = self.server + html_path
                                 img_kpi_html_path = img_kpi_html_path.replace(self.cut,'')
 
@@ -356,15 +386,30 @@ class csv_sql():
                                 </a>
                                 """.format(img_kpi_html_path=img_kpi_html_path,png_server_img=png_server_img)
 
+                        # WARNING: DO NOT USE os.path.join will use the path for where the script is RUN which can be container.
+                        # Constructed path to server manually.  
                         # link to interactive results
                         kpi_html_path = self.server + html_path
                         kpi_html_path = kpi_html_path.replace(self.cut,'')
+                        self.children_div.append(html.Br())
                         #self.html_results +="""<br>"""
+                        self.children_div.append(html.A('{test_id}_{group}_{test_tag}_{test_rig}_kpi.html'
+                        .format(test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
+                            href=kpi_html_path, target='_blank'))
+
                         # link to full test results
                         report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
                         report_index_html_path = report_index_html_path.replace(self.cut,'')
+                        self.children_div.append(html.Br())
+                        #self.html_results +="""<br>"""
+                        self.children_div.append(html.A('{test_id}_{group}_{test_tag}_{test_rig}_report.html'
+                        .format(test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
+                            href=report_index_html_path, target='_blank'))
                         self.html_results +="""<a href={report_index_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_Report </a>
                         """.format(report_index_html_path=report_index_html_path,test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
+                        self.children_div.append(html.Br())
+                        self.children_div.append(html.Br())
+                        self.children_div.append(html.Br())
                         self.html_results +="""<br>"""
                         self.html_results +="""<br>"""
                         self.html_results +="""<br>"""
@@ -374,6 +419,46 @@ class csv_sql():
         # TODO see if this stops the regenration of the graphs each time
         self.png_generated = True
 
+
+    # access from server
+    # https://stackoverflow.com/questions/61678129/how-to-access-a-plotly-dash-app-server-via-lan
+    #def show(self,n_clicks):
+    def show(self):
+        # gererate dash display
+        #print("refreshes: {}".format(n_clicks))
+        self.generate_graph_png()
+        if not self.children_div:
+            print("NOTE: test-tag may not be present in the kpi thus no results generated")
+        print("show: {}".format(time.time()))
+        self.app.layout = html.Div([
+            html.Div(id='my-output'),
+            html.H1(children= "LANforge Testing",className="lanforge",
+            style={'color':'green','text-align':'center'}),
+            #For dash refresh # html.Button('Submit Recalculate',id='submit-val', n_clicks=0),  
+            #For dash refresh # html.Div(id='container-button-basic', children='to recalculate hit submit'),
+            html.H2(children= "Results",className="ts1",
+            style={'color':'#00361c','text-align':'left'}),
+            # images_div is already a list, children = a list of html components
+            # remove scrolling : html.Div(children= self.children_div, style={"maxHeight": "600px", "overflow": "scroll"} ), 
+            html.Div(children= self.children_div ), 
+            html.A('www.candelatech.com',href='http://www.candelatech.com', target='_blank',
+            style={'color':'#00361c','text-align':'left'}),
+        ])
+
+        # save as standalone files
+        #https://plotly.com/python/static-image-export/
+        
+        if self.server_started:
+            print("refresh complete")
+            pass
+        else:
+            self.server_started = True
+            print("self.server_started {}".format(self.server_started))
+            #NOTE: the server_started flag needs to be set prior to run_server (or you get to debug an infinite loop)
+            #NOTE: debug=False will prevent init going though twice, also stops auto reload when editing code
+            self.app.run_server(host= '0.0.0.0', debug=True)
+            # host = '0.0.0.0'  allows for remote access,  local debug host = '127.0.0.1'
+            # app.run_server(host= '0.0.0.0', debug=True) 
 
 # Feature, Sum up the subtests passed/failed from the kpi files for each run, poke those into the database, and generate a kpi graph for them.
 def main():
@@ -387,7 +472,9 @@ def main():
             ''',
         description='''\
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
-Usage: lf_qa.py --store --png --path <path to directories to traverse> --database <name of database> 
+Usage: kpi_csv_sq.py --store --png --show --path <path to directories to traverse> --database <name of database> 
+Example: kpi_csv_sq.py --show  (show dashboard generated from database)
+Example: kpi_csv_sq.py --store --png --show --path <path to read kpi.csv> (read kpi.csv store to database, write png, show dashboard )
 
         ''')
     parser.add_argument('--path', help='--path top directory path to kpi if regererating database or png files',default='')
@@ -398,6 +485,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
     parser.add_argument('--cut', help='--cut /home/lanforge/ used to adjust server path default: /home/lanforge/',default='/home/lanforge/')
     parser.add_argument('--store', help='--store , store kpi to db, action store_true',action='store_true')
     parser.add_argument('--png', help='--png,  generate png for kpi in path, generate display, action store_true',action='store_true')
+    parser.add_argument('--show', help='--show generate display and show dashboard, action store_true',action='store_true')
     parser.add_argument('--dir', help="--dir <results directory> default lf_qa", default="lf_qa")
 
     args = parser.parse_args()
@@ -411,8 +499,11 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
     __dir = args.dir
     __cut = args.cut
 
-    print("config: path:{path} file:{file} database:{database} table:{table} server:{server} store:{store} png:{png}"
-        .format(path=__path,file=__file,database=__database,table=__table,server=__server,store=args.store,png=args.png))
+    # needed for refresh button 
+    # n_clicks = 0
+
+    print("config: path:{} file:{} database:{} table:{} server:{} store:{} png:{} show:{} "
+        .format(__path,__file,__database,__table,__server,args.store, args.png,args.show))
 
     if(__path == '' and args.store == True):
         print("--path <path of kpi.csv> must be entered if --store ,  exiting")
@@ -434,7 +525,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
                        _output_html="lf_qa.html",
                        _output_pdf="lf_qa.pdf" )        
 
-    csv_dash = csv_sql(
+    csv_dash = csv_sqlite_dash(
                 _path = __path,
                 _file = __file,
                 _database = __database,
@@ -506,6 +597,10 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
             report.write_pdf_with_timestamp()
         except:
             print("exception write_pdf_with_timestamp()")
+
+    if args.show:        
+        #csv_dash.show(n_clicks)
+        csv_dash.show()
 
 if __name__ == '__main__':
     main()
