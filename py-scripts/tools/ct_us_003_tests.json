@@ -76,14 +76,14 @@
                 "command":"lf_wifi_capacity_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name wc_m57915e",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name mt7915e_wc",
                     " --upstream UPSTREAM_PORT --batch_size 1,10,19 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7915e'",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
                 ]
             },
-            "create_chamberview_dut_for_mt7915e_dp":{
+            "create_chamberview_dut_mt7915e_dp":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
@@ -102,7 +102,7 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario ct-us-003-mt7915e-scenario ",
+                    " --create_scenario mt7915e_dp ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: DUT_NAME Radio-2' NA wiphy7,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
@@ -114,7 +114,7 @@
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-dpt",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name mt7915e_dp",
                     " --config_name test_con --upstream 1.1.eth1 --dut asus_5g --duration 30s --station 1.1.wlan7",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
@@ -168,7 +168,7 @@
                 "command":"lf_wifi_capacity_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name wc_ATH10K",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name ATH10K(9984)_wc",
                     " --upstream 1.1.eth1 --batch_size 1,5,25,32 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)'",
                     " --test_rig TEST_RIG ",
@@ -207,7 +207,7 @@
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-dpt",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name ATH10K(9984)_dp",
                     " --config_name test_con --upstream 1.1.eth1 --dut asus_5g --duration 30s --station 1.1.wlan1",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
@@ -248,7 +248,7 @@
                 "command":"lf_wifi_capacity_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-wct",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name AX210_wc",
                     " --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --stations 1.1.wlan3  --test_tag 'AX210'",
                     " --test_rig TEST_RIG",
@@ -286,7 +286,7 @@
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-dpt",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name AX210_dp",
                     " --config_name test_con --upstream 1.1.eth1 --dut asus_5g --duration 30s --station 1.1.wlan3",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
@@ -328,7 +328,7 @@
                 "command":"lf_wifi_capacity_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-wct-mt7915e",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name mt7915e_wc",
                     " --upstream 1.1.eth1 --batch_size 1,5,10,15,19 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7915e'",
                     " --test_rig TEST_RIG",
@@ -366,7 +366,7 @@
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name cicd-dpt-mt7915e",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name mt7915e_dp",
                     " --config_name test_con --upstream 1.1.eth1 --dut asus_5g --duration 30s --station 1.1.wlan7",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
@@ -377,7 +377,7 @@
                 ]
             },
             "create_chamberview_dut_ap":{
-                "enabled":"FALSE",
+                "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
                 "args":"",
@@ -388,38 +388,38 @@
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
             "create_chamberview_ap":{
-                "enabled":"FALSE",
+                "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario ap-script ",
+                    " --create_scenario ap_auto ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: DUT_NAME Radio-1' NA AUTO,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: DUT_NAME Radio-2' NA AUTO,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA eth2,AUTO -1 NA \" "
                 ]
             },
             "ap_auto": {
-                "enabled": "FALSE",
+                "enabled": "TRUE",
                 "command": "lf_ap_auto_test.py",
                 "timeout":"25200",
                 "iterations":"1",
                 "args": "",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge",
-                    " --instance_name ap-auto-instance --config_name test_con --upstream eth2",
+                    " --instance_name ap_auto --config_name test_con --upstream eth2",
                     " --dut5_0 'DUT_NAME lanforge BSSID (2)' --dut2_0 'DUT_NAME lanforge BSSID (1)'",
                     " --max_stations_2 8 --max_stations_5 8 --max_stations_dual 1",
                     " --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 --radio2 1.1.wiphy4 --radio2 1.1.wiphy5 --radio2 1.1.wiphy6 --radio2 1.1.wiphy7",
                     " --radio5 1.1.wiphy1 --radio5 1.1.wiphy2 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7",
                     " --set 'Basic Client Connectivity' 1",
-                    " --set 'Multi Band Performance' 1",
-                    " --set 'Stability' 1",
+                    " --set 'Multi Band Performance' 0",
+                    " --set 'Stability' 0",
                     " --set 'Multi-Station Throughput vs Pkt Size'  0,",
-                    " --set 'Throughput vs Pkt Size' 1",
-                    " --set 'Capacity' 1",
-                    " --set 'Band-Steering' 1",
+                    " --set 'Throughput vs Pkt Size' 0",
+                    " --set 'Capacity' 0",
+                    " --set 'Band-Steering' 0",
                     " --set 'Skip 2.4 Ghz Tests' 0",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AP_AUTO'",
                     " --test_rig TEST_RIG",
@@ -456,7 +456,7 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario ap-script",
+                    " --create_scenario ap_auto",
                     " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: DUT_NAME Radio-1' NA AUTO,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: DUT_NAME Radio-2' NA AUTO,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA eth2,AUTO -1 NA \" "
@@ -470,19 +470,19 @@
                 "args": "",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge",
-                    " --instance_name ap-auto-instance --config_name test_con --upstream eth2",
+                    " --instance_name ap_auto --config_name test_con --upstream eth2",
                     " --dut5_0 'DUT_NAME lanforge BSSID (2)' --dut2_0 'DUT_NAME lanforge BSSID (1)'",
                     " --max_stations_2 8 --max_stations_5 8 --max_stations_dual 1",
                     " --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 --radio2 1.1.wiphy4 --radio2 1.1.wiphy5 --radio2 1.1.wiphy6 --radio2 1.1.wiphy7",
                     " --radio5 1.1.wiphy1 --radio5 1.1.wiphy2 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7",
                     " --set 'Basic Client Connectivity' 1",
                     " --set 'Multi Band Performance' 1",
-                    " --set 'Stability' 0",
+                    " --set 'Stability' 1",
                     " --set 'Multi-Station Throughput vs Pkt Size'  0,",
-                    " --set 'Throughput vs Pkt Size' 0",
-                    " --set 'Capacity' 0",
-                    " --set 'Band-Steering' 0",
-                    " --set 'Skip 2.4 Ghz Tests' 1",
+                    " --set 'Throughput vs Pkt Size' 1",
+                    " --set 'Capacity' 1",
+                    " --set 'Band-Steering' 1",
+                    " --set 'Skip 2.4 Ghz Tests' 0",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AP_AUTO'",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"

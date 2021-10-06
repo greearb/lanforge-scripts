@@ -51,7 +51,7 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario ucentral-scenario ",
+                    " --create_scenario ap_auto ",
                     " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-2' NA wiphy4,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA \" "
@@ -64,7 +64,7 @@
                 "args": "",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS",
-                    " --instance_name ap-auto-instance --config_name test_con --upstream UPSTREAM_PORT",
+                    " --instance_name ap_auto --config_name test_con --upstream UPSTREAM_PORT",
                     " --dut5_0 'DUT_NAME lanforge BSSID (1)' --dut2_0 'DUT_NAME lanforge BSSID (1)'",
                     " --max_stations_2 32 --max_stations_5 32 --max_stations_dual 100 --radio2 1.1.wiphy1",
                     " --radio5 1.1.wiphy2 --set 'Basic Client Connectivity' 1",
@@ -116,7 +116,7 @@
                 "command":"lf_wifi_capacity_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name wct_ath10k",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name ATH10K(9984)_wc",
                     " --upstream UPSTREAM_PORT --batch_size 1,5,15 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K(9984)'",
                     " --test_rig TEST_RIG",
@@ -134,14 +134,14 @@
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]},
-            "create_chamberview_ATH10k(9984)_dp":{
+            "create_chamberview_ATH10K(9984)_dp":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario ATH10k(9984)_dp",
+                    " --create_scenario ATH10K(9984)_dp",
                     " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA \" "                    
                 ]
@@ -152,7 +152,7 @@
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name cicd_dpt_ATH10k",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name ATH10K(9984)_dp",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut DUT_NAME --duration 30s --station 1.1.wlan1",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
@@ -191,7 +191,7 @@
                 "command":"lf_wifi_capacity_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name cicd-ax200",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name AX200_wc",
                     " --upstream UPSTREAM_PORT --batch_size 1 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
                     " --pull_report --local_lf_report_dir REPORT_PATH --stations 1.1.wlan4 --test_tag 'ATH10K(9984)' ",
                     " --set DUT_SET_NAME"
@@ -226,7 +226,7 @@
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name cicd_dpt_AX210",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name AX200_dp",
                     " --config_name test_con --upstream UPSTREAM_PORT --dut DUT_NAME --duration 30s --station 1.1.wlan4",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
@@ -266,18 +266,18 @@
                 "args": "",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge",
-                    " --instance_name ap-auto-instance --config_name test_con --upstream eth2",
+                    " --instance_name ap_auto --config_name test_con --upstream eth2",
                     " --dut5_0 'DUT_NAME lanforge BSSID (2)' --dut2_0 'DUT_NAME lanforge BSSID (1)'",
                     " --max_stations_2 8 --max_stations_5 8 --max_stations_dual 1",
                     " --radio2 1.1.wiphy4 --radio2 1.1.wiphy5 --radio2 1.1.wiphy6 --radio2 1.1.wiphy7",
                     " --radio5 1.1.wiphy0 --radio5 1.1.wiphy1 --radio5 1.1.wiphy2 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7",
                     " --set 'Basic Client Connectivity' 1",
-                    " --set 'Multi Band Performance' 1",
-                    " --set 'Stability' 1",
+                    " --set 'Multi Band Performance' 0",
+                    " --set 'Stability' 0",
                     " --set 'Multi-Station Throughput vs Pkt Size'  0,",
-                    " --set 'Throughput vs Pkt Size' 1",
-                    " --set 'Capacity' 1",
-                    " --set 'Band-Steering' 1",
+                    " --set 'Throughput vs Pkt Size' 0",
+                    " --set 'Capacity' 0",
+                    " --set 'Band-Steering' 0",
                     " --set 'Skip 2.4 Ghz Tests' 0",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AP_AUTO'",
                     " --test_rig TEST_RIG",
