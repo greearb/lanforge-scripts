@@ -154,6 +154,7 @@ class lf_check():
         self.html_results = ""
         self.background_green = "background-color:green"
         self.background_red = "background-color:red"
+        self.background_orange = "background-color:orange"
         self.background_purple = "background-color:purple"
         self.background_blue = "background-color:blue"
 
@@ -1050,9 +1051,13 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     # Check to see if there is an error in stdout_log
                     if stdout_log_size > 0:
                         text = open(stdout_log_txt).read()
-                        if 'error' in text.lower():
-                            self.test_result = "Test Failure"
-                            background = self.background_red
+                        # for 5.4.3 only TestTag was not present
+                        if 'ERROR:  Could not find component: TestTag' in text:
+                            self.test_result = "Success"
+                            background = self.background_green
+                        elif 'error' in text.lower():
+                            self.test_result = "Test Fail"
+                            background = self.background_orange
                         else:
                             self.test_result = "Success"
                             background = self.background_green
