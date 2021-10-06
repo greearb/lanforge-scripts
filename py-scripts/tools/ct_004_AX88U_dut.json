@@ -1,7 +1,8 @@
 {
     "ct_AX88U_dut":{
         "Notes":[
-            "This json file is used as an input to the ./lf_check.py file",
+            "This json file describes the device undertest used as input to ./lf_check.py",
+            "The variables that are capitalize are used for configuration",
             "The dut related configuration is contained in this file"
         ]  
     },

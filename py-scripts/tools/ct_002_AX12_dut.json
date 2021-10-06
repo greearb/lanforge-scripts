@@ -1,11 +1,9 @@
 {
     "ct_AX12_dut":{
         "Notes":[
-            "This json file is used as an input to the ./lf_check.py file",
-            "The variables that are all capitalized below are replaced with configuration",
-            "The dut related configuration is contained in this file",
-            "NOTE: create_chamberview_dut starts ssid-idx at 0 ",
-            "NOTE: create_chamberview starts counting at Radio-1 which is dut ssid-idx 0"
+            "This json file describes the device undertest as input to ./lf_check.py",
+            "The variables that are capitalize are used for configuration",
+            "The dut related configuration is contained in this file"
         ]  
     },
     "test_dut":{
