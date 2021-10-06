@@ -815,8 +815,14 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                                 #args_list_element = args_list_element.replace('BSSID', self.wireless_network_dict[idx]['BSSID'])
                                 self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace('BSSID', self.wireless_network_dict[idx]['BSSID'])
 
+                            # use_ssid_idx is ephemeral and used only for variable replacement , remove
+                            tmp_idx = "use_ssid_idx={}".format(ssid_idx_number)
+                            if tmp_idx in args_list_element:
+                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace(tmp_idx,'')
+
+                            # leave in for checking the command line arguments
                             #print("args_list_element: {}".format(args_list_element))                                    
-                            #print("self.test_dict[test]['args_list']: {}".format(self.test_dict[test]['args_list']))                                    
+                            print("self.test_dict[test]['args_list']: {}".format(self.test_dict[test]['args_list']))          
 
 
                     # Walk all the args in the args list then construct the arguments
