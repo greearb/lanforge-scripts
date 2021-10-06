@@ -202,22 +202,6 @@ class lf_check():
 
         self.dut_wireless_network_dict = {}
 
-        self.dut_bssid_2g = "BSSID_2G_NA"  # "3c:7c:3f:55:4d:64" - this is the mac for the 2.4G radio this may be seen with a scan
-        self.dut_bssid_5g = "BSSID_5G_NA"  # "3c:7c:3f:55:4d:64" - this is the mac for the 5G radio this may be seen with a scan
-        self.dut_bssid_6g = "BSSID_6G_NA"  # "3c:7c:3f:55:4d:64" - this is the mac for the 6G radio this may be seen with a scan
-
-        self.ssid_2g = ""
-        self.ssid_2g_pw = ""
-        self.security_2g = ""
-
-        self.ssid_5g = ""
-        self.ssid_5g_pw = ""
-        self.security_5g = ""
-
-        self.ssid_6g = ""
-        self.ssid_6g_pw = ""
-        self.security_6g = ""
-
         self.csv_results = _csv_results
         self.csv_results_file = ""
         self.csv_results_writer = ""
@@ -642,61 +626,6 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             self.logger.info("wireless_network_dict not in test_dut json")
             exit(1)
 
-        if "DUT_BSSID_5G" in self.json_dut["test_dut"]:
-            self.dut_bssid_5g = self.json_dut["test_dut"]["DUT_BSSID_5G"]
-        else:
-            self.logger.info("DUT_BSSID_5G not in test_dut json")
-
-        if "DUT_BSSID_6G" in self.json_dut["test_dut"]:
-            self.dut_bssid_6g = self.json_dut["test_dut"]["DUT_BSSID_6G"]
-        else:
-            self.logger.info("DUT_BSSID_6G not in test_dut json")
-
-        if "SSID_6G_USED" in self.json_dut["test_dut"]:
-            self.ssid_6g = self.json_dut["test_dut"]["SSID_6G_USED"]
-        else:
-            self.logger.info("SSID_6G_USED not in test_dut json")
-
-        if "SSID_6G_PW_USED" in self.json_dut["test_dut"]:
-            self.ssid_6g_pw = self.json_dut["test_dut"]["SSID_6G_PW_USED"]
-        else:
-            self.logger.info("SSID_6G_PW_USED not in test_dut json")
-
-        if "SECURITY_6G_USED" in self.json_dut["test_dut"]:
-            self.security_6g = self.json_dut["test_dut"]["SECURITY_6G_USED"]
-        else:
-            self.logger.info("SECURITY_6G_USED not in test_dut json")
-
-        if "SSID_5G_USED" in self.json_dut["test_dut"]:
-            self.ssid_5g = self.json_dut["test_dut"]["SSID_5G_USED"]
-        else:
-            self.logger.info("SSID_5G_USED not in test_dut json")
-
-        if "SSID_5G_PW_USED" in self.json_dut["test_dut"]:
-            self.ssid_5g_pw = self.json_dut["test_dut"]["SSID_5G_PW_USED"]
-        else:
-            self.logger.info("SSID_5G_PW_USED not in test_dut json")
-
-        if "SECURITY_5G_USED" in self.json_dut["test_dut"]:
-            self.security_5g = self.json_dut["test_dut"]["SECURITY_5G_USED"]
-        else:
-            self.logger.info("SECURITY_5G_USED not in test_dut json")
-
-        if "SSID_2G_USED" in self.json_dut["test_dut"]:
-            self.ssid_2g = self.json_dut["test_dut"]["SSID_2G_USED"]
-        else:
-            self.logger.info("SSID_2G_USED not in test_dut json")
-
-        if "SSID_2G_PW_USED" in self.json_dut["test_dut"]:
-            self.ssid_2g_pw = self.json_dut["test_dut"]["SSID_2G_PW_USED"]
-        else:
-            self.logger.info("SSID_2G_PW_USED not in test_dut json")
-
-        if "SECURITY_2G_USED" in self.json_dut["test_dut"]:
-            self.security_2g = self.json_dut["test_dut"]["SECURITY_2G_USED"]
-        else:
-            self.logger.info("SECURITY_2G_USED not in test_dut json")
-
     def read_test_network(self):
         if "HTTP_TEST_IP" in self.json_rig["test_network"]:
             self.http_test_ip = self.json_rig["test_network"]["HTTP_TEST_IP"]
@@ -803,16 +732,12 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                             idx = "ssid_idx={}".format(ssid_idx_number) # index into the DUT network index
                             print("idx: {}".format(idx))
                             if 'SSID_USED' in args_list_element:
-                                #args_list_element = args_list_element.replace('SSID_USED', self.wireless_network_dict[idx]['SSID_USED'])
                                 self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace('SSID_USED', self.wireless_network_dict[idx]['SSID_USED'])
                             if 'SECURITY_USED' in args_list_element:
-                                #args_list_element = args_list_element.replace('SECURITY_USED', self.wireless_network_dict[idx]['SECURITY_USED'])
                                 self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace('SECURITY_USED', self.wireless_network_dict[idx]['SECURITY_USED'])
                             if 'SSID_PW_USED' in args_list_element:
-                                #args_list_element = args_list_element.replace('SSID_PW_USED', self.wireless_network_dict[idx]['SSID_PW_USED'])
                                 self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace('SSID_PW_USED', self.wireless_network_dict[idx]['SSID_PW_USED'])
                             if 'BSSID' in args_list_element:
-                                #args_list_element = args_list_element.replace('BSSID', self.wireless_network_dict[idx]['BSSID'])
                                 self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace('BSSID', self.wireless_network_dict[idx]['BSSID'])
 
                             # use_ssid_idx is ephemeral and used only for variable replacement , remove
@@ -821,7 +746,6 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                                 self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace(tmp_idx,'')
 
                             # leave in for checking the command line arguments
-                            #print("args_list_element: {}".format(args_list_element))                                    
                             print("self.test_dict[test]['args_list']: {}".format(self.test_dict[test]['args_list']))          
 
 
@@ -861,33 +785,6 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     if 'DUT_SERIAL' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_SERIAL', self.dut_serial)
 
-                    if 'DUT_BSSID_2G' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_2G', self.dut_bssid_2g)
-                    if 'SSID_2G_USED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_2G_USED', self.ssid_2g)
-                    if 'SSID_2G_PW_USED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_2G_PW_USED', self.ssid_2g_pw)
-                    if 'SECURITY_2G_USED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SECURITY_2G_USED', self.security_2g)
-
-                    if 'DUT_BSSID_5G' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_5G', self.dut_bssid_5g)
-                    if 'SSID_5G_USED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_5G_USED', self.ssid_5g)
-                    if 'SSID_5G_PW_USED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_5G_PW_USED', self.ssid_5g_pw)
-                    if 'SECURITY_5G_USED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SECURITY_5G_USED', self.security_5g)
-
-                    if 'DUT_BSSID_6G' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_BSSID_6G', self.dut_bssid_6g)
-                    if 'SSID_6G_USED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_6G_USED', self.ssid_6g)
-                    if 'SSID_6G_PW_USED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SSID_6G_PW_USED', self.ssid_6g_pw)
-                    if 'SECURITY_6G_USED' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('SECURITY_6G_USED', self.security_6g)
-
                     if 'UPSTREAM_PORT' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('UPSTREAM_PORT',
                                                                                             self.upstream_port)
@@ -896,21 +793,17 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     if 'REPORT_PATH' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('REPORT_PATH', self.report_path)
 
-                    # The TEST_BED is the database tag
                     if 'DUT_SET_NAME' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_SET_NAME',
                                                                                             self.dut_set_name)
                     if 'TEST_RIG' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('TEST_RIG', self.test_rig)
 
-
                     # END of command line arg processing
                     if self.test_dict[test]['args'] == "":
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.test_dict[test]['args'],
                                                                                             ''.join(self.test_dict[test][
                                                                                                         'args_list']))
-
-                    # end of database configuration                        
 
                     if 'timeout' in self.test_dict[test]:
                         self.logger.info("timeout : {}".format(self.test_dict[test]['timeout']))
@@ -1087,7 +980,6 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                                 break
 
                         self.qa_report_html = self.qa_report_html.replace('html report: ','')
-
 
                     # stdout_log_link is used for the email reporting to have the corrected path
                     stdout_log_link = str(stdout_log_txt).replace('/home/lanforge', '')
