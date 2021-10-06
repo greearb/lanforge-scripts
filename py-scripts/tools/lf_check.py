@@ -141,7 +141,6 @@ class lf_check():
         self.production_run = _production
         self.report_path = _report_path
         self.log_path = _log_path
-        self.radio_dict = {}
         self.test_dict = {}
         path_parent = os.path.dirname(os.getcwd())
         os.chdir(path_parent)
@@ -192,8 +191,6 @@ class lf_check():
         # section DUT
         # dut selection 
         self.dut_set_name = 'DUT_NAME ASUSRT-AX88U'  # note the name will be set as --set DUT_NAME ASUSRT-AX88U, this is not dut_name (see above)
-
-        # dut configuration 
         self.dut_name = "DUT_NAME_NA"  # "ASUSRT-AX88U" note this is not dut_set_name
         self.dut_hw = "DUT_HW_NA"
         self.dut_sw = "DUT_SW_NA"
@@ -214,9 +211,7 @@ class lf_check():
         self.use_factory_default_db = "FALSE"
         self.use_custom_db = "FALSE"
         self.email_list_production = ""
-        self.host_ip_production = None
         self.email_list_test = ""
-        self.host_ip_test = None
         self.email_title_txt = ""
         self.email_txt = ""
 
@@ -379,7 +374,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             mail_subject = "Regression Test [{hostname}] {date}".format(hostname=hostname, date=datetime.datetime.now())
         try:
             if self.production_run == True:
-                msg = message_txt.format(ip=self.host_ip_production)
+                msg = message_txt.format(ip=ip)
                 # for postfix from command line  echo "My message" | mail -s subject user@candelatech.com
                 command = "echo \"{message}\" | mail -s \"{subject}\" {address}".format(
                     message=msg,
@@ -455,23 +450,6 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             self.logger.info("EXITING test_rig_parameters not in json {}".format(self.json_rig))
             self.logger.info("EXITING ERROR test_rig_parameters not in rig json")
             exit(1)
-
-        if "test_network" in self.json_rig:
-            self.logger.info("json: read test_network")
-            # self.logger.info("test_network {}".format(self.json_rig["test_network"]))
-            self.read_test_network()
-        else:
-            self.logger.info("EXITING test_network not in json {}".format(self.json_rig))
-            self.logger.info("EXITING ERROR test_network not in rig json")
-            exit(1)
-
-        if "radio_dict" in self.json_rig:
-            self.logger.info("json: read radio_dict")
-            # self.logger.info("radio_dict {}".format(self.json_rig["radio_dict"]))
-            self.radio_dict = self.json_rig["radio_dict"]
-            self.logger.info("self.radio_dict {}".format(self.radio_dict))
-        else:
-            self.logger.info("radio_dict not in json {}".format(self.json_rig))
 
     # read dut configuration
     def read_json_dut(self):
@@ -561,21 +539,11 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
         else:
             self.logger.info("EMAIL_LIST_PRODUCTION not in test_rig_parameters json")
             exit(1)
-        if "HOST_IP_PRODUCTION" in self.json_rig["test_rig_parameters"]:
-            self.host_ip_production = self.json_rig["test_rig_parameters"]["HOST_IP_PRODUCTION"]
-        else:
-            self.logger.info("HOST_IP_PRODUCTION not in test_rig_parameters json")
-            exit(1)
         if "EMAIL_LIST_TEST" in self.json_rig["test_rig_parameters"]:
             self.email_list_test = self.json_rig["test_rig_parameters"]["EMAIL_LIST_TEST"]
             print(self.email_list_test)
         else:
             self.logger.info("EMAIL_LIST_TEST not in test_rig_parameters json")
-            exit(1)
-        if "HOST_IP_TEST" in self.json_rig["test_rig_parameters"]:
-            self.host_ip_test = self.json_rig["test_rig_parameters"]["HOST_IP_TEST"]
-        else:
-            self.logger.info("HOST_IP_TEST not in test_rig_parameters json")
             exit(1)
         if "EMAIL_TITLE_TXT" in self.json_rig["test_rig_parameters"]:
             self.email_title_txt = self.json_rig["test_rig_parameters"]["EMAIL_TITLE_TXT"]
@@ -624,23 +592,6 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             self.logger.info("self.wireless_network_dict {}".format(self.wireless_network_dict))
         else:
             self.logger.info("wireless_network_dict not in test_dut json")
-            exit(1)
-
-    def read_test_network(self):
-        if "HTTP_TEST_IP" in self.json_rig["test_network"]:
-            self.http_test_ip = self.json_rig["test_network"]["HTTP_TEST_IP"]
-        else:
-            self.logger.info("HTTP_TEST_IP not in test_network json")
-            exit(1)
-        if "FTP_TEST_IP" in self.json_rig["test_network"]:
-            self.ftp_test_ip = self.json_rig["test_network"]["FTP_TEST_IP"]
-        else:
-            self.logger.info("FTP_TEST_IP not in test_network json")
-            exit(1)
-        if "TEST_IP" in self.json_rig["test_network"]:
-            self.ftp_test_ip = self.json_rig["test_network"]["TEST_IP"]
-        else:
-            self.logger.info("TEST_IP not in test_network json")
             exit(1)
 
     def load_FACTORY_DFLT_database(self):
@@ -695,16 +646,6 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
     def run_script_test(self):
         self.start_html_results()
         self.start_csv_results()
-        #print(self.test_dict)
-
-        # loop through radios (For future functionality based on radio)
-        if self.radio_dict:
-            for radio in self.radio_dict:
-                # This has been changed to reflect the Radio configuriaton of LANforge, for now print
-                print("rig json config: RADIO: {radio} DRIVER: {driver} CAPABILITIES {cap} MAX_STA {max_sta} MAX_VAP {max_vap} MAX_VIFS {max_vif}".format(
-                radio=self.radio_dict[radio]['RADIO'],driver=self.radio_dict[radio]['DRIVER'],cap=self.radio_dict[radio]['CAPABILITIES'],
-                max_sta=self.radio_dict[radio]['MAX_STA'],max_vap=self.radio_dict[radio]['MAX_VAP'],max_vif=self.radio_dict[radio]['MAX_VIFS']))
-
         # Configure Tests
         for test in self.test_dict:
             if self.test_dict[test]['enabled'] == "FALSE":

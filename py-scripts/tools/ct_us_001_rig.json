@@ -1,18 +1,13 @@
 {
     "ct_us_001":{
         "Notes":[
-            "The json is used to orchastrate the tests to be run on testbed ct_us_001",
-            "This json file is used as an input to the ./lf_check.py file",
-            "The variables that are all capitalized below are replaced with configuration",
-            "from the json file. so LF_MGR_IP in the test below is replaced by the json lf_mgr_ip",
-            "The replacement is loosely coupled so the upper and lower case convention is used",
-            "to identify replaced strings in the lf_check.py code."  
+            "This json file describes LANforge system and test run configuration"
         ]  
     },
     "test_rig_parameters":{
         "TEST_BED": "CT-US-001",
         "TEST_RIG": "CT-US-001",
-        "DATABASE_SQLITE": "qa_001_test_db",
+        "DATABASE_SQLITE": "./tools/qa_001_Oct.db",
         "LF_MGR_IP": "192.168.100.116",
         "LF_MGR_PORT": "8080",
         "LF_MGR_USER": "lanforge",
@@ -24,15 +19,8 @@
         "LOAD_CUSTOM_DB": false,
         "CUSTOM_DB": "DFLT_ETH1_GEN",
         "EMAIL_LIST_PRODUCTION": "konikofi@candelatech.com,greearb@candelatech.com,,jreynolds@candelatech.com,matthew@candelatech.com,iain.davidson@candelatech.com,erin.grimes@candelatech.com,logan.lipke@candelatech.com,dipti.dhond@candelatech.com,chuck.rekiere@candelatech.com",
-        "HOST_IP_PRODUCTION": "192.168.95.6",
         "EMAIL_LIST_TEST": "chuck.rekiere@candelatech.com",
-        "HOST_IP_TEST": "192.168.95.6",
         "EMAIL_TITLE_TXT": "Lanforge QA Testing CT-US-001",
         "EMAIL_TXT": "Lanforge QA Testing CT-US-001 "
-    },
-    "test_network":{
-        "HTTP_TEST_IP": "192.168.50.1",
-        "FTP_TEST_IP": "192.168.50.1",
-        "TEST_IP": "192.168.50.1"
     }
 }
