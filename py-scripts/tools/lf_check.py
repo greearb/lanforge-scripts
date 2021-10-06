@@ -1051,7 +1051,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     if stdout_log_size > 0:
                         text = open(stdout_log_txt).read()
                         if 'error' in text.lower():
-                            self.test_result = "Failure"
+                            self.test_result = "Test Failure"
                             background = self.background_red
                         else:
                             self.test_result = "Success"
