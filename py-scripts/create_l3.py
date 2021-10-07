@@ -65,17 +65,16 @@ class CreateL3(Realm):
                                side_a=self.endp_a,
                                side_b=self.endp_b,
                                sleep_time=0)
+        self.cx_profile.start_cx()
         self._pass("PASS: Cross-connect build finished")
 
 
 def main(args):
 
-    num_sta = 2
-    if (args.num_stations is not None) and (int(args.num_stations) > 0):
-        num_sta = int(args.num_stations)
+    num_sta = 1
+    # if (args.num_stations is not None) and (int(args.num_stations) > 0):
+    #     num_sta = int(args.num_stations)
 
-    # station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=int(args.number_template), end_id_=num_sta+int(args.number_template) - 1, padding_number_=10000,
-    #                                       radio=args.radio)
     ip_var_test = CreateL3(host=args.mgr,
                            port=args.mgr_port,
                            name_prefix="VT",
@@ -91,8 +90,7 @@ def main(args):
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
         ip_var_test.exit_fail()
-    print('Created %s stations and connections' % num_sta)
-
+    print(f'Created {num_sta} stations and connections')
 
 if __name__ == "__main__":
     parser = LFCliBase.create_basic_argparse(

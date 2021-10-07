@@ -237,7 +237,7 @@ class LanforgeResourceDriver (ResourceDriverInterface):
         #     "endp_b": endp_b
         # }
         
-        cmd = f"/home/lanforge/lanforge-scripts/py-scripts/create_l3.py --endp_a \"{endp_a}\" --endp_b \"{endp_b}\" --min_rate_a \"{min_rate_a}\" --min_rate_b \"{min_rate_b}\""
+        cmd = f"/home/lanforge/lanforge-scripts/py-scripts/create_l3.py --host \"localhost\" --endp_a \"{endp_a}\" --endp_b \"{endp_b}\" --min_rate_a \"{min_rate_a}\" --min_rate_b \"{min_rate_b}\""
 
         output = self.send_command(context, cmd)
         print(output)
