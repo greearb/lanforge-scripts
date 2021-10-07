@@ -224,6 +224,10 @@ class csv_sql():
 
     # information on sqlite database
     # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
+    # sqlite browser:
+    # Fedora  sudo dnf install sqlitebrowser
+    # Ubuntu sudo apt-get install sqlite3 
+    #
     def store(self):
         print("reading kpi and storing in db {}".format(self.database))
         path = Path(self.path)
@@ -271,7 +275,7 @@ class csv_sql():
         graph_group_list = list(set(graph_group_list)) 
         print("graph_group_list: {}".format(graph_group_list))
 
-        # prior to 5.4.3 there was not test-tag
+        # prior to 5.4.3 there was not test-tag, the test tag is in the meta data
         #print("dataframe df3 {df3}".format(df3=df3))
         test_tag_list = list(df3['test-tag'])
         test_tag_list = list(set(test_tag_list))
@@ -287,12 +291,15 @@ class csv_sql():
                 for group in graph_group_list:
                     df_tmp = df3.loc[(df3['test-rig'] == test_rig) & (df3['Graph-Group'] == str(group)) & (df3['test-tag'] == str(test_tag))]
                     if df_tmp.empty == False:
+                        # Note if graph group is score there is sub tests for pass and fail
+                        # would like a percentage
 
                         df_tmp = df_tmp.sort_values(by='Date')
                         test_id_list = list(df_tmp['test-id'])
                         kpi_path_list = list(df_tmp['kpi_path'])
                         # get Device Under Test Information , 
                         # the set reduces the redundency , list puts it back into a list
+                        # the [0] will get the latest versions for the report
                         self.dut_model_num_list = list(set(list(df_tmp['dut-model-num'])))
                         print("in png self.dut_model_num_list {dut_model_num_list}".format(dut_model_num_list=self.dut_model_num_list))
                         if self.dut_model_num_list[0] != None:
@@ -312,9 +319,23 @@ class csv_sql():
 
                         units_list = list(df_tmp['Units'])
                         print("GRAPHING::: test-rig {} test-tag {}  Graph-Group {}".format(test_rig,test_tag,group))
-                        kpi_fig = (px.scatter(df_tmp, x="Date", y="numeric-score",
-                             color="short-description", hover_name="short-description",
-                             size_max=60)).update_traces(mode='lines+markers')
+                        if group == 'Score':
+                            kpi_fig = (px.scatter(df_tmp, x="Date", y="numeric-score",
+                                custom_data=['numeric-score','Subtest-Pass','Subtest-Fail'],
+                                color="short-description", hover_name="short-description",
+                                size_max=60)).update_traces(mode='lines+markers')
+                                
+                            kpi_fig.update_traces(
+                                hovertemplate="<br>".join([
+                                    "numeric-score: %{customdata[0]}",
+                                    "Subtest-Pass: %{customdata[1]}",
+                                    "Subtest-Fail: %{customdata[2]}"
+                                    ])
+                            )
+                        else:
+                            kpi_fig = (px.scatter(df_tmp, x="Date", y="numeric-score",
+                                 color="short-description", hover_name="short-description",
+                                 size_max=60)).update_traces(mode='lines+markers')
 
                         kpi_fig.update_layout(
                             title="{} : {} : {} : {}".format(test_id_list[-1], group, test_tag, test_rig),
@@ -325,7 +346,7 @@ class csv_sql():
                         # save the figure - figures will be over written png 
                         # for testing 
                         png_server_img = ''
-                        #TODO work out when to generate the png files
+                        #generate the png files
                         if self.png:
                             if self.png_generated:
                                 pass
