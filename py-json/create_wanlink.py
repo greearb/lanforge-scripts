@@ -165,15 +165,15 @@ def main(args={}):
             print("Error code "+error.code)
             continue
 
-    print("starting wanlink:")
-    # print("the latency is {laten}".format(laten=latency))
-    lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_cx_state")
-    lf_r.addPostData({
-       'test_mgr': 'all',
-       'cx_name': args['name'],
-       'cx_state': 'RUNNING'
-    })
-    lf_r.jsonPost()
+    # print("starting wanlink:")
+    # # print("the latency is {laten}".format(laten=latency))
+    # lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_cx_state")
+    # lf_r.addPostData({
+    #    'test_mgr': 'all',
+    #    'cx_name': args['name'],
+    #    'cx_state': 'RUNNING'
+    # })
+    # lf_r.jsonPost()
 
     running = 0
     while (running < 1):

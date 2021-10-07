@@ -65,7 +65,7 @@ class CreateL3(Realm):
                                side_a=self.endp_a,
                                side_b=self.endp_b,
                                sleep_time=0)
-        self.cx_profile.start_cx()
+        # self.cx_profile.start_cx()
         self._pass("PASS: Cross-connect build finished")
 
 
