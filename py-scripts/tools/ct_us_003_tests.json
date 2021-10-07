@@ -135,7 +135,7 @@
                 ]
             }
         },
-        "suite_wc_dp_ap":{
+        "suite_wc_dp":{
             "create_chamberview_dut_ATH10K_9984__wc":{
                 "enabled":"TRUE",
                 "load_db":"skip",
