@@ -83,8 +83,6 @@ class LoadScenario(Realm):
                 data['clean_chambers'] = "yes"
             print("Loading database %s" % self.scenario)
             self.json_post("/cli-json/load", data)
-
-
         elif self.start is not None:
             print("Starting test group %s..." % self.start)
             self.json_post("/cli-json/start_group", {"name": self.start})
@@ -100,7 +98,11 @@ class LoadScenario(Realm):
         while not completed:
             current_events = self.json_get('/events/since=time/1h')
             new_events = find_new_events(starting_events, current_events)
+            target_events = [event for event in get_events(new_events, 'event description') if event.startswith('LOAD COMPLETED')]
             if 'LOAD-DB:  Load attempt has been completed.' in get_events(new_events, 'event description'):
+                completed = True
+                print('Scenario %s fully loaded after %s seconds' % (self.scenario, timer))
+            elif len(target_events) > 0:
                 completed = True
                 print('Scenario %s fully loaded after %s seconds' % (self.scenario, timer))
             else:
@@ -108,8 +110,9 @@ class LoadScenario(Realm):
                 time.sleep(1)
                 if timer > self.timeout:
                     completed = True
-                    print('Scenario failed to load after 120 seconds')
+                    print('Scenario failed to load after %s seconds' % self.timeout)
                 else:
+                    print(new_events)
                     print('Waiting %s out of %s seconds to load scenario %s' % (timer, self.timeout, self.scenario))
 
 
@@ -161,7 +164,7 @@ def main():
                  timeout=args.timeout,
                  debug=args.debug)
 
-    # LoadScenario.scenario()
+    # scenario_loader.load_scenario()
 
 
 if __name__ == '__main__':
