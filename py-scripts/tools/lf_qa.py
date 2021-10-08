@@ -7,6 +7,7 @@ import sys
 import os
 import importlib
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
 import sqlite3
 import argparse
@@ -36,7 +37,6 @@ class csv_sql():
         self.server = _server
         self.cut = _cut
         self.png = _png
-        self.png_generated = False
         self.kpi_list = []
         self.html_list = []
         self.conn = None
@@ -255,6 +255,50 @@ class csv_sql():
             exit(1)
         self.conn.close()
 
+    def generate_png(self,group,test_id_list,test_tag,test_rig,kpi_path_list,kpi_fig,df_tmp):
+        # save the figure - figures will be over written png 
+        # for testing 
+        png_server_img = ''
+        #generate the png files
+        print("generate png and kpi images from kpi kpi_path:{}".format(df_tmp['kpi_path']))
+        # generate png img path
+        png_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_kpi.png".format( group, test_tag, test_rig))
+        png_path = png_path.replace(' ','')
+        # generate html graphics path
+        html_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_kpi.html".format( group, test_tag, test_rig))
+        html_path = html_path.replace(' ','')
+        # NOTE: html links to png do not like spaces
+        png_server_img = self.server + png_path.replace(self.cut,'')
+        # generate png image
+        try:
+            kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
+        except:
+            print("ERROR: {database} Was correct database passed in, moved or duplicates of same name?".format(database=self.database))
+        # generate html image (interactive)
+        kpi_fig.write_html(html_path)
+        img_kpi_html_path = self.server + html_path
+        img_kpi_html_path = img_kpi_html_path.replace(self.cut,'')
+        self.html_results += """
+        <a href={img_kpi_html_path} target="_blank">
+            <img src={png_server_img}>
+        </a>
+        """.format(img_kpi_html_path=img_kpi_html_path,png_server_img=png_server_img)
+        # link to interactive results
+        kpi_html_path = self.server + html_path
+        kpi_html_path = kpi_html_path.replace(self.cut,'')
+        #self.html_results +="""<br>"""
+        # link to full test results
+        report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
+        report_index_html_path = report_index_html_path.replace(self.cut,'')
+        self.html_results +="""<a href={report_index_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_Report </a>
+        """.format(report_index_html_path=report_index_html_path,test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
+        self.html_results +="""<br>"""
+        self.html_results +="""<br>"""
+        self.html_results +="""<br>"""
+        self.html_results +="""<br>"""
+        self.html_results +="""<br>"""
+
+
     def generate_graph_png(self):
         print("generate png and html to display, generate time: {}".format(time.time()))
 
@@ -297,6 +341,7 @@ class csv_sql():
                         df_tmp = df_tmp.sort_values(by='Date')
                         test_id_list = list(df_tmp['test-id'])
                         kpi_path_list = list(df_tmp['kpi_path'])
+
                         # get Device Under Test Information , 
                         # the set reduces the redundency , list puts it back into a list
                         # the [0] will get the latest versions for the report
@@ -319,12 +364,14 @@ class csv_sql():
 
                         units_list = list(df_tmp['Units'])
                         print("GRAPHING::: test-rig {} test-tag {}  Graph-Group {}".format(test_rig,test_tag,group))
+                        # group of Score will have subtest
                         if group == 'Score':
+                            # Print out the Standard Score report , May want to check for empty pass fail
                             kpi_fig = (px.scatter(df_tmp, x="Date", y="numeric-score",
                                 custom_data=['numeric-score','Subtest-Pass','Subtest-Fail'],
                                 color="short-description", hover_name="short-description",
                                 size_max=60)).update_traces(mode='lines+markers')
-                                
+
                             kpi_fig.update_traces(
                                 hovertemplate="<br>".join([
                                     "numeric-score: %{customdata[0]}",
@@ -332,67 +379,84 @@ class csv_sql():
                                     "Subtest-Fail: %{customdata[2]}"
                                     ])
                             )
+
+                            kpi_fig.update_layout(
+                                title="{} : {} : {} : {}".format(test_id_list[-1], group, test_tag, test_rig),
+                                xaxis_title="Time",
+                                yaxis_title="{}".format(units_list[-1]),
+                                xaxis = {'type' : 'date'}
+                            )
+
+                            self.generate_png(df_tmp=df_tmp,
+                                group=group,
+                                test_id_list=test_id_list,
+                                test_tag=test_tag,
+                                test_rig=test_rig,
+                                kpi_path_list=kpi_path_list,
+                                kpi_fig=kpi_fig)
+
+                            #kpi_fig = (px.bar(df_tmp, x="Date", y=["Subtest-Pass","Subtest-Fail"], title="This is the title"))
+                            #kpi_fig = (px.bar(df_tmp, x="Date", y="Subtest-Pass", title="This is the title"))
+                            
+                            df_tmp["Percent"] = df_tmp["Subtest-Pass"] / (df_tmp["Subtest-Pass"] + df_tmp["Subtest-Fail"])
+
+                            fig1 = (px.scatter(df_tmp, x="Date", y="Percent",
+                                custom_data=['short-description','Percent','Subtest-Pass','Subtest-Fail'],
+                                color="short-description", hover_name="short-description",
+                                size_max=60)).update_traces(mode='lines+markers')
+
+                            fig1.update_traces(
+                                hovertemplate="<br>".join([
+                                    "short-description: %{customdata[0]}",
+                                    "Percent: %{customdata[1]:.2%}",
+                                    "Subtest-Pass: %{customdata[2]}",
+                                    "Subtest-Fail: %{customdata[3]}"
+                                    ])
+                            )
+
+                            #kpi_fig = go.Figure(data=fig1.data + fig2.data)
+                            # the kpi_fig is a go.Figure
+                            kpi_fig = go.Figure(data=fig1.data)
+                            kpi_fig.update_layout(yaxis=dict(tickformat='.2%'))
+                            kpi_fig.update_layout(
+                                title="{} : {} : Subtests : {} : {}".format(test_id_list[-1], group, test_tag, test_rig),
+                                xaxis_title="Time",
+                                yaxis_title="Subtest Percent Pass",
+                                xaxis = {'type' : 'date'}
+                            )
+
+                            # modify the group 
+                            group = group + "_subtests"
+
+                            self.generate_png(df_tmp=df_tmp,
+                                group=group,
+                                test_id_list=test_id_list,
+                                test_tag=test_tag,
+                                test_rig=test_rig,
+                                kpi_path_list=kpi_path_list,
+                                kpi_fig=kpi_fig)
+                            
+                            #kpi_fig.add_scatter(x=df_tmp['Date'], y=df_tmp['Subtest-Fail']).update_traces(mode='lines+markers')
+                            
                         else:
                             kpi_fig = (px.scatter(df_tmp, x="Date", y="numeric-score",
                                  color="short-description", hover_name="short-description",
                                  size_max=60)).update_traces(mode='lines+markers')
 
-                        kpi_fig.update_layout(
-                            title="{} : {} : {} : {}".format(test_id_list[-1], group, test_tag, test_rig),
-                            xaxis_title="Time",
-                            yaxis_title="{}".format(units_list[-1]),
-                            xaxis = {'type' : 'date'}
-                        )
-                        # save the figure - figures will be over written png 
-                        # for testing 
-                        png_server_img = ''
-                        #generate the png files
-                        if self.png:
-                            if self.png_generated:
-                                pass
-                            else:
-                                print("generate png and kpi images from kpi kpi_path:{}".format(df_tmp['kpi_path']))
-                                # generate png img path
-                                png_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_kpi.png".format( group, test_tag, test_rig))
-                                png_path = png_path.replace(' ','')
-                                # generate html graphics path
-                                html_path = os.path.join(kpi_path_list[-1],"{}_{}_{}_kpi.html".format( group, test_tag, test_rig))
-                                html_path = html_path.replace(' ','')
-                                # NOTE: html links to png do not like spaces
-                                png_server_img = self.server + png_path.replace(self.cut,'')
-                                # generate png image
-                                try:
-                                    kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
-                                except:
-                                    print("ERROR: {database} Was correct database passed in, moved or duplicates of same name?".format(database=self.database))
-                                # generate html image (interactive)
-                                kpi_fig.write_html(html_path)
-                                img_kpi_html_path = self.server + html_path
-                                img_kpi_html_path = img_kpi_html_path.replace(self.cut,'')
+                            kpi_fig.update_layout(
+                                title="{} : {} : {} : {}".format(test_id_list[-1], group, test_tag, test_rig),
+                                xaxis_title="Time",
+                                yaxis_title="{}".format(units_list[-1]),
+                                xaxis = {'type' : 'date'}
+                            )
 
-                                self.html_results += """
-                                <a href={img_kpi_html_path} target="_blank">
-                                    <img src={png_server_img}>
-                                </a>
-                                """.format(img_kpi_html_path=img_kpi_html_path,png_server_img=png_server_img)
-
-                        # link to interactive results
-                        kpi_html_path = self.server + html_path
-                        kpi_html_path = kpi_html_path.replace(self.cut,'')
-                        #self.html_results +="""<br>"""
-                        # link to full test results
-                        report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
-                        report_index_html_path = report_index_html_path.replace(self.cut,'')
-                        self.html_results +="""<a href={report_index_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_Report </a>
-                        """.format(report_index_html_path=report_index_html_path,test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
-                        self.html_results +="""<br>"""
-                        self.html_results +="""<br>"""
-                        self.html_results +="""<br>"""
-                        self.html_results +="""<br>"""
-                        self.html_results +="""<br>"""
-        
-        # TODO see if this stops the regenration of the graphs each time
-        self.png_generated = True
+                            self.generate_png(df_tmp=df_tmp,
+                                group=group,
+                                test_id_list=test_id_list,
+                                test_tag=test_tag,
+                                test_rig=test_rig,
+                                kpi_path_list=kpi_path_list,
+                                kpi_fig=kpi_fig)
 
 
 # Feature, Sum up the subtests passed/failed from the kpi files for each run, poke those into the database, and generate a kpi graph for them.
