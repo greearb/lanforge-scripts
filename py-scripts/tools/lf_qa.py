@@ -271,7 +271,7 @@ class csv_sql():
         png_server_img = self.server + png_path.replace(self.cut,'')
         # generate png image
         try:
-            kpi_fig.write_image(png_path,scale=1,width=1200,height=350)
+            kpi_fig.write_image(png_path,scale=1,width=1200,height=300)
         except:
             print("ERROR: {database} Was correct database passed in, moved or duplicates of same name?".format(database=self.database))
         # generate html image (interactive)
