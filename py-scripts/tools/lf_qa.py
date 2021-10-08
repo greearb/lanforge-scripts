@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
-Usage: lf_qa.py --store --png --show --path <path to directories to traverse> --database <name of database> 
+Usage: lf_qa.py --store --png --show --path <path to directories to traverse> --database <name of database>
 '''
 import sys
 import os
@@ -64,8 +64,12 @@ class csv_sql():
 
     def get_dut_info(self):
         # try:
-        print("get_dut_info DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}"
-              .format(DUT=self.dut_model_num, SW=self.dut_sw_version, HW=self.dut_hw_version, SN=self.dut_serial_num))
+        print(
+            "get_dut_info DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}" .format(
+                DUT=self.dut_model_num,
+                SW=self.dut_sw_version,
+                HW=self.dut_hw_version,
+                SN=self.dut_serial_num))
 
         dut_dict = {
             'DUT': [self.dut_model_num],
@@ -92,16 +96,18 @@ class csv_sql():
             test_id_list = list(kpi_df['test-id'])
             test_id = list(set(test_id_list))
             test_id = test_id[-1]  # done to get element of list
-        except:
-            print("exception reading test_id in csv _kpi_path {kpi_path}".format(
-                kpi_path=_kpi_path))
+        except BaseException:
+            print(
+                "exception reading test_id in csv _kpi_path {kpi_path}".format(
+                    kpi_path=_kpi_path))
         try:
             test_tag_list = list(kpi_df['test-tag'])
             test_tag = list(set(test_tag_list))
             test_tag = test_tag[-1]  # done to get element of list
-        except:
+        except BaseException:
             print(
-                "exception reading test-tag in csv _kpi_path {kpi_path}, try meta.txt".format(kpi_path=_kpi_path))
+                "exception reading test-tag in csv _kpi_path {kpi_path}, try meta.txt".format(
+                    kpi_path=_kpi_path))
 
         # if test_tag still NA then try meta file
         try:
@@ -109,7 +115,7 @@ class csv_sql():
                 _kpi_path = _kpi_path.replace('kpi.csv', '')
                 use_meta_test_tag, test_tag = self.get_test_tag_from_meta(
                     _kpi_path)
-        except:
+        except BaseException:
             print("exception reading meta.txt _kpi_path: {kpi_path}".format(
                 kpi_path=_kpi_path))
         if use_meta_test_tag:
@@ -142,17 +148,19 @@ class csv_sql():
                     if "test_tag" in line:
                         test_tag = line.replace("test_tag", "")
                         test_tag = test_tag.strip()
-                        print("meta_data_path {meta_data_path} test_tag {test_tag}".format(
-                            meta_data_path=meta_data_path, test_tag=test_tag))
+                        print(
+                            "meta_data_path {meta_data_path} test_tag {test_tag}".format(
+                                meta_data_path=meta_data_path,
+                                test_tag=test_tag))
                 meta_data_fd.close()
-        except:
+        except BaseException:
             print("exception reading test_tag from {_kpi_path}".format(
                 _kpi_path=_kpi_path))
 
         return use_meta_test_tag, test_tag
 
     def get_suite_html(self):
-        suite_html_results = """ 
+        suite_html_results = """
             <table class="dataframe" border="1">
                     <thead>
                         <tr style="text-align: center;">
@@ -189,13 +197,13 @@ class csv_sql():
         suite_html_results += """
                     </tbody>
                 </table>
-                <br> 
+                <br>
                 """
 
         return suite_html_results
 
     def get_kpi_chart_html(self):
-        kpi_chart_html = """ 
+        kpi_chart_html = """
             <table border="0">
                 <tbody>
         """
@@ -222,7 +230,7 @@ class csv_sql():
                     <td>
                         <a href="{kpi_chart_0}"  target="_blank">
                             <img src="{kpi_chart_1}" style="width:400px;max-width:400px" title="{kpi_chart_2}">
-                        </a> 
+                        </a>
                     </td>
                 """.format(test_tag=test_tag, test_id=test_id, kpi_chart_0=kpi_chart, kpi_chart_1=kpi_chart, kpi_chart_2=kpi_chart)
                 table_index += 1
@@ -262,13 +270,16 @@ class csv_sql():
         self.conn = sqlite3.connect(self.database)
         try:
             self.df.to_sql(self.table, self.conn, if_exists='append')
-        except:
+        except BaseException:
             print("attempt to append to database with different column layout, caused an exception, input new name --database <new name>")
-            print("Error attempt to append to database with different column layout, caused an exception, input new name --database <new name>", file=sys.stderr)
+            print(
+                "Error attempt to append to database with different column layout, caused an exception, input new name --database <new name>",
+                file=sys.stderr)
             exit(1)
         self.conn.close()
 
-    def generate_png(self, group, test_id_list, test_tag, test_rig, kpi_path_list, kpi_fig, df_tmp):
+    def generate_png(self, group, test_id_list, test_tag,
+                     test_rig, kpi_path_list, kpi_fig, df_tmp):
         # save the figure - figures will be over written png
         # for testing
         png_server_img = ''
@@ -288,9 +299,10 @@ class csv_sql():
         # generate png image
         try:
             kpi_fig.write_image(png_path, scale=1, width=1200, height=300)
-        except:
-            print("ERROR: {database} Was correct database passed in, moved or duplicates of same name?".format(
-                database=self.database))
+        except BaseException:
+            print(
+                "ERROR: {database} Was correct database passed in, moved or duplicates of same name?".format(
+                    database=self.database))
         # generate html image (interactive)
         kpi_fig.write_html(html_path)
         img_kpi_html_path = self.server + html_path
@@ -316,7 +328,9 @@ class csv_sql():
         self.html_results += """<br>"""
 
     def generate_graph_png(self):
-        print("generate png and html to display, generate time: {}".format(time.time()))
+        print(
+            "generate png and html to display, generate time: {}".format(
+                time.time()))
 
         # https://datacarpentry.org/python-ecology-lesson/09-working-with-sql/index.html-
         self.conn = sqlite3.connect(self.database)
@@ -326,7 +340,7 @@ class csv_sql():
         # sort by date from oldest to newest.
         try:
             df3 = df3.sort_values(by='Date')
-        except:
+        except BaseException:
             print("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
             exit(1)
         self.conn.close()
@@ -353,7 +367,7 @@ class csv_sql():
                 for group in graph_group_list:
                     df_tmp = df3.loc[(df3['test-rig'] == test_rig) & (
                         df3['Graph-Group'] == str(group)) & (df3['test-tag'] == str(test_tag))]
-                    if df_tmp.empty == False:
+                    if not df_tmp.empty:
                         # Note if graph group is score there is sub tests for pass and fail
                         # would like a percentage
 
@@ -366,37 +380,51 @@ class csv_sql():
                         # the [0] will get the latest versions for the report
                         self.dut_model_num_list = list(
                             set(list(df_tmp['dut-model-num'])))
-                        print("in png self.dut_model_num_list {dut_model_num_list}".format(
-                            dut_model_num_list=self.dut_model_num_list))
-                        if self.dut_model_num_list[0] != None:
+                        print(
+                            "in png self.dut_model_num_list {dut_model_num_list}".format(
+                                dut_model_num_list=self.dut_model_num_list))
+                        if self.dut_model_num_list[0] is not None:
                             self.dut_model_num = self.dut_model_num_list[0]
                         self.dut_sw_version_list = list(
                             set(list(df_tmp['dut-sw-version'])))
-                        if self.dut_sw_version_list[0] != None:
+                        if self.dut_sw_version_list[0] is not None:
                             self.dut_sw_version = self.dut_sw_version_list[0]
                         self.dut_hw_version_list = list(
                             set(list(df_tmp['dut-hw-version'])))
-                        if self.dut_hw_version_list[0] != None:
+                        if self.dut_hw_version_list[0] is not None:
                             self.dut_hw_version = self.dut_hw_version_list[0]
                         self.dut_serial_num_list = list(
                             set(list(df_tmp['dut-serial-num'])))
-                        if self.dut_serial_num_list[0] != None:
+                        if self.dut_serial_num_list[0] is not None:
                             self.dut_serial_num_ = self.dut_serial_num_list[0]
 
-                        print("In png DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}"
-                              .format(DUT=self.dut_model_num_list, SW=self.dut_sw_version_list, HW=self.dut_hw_version_list, SN=self.dut_serial_num_list))
+                        print(
+                            "In png DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}" .format(
+                                DUT=self.dut_model_num_list,
+                                SW=self.dut_sw_version_list,
+                                HW=self.dut_hw_version_list,
+                                SN=self.dut_serial_num_list))
 
                         units_list = list(df_tmp['Units'])
                         print(
                             "GRAPHING::: test-rig {} test-tag {}  Graph-Group {}".format(test_rig, test_tag, group))
                         # group of Score will have subtest
                         if group == 'Score':
-                            # Print out the Standard Score report , May want to check for empty pass fail
-                            kpi_fig = (px.scatter(df_tmp, x="Date", y="numeric-score",
-                                                  custom_data=[
-                                                      'numeric-score', 'Subtest-Pass', 'Subtest-Fail'],
-                                                  color="short-description", hover_name="short-description",
-                                                  size_max=60)).update_traces(mode='lines+markers')
+                            # Print out the Standard Score report , May want to
+                            # check for empty pass fail
+                            kpi_fig = (
+                                px.scatter(
+                                    df_tmp,
+                                    x="Date",
+                                    y="numeric-score",
+                                    custom_data=[
+                                        'numeric-score',
+                                        'Subtest-Pass',
+                                        'Subtest-Fail'],
+                                    color="short-description",
+                                    hover_name="short-description",
+                                    size_max=60)).update_traces(
+                                mode='lines+markers')
 
                             kpi_fig.update_traces(
                                 hovertemplate="<br>".join([
@@ -429,11 +457,20 @@ class csv_sql():
                                 (df_tmp["Subtest-Pass"] +
                                  df_tmp["Subtest-Fail"])
 
-                            fig1 = (px.scatter(df_tmp, x="Date", y="Percent",
-                                               custom_data=[
-                                                   'short-description', 'Percent', 'Subtest-Pass', 'Subtest-Fail'],
-                                               color="short-description", hover_name="short-description",
-                                               size_max=60)).update_traces(mode='lines+markers')
+                            fig1 = (
+                                px.scatter(
+                                    df_tmp,
+                                    x="Date",
+                                    y="Percent",
+                                    custom_data=[
+                                        'short-description',
+                                        'Percent',
+                                        'Subtest-Pass',
+                                        'Subtest-Fail'],
+                                    color="short-description",
+                                    hover_name="short-description",
+                                    size_max=60)).update_traces(
+                                mode='lines+markers')
 
                             fig1.update_traces(
                                 hovertemplate="<br>".join([
@@ -470,9 +507,15 @@ class csv_sql():
                             #kpi_fig.add_scatter(x=df_tmp['Date'], y=df_tmp['Subtest-Fail']).update_traces(mode='lines+markers')
 
                         else:
-                            kpi_fig = (px.scatter(df_tmp, x="Date", y="numeric-score",
-                                                  color="short-description", hover_name="short-description",
-                                                  size_max=60)).update_traces(mode='lines+markers')
+                            kpi_fig = (
+                                px.scatter(
+                                    df_tmp,
+                                    x="Date",
+                                    y="numeric-score",
+                                    color="short-description",
+                                    hover_name="short-description",
+                                    size_max=60)).update_traces(
+                                mode='lines+markers')
 
                             kpi_fig.update_layout(
                                 title="{} : {} : {} : {}".format(
@@ -491,7 +534,8 @@ class csv_sql():
                                               kpi_fig=kpi_fig)
 
 
-# Feature, Sum up the subtests passed/failed from the kpi files for each run, poke those into the database, and generate a kpi graph for them.
+# Feature, Sum up the subtests passed/failed from the kpi files for each
+# run, poke those into the database, and generate a kpi graph for them.
 def main():
 
     parser = argparse.ArgumentParser(
@@ -503,27 +547,43 @@ def main():
             ''',
         description='''\
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
-Usage: lf_qa.py --store --png --path <path to directories to traverse> --database <name of database> 
+Usage: lf_qa.py --store --png --path <path to directories to traverse> --database <name of database>
 
         ''')
     parser.add_argument(
-        '--path', help='--path top directory path to kpi if regererating database or png files', default='')
+        '--path',
+        help='--path top directory path to kpi if regererating database or png files',
+        default='')
     parser.add_argument('--file', help='--file kpi.csv  default: kpi.csv',
                         default='kpi.csv')  # TODO is this needed
     parser.add_argument(
-        '--database', help='--database qa_test_db  default: qa_test_db', default='qa_test_db')
+        '--database',
+        help='--database qa_test_db  default: qa_test_db',
+        default='qa_test_db')
     parser.add_argument(
-        '--table', help='--table qa_table  default: qa_table', default='qa_table')
+        '--table',
+        help='--table qa_table  default: qa_table',
+        default='qa_table')
     parser.add_argument(
-        '--server', help='--server http://<server ip>/   default: http://192.168.95.6/', default='http://192.168.95.6/')
+        '--server',
+        help='--server http://<server ip>/   default: http://192.168.95.6/',
+        default='http://192.168.95.6/')
     parser.add_argument(
-        '--cut', help='--cut /home/lanforge/ used to adjust server path default: /home/lanforge/', default='/home/lanforge/')
+        '--cut',
+        help='--cut /home/lanforge/ used to adjust server path default: /home/lanforge/',
+        default='/home/lanforge/')
     parser.add_argument(
-        '--store', help='--store , store kpi to db, action store_true', action='store_true')
+        '--store',
+        help='--store , store kpi to db, action store_true',
+        action='store_true')
     parser.add_argument(
-        '--png', help='--png,  generate png for kpi in path, generate display, action store_true', action='store_true')
+        '--png',
+        help='--png,  generate png for kpi in path, generate display, action store_true',
+        action='store_true')
     parser.add_argument(
-        '--dir', help="--dir <results directory> default lf_qa", default="lf_qa")
+        '--dir',
+        help="--dir <results directory> default lf_qa",
+        default="lf_qa")
 
     args = parser.parse_args()
 
@@ -536,14 +596,14 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
     __dir = args.dir
     __cut = args.cut
 
-    print("config: path:{path} file:{file} database:{database} table:{table} server:{server} store:{store} png:{png}"
-          .format(path=__path, file=__file, database=__database, table=__table, server=__server, store=args.store, png=args.png))
+    print("config: path:{path} file:{file} database:{database} table:{table} server:{server} store:{store} png:{png}" .format(
+        path=__path, file=__file, database=__database, table=__table, server=__server, store=args.store, png=args.png))
 
-    if(__path == '' and args.store == True):
+    if(__path == '' and args.store):
         print("--path <path of kpi.csv> must be entered if --store ,  exiting")
         exit(1)
 
-    if(args.png == True and args.store == False):
+    if(args.png and args.store == False):
         print("if --png set to create png files then --store must also be set, exiting")
         exit(1)
 
@@ -627,7 +687,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         print("html report: {}".format(html_report))
         try:
             report.write_pdf_with_timestamp()
-        except:
+        except BaseException:
             print("exception write_pdf_with_timestamp()")
 
 
