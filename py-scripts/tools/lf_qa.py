@@ -271,9 +271,11 @@ class csv_sql():
         try:
             self.df.to_sql(self.table, self.conn, if_exists='append')
         except BaseException:
-            print("attempt to append to database with different column layout, caused an exception, input new name --database <new name>")
+            print("attempt to append to database with different column layout,\
+                 caused an exception, input new name --database <new name>")
             print(
-                "Error attempt to append to database with different column layout, caused an exception, input new name --database <new name>",
+                "Error attempt to append to database with different column layout,\
+                     caused an exception, input new name --database <new name>",
                 file=sys.stderr)
             exit(1)
         self.conn.close()
@@ -315,7 +317,7 @@ class csv_sql():
         # link to interactive results
         kpi_html_path = self.server + html_path
         kpi_html_path = kpi_html_path.replace(self.cut, '')
-        #self.html_results +="""<br>"""
+        # self.html_results +="""<br>"""
         # link to full test results
         report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
         report_index_html_path = report_index_html_path.replace(self.cut, '')
@@ -352,10 +354,11 @@ class csv_sql():
         print("graph_group_list: {}".format(graph_group_list))
 
         # prior to 5.4.3 there was not test-tag, the test tag is in the meta data
-        #print("dataframe df3 {df3}".format(df3=df3))
+        # print("dataframe df3 {df3}".format(df3=df3))
+
         test_tag_list = list(df3['test-tag'])
         test_tag_list = list(set(test_tag_list))
-        #print("test_tag_list: {}".format(test_tag_list) )
+        # print("test_tag_list: {}".format(test_tag_list) )
 
         test_rig_list = list(df3['test-rig'])
         test_rig_list = list(set(test_rig_list))
@@ -450,9 +453,6 @@ class csv_sql():
                                               kpi_path_list=kpi_path_list,
                                               kpi_fig=kpi_fig)
 
-                            #kpi_fig = (px.bar(df_tmp, x="Date", y=["Subtest-Pass","Subtest-Fail"], title="This is the title"))
-                            #kpi_fig = (px.bar(df_tmp, x="Date", y="Subtest-Pass", title="This is the title"))
-
                             df_tmp["Percent"] = df_tmp["Subtest-Pass"] / \
                                 (df_tmp["Subtest-Pass"] +
                                  df_tmp["Subtest-Fail"])
@@ -480,9 +480,10 @@ class csv_sql():
                                     "Subtest-Fail: %{customdata[3]}"
                                 ])
                             )
-
-                            #kpi_fig = go.Figure(data=fig1.data + fig2.data)
-                            # the kpi_fig is a go.Figure
+                            '''
+                            kpi_fig = go.Figure(data=fig1.data + fig2.data)
+                            the kpi_fig is a go.Figure
+                            '''
                             kpi_fig = go.Figure(data=fig1.data)
                             kpi_fig.update_layout(yaxis=dict(tickformat='.2%'))
                             kpi_fig.update_layout(
@@ -504,7 +505,7 @@ class csv_sql():
                                               kpi_path_list=kpi_path_list,
                                               kpi_fig=kpi_fig)
 
-                            #kpi_fig.add_scatter(x=df_tmp['Date'], y=df_tmp['Subtest-Fail']).update_traces(mode='lines+markers')
+                            # kpi_fig.add_scatter(x=df_tmp['Date'], y=df_tmp['Subtest-Fail']).update_traces(mode='lines+markers')
 
                         else:
                             kpi_fig = (
@@ -596,18 +597,23 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
     __dir = args.dir
     __cut = args.cut
 
-    print("config: path:{path} file:{file} database:{database} table:{table} server:{server} store:{store} png:{png}" .format(
-        path=__path, file=__file, database=__database, table=__table, server=__server, store=args.store, png=args.png))
+    print("config:\
+            path:{path} file:{file}\
+            database:{database} table:{table} \
+            server:{server} store:{store} png:{png}" .format(
+        path=__path, file=__file,
+        database=__database, table=__table,
+        server=__server, store=args.store, png=args.png))
 
     if(__path == '' and args.store):
         print("--path <path of kpi.csv> must be entered if --store ,  exiting")
         exit(1)
 
-    if(args.png and args.store == False):
+    if(args.png and args.store is False):
         print("if --png set to create png files then --store must also be set, exiting")
         exit(1)
 
-    if args.store == False and args.png == False:
+    if args.store is False and args.png is False:
         print("Need to enter an action of --store --png ")
 
     # create report class for reporting
@@ -660,7 +666,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         report.build_link(
             "All Test-Rig Test Suites Results Directory", report_parent_path)
 
- # links table for tests TODO : can this be a table
+        # links table for tests TODO : can this be a table
         report.set_table_title("Test Suite")
         report.build_table_title()
         suite_html = csv_dash.get_suite_html()
