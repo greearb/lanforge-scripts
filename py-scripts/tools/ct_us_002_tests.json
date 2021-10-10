@@ -157,7 +157,7 @@
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20' ",
-                    " --raw_line 'spatial_streams: 4' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K_9984' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K_9984' ",
                     " --set DUT_SET_NAME"
                 ]
             },
@@ -231,7 +231,7 @@
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: 20'",
-                    " --raw_line 'spatial_streams: 4' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AX200'",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AX200'",
                     " --set DUT_SET_NAME"
                 ]
             },
