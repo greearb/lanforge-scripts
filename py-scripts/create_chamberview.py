@@ -41,7 +41,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
@@ -52,28 +51,28 @@ class CreateChamberview(cv):
     def __init__(self,
                  lfmgr="localhost",
                  port="8080",
-                ):
+                 ):
         super().__init__(
-                 lfclient_host=lfmgr,
-                 lfclient_port=port,
+            lfclient_host=lfmgr,
+            lfclient_port=port,
         )
         self.lfmgr = lfmgr
         self.port = port
 
-    def clean_cv_scenario(self,type="Network-Connectivity",scenario_name=None):
-        self.rm_cv_text_blob(type,scenario_name)
+    def clean_cv_scenario(self, type="Network-Connectivity", scenario_name=None):
+        self.rm_cv_text_blob(type, scenario_name)
 
     def setup(self,
-             create_scenario="",
-             line="",
-             raw_line=[]):
+              create_scenario="",
+              line="",
+              raw_line=[]):
 
         if raw_line:
             print("creating %s scenario" % create_scenario)
             for create_lines in raw_line:
-                self.pass_raw_lines_to_cv(create_scenario,create_lines[0])
+                self.pass_raw_lines_to_cv(create_scenario, create_lines[0])
 
-        #check for lines
+        # check for lines
         if line:
             scenario_name = create_scenario
             line = line
@@ -130,43 +129,43 @@ class CreateChamberview(cv):
                             continue
 
                 self.add_text_blob_line(scenario_name,
-                                            Resource,
-                                            Profile,
-                                            Amount,
-                                            DUT,
-                                            DUT_Radio,
-                                            Uses1,
-                                            Uses2,
-                                            Traffic,
-                                            Freq,
-                                            VLAN
-                                            );  # To manage scenario
+                                        Resource,
+                                        Profile,
+                                        Amount,
+                                        DUT,
+                                        DUT_Radio,
+                                        Uses1,
+                                        Uses2,
+                                        Traffic,
+                                        Freq,
+                                        VLAN
+                                        )  # To manage scenario
         if not line and not raw_line:
             raise Exception("scenario creation failed")
 
         return True
 
-    def build(self,scenario_name):
+    def build(self, scenario_name):
         self.sync_cv()  # chamberview sync
         time.sleep(2)
         self.apply_cv_scenario(scenario_name)  # Apply scenario
-        self.show_text_blob(None, None, False) # Show changes on GUI
+        self.show_text_blob(None, None, False)  # Show changes on GUI
         self.apply_cv_scenario(scenario_name)  # Apply scenario
         self.build_cv_scenario()  # build scenario
         tries = 0
-        while (True):
+        while True:
             self.get_popup_info_and_close()
             if not self.get_cv_is_built():
                 # It can take a while to build a large scenario, so wait-time
                 # is currently max of 5 minutes.
-                print("Waiting %i/300 for Chamber-View to be built." % (tries))
+                print("Waiting %i/300 for Chamber-View to be built." % tries)
                 tries += 1
-                if (tries > 300):
+                if tries > 300:
                     break
                 time.sleep(1)
             else:
                 break
-        print("completed building %s scenario" %scenario_name)
+        print("completed building %s scenario" % scenario_name)
 
 
 def main():
