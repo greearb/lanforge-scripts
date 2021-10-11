@@ -54,7 +54,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 # from cv_dut_profile import cv_dut as dut
@@ -92,7 +91,6 @@ class DUT(dut):
         self.dut_name = dut_name
         self.ssid = ssid
 
-
     def setup(self):
         self.create_dut()
 
@@ -117,7 +115,7 @@ class DUT(dut):
                 self.ssid[j]['flag'] = []
                 self.ssid[j].keys
 
-                flag=0x0
+                flag = 0x0
                 if 'security' in self.ssid[j].keys():
                     self.ssid[j]['security'] = self.ssid[j]['security'].split('|')
                     for security in self.ssid[j]['security']:
@@ -172,10 +170,10 @@ def main():
                   port=args.port,
                   dut_name=args.dut_name,
                   ssid=args.ssid,
-                  sw_version = args.sw_version,
-                  hw_version = args.hw_version,
-                  serial_num = args.serial_num,
-                  model_num = args.model_num,
+                  sw_version=args.sw_version,
+                  hw_version=args.hw_version,
+                  serial_num=args.serial_num,
+                  model_num=args.model_num,
                   dut_flags=args.dut_flag
                   )
 
