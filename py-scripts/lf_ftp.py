@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """ lf_ftp.py will verify that N clients connected on specified band and can simultaneously download/upload some amount of file from FTP server and measuring the time taken by client to download/upload the file.
     cli- python3 lf_ftp.py --mgr localhost --mgr_port 8080 --upstream_port eth1 --ssid FTP --security open --passwd BLANK --ap_name WAC505 --ap_ip 192.168.213.90 --bands Both --directions Download --twog_radio wiphy1 --fiveg_radio wiphy0 --file_size 2MB --num_stations 40 --Both_duration 1 --traffic_duration 2 --ssh_port 22_
     Copyright 2021 Candela Technologies Inc
@@ -11,6 +12,7 @@ from datetime import datetime
 import time
 import os
 import matplotlib.patches as mpatches
+import pandas as pd
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -301,7 +303,7 @@ class FtpTest(LFCliBase):
         for i in range(self.num_sta):
             list_of_time.append(0)
         #running layer 4 traffic upto user given time
-        while str(datetime.datetime.now() - time1) <= self.traffic_duration:
+        while str(datetime.now() - time1) <= self.traffic_duration:
             if list_of_time.count(0) == 0:
                 break
 
@@ -309,11 +311,11 @@ class FtpTest(LFCliBase):
 
                 # run script upto given time
                 if counter == 0:
-                    if str(datetime.datetime.now() - time1) >= self.duration:
+                    if str(datetime.now() - time1) >= self.duration:
                         counter = counter + 1
                         break
                 else:
-                    if str(datetime.datetime.now() - time1) >= self.traffic_duration:
+                    if str(datetime.now() - time1) >= self.traffic_duration:
                         break
 
                 for i in range(self.num_sta):
@@ -732,10 +734,10 @@ def main():
     args = parser.parse_args()
 
     # 1st time stamp for test duration
-    time_stamp1 = datetime.datetime.now()
+    time_stamp1 = datetime.now()
 
     # use for creating ftp_test dictionary
-    iteraration_num = 0
+    interation_num = 0
 
     # empty dictionary for whole test data
     ftp_data = {}
@@ -794,7 +796,7 @@ def main():
                               ssh_port=args.ssh_port
                               )
 
-                iteraration_num = iteraration_num + 1
+                interation_num = interation_num + 1
                 obj.file_create()
                 obj.set_values()
                 obj.precleanup()
@@ -804,7 +806,7 @@ def main():
                     exit(1)
 
                 # First time stamp
-                time1 = datetime.datetime.now()
+                time1 = datetime.now()
 
                 obj.start(False, False)
 
@@ -815,19 +817,19 @@ def main():
                 pass_fail = obj.pass_fail_check(time_list)
 
                 # dictionary of whole data
-                ftp_data[iteraration_num] = obj.ftp_test_data(time_list, pass_fail, args.bands, args.file_sizes,
+                ftp_data[interation_num] = obj.ftp_test_data(time_list, pass_fail, args.bands, args.file_sizes,
                                                               args.directions, args.num_stations)
 
                 obj.stop()
                 obj.postcleanup()
 
     # 2nd time stamp for test duration
-    time_stamp2 = datetime.datetime.now()
+    time_stamp2 = datetime.now()
 
     # total time for test duration
     test_duration = str(time_stamp2 - time_stamp1)[:-7]
 
-    date = str(datetime.datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
+    date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
 
     #print(ftp_data)
 
