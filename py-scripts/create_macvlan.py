@@ -96,6 +96,8 @@ Generic command layout:
 ./create_macvlan.py --radio 1.wiphy0 --macvlan_parent eth1 --num_ports 3
                  --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2 --connections_per_port 2
                  --netmask 255.255.240.0 --gateway 10.40.0.1
+                 
+                 You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices. 
 
 ''')
     parser.add_argument('--num_stations', help='Number of stations to create', default=0)
@@ -103,7 +105,7 @@ Generic command layout:
     parser.add_argument('-u', '--upstream_port',
                         help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
                         default='1.eth1')
-    parser.add_argument('--macvlan_parent', help='specifies parent port for macvlan creation', default=None)
+    parser.add_argument('--macvlan_parent', help='specifies parent port for macvlan creation', required=True)
     parser.add_argument('--first_port', help='specifies name of first port to be used', default=None)
     parser.add_argument('--num_ports', help='number of ports to create', default=1)
     parser.add_argument('--connections_per_port', help='specifies number of connections to be used per port', default=1,
