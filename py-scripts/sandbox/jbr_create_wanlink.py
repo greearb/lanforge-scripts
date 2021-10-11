@@ -22,12 +22,14 @@ if sys.version_info[0] != 3:
     print("This script requires Python3")
     exit()
 
-sys.path.insert(1, "../../py-json")
+import importlib
 import argparse
 import pprint
-from LANforge.lf_json_autogen import LFSession
-from LANforge.lf_json_autogen import LFJsonCommand
-from LANforge.lf_json_autogen import LFJsonQuery
+sys.path.insert(1, "../../")
+lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
+from lanforge_client.lanforge_api import LFSession
+from lanforge_client.lanforge_api import LFJsonCommand
+from lanforge_client.lanforge_api import LFJsonQuery
 
 
 # import LANforge.lfcli_base
@@ -41,7 +43,7 @@ def main():
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
         description='tests creating wanlink')
-    parser.add_argument("--host", help='specify the GUI to connect to, assumes port 8080')
+    parser.add_argument("--host", "--mgr", help='specify the GUI to connect to, assumes port 8080')
     parser.add_argument("--wl_name", help='name of the wanlink to create')
     parser.add_argument("--resource", help='LANforge resource')
     parser.add_argument("--debug", help='turn on debugging', action="store_true")
