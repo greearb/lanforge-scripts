@@ -31,7 +31,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -98,7 +97,6 @@ class ConnectTest(LFCliBase):
             pprint.pprint(self.sta_list)
             print("---- ~Station List ----- ----- ----- ----- ----- ----- \n")
 
-
     def build(self):
         # Build stations
         self.station_profile.use_security(self.security, self.ssid, self.password)
@@ -135,7 +133,8 @@ class ConnectTest(LFCliBase):
                     associated_map[sta_name] = 1
                     if self.debug:
                         if self.ipv6:
-                            print("Associated", sta_name, sta_status['interface']['ap'], sta_status['interface']['ipv6 address'])
+                            print("Associated", sta_name, sta_status['interface']['ap'],
+                                  sta_status['interface']['ipv6 address'])
                         else:
                             print("Associated", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
 
@@ -243,7 +242,7 @@ Generic ipv4 command example:
 
     args = parser.parse_args()
 
-    if (args.radio is None):
+    if args.radio is None:
         raise ValueError("--radio required")
 
     num_sta = 2
@@ -289,6 +288,7 @@ Generic ipv4 command example:
     if ip_test.passes():
         ip_test.add_event(name="test_ip_connection.py", message="Full test passed, all stations associated and got IP")
         ip_test.exit_success()
+
 
 if __name__ == "__main__":
     main()
