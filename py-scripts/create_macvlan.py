@@ -8,7 +8,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -29,7 +28,7 @@ class CreateMacVlan(Realm):
                  netmask=None,
                  gateway=None,
                  dhcp=True,
-                 port_list=[],
+                 port_list=None,
                  ip_list=None,
                  connections_per_port=1,
                  _debug_on=False,
@@ -51,7 +50,6 @@ class CreateMacVlan(Realm):
 
         self.mvlan_profile = self.new_mvlan_profile()
 
-
         self.mvlan_profile.num_macvlans = int(num_ports)
         self.mvlan_profile.desired_macvlans = self.port_list
         self.mvlan_profile.macvlan_parent = self.macvlan_parent
@@ -68,6 +66,7 @@ class CreateMacVlan(Realm):
         self.mvlan_profile.create(admin_down=False, sleep_time=.5, debug=self.debug)
         self._pass("PASS: MACVLAN build finished")
         self.created_ports += self.mvlan_profile.created_macvlans
+
 
 def main():
     parser = LFCliBase.create_bare_argparse(
@@ -116,8 +115,8 @@ Generic command layout:
     parser.add_argument('--first_mvlan_ip', help='specifies first static ip address to be used or dhcp', default=None)
     parser.add_argument('--netmask', help='specifies netmask to be used with static ip addresses', default=None)
     parser.add_argument('--gateway', help='specifies default gateway to be used with static addressing', default=None)
-    parser.add_argument('--cxs', help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group'
-                        , default=None)
+    parser.add_argument('--cxs', help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group',
+                        default=None)
     args = parser.parse_args()
 
     port_list = []
