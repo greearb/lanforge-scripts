@@ -59,13 +59,13 @@ class CreateChamberview(cv):
         self.lfmgr = lfmgr
         self.port = port
 
-    def clean_cv_scenario(self, type="Network-Connectivity", scenario_name=None):
-        self.rm_cv_text_blob(type, scenario_name)
+    def clean_cv_scenario(self, cv_type="Network-Connectivity", scenario_name=None):
+        self.rm_cv_text_blob(cv_type, scenario_name)
 
     def setup(self,
               create_scenario="",
               line="",
-              raw_line=[]):
+              raw_line=None):
 
         if raw_line:
             print("creating %s scenario" % create_scenario)
@@ -205,7 +205,7 @@ def main():
                                            port=args.port,
                                            )
     if args.delete_scenario:
-        Create_Chamberview.clean_cv_scenario(type="Network-Connectivity", scenario_name=args.create_scenario)
+        Create_Chamberview.clean_cv_scenario(cv_type="Network-Connectivity", scenario_name=args.create_scenario)
 
     Create_Chamberview.setup(create_scenario=args.create_scenario,
                              line=args.line,
