@@ -7,12 +7,12 @@ if sys.version_info[0] != 3:
     exit()
 
 
-sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../")))
 
 
 if os.environ.get("LF_USE_AUTOGEN") == 1:
-    lf_json_autogen = importlib.import_module("py-json.LANforge.lf_json_autogen")
-    LFJsonCommand = lf_json_autogen.LFJsonCommand
+    lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
+    LFJsonCommand = lanforge_api.LFJsonCommand
     set_port_current_flags = LFJsonCommand.SetPortCurrentFlags.__members__
     set_port_cmd_flags = LFJsonCommand.SetPortCmdFlags.__members__
     set_port_interest_flags = LFJsonCommand.SetPortInterest.__members__
