@@ -142,7 +142,7 @@ def main():
     for group in parser._action_groups:
         if group.title == "required arguments":
             required_args = group
-            break;
+            break
     if required_args is not None:
         required_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
         required_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
@@ -151,12 +151,15 @@ def main():
     for group in parser._action_groups:
         if group.title == "optional arguments":
             optional_args = group
-            break;
+            break
     if optional_args is not None:
         optional_args.add_argument('--mode', help='Used to force mode of stations')
         optional_args.add_argument('--ap', help='Used to force a connection to a particular AP')
-        optional_args.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000', default=0000)
-        optional_args.add_argument('--station_list', help='Optional: User defined station names', action='append',default=None)
+        optional_args.add_argument('--number_template',
+                                   help='Start the station numbering with a particular number. Default is 0000',
+                                   default=0000)
+        optional_args.add_argument('--station_list', help='Optional: User defined station names', action='append',
+                                   default=None)
     args = parser.parse_args()
 
     num_sta = 2
@@ -164,7 +167,8 @@ def main():
         num_sta = int(args.num_stations)
 
     if args.station_list is None:
-        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=int(args.number_template), end_id_=num_sta+int(args.number_template) - 1, padding_number_=10000,
+        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=int(args.number_template),
+                                              end_id_=num_sta + int(args.number_template) - 1, padding_number_=10000,
                                               radio=args.radio)
     else:
         station_list = args.station_list
