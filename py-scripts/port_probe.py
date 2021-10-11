@@ -59,7 +59,7 @@ def main():
         prog=__name__,
         description='''\
     Example:
-    ./port_probe2.py --port 1.1.eth0
+    ./port_probe.py --port 1.1.eth0
         ''')
 
     parser.add_argument('--mode', help='Used to force mode of stations')
