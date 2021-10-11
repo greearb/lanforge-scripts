@@ -123,6 +123,32 @@ class csv_sql():
                 kpi_path=_kpi_path))
         return test_id, test_tag
 
+    def get_test_run_from_meta(self, _kpi_path):
+        test_run = "NA"
+        print("read meta path {_kpi_path}".format(_kpi_path=_kpi_path))
+        try:
+            meta_data_path = _kpi_path + '/' + '/meta.txt'
+            meta_data_fd = open(meta_data_path, 'r')
+            for line in meta_data_fd:
+                if "test_run" in line:
+                    test_run = line.replace("test_run", "")
+                    test_run = test_run.strip()
+                    print("meta_data_path: {meta_data_path} test_run: {test_run}".format(
+                        meta_data_path=meta_data_path, test_run=test_run))
+            meta_data_fd.close()
+        except BaseException:
+            print("exception reading test_run from {_kpi_path}".format(
+                _kpi_path=_kpi_path))
+
+        if test_run is "NA":
+            try:
+                test_run = _kpi_path.rsplit('/', 2)[0]
+                print("try harder test_run {test_run}".format(test_run))
+            except BaseException:
+                print("exception getting test_run from kpi_path")
+            print("Try harder test_run: {test_run} _kpi_path: {_kpi_path}".format(test_run=test_run, _kpi_path=_kpi_path))
+        return test_run
+
     def get_test_tag_from_meta(self, _kpi_path):
         test_tag = "NA"
         use_meta_test_tag = False
@@ -260,8 +286,9 @@ class csv_sql():
             # only store the path to the kpi.csv file
             _kpi_path = str(kpi).replace('kpi.csv', '')
             df_kpi_tmp['kpi_path'] = _kpi_path
-            use_meta_test_tag, test_tag = self.get_test_tag_from_meta(
-                _kpi_path)
+            test_run = self.get_test_run_from_meta(_kpi_path)
+            df_kpi_tmp['test_run'] = test_run
+            use_meta_test_tag, test_tag = self.get_test_tag_from_meta(_kpi_path)
             if use_meta_test_tag:
                 df_kpi_tmp['test-tag'] = test_tag
             df_kpi_tmp = df_kpi_tmp.append(df_kpi_tmp, ignore_index=True)
@@ -365,6 +392,9 @@ class csv_sql():
         self.test_rig_list = test_rig_list
         print("test_rig_list: {}".format(test_rig_list))
 
+        # TODO determin the subtest pass and fail graph
+
+        # create the rest of the graphs
         for test_rig in test_rig_list:
             for test_tag in test_tag_list:
                 for group in graph_group_list:
@@ -413,8 +443,7 @@ class csv_sql():
                             "GRAPHING::: test-rig {} test-tag {}  Graph-Group {}".format(test_rig, test_tag, group))
                         # group of Score will have subtest
                         if group == 'Score':
-                            # Print out the Standard Score report , May want to
-                            # check for empty pass fail
+                            # Print out the Standard Score report
                             kpi_fig = (
                                 px.scatter(
                                     df_tmp,
@@ -438,8 +467,8 @@ class csv_sql():
                             )
 
                             kpi_fig.update_layout(
-                                title="{} : {} : {} : {}".format(
-                                    test_id_list[-1], group, test_tag, test_rig),
+                                title="{test_id} : {group} : {test_tag} : {test_rig}".format(
+                                    test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
                                 xaxis_title="Time",
                                 yaxis_title="{}".format(units_list[-1]),
                                 xaxis={'type': 'date'}
@@ -452,60 +481,6 @@ class csv_sql():
                                               test_rig=test_rig,
                                               kpi_path_list=kpi_path_list,
                                               kpi_fig=kpi_fig)
-
-                            df_tmp["Percent"] = df_tmp["Subtest-Pass"] / \
-                                (df_tmp["Subtest-Pass"] +
-                                 df_tmp["Subtest-Fail"])
-
-                            fig1 = (
-                                px.scatter(
-                                    df_tmp,
-                                    x="Date",
-                                    y="Percent",
-                                    custom_data=[
-                                        'short-description',
-                                        'Percent',
-                                        'Subtest-Pass',
-                                        'Subtest-Fail'],
-                                    color="short-description",
-                                    hover_name="short-description",
-                                    size_max=60)).update_traces(
-                                mode='lines+markers')
-
-                            fig1.update_traces(
-                                hovertemplate="<br>".join([
-                                    "short-description: %{customdata[0]}",
-                                    "Percent: %{customdata[1]:.2%}",
-                                    "Subtest-Pass: %{customdata[2]}",
-                                    "Subtest-Fail: %{customdata[3]}"
-                                ])
-                            )
-                            '''
-                            kpi_fig = go.Figure(data=fig1.data + fig2.data)
-                            the kpi_fig is a go.Figure
-                            '''
-                            kpi_fig = go.Figure(data=fig1.data)
-                            kpi_fig.update_layout(yaxis=dict(tickformat='.2%'))
-                            kpi_fig.update_layout(
-                                title="{} : {} : Subtests : {} : {}".format(
-                                    test_id_list[-1], group, test_tag, test_rig),
-                                xaxis_title="Time",
-                                yaxis_title="Subtest Percent Pass",
-                                xaxis={'type': 'date'}
-                            )
-
-                            # modify the group
-                            group = group + "_subtests"
-
-                            self.generate_png(df_tmp=df_tmp,
-                                              group=group,
-                                              test_id_list=test_id_list,
-                                              test_tag=test_tag,
-                                              test_rig=test_rig,
-                                              kpi_path_list=kpi_path_list,
-                                              kpi_fig=kpi_fig)
-
-                            # kpi_fig.add_scatter(x=df_tmp['Date'], y=df_tmp['Subtest-Fail']).update_traces(mode='lines+markers')
 
                         else:
                             kpi_fig = (
@@ -519,10 +494,10 @@ class csv_sql():
                                 mode='lines+markers')
 
                             kpi_fig.update_layout(
-                                title="{} : {} : {} : {}".format(
-                                    test_id_list[-1], group, test_tag, test_rig),
+                                title="{test_id} : {group} : {test_tag} : {test_rig}".format(
+                                    test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig),
                                 xaxis_title="Time",
-                                yaxis_title="{}".format(units_list[-1]),
+                                yaxis_title="{units}".format(units=units_list[-1]),
                                 xaxis={'type': 'date'}
                             )
 
