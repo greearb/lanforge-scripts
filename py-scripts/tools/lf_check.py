@@ -915,7 +915,8 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                         if 'ERROR:  Could not find component: TestTag' in text:
                             self.test_result = "Success"
                             background = self.background_green
-                        elif 'error' in text.lower():
+                        # leave the space in after error to not pick up tx errors or rx errors 
+                        elif 'error ' in text.lower():
                             self.test_result = "Test Fail"
                             background = self.background_orange
                         else:
