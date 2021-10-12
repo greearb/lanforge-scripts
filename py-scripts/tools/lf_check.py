@@ -374,7 +374,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
         else:
             mail_subject = "Regression Test [{hostname}] {date}".format(hostname=hostname, date=datetime.datetime.now())
         try:
-            if self.production_run == True:
+            if self.production_run:
                 msg = message_txt.format(ip=ip)
                 # for postfix from command line  echo "My message" | mail -s subject user@candelatech.com
                 command = "echo \"{message}\" | mail -s \"{subject}\" {address}".format(
