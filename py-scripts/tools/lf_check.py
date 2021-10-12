@@ -1,16 +1,17 @@
 #!/usr/bin/python3
 
 '''
-NAME: lf_check.py 
+NAME: lf_check.py
 
-PURPOSE: lf_check.py run tests based on test rig json input, test dut json input,  and test command line inputs 
+PURPOSE: lf_check.py run tests based on test rig json input, test dut json input,  and test command line inputs
 
-EXAMPLE: 
+EXAMPLE:
 
-./lf_check.py --json_rig <test rig json> --json_dut <dut_json> --json_test <tests json> --test_suite <suite_name> --path <path to results and db, db table>
-./lf_check.py --json_rig <test rig json> --json_dut <dut_json> --json_test <tests json> --test_suite <suite_name> --path <path to results>  --production
+./lf_check.py --json_rig <rig_json> --json_dut <dut_json> --json_test <tests json> --test_suite <suite_name> --path <path to results>
+./lf_check.py --json_rig <rig_json> --json_dut <dut_json> --json_test <tests json> --test_suite <suite_name> --path <path to results>  --production
 
-./lf_check.py  --json_rig ct_us_001_rig.json --json_dut ct_001_AX88U_dut.json  --json_test ct_us_001_tests.json  --suite "suite_wc_dp"  --path '/home/lanforge/html-reports/ct-us-001'
+./lf_check.py  --json_rig ct_us_001_rig.json --json_dut ct_001_AX88U_dut.json
+    --json_test ct_us_001_tests.json  --suite "suite_wc_dp"  --path '/home/lanforge/html-reports/ct-us-001'
 
 
 rig is the LANforge
@@ -21,22 +22,22 @@ NOTES:
 Create three json files: 1. discribes rig (lanforge), dut (device under test) and other for the description of the tests
 
 Starting LANforge:
-    On local or remote system: /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR 
+    On local or remote system: /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR
     On local system the -s LF_MGR will be local_host if not provided
 
 ### Below are development Notes ###
 
 
 NOTES: getting radio information:
-1. (Using Curl) curl -H 'Accept: application/json' http://localhost:8080/radiostatus/all | json_pp 
+1. (Using Curl) curl -H 'Accept: application/json' http://localhost:8080/radiostatus/all | json_pp
 2.  , where --user "USERNAME:PASSWORD"
 # https://itnext.io/curls-just-want-to-have-fun-9267432c4b55
 3. (using Python) response = self.json_get("/radiostatus/all"), Currently lf_check.py is independent of py-json libraries
 
 4. if the connection to 8080 is rejected check : pgrep -af java  , to see the number of GUI instances running
 
-5. getting the lanforge GUI version 
-curl -H 'Accept: application/json' http://localhost:8080/ | json_pp 
+5. getting the lanforge GUI version
+curl -H 'Accept: application/json' http://localhost:8080/ | json_pp
 {
    "VersionInfo" : {
       "BuildDate" : "Sun 19 Sep 2021 02:36:51 PM PDT",
@@ -47,14 +48,14 @@ curl -H 'Accept: application/json' http://localhost:8080/ | json_pp
       "JsonVersion" : "1.0.25931"
    },
 
-curl -u 'user:pass' -H 'Accept: application/json' http://<lanforge ip>:8080 | json_pp  | grep -A 7 "VersionInfo"   
+curl -u 'user:pass' -H 'Accept: application/json' http://<lanforge ip>:8080 | json_pp  | grep -A 7 "VersionInfo"
 
 6. for Fedora you can do a:  dnf group list  , to see what all is installed
     dnf group install "Development Tools" for example,  to install a group
 
-GENERIC NOTES: 
+GENERIC NOTES:
 Starting LANforge:
-    On local or remote system: /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR 
+    On local or remote system: /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR
     On local system the -s LF_MGR will be local_host if not provided
     Saving stdout and stderr to find LANforge issues
     ./lfclient.bash -cli-socket 3990 > >(tee -a stdout.log) 2> >(tee -a stderr.log >&2)
@@ -63,13 +64,13 @@ Starting LANforge:
     On LANforge ~lanforge/.config/autostart/LANforge-auto.desktop is used to restart lanforge on boot.
         http://www.candelatech.com/cookbook.php?vol=misc&book=Automatically+starting+LANforge+GUI+on+login
 
-1. add server (telnet localhost 4001) build info,  GUI build sha, and Kernel version to the output. 
+1. add server (telnet localhost 4001) build info,  GUI build sha, and Kernel version to the output.
     A. for build information on LANforgeGUI : /home/lanforge ./btserver --version
     B. for the kernel version uname -r (just verion ), uname -a build date
-    C. for getting the radio firmware:  ethtool -i wlan0 
+    C. for getting the radio firmware:  ethtool -i wlan0
 
 # may need to build in a testbed reboot at the beginning of a day's testing...
-# seeing some dhcp exhaustion and high latency values for testbeds that have been running 
+# seeing some dhcp exhaustion and high latency values for testbeds that have been running
 # for a while that appear to clear up once the entire testbed is power cycled
 
 # Capture the LANforge client output sdtout and stdwrr
@@ -79,13 +80,14 @@ Starting LANforge:
 # Build Chamber View Scenario in the GUI and then # copy/tweak what it shows in the 'Text Output' tab after saving and re-opening # the scenario
 
 # issue a shutdown command on the lanforge(s)
-#  ssh root@lanforge reboot (need to verify)  or do a shutdown 
+#  ssh root@lanforge reboot (need to verify)  or do a shutdown
 # send curl command to remote power switch to reboot testbed
 #   curl -s http://admin:lanforge@192.168.100.237/outlet?1=CCL -o /dev/null 2>&1
-# 
- 
+#
+
 
 '''
+
 import datetime
 import sys
 import traceback
@@ -112,7 +114,7 @@ import requests
 dir_path = os.path.dirname(os.path.realpath(__file__))
 parent_dir_path = os.path.abspath(os.path.join(dir_path, os.pardir))
 sys.path.insert(0, parent_dir_path)
-
+# NOTE leave this line here for now
 from lf_report import lf_report
 
 sys.path.append('/')
@@ -124,16 +126,16 @@ FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
 # lf_check class contains verificaiton configuration and ocastrates the testing.
 class lf_check():
     def __init__(self,
-                _json_rig,
-                _json_dut,
-                _json_test,
-                _test_suite,
-                _production,
-                _csv_results,
-                _outfile,
-                _outfile_name,
-                _report_path,
-                _log_path):
+                 _json_rig,
+                 _json_dut,
+                 _json_test,
+                 _test_suite,
+                 _production,
+                 _csv_results,
+                 _outfile,
+                 _outfile_name,
+                 _report_path,
+                 _log_path):
         self.json_rig = _json_rig
         self.json_dut = _json_dut
         self.json_test = _json_test
@@ -170,13 +172,12 @@ class lf_check():
         # meta.txt
         self.meta_data_path = ""
 
-        # lanforge configuration 
+        # lanforge configuration
         self.lf_mgr_ip = "192.168.0.102"
         self.lf_mgr_port = "8080"
         self.lf_mgr_user = "lanforge"
         self.lf_mgr_pass = "lanforge"
         self.upstream_port = ""
-
 
         # results
         self.database_sqlite = ""
@@ -189,7 +190,7 @@ class lf_check():
         self.test_ip = ""
 
         # section DUT
-        # dut selection 
+        # dut selection
         self.dut_set_name = 'DUT_NAME ASUSRT-AX88U'  # note the name will be set as --set DUT_NAME ASUSRT-AX88U, this is not dut_name (see above)
         self.dut_name = "DUT_NAME_NA"  # "ASUSRT-AX88U" note this is not dut_set_name
         self.dut_hw = "DUT_HW_NA"
@@ -244,12 +245,15 @@ class lf_check():
         self.lf_mgr_user = "lanforge"
         self.lf_mgr_pass = "lanforge"
         '''
+
     def get_lanforge_radio_information(self):
         # https://docs.python-requests.org/en/latest/
         # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
-        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/radiostatus/all | json_pp  , where --user "USERNAME:PASSWORD"
-        request_command = 'http://{lfmgr}:{port}/radiostatus/all'.format(lfmgr=self.lf_mgr_ip,port=self.lf_mgr_port)
-        request = requests.get(request_command, auth=(self.lf_mgr_user,self.lf_mgr_pass))
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json'
+        # http://192.168.100.116:8080/radiostatus/all | json_pp  , where --user
+        # "USERNAME:PASSWORD"
+        request_command = 'http://{lfmgr}:{port}/radiostatus/all'.format(lfmgr=self.lf_mgr_ip, port=self.lf_mgr_port)
+        request = requests.get(request_command, auth=(self.lf_mgr_user, self.lf_mgr_pass))
         print("radio request command: {request_command}".format(request_command=request_command))
         print("radio request status_code {status}".format(status=request.status_code))
         lanforge_radio_json = request.json()
@@ -257,7 +261,6 @@ class lf_check():
         lanforge_radio_text = request.text
         print("radio request.test: {text}".format(text=lanforge_radio_text))
         return lanforge_radio_json, lanforge_radio_text
-        
 
     def get_lanforge_system_node_version(self):
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
@@ -292,7 +295,7 @@ class lf_check():
         self.lanforge_server_version_full = stdout.readlines()
         self.lanforge_server_version_full = [line.replace('\n', '') for line in self.lanforge_server_version_full]
         print("lanforge_server_version_full: {lanforge_server_version_full}".format(lanforge_server_version_full=self.lanforge_server_version_full))
-        self.lanforge_server_version = self.lanforge_server_version_full[0].split('Version:',maxsplit=1)[-1].split(maxsplit=1)[0]
+        self.lanforge_server_version = self.lanforge_server_version_full[0].split('Version:', maxsplit=1)[-1].split(maxsplit=1)[0]
         self.lanforge_server_version = self.lanforge_server_version.strip()
         print("lanforge_server_version: {lanforge_server_version}".format(lanforge_server_version=self.lanforge_server_version))
         ssh.close()
@@ -304,30 +307,30 @@ class lf_check():
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
         ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass,
                     allow_agent=False, look_for_keys=False, banner_timeout=600)
-        stdin, stdout, stderr = ssh.exec_command('curl -H "Accept: application/json" http://{lanforge_ip}:8080 | json_pp  | grep -A 7 "VersionInfo"'.format(lanforge_ip=self.lf_mgr_ip))
+        stdin, stdout, stderr = ssh.exec_command(
+            'curl -H "Accept: application/json" http://{lanforge_ip}:8080 | json_pp  | grep -A 7 "VersionInfo"'.format(lanforge_ip=self.lf_mgr_ip))
         self.lanforge_gui_version_full = stdout.readlines()
-        #print("lanforge_gui_version_full pre: {lanforge_gui_version_full}".format(lanforge_gui_version_full=self.lanforge_gui_version_full))
+        # print("lanforge_gui_version_full pre: {lanforge_gui_version_full}".format(lanforge_gui_version_full=self.lanforge_gui_version_full))
         self.lanforge_gui_version_full = [line.replace('\n', '') for line in self.lanforge_gui_version_full]
-        #print("lanforge_gui_version_full: {lanforge_gui_version_full}".format(lanforge_gui_version_full=self.lanforge_gui_version_full))
+        # print("lanforge_gui_version_full: {lanforge_gui_version_full}".format(lanforge_gui_version_full=self.lanforge_gui_version_full))
         for element in self.lanforge_gui_version_full:
             if "BuildVersion" in element:
                 ver_str = str(element)
-                self.lanforge_gui_version = ver_str.split(':',maxsplit=1)[-1].replace(',','')
-                self.lanforge_gui_version = self.lanforge_gui_version.strip().replace('"','')             
+                self.lanforge_gui_version = ver_str.split(':', maxsplit=1)[-1].replace(',', '')
+                self.lanforge_gui_version = self.lanforge_gui_version.strip().replace('"', '')
                 print("BuildVersion {}".format(self.lanforge_gui_version))
             if "BuildDate" in element:
                 gui_str = str(element)
-                self.lanforge_gui_build_date = gui_str.split(':',maxsplit=1)[-1].replace(',','') 
+                self.lanforge_gui_build_date = gui_str.split(':', maxsplit=1)[-1].replace(',', '')
                 print("BuildDate {}".format(self.lanforge_gui_build_date))
             if "GitVersion" in element:
                 git_sha_str = str(element)
-                self.lanforge_gui_git_sha = git_sha_str.split(':',maxsplit=1)[-1].replace(',','')                 
+                self.lanforge_gui_git_sha = git_sha_str.split(':', maxsplit=1)[-1].replace(',', '')
                 print("GitVersion {}".format(self.lanforge_gui_git_sha))
 
         ssh.close()
         time.sleep(1)
         return self.lanforge_gui_version_full, self.lanforge_gui_version, self.lanforge_gui_build_date, self.lanforge_gui_git_sha
-
 
     def send_results_email(self, report_file=None):
         if (report_file is None):
@@ -336,10 +339,10 @@ class lf_check():
         report_url = report_file.replace('/home/lanforge/', '')
         if report_url.startswith('/'):
             report_url = report_url[1:]
-        qa_url = self.qa_report_html.replace('home/lanforge','')
+        qa_url = self.qa_report_html.replace('home/lanforge', '')
         if qa_url.startswith('/'):
             qa_url = qa_url[1:]
-        # following recommendation 
+        # following recommendation
         # NOTE: https://stackoverflow.com/questions/24196932/how-can-i-get-the-ip-address-from-nic-in-python
         # Mail
         # command to check if mail running : systemctl status postfix
@@ -352,21 +355,21 @@ class lf_check():
         if hostname.find('.') < 1:
             hostname = ip
 
-        message_txt =""
+        message_txt = ""
         if (self.email_txt != ""):
             message_txt = """{email_txt} lanforge target {lf_mgr_ip}
 Results from {hostname}:
 http://{hostname}/{report}
-""".format(email_txt=self.email_txt,lf_mgr_ip=self.lf_mgr_ip,hostname=hostname,report=report_url)
+""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, hostname=hostname, report=report_url)
         else:
             message_txt = """Results from {hostname}:
-http://{hostname}/{report}""".format(hostname=hostname,report=report_url)
+http://{hostname}/{report}""".format(hostname=hostname, report=report_url)
 
-        # Put in report information current two methods supported, 
-        message_txt +="""
+        # Put in report information current two methods supported,
+        message_txt += """
 QA Report Dashboard:
 http://{ip_qa}/{qa_url}
-NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
+NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
 
         if (self.email_title_txt != ""):
             mail_subject = "{} [{hostname}] {date}".format(self.email_title_txt, hostname=hostname,
@@ -391,7 +394,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             print("running:[{}]".format(command))
             process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                        universal_newlines=True)
-            # have email on separate timeout        
+            # have email on separate timeout
             process.wait(timeout=int(self.test_timeout))
         except subprocess.TimeoutExpired:
             print("send email timed out")
@@ -435,7 +438,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                 <br>
                 """
 
-    # Read the json configuration 
+    # Read the json configuration
     # Read the test rig configuration, which is the LANforge system configuration
     # Read the dut configuration, which is the specific configuration for the AP / VAP or other device under test
     # Read the test configuration, replace the wide card parameters
@@ -479,7 +482,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             self.logger.info("EXITING ERROR test_suites not in json test")
             exit(1)
 
-    #TODO change code so if parameter is not present then implied to be false
+    # TODO change code so if parameter is not present then implied to be false
     def read_test_rig_parameters(self):
         if "TEST_RIG" in self.json_rig["test_rig_parameters"]:
             self.test_rig = self.json_rig["test_rig_parameters"]["TEST_RIG"]
@@ -554,14 +557,14 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
             self.email_txt = self.json_rig["test_rig_parameters"]["EMAIL_TXT"]
         else:
             self.logger.info("EMAIL_TXT not in test_rig_parameters json")
-            
+
         # dut_set_name selectes the DUT to test against , it is different then dut_name
         # this value gets set in the test
     def read_dut_parameters(self):
         if "DUT_SET_NAME" in self.json_dut["test_dut"]:
             self.dut_set_name = self.json_dut["test_dut"]["DUT_SET_NAME"]
         else:
-           self.logger.info("DUT_SET_NAME not in test_dut json")
+            self.logger.info("DUT_SET_NAME not in test_dut json")
         # dut name will set a chamberview scenerio for a DUT which can be selected with dut_set_name
         if "DUT_NAME" in self.json_dut["test_dut"]:
             self.dut_name = self.json_dut["test_dut"]["DUT_NAME"]
@@ -600,7 +603,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
         try:
             os.chdir(self.scripts_wd)
             # self.logger.info("Current Working Directory {}".format(os.getcwd()))
-        except:
+        except BaseException:
             self.logger.info("failed to change to {}".format(self.scripts_wd))
 
         # no spaces after FACTORY_DFLT
@@ -619,7 +622,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
     def load_BLANK_database(self):
         try:
             os.chdir(self.scripts_wd)
-        except:
+        except BaseException:
             self.logger.info("failed to change to {}".format(self.scripts_wd))
 
         # no spaces after FACTORY_DFLT
@@ -638,7 +641,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
     def load_custom_database(self, custom_db):
         try:
             os.chdir(self.scripts_wd)
-        except:
+        except BaseException:
             self.logger.info("failed to change to {}".format(self.scripts_wd))
 
         # no spaces after FACTORY_DFLT
@@ -661,51 +664,54 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
         for test in self.test_dict:
             if self.test_dict[test]['enabled'] == "FALSE":
                 self.logger.info("test: {}  skipped".format(test))
-            # load the default database 
+            # load the default database
             elif self.test_dict[test]['enabled'] == "TRUE":
-                #TODO Place test interations here
+                # TODO Place test interations here
                 if 'iterations' in self.test_dict[test]:
                     self.logger.info("iterations : {}".format(self.test_dict[test]['iterations']))
                     self.test_iterations = int(self.test_dict[test]['iterations'])
                 else:
                     self.test_iterations = self.test_iterations_default
 
-                iteration = 0                
+                iteration = 0
                 for iteration in range(self.test_iterations):
                     iteration += 1
 
                     # The network arguments need to be changed when in a list
                     for index, args_list_element in enumerate(self.test_dict[test]['args_list']):
                         if 'ssid_idx=' in args_list_element:
-                            #print("args_list_element {}".format(args_list_element))
+                            # print("args_list_element {}".format(args_list_element))
                             # get ssid_idx used in the test as an index for the dictionary
-                            ssid_idx_number =  args_list_element.split('ssid_idx=')[-1].split()[0]
+                            ssid_idx_number = args_list_element.split('ssid_idx=')[-1].split()[0]
                             print("ssid_idx_number: {}".format(ssid_idx_number))
-                            idx = "ssid_idx={}".format(ssid_idx_number) # index into the DUT network index
+                            idx = "ssid_idx={}".format(ssid_idx_number)  # index into the DUT network index
                             print("idx: {}".format(idx))
                             if 'SSID_USED' in args_list_element:
-                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace('SSID_USED', self.wireless_network_dict[idx]['SSID_USED'])
+                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace(
+                                    'SSID_USED', self.wireless_network_dict[idx]['SSID_USED'])
                             if 'SECURITY_USED' in args_list_element:
-                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace('SECURITY_USED', self.wireless_network_dict[idx]['SECURITY_USED'])
+                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace(
+                                    'SECURITY_USED', self.wireless_network_dict[idx]['SECURITY_USED'])
                             if 'SSID_PW_USED' in args_list_element:
-                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace('SSID_PW_USED', self.wireless_network_dict[idx]['SSID_PW_USED'])
+                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace(
+                                    'SSID_PW_USED', self.wireless_network_dict[idx]['SSID_PW_USED'])
                             if 'BSSID' in args_list_element:
-                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace('BSSID', self.wireless_network_dict[idx]['BSSID'])
+                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace(
+                                    'BSSID', self.wireless_network_dict[idx]['BSSID'])
 
                             # use_ssid_idx is ephemeral and used only for variable replacement , remove
                             tmp_idx = "use_ssid_idx={}".format(ssid_idx_number)
                             if tmp_idx in args_list_element:
-                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace(tmp_idx,'')
+                                self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace(tmp_idx, '')
 
                             # leave in for checking the command line arguments
-                            print("self.test_dict[test]['args_list']: {}".format(self.test_dict[test]['args_list']))          
-
+                            print("self.test_dict[test]['args_list']: {}".format(self.test_dict[test]['args_list']))
 
                     # Walk all the args in the args list then construct the arguments
                     if self.test_dict[test]['args'] == "":
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.test_dict[test]['args'],
                                                                                             ''.join(self.test_dict[test][
-                                                                                                        'args_list']))
+                                                                                                'args_list']))
                     if 'DATABASE_SQLITE' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DATABASE_SQLITE', self.database_sqlite)
                     if 'HTTP_TEST_IP' in self.test_dict[test]['args']:
@@ -740,7 +746,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     if 'UPSTREAM_PORT' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('UPSTREAM_PORT',
                                                                                             self.upstream_port)
-                    # lf_dataplane_test.py and lf_wifi_capacity_test.py use a parameter --local_path for the location 
+                    # lf_dataplane_test.py and lf_wifi_capacity_test.py use a parameter --local_path for the location
                     # of the reports when the reports are pulled.
                     if 'REPORT_PATH' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('REPORT_PATH', self.report_path)
@@ -755,7 +761,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     if self.test_dict[test]['args'] == "":
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(self.test_dict[test]['args'],
                                                                                             ''.join(self.test_dict[test][
-                                                                                                        'args_list']))
+                                                                                                'args_list']))
 
                     if 'timeout' in self.test_dict[test]:
                         self.logger.info("timeout : {}".format(self.test_dict[test]['timeout']))
@@ -769,7 +775,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                                 self.test_dict[test]['load_db']).lower() != "skip":
                             try:
                                 self.load_custom_database(self.test_dict[test]['load_db'])
-                            except:
+                            except BaseException:
                                 self.logger.info("custom database failed to load check existance and location: {}".format(
                                     self.test_dict[test]['load_db']))
                     else:
@@ -783,8 +789,8 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                         if self.use_custom_db == "TRUE":
                             try:
                                 self.load_custom_database(self.custom_db)
-                                self.logger.info("{} loaded between tests with scenario.py --load {}".format(self.custom_db,self.custom_db))
-                            except:
+                                self.logger.info("{} loaded between tests with scenario.py --load {}".format(self.custom_db, self.custom_db))
+                            except BaseException:
                                 self.logger.info("custom database failed to load check existance and location: {}".format(self.custom_db))
                         else:
                             self.logger.info("no db loaded between tests: {}".format(self.use_custom_db))
@@ -792,7 +798,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     try:
                         os.chdir(self.scripts_wd)
                         # self.logger.info("Current Working Directory {}".format(os.getcwd()))
-                    except:
+                    except BaseException:
                         self.logger.info("failed to change to {}".format(self.scripts_wd))
                     cmd_args = "{}".format(self.test_dict[test]['args'])
                     command = "./{} {}".format(self.test_dict[test]['command'], cmd_args)
@@ -800,24 +806,24 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     self.logger.info("cmd_args {}".format(cmd_args))
 
                     if self.outfile_name is not None:
-                        stdout_log_txt = os.path.join(self.log_path, "{}-{}-stdout.txt".format(self.outfile_name,test))
+                        stdout_log_txt = os.path.join(self.log_path, "{}-{}-stdout.txt".format(self.outfile_name, test))
                         self.logger.info("stdout_log_txt: {}".format(stdout_log_txt))
                         stdout_log = open(stdout_log_txt, 'a')
-                        stderr_log_txt = os.path.join(self.log_path, "{}-{}-stderr.txt".format(self.outfile_name,test))
+                        stderr_log_txt = os.path.join(self.log_path, "{}-{}-stderr.txt".format(self.outfile_name, test))
                         self.logger.info("stderr_log_txt: {}".format(stderr_log_txt))
                         stderr_log = open(stderr_log_txt, 'a')
 
-                    # need to take into account --raw_line parameters thus need to use shlex.split 
+                    # need to take into account --raw_line parameters thus need to use shlex.split
                     # need to preserve command to have correct command syntax in command output
                     command_to_run = command
                     command_to_run = shlex.split(command_to_run)
                     print("running {command_to_run}".format(command_to_run=command_to_run))
-                    self.test_start_time = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':','-')
+                    self.test_start_time = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':', '-')
                     print("Test start: {time}".format(time=self.test_start_time))
                     start_time = datetime.datetime.now()
                     try:
                         process = subprocess.Popen(command_to_run, shell=False, stdout=stdout_log, stderr=stderr_log,
-                                                  universal_newlines=True)
+                                                   universal_newlines=True)
                         # if there is a better solution please propose,  the TIMEOUT Result is different then FAIL
                         try:
                             if int(self.test_timeout != 0):
@@ -828,17 +834,17 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                             process.terminate()
                             self.test_result = "TIMEOUT"
 
-                    except:
+                    except BaseException:
                         print("No such file or directory with command: {}".format(command))
                         self.logger.info("No such file or directory with command: {}".format(command))
 
                     end_time = datetime.datetime.now()
-                    self.test_end_time = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':','-')
+                    self.test_end_time = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':', '-')
                     print("Test end time {time}".format(time=self.test_end_time))
 
                     time_delta = end_time - start_time
                     self.duration = "{day}d {seconds}s {msec} ms".format(
-                        day=time_delta.days,seconds=time_delta.seconds,msec=time_delta.microseconds)
+                        day=time_delta.days, seconds=time_delta.seconds, msec=time_delta.microseconds)
 
                     # If collect meta data is set
                     meta_data_path = ""
@@ -846,19 +852,19 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     stdout_log_size = os.path.getsize(stdout_log_txt)
                     if stdout_log_size > 0:
                         stdout_log_fd = open(stdout_log_txt)
-                        #"Report Location:::/home/lanforge/html-reports/wifi-capacity-2021-08-17-04-02-56"
+                        # "Report Location:::/home/lanforge/html-reports/wifi-capacity-2021-08-17-04-02-56"
                         #
                         for line in stdout_log_fd:
                             if "Report Location" in line:
-                                meta_data_path = line.replace('"','')
-                                meta_data_path = meta_data_path.replace('Report Location:::','')
+                                meta_data_path = line.replace('"', '')
+                                meta_data_path = meta_data_path.replace('Report Location:::', '')
                                 meta_data_path = meta_data_path.split('/')[-1]
                                 meta_data_path = meta_data_path.strip()
                                 meta_data_path = self.report_path + '/' + meta_data_path + '/meta.txt'
                                 break
                         stdout_log_fd.close()
                     if meta_data_path != "":
-                        meta_data_fd = open(meta_data_path,'w+')
+                        meta_data_fd = open(meta_data_path, 'w+')
                         meta_data_fd.write('$ Generated by Candela Technologies LANforge network testing tool\n')
                         meta_data_fd.write("test_run {test_run}\n".format(test_run=self.report_path))
                         meta_data_fd.write("file_meta {path}\n".format(path=meta_data_path))
@@ -867,16 +873,24 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                         meta_data_fd.write('$ LANforge command\n')
                         meta_data_fd.write("command {command}\n".format(command=command))
                         # split command at test-tag , at rest of string once at the actual test-tag value
-                        test_tag = command.split('test_tag',maxsplit=1)[-1].split(maxsplit=1)[0]
-                        test_tag = test_tag.replace("'","")
+                        test_tag = command.split('test_tag', maxsplit=1)[-1].split(maxsplit=1)[0]
+                        test_tag = test_tag.replace("'", "")
                         meta_data_fd.write('$ LANforge test tag\n')
                         meta_data_fd.write("test_tag {test_tag}\n".format(test_tag=test_tag))
                         # LANforge information is a list thus [0]
                         meta_data_fd.write('$ LANforge Information\n')
-                        meta_data_fd.write("lanforge_system_node {lanforge_system_node}\n".format(lanforge_system_node=self.lanforge_system_node_version[0]))
-                        meta_data_fd.write("lanforge_kernel_version {lanforge_kernel_version}\n".format(lanforge_kernel_version=self.lanforge_kernel_version[0]))
-                        meta_data_fd.write("lanforge_gui_version_full {lanforge_gui_version_full}\n".format(lanforge_gui_version_full=self.lanforge_gui_version_full))
-                        meta_data_fd.write("lanforge_server_version_full {lanforge_server_version_full}\n".format(lanforge_server_version_full=self.lanforge_server_version_full[0]))
+                        meta_data_fd.write(
+                            "lanforge_system_node {lanforge_system_node}\n".format(
+                                lanforge_system_node=self.lanforge_system_node_version[0]))
+                        meta_data_fd.write(
+                            "lanforge_kernel_version {lanforge_kernel_version}\n".format(
+                                lanforge_kernel_version=self.lanforge_kernel_version[0]))
+                        meta_data_fd.write(
+                            "lanforge_gui_version_full {lanforge_gui_version_full}\n".format(
+                                lanforge_gui_version_full=self.lanforge_gui_version_full))
+                        meta_data_fd.write(
+                            "lanforge_server_version_full {lanforge_server_version_full}\n".format(
+                                lanforge_server_version_full=self.lanforge_server_version_full[0]))
                         meta_data_fd.close()
 
                     stderr_log_size = os.path.getsize(stderr_log_txt)
@@ -912,7 +926,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                         self.test_resut = "Failure"
                         background = self.background_red
 
-                    # if there was a                     
+                    # if there was a
                     if self.test_result == "TIMEOUT":
                         self.logger.info("TIMEOUT FAILURE,  Check LANforge Radios")
                         self.test_result = "Time Out"
@@ -926,7 +940,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                                 print("html_report: {report}".format(report=self.qa_report_html))
                                 break
 
-                        self.qa_report_html = self.qa_report_html.replace('html report: ','')
+                        self.qa_report_html = self.qa_report_html.replace('html report: ', '')
 
                     # stdout_log_link is used for the email reporting to have the corrected path
                     stdout_log_link = str(stdout_log_txt).replace('/home/lanforge', '')
@@ -942,7 +956,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                     <td class='TimeFont'>""" + str(self.duration) + """</td>
                     <td class='DateFont'>""" + str(self.test_start_time) + """</td>
                     <td class='DateFont'>""" + str(self.test_end_time) + """</td>
-                    <td style=""" + str(background) + """>""" + str(self.test_result) + """ 
+                    <td style=""" + str(background) + """>""" + str(self.test_result) + """
                     <td><a href=""" + str(stdout_log_link) + """ target=\"_blank\">STDOUT</a></td>"""
                     if self.test_result == "Failure":
                         self.html_results += """<td><a href=""" + str(
@@ -952,9 +966,9 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                             stderr_log_link) + """ target=\"_blank\">STDERR</a></td>"""
                     else:
                         self.html_results += """<td></td>"""
-                    
+
                     self.html_results += """</tr>"""
-                    #TODO - plase copy button at end and selectable , so individual sections may be copied
+                    # TODO - plase copy button at end and selectable , so individual sections may be copied
                     if command != short_cmd:
                         '''self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
                             <span class='copybtn'>Copy</span>
@@ -966,13 +980,13 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip,qa_url=qa_url)
                              </td></tr>
                              """.format(command=command)
 
-                        #nocopy
+                        # nocopy
                         '''
                         self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
                              <tt>{command}</tt>
                              </td></tr>
                              """.format(command=command)
-                        '''                            
+                        '''
 
                     row = [test, command, self.test_result, stdout_log_txt, stderr_log_txt]
                     self.csv_results_writer.writerow(row)
@@ -992,7 +1006,7 @@ def main():
         prog='lf_check.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-            lf_check.py : running scripts  
+            lf_check.py : running scripts
             ''',
         description='''\
 lf_check.py
@@ -1000,9 +1014,9 @@ lf_check.py
 
 Summary :
 ---------
-running scripts 
+running scripts
 
-Example :  
+Example :
 ./lf_check.py --json_rig rig.json --json_dut dut.json --json_test tests.json --suite suite_test
 note if all json data (rig,dut,tests)  in same json file pass same json in for all 3 inputs
 ---------
@@ -1029,23 +1043,23 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         print("args.json_rig {rig}".format(rig=args.json_rig))
         with open(args.json_rig, 'r') as json_rig_config:
             json_rig = json.load(json_rig_config)
-    except:
-        print("Error reading {}".format(args.json_rig))        
+    except BaseException:
+        print("Error reading {}".format(args.json_rig))
 
     json_dut = ""
     try:
         print("args.json_dut {dut}".format(dut=args.json_dut))
         with open(args.json_dut, 'r') as json_dut_config:
             json_dut = json.load(json_dut_config)
-    except:
-        print("Error reading {}".format(args.json_dut))        
+    except BaseException:
+        print("Error reading {}".format(args.json_dut))
 
     json_test = ""
     try:
         print("args.json_test {}".format(args.json_test))
         with open(args.json_test, 'r') as json_test_config:
             json_test = json.load(json_test_config)
-    except:
+    except BaseException:
         print("Error reading {}".format(args.json_test))
 
     # Test-rig information information
@@ -1054,7 +1068,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     lanforge_kernel_version = 'NO_KERNEL_VER'
     lanforge_server_version_full = 'NO_LF_SERVER_VER'
 
-    # select test suite 
+    # select test suite
     test_suite = args.suite
     __dir = args.dir
     __path = args.path
@@ -1067,7 +1081,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         print("Email to email list")
 
     # create report class for reporting
-    report = lf_report(_path = __path,
+    report = lf_report(_path=__path,
                        _results_dir_name=__dir,
                        _output_html="lf_check.html",
                        _output_pdf="lf-check.pdf")
@@ -1088,7 +1102,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                      _production=production,
                      _csv_results=csv_results,
                      _outfile=outfile,
-                     _outfile_name = outfile_name,
+                     _outfile_name=outfile_name,
                      _report_path=report_path,
                      _log_path=log_path)
 
@@ -1107,72 +1121,72 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     logger.addHandler(logging.StreamHandler(sys.stdout))  # allows to logging to file and stdout
 
     # read config and run tests
-    check.read_json_rig()  #check.read_config
+    check.read_json_rig()  # check.read_config
     check.read_json_dut()
     check.read_json_test()
-    
+
     # get sha and lanforge information for results
     # Need to do this after reading the configuration
     try:
         scripts_git_sha = check.get_scripts_git_sha()
         print("git_sha {sha}".format(sha=scripts_git_sha))
-    except:
+    except BaseException:
         print("git_sha read exception ")
 
     try:
         lanforge_system_node_version = check.get_lanforge_system_node_version()
         print("lanforge_system_node_version {system_node_ver}".format(system_node_ver=lanforge_system_node_version))
-    except:
+    except BaseException:
         print("lanforge_system_node_version exception")
 
     try:
         lanforge_kernel_version = check.get_lanforge_kernel_version()
         print("lanforge_kernel_version {kernel_ver}".format(kernel_ver=lanforge_kernel_version))
-    except:
+    except BaseException:
         print("lanforge_kernel_version exception, tests aborted check lanforge ip")
         exit(1)
 
     try:
         lanforge_server_version_full = check.get_lanforge_server_version()
         print("lanforge_server_version_full {lanforge_server_version_full}".format(lanforge_server_version_full=lanforge_server_version_full))
-    except:
+    except BaseException:
         print("lanforge_server_version exception, tests aborted check lanforge ip")
         exit(1)
 
     try:
-        lanforge_gui_version_full, lanforge_gui_version, lanforge_gui_build_date, lanforge_gui_git_sha  = check.get_lanforge_gui_version()
+        lanforge_gui_version_full, lanforge_gui_version, lanforge_gui_build_date, lanforge_gui_git_sha = check.get_lanforge_gui_version()
         print("lanforge_gui_version_full {lanforge_gui_version_full}".format(lanforge_gui_version_full=lanforge_gui_version_full))
-    except:
+    except BaseException:
         print("lanforge_gui_version exception, tests aborted check lanforge ip")
         exit(1)
 
     try:
         lanforge_radio_json, lanforge_radio_text = check.get_lanforge_radio_information()
-        lanforge_radio_formatted_str = json.dumps(lanforge_radio_json, indent = 2)
+        lanforge_radio_formatted_str = json.dumps(lanforge_radio_json, indent=2)
         print("lanforge_radio_json: {lanforge_radio_json}".format(lanforge_radio_json=lanforge_radio_formatted_str))
 
         # note put into the meta data
-        lf_radio_df = pd.DataFrame(columns = ['Radio','WIFI-Radio Driver','Radio Capabilities','Firmware Version','max_sta','max_vap','max_vifs'])
+        lf_radio_df = pd.DataFrame(columns=['Radio', 'WIFI-Radio Driver', 'Radio Capabilities', 'Firmware Version', 'max_sta', 'max_vap', 'max_vifs'])
 
         for key in lanforge_radio_json:
-            if 'wiphy' in key: 
-                #print("key {}".format(key))
-                #print("lanforge_radio_json[{}]: {}".format(key,lanforge_radio_json[key]))
-                driver = lanforge_radio_json[key]['driver'].split('Driver:',maxsplit=1)[-1].split(maxsplit=1)[0]
+            if 'wiphy' in key:
+                # print("key {}".format(key))
+                # print("lanforge_radio_json[{}]: {}".format(key,lanforge_radio_json[key]))
+                driver = lanforge_radio_json[key]['driver'].split('Driver:', maxsplit=1)[-1].split(maxsplit=1)[0]
                 try:
                     firmware_version = lanforge_radio_json[key]['firmware version']
-                except:
+                except BaseException:
                     print("5.4.3 radio fw version not in /radiostatus/all")
                     firmware_version = "5.4.3 N/A"
 
                 lf_radio_df = lf_radio_df.append(
-                    {'Radio':lanforge_radio_json[key]['entity id'],
-                    'WIFI-Radio Driver': driver,
-                    'Radio Capabilities':lanforge_radio_json[key]['capabilities'],
-                    'Firmware Version':firmware_version,
-                    'max_sta':lanforge_radio_json[key]['max_sta'],
-                    'max_vap':lanforge_radio_json[key]['max_vap'],
-                    'max_vifs':lanforge_radio_json[key]['max_vifs']}, ignore_index = True)
+                    {'Radio': lanforge_radio_json[key]['entity id'],
+                     'WIFI-Radio Driver': driver,
+                     'Radio Capabilities': lanforge_radio_json[key]['capabilities'],
+                     'Firmware Version': firmware_version,
+                     'max_sta': lanforge_radio_json[key]['max_sta'],
+                     'max_vap': lanforge_radio_json[key]['max_vap'],
+                     'max_vifs': lanforge_radio_json[key]['max_vifs']}, ignore_index=True)
         print("lf_radio_df:: {lf_radio_df}".format(lf_radio_df=lf_radio_df))
 
     except Exception as error:
@@ -1221,7 +1235,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     print("html report: {}".format(html_report))
     try:
         report.write_pdf_with_timestamp()
-    except:
+    except BaseException:
         print("exception write_pdf_with_timestamp()")
 
     print("lf_check_html_report: " + html_report)
