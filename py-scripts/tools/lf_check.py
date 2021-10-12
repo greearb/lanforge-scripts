@@ -97,6 +97,7 @@ if sys.version_info[0] != 3:
     exit()
 
 import os
+import importlib
 import socket
 import logging
 import time
@@ -110,14 +111,13 @@ import paramiko
 import pandas as pd
 import requests
 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+lf_report = importlib.import_module("lf_report")
+
 # lf_report is from the parent of the current file
 dir_path = os.path.dirname(os.path.realpath(__file__))
 parent_dir_path = os.path.abspath(os.path.join(dir_path, os.pardir))
 sys.path.insert(0, parent_dir_path)
-# NOTE leave this line here for now
-from lf_report import lf_report
-
-sys.path.append('/')
 
 # setup logging FORMAT
 FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
@@ -1082,10 +1082,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         print("Email to email list")
 
     # create report class for reporting
-    report = lf_report(_path=__path,
+    report = lf_report.lf_report(_path=__path,
                        _results_dir_name=__dir,
                        _output_html="lf_check.html",
-                       _output_pdf="lf-check.pdf")
+                       _output_pdf="lf_check.pdf")
 
     current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     csv_results = "lf_check{}-{}.csv".format(args.outfile, current_time)
