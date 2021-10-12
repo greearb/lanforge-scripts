@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''
+"""
 NAME: jbr_create_wanlink.py
 
 PURPOSE: create a wanlink
@@ -15,7 +15,7 @@ NOTES:
 
 TO DO NOTES:
 
-'''
+"""
 import sys
 
 if sys.version_info[0] != 3:
@@ -68,8 +68,8 @@ def main():
     command.post_add_rdd(resource=args.resource,
                          port="rd0a",
                          peer_ifname="rd0b",
-                         report_timer="1000",
-                         shelf="1",
+                         report_timer=1000,
+                         shelf=1,
                          debug=args.debug)
 
     command.post_add_rdd(resource=args.resource,
@@ -84,12 +84,12 @@ def main():
     command.post_add_wl_endp(alias=endp_a,
                              resource=args.resource,
                              port="rd0a",
-                             shelf="1",
+                             shelf=1,
                              debug=args.debug)
     command.post_add_wl_endp(alias=endp_b,
                              resource=args.resource,
                              port="rd1a",
-                             shelf="1",
+                             shelf=1,
                              debug=args.debug)
     command.post_add_cx(alias=args.wl_name,
                         rx_endp=endp_a,
@@ -97,13 +97,13 @@ def main():
                         test_mgr="default_tm",
                         debug=args.debug)
     ewarn_list = []
-    result = query.get_wl(eid_list=(args.wl_name),
+    result = query.get_wl(eid_list=[args.wl_name],
                           wait_sec=0.2,
                           timeout_sec=2.0,
                           errors_warnings=ewarn_list,
                           debug=args.debug)
     pprint.pprint(result)
-    result = query.get_wl_endp(eid_list=(args.wl_name+"-A", args.wl_name+"-B"),
+    result = query.get_wl_endp(eid_list=[args.wl_name+"-A", args.wl_name+"-B"],
                                wait_sec=0.2,
                                timeout_sec=15.0,
                                debug=args.debug)
