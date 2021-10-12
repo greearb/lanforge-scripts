@@ -221,12 +221,6 @@ Generic ipv4 command example:
     --passwd BLANK
     --debug''')
 
-    required = None
-    for agroup in parser._action_groups:
-        if agroup.title == "required arguments":
-            required = agroup
-    # if required is not None:
-
     optional = None
     for agroup in parser._action_groups:
         if agroup.title == "optional arguments":
