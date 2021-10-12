@@ -45,7 +45,7 @@ class IPVariableTime(Realm):
                  ssid=None,
                  security=None,
                  password=None,
-                 sta_list=[],
+                 sta_list=None,
                  create_sta=True,
                  name_prefix=None,
                  upstream=None,
@@ -62,7 +62,7 @@ class IPVariableTime(Realm):
                  use_ht160=False,
                  report_file=None,
                  output_format=None,
-                 layer3_cols=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'],
+                 layer3_cols=None,
                  monitor_interval='10s',
                  influx_host=None,
                  influx_port=None,
@@ -74,6 +74,10 @@ class IPVariableTime(Realm):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
+        if sta_list is None:
+            sta_list = []
+        if layer3_cols is None:
+            layer3_cols = ['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate']
         super().__init__(lfclient_host=host,
                          lfclient_port=port),
         self.upstream = upstream
