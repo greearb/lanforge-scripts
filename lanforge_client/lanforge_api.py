@@ -99,6 +99,7 @@ from enum import Enum
 SESSION_HEADER = 'X-LFJson-Session'
 LOGGER = Logger('json_api')
 
+
 def _now_ms() -> int:
     return round(time.time() * 1000)
 
@@ -217,6 +218,7 @@ def print_diagnostics(url_: str = None,
     if die_on_error_:
         exit(1)
 
+
 class Logg:
     DEFAULT_LEVEL = logging.WARNING
 
@@ -230,7 +232,7 @@ class Logg:
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
         self.level = log_level
-        self.logger : Logger
+        self.logger: Logger
 
         self.start_time = datetime.now()
         self.start_time_str = time.strftime("%Y%m%d-%I:%M%:%S")
@@ -270,7 +272,6 @@ class Logg:
 
         if level == logging.DEBUG:
             self.logger.debug(message)
-
 
     def error(self, message: str = None):
         if not message:
@@ -566,9 +567,9 @@ class BaseLFJsonRequest:
                 self.logger.warning("response headers:")
                 self.logger.warning(pformat(headers))
             if SESSION_HEADER in headers:
-                if self.session_id != headers[SESSION_HEADER]:
+                if self.session_id != resp.getheader(SESSION_HEADER):
                     self.logger.warning("established session header [%s] different from response session header[%s]"
-                                        % (self.session_id, headers[SESSION_HEADER]))
+                                        % (self.session_id, resp.getheader(SESSION_HEADER)))
             if response_json_list is not None:
                 if type(response_json_list) is not list:
                     raise ValueError("reponse_json_list needs to be type list")
@@ -968,8 +969,9 @@ class JsonCommand(BaseLFJsonRequest):
             if die_without_session_id_:
                 exit(1)
             return False
-        if _not(first_response.msg):
-            self.logger.error("no session_response.msg: %s" % pformat(first_response))
+        # first_response.msg is HttpMessage not a string
+        if first_response.status != 200:
+            self.logger.error("Error starting session msg: %s" % pformat(first_response.headers))
             if die_without_session_id_:
                 exit(1)
             return False
@@ -977,8 +979,8 @@ class JsonCommand(BaseLFJsonRequest):
         if debug:
             self.logger.debug("%s: newsession: %s" % (__name__, pformat(first_response)))
         # self.session_instance.session_id = first_response["session_id"]
-        self.logger.debug(pformat( ("start_session headers:",
-                                    first_response.getheaders())))
+        self.logger.debug(pformat(("start_session headers:",
+                                   first_response.getheaders())))
         if SESSION_HEADER not in first_response.headers:
             self.logger.error("start_session: no %s in response headers:" % SESSION_HEADER)
             self.logger.error(pformat(first_response.headers))
@@ -1190,8 +1192,8 @@ class LFJsonCommand(JsonCommand):
                           pkt_sz: str = None,     # Minimum packet size, including all Ethernet headers.
                           port: str = None,       # Port number. [W]
                           pps: str = None,        # Packets per second to generate.
-                          resource: str = None,   # Resource number. [W]
-                          shelf: str = None,      # Shelf name/id. Required. [R][D:1]
+                          resource: int = None,   # Resource number. [W]
+                          shelf: int = 1,         # Shelf name/id. Required. [R][D:1]
                           tos: str = None,        # The Type of Service, can be HEX. See set_endp_tos for details.
                           p_type: str = None,     # Endpoint Type : arm_udp. [W]
                           debug=False):
@@ -1269,8 +1271,8 @@ class LFJsonCommand(JsonCommand):
                           nexthop6: str = None,         # BGP Peer IPv6 Nexthop address.
                           peer_id: str = None,          # BGP Peer Identifier: IPv4 Address
                           peer_index: str = None,       # Peer index in this virtual router (0-7).
-                          resource: str = None,         # Resource number. [W]
-                          shelf: str = None,            # Shelf name/id. [R][D:1]
+                          resource: int = None,         # Resource number. [W]
+                          shelf: int = 1,               # Shelf name/id. [R][D:1]
                           vr_id: str = None,            # Name of virtual router. [R]
                           debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -1321,8 +1323,8 @@ class LFJsonCommand(JsonCommand):
     def post_add_bond(self, 
                       network_devs: str = None,  # Comma-separated list of network devices: eth1,eth2,eth3... [W]
                       port: str = None,          # Name of the bond device. [W]
-                      resource: str = None,      # Resource number. [W]
-                      shelf: str = None,         # Shelf number. [R][D:1]
+                      resource: int = None,      # Resource number. [W]
+                      shelf: int = 1,            # Shelf number. [R][D:1]
                       debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -1370,8 +1372,8 @@ class LFJsonCommand(JsonCommand):
                     br_priority: str = None,          # Bridge priority, 16-bit number.
                     network_devs: str = None,         # Comma-separated list of network devices: eth1,eth2,eth3...
                     port: str = None,                 # Name of the bridge device. [W]
-                    resource: str = None,             # Resource number. [W]
-                    shelf: str = None,                # Shelf number. [R][D:1]
+                    resource: int = None,             # Resource number. [W]
+                    shelf: int = 1,                   # Shelf number. [R][D:1]
                     debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -1426,9 +1428,9 @@ class LFJsonCommand(JsonCommand):
                     alias: str = None,         # Name of Collision Domain. [W]
                     bps: str = None,           # Maximum speed at which this collision domain can run.
                     flags: str = None,         # See above. Leave blank or use 'NA' for no default values.
-                    report_timer: str = None,  # How often to report stats.
-                    resource: str = None,      # Resource number. [W]
-                    shelf: str = None,         # Shelf name/id. [R][D:1]
+                    report_timer: int = None,  # How often to report stats.
+                    resource: int = None,      # Resource number. [W]
+                    shelf: int = 1,            # Shelf name/id. [R][D:1]
                     state: str = None,         # RUNNING or STOPPED (default is RUNNING). Use this to start/stop.
                     p_type: str = None,        # CD Type: WIFI, WISER_SURFACE, WISER_SURFACE_AIR, WISER_AIR_AIR,
                     # WISER_NCW
@@ -1586,7 +1588,7 @@ class LFJsonCommand(JsonCommand):
                          lanforge3: str = None,       # EID of third LANforge Resource in this chamber or NA
                          lanforge4: str = None,       # EID of fourth LANforge Resource in this chamber or NA
                          name: str = None,            # Name of Chamber, unique identifier. [R]
-                         resource: str = None,        # LANforge Resource ID for controlling turn-table via serial
+                         resource: int = None,        # LANforge Resource ID for controlling turn-table via serial
                          # protocol.
                          sma_count: str = None,       # Number of SMA connectors on this chamber, default is 16.
                          turntable_type: str = None,  # Turn-Table type: see above.
@@ -1785,8 +1787,8 @@ class LFJsonCommand(JsonCommand):
                                # 0x7e
                                mtu: str = None,        # MTU (and MRU) for this channel group. Must be a multiple
                                # of the number of channels if configuring a T1 WanLink.
-                               resource: str = None,   # Resource number. [W]
-                               shelf: str = None,      # Shelf name/id. [R][D:1]
+                               resource: int = None,   # Resource number. [W]
+                               shelf: int = 1,         # Shelf name/id. [R][D:1]
                                span_num: str = None,   # The span number. First span is 1, second is 2... [W]
                                p_type: str = None,     # The channel-type. Use 'clear' for PPP links.
                                debug=False):
@@ -2153,10 +2155,10 @@ class LFJsonCommand(JsonCommand):
                       # connections per endpoint. See AUTO_HELPER flag
                       payload_pattern: str = None,           # Payload pattern, see above.
                       port: str = None,                      # Port/Interface name or number. [R]
-                      resource: str = None,                  # Resource number. [W]
+                      resource: int = None,                  # Resource number. [W]
                       send_bad_crc_per_million: str = None,  # If NIC supports it, will randomly send X per million packets
                       # with bad ethernet Frame Check Sum.
-                      shelf: str = None,                     # Shelf name/id. [R][D:1]
+                      shelf: int = 1,                        # Shelf name/id. [R][D:1]
                       ttl: str = None,                       # Time-to-live, used by UDP Multicast Endpoints only.
                       p_type: str = None,                    # Endpoint Type: See above. [W]
                       use_checksum: str = None,              # Yes means checksum the payload, anything else means NO.
@@ -2335,12 +2337,12 @@ class LFJsonCommand(JsonCommand):
                            payload_pattern: str = None,  # Payload pattern, see above.
                            port: str = None,             # Port number. [W]
                            prefix: str = None,           # The prefix of the file(s) to read/write.
-                           resource: str = None,         # Resource number. [W]
+                           resource: int = None,         # Resource number. [W]
                            retry_timer: str = None,      # Number of miliseconds to retry errored IO calls before
                            # giving up.
                            server_mount: str = None,     # The server to mount, ex:
                            # <tt>192.168.100.5/exports/test1</tt> [W]
-                           shelf: str = None,            # Shelf name/id. [R][D:1]
+                           shelf: int = 1,               # Shelf name/id. [R][D:1]
                            p_type: str = None,           # Endpoint Type (like <tt>fe_nfs</tt>) [W]
                            volume: str = None,           # iSCSI volume to mount
                            debug=False):
@@ -2404,8 +2406,8 @@ class LFJsonCommand(JsonCommand):
     def post_add_gen_endp(self, 
                           alias: str = None,     # Name of endpoint. [R]
                           port: str = None,      # Port number. [W]
-                          resource: str = None,  # Resource number. [W]
-                          shelf: str = None,     # Shelf name/id. [R][D:1]
+                          resource: int = None,  # Resource number. [W]
+                          shelf: int = 1,        # Shelf name/id. [R][D:1]
                           p_type: str = None,    # Endpoint Type : gen_generic [W][D:gen_generic]
                           debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -2443,9 +2445,9 @@ class LFJsonCommand(JsonCommand):
                      local_lower_ip: str = None,   # The local lower-level IP to use.
                      port: str = None,             # Name of the GRE to create, suggested to start with 'gre' [W]
                      remote_lower_ip: str = None,  # The remote lower-level IP to use.
-                     report_timer: str = None,     # Report timer for this port, leave blank or use NA for defaults.
-                     resource: str = None,         # Resource number. [W]
-                     shelf: str = None,            # Shelf number. [R][D:1]
+                     report_timer: int = None,     # Report timer for this port, leave blank or use NA for defaults.
+                     resource: int = None,         # Resource number. [W]
+                     shelf: int = 1,               # Shelf number. [R][D:1]
                      debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -2621,8 +2623,8 @@ class LFJsonCommand(JsonCommand):
                          proxy_userpwd: str = None,      # The user-name and password for proxy authentication, format:
                          # <tt>user:passwd</tt>.
                          quiesce_after: str = None,      # Quiesce test after this many URLs have been processed.
-                         resource: str = None,           # Resource number. [W]
-                         shelf: str = None,              # Shelf name/id. [R][D:1]
+                         resource: int = None,           # Resource number. [W]
+                         shelf: int = 1,                 # Shelf name/id. [R][D:1]
                          smtp_from: str = None,          # SMTP From address.
                          ssl_cert_fname: str = None,     # Name of SSL Certs file.
                          timeout: str = None,            # How long to wait for a connection, in milliseconds
@@ -2726,8 +2728,8 @@ class LFJsonCommand(JsonCommand):
                          flags: str = None,       # Flags for this monitor interface.
                          flags_mask: str = None,  # Flags mask for this monitor interface.
                          radio: str = None,       # Name of the physical radio interface, for example: wiphy0 [W]
-                         resource: str = None,    # Resource number. [W]
-                         shelf: str = None,       # Shelf number. [R][D:1]
+                         resource: int = None,    # Resource number. [W]
+                         shelf: int = 1,          # Shelf number. [R][D:1]
                          debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -2774,9 +2776,9 @@ class LFJsonCommand(JsonCommand):
                        # <tt>xx:xx:xx:*:*:xx</tt> [W]
                        old_name: str = None,      # The temporary name, used for configuring un-discovered hardware.
                        port: str = None,          # Port number of an existing Ethernet interface. [W]
-                       report_timer: str = None,  # Report timer for this port, leave blank or use NA for defaults.
-                       resource: str = None,      # Resource number. [W]
-                       shelf: str = None,         # Shelf number. [R][D:1]
+                       report_timer: int = None,  # Report timer for this port, leave blank or use NA for defaults.
+                       resource: int = None,      # Resource number. [W]
+                       shelf: int = 1,            # Shelf number. [R][D:1]
                        debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -2818,7 +2820,7 @@ class LFJsonCommand(JsonCommand):
     def post_add_ppp_link(self, 
                           auth: str = None,                  # YES if you want to authenticate. Default is NO.
                           channel_groups: str = None,        # List of channel groups, see above.
-                          p_debug: str = None,               # YES for debug, otherwise debugging for the ppp connection
+                          p_debug: bool = False,             # YES for debug, otherwise debugging for the ppp connection
                           # is off.
                           down_time_max_ms: str = None,      # Maximum length of downtime (ms) for PPP link between runs,
                           # or 0 for the link to be always up.
@@ -2835,12 +2837,12 @@ class LFJsonCommand(JsonCommand):
                           persist: str = None,               # YES if you want to persist the connection. This is
                           # suggested.
                           pppoe_transport_port: str = None,  # Port number (or name) for underlying PPPoE transport.
-                          resource: str = None,              # Resource (machine) number. [W]
+                          resource: int = None,              # Resource (machine) number. [W]
                           run_time_max_ms: str = None,       # Maximum uptime (ms) for PPP link during an experiment, or
                           # 0 for the link to be always up.
                           run_time_min_ms: str = None,       # Minimum uptime (ms) for PPP link during an experiment, or
                           # 0 for the link to be always up.
-                          shelf: str = None,                 # Shelf name/id. [R]
+                          shelf: int = 1,                    # Shelf name/id. [R]
                           src_ip: str = None,                # Source IP address for this PPP connection.
                           transport_type: str = None,        # What sort of transport this ppp link uses.
                           tty_transport_device: str = None,  # TTY device for PPP links associated with TTYs.
@@ -3078,9 +3080,9 @@ class LFJsonCommand(JsonCommand):
     def post_add_rdd(self, 
                      peer_ifname: str = None,   # The peer (other) RedirectDevice in this pair.
                      port: str = None,          # Name of the Redirect Device to create. [W]
-                     report_timer: str = None,  # Report timer for this port, leave blank or use NA for defaults.
-                     resource: str = None,      # Resource number. [W]
-                     shelf: str = None,         # Shelf number. [R][D:1]
+                     report_timer: int = None,  # Report timer for this port, leave blank or use NA for defaults.
+                     resource: int = None,      # Resource number. [W]
+                     shelf: int = 1,            # Shelf number. [R][D:1]
                      debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -3117,8 +3119,8 @@ class LFJsonCommand(JsonCommand):
                         ip_list: str = None,   # IP1/prefix,IP2/prefix,...IPZ/prefix. [W]
                         port: str = None,      # Name of network device (Port) to which these IPs will be added.
                         # [W]
-                        resource: str = None,  # Resource number. [W]
-                        shelf: str = None,     # Shelf number. [R][D:1]
+                        resource: int = None,  # Resource number. [W]
+                        shelf: int = 1,        # Shelf number. [R][D:1]
                         debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -3265,8 +3267,8 @@ class LFJsonCommand(JsonCommand):
                      nickname: str = None,       # Nickname for this Virtual STA. (No longer used)
                      radio: str = None,          # Name of the physical radio interface, for example: wiphy0 [W]
                      rate: str = None,           # Max rate, see help above.
-                     resource: str = None,       # Resource number. [W]
-                     shelf: str = None,          # Shelf number. [R][D:1]
+                     resource: int = None,       # Resource number. [W]
+                     shelf: int = 1,             # Shelf number. [R][D:1]
                      ssid: str = None,           # SSID for this Virtual STA. Use [BLANK] for empty SSID. Start with
                      # <tt>0x</tt> for HEX interpretation. [W]
                      sta_br_ip: str = None,      # IP Address for station bridging. Set to 0.0.0.0 to use MAC
@@ -3374,8 +3376,8 @@ class LFJsonCommand(JsonCommand):
                          mtu: str = None,            # MTU for this span (used by in-band management, if at all).
                          pci_bus: str = None,        # PCI Bus number, needed for Sangoma resources.
                          pci_slot: str = None,       # PCI slot number, needed for Sangoma resources.
-                         resource: str = None,       # Resource number. [W]
-                         shelf: str = None,          # Shelf name/id. [R][D:1]
+                         resource: int = None,       # Resource number. [W]
+                         shelf: int = 1,             # Shelf name/id. [R][D:1]
                          span_num: str = None,       # The span number. First span is 1, second is 2... [W]
                          timing: str = None,         # Timing: 0 == do not use, 1 == primary, 2 == secondary..
                          p_type: str = None,         # Currently supported types listed above. [W]
@@ -3788,8 +3790,8 @@ class LFJsonCommand(JsonCommand):
                      mode: str = None,         # WiFi mode: see table [W]
                      radio: str = None,        # Name of the physical radio interface, for example: wiphy0 [W]
                      rate: str = None,         # Max rate, see help for add_vsta
-                     resource: str = None,     # Resource number. [W]
-                     shelf: str = None,        # Shelf number. [R][D:1]
+                     resource: int = None,     # Resource number. [W]
+                     shelf: int = 1,           # Shelf number. [R][D:1]
                      ssid: str = None,         # SSID for this Virtual AP. [W]
                      x_coord: str = None,      # Floating point number.
                      y_coord: str = None,      # Floating point number.
@@ -3929,8 +3931,8 @@ class LFJsonCommand(JsonCommand):
                        # 47-characters max.
                        freq_24: str = None,      # Frequency list for 2.4Ghz band, see above.
                        freq_5: str = None,       # Frequency list for 5Ghz band, see above.
-                       resource: str = None,     # Resource number. [W]
-                       shelf: str = None,        # Shelf number. [R][D:1]
+                       resource: int = None,     # Resource number. [W]
+                       shelf: int = 1,           # Shelf number. [R][D:1]
                        venu_id: str = None,      # Number to uniquely identify this venue on this resource. [W]
                        x1: str = None,           # Floating point coordinate for lower-left corner.
                        x2: str = None,           # Floating point coordinate for upper-right corner.
@@ -3981,9 +3983,9 @@ class LFJsonCommand(JsonCommand):
     def post_add_vlan(self, 
                       old_name: str = None,      # The temporary name, used for configuring un-discovered hardware.
                       port: str = None,          # Port number of an existing Ethernet interface. [W]
-                      report_timer: str = None,  # Report timer for this port, leave blank or use NA for defaults.
-                      resource: str = None,      # Resource number. [W]
-                      shelf: str = None,         # Shelf number. [R][D:1]
+                      report_timer: int = None,  # Report timer for this port, leave blank or use NA for defaults.
+                      resource: int = None,      # Resource number. [W]
+                      shelf: int = 1,            # Shelf number. [R][D:1]
                       vid: str = None,           # The VLAN-ID for this 802.1Q VLAN interface. [W]
                       debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -4032,11 +4034,11 @@ class LFJsonCommand(JsonCommand):
                            phone_num: str = None,       # Phone number for Endpoint [W]
                            port: str = None,            # Port number or name. [W]
                            proxy_passwd: str = None,    # Password to be used when registering with proxy/gateway.
-                           resource: str = None,        # Resource number. [W]
+                           resource: int = None,        # Resource number. [W]
                            rtp_port: str = None,        # RTP port to use for send and receive.
                            rx_sound_file: str = None,   # File name to save received PCM data to. Will be in WAV
                            # format, or AUTO
-                           shelf: str = None,           # Shelf name/id. [R][D:1]
+                           shelf: int = 1,              # Shelf name/id. [R][D:1]
                            sip_gateway: str = None,     # SIP Gateway/Proxy Name, this is who to register with, or
                            # AUTO
                            tx_sound_file: str = None,   # File name containing the sound sample we will be playing.
@@ -4136,8 +4138,8 @@ class LFJsonCommand(JsonCommand):
                     height: str = None,    # Height to be used when drawn in the LANforge-GUI.
                     notes: str = None,     # Notes for this Virtual Router. Put in quotes if the notes include
                     # white-space.
-                    resource: str = None,  # Resource number. [W]
-                    shelf: str = None,     # Shelf name/id. [R][D:1]
+                    resource: int = None,  # Resource number. [W]
+                    shelf: int = 1,        # Shelf name/id. [R][D:1]
                     vr_id: str = None,     # Leave blank, use NA or 0xFFFF unless you are certain of the value you
                     # want to enter.
                     width: str = None,     # Width to be used when drawn in the LANforge-GUI.
@@ -4217,9 +4219,9 @@ class LFJsonCommand(JsonCommand):
                         half_life: str = None,     # Halflife in minutes for damping configuration.
                         local_as: str = None,      # BGP Autonomous System number, 1-65535
                         max_suppress: str = None,  # Maximum hold down time in minutes for damping configuration.
-                        resource: str = None,      # Resource number. [W]
+                        resource: int = None,      # Resource number. [W]
                         reuse: str = None,         # Route flag damping reuse threshold, in minutes.
-                        shelf: str = None,         # Shelf name/id. [R][D:1]
+                        shelf: int = 1,            # Shelf name/id. [R][D:1]
                         suppress: str = None,      # Route flag damping cutoff threshold, in minutes.
                         vr_id: str = None,         # Name of virtual router. [R]
                         debug=False):
@@ -4320,10 +4322,10 @@ class LFJsonCommand(JsonCommand):
                       # Default is 0.0.0.0.
                       remote_dev: str = None,       # Name the remote network device. [W]
                       remote_dev_b: str = None,     # Name of port B for the remote network device. [W]
-                      resource: str = None,         # Resource number. [W]
+                      resource: int = None,         # Resource number. [W]
                       rip_metric: str = None,       # If using RIP, this determines the RIP metric (cost), (1-15, 15
                       # is infinite).
-                      shelf: str = None,            # Shelf name/id. [R][D:1]
+                      shelf: int = 1,               # Shelf name/id. [R][D:1]
                       subnets: str = None,          # Subnets associated with this link, format:
                       # 1.1.1.1/24,1.1.2.1/16...
                       vr_name: str = None,          # Virtual Router this endpoint belongs to. Use 'FREE_LIST' to add
@@ -4424,8 +4426,8 @@ class LFJsonCommand(JsonCommand):
     def post_add_vrcx2(self, 
                        local_dev: str = None,  # Name of port A for the connection. [W]
                        nexthop6: str = None,   # The IPv6 next-hop to use when routing packets out this interface.
-                       resource: str = None,   # Resource number. [W]
-                       shelf: str = None,      # Shelf name/id. [R][D:1]
+                       resource: int = None,   # Resource number. [W]
+                       shelf: int = 1,         # Shelf name/id. [R][D:1]
                        subnets6: str = None,   # IPv6 Subnets associated with this link, format:
                        # aaaa:bbbb::0/64,cccc:dddd:eeee::0/64...
                        vr_name: str = None,    # Virtual Router this endpoint belongs to. Use 'FREE_LIST' to add a
@@ -4522,8 +4524,8 @@ class LFJsonCommand(JsonCommand):
                          # packets randomly.
                          reorder_freq: str = None,           # How often, out of 1,000,000 packets, should we make a
                          # packet out of order. [W]
-                         resource: str = None,               # Resource number. [W]
-                         shelf: str = None,                  # Shelf name/id. [R][D:1]
+                         resource: int = None,               # Resource number. [W]
+                         shelf: int = 1,                     # Shelf name/id. [R][D:1]
                          source_ip: str = None,              # Selection filter: Source IP.
                          source_ip_mask: str = None,         # Selection filter: Source IP MASK.
                          speed: str = None,                  # The maximum speed this WanLink will accept (bps). [W]
@@ -4668,8 +4670,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#apply_vr_cfg
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_apply_vr_cfg(self, 
-                          resource: str = None,  # The number of the resource in question, or 'ALL'. [W]
-                          shelf: str = None,     # The number of the shelf in question, or 'ALL'. [R][D:ALL]
+                          resource: int = None,  # The number of the resource in question, or 'ALL'. [W]
+                          shelf: int = 1,        # The number of the shelf in question, or 'ALL'. [R][D:ALL]
                           debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -4697,9 +4699,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#blink_attenuator
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_blink_attenuator(self, 
-                              resource: str = None,  # Resource number. [W]
+                              resource: int = None,  # Resource number. [W]
                               serno: str = None,     # Serial number for requested Attenuator, or 'all'. [W]
-                              shelf: str = None,     # Shelf number, usually 1. [R][D:1]
+                              shelf: int = 1,        # Shelf number, usually 1. [R][D:1]
                               debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -4758,8 +4760,8 @@ class LFJsonCommand(JsonCommand):
                           port: str = None,         # Port number, or 'all'. [W]
                           probe_flags: str = None,  # See above, add them together for multiple probings. Leave
                           # blank if you want stats only.
-                          resource: str = None,     # Resource number, or 'all'. [W]
-                          shelf: str = None,        # Name/id of the shelf, or 'all'. [R][D:1]
+                          resource: int = None,     # Resource number, or 'all'. [W]
+                          shelf: int = 1,           # Name/id of the shelf, or 'all'. [R][D:1]
                           debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -4791,8 +4793,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#cancel_vr_cfg
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_cancel_vr_cfg(self, 
-                           resource: str = None,  # The number of the resource in question, or 'ALL'. [W]
-                           shelf: str = None,     # The number of the shelf in question, or 'ALL'. [R][D:ALL]
+                           resource: int = None,  # The number of the resource in question, or 'ALL'. [W]
+                           shelf: int = 1,        # The number of the shelf in question, or 'ALL'. [R][D:ALL]
                            debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -4947,8 +4949,8 @@ class LFJsonCommand(JsonCommand):
                                  extra: str = None,     # Clear something else instead: dhcp4_lease | dhcp6_lease |
                                  # dhcp_leases
                                  port: str = None,      # The number of the port in question, or 'ALL'. [W]
-                                 resource: str = None,  # The number of the resource in question, or 'ALL'. [W]
-                                 shelf: str = None,     # The number of the shelf in question, or 'ALL'. [R][D:1]
+                                 resource: int = None,  # The number of the resource in question, or 'ALL'. [W]
+                                 shelf: int = 1,        # The number of the shelf in question, or 'ALL'. [R][D:1]
                                  debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -4980,8 +4982,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#clear_resource_counters
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_clear_resource_counters(self, 
-                                     resource: str = None,  # The number of the resource in question, or 'ALL'. [W]
-                                     shelf: str = None,     # The number of the shelf in question, or 'ALL'.
+                                     resource: int = None,  # The number of the resource in question, or 'ALL'. [W]
+                                     shelf: int = 1,        # The number of the shelf in question, or 'ALL'.
                                      # [R][D:1]
                                      debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -5119,8 +5121,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_discover(self, 
                       disconnect: str = None,  # Set to 'disconnect' to force disconnect to remote resource process.
-                      resource: str = None,    # Resource ID. Use if discovering Attenuators. [W]
-                      shelf: str = None,       # Shelf-ID, only used if discovering Attenuators. [R][D:1]
+                      resource: int = None,    # Resource ID. Use if discovering Attenuators. [W]
+                      shelf: int = 1,          # Shelf-ID, only used if discovering Attenuators. [R][D:1]
                       debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -5179,11 +5181,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#file
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_file(self, 
-                  card: str = None,      # Resource ID [W]
+                  card: int = None,      # Resource ID [W]
                   cmd: str = None,       # Only 'Download' supported for now, 'Upload' reserved for future use.
                   # [W][D:Download]
                   filename: str = None,  # File to transfer. [W]
-                  shelf: str = None,     # Shelf ID [R][D:1]
+                  shelf: int = 1,        # Shelf ID [R][D:1]
                   debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -5216,9 +5218,9 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_flash_attenuator(self, 
                               filename: str = None,  # File to use when uploading to attenuator.
-                              resource: str = None,  # Resource number. [W]
+                              resource: int = None,  # Resource number. [W]
                               serno: str = None,     # Serial number for requested Attenuator, or 'all'. [W]
-                              shelf: str = None,     # Shelf number, usually 1. [R][D:1]
+                              shelf: int = 1,        # Shelf number, usually 1. [R][D:1]
                               debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -5655,8 +5657,8 @@ class LFJsonCommand(JsonCommand):
                         # string.
                         node_count: str = None,  # The number of WISER nodes for the desired emulation, or 'NA' for
                         # empty string.
-                        resource: str = None,    # The number of the resource in question. [W]
-                        shelf: str = None,       # The number of the shelf in question. [R][D:1]
+                        resource: int = None,    # The number of the resource in question. [W]
+                        shelf: int = 1,          # The number of the shelf in question. [R][D:1]
                         debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -5902,8 +5904,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_cd(self, 
                         collision_domain: str = None,  # Name of the Collision Domain, or 'all'. [W]
-                        resource: str = None,          # Resource number, or 'all'. [W]
-                        shelf: str = None,             # Name/id of the shelf, or 'all'. [R][D:1]
+                        resource: int = None,          # Resource number, or 'all'. [W]
+                        shelf: int = 1,                # Name/id of the shelf, or 'all'. [R][D:1]
                         debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -5934,8 +5936,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_channel_groups(self, 
                                     channel_name: str = None,  # Name of the channel, or 'all'. [W]
-                                    resource: str = None,      # Resource number, or 'all'. [W]
-                                    shelf: str = None,         # Name/id of the shelf, or 'all'. [R][D:1]
+                                    resource: int = None,      # Resource number, or 'all'. [W]
+                                    shelf: int = 1,            # Name/id of the shelf, or 'all'. [R][D:1]
                                     debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -6049,8 +6051,8 @@ class LFJsonCommand(JsonCommand):
                            port: str = None,         # Port number, or 'all'. [W]
                            probe_flags: str = None,  # See above, add them together for multiple probings. Leave
                            # blank if you want stats only.
-                           resource: str = None,     # Resource number, or 'all'. [W]
-                           shelf: str = None,        # Name/id of the shelf, or 'all'. [R][D:1]
+                           resource: int = None,     # Resource number, or 'all'. [W]
+                           shelf: int = 1,           # Name/id of the shelf, or 'all'. [R][D:1]
                            debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -6083,8 +6085,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_ppp_links(self, 
                                link_num: str = None,  # Ppp-Link number of the span, or 'all'. [W]
-                               resource: str = None,  # Resource number, or 'all'. [W]
-                               shelf: str = None,     # Name/id of the shelf, or 'all'. [R][D:1]
+                               resource: int = None,  # Resource number, or 'all'. [W]
+                               shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
                                debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -6114,8 +6116,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#nc_show_spans
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_spans(self, 
-                           resource: str = None,     # Resource number, or 'all'. [W]
-                           shelf: str = None,        # Name/id of the shelf, or 'all'. [R][D:1]
+                           resource: int = None,     # Resource number, or 'all'. [W]
+                           shelf: int = 1,           # Name/id of the shelf, or 'all'. [R][D:1]
                            span_number: str = None,  # Span-Number of the span, or 'all'. [W]
                            debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -6146,9 +6148,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#nc_show_vr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_vr(self, 
-                        resource: str = None,  # Resource number, or 'all'. [W]
+                        resource: int = None,  # Resource number, or 'all'. [W]
                         router: str = None,    # Name of the Virtual Router, or 'all'. [W]
-                        shelf: str = None,     # Name/id of the shelf, or 'all'. [R][D:1]
+                        shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
                         debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -6179,8 +6181,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_vrcx(self, 
                           cx_name: str = None,   # Name of the Virtual Router Connection, or 'all'. [W]
-                          resource: str = None,  # Resource number, or 'all'. [W]
-                          shelf: str = None,     # Name/id of the shelf, or 'all'. [R][D:1]
+                          resource: int = None,  # Resource number, or 'all'. [W]
+                          shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
                           debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -6296,8 +6298,8 @@ class LFJsonCommand(JsonCommand):
     def post_probe_port(self, 
                         key: str = None,       # Unique identifier for this request. Usually left blank.<br/>
                         port: str = None,      # Port number or name [W]
-                        resource: str = None,  # Resource number. [W]
-                        shelf: str = None,     # Shelf number. [R][D:1]
+                        resource: int = None,  # Resource number. [W]
+                        shelf: int = 1,        # Shelf number. [R][D:1]
                         debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -6329,8 +6331,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#probe_ports
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_probe_ports(self, 
-                         resource: str = None,  # Resource number, or 'all'. [W]
-                         shelf: str = None,     # Name/id of the shelf, or 'all'. [R][D:1]
+                         resource: int = None,  # Resource number, or 'all'. [W]
+                         shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
                          debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -6431,8 +6433,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#reboot_os
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_reboot_os(self, 
-                       resource: str = None,  # Resource number, or ALL. [W]
-                       shelf: str = None,     # Shelf number, or ALL. [R][D:1]
+                       resource: int = None,  # Resource number, or ALL. [W]
+                       shelf: int = 1,        # Shelf number, or ALL. [R][D:1]
                        debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -6511,8 +6513,8 @@ class LFJsonCommand(JsonCommand):
                         pre_ifdown: str = None,  # See above. Leave blank or use NA if unsure.
                         reset_ospf: str = None,  # If set to 'NO' or 'NA', then OSPF will not be updated. Otherwise,
                         # it will be updated.
-                        resource: str = None,    # Resource number, or ALL. [W]
-                        shelf: str = None,       # Shelf number, or ALL. [R][D:1]
+                        resource: int = None,    # Resource number, or ALL. [W]
+                        shelf: int = 1,          # Shelf number, or ALL. [R][D:1]
                         debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -6546,8 +6548,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#reset_serial_span
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_reset_serial_span(self, 
-                               resource: str = None,  # Resource (machine) number. [W]
-                               shelf: str = None,     # Shelf number [R][D:1]
+                               resource: int = None,  # Resource (machine) number. [W]
+                               shelf: int = 1,        # Shelf number [R][D:1]
                                span: str = None,      # Serial-Span number to reset. [W]
                                debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -6578,9 +6580,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_attenuator
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_attenuator(self, 
-                           resource: str = None,  # Resource number [W]
+                           resource: int = None,  # Resource number [W]
                            serno: str = None,     # Serial number for requested Attenuator. [W]
-                           shelf: str = None,     # Shelf number, usually 1 [R][D:1]
+                           shelf: int = 1,        # Shelf number, usually 1 [R][D:1]
                            debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -6750,8 +6752,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_channel_group(self, 
                               channel_name: str = None,  # Name of the channel, or 'all'. [W]
-                              resource: str = None,      # Resource number, or 'all'. [W]
-                              shelf: str = None,         # Name/id of the shelf, or 'all'. [R][D:1]
+                              resource: int = None,      # Resource number, or 'all'. [W]
+                              shelf: int = 1,            # Name/id of the shelf, or 'all'. [R][D:1]
                               debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -6865,7 +6867,7 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_dut
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_dut(self, 
-                    shelf: str = None,  # DUT name, or 'ALL' [W]
+                    shelf: int = 1,  # DUT name, or 'ALL' [W]
                     debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -6969,8 +6971,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_ppp_link
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_ppp_link(self, 
-                         resource: str = None,  # Resource number that holds this PppLink. [W]
-                         shelf: str = None,     # Name/id of the shelf. [R][D:1]
+                         resource: int = None,  # Resource number that holds this PppLink. [W]
+                         shelf: int = 1,        # Name/id of the shelf. [R][D:1]
                          unit_num: str = None,  # Unit-Number for the PppLink to be deleted. [W]
                          debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -7027,8 +7029,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_resource
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_resource(self, 
-                         resource: str = None,  # Resource number. [W]
-                         shelf: str = None,     # Shelf number. [R][D:1]
+                         resource: int = None,  # Resource number. [W]
+                         shelf: int = 1,        # Shelf number. [R][D:1]
                          debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -7056,8 +7058,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_rfgen
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_rfgen(self, 
-                      resource: str = None,  # Resource number [W]
-                      shelf: str = None,     # Shelf number, usually 1 [R][D:1]
+                      resource: int = None,  # Resource number [W]
+                      shelf: int = 1,        # Shelf number, usually 1 [R][D:1]
                       debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -7088,8 +7090,8 @@ class LFJsonCommand(JsonCommand):
                        ip_list: str = None,   # IP1/prefix,IP2/prefix,...IPZ/prefix, or ALL [W]
                        port: str = None,      # Name of network device (Port) from which these IPs will be removed.
                        # [W]
-                       resource: str = None,  # Resource number. [W]
-                       shelf: str = None,     # Shelf number. [R][D:1]
+                       resource: int = None,  # Resource number. [W]
+                       shelf: int = 1,        # Shelf number. [R][D:1]
                        debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -7121,8 +7123,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_span
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_span(self, 
-                     resource: str = None,  # Resource number, or 'all'. [W]
-                     shelf: str = None,     # Name/id of the shelf, or 'all'. [R][D:1]
+                     resource: int = None,  # Resource number, or 'all'. [W]
+                     shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
                      span_num: str = None,  # Span-Number of the channel, or 'all'. [W]
                      debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -7292,8 +7294,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_venue
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_venue(self, 
-                      resource: str = None,  # Resource number, or 'ALL' [W]
-                      shelf: str = None,     # Shelf number. [R][D:1]
+                      resource: int = None,  # Resource number, or 'ALL' [W]
+                      shelf: int = 1,        # Shelf number. [R][D:1]
                       venu_id: str = None,   # Number to uniquely identify this venue on this resource, or 'ALL'
                       # [W]
                       debug=False):
@@ -7326,8 +7328,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_vlan(self, 
                      port: str = None,      # Port number or name of the virtual interface. [W]
-                     resource: str = None,  # Resource number. [W]
-                     shelf: str = None,     # Shelf number. [R][D:1]
+                     resource: int = None,  # Resource number. [W]
+                     shelf: int = 1,        # Shelf number. [R][D:1]
                      debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -7357,9 +7359,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_vr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_vr(self, 
-                   resource: str = None,     # Resource number, or 'all'. [W]
+                   resource: int = None,     # Resource number, or 'all'. [W]
                    router_name: str = None,  # Virtual Router name, or 'all'. [W]
-                   shelf: str = None,        # Name/id of the shelf, or 'all'. [R][D:1]
+                   shelf: int = 1,           # Name/id of the shelf, or 'all'. [R][D:1]
                    debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -7390,8 +7392,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_vrcx(self, 
                      connection_name: str = None,  # Virtual Router Connection name, or 'all'. [W]
-                     resource: str = None,         # Resource number, or 'all'. [W]
-                     shelf: str = None,            # Name/id of the shelf, or 'all'. [R][D:1]
+                     resource: int = None,         # Resource number, or 'all'. [W]
+                     shelf: int = 1,               # Name/id of the shelf, or 'all'. [R][D:1]
                      vr_id: str = None,            # If not removing from the free-list, then supply the
                      # virtual-router name/ID here. Leave blank or use NA for free-list.
                      vrcx_only: str = None,        # If we should NOT delete underlying auto-created objects, enter
@@ -7514,8 +7516,8 @@ class LFJsonCommand(JsonCommand):
                        extra: str = None,     # Extra arguments to the scan script, see above.
                        key: str = None,       # Unique identifier for this request. Usually left blank.
                        port: str = None,      # Port number or name of the virtual interface. [W]
-                       resource: str = None,  # Resource number. [W]
-                       shelf: str = None,     # Shelf number. [R][D:1]
+                       resource: int = None,  # Resource number. [W]
+                       shelf: int = 1,        # Shelf number. [R][D:1]
                        debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -7676,9 +7678,9 @@ class LFJsonCommand(JsonCommand):
                             # (1-60000)
                             pulse_width_us5: str = None,    # Pulse width in units of 1/2 micro second. So, if you want
                             # 1.5us, use value 3 (0-60000)
-                            resource: str = None,           # Resource number. [W]
+                            resource: int = None,           # Resource number. [W]
                             serno: str = None,              # Serial number for requested Attenuator, or 'all'. [W]
-                            shelf: str = None,              # Shelf number, usually 1. [R][D:1]
+                            shelf: int = 1,                 # Shelf number, usually 1. [R][D:1]
                             val: str = None,                # Requested attenution in 1/10ths of dB (ddB). [W]
                             debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -8670,8 +8672,8 @@ class LFJsonCommand(JsonCommand):
                           lattitude: str = None,  # The lattitude, as read from a GPS device.
                           longitude: str = None,  # The longitude, as ready from a GPS device.
                           ns: str = None,         # North or South (Latitude).
-                          resource: str = None,   # Resource number for the port to be modified. [W]
-                          shelf: str = None,      # Shelf number for the port to be modified, or SELF. [R][D:1]
+                          resource: int = None,   # Resource number for the port to be modified. [W]
+                          shelf: int = 1,         # Shelf number for the port to be modified, or SELF. [R][D:1]
                           debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -8713,8 +8715,8 @@ class LFJsonCommand(JsonCommand):
                              port: str = None,              # WiFi interface name or number. [W]
                              post_ifup_script: str = None,  # Script name with optional args, will run after interface
                              # comes up and gets IP.
-                             resource: str = None,          # Resource number. [W]
-                             shelf: str = None,             # Shelf number. [R][D:1]
+                             resource: int = None,          # Resource number. [W]
+                             shelf: int = 1,                # Shelf number. [R][D:1]
                              debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -9115,10 +9117,10 @@ class LFJsonCommand(JsonCommand):
                       # or NA.
                       netmask: str = None,              # Netmask which this port should use, or NA.
                       port: str = None,                 # Port number for the port to be modified. [W]
-                      report_timer: str = None,         # How often, in milliseconds, should we poll stats on this
+                      report_timer: int = None,         # How often, in milliseconds, should we poll stats on this
                       # interface?
-                      resource: str = None,             # Resource number for the port to be modified. [W]
-                      shelf: str = None,                # Shelf number for the port to be modified. [R][D:1]
+                      resource: int = None,             # Resource number for the port to be modified. [W]
+                      shelf: int = 1,                   # Shelf number for the port to be modified. [R][D:1]
                       sta_br_id: str = None,            # WiFi STAtion bridge ID. Zero means none.
                       tx_queue_len: str = None,         # Transmit Queue Length for this interface. Can be blank or NA.
                       debug=False):
@@ -9220,8 +9222,8 @@ class LFJsonCommand(JsonCommand):
     def post_set_port_alias(self, 
                             alias: str = None,     # New alias to assign to this virtual interface. [W]
                             port: str = None,      # Physical Port identifier that owns the virtual interface. [R]
-                            resource: str = None,  # Resource number for the port to be modified. [W]
-                            shelf: str = None,     # Shelf number for the port to be modified. [R][D:1]
+                            resource: int = None,  # Resource number for the port to be modified. [W]
+                            shelf: int = 1,        # Shelf number for the port to be modified. [R][D:1]
                             vport: str = None,     # Virtual port identifier. MAC for MAC-VLANs, VLAN-ID for 802.1Q
                             # vlans.
                             debug=False):
@@ -9259,8 +9261,8 @@ class LFJsonCommand(JsonCommand):
     def post_set_ppp_link_state(self, 
                                 link: str = None,       # Unit Number of the PPP Link, or 'all'. [W]
                                 ppp_state: str = None,  # One of: RUNNING, STOPPED, or DELETED. [R]
-                                resource: str = None,   # Number of the Resource, or 'all'. [W]
-                                shelf: str = None,      # Name of the Shelf, or 'all'. [R][D:1]
+                                resource: int = None,   # Number of the Resource, or 'all'. [W]
+                                shelf: int = 1,         # Name of the Shelf, or 'all'. [R][D:1]
                                 debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -9308,11 +9310,11 @@ class LFJsonCommand(JsonCommand):
                           # Default is 12.
                           max_trying_ifup: str = None,      # Maximum amount of interfaces running the network config
                           # 'ifup' logic. Default is 15
-                          resource: str = None,             # Number of the Resource, or <tt>all</tt>. [W]
+                          resource: int = None,             # Number of the Resource, or <tt>all</tt>. [W]
                           resource_flags: str = None,       # System wide flags, often requires a reboot for changes to
                           # take effect.
                           resource_flags_mask: str = None,  # What flags to change. If unset, default is all.
-                          shelf: str = None,                # Name of the Shelf, or <tt>all</tt>. [R][D:1]
+                          shelf: int = 1,                   # Name of the Shelf, or <tt>all</tt>. [R][D:1]
                           top_left_x: str = None,           # X Location for Chamber View.
                           top_left_y: str = None,           # X Location for Chamber View.
                           debug=False):
@@ -9390,10 +9392,10 @@ class LFJsonCommand(JsonCommand):
                        pulse_count: str = None,        # Number of pulses (0-255)
                        pulse_interval_us: str = None,  # Time between pulses, in micro-seconds.
                        pulse_width_us: str = None,     # Requested pulse width, units are in micro-seconds.
-                       resource: str = None,           # Resource number. [W]
+                       resource: int = None,           # Resource number. [W]
                        rfgen_flags: str = None,        # RF Generator flags, see above.
                        rfgen_flags_mask: str = None,   # Mask of what flags to set, see above.
-                       shelf: str = None,              # Shelf number, usually 1. [R][D:1]
+                       shelf: int = 1,                 # Shelf number, usually 1. [R][D:1]
                        sweep_time_ms: str = None,      # Time interval between pulse groups in miliseconds
                        debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -9539,8 +9541,8 @@ class LFJsonCommand(JsonCommand):
                         ip_list: str = None,   # IP1/prefix,IP2/prefix,...IPZ/prefix. [W]
                         port: str = None,      # Name of network device (Port) to which these IPs will be added.
                         # [R]
-                        resource: str = None,  # Resource number. [W]
-                        shelf: str = None,     # Shelf number. [R][D:1]
+                        resource: int = None,  # Resource number. [W]
+                        shelf: int = 1,        # Shelf number. [R][D:1]
                         debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -9661,8 +9663,8 @@ class LFJsonCommand(JsonCommand):
                            local_dev_b: str = None,     # Name of port B for the local redirect device pair.
                            remote_dev: str = None,      # Name of port B for the remote redirect device pair.
                            remote_dev_b: str = None,    # Name of port B for the remote redirect device pair.
-                           resource: str = None,        # Resource number. [W]
-                           shelf: str = None,           # Shelf name/id. [R][D:1]
+                           resource: int = None,        # Resource number. [W]
+                           shelf: int = 1,              # Shelf name/id. [R][D:1]
                            vr_name: str = None,         # Virtual Router this endpoint belongs to. Use 'FREE_LIST' to
                            # add a stand-alone endpoint. [W][D:FREE_LIST]
                            wanlink: str = None,         # The name of the WanLink that connects the two B ports.
@@ -10045,8 +10047,8 @@ class LFJsonCommand(JsonCommand):
                                   # message types by this amount.
                                   port: str = None,             # WiFi interface name or number. [W]
                                   req_flush: str = None,        # Set to 1 if you wish to flush changes to kernel now.
-                                  resource: str = None,         # Resource number. [W]
-                                  shelf: str = None,            # Shelf number. [R][D:1]
+                                  resource: int = None,         # Resource number. [W]
+                                  shelf: int = 1,               # Shelf number. [R][D:1]
                                   debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -10097,8 +10099,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_wifi_custom(self, 
                              port: str = None,      # WiFi interface name or number. [W]
-                             resource: str = None,  # Resource number. [W]
-                             shelf: str = None,     # Shelf number. [R][D:1]
+                             resource: int = None,  # Resource number. [W]
+                             shelf: int = 1,        # Shelf number. [R][D:1]
                              text: str = None,      # [BLANK] will erase all, any other text will be appended to
                              # existing text.
                              p_type: str = None,    # NA for now, may specify specific locations later. [D:NA]
@@ -10172,9 +10174,9 @@ class LFJsonCommand(JsonCommand):
                             # password entry. Prepend with 0x for ascii-hex
                             # representation.
                             realm: str = None,               # 802.11u realm: mytelco.com
-                            resource: str = None,            # Resource number. [W]
+                            resource: int = None,            # Resource number. [W]
                             roaming_consortium: str = None,  # 802.11u roaming consortium: 223344 (15 characters max)
-                            shelf: str = None,               # Shelf number. [R][D:1]
+                            shelf: int = 1,                  # Shelf number. [R][D:1]
                             venue_group: str = None,         # 802.11u Venue Group, integer. VAP only.
                             venue_type: str = None,          # 802.11u Venue Type, integer. VAP only.
                             debug=False):
@@ -10279,10 +10281,10 @@ class LFJsonCommand(JsonCommand):
                              radius_ip: str = None,              # RADIUS server IP Address (AP Only)
                              radius_port: str = None,            # RADIUS server IP Port (AP Only)
                              req_flush: str = None,              # Set to 1 if you wish to flush changes to kernel now.
-                             resource: str = None,               # Resource number. [W]
+                             resource: int = None,               # Resource number. [W]
                              sae_pwe: str = None,                # Set SAE-PWE, 0 == hunting-and-pecking, 1 ==
                              # hash-to-element, 2 allow both.
-                             shelf: str = None,                  # Shelf number. [R][D:1]
+                             shelf: int = 1,                     # Shelf number. [R][D:1]
                              venue_id: str = None,               # Venue-ID for this wifi device. VAP in same venue will
                              # share neigh reports as appropriate.
                              debug=False):
@@ -10425,9 +10427,9 @@ class LFJsonCommand(JsonCommand):
                             rate: str = None,                # No longer used, specify the rate on the virtual
                             # station(s) instead.
                             rate_ctrl_count: str = None,     # Number of rate-ctrl objects for this radio.
-                            resource: str = None,            # Resource number. [W]
+                            resource: int = None,            # Resource number. [W]
                             rts: str = None,                 # The RTS Threshold for this radio (off, or 1-2347).
-                            shelf: str = None,               # Shelf number. [R][D:1]
+                            shelf: int = 1,                  # Shelf number. [R][D:1]
                             skid_limit: str = None,          # Firmware hash-table Skid Limit for this radio.
                             stations_count: str = None,      # Number of stations supported by this radio.
                             tids_count: str = None,          # TIDs count for this radio.
@@ -10527,8 +10529,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_wifi_txo(self, 
                           port: str = None,         # WiFi interface name or number. [W]
-                          resource: str = None,     # Resource number. [W]
-                          shelf: str = None,        # Shelf number. [R][D:1]
+                          resource: int = None,     # Resource number. [W]
+                          shelf: int = 1,           # Shelf number. [R][D:1]
                           txo_bw: str = None,       # Configure bandwidth: 0 == 20, 1 == 40, 2 == 80, 3 == 160, 4 ==
                           # 80+80.
                           txo_enable: str = None,   # Set to 1 if you wish to enable transmit override, 0 to
@@ -10714,11 +10716,11 @@ class LFJsonCommand(JsonCommand):
         Test_Mgr = "Test_Mgr"                  #
 
     def post_show_alerts(self, 
-                         card: str = None,   # Alert resource filter.
+                         card: int = None,   # Alert resource filter.
                          endp: str = None,   # Alert endpoint filter.
                          extra: str = None,  # Extra filter, currently ignored.
                          port: str = None,   # Alert port filter (can be port name or number).
-                         shelf: str = None,  # Alert shelf filter.
+                         shelf: int = 1,     # Alert shelf filter.
                          p_type: str = None,  # Alert type filter. [R]
                          debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -10755,9 +10757,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_attenuators
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_attenuators(self, 
-                              resource: str = None,  # Resource number, or 'all'. [W]
+                              resource: int = None,  # Resource number, or 'all'. [W]
                               serno: str = None,     # Serial number for requested Attenuator, or 'all'. [W]
-                              shelf: str = None,     # Shelf number or alias, can be 'all'. [R][D:1]
+                              shelf: int = 1,        # Shelf number or alias, can be 'all'. [R][D:1]
                               debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -10788,8 +10790,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_cd(self, 
                      collision_domain: str = None,  # Name of the Collision Domain, or 'all'. [W]
-                     resource: str = None,          # Resource number, or 'all'. [W]
-                     shelf: str = None,             # Name/id of the shelf, or 'all'. [R][D:1]
+                     resource: int = None,          # Resource number, or 'all'. [W]
+                     shelf: int = 1,                # Name/id of the shelf, or 'all'. [R][D:1]
                      debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -10846,8 +10848,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_channel_groups(self, 
                                  channel_name: str = None,  # Name of the channel, or 'all'. [W]
-                                 resource: str = None,      # Resource number, or 'all'. [W]
-                                 shelf: str = None,         # Name/id of the shelf, or 'all'. [R][D:1]
+                                 resource: int = None,      # Resource number, or 'all'. [W]
+                                 shelf: int = 1,            # Name/id of the shelf, or 'all'. [R][D:1]
                                  debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -11128,11 +11130,11 @@ class LFJsonCommand(JsonCommand):
         Test_Mgr = "Test_Mgr"                  #
 
     def post_show_events(self, 
-                         card: str = None,   # Event resource filter.
+                         card: int = None,   # Event resource filter.
                          endp: str = None,   # Event endpoint filter.
                          extra: str = None,  # Extra filter, currently ignored.
                          port: str = None,   # Event port filter (can be port name or number).
-                         shelf: str = None,  # Event shelf filter.
+                         shelf: int = 1,     # Event shelf filter.
                          p_type: str = None,  # Event type filter. [R]
                          debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -11173,8 +11175,8 @@ class LFJsonCommand(JsonCommand):
                         directory: str = None,  # The sub-directory in which to list.
                         p_filter: str = None,   # An optional filter, as used by the 'ls' command.
                         key: str = None,        # A special key, can be used for scripting.
-                        resource: str = None,   # The machine to search in. [W]
-                        shelf: str = None,      # The virtual shelf to search in. Use 0 for manager machine.
+                        resource: int = None,   # The machine to search in. [W]
+                        shelf: int = 1,         # The virtual shelf to search in. Use 0 for manager machine.
                         # [R,0-1]
                         debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -11266,8 +11268,8 @@ class LFJsonCommand(JsonCommand):
                         port: str = None,         # Port number, or 'all'. [W]
                         probe_flags: str = None,  # See above, add them together for multiple probings. Leave blank
                         # if you want stats only.
-                        resource: str = None,     # Resource number, or 'all'. [W]
-                        shelf: str = None,        # Name/id of the shelf, or 'all'. [R][D:1]
+                        resource: int = None,     # Resource number, or 'all'. [W]
+                        shelf: int = 1,           # Name/id of the shelf, or 'all'. [R][D:1]
                         debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -11300,8 +11302,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_ppp_links(self, 
                             link_num: str = None,  # Ppp-Link number of the span, or 'all'. [W]
-                            resource: str = None,  # Resource number, or 'all'. [W]
-                            shelf: str = None,     # Name/id of the shelf, or 'all'. [R][D:1]
+                            resource: int = None,  # Resource number, or 'all'. [W]
+                            shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
                             debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -11357,8 +11359,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_resources
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_resources(self, 
-                            resource: str = None,  # Resource number, or 'all'. [W]
-                            shelf: str = None,     # Shelf number or alias, can be 'all'. [R][D:1]
+                            resource: int = None,  # Resource number, or 'all'. [W]
+                            shelf: int = 1,        # Shelf number or alias, can be 'all'. [R][D:1]
                             debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -11386,8 +11388,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_rfgen
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_rfgen(self, 
-                        resource: str = None,  # Resource number, or 'all'. [W]
-                        shelf: str = None,     # Shelf number or alias, can be 'all'. [R][D:1]
+                        resource: int = None,  # Resource number, or 'all'. [W]
+                        shelf: int = 1,        # Shelf number or alias, can be 'all'. [R][D:1]
                         debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -11416,8 +11418,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_rt(self, 
                      key: str = None,             # Unique identifier for this request. Usually left blank.
-                     resource: str = None,        # Resource number. [W]
-                     shelf: str = None,           # Shelf number. [R][D:1]
+                     resource: int = None,        # Resource number. [W]
+                     shelf: int = 1,              # Shelf number. [R][D:1]
                      virtual_router: str = None,  # Name of the virtual router. [W]
                      debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -11479,8 +11481,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_spans
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_spans(self, 
-                        resource: str = None,     # Resource number, or 'all'. [W]
-                        shelf: str = None,        # Name/id of the shelf, or 'all'. [R][D:1]
+                        resource: int = None,     # Resource number, or 'all'. [W]
+                        shelf: int = 1,           # Name/id of the shelf, or 'all'. [R][D:1]
                         span_number: str = None,  # Span-Number of the span, or 'all'. [W]
                         debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -11595,8 +11597,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_venue
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_venue(self, 
-                        resource: str = None,  # Resource number, or 'ALL' [W]
-                        shelf: str = None,     # Shelf number. [R][D:1]
+                        resource: int = None,  # Resource number, or 'ALL' [W]
+                        shelf: int = 1,        # Shelf number. [R][D:1]
                         venu_id: str = None,   # Number to uniquely identify this venue on this resource, or 'ALL'
                         # [W]
                         debug=False):
@@ -11628,9 +11630,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_vr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_vr(self, 
-                     resource: str = None,  # Resource number, or 'all'. [W]
+                     resource: int = None,  # Resource number, or 'all'. [W]
                      router: str = None,    # Name of the Virtual Router, or 'all'. [W]
-                     shelf: str = None,     # Name/id of the shelf, or 'all'. [R][D:1]
+                     shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
                      debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -11661,8 +11663,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_vrcx(self, 
                        cx_name: str = None,   # Name of the Virtual Router Connection, or 'all'. [W]
-                       resource: str = None,  # Resource number, or 'all'. [W]
-                       shelf: str = None,     # Name/id of the shelf, or 'all'. [R][D:1]
+                       resource: int = None,  # Resource number, or 'all'. [W]
+                       shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
                        debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -11755,8 +11757,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#shutdown_os
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_shutdown_os(self, 
-                         resource: str = None,  # Resource number, or ALL. [W]
-                         shelf: str = None,     # Shelf number, or ALL. [R][D:1]
+                         resource: int = None,  # Resource number, or ALL. [W]
+                         shelf: int = 1,        # Shelf number, or ALL. [R][D:1]
                          debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -11784,8 +11786,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#shutdown_resource
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_shutdown_resource(self, 
-                               resource: str = None,  # Resource number, or ALL. [W]
-                               shelf: str = None,     # Shelf number, or ALL. [R][D:1]
+                               resource: int = None,  # Resource number, or ALL. [W]
+                               shelf: int = 1,        # Shelf number, or ALL. [R][D:1]
                                debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -11843,8 +11845,8 @@ class LFJsonCommand(JsonCommand):
                         flags: str = None,     # Flags that control how the sniffing is done.
                         outfile: str = None,   # Optional file location for saving a capture.
                         port: str = None,      # The port we are trying to run the packet sniffer on. [R]
-                        resource: str = None,  # Resource number. [W]
-                        shelf: str = None,     # Shelf number. [R][D:1]
+                        resource: int = None,  # Resource number. [W]
+                        shelf: int = 1,        # Shelf number. [R][D:1]
                         debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -11934,8 +11936,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#start_ppp_link
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_start_ppp_link(self, 
-                            resource: str = None,  # Resource number that holds this PppLink. [W]
-                            shelf: str = None,     # Name/id of the shelf. [R][D:1]
+                            resource: int = None,  # Resource number that holds this PppLink. [W]
+                            shelf: int = 1,        # Name/id of the shelf. [R][D:1]
                             unit_num: str = None,  # Unit-Number for the PppLink to be started. [R]
                             debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -12018,8 +12020,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#stop_ppp_link
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_stop_ppp_link(self, 
-                           resource: str = None,  # Resource number that holds this PppLink. [W]
-                           shelf: str = None,     # Name/id of the shelf. [R][D:1]
+                           resource: int = None,  # Resource number that holds this PppLink. [W]
+                           shelf: int = 1,        # Name/id of the shelf. [R][D:1]
                            unit_num: str = None,  # Unit-Number for the PppLink to be stopped. [W]
                            debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -12054,8 +12056,8 @@ class LFJsonCommand(JsonCommand):
                   key: str = None,       # File-name that we should be tailing.
                   message: str = None,   # The contents to display (for results only) <tt
                   # escapearg='false'>Unescaped Value</tt>
-                  resource: str = None,  # Resource that holds the file. [W]
-                  shelf: str = None,     # Shelf that holds the resource that holds the file. [R][D:1]
+                  resource: int = None,  # Resource that holds the file. [W]
+                  shelf: int = 1,        # Shelf that holds the resource that holds the file. [R][D:1]
                   debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -12192,8 +12194,8 @@ class LFJsonCommand(JsonCommand):
     def post_wifi_cli_cmd(self, 
                           port: str = None,         # Name of the WiFi station or AP interface to which this command
                           # will be directed. [R]
-                          resource: str = None,     # Resource number. [W]
-                          shelf: str = None,        # Shelf number. [R][D:1]
+                          resource: int = None,     # Resource number. [W]
+                          shelf: int = 1,           # Shelf number. [R][D:1]
                           wpa_cli_cmd: str = None,  # Command to pass to wpa_cli or hostap_cli. This must be
                           # single-quoted. [R]
                           debug=False):
@@ -12262,8 +12264,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#wiser_reset
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_wiser_reset(self, 
-                         resource: str = None,  # Resource number, or ALL. [W]
-                         shelf: str = None,     # Shelf number, or ALL. [R][D:1]
+                         resource: int = None,  # Resource number, or ALL. [W]
+                         shelf: int = 1,        # Shelf number, or ALL. [R][D:1]
                          debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -12310,7 +12312,6 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
-
 
 
 class LFJsonQuery(JsonQuery):
@@ -15314,6 +15315,7 @@ class LFJsonQuery(JsonQuery):
                                    plural_key="")
     #
 
+
 class LFSession(BaseSession):
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
         This subclass of BaseSession knows about LFJsonQuery and LFJsonCommand
@@ -15350,7 +15352,7 @@ class LFSession(BaseSession):
         self.query_instance = LFJsonQuery(session_obj=self, debug=debug, exit_on_error=exit_on_error)
         self.session_connection_check = \
             self.command_instance.start_session(debug=debug,
-                                    die_without_session_id_=require_session)
+                                                die_without_session_id_=require_session)
         if self.session_connection_check:
             self.session_id = self.command_instance.session_id
             self.query_instance.session_id = self.session_id
