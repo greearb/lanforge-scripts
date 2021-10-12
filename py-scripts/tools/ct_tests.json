@@ -1,12 +1,12 @@
 {
-    "ct_tests_001":{
+    "ct_wifi_capacity_test":{
         "Notes":[
             "This json file describes tests to be run by LANforge system"
         ]  
     },
     "test_suites":{
-        "suite_wc_dp_shorter":{
-            "create_chamberview_dut_mt7915e_wc":{
+        "suite_wc":{
+            "create_chamberview_dut_wc":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
@@ -18,7 +18,7 @@
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
                 ]
             },
-            "create_chamberview_mt7915e_wc":{
+            "create_chamberview_wc":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
@@ -30,7 +30,7 @@
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
-            "wifi_capacity_mt7915e":{
+            "wifi_capacity":{
                 "enabled":"TRUE",
                 "timeout":"600",
                 "iterations":"1",
