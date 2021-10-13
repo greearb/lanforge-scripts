@@ -3,7 +3,6 @@ import sys
 import os
 import importlib
 import pprint
-import csv
 import pandas as pd
 import time
 import datetime
@@ -167,8 +166,6 @@ class L3CXProfile(LFCliBase):
             default_cols.extend(port_mgr_cols)
         header_row = default_cols
 
-        # csvwriter.writerow([systeminfo['VersionInfo']['BuildVersion'], script_name, str(arguments)])
-
         if port_mgr_cols is not None:
             port_mgr_cols = [self.replace_special_char(x) for x in port_mgr_cols]
             port_mgr_cols_labelled = []
@@ -193,59 +190,25 @@ class L3CXProfile(LFCliBase):
         expected_passes = 0
         old_cx_rx_values = self.__get_rx_values()
 
-        # instantiate csv file here, add specified column headers
-        csvfile = open(str(report_file), 'w')
-        csvwriter = csv.writer(csvfile, delimiter=",")
-        csvwriter.writerow(header_row)
-
         # wait 10 seconds to get proper port data
         time.sleep(10)
 
         # for x in range(0,int(round(iterations,0))):
         initial_starttime = datetime.datetime.now()
+        timestamp_data = list()
         while datetime.datetime.now() < end_time:
             t = datetime.datetime.now()
             timestamp = t.strftime("%m/%d/%Y %I:%M:%S")
             t_to_millisec_epoch = int(self.get_milliseconds(t))
             t_to_sec_epoch = int(self.get_seconds(t))
             time_elapsed = int(self.get_seconds(t)) - int(self.get_seconds(initial_starttime))
-            basecolumns = [timestamp, t_to_millisec_epoch, t_to_sec_epoch, time_elapsed]
-            layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
-            if port_mgr_cols is not None:
-                port_mgr_response = self.json_get("/port/1/1/%s?fields=%s" % (sta_list, port_mgr_fields))
-            # get info from port manager with list of values from cx_a_side_list
-            if "endpoint" not in layer_3_response or layer_3_response is None:
-                print(layer_3_response)
-                raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
-                if debug:
-                    print("Json layer_3_response from LANforge... " + str(layer_3_response))
-            if port_mgr_cols is not None:
-                if "interfaces" not in port_mgr_response or port_mgr_response is None:
-                    print(port_mgr_response)
-                    raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
-                if debug:
-                    print("Json port_mgr_response from LANforge... " + str(port_mgr_response))
+            stations = [station.split('.')[-1] for station in sta_list]
+            stations = ','.join(stations)
 
-            for endpoint in layer_3_response["endpoint"]:  # each endpoint is a dictionary
-                endp_values = list(endpoint.values())[0]
-                temp_list = basecolumns
-                for columnname in header_row[len(basecolumns):]:
-                    temp_list.append(endp_values[columnname])
-                    if port_mgr_cols is not None:
-                        for sta_name in sta_list_edit:
-                            if sta_name in current_sta:
-                                for interface in port_mgr_response["interfaces"]:
-                                    if sta_name in list(interface.keys())[0]:
-                                        merge = temp_endp_values.copy()
-                                        # rename keys (separate port mgr 'rx bytes' from layer3 'rx bytes')
-                                        port_mgr_values_dict = list(interface.values())[0]
-                                        renamed_port_cols = {}
-                                        for key in port_mgr_values_dict.keys():
-                                            renamed_port_cols['port mgr - ' + key] = port_mgr_values_dict[key]
-                                        merge.update(renamed_port_cols)
-                                        for name in port_mgr_cols:
-                                            temp_list.append(merge[name])
-                csvwriter.writerow(temp_list)
+            if port_mgr_cols is not None:
+                port_mgr_response = self.json_get("/port/1/1/%s?fields=%s" % (stations, port_mgr_fields))
+
+            layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
 
             new_cx_rx_values = self.__get_rx_values()
             if debug:
@@ -259,32 +222,39 @@ class L3CXProfile(LFCliBase):
             else:
                 self.fail("FAIL: Not all stations increased traffic")
                 self.exit_fail()
-            try:
-                cx_data = self.json_get("/cx/all")
-                cx_data.pop("handler")
-                cx_data.pop("uri")
 
-                for i in self.created_cx.keys():
-                    endp_a_data = self.json_get("/endp/"+ cx_data[i]['endpoints'][0])
-                    endp_b_data = self.json_get("/endp/" + cx_data[i]['endpoints'][1])
-                    print("cx name:", i, "\n",
-                          " bps tx a :", endp_a_data['endpoint']['tx rate'], " --> ",
-                          "  bps rx b : ", endp_b_data['endpoint']['rx rate'],
-                          "  rx drop % b : ", cx_data[i]['rx drop % b'], "\n"
-                          "  tx bytes a : ", endp_a_data['endpoint']['tx bytes'], " --> " 
-                          "  rx bytes b", endp_b_data['endpoint']['rx bytes'],  "\n"
-                          "  tx bytes b : ", endp_b_data['endpoint']['tx bytes'], " --> " 
-                          "  rx bytes a", endp_a_data['endpoint']['rx bytes'], "\n"
-                          "  bps tx b :", endp_b_data['endpoint']['tx rate'], " --> "
-                          "  bps rx a : ", endp_a_data['endpoint']['rx rate'],
-                          "  rx drop % a :", cx_data[i]['rx drop % a'], "\n"
-                          "  pkt rx a :", cx_data[i]['pkt rx a'], "  pkt rx b : ", cx_data[i]['pkt rx b'],
-                          )
-                print("\n\n\n")
-            except Exception as e:
-                print(e)
+            if port_mgr_cols is not None:
+                result = dict()
+                for dictionary in port_mgr_response['interfaces']:
+                    if debug:
+                        print('port mgr data: %s' % dictionary)
+                    result.update(dictionary)
+                portdata_df = pd.DataFrame(result.values())
+                portdata_df['EID'] = result.keys()
+
+            result = dict()
+            if type(layer_3_response) is dict:
+                for dictionary in layer_3_response['endpoint']:
+                    if debug:
+                        print('layer_3_data: %s' % dictionary)
+                    result.update(dictionary)
+            else:
+                pass
+            layer3 = pd.DataFrame(result.values())
+            layer3['EID'] = result.keys()
+
+            if port_mgr_cols is not None:
+                timestamp_df = pd.concat([layer3, portdata_df])
+            else:
+                timestamp_df = layer3
+            timestamp_df['Timestamp'] = timestamp
+            timestamp_df['Timestamp milliseconds epoch'] = t_to_millisec_epoch
+            timestamp_df['Timestamp seconds epoch'] = t_to_sec_epoch
+            timestamp_df['Duration elapsed'] = time_elapsed
+            timestamp_data.append(timestamp_df)
             time.sleep(monitor_interval_ms)
-        csvfile.close()
+        df = pd.concat(timestamp_data)
+        df.to_csv(str(report_file), index=False)
 
         # comparison to last report / report inputted
         if compared_report is not None:
