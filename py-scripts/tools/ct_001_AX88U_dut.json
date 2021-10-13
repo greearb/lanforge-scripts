@@ -8,7 +8,7 @@
     },
     "test_dut":{
         "DUT_SET_NAME": "DUT_NAME ASUSRT-AX88U",
-        "DUT_NAME": "ASUSRT-AX88U",
+        "USE_DUT_NAME": "ASUSRT-AX88U",
         "wireless_network_dict":{
             "ssid_idx=0":{"ssid_idx":"0","SSID_USED":"asus11ax-2","SSID_PW_USED":"hello123","BSSID":"3c:7c:3f:55:4d:60","SECURITY_USED":"wpa2"},
             "ssid_idx=1":{"ssid_idx":"1","SSID_USED":"asus11ax-5","SSID_PW_USED":"hello123","BSSID":"3c:7c:3f:55:4d:64","SECURITY_USED":"wpa2"}

@@ -192,7 +192,7 @@ class lf_check():
         # section DUT
         # dut selection
         self.dut_set_name = 'DUT_NAME ASUSRT-AX88U'  # note the name will be set as --set DUT_NAME ASUSRT-AX88U, this is not dut_name (see above)
-        self.dut_name = "DUT_NAME_NA"  # "ASUSRT-AX88U" note this is not dut_set_name
+        self.use_dut_name = "DUT_NAME_NA"  # "ASUSRT-AX88U" note this is not dut_set_name
         self.dut_hw = "DUT_HW_NA"
         self.dut_sw = "DUT_SW_NA"
         self.dut_model = "DUT_MODEL_NA"
@@ -558,7 +558,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
         else:
             self.logger.info("EMAIL_TXT not in test_rig_parameters json")
 
-        # dut_set_name selectes the DUT to test against , it is different then dut_name
+        # dut_set_name selectes the DUT to test against , it is different then use_dut_name
         # this value gets set in the test
     def read_dut_parameters(self):
         if "DUT_SET_NAME" in self.json_dut["test_dut"]:
@@ -566,10 +566,10 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
         else:
             self.logger.info("DUT_SET_NAME not in test_dut json")
         # dut name will set a chamberview scenerio for a DUT which can be selected with dut_set_name
-        if "DUT_NAME" in self.json_dut["test_dut"]:
-            self.dut_name = self.json_dut["test_dut"]["DUT_NAME"]
+        if "USE_DUT_NAME" in self.json_dut["test_dut"]:
+            self.use_dut_name = self.json_dut["test_dut"]["USE_DUT_NAME"]
         else:
-            self.logger.info("DUT_NAME not in test_dut json")
+            self.logger.info("USE_DUT_NAME not in test_dut json")
 
         if "DUT_HW" in self.json_dut["test_dut"]:
             self.dut_hw = self.json_dut["test_dut"]["DUT_HW"]
@@ -732,8 +732,8 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('LF_MGR_PORT', self.lf_mgr_port)
 
                     # DUT Configuration
-                    if 'DUT_NAME' in self.test_dict[test]['args']:
-                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_NAME', self.dut_name)
+                    if 'USE_DUT_NAME' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('USE_DUT_NAME', self.use_dut_name)
                     if 'DUT_HW' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_HW', self.dut_hw)
                     if 'DUT_SW' in self.test_dict[test]['args']:

@@ -50,10 +50,10 @@
                 "command":"create_chamberview_dut.py",
                 "args":"",
                 "args_list":[
-                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
-                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
             "create_chamberview_mt7915e_wc":{
@@ -64,7 +64,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario mt7915e_wc",
-                    " --raw_line \"profile_link 1.1 STA-AC 19 'DUT: DUT_NAME Radio-2' NA wiphy7,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AC 19 'DUT: USE_DUT_NAME Radio-2' NA wiphy7,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
@@ -89,10 +89,10 @@
                 "command":"create_chamberview_dut.py",
                 "args":"",
                 "args_list":[
-                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
-                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
             "create_chamberview_mt7915e_dp":{
@@ -103,7 +103,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario mt7915e_dp",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: DUT_NAME Radio-2' NA wiphy7,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy7,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
@@ -151,10 +151,10 @@
                 "command":"create_chamberview_dut.py",
                 "args":"",
                 "args_list":[
-                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
-                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
             "create_chamberview_ATH10K_9984_wc":{
@@ -165,7 +165,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ATH10K_9984_wc ",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 32 'DUT: DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 32 'DUT: USE_DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
@@ -190,10 +190,10 @@
                 "command":"create_chamberview_dut.py",
                 "args":"",
                 "args_list":[
-                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
-                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
             "create_chamberview_ATH10K_9984_dp":{
@@ -204,7 +204,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ATH10K_9984_dp",
-                    " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
@@ -232,10 +232,10 @@
                 "command":"create_chamberview_dut.py",
                 "args":"",
                 "args_list":[
-                    "--lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    "--lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
-                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
             "create_chamberview_AX210_wc":{
@@ -246,7 +246,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario AX210_wc ",
-                    " --raw_line \"profile_link 1.1 STA-AX 1 'DUT: DUT_NAME Radio-2' NA wiphy3,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AX 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy3,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\" "                    
                 ]
             },    
@@ -271,10 +271,10 @@
                 "command":"create_chamberview_dut.py",
                 "args":"",
                 "args_list":[
-                    "--lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    "--lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
-                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
             "create_chamberview_AX210_dp":{
@@ -285,7 +285,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario AX210_dp",
-                    " --raw_line \"profile_link 1.1 STA-AX 1 'DUT: DUT_NAME Radio-2' NA wiphy3,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AX 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy3,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\" "                    
                 ]
             },    
@@ -312,10 +312,10 @@
                 "command":"create_chamberview_dut.py",
                 "args":"",
                 "args_list":[
-                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
-                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
             "create_chamberview_mt7915e_wc":{
@@ -326,7 +326,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario m7915e_wc ",
-                    " --raw_line \"profile_link 1.1 STA-AC 19 'DUT: DUT_NAME Radio-2' NA wiphy7,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AC 19 'DUT: USE_DUT_NAME Radio-2' NA wiphy7,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
@@ -351,10 +351,10 @@
                 "command":"create_chamberview_dut.py",
                 "args":"",
                 "args_list":[
-                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
-                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
             "create_chamberview_mt7915e_dp":{
@@ -365,7 +365,7 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario mt7915e_dp",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: DUT_NAME Radio-2' NA wiphy7,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy7,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
@@ -392,10 +392,10 @@
                 "command":"create_chamberview_dut.py",
                 "args":"",
                 "args_list":[
-                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
-                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]},
             "create_chamberview_ap":{
                 "enabled":"TRUE",
@@ -405,8 +405,8 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ap_auto ",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: DUT_NAME Radio-1' NA AUTO,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: DUT_NAME Radio-2' NA AUTO,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: USE_DUT_NAME Radio-1' NA AUTO,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: USE_DUT_NAME Radio-2' NA AUTO,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA eth2,AUTO -1 NA \" "
                 ]
             },
@@ -419,7 +419,7 @@
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge",
                     " --instance_name ap_auto --config_name test_con --upstream eth2",
-                    " --dut5_0 'DUT_NAME lanforge DUT_BSSID_5G (2)' --dut2_0 'DUT_NAME lanforge DUT_BSSID_2G (1)'",
+                    " --dut5_0 'USE_DUT_NAME lanforge DUT_BSSID_5G (2)' --dut2_0 'USE_DUT_NAME lanforge DUT_BSSID_2G (1)'",
                     " --max_stations_2 8 --max_stations_5 8 --max_stations_dual 1",
                     " --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 --radio2 1.1.wiphy4 --radio2 1.1.wiphy5 --radio2 1.1.wiphy6 --radio2 1.1.wiphy7",
                     " --radio5 1.1.wiphy1 --radio5 1.1.wiphy2 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7",
@@ -454,10 +454,10 @@
                 "command":"create_chamberview_dut.py",
                 "args":"",
                 "args_list":[
-                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name DUT_NAME",
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
                     " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
                     " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
-                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num DUT_NAME"
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]},
             "create_chamberview_ap":{
                 "enabled":"TRUE",
@@ -467,8 +467,8 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ap_auto",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: DUT_NAME Radio-1' NA AUTO,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: DUT_NAME Radio-2' NA AUTO,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: USE_DUT_NAME Radio-1' NA AUTO,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: USE_DUT_NAME Radio-2' NA AUTO,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA eth2,AUTO -1 NA \" "
                 ]
             },
@@ -481,7 +481,7 @@
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge",
                     " --instance_name ap_auto --config_name test_con --upstream eth2",
-                    " --dut5_0 'DUT_NAME lanforge DUT_BSSID_5G (2)' --dut2_0 'DUT_NAME lanforge DUT_BSSID_2G (1)'",
+                    " --dut5_0 'USE_DUT_NAME lanforge DUT_BSSID_5G (2)' --dut2_0 'USE_DUT_NAME lanforge DUT_BSSID_2G (1)'",
                     " --max_stations_2 8 --max_stations_5 8 --max_stations_dual 1",
                     " --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 --radio2 1.1.wiphy4 --radio2 1.1.wiphy5 --radio2 1.1.wiphy6 --radio2 1.1.wiphy7",
                     " --radio5 1.1.wiphy1 --radio5 1.1.wiphy2 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7",
