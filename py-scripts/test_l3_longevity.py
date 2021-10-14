@@ -419,6 +419,7 @@ class L3VariableTime(Realm):
         return endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
  # This script supports resetting ports, allowing one to test AP/controller under data load
     # while bouncing wifi stations.  Check here to see if we should reset ports.
+
     def reset_port_check(self):
         for station_profile in self.station_profiles:
             if station_profile.reset_port_extra_data['reset_port_enable']:
@@ -427,17 +428,26 @@ class L3VariableTime(Realm):
                     print("reset_port_time_min: {}".format(station_profile.reset_port_extra_data['reset_port_time_min']))
                     print("reset_port_time_max: {}".format(station_profile.reset_port_extra_data['reset_port_time_max']))
                     station_profile.reset_port_extra_data['seconds_till_reset'] = \
-                    random.randint(station_profile.reset_port_extra_data['reset_port_time_min'],\
-                                   station_profile.reset_port_extra_data['reset_port_time_max'])
+                        random.randint(station_profile.reset_port_extra_data['reset_port_time_min'],
+                                       station_profile.reset_port_extra_data['reset_port_time_max'])
                     station_profile.reset_port_extra_data['reset_port_timer_started'] = True
-                    print("on radio {} seconds_till_reset {}".format(station_profile.add_sta_data['radio'],station_profile.reset_port_extra_data['seconds_till_reset']))
+                    print(
+                        "on radio {} seconds_till_reset {}".format(
+                            station_profile.add_sta_data['radio'],
+                            station_profile.reset_port_extra_data['seconds_till_reset']))
                 else:
                     station_profile.reset_port_extra_data['seconds_till_reset'] = station_profile.reset_port_extra_data['seconds_till_reset'] - 1
-                    print("radio: {} countdown seconds_till_reset {}".format(station_profile.add_sta_data['radio']  ,station_profile.reset_port_extra_data['seconds_till_reset']))
-                    if ((station_profile.reset_port_extra_data['seconds_till_reset']  <= 0)):
+                    print(
+                        "radio: {} countdown seconds_till_reset {}".format(
+                            station_profile.add_sta_data['radio'],
+                            station_profile.reset_port_extra_data['seconds_till_reset']))
+                    if ((station_profile.reset_port_extra_data['seconds_till_reset'] <= 0)):
                         station_profile.reset_port_extra_data['reset_port_timer_started'] = False
-                        port_to_reset = random.randint(0,len(station_profile.station_names)-1)
-                        print("reset on radio {} station: {}".format(station_profile.add_sta_data['radio'],station_profile.station_names[port_to_reset]))
+                        port_to_reset = random.randint(0, len(station_profile.station_names) - 1)
+                        print(
+                            "reset on radio {} station: {}".format(
+                                station_profile.add_sta_data['radio'],
+                                station_profile.station_names[port_to_reset]))
                         self.reset_port(station_profile.station_names[port_to_reset])
 
     # Common code to generate timestamp for CSV files.
@@ -768,20 +778,19 @@ class L3VariableTime(Realm):
                     ap_stats_col_titles = []
                     mac_found_5g = False
                     mac_found_2g = False
-                    reset_timer = 0 
+                    reset_timer = 0
 
                     while cur_time < end_time:
                         #interval_time = cur_time + datetime.timedelta(seconds=5)
                         interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
                         #print("polling_interval_seconds {}".format(self.polling_interval_seconds))
-                        
+
                         while cur_time < interval_time:
                             cur_time = datetime.datetime.now()
                             time.sleep(.2)
                             reset_timer += 1
                             if reset_timer % 5 is 0:
                                 self.reset_port_check()
-
 
                         self.epoch_time = int(time.time())
                         new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
@@ -1404,7 +1413,7 @@ and received.
 Generic command layout:
 -----------------------
 python .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port>
-        --radio "radio==<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> 
+        --radio "radio==<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password>
         security==<security type: wpa2, open, wpa3>" --debug
 Multiple radios may be entered with individual --radio switches
 
