@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-from LANforge.lfcli_base import LFCliBase
-
+import importlib
+from time import sleep
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+# Probe data can change frequently. It is recommended to update
 
 class ProbePort(LFCliBase):
     def __init__(self,
@@ -19,8 +22,12 @@ class ProbePort(LFCliBase):
 
     def refreshProbe(self):
         self.json_post(self.probepath, {})
+        sleep(0.2)
         response = self.json_get(self.probepath)
         self.response = response
+        if self.debug:
+            print(self.probepath)
+            print(response)
         text = self.response['probe-results'][0][self.eid_str]['probe results'].split('\n')
         signals = [x.strip('\t').split('\t') for x in text if 'signal' in x]
         keys = [x[0].strip(' ').strip(':') for x in signals]

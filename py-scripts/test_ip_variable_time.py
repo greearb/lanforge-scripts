@@ -38,6 +38,9 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+sys.path.append("../py-dashboard")
+from InfluxRequest import RecordInflux
+port_probe = importlib.import_module("py-json.port_probe")
 
 
 class IPVariableTime(Realm):
@@ -63,6 +66,7 @@ class IPVariableTime(Realm):
                  report_file=None,
                  output_format=None,
                  layer3_cols=None,
+                 port_mgr_cols=None,
                  monitor_interval='10s',
                  influx_host=None,
                  influx_port=None,
@@ -125,6 +129,7 @@ class IPVariableTime(Realm):
         self.report_file = report_file
         self.output_format = output_format
         self.layer3_cols = layer3_cols
+        self.port_mgr_cols = port_mgr_cols
         self.monitor_interval = monitor_interval
         self.influx_host = influx_host
         self.influx_port = influx_port
@@ -234,22 +239,22 @@ class IPVariableTime(Realm):
         else:
             layer3_cols = self.layer3_cols
             # send col names here to file to reformat
-        #if type(self.port_mgr_cols) is not list:
-            #port_mgr_cols = list(self.port_mgr_cols.split(","))
+        if type(self.port_mgr_cols) is not list:
+            port_mgr_cols = list(self.port_mgr_cols.split(","))
             # send col names here to file to reformat
-        #else:
-            #port_mgr_cols = self.port_mgr_cols
+        else:
+            port_mgr_cols = self.port_mgr_cols
             # send col names here to file to reformat
         if self.debug:
             print("Layer 3 Endp column names are...")
             print(layer3_cols)
             print("Port Manager column names are...")
-            #print(port_mgr_cols)
+            print(port_mgr_cols)
 
         print("Layer 3 Endp column names are...")
         print(layer3_cols)
         print("Port Manager column names are...")
-        #print(port_mgr_cols)
+        print(port_mgr_cols)
 
         try:
             monitor_interval = Realm.parse_time(self.monitor_interval).total_seconds()
@@ -266,13 +271,12 @@ class IPVariableTime(Realm):
         #    manager = self.influx_mgr
 
         if self.influx_org is not None:
-            from InfluxRequest import RecordInflux
             grapher = RecordInflux(_influx_host=self.influx_host,
                                    _influx_port=self.influx_port,
                                    _influx_org=self.influx_org,
                                    _influx_token=self.influx_token,
                                    _influx_bucket=self.influx_bucket)
-            devices = [station.split('.')[-1] for station in station_list]
+            devices = [station.split('.')[-1] for station in self.sta_list]
             tags = dict()
             tags['script'] = 'test_ip_variable_time'
             try:
@@ -284,7 +288,6 @@ class IPVariableTime(Realm):
                                       devices=devices,
                                       monitor_interval=Realm.parse_time(self.monitor_interval).total_seconds(),
                                       tags=tags)
-
 
         # Retrieve last data file
         compared_rept = None
@@ -299,7 +302,7 @@ class IPVariableTime(Realm):
 
         self.cx_profile.monitor(layer3_cols=layer3_cols,
                                 sta_list=self.sta_list,
-                                # port_mgr_cols=port_mgr_cols,
+                                port_mgr_cols=port_mgr_cols,
                                 report_file=report_f,
                                 systeminfopath=systeminfopath,
                                 duration_sec=Realm.parse_time(self.test_duration).total_seconds(),
@@ -443,13 +446,91 @@ python3 ./test_ip_variable_time.py
     Elapsed             |  'elapsed'
     Destination Addr    |  'destination addr'
     Source Addr         |  'source addr'
+    
+    Using the port_mgr_cols flag:
+         '4way time (us)'
+         'activity'
+         'alias'
+         'anqp time (us)'
+         'ap'
+         'beacon'
+         'bps rx'
+         'bps rx ll'
+         'bps tx'
+         'bps tx ll'
+         'bytes rx ll'
+         'bytes tx ll'
+         'channel'
+         'collisions'
+         'connections'
+         'crypt'
+         'cx ago'
+         'cx time (us)'
+         'device'
+         'dhcp (ms)'
+         'down'
+         'entity id'
+         'gateway ip'
+         'ip'
+         'ipv6 address'
+         'ipv6 gateway'
+         'key/phrase'
+         'login-fail'
+         'login-ok'
+         'logout-fail'
+         'logout-ok'
+         'mac'
+         'mask'
+         'misc'
+         'mode'
+         'mtu'
+         'no cx (us)'
+         'noise'
+         'parent dev'
+         'phantom'
+         'port'
+         'port type'
+         'pps rx'
+         'pps tx'
+         'qlen'
+         'reset'
+         'retry failed'
+         'rx bytes'
+         'rx crc'
+         'rx drop'
+         'rx errors'
+         'rx fifo'
+         'rx frame'
+         'rx length'
+         'rx miss'
+         'rx over'
+         'rx pkts'
+         'rx-rate'
+         'sec'
+         'signal'
+         'ssid'
+         'status'
+         'time-stamp'
+         'tx abort'
+         'tx bytes'
+         'tx crr'
+         'tx errors'
+         'tx fifo'
+         'tx hb'
+         'tx pkts'
+         'tx wind'
+         'tx-failed %'
+         'tx-rate'
+         'wifi retries'
+         
+    Can't decide what columns to use? You can just use 'all' to select all available columns from both tables.
             ''')
 
     parser.add_argument('--mode', help='Used to force mode of stations')
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
     parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp, udp, tcp], type will be '
-                                               'adjusted automatically between ipv4 and ipv6 based on use of --ipv6 flag'
-                        , required=True)
+                                               'adjusted automatically between ipv4 and ipv6 based on use of --ipv6 flag',
+                        required=True)
     parser.add_argument('--output_format', help='choose either csv or xlsx')
     parser.add_argument('--report_file', help='where you want to store results', default=None)
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
@@ -458,7 +539,7 @@ python3 ./test_ip_variable_time.py
     parser.add_argument('--layer3_cols', help='Columns wished to be monitored from layer 3 endpoint tab',
                         default=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'])
     parser.add_argument('--port_mgr_cols', help='Columns wished to be monitored from port manager tab',
-                        default=['ap', 'ip', 'parent dev'])
+                        default=['alias', 'ap', 'ip', 'parent dev', 'rx-rate', 'beacon'])
     parser.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',
                         default=None)
     parser.add_argument('--monitor_interval',
@@ -487,8 +568,8 @@ python3 ./test_ip_variable_time.py
         num_sta = int(args.num_stations)
     if args.create_sta:
         station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1,
-                                               padding_number_=10000,
-                                               radio=args.radio)
+                                              padding_number_=10000,
+                                              radio=args.radio)
     else:
         station_list = args.sta_names.split(",")
     # Create directory
@@ -534,6 +615,7 @@ python3 ./test_ip_variable_time.py
                                  report_file=args.report_file,
                                  output_format=args.output_format,
                                  layer3_cols=args.layer3_cols,
+                                 port_mgr_cols=args.port_mgr_cols,
                                  monitor_interval=args.monitor_interval,
                                  influx_host=args.influx_host,
                                  influx_port=args.influx_port,

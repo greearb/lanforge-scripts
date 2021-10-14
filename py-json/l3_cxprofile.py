@@ -13,7 +13,8 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 pandas_extensions = importlib.import_module("py-json.LANforge.pandas_extensions")
-
+port_probe = importlib.import_module("py-json.port_probe")
+ProbePort = port_probe.ProbePort
 
 class L3CXProfile(LFCliBase):
     def __init__(self,
@@ -120,7 +121,6 @@ class L3CXProfile(LFCliBase):
                 layer3_cols=None,
                 port_mgr_cols=None,
                 created_cx=None,
-                monitor=True,
                 report_file=None,
                 systeminfopath=None,
                 output_format=None,
@@ -221,18 +221,8 @@ class L3CXProfile(LFCliBase):
                 passes += 1
             else:
                 self.fail("FAIL: Not all stations increased traffic")
-                self.exit_fail()
 
-            if port_mgr_cols is not None:
-                result = dict()
-                for dictionary in port_mgr_response['interfaces']:
-                    if debug:
-                        print('port mgr data: %s' % dictionary)
-                    result.update(dictionary)
-                portdata_df = pd.DataFrame(result.values())
-                portdata_df['EID'] = result.keys()
-
-            result = dict()
+            result = dict()  # create dataframe from layer 3 results
             if type(layer_3_response) is dict:
                 for dictionary in layer_3_response['endpoint']:
                     if debug:
@@ -241,12 +231,51 @@ class L3CXProfile(LFCliBase):
             else:
                 pass
             layer3 = pd.DataFrame(result.values())
-            layer3['EID'] = result.keys()
+            layer3.columns = ['l3-'+x for x in layer3.columns]
 
-            if port_mgr_cols is not None:
-                timestamp_df = pd.concat([layer3, portdata_df])
+            if port_mgr_cols is not None:  # create dataframe from port mgr results
+                if 'alias' not in port_mgr_cols:
+                    port_mgr_cols.append('alias')
+                result = dict()
+                if type(port_mgr_response) is dict:
+                    for dictionary in port_mgr_response['interfaces']:
+                        if debug:
+                            print('port mgr data: %s' % dictionary)
+                        result.update(dictionary)
+                    portdata_df = pd.DataFrame(result.values())
+                    portdata_df.columns = ['port-'+x for x in portdata_df.columns]
+                    portdata_df['alias'] = portdata_df['port-alias']
+
+                    layer3_alias = list()  # Add alias to layer 3 dataframe
+                    for cross_connect in layer3['l3-name']:
+                        for port in portdata_df['port-alias']:
+                            if port in cross_connect:
+                                layer3_alias.append(port)
+                    layer3['alias'] = layer3_alias
+
+                    timestamp_df = pd.merge(layer3, portdata_df, on='alias')
             else:
                 timestamp_df = layer3
+            probe_port_df_list = list()
+            for station in sta_list:
+                probe_port = ProbePort(lfhost=self.lfclient_host,
+                                       lfport=self.lfclient_port,
+                                       eid_str=station,
+                                       debug=self.debug)
+                probe_results = dict()
+                probe_port.refreshProbe()
+                probe_results['Signal Avg Combined'] = probe_port.getSignalAvgCombined()
+                probe_results['Signal Avg per Chain'] = probe_port.getSignalAvgPerChain()
+                probe_results['Signal Combined'] = probe_port.getSignalCombined()
+                probe_results['Signal per Chain'] = probe_port.getSignalPerChain()
+                probe_results['Beacon Avg Signal'] = probe_port.getBeaconSignalAvg()
+                probe_df_initial = pd.DataFrame(probe_results.values()).transpose()
+                probe_df_initial.columns = probe_results.keys()
+                probe_df_initial.columns = ['probe '+x for x in probe_df_initial.columns]
+                probe_df_initial['alias'] = station.split('.')[-1]
+                probe_port_df_list.append(probe_df_initial)
+            probe_port_df = pd.concat(probe_port_df_list)
+            timestamp_df = pd.merge(timestamp_df, probe_port_df, on='alias')
             timestamp_df['Timestamp'] = timestamp
             timestamp_df['Timestamp milliseconds epoch'] = t_to_millisec_epoch
             timestamp_df['Timestamp seconds epoch'] = t_to_sec_epoch
@@ -254,6 +283,7 @@ class L3CXProfile(LFCliBase):
             timestamp_data.append(timestamp_df)
             time.sleep(monitor_interval_ms)
         df = pd.concat(timestamp_data)
+        df = df.drop('alias', 1)
         df.to_csv(str(report_file), index=False)
 
         # comparison to last report / report inputted
