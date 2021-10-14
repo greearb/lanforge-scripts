@@ -56,6 +56,7 @@ import argparse
 import time
 import datetime
 import csv
+import random
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -415,6 +416,27 @@ class L3VariableTime(Realm):
 
         #print("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
+ # This script supports resetting ports, allowing one to test AP/controller under data load
+    # while bouncing wifi stations.  Check here to see if we should reset ports.
+    def reset_port_check(self):
+        for station_profile in self.station_profiles:
+            if station_profile.reset_port_extra_data['reset_port_enable']:
+                if station_profile.reset_port_extra_data['reset_port_timer_started'] == False:
+                    print("reset_port_time_min: {}".format(station_profile.reset_port_extra_data['reset_port_time_min']))
+                    print("reset_port_time_max: {}".format(station_profile.reset_port_extra_data['reset_port_time_max']))
+                    station_profile.reset_port_extra_data['seconds_till_reset'] = \
+                    random.randint(station_profile.reset_port_extra_data['reset_port_time_min'],\
+                                   station_profile.reset_port_extra_data['reset_port_time_max'])
+                    station_profile.reset_port_extra_data['reset_port_timer_started'] = True
+                    print("on radio {} seconds_till_reset {}".format(station_profile.add_sta_data['radio'],station_profile.reset_port_extra_data['seconds_till_reset']))
+                else:
+                    station_profile.reset_port_extra_data['seconds_till_reset'] = station_profile.reset_port_extra_data['seconds_till_reset'] - 1
+                    if self.debug: print("radio: {} countdown seconds_till_reset {}".format(station_profile.add_sta_data['radio']  ,station_profile.reset_port_extra_data['seconds_till_reset']))
+                    if ((station_profile.reset_port_extra_data['seconds_till_reset']  <= 0)):
+                        station_profile.reset_port_extra_data['reset_port_timer_started'] = False
+                        port_to_reset = random.randint(0,len(station_profile.station_names)-1)
+                        print("reset on radio {} station: {}".format(station_profile.add_sta_data['radio'],station_profile.station_names[port_to_reset]))
+                        self.reset_port(station_profile.station_names[port_to_reset])
 
     # Common code to generate timestamp for CSV files.
     def time_stamp(self):
@@ -752,6 +774,7 @@ class L3VariableTime(Realm):
 
                         while cur_time < interval_time:
                             cur_time = datetime.datetime.now()
+                            self.reset_port_check()
                             time.sleep(.2)
 
                         self.epoch_time = int(time.time())
