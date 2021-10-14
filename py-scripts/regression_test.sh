@@ -4,7 +4,7 @@
 ##########################
 Help()
 {
-  echo "This bash script aims to automate the test process of all Candela Technologies test_* scripts in the lanforge-scripts directory. The script can be run 2 ways and may include (via user input) the \"start_num\" and \"stop_num\" variables to select which tests should be run."
+  echo "This bash script aims to automate the test process of all Candela Technologies test_* scripts in the lanforge-scripts directory to detect software regressions. The script can be run 2 ways and may include (via user input) the \"start_num\" and \"stop_num\" variables to select which tests should be run."
   echo "OPTION ONE: ./regression_test.sh : this command runs all the scripts in the array \"testCommands\""
   echo "OPTION TWO: ./regression_test.sh 4 5 :  this command runs py-script commands (in testCommands array) that include the py-script options beginning with 4 and 5 (inclusive) in case function ret_case_num."
   echo "Optional Variables:"
@@ -181,8 +181,7 @@ else
       #"./cv_manager.py --mgr $MGR --scenario FACTORY_DFLT"
       #"./cv_to_grafana --mgr $MGR "
       #"./docstrings.py --mgr $MGR"
-      #"./event_breaker --mgr $MGR"
-      #"./event_flood --mgr $MGR"
+      #"./scripts_deprecated/event_break_flood.py --mgr $MGR"
       "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED \
       --passwd $PASSWD_USED --radio 1.1.$RADIO_USED --security wpa2 --debug --mgr $MGR"
       #./ftp_html.py
@@ -210,9 +209,9 @@ else
           --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
           --influx_bucket ben \
           --influx_tag testbed Ferndale-01"
-      "./lf_dut_sta_vap_test.py --mgr $MGR --dut_host $LANFORGE_DUT --radio $RADIO_USED \
-          --num_sta 1 --sta_id 1 --ssid $SSID_USED --security $SECURITY --upstream $UPSTREAM \
-          --protocol lf_udp --min_bps 1000 --max_bps 10000 --duration 1"
+      #"./lf_dut_sta_vap_test.py --mgr $MGR --radio $RADIO_USED \
+          #--num_sta 1 --sta_id 1 --ssid $SSID_USED --security $SECURITY --upstream $UPSTREAM \
+          #--protocol lf_udp --min_mbps 1000 --max_mbps 10000 --duration 1"
       "./lf_graph.py --mgr $MGR"
       "./lf_mesh_test.py --mgr $MGR --upstream $UPSTREAM --raw_line \"selected_dut2 RootAP wactest $BSSID\""
       #"./lf_multipsk.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --debug"
@@ -242,7 +241,7 @@ else
                                --duration 20
                                --channel 52
                                --radio_mode AUTO"
-      #./lf_snp_test
+      "./lf_snp_test.py --mgr $MGR"
       "./lf_tr398_test.py --mgr $MGR"
       #./lf_webpage
       "./lf_wifi_capacity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
@@ -276,16 +275,16 @@ else
       --radio $RADIO_USED"
       #station_layer3.py
       #stations_connected.py
-      #"./test_1k_clients_jedtest.py
-      # --mgr $MGR
-      # --mgr_port 8080
-      # --sta_per_radio 300
-      # --test_duration 3m
-      # --a_min 1000
-      # --b_min 1000
-      # --a_max 0
-      # --b_max 0
-      # --debug"
+      "./test_1k_clients_jedtest.py
+       --mgr $MGR
+       --mgr_port 8080
+       --sta_per_radio 300
+       --test_duration 3m
+       --a_min 1000
+       --b_min 1000
+       --a_max 0
+       --b_max 0
+       --debug"
       #test_client_admission.py
       "./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1 --test_duration 30s --mgr $MGR" # Better tested on Kelly, where VRF is turned off
       #"./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest $TEST_HTTP_IP --debug --mgr $MGR"
