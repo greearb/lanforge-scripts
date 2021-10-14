@@ -240,6 +240,7 @@ class L3VariableTime(Realm):
             self.csv_kpi_file = open(kpi, "w")
             self.csv_kpi_writer = csv.writer(self.csv_kpi_file, delimiter=",")
 
+        # if it is a dataplane test the side_a is not None and an ethernet port
         # if side_a is None then side_a is radios
         if self.dataplane == False:
             for (radio_, ssid_, ssid_password_, ssid_security_,
@@ -421,7 +422,8 @@ class L3VariableTime(Realm):
     def reset_port_check(self):
         for station_profile in self.station_profiles:
             if station_profile.reset_port_extra_data['reset_port_enable']:
-                if station_profile.reset_port_extra_data['reset_port_timer_started'] == False:
+                if station_profile.reset_port_extra_data['reset_port_timer_started'] is False:
+                    print("reset_port_timer_started {}".format(station_profile.reset_port_extra_data['reset_port_timer_started']))
                     print("reset_port_time_min: {}".format(station_profile.reset_port_extra_data['reset_port_time_min']))
                     print("reset_port_time_max: {}".format(station_profile.reset_port_extra_data['reset_port_time_max']))
                     station_profile.reset_port_extra_data['seconds_till_reset'] = \
@@ -431,7 +433,7 @@ class L3VariableTime(Realm):
                     print("on radio {} seconds_till_reset {}".format(station_profile.add_sta_data['radio'],station_profile.reset_port_extra_data['seconds_till_reset']))
                 else:
                     station_profile.reset_port_extra_data['seconds_till_reset'] = station_profile.reset_port_extra_data['seconds_till_reset'] - 1
-                    if self.debug: print("radio: {} countdown seconds_till_reset {}".format(station_profile.add_sta_data['radio']  ,station_profile.reset_port_extra_data['seconds_till_reset']))
+                    print("radio: {} countdown seconds_till_reset {}".format(station_profile.add_sta_data['radio']  ,station_profile.reset_port_extra_data['seconds_till_reset']))
                     if ((station_profile.reset_port_extra_data['seconds_till_reset']  <= 0)):
                         station_profile.reset_port_extra_data['reset_port_timer_started'] = False
                         port_to_reset = random.randint(0,len(station_profile.station_names)-1)
@@ -766,16 +768,20 @@ class L3VariableTime(Realm):
                     ap_stats_col_titles = []
                     mac_found_5g = False
                     mac_found_2g = False
+                    reset_timer = 0 
 
                     while cur_time < end_time:
                         #interval_time = cur_time + datetime.timedelta(seconds=5)
                         interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
                         #print("polling_interval_seconds {}".format(self.polling_interval_seconds))
-
+                        
                         while cur_time < interval_time:
                             cur_time = datetime.datetime.now()
-                            self.reset_port_check()
                             time.sleep(.2)
+                            reset_timer += 1
+                            if reset_timer % 5 is 0:
+                                self.reset_port_check()
+
 
                         self.epoch_time = int(time.time())
                         new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
@@ -1398,7 +1404,8 @@ and received.
 Generic command layout:
 -----------------------
 python .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port>
-        --radio "radio==<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> security==<security type: wpa2, open, wpa3>" --debug
+        --radio "radio==<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> 
+        security==<security type: wpa2, open, wpa3>" --debug
 Multiple radios may be entered with individual --radio switches
 
 # UDP bi-directional test, no use of controller.
@@ -1406,6 +1413,13 @@ Multiple radios may be entered with individual --radio switches
   --radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
   --radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
   --test_duration 30s
+
+# Port resets, chooses random value between min and max
+test_l3_longevity.py --lfmgr LF_MGR_IP --test_duration 90s --polling_interval 10s --upstream_port eth2 \
+                     --radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED, \
+                        reset_port_enable==TRUE,reset_port_time_min==10s,reset_port_time_max==20s'
+                     --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"
+
 
 <duration>: number followed by one of the following
 d - days
@@ -1464,9 +1478,6 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
     parser.add_argument('--tty', help='--tty \"/dev/ttyUSB2\" the serial interface to the AP', default="")
     parser.add_argument('--baud', help='--baud \"9600\"  AP baud rate for the serial interface', default="9600")
-    parser.add_argument('--amount_ports_to_reset', help='--amount_ports_to_reset \"<min amount ports> <max amount ports>\" ', default=None)
-    parser.add_argument('--port_reset_seconds', help='--ports_reset_seconds \"<min seconds> <max seconds>\" ', default="10 30")
-
     parser.add_argument('--lfmgr', help='--lfmgr <hostname for where LANforge GUI is running>', default='localhost')
     parser.add_argument(
         '--test_duration',
@@ -1480,8 +1491,9 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     parser.add_argument('--downstream_port', help='--downstream_port <cross connect downstream_port> example: --downstream_port eth2')
     parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='60s')
 
-    parser.add_argument('-r', '--radio', action='append', nargs=1, help='--radio  \
-                        \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\" ')
+    parser.add_argument('-r', '--radio', action='append', nargs=1, help='--radio\
+                        "radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\
+                        reset_port_enable==TRUE,reset_port_time_min==<min>s,reset_port_time_max==<max>s" ')
 
     parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
     parser.add_argument('--ap_port', help='--ap_port \'/dev/ttyUSB0\'', default='/dev/ttyUSB0')
@@ -1671,6 +1683,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
             ssid_password_list.append(radio_info_dict['ssid_pw'])
             ssid_security_list.append(radio_info_dict['security'])
 
+            # check for optional radio key , currently only reset is enabled
             optional_radio_reset_keys = ['reset_port_enable']
             radio_reset_found = True
             for key in optional_radio_reset_keys:
@@ -1680,7 +1693,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
                     break
 
             if radio_reset_found:
-                reset_port_enable_list.append(True)
+                reset_port_enable_list.append(radio_info_dict['reset_port_enable'])
                 reset_port_time_min_list.append(radio_info_dict['reset_port_time_min'])
                 reset_port_time_max_list.append(radio_info_dict['reset_port_time_max'])
             else:

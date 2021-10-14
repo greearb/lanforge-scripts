@@ -51,7 +51,7 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --test_duration 90s --polling_interval 10s --upstream_port eth2 ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED,reset_port_enable==TRUE,reset_port_time_min==1s,reset_port_time_max==5s' ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED,reset_port_enable==TRUE,reset_port_time_min==10s,reset_port_time_max==20s' ",
                     " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"
                 ]
             }
