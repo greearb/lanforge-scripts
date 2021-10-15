@@ -404,7 +404,7 @@
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario ap_auto ",
+                    " --create_scenario ap_auto_1 ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: USE_DUT_NAME Radio-1' NA AUTO,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: USE_DUT_NAME Radio-2' NA AUTO,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA eth2,AUTO -1 NA \" "
@@ -418,7 +418,7 @@
                 "args": "",
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge",
-                    " --instance_name ap_auto --config_name test_con --upstream eth2",
+                    " --instance_name ap_auto_1 --config_name test_con --upstream eth2",
                     " --dut5_0 'USE_DUT_NAME lanforge DUT_BSSID_5G (2)' --dut2_0 'USE_DUT_NAME lanforge DUT_BSSID_2G (1)'",
                     " --max_stations_2 8 --max_stations_5 8 --max_stations_dual 1",
                     " --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 --radio2 1.1.wiphy4 --radio2 1.1.wiphy5 --radio2 1.1.wiphy6 --radio2 1.1.wiphy7",
