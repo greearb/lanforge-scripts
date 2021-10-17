@@ -7,7 +7,6 @@ import sys
 import os
 import importlib
 import plotly.express as px
-import plotly.graph_objects as go
 import pandas as pd
 import sqlite3
 import argparse
@@ -143,7 +142,7 @@ class csv_sql():
         if test_run is "NA":
             try:
                 test_run = _kpi_path.rsplit('/', 2)[0]
-                print("try harder test_run {test_run}".format(test_run))
+                print("try harder test_run {test_run}".format(test_run=test_run))
             except BaseException:
                 print("exception getting test_run from kpi_path")
             print("Try harder test_run: {test_run} _kpi_path: {_kpi_path}".format(test_run=test_run, _kpi_path=_kpi_path))
@@ -155,16 +154,16 @@ class csv_sql():
         gui_version_5_4_3 = False
         print("read meta path {_kpi_path}".format(_kpi_path=_kpi_path))
         try:
-            meta_data_path = _kpi_path + '/' + '/meta.txt'
+            meta_data_path = _kpi_path + '/' + 'meta.txt'
             meta_data_fd = open(meta_data_path, 'r')
             for line in meta_data_fd:
                 if "gui_version:" in line:
-                    gui_version = line.replace("gui_version:", "")
+                    gui_version = line.replace("lanforge_gui_version:", "")
                     gui_version = gui_version.strip()
                     if gui_version == '5.4.3':
                         gui_version_5_4_3 = True
                         use_meta_test_tag = True
-                    print("meta_data_path: {meta_data_path} gui_version: {gui_version} 5.4.3: {gui_version_5_4_3}".format(
+                    print("meta_data_path: {meta_data_path} lanforge_gui_version: {gui_version} 5.4.3: {gui_version_5_4_3}".format(
                         meta_data_path=meta_data_path, gui_version=gui_version, gui_version_5_4_3=gui_version_5_4_3))
             meta_data_fd.close()
             if gui_version_5_4_3:
