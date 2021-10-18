@@ -323,3 +323,4 @@ if __name__ == "__main__":
     # driver.create_wanlink(context, name="my_wanlin", latency="49", rate="6000")
     driver.dataplane_test(context, "instance", "upstream", "station", "duration")
     print("done")
+    
