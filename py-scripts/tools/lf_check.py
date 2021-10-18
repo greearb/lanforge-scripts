@@ -518,26 +518,6 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
         else:
             self.logger.info("TEST_TIMEOUT not in test_rig_parameters json")
             exit(1)
-        if "LOAD_BLANK_DB" in self.json_rig["test_rig_parameters"]:
-            self.load_blank_db = self.json_rig["test_rig_parameters"]["LOAD_BLANK_DB"]
-        else:
-            self.logger.info("LOAD_BLANK_DB not in test_rig_parameters json")
-            exit(1)
-        if "LOAD_FACTORY_DEFAULT_DB" in self.json_rig["test_rig_parameters"]:
-            self.load_factory_default_db = self.json_rig["test_rig_parameters"]["LOAD_FACTORY_DEFAULT_DB"]
-        else:
-            self.logger.info("LOAD_FACTORY_DEFAULT_DB not in test_rig_parameters json")
-            exit(1)
-        if "LOAD_CUSTOM_DB" in self.json_rig["test_rig_parameters"]:
-            self.load_custom_db = self.json_rig["test_rig_parameters"]["LOAD_CUSTOM_DB"]
-        else:
-            self.logger.info("LOAD_CUSTOM_DB not in test_rig_parameters json")
-            exit(1)
-        if "CUSTOM_DB" in self.json_rig["test_rig_parameters"]:
-            self.custom_db = self.json_rig["test_rig_parameters"]["CUSTOM_DB"]
-        else:
-            self.logger.info("CUSTOM_DB not in test_rig_parameters json, if not using custom_db just put in a name")
-            exit(1)
         if "EMAIL_LIST_PRODUCTION" in self.json_rig["test_rig_parameters"]:
             self.email_list_production = self.json_rig["test_rig_parameters"]["EMAIL_LIST_PRODUCTION"]
         else:
@@ -598,46 +578,8 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
             self.logger.info("wireless_network_dict not in test_dut json")
             exit(1)
 
-    def load_FACTORY_DFLT_database(self):
-        # self.logger.info("file_wd {}".format(self.scripts_wd))
-        try:
-            os.chdir(self.scripts_wd)
-            # self.logger.info("Current Working Directory {}".format(os.getcwd()))
-        except BaseException:
-            self.logger.info("failed to change to {}".format(self.scripts_wd))
-
-        # no spaces after FACTORY_DFLT
-        command = "./{} {}".format("scenario.py", "--load FACTORY_DFLT")
-        process = subprocess.Popen(command.split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                   universal_newlines=True)
-        # wait for the process to terminate
-        out, err = process.communicate()
-        errcode = process.returncode
-        print("load_FACTORY_DFLT_database errcode: {errcode}".format(errcode=errcode))
-        # DO NOT REMOVE 15 second sleep.
-        # After every DB load, the loed changes are applied, and part of the apply is to re-build
-        # The underlying netsmith objects
-        sleep(15)
-
-    def load_BLANK_database(self):
-        try:
-            os.chdir(self.scripts_wd)
-        except BaseException:
-            self.logger.info("failed to change to {}".format(self.scripts_wd))
-
-        # no spaces after FACTORY_DFLT
-        command = "./{} {}".format("scenario.py", "--load BLANK")
-        process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                   universal_newlines=True)
-        # wait for the process to terminate
-        out, err = process.communicate()
-        errcode = process.returncode
-        print("load_BLANK_database errcode: {errcode}".format(errcode=errcode))
-        # DO NOT REMOVE 15 second sleep.
-        # After every DB load, the loed changes are applied, and part of the apply is to re-build
-        # The underlying netsmith objects
-        sleep(15)
-
+    # custom will accept --load FACTORY_DFLT and --load BLANK 
+    # TODO make a list
     def load_custom_database(self, custom_db):
         try:
             os.chdir(self.scripts_wd)
@@ -778,22 +720,6 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                             except BaseException:
                                 self.logger.info("custom database failed to load check existance and location: {}".format(
                                     self.test_dict[test]['load_db']))
-                    else:
-                        self.logger.info("no load_db present in dictionary, load db normally")
-                        if self.use_factory_default_db == "TRUE":
-                            self.load_FACTORY_DFLT_database()
-                            self.logger.info("FACTORY_DFLT loaded between tests with scenario.py --load FACTORY_DFLT")
-                        if self.use_blank_db == "TRUE":
-                            self.load_BLANK_database()
-                            self.logger.info("BLANK loaded between tests with scenario.py --load BLANK")
-                        if self.use_custom_db == "TRUE":
-                            try:
-                                self.load_custom_database(self.custom_db)
-                                self.logger.info("{} loaded between tests with scenario.py --load {}".format(self.custom_db, self.custom_db))
-                            except BaseException:
-                                self.logger.info("custom database failed to load check existance and location: {}".format(self.custom_db))
-                        else:
-                            self.logger.info("no db loaded between tests: {}".format(self.use_custom_db))
 
                     try:
                         os.chdir(self.scripts_wd)
