@@ -45,10 +45,10 @@ class CreateL3(Realm):
         self.endp_a = endp_a
         self.mode = mode
         self.name_prefix = name_prefix
-        self.station_profile = self.new_station_profile()
+        # self.station_profile = self.new_station_profile()
+        # self.station_profile.lfclient_url = self.lfclient_url
+        # self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user defined variable from terminal.
         self.cx_profile = self.new_l3_cx_profile()
-        self.station_profile.lfclient_url = self.lfclient_url
-        self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user defined variable from terminal.
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
         self.cx_profile.name_prefix = self.name_prefix
@@ -71,7 +71,7 @@ class CreateL3(Realm):
 
 def main(args):
 
-    num_sta = 1
+    num_sta = 0
     # if (args.num_stations is not None) and (int(args.num_stations) > 0):
     #     num_sta = int(args.num_stations)
 
@@ -103,7 +103,7 @@ if __name__ == "__main__":
         ''')
     parser.add_argument('--min_rate_a', help='--min_rate_a bps rate minimum for side_a', default=56000)
     parser.add_argument('--min_rate_b', help='--min_rate_b bps rate minimum for side_b', default=56000)
-    parser.add_argument('--endp_a', help='--endp_a station list', default=["eth1"], action="append", required=True)
+    parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=True)
     parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=True)
     parser.add_argument('--mode', help='Used to force mode of stations', default=0)
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')

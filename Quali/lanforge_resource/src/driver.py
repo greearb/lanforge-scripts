@@ -13,6 +13,7 @@ import sys
 import os
 import importlib
 import paramiko
+from scp import SCPClient
 
 # command = "./lanforge-scripts/py-scripts/update_dependencies.py"
 # print("running:[{}]".format(command))
@@ -221,28 +222,79 @@ class LanforgeResourceDriver (ResourceDriverInterface):
             drop_A="0",
             drop_B="0"
         )
-        
+
         output = self.send_command(context, cmd)
         print(output)
         return output
-      
+
     def create_l3(self, context, name, min_rate_a, min_rate_b, endp_a, endp_b):
 
-        # args = {
-        #     "host": context.resource.address,
-        #     "name_prefix": name,
-        #     "min_rate_a": min_rate_a,
-        #     "min_rate_b": min_rate_b,
-        #     "endp_a": endp_a,
-        #     "endp_b": endp_b
-        # }
-        
-        cmd = f"/home/lanforge/lanforge-scripts/py-scripts/create_l3.py --host \"localhost\" --endp_a \"{endp_a}\" --endp_b \"{endp_b}\" --min_rate_a \"{min_rate_a}\" --min_rate_b \"{min_rate_b}\""
+        cmd = f"/home/lanforge/lanforge-scripts/py-scripts/create_l3.py --endp_a \"{endp_a}\" --endp_b \"{endp_b}\" --min_rate_a \"{min_rate_a}\" --min_rate_b \"{min_rate_b}\""
 
         output = self.send_command(context, cmd)
         print(output)
         return output
-                
+
+    def pull_reports(self, hostname="", port=22,
+                     username="lanforge", password="lanforge",
+                     report_location="/home/lanforge/html_reports/",
+                     report_dir="./"):
+        
+        ssh = paramiko.SSHClient()
+        ssh.load_system_host_keys()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname="juicer", username=username, password=password, port=port, allow_agent=False, look_for_keys=False)
+
+        with SCPClient(ssh.get_transport()) as scp:
+            scp.get(remote_path=report_location, local_path=report_dir, recursive=True)
+            scp.close()
+        
+    def dataplane_test(self, context, instance_name, upstream, station, duration, download_speed, upload_speed, traffic_types, local_lf_report_dir, output_report_dir, mgr):
+
+        cmd = '''/home/lanforge/lanforge-scripts/py-scripts/lf_dataplane_test.py --mgr {mgr} --port 8080 --lf_user lanforge --lf_password lanforge \
+                --instance_name {instance_name} --config_name test_con \
+                --upstream {upstream} --station {station} --duration {duration}\
+                --download_speed {download_speed} --upload_speed {upload_speed} \
+                --raw_line 'pkts: 256;1024' \
+                --raw_line 'directions: DUT Transmit' \
+                --raw_line 'traffic_types: {traffic_types}' \
+                --test_rig juicer --pull_report \
+                --local_lf_report_dir {local_lf_report_dir}'''.format(
+                    instance_name=instance_name,
+                    mgr=mgr,
+                    upstream=upstream,
+                    station=station,
+                    duration=duration,
+                    download_speed=download_speed,
+                    upload_speed=upload_speed,
+                    traffic_types=traffic_types,
+                    local_lf_report_dir=local_lf_report_dir
+                )
+
+        output = self.send_command(context, cmd)
+        print(output)
+        
+        resource = LanforgeResource.create_from_context(context)
+        session = CloudShellAPISession(host=context.connectivity.server_address,
+                                       token_id=context.connectivity.admin_auth_token,
+                                       domain=context.reservation.domain)
+        terminal_ip = context.resource.address
+        resource_model_name = resource.cloudshell_model_name
+        terminal_pass = session.DecryptPassword(context.resource.attributes[f'{resource_model_name}.Password']).Value
+        terminal_user = context.resource.attributes[f'{resource_model_name}.User']
+        # session.AttachFileToReservation(context.reservation.reservation_id, f"C:/Users/Administrator/{output_report_dir}", "C:/Users/Administrator/AppData/Local/Temp", True)
+        self.pull_reports(hostname=context.resource.address, port=22,
+                          username=terminal_user, password=terminal_pass,
+                          report_location=f"/home/lanforge/html-reports",
+                          report_dir=f"C:/Users/Administrator/{output_report_dir}")
+        return output
+
+    def scenario(self, context, load):
+        cmd = f"/home/lanforge/lanforge-scripts/py-scripts/scenario.py --load {load}"
+
+        output = self.send_command(context, cmd)
+        print(output)
+        return output
 
 if __name__ == "__main__":
     # setup for mock-debug environment
@@ -267,6 +319,7 @@ if __name__ == "__main__":
     # print driver.run_custom_command(context, custom_command="sh run", cancellation_context=cancellation_context)
     # result = driver.example_command_with_api(context)
 
-    driver.create_l3(context, "my_fire", "69000", "41000", "eth1", "eth2")
-    driver.create_wanlink(context, name="my_wanlin", latency="49", rate="6000")
+    # driver.create_l3(context, "my_fire", "69000", "41000", "eth1", "eth2")
+    # driver.create_wanlink(context, name="my_wanlin", latency="49", rate="6000")
+    driver.dataplane_test(context, "instance", "upstream", "station", "duration")
     print("done")
