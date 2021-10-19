@@ -225,8 +225,8 @@ class L3VariableTime(Realm):
         self.port_csv_writers = {}
 
         # TODO:  cmd-line arg to enable/disable these stats.
-        self.ap_stats_col_titles = ["Station Address", "PHY Mbps", "Data Mbps", "Air Use", "Data Use",
-                                    "Retries", "bw", "mcs", "Nss", "dl ofdma", "dl mu-mimo", "channel utilization"]
+        self.ap_stats_col_titles = ["Station Address", "Dl-PHY-Mbps", "Dl-Data-Mbps", "Dl-Air-Use", "Dl-Data-Use",
+                                    "Dl-Retries", "Dl-BW", "Dl-MCS", "Dl-NSS", "Dl-OFDMA", "Dl-MU-MIMO", "Dl-Channel-Utilization"]
 
         dur = self.duration_time_to_seconds(self.test_duration)
 
@@ -937,7 +937,7 @@ class L3VariableTime(Realm):
 
                                         self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                                             latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row, self.ap_stats_col_titles)  # self.ap_stats_col_titles used as a length
+                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row)
                             # 5G test mode
                             if self.ap_test_mode:
                                 ap_stats_5g = self.read_ap_bs_data_test_mode()
@@ -1035,7 +1035,7 @@ class L3VariableTime(Realm):
 
                                         self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                                             latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row, self.ap_stats_col_titles)  # self.ap_stats_col_titles used as a length
+                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row) 
                             # 2g test mode
                             if self.ap_test_mode:
                                 ap_stats_2g = self.read_ap_bs_data_test_mode()
@@ -1133,7 +1133,7 @@ class L3VariableTime(Realm):
 
                                         self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                                             latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row, self.ap_stats_col_titles)  # self.ap_stats_col_titles used as a length
+                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row)  
 
                         else:
 
@@ -1154,7 +1154,7 @@ class L3VariableTime(Realm):
 
                                     self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                        total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row, ap_stats_col_titles)  # ap_stats_col_titles used as a length
+                                                        total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row) 
 
                     # At end of test step, record KPI information. This is different the kpi.csv
                     self.record_kpi(
@@ -1206,7 +1206,7 @@ class L3VariableTime(Realm):
                         self._pass("PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" % (ul, dl, ul_pdu, dl_pdu), print_pass)
 
     def write_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data, latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                       total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row, ap_stats_col_titles):
+                       total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, eid_name
@@ -1215,7 +1215,7 @@ class L3VariableTime(Realm):
         row = row + [port_data['bps rx'], port_data['bps tx'], port_data['rx-rate'], port_data['tx-rate'],
                      port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll]
 
-        # Add in info queried from AP. NOTE: do not need to pass in the ap_stats_col_titles
+        # Add in info queried from AP. 
         #print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
         #print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
         if len(ap_row) == len(self.ap_stats_col_titles):
