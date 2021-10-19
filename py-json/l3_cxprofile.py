@@ -16,6 +16,7 @@ pandas_extensions = importlib.import_module("py-json.LANforge.pandas_extensions"
 port_probe = importlib.import_module("py-json.port_probe")
 ProbePort = port_probe.ProbePort
 
+
 class L3CXProfile(LFCliBase):
     def __init__(self,
                  lfclient_host,
@@ -269,6 +270,20 @@ class L3CXProfile(LFCliBase):
                 probe_results['Signal Combined'] = probe_port.getSignalCombined()
                 probe_results['Signal per Chain'] = probe_port.getSignalPerChain()
                 probe_results['Beacon Avg Signal'] = probe_port.getBeaconSignalAvg()
+                probe_results['HE status'] = probe_port.he
+
+                probe_results['TX Bitrate'] = probe_port.tx_bitrate
+                probe_results['TX MCS'] = probe_port.tx_mcs
+                probe_results['TX NSS'] = probe_port.tx_nss
+                probe_results['TX MHz'] = probe_port.tx_mhz
+                probe_results['TX guard interval'] = probe_port.tx_ns
+
+                probe_results['RX Bitrate'] = probe_port.rx_bitrate
+                probe_results['RX MCS'] = probe_port.rx_mcs
+                probe_results['RX NSS'] = probe_port.rx_nss
+                probe_results['RX MHz'] = probe_port.rx_mhz
+                probe_results['RX guard interval'] = probe_port.rx_ns
+
                 probe_df_initial = pd.DataFrame(probe_results.values()).transpose()
                 probe_df_initial.columns = probe_results.keys()
                 probe_df_initial.columns = ['probe '+x for x in probe_df_initial.columns]

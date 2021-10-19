@@ -259,16 +259,10 @@ class IPVariableTime(Realm):
         try:
             monitor_interval = Realm.parse_time(self.monitor_interval).total_seconds()
         except ValueError as error:
-            print(str(error))
-            print(ValueError(
-                "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. "))
-            exit(1)
+            print(error)
+            return ValueError(
+                "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. ")
         self.start(False, False)
-
-        # if self.influx_mgr is None:
-        #    manager = self.mgr
-        # else:
-        #    manager = self.influx_mgr
 
         if self.influx_org is not None:
             grapher = RecordInflux(_influx_host=self.influx_host,
@@ -539,7 +533,7 @@ python3 ./test_ip_variable_time.py
     parser.add_argument('--layer3_cols', help='Columns wished to be monitored from layer 3 endpoint tab',
                         default=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'])
     parser.add_argument('--port_mgr_cols', help='Columns wished to be monitored from port manager tab',
-                        default=['alias', 'ap', 'ip', 'parent dev', 'rx-rate', 'beacon'])
+                        default=['alias', 'ap', 'ip', 'parent dev', 'rx-rate'])
     parser.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',
                         default=None)
     parser.add_argument('--monitor_interval',
@@ -559,9 +553,6 @@ python3 ./test_ip_variable_time.py
     parser.add_argument('--create_sta', help='Used to force a connection to a particular AP', default=True)
     parser.add_argument('--sta_names', help='Used to force a connection to a particular AP', default="sta0000")
     args = parser.parse_args()
-    create_sta = True
-    if args.create_sta == "False":
-        create_sta = False
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
@@ -599,7 +590,7 @@ python3 ./test_ip_variable_time.py
                                  port=args.mgr_port,
                                  number_template="0000",
                                  sta_list=station_list,
-                                 create_sta=create_sta,
+                                 create_sta=args.create_sta,
                                  name_prefix="VT",
                                  upstream=args.upstream_port,
                                  ssid=args.ssid,
