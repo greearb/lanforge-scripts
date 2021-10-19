@@ -670,6 +670,28 @@ class L3VariableTime(Realm):
 
         return ap_chanim_stats_2g
 
+    # provide fake bs_data for testing without AP wl2 is the 6E interface,
+    def read_ap_bs_data_test_mode(self):
+        ap_stats_fake = "{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl2 bs_data\n",
+                                              "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
+                                              "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
+                                              "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
+                                              "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
+                                              "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n")
+                                              #Keep commented for testing "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
+        # print("ap_stats_fake {}".format(ap_stats_fake))
+        return ap_stats_fake
+
+    def read_ap_chanim_stats_test_mode(self):
+        # Create the test data as a continuous string
+        ap_chanim_stats_fake = "{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl2 chanim_stats\n",
+                                               "version: 3\n",
+                                               "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
+                                               # `"0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
+                                               '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
+        # "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
+        return ap_chanim_stats_fake
+
     # Run the main body of the test logic.
     def start(self, print_pass=False, print_fail=False):
         print("Bringing up stations")
@@ -809,6 +831,9 @@ class L3VariableTime(Realm):
                         if self.ap_read:
                             # 6G test mode
                             if self.ap_test_mode:
+                                ap_stats_6g = self.read_ap_bs_data_test_mode()
+                                ap_chanim_stats_6g = self.read_ap_chanim_stats_test_mode()
+                                '''
                                 # Create the test data as a continuous string
                                 ap_stats_6g = "{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl2 bs_data\n",
                                                                       "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
@@ -826,7 +851,7 @@ class L3VariableTime(Realm):
                                                                        # `"0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
                                                                        '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
                                 # "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
-
+                                '''
                             else:
                                 # read from the AP 6g
                                 ap_stats_6g = self.read_ap_stats_6g()
@@ -925,6 +950,10 @@ class L3VariableTime(Realm):
                                                             total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row, ap_stats_6g_col_titles)  # ap_stats_5g_col_titles used as a length
                             # 5G test mode
                             if self.ap_test_mode:
+                                ap_stats_5g = self.read_ap_bs_data_test_mode()
+                                print("ap_stats 5g {}".format(ap_stats_5g))
+                                ap_chanim_stats_5g = self.read_ap_chanim_stats_test_mode()
+                                '''
                                 # Create the test data as a continuous string
                                 ap_stats_5g = "{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 bs_data\n",
                                                                       "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
@@ -942,7 +971,7 @@ class L3VariableTime(Realm):
                                                                        # `"0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
                                                                        '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
                                 # "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
-
+                                '''
                             else:
                                 # read from the AP
                                 ap_stats_5g = self.read_ap_stats_5g()
@@ -1041,14 +1070,18 @@ class L3VariableTime(Realm):
                                                             total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row, ap_stats_5g_col_titles)  # ap_stats_5g_col_titles used as a length
                             # 2g test mode
                             if self.ap_test_mode:
+                                ap_stats_2g = self.read_ap_bs_data_test_mode()
+                                print("ap_stats 2g {}".format(ap_stats_2g))
+                                ap_chanim_stats_2g = self.read_ap_chanim_stats_test_mode()
+                                '''
                                 # Create the test data as a continuous string
                                 ap_stats_2g = "{}{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl0 bs_data\n",
                                                                       "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
                                                                       "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
                                                                       "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
                                                                       "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
-                                                                      "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n",
-                                                                      "- note the MAC will match ap_stats_2g.append((overall)          -      200.2      26.5%         -         - \n")
+                                                                      "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n")
+                                                                      #Keep Commented for Testing ""- note the MAC will match ap_stats_2g.append((overall)          -      200.2      26.5%         -         - \n")
                                 print("ap_stats_2g {}".format(ap_stats_2g))
 
                                 # Create the test data as a continuous string
@@ -1058,6 +1091,7 @@ class L3VariableTime(Realm):
                                                                        # "0xe06a  62      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
                                                                        '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
                                 # "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
+                                ''' 
                             else:
                                 # read from the AP
                                 ap_stats_2g = self.read_ap_stats_2g()
