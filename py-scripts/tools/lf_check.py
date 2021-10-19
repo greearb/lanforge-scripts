@@ -358,12 +358,14 @@ class lf_check():
         message_txt = ""
         if (self.email_txt != ""):
             message_txt = """{email_txt} lanforge target {lf_mgr_ip}
-Results from {hostname}:
+Results from {hostname}:  
+Suite: {suite}
 http://{hostname}/{report}
-""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, hostname=hostname, report=report_url)
+""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, suite=self.test_suite, hostname=hostname, report=report_url)
         else:
-            message_txt = """Results from {hostname}:
-http://{hostname}/{report}""".format(hostname=hostname, report=report_url)
+            message_txt = """Results from {hostname}:  
+Suite: {suite}
+http://{hostname}/{report}""".format(hostname=hostname, suite=self.test_suite, report=report_url)
 
         # Put in report information current two methods supported,
         message_txt += """
@@ -372,10 +374,11 @@ http://{ip_qa}/{qa_url}
 NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
 
         if (self.email_title_txt != ""):
-            mail_subject = "{} [{hostname}] {date}".format(self.email_title_txt, hostname=hostname,
-                                                           date=datetime.datetime.now())
+            mail_subject = "{email} [{hostname}] {suite} {date}".format(email=self.email_title_txt, hostname=hostname,
+                                                    suite=self.test_suite, date=datetime.datetime.now())
         else:
-            mail_subject = "Regression Test [{hostname}] {date}".format(hostname=hostname, date=datetime.datetime.now())
+            mail_subject = "Regression Test [{hostname}] {suite} {date}".format(hostname=hostname, 
+                suite = self.test_suite, date=datetime.datetime.now())
         try:
             if self.production_run:
                 msg = message_txt.format(ip=ip)
