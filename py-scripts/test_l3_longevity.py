@@ -226,7 +226,7 @@ class L3VariableTime(Realm):
 
         # TODO:  cmd-line arg to enable/disable these stats.
         self.ap_stats_col_titles = ["Station Address", "PHY Mbps", "Data Mbps", "Air Use", "Data Use",
-                                    "Retries", "bw", "mcs", "Nss", "ofdma", "mu-mimo", "channel utilization"]
+                                    "Retries", "bw", "mcs", "Nss", "dl ofdma", "dl mu-mimo", "channel utilization"]
 
         dur = self.duration_time_to_seconds(self.test_duration)
 
@@ -670,7 +670,17 @@ class L3VariableTime(Realm):
 
         return ap_chanim_stats_2g
 
-    # provide fake bs_data for testing without AP wl2 is the 6E interface,
+    # provide fake bs_data for testing without AP wl2 is the 6E interface, wl1 5G, wl0 2G
+
+    def read_ap_rx_report(self):
+        ap_rx_report_fake = "{}{}{}{}{}".format("root@Docsis-Gateway:~#  wl -i wl1 rx_report\n",
+                "Station Address (rssi)  tid   ampdu     mpdu  Data Mbps   PHY Mbps    bw   mcs   Nss   oow holes   dup rtries    mmu  ofdma  tones    air\n",
+                "50:E0:85:87:5B:F4 (-43dBm)   0    2062   127078       32.5      571.9    80  11.0     2     0     0    64      0     0%   100%  483.3     6%\n",
+                "50:E0:85:84:7A:E7 (-44dBm)   0    2334   144373       36.9      343.1    80  10.9     2     0     0    63      0     0%   100%  291.4    11%\n",
+                "50:E0:85:88:F4:5F (-45dBm)   0    2296   142463       36.4      346.3    80  10.9     2     0     0    64      0     0%   100%  294.1    11%\n")
+                #Keep commented for testing "(overall)   -    6692   413914      105.8          -     -     -     -     -     -     -      -     -      -       -     -\n"
+        return ap_rx_report_fake
+
     def read_ap_bs_data_test_mode(self):
         ap_stats_fake = "{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl2 bs_data\n",
                                               "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
@@ -828,30 +838,13 @@ class L3VariableTime(Realm):
                             total_ul_ll_bps)
 
                         # AP OUTPUT
+                        # rx_report command gives OFDMA and airtime fro the Uplink
+                        # bs_data command shows the OFDMA and MU-MIMO on the downlink 
                         if self.ap_read:
                             # 6G test mode
                             if self.ap_test_mode:
                                 ap_stats_6g = self.read_ap_bs_data_test_mode()
                                 ap_chanim_stats_6g = self.read_ap_chanim_stats_test_mode()
-                                '''
-                                # Create the test data as a continuous string
-                                ap_stats_6g = "{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl2 bs_data\n",
-                                                                      "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
-                                                                      "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
-                                                                      "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
-                                                                      "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
-                                                                      "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n")
-                                                                      #Keep commented for testing "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
-                                print("ap_stats 6g{}".format(ap_stats_6g))
-
-                                # Create the test data as a continuous string
-                                ap_chanim_stats_6g = "{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl2 chanim_stats\n",
-                                                                       "version: 3\n",
-                                                                       "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
-                                                                       # `"0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
-                                                                       '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
-                                # "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
-                                '''
                             else:
                                 # read from the AP 6g
                                 ap_stats_6g = self.read_ap_stats_6g()
@@ -942,36 +935,14 @@ class L3VariableTime(Realm):
                                         print("6g channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
                                         print("6g ap_row {ap_row}".format(ap_row=ap_row))
 
-                                        ap_stats_6g_col_titles = ['Station Address', 'PHY Mbps', 'Data Mbps', 'Air Use',
-                                                                  'Data Use', 'Retries', 'bw', 'mcs', 'Nss', 'ofdma', 'mu-mimo', 'channel_utilization']
-
                                         self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                                             latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row, ap_stats_6g_col_titles)  # ap_stats_5g_col_titles used as a length
+                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row, self.ap_stats_col_titles)  # self.ap_stats_col_titles used as a length
                             # 5G test mode
                             if self.ap_test_mode:
                                 ap_stats_5g = self.read_ap_bs_data_test_mode()
                                 print("ap_stats 5g {}".format(ap_stats_5g))
                                 ap_chanim_stats_5g = self.read_ap_chanim_stats_test_mode()
-                                '''
-                                # Create the test data as a continuous string
-                                ap_stats_5g = "{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 bs_data\n",
-                                                                      "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
-                                                                      "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
-                                                                      "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
-                                                                      "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
-                                                                      "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n")
-                                                                      #Keep Commented for Testing "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
-                                print("ap_stats 5g {}".format(ap_stats_5g))
-
-                                # Create the test data as a continuous string
-                                ap_chanim_stats_5g = "{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 chanim_stats\n",
-                                                                       "version: 3\n",
-                                                                       "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
-                                                                       # `"0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
-                                                                       '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
-                                # "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
-                                '''
                             else:
                                 # read from the AP
                                 ap_stats_5g = self.read_ap_stats_5g()
@@ -1062,36 +1033,14 @@ class L3VariableTime(Realm):
                                         print("5g channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
                                         print("5g ap_row {ap_row}".format(ap_row=ap_row))
 
-                                        ap_stats_5g_col_titles = ['Station Address', 'PHY Mbps', 'Data Mbps', 'Air Use',
-                                                                  'Data Use', 'Retries', 'bw', 'mcs', 'Nss', 'ofdma', 'mu-mimo', 'channel_utilization']
-
                                         self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                                             latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row, ap_stats_5g_col_titles)  # ap_stats_5g_col_titles used as a length
+                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row, self.ap_stats_col_titles)  # self.ap_stats_col_titles used as a length
                             # 2g test mode
                             if self.ap_test_mode:
                                 ap_stats_2g = self.read_ap_bs_data_test_mode()
                                 print("ap_stats 2g {}".format(ap_stats_2g))
                                 ap_chanim_stats_2g = self.read_ap_chanim_stats_test_mode()
-                                '''
-                                # Create the test data as a continuous string
-                                ap_stats_2g = "{}{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl0 bs_data\n",
-                                                                      "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
-                                                                      "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
-                                                                      "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
-                                                                      "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
-                                                                      "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n")
-                                                                      #Keep Commented for Testing ""- note the MAC will match ap_stats_2g.append((overall)          -      200.2      26.5%         -         - \n")
-                                print("ap_stats_2g {}".format(ap_stats_2g))
-
-                                # Create the test data as a continuous string
-                                ap_chanim_stats_2g = "{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl1 chanim_stats\n",
-                                                                       "version: 3\n",
-                                                                       "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
-                                                                       # "0xe06a  62      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
-                                                                       '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
-                                # "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
-                                ''' 
                             else:
                                 # read from the AP
                                 ap_stats_2g = self.read_ap_stats_2g()
@@ -1182,12 +1131,9 @@ class L3VariableTime(Realm):
                                         print("2g channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
                                         print("2g ap_row {ap_row}".format(ap_row=ap_row))
 
-                                        ap_stats_2g_col_titles = ['Station Address', 'PHY Mbps', 'Data Mbps', 'Air Use',
-                                                                  'Data Use', 'Retries', 'bw', 'mcs', 'Nss', 'ofdma', 'mu-mimo', 'channel_utilization']
-
                                         self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                                             latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row, ap_stats_2g_col_titles)  # ap_stats_2g_col_titles used as a length
+                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row, self.ap_stats_col_titles)  # self.ap_stats_col_titles used as a length
 
                         else:
 
