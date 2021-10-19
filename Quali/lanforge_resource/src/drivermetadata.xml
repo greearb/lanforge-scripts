@@ -150,7 +150,7 @@
 	      <Parameter Name="duration"
 			 Type="String"
 			 Mandatory="False"
-			 DefaultValue="15s"
+			 DefaultValue="2s"
 			 Description="The duration of the test (append 's' for seconds)"/>
 	      <Parameter Name="download_speed"
 			 Type="String"

@@ -3,6 +3,10 @@ from cloudshell.shell.core.driver_context import InitCommandContext, ResourceCom
     AutoLoadAttribute, AutoLoadDetails, CancellationContext
 from cloudshell.shell.core.session.cloudshell_session import CloudShellSessionContext
 from cloudshell.api.cloudshell_api import CloudShellAPISession
+from cloudshell.helpers.scripts.cloudshell_scripts_helpers import get_api_session, get_reservation_context_details
+from cloudshell.shell.core.session.cloudshell_session import CloudShellSessionContext 
+import cloudshell.helpers.scripts.cloudshell_scripts_helpers as script_help
+import cloudshell.helpers.scripts.cloudshell_dev_helpers as dev_helpers
 # from cloudshell.shell.core.resource_driver_interface import ResourceDriverInterface
 # from cloudshell.shell.core.context import InitCommandContext, ResourceCommandContext
 import mock
@@ -14,6 +18,9 @@ import os
 import importlib
 import paramiko
 from scp import SCPClient
+import requests
+import datetime
+import os
 
 # command = "./lanforge-scripts/py-scripts/update_dependencies.py"
 # print("running:[{}]".format(command))
@@ -150,7 +157,37 @@ class LanforgeResourceDriver (ResourceDriverInterface):
         return saved_details_object[u'saved_artifact'][u'identifier']
         '''
         pass
-    
+
+    def attach_file(self, report_server, resid, file_path, user, password, domain, filename):
+
+        # st = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d%H%M%S')
+        data = {
+            'username': user,
+            'password': password,
+            'domain': domain
+        }
+        qq = 'Basic ' + requests.put(
+            url='http://' + report_server + ':9000/API/Auth/Login',
+            data=data
+        ).text[1:-1]
+        head = {
+            'Authorization': qq,
+        }
+        dat_json ={
+            "reservationId": resid,
+            "saveFileAs": filename,
+            "overwriteIfExists": "true",
+        }
+
+        with open(file_path, 'rb') as upload_file:
+            xx = requests.post(
+                url='http://' + report_server + ':9000/API/Package/AttachFileToReservation',
+                headers=head,
+                data=dat_json,
+                files={'QualiPackage': upload_file}
+            )
+        return xx
+
     def send_command(self, context, cmd):
         
         msg = ""
@@ -237,7 +274,7 @@ class LanforgeResourceDriver (ResourceDriverInterface):
 
     def pull_reports(self, hostname="", port=22,
                      username="lanforge", password="lanforge",
-                     report_location="/home/lanforge/html_reports/",
+                     report_location="/home/lanforge/html-reports/",
                      report_dir="./"):
         
         ssh = paramiko.SSHClient()
@@ -282,11 +319,27 @@ class LanforgeResourceDriver (ResourceDriverInterface):
         resource_model_name = resource.cloudshell_model_name
         terminal_pass = session.DecryptPassword(context.resource.attributes[f'{resource_model_name}.Password']).Value
         terminal_user = context.resource.attributes[f'{resource_model_name}.User']
+        reservation_id = context.reservation.reservation_id
+        api = CloudShellSessionContext(context).get_api()
+        cwd = os.getcwd()
         # session.AttachFileToReservation(context.reservation.reservation_id, f"C:/Users/Administrator/{output_report_dir}", "C:/Users/Administrator/AppData/Local/Temp", True)
         self.pull_reports(hostname=context.resource.address, port=22,
                           username=terminal_user, password=terminal_pass,
-                          report_location=f"/home/lanforge/html-reports",
+                          report_location="/home/lanforge/html-reports/",
                           report_dir=f"C:/Users/Administrator/{output_report_dir}")
+
+        # api = get_api_session()
+        # api.WriteMessageToReservationOutput(reservation_id, f"Attaching report to sandbox.")
+        api.WriteMessageToReservationOutput(reservation_id, f"The current working directory is {cwd}")
+        self.attach_file(
+            report_server=context.connectivity.server_address,
+            resid=context.reservation.reservation_id,
+            user='admin',
+            password='admin',
+            domain=context.reservation.domain,
+            file_path="C:/Users/Administrator/Desktop/My_Reports/html-reports/dataplane-2021-10-13-03-32-40/dataplane-report-2021-10-13-03-31-50.pdf",
+            filename="C:/Users/Administrator/Desktop/test_report.txt"
+        )
         return output
 
     def scenario(self, context, load):
