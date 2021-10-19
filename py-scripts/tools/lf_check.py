@@ -850,7 +850,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                             background = self.background_green
                     else:
                         # if stdout empty that is a failure also
-                        self.test_resut = "Failure"
+                        self.test_result = "Failure"
                         background = self.background_red
 
                     # if there was a
