@@ -629,11 +629,20 @@ class BaseLFJsonRequest:
     def json_delete(self,
                     url: str = None,
                     debug: bool = False,
-                    die_on_error: bool = False):
+                    die_on_error: bool = False,
+                    wait_sec: float = None,
+                    request_timeout_sec: float = None,
+                    max_timeout_sec: float = None,
+                    errors_warnings: list = None):
+        if wait_sec and (wait_sec > 0):
+            time.sleep(wait_sec)
         return self.get_as_json(url=url,
                                 debug=debug | self.debug_on,
                                 die_on_error=die_on_error,
-                                method_='DELETE')
+                                request_timeout_sec=request_timeout_sec,
+                                max_timeout_sec=max_timeout_sec,
+                                method_='DELETE',
+                                errors_warnings=errors_warnings)
 
     def get(self,
             url: str = None,
@@ -704,33 +713,47 @@ class BaseLFJsonRequest:
                     url: str = None,
                     die_on_error: bool = False,
                     debug: bool = False,
-                    timeout_sec: float = None,
-                    method_='GET'):
+                    wait_sec: float = None,
+                    request_timeout_sec: float = None,
+                    max_timeout_sec: float = None,  # TODO: use if we do retries
+                    method_='GET',
+                    errors_warnings: list = None):
         """
         :param url: url to do GET request on
         :param die_on_error:  exit immediate if result status is BAD RESPONSE
         :param debug: print diagnostic information about query
-        :param timeout_sec: number of seconds to wait for a response
+        :param wait_sec: wait before requesting
+        :param request_timeout_sec: number of seconds to wait for a response
         :param method_: Overrides the HTTP method used. Please do not override.
+        :param errors_warnings: if present, this list gets populated with errors and warnings from the result
+        :param max_timeout_sec: if there is no response, this request can retry every request_timeout_sec
         :return: get request as Json data
         """
+        begin_sec = time.time() * 1000
         responses = []
-        j = self.get(url=url,
-                     debug=debug,
-                     die_on_error=die_on_error,
-                     connection_timeout_sec=timeout_sec,
-                     method_=method_)
-        responses.append(j)
-        if len(responses) < 1:
-            if debug and self.has_errors():
-                self.print_errors()
-            return None
+        while (time.time() * 1000) < (begin_sec + max_timeout_sec):
+            if wait_sec and (wait_sec > 0):
+                time.sleep(wait_sec)
+            responses = [self.get(url=url,
+                                  debug=debug,
+                                  die_on_error=die_on_error,
+                                  connection_timeout_sec=request_timeout_sec,
+                                  method_=method_)]
+            if (len(responses) > 0) and responses[0]:
+                break
 
         if responses[0] is None:
             if debug:
                 self.logger.debug(message="No response from " + url)
             return None
+
         json_data = json.loads(responses[0].read().decode('utf-8'))
+        if errors_warnings is not None:
+            if "errors" in json_data:
+                errors_warnings.extend(json_data["errors"])
+            if "warnings" in responses[0]:
+                errors_warnings.extend(json_data["warnings"])
+
         return json_data
 
     def json_get(self,
@@ -769,7 +792,7 @@ class BaseLFJsonRequest:
                 json_response = self.get_as_json(url=url,
                                                  debug=debug,
                                                  die_on_error=False,
-                                                 timeout_sec=request_timeout_sec)
+                                                 request_timeout_sec=request_timeout_sec)
                 if debug:
                     self.logger.debug("[%s] json_get: URL[%s]" % (attempt_counter, url))
                     self.logger.debug(pformat(json_response))
@@ -14414,6 +14437,81 @@ class LFJsonQuery(JsonQuery):
                                    singular_key="sessions/messages",
                                    plural_key="sessions/messages")
     #
+    """
+        Below are 3 methods defined by LFClient URL Responders
+    """
+
+    def status_msg_new_session(self,
+                               session : str = None,
+                               debug : bool = False,
+                               wait_sec : float = None,
+                               request_timeout_sec : float = None,
+                               max_timeout_sec : float = None,
+                               errors_warnings : list = None):
+        """
+        Add a status message
+        :param [R]session: session ID [R]
+        """
+        response = self.json_put(url="/status-msg/{session}".format(session=session),
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=request_timeout_sec,
+                                 max_timeout_sec=max_timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if not response:
+            return None
+        errors_warnings.extend(response['errors'])
+        errors_warnings.extend(response['warnings'])
+        return None
+
+    def status_msg_delete_session(self,
+                                  session : str = None,
+                                  debug : bool = False,
+                                  wait_sec : float = None,
+                                  request_timeout_sec : float = None,
+                                  max_timeout_sec : float = None,
+                                  errors_warnings : list = None):
+        """
+        Delete a status-msg session
+        :param session: id to delete
+        """
+        response = self.json_delete(url="/status-msg/{session}".format(session=session),
+                                    debug=debug,
+                                    wait_sec=wait_sec,
+                                    request_timeout_sec=request_timeout_sec,
+                                    max_timeout_sec=max_timeout_sec,
+                                    errors_warnings=errors_warnings)
+        if not response:
+            return None
+        errors_warnings.extend(response['errors'])
+        errors_warnings.extend(response['warnings'])
+        return None
+
+    def status_msg_delete_message(self,
+                                  session : str = None,
+                                  key : str = None,
+                                  debug : bool = False,
+                                  wait_sec : float = None,
+                                  request_timeout_sec : float = None,
+                                  max_timeout_sec : float = None,
+                                  errors_warnings : list = None):
+        """
+        Delete a status message
+        :param session: session ID
+        :param key: item ID
+        """
+        response = self.json_delete(url="/status-msg/{session}/{key}".format(session=session, key=key),
+                                    debug=debug,
+                                    wait_sec=wait_sec,
+                                    request_timeout_sec=request_timeout_sec,
+                                    max_timeout_sec=max_timeout_sec,
+                                    errors_warnings=errors_warnings)
+        if not response:
+            return None
+        errors_warnings.extend(response['errors'])
+        errors_warnings.extend(response['warnings'])
+        return None
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <TEST-GROUP> type requests
 
