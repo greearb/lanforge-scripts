@@ -45,18 +45,19 @@ Copyright 2021 Candela Technologies Inc
 
 INCLUDE_IN_README
 '''
-import sys
-import os
-import importlib
-from pprint import pprint
-import serial
-import pexpect
-from pexpect_serial import SerialSpawn
 import argparse
-import time
-import datetime
 import csv
+import datetime
+import importlib
+import os
 import random
+import sys
+import time
+from pprint import pprint
+
+import pexpect
+import serial
+from pexpect_serial import SerialSpawn
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -66,6 +67,7 @@ if sys.version_info[0] != 3:
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lf_report = importlib.import_module("py-scripts.lf_report")
+lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv") 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
@@ -113,6 +115,7 @@ class L3VariableTime(Realm):
                  lfclient_port=8080,
                  debug=False,
                  influxdb=None,
+                 kpi_csv=None,
                  ap_scheduler_stats=False,
                  ap_ofdma_stats=False,
                  ap_read=False,
@@ -140,6 +143,7 @@ class L3VariableTime(Realm):
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)
         self.influxdb = influxdb
+        self.kpi_csv = kpi_csv
         self.tos = tos.split(",")
         self.endp_types = endp_types.split(",")
         self.side_b = side_b
@@ -1398,6 +1402,20 @@ class L3VariableTime(Realm):
                                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
                                                         total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row) 
 
+                    # At end of test step, record KPI into kpi.csv
+                    self.record_kpi_csv(
+                        len(temp_stations_list),
+                        ul,
+                        dl,
+                        ul_pdu_str,
+                        dl_pdu_str,
+                        atten_val,
+                        total_dl_bps,
+                        total_ul_bps,
+                        total_dl_ll_bps,
+                        total_ul_ll_bps)
+
+
                     # At end of test step, record KPI information. This is different the kpi.csv
                     self.record_kpi(
                         len(temp_stations_list),
@@ -1495,8 +1513,63 @@ class L3VariableTime(Realm):
         writer.writerow(row)
         self.ul_port_csv_files[eid_name].flush()
 
-    # Submit data to the influx db if configured to do so.
+    '''
+     _kpi_headers = ['Date','test-rig','test-tag','dut-hw-version','dut-sw-version','dut-model-num',
+                                'test-priority','test-id','short-description','pass/fail','numeric-score',
+                                'test-details','Units','Graph-Group','Subtest-Pass','Subtest-Fail'],
+    '''
 
+    def record_kpi_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps):
+
+        print("NOTE:  Adding kpi to kpi.csv, sta_count {sta_count}  total-download-bps:{total_dl_bps}  upload: {total_ul_bps}  bi-directional: {total}\n".format(
+              sta_count=sta_count,total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total=(total_ul_bps + total_dl_bps)))
+
+        print("NOTE:  Adding kpi to kpi.csv, sta_count {sta_count}  total-download-bps:{total_dl_ll_bps}  upload: {total_ul_ll_bps}  bi-directional: {total_ll}\n".format(
+              sta_count=sta_count,total_dl_ll_bps=total_dl_ll_bps, total_ul_ll_bps=total_ul_ll_bps, total_ll=(total_ul_ll_bps + total_dl_ll_bps)))
+
+
+        # the short description will all for more data to show up in one test-tag graph
+
+        results_dict = self.kpi_csv.kpi_csv_get_dict_update_time()
+        results_dict['Graph-Group'] = "Per Stations Rate DL"
+        results_dict['short-description'] = "DL bps - {sta_count} STA".format(sta_count=sta_count)
+        results_dict['numeric-score'] = "{}".format(total_dl_bps)
+        results_dict['Units'] = "bps"
+        self.kpi_csv.kpi_csv_write_dict(results_dict)
+
+        results_dict['Graph-Group'] = "Per Stations Rate UL"
+        results_dict['short-description'] = "UL bps - {sta_count} STA".format(sta_count=sta_count)
+        results_dict['numeric-score'] = "{}".format(total_ul_bps)
+        results_dict['Units'] = "bps"
+        self.kpi_csv.kpi_csv_write_dict(results_dict)
+
+        results_dict['Graph-Group'] = "Per Stations Rate UL+DL"
+        results_dict['short-description'] = "UL+DL bps - {sta_count} STA".format(sta_count=sta_count)
+        results_dict['numeric-score'] = "{}".format((total_ul_bps + total_dl_bps))
+        results_dict['Units'] = "bps"
+        self.kpi_csv.kpi_csv_write_dict(results_dict)
+
+        results_dict['Graph-Group'] = "Per Stations Rate DL"
+        results_dict['short-description'] = "DL LL bps - {sta_count} STA".format(sta_count=sta_count)
+        results_dict['numeric-score'] = "{}".format(total_dl_ll_bps)
+        results_dict['Units'] = "bps"
+        self.kpi_csv.kpi_csv_write_dict(results_dict)
+
+        results_dict['Graph-Group'] = "Per Stations Rate UL"
+        results_dict['short-description'] = "UL LL bps - {sta_count} STA".format(sta_count=sta_count)
+        results_dict['numeric-score'] = "{}".format(total_ul_ll_bps)
+        results_dict['Units'] = "bps"
+        self.kpi_csv.kpi_csv_write_dict(results_dict)
+
+        results_dict['Graph-Group'] = "Per Stations Rate UL+DL"
+        results_dict['short-description'] = "UL+DL LL bps - {sta_count} STA".format(sta_count=sta_count)
+        results_dict['numeric-score'] = "{}".format((total_ul_ll_bps + total_dl_ll_bps))
+        results_dict['Units'] = "bps"
+        self.kpi_csv.kpi_csv_write_dict(results_dict)
+
+
+    # Submit data to the influx db if configured to do so.
+    # This is not the kpi.csv 
     def record_kpi(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps):
 
         tags = dict()
@@ -1758,6 +1831,23 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
         '--local_lf_report_dir',
         help='--local_lf_report_dir override the report path, primary use when running test in test suite',
         default="")
+    parser.add_argument("--test_rig", default="", help="test rig for kpi.csv, testbed that the tests are run on")
+    parser.add_argument("--test_tag", default="", help="test tag for kpi.csv,  test specific information to differenciate the test")
+    parser.add_argument("--dut_hw_version", default="", help="dut hw version for kpi.csv, hardware version of the device under test")
+    parser.add_argument("--dut_sw_version", default="", help="dut sw version for kpi.csv, software version of the device under test")
+    parser.add_argument("--dut_model_num", default="", help="dut model for kpi.csv,  model number / name of the device under test")
+    parser.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
+    parser.add_argument("--test_id", default="l3 Longevity", help="test-id for kpi.csv,  script or test name")
+    '''
+    Other values that are included in the kpi.csv row.
+    short-description : short description of the test
+    pass/fail : set blank for performance tests
+    numeric-score : this is the value for the y-axis (x-axis is a timestamp),  numeric value of what was measured
+    test-details : what was measured in the numeric-score,  e.g. bits per second, bytes per second, upload speed, minimum cx time (ms)
+    Units : units used for the numeric-scort
+    Graph-Group - For the lf_qa.py dashboard
+
+    '''
     parser.add_argument('-o', '--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
 
     parser.add_argument('--tty', help='--tty \"/dev/ttyUSB2\" the serial interface to the AP', default="")
@@ -1837,10 +1927,15 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     #print("args: {}".format(args))
     debug = args.debug
 
-    if args.local_lf_report_dir != "":
-        local_lf_report_dir = args.local_lf_report_dir
-    else:
-        local_lf_report_dir = ""
+    # for kpi.csv generation
+    local_lf_report_dir = args.local_lf_report_dir
+    test_rig = args.test_rig
+    test_tag = args.test_tag
+    dut_hw_version = args.dut_hw_version
+    dut_sw_version = args.dut_sw_version
+    dut_model_num = args.dut_model_num
+    test_priority = args.test_priority # this may need to be set per test
+    test_id = args.test_id
 
     if args.ap_read:
         ap_read = args.ap_read
@@ -1932,6 +2027,18 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
             _results_dir_name="test_l3_longevity",
             _output_html="test_l3_longevity.html",
             _output_pdf="test_l3_longevity.pdf")
+
+    # Get the report path to create the kpi.csv path
+    kpi_path = report.get_report_path()
+    kpi_csv = lf_kpi_csv.lf_kpi_csv(
+        _kpi_path = kpi_path,
+        _kpi_test_rig = test_rig,
+        _kpi_test_tag = test_tag,
+        _kpi_dut_hw_version = dut_hw_version,
+        _kpi_dut_sw_version = dut_sw_version,
+        _kpi_dut_model_num = dut_model_num,
+        _kpi_test_id = test_id)
+
 
     if args.csv_outfile is not None:
         current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
@@ -2064,6 +2171,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
         lfclient_port=lfjson_port,
         debug=debug,
         influxdb=influxdb,
+        kpi_csv=kpi_csv,
         ap_scheduler_stats=ap_scheduler_stats,
         ap_ofdma_stats=ap_ofdma_stats,
         ap_read=ap_read,
