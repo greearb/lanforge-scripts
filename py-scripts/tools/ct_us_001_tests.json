@@ -460,6 +460,318 @@
                 ]
             }
         },
+        "suite_wc_dp_nightly":{
+            "lf_help_check":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"lf_help_check.bash",
+                "args":"",
+                "args_list":[
+                    " "
+                ]
+            },
+            "create_chamberview_dut_ATH10K_9984__wc":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
+                ]
+            },
+            "create_chamberview_ATH10K_9984__wc":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario ATH10K_9984__wc ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 32 'DUT: USE_DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
+                ]
+            },
+            "wifi_capacity_ATH10K_9984_":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "iterations":"3",
+                "load_db":"skip",
+                "command":"lf_wifi_capacity_test.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name ATH10K_9984__wc",
+                    " --upstream 1.1.eth2 --batch_size 1,5,25,32 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K_9984_'",
+                    " --test_rig TEST_RIG ",
+                    " --set DUT_SET_NAME"
+                ]
+            },
+            "create_chamberview_dut_ATH10K_9984__dp":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
+                ]
+            },
+            "create_chamberview_ATH10K_9984__dp":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario ATH10K_9984__dp",
+                    " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
+                ]
+            },
+            "dataplane_ATH10K_9984_":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "timeout":"600",
+                "iterations":"3",
+                "command":"lf_dataplane_test.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name ATH10K_9984__dp",
+                    " --config_name test_con --upstream 1.1.eth2 --dut asus_5g --duration 30s --station 1.1.wlan1",
+                    " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
+                    " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
+                    " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K_9984_' ",
+                    " --test_rig TEST_RIG",
+                    " --set DUT_SET_NAME"
+                ]
+            },
+            "create_chamberview_dut_AX210_wc":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    "--lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
+                ]
+            },
+            "create_chamberview_AX210_wc":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario AX210_wc ",
+                    " --raw_line \"profile_link 1.1 STA-AX 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy3,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\" "                    
+                ]
+            },    
+            "wifi_capacity_AX210":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "iterations":"3",
+                "load_db":"skip",
+                "command":"lf_wifi_capacity_test.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name AX210_wc",
+                    " --upstream 1.1.eth2 --batch_size 1 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --stations 1.1.wlan3  --test_tag 'AX210'",
+                    " --test_rig TEST_RIG",
+                    " --set DUT_SET_NAME"
+                ]
+            },
+            "create_chamberview_dut_AX210_dp":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    "--lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
+                ]
+            },
+            "create_chamberview_AX210_dp":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario AX210_dp",
+                    " --raw_line \"profile_link 1.1 STA-AX 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy3,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\" "                    
+                ]
+            },    
+            "dataplane_AX210":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "iterations":"3",
+                "command":"lf_dataplane_test.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name AX210_dp",
+                    " --config_name test_con --upstream 1.1.eth2 --dut asus_5g --duration 30s --station 1.1.wlan3",
+                    " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
+                    " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
+                    " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AX210'",
+                    " --test_rig TEST_RIG",
+                    " --set DUT_SET_NAME"
+                ]
+            },
+            "create_chamberview_dut_mt7915e_wc":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
+                ]
+            },
+            "create_chamberview_mt7915e_wc":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario mt7915e_wc ",
+                    " --raw_line \"profile_link 1.1 STA-AC 19 'DUT: USE_DUT_NAME Radio-2' NA wiphy7,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
+                ]
+            },
+            "wifi_capacity_mt7915e":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "iterations":"3",
+                "load_db":"skip",
+                "command":"lf_wifi_capacity_test.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name mt7915e_wc",
+                    " --upstream 1.1.eth2 --batch_size 1,5,10,15,19 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7915e'",
+                    " --test_rig TEST_RIG",
+                    " --set DUT_SET_NAME"
+                ]
+            },
+            "create_chamberview_dut_mt7915e_dp":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
+                ]
+            },
+            "create_chamberview_mt7915e_dp":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario mt7915e_dp",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy7,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
+                ]
+            },
+            "dataplane_mt7915e":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "iterations":"3",
+                "command":"lf_dataplane_test.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name mt7915e_dp",
+                    " --config_name test_con --upstream 1.1.eth2 --dut asus_5g --duration 30s --station 1.1.wlan7",
+                    " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
+                    " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
+                    " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'mt7915e' ",
+                    " --test_rig TEST_RIG",
+                    " --set DUT_SET_NAME"
+                ]
+            },
+            "create_chamberview_dut_ap":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
+                ]},
+            "create_chamberview_ap":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario ap_auto_1 ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: USE_DUT_NAME Radio-1' NA AUTO,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: USE_DUT_NAME Radio-2' NA AUTO,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA eth2,AUTO -1 NA \" "
+                ]
+            },
+            "ap_auto": {
+                "enabled": "TRUE",
+                "command": "lf_ap_auto_test.py",
+                "timeout":"25200",
+                "iterations":"1",
+                "args": "",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge",
+                    " --instance_name ap_auto_1 --config_name test_con --upstream eth2",
+                    " --dut5_0 'USE_DUT_NAME lanforge DUT_BSSID_5G (2)' --dut2_0 'USE_DUT_NAME lanforge DUT_BSSID_2G (1)'",
+                    " --max_stations_2 8 --max_stations_5 8 --max_stations_dual 1",
+                    " --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 --radio2 1.1.wiphy4 --radio2 1.1.wiphy5 --radio2 1.1.wiphy6 --radio2 1.1.wiphy7",
+                    " --radio5 1.1.wiphy1 --radio5 1.1.wiphy2 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7",
+                    " --set 'Basic Client Connectivity' 1",
+                    " --set 'Multi Band Performance' 1",
+                    " --set 'Stability' 1",
+                    " --set 'Multi-Station Throughput vs Pkt Size'  0,",
+                    " --set 'Throughput vs Pkt Size' 1",
+                    " --set 'Capacity' 1",
+                    " --set 'Band-Steering' 1",
+                    " --set 'Skip 2.4 Ghz Tests' 0",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AP_AUTO'",
+                    " --test_rig TEST_RIG",
+                    " --set DUT_SET_NAME"
+                ]
+            },
+            "lf_qa":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+                ]
+            }
+        },
         "suite_ap":{
             "create_chamberview_dut_ap":{
                 "enabled":"TRUE",
