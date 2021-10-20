@@ -81,15 +81,33 @@ def main():
 
     endp_a = args.wl_name + "-A"
     endp_b = args.wl_name + "-B"
+    # Comment out some parameters like 'max_jitter', 'drop_freq' and 'wanlink'
+    # in order to view the X-Errors headers
     command.post_add_wl_endp(alias=endp_a,
-                             resource=args.resource,
-                             port="rd0a",
                              shelf=1,
+                             resource=args.resource,
+                             wanlink=args.wl_name,
+                             speed=56000,
+                             port="rd0a",
+                             drop_freq="0",
+                             max_jitter="10",
+                             latency="10ms",
+                             min_reorder_amt="1",
+                             max_reorder_amt="10",
+                             min_drop_amt="1",
                              debug=args.debug)
     command.post_add_wl_endp(alias=endp_b,
+                             shelf=1,
                              resource=args.resource,
                              port="rd1a",
-                             shelf=1,
+                             wanlink=args.wl_name,
+                             speed=56000,
+                             drop_freq="0",
+                             max_jitter="10",
+                             latency="10ms",
+                             min_reorder_amt="1",
+                             max_reorder_amt="10",
+                             min_drop_amt="1",
                              debug=args.debug)
     command.post_add_cx(alias=args.wl_name,
                         rx_endp=endp_a,
