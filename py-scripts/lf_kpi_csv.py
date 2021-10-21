@@ -51,6 +51,7 @@ A blank entry is a valid entry in some cases.
     Graph-Group - Items graphed together used by dashboard, For the lf_qa.py dashboard
 
 '''
+# NOTE the delimiter for the kpi.csv is a tab not a comma
 class lf_kpi_csv:
     def __init__(self,
                 _kpi_headers = ['Date','test-rig','test-tag','dut-hw-version','dut-sw-version','dut-model-num','dut-serial-num',
@@ -88,7 +89,7 @@ class lf_kpi_csv:
             kpifile = self.kpi_path + '/' + self.kpi_filename
         print("kpifile {kpifile}".format(kpifile=kpifile))
         self.kpi_file = open(kpifile,'w')
-        self.kpi_writer = csv.DictWriter(self.kpi_file, fieldnames=self.kpi_headers)
+        self.kpi_writer = csv.DictWriter(self.kpi_file, delimiter="\t", fieldnames=self.kpi_headers)
         self.kpi_writer.writeheader()
         #except BaseException:
         #    print("lf_kpi_csv.py: {} WARNING unable to open".format(self.kpi_file))
