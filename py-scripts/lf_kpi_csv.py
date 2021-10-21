@@ -40,6 +40,7 @@ A blank entry is a valid entry in some cases.
     dut-hw-version : hardware version of the device under test
     dut-sw-version : software version of the device under test
     dut-model-num : model number / name of the device under test
+    dut-serial-num : serial number / serial number of the device under test
     test-priority : test-priority is arbitrary number, choosing under 95 means it goes down at bottom of blog report, and higher priority goes at top.
     test-id : script or test name ,  AP Auto, wifi capacity, data plane, dfs
     short-description : short description of the test
@@ -52,7 +53,7 @@ A blank entry is a valid entry in some cases.
 '''
 class lf_kpi_csv:
     def __init__(self,
-                _kpi_headers = ['Date','test-rig','test-tag','dut-hw-version','dut-sw-version','dut-model-num',
+                _kpi_headers = ['Date','test-rig','test-tag','dut-hw-version','dut-sw-version','dut-model-num','dut-serial-num',
                                 'test-priority','test-id','short-description','pass/fail','numeric-score',
                                 'test-details','Units','Graph-Group','Subtest-Pass','Subtest-Fail'],
                 _kpi_filename = 'kpi.csv', #Currently this is the only file name accepted
@@ -62,6 +63,7 @@ class lf_kpi_csv:
                 _kpi_dut_hw_version = "HW_VERSION",
                 _kpi_dut_sw_version = "SW_VERSION",
                 _kpi_dut_model_num = "MODEL_NUM",
+                _kpi_dut_serial_num = "SERIAL_NUM",
                 _kpi_test_id = "TEST_ID"
                 ):
         self.kpi_headers = _kpi_headers
@@ -74,12 +76,16 @@ class lf_kpi_csv:
         self.kpi_dut_hw_version = _kpi_dut_hw_version
         self.kpi_dut_sw_version = _kpi_dut_sw_version
         self.kpi_dut_model_num = _kpi_dut_model_num
+        self.kpi_dut_serial_num = _kpi_dut_serial_num
         self.kpi_test_id = _kpi_test_id
         self.kpi_rows = ""
         #try:
         print("self.kpi_path {kpi_path}".format(kpi_path=self.kpi_path))
         print("self.kpi_filename {kpi_filename}".format(kpi_filename=self.kpi_filename))
-        kpifile = self.kpi_path + '/' + self.kpi_filename
+        if self.kpi_path is "":
+            kpifile = self.kpi_filename
+        else:            
+            kpifile = self.kpi_path + '/' + self.kpi_filename
         print("kpifile {kpifile}".format(kpifile=kpifile))
         self.kpi_file = open(kpifile,'w')
         self.kpi_writer = csv.DictWriter(self.kpi_file, fieldnames=self.kpi_headers)
