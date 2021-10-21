@@ -1516,7 +1516,7 @@ class L3VariableTime(Realm):
     '''
      _kpi_headers = ['Date','test-rig','test-tag','dut-hw-version','dut-sw-version','dut-model-num',
                                 'test-priority','test-id','short-description','pass/fail','numeric-score',
-                                'test-details','Units','Graph-Group','Subtest-Pass','Subtest-Fail'],
+                                'test details','Units','Graph-Group','Subtest-Pass','Subtest-Fail'],
     '''
 
     def record_kpi_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps):
@@ -1843,7 +1843,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     short-description : short description of the test
     pass/fail : set blank for performance tests
     numeric-score : this is the value for the y-axis (x-axis is a timestamp),  numeric value of what was measured
-    test-details : what was measured in the numeric-score,  e.g. bits per second, bytes per second, upload speed, minimum cx time (ms)
+    test details : what was measured in the numeric-score,  e.g. bits per second, bytes per second, upload speed, minimum cx time (ms)
     Units : units used for the numeric-scort
     Graph-Group - For the lf_qa.py dashboard
 

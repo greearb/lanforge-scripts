@@ -55,7 +55,7 @@ class lf_kpi_csv:
     def __init__(self,
                 _kpi_headers = ['Date','test-rig','test-tag','dut-hw-version','dut-sw-version','dut-model-num','dut-serial-num',
                                 'test-priority','test-id','short-description','pass/fail','numeric-score',
-                                'test-details','Units','Graph-Group','Subtest-Pass','Subtest-Fail'],
+                                'test details','Units','Graph-Group','Subtest-Pass','Subtest-Fail'],
                 _kpi_filename = 'kpi.csv', #Currently this is the only file name accepted
                 _kpi_path = "",
                 _kpi_test_rig = "TEST_RIG",
