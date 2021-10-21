@@ -2030,6 +2030,8 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
     # Get the report path to create the kpi.csv path
     kpi_path = report.get_report_path()
+    print("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
+
     kpi_csv = lf_kpi_csv.lf_kpi_csv(
         _kpi_path = kpi_path,
         _kpi_test_rig = test_rig,
@@ -2038,7 +2040,6 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
         _kpi_dut_sw_version = dut_sw_version,
         _kpi_dut_model_num = dut_model_num,
         _kpi_test_id = test_id)
-
 
     if args.csv_outfile is not None:
         current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())

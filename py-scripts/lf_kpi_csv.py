@@ -79,7 +79,8 @@ class lf_kpi_csv:
         #try:
         print("self.kpi_path {kpi_path}".format(kpi_path=self.kpi_path))
         print("self.kpi_filename {kpi_filename}".format(kpi_filename=self.kpi_filename))
-        kpifile = self.kpi_path + self.kpi_filename
+        kpifile = self.kpi_path + '/' + self.kpi_filename
+        print("kpifile {kpifile}".format(kpifile=kpifile))
         self.kpi_file = open(kpifile,'w')
         self.kpi_writer = csv.DictWriter(self.kpi_file, fieldnames=self.kpi_headers)
         self.kpi_writer.writeheader()
@@ -119,6 +120,7 @@ class lf_kpi_csv:
 
     def kpi_csv_write_dict(self,kpi_dict):
         self.kpi_writer.writerow(kpi_dict)
+        self.kpi_file.flush()
 
     '''
     Date: date of run 
@@ -136,7 +138,6 @@ class lf_kpi_csv:
     Units : units used for the numeric-scort
     Graph-Group - Items graphed together used by dashboard, For the lf_qa.py dashboard
     '''
-
 
     def kpi_csv_writerow(self,row):
         self.kpi_writer.writerow(row)
