@@ -105,12 +105,13 @@ class lf_kpi_csv:
         self.kpi_dict['dut-hw-version'] = '{dut_hw_version}'.format(dut_hw_version=self.kpi_dut_hw_version)
         self.kpi_dict['dut-sw-version'] = '{dut_sw_version}'.format(dut_sw_version=self.kpi_dut_sw_version)
         self.kpi_dict['dut-model-num'] = '{dut_model_num}'.format(dut_model_num=self.kpi_dut_model_num)
+        self.kpi_dict['dut-serial-num'] = '{dut_serial_num}'.format(dut_serial_num=self.kpi_dut_serial_num)
         self.kpi_dict['test-priority'] = ''
         self.kpi_dict['test-id'] = '{test_id}'.format(test_id=self.kpi_test_id)
         self.kpi_dict['short-description'] = ''
         self.kpi_dict['pass/fail'] = ''
         self.kpi_dict['numeric-score'] = ''
-        self.kpi_dict['test-details'] = ''
+        self.kpi_dict['test details'] = ''
         self.kpi_dict['Units'] = ''
         self.kpi_dict['Graph-Group'] = ''
         self.kpi_dict['Subtest-Pass'] = ''
@@ -140,7 +141,7 @@ class lf_kpi_csv:
     short-description : short description of the test
     pass/fail : set blank for performance tests
     numeric-score : this is the value for the y-axis (x-axis is a timestamp),  numeric value of what was measured
-    test-details : what was measured in the numeric-score,  e.g. bits per second, bytes per second, upload speed, minimum cx time (ms)
+    test details : what was measured in the numeric-score,  e.g. bits per second, bytes per second, upload speed, minimum cx time (ms)
     Units : units used for the numeric-scort
     Graph-Group - Items graphed together used by dashboard, For the lf_qa.py dashboard
     '''
@@ -186,7 +187,7 @@ Example :
     short-description : short description of the test
     pass/fail : set blank for performance tests
     numeric-score : this is the value for the y-axis (x-axis is a timestamp),  numeric value of what was measured
-    test-details : what was measured in the numeric-score,  e.g. bits per second, bytes per second, upload speed, minimum cx time (ms)
+    test details : what was measured in the numeric-score,  e.g. bits per second, bytes per second, upload speed, minimum cx time (ms)
     Units : units used for the numeric-scort
     Graph-Group - For the lf_qa.py dashboard
     '''
