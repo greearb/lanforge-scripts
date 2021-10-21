@@ -10,7 +10,7 @@ DesktopFile="/home/lanforge/desktop.png"
 my_version=`cat /var/www/html/installed-ver.txt`
 my_hostname=`hostname`
 my_dev=`ip ro sho | awk '/default via/{print $5}'`
-my_ip=`ip ro sho | awk '/default via/{print$3}'`
+my_ip=`ip a sho $my_dev | awk '/inet /{print $2}'`
 my_mac=`ip a sho | grep -B1 "$my_dev" | awk '/ether /{print $2}'`
 
 X=220
