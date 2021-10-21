@@ -46,6 +46,7 @@ import importlib
 import argparse
 from http.client import HTTPResponse
 from typing import Optional
+from pprint import pprint, pformat
 
 path_hunks = os.path.abspath(__file__).split('/')
 while( path_hunks[-1] != 'lanforge-scripts'):
@@ -59,7 +60,7 @@ LFJsonCommand = lanforge_api.LFJsonCommand
 LFJsonQuery = lanforge_api.LFJsonQuery
 # from scenario import LoadScenario
 
-import pprint
+
 # print(pprint.pformat(("ospath", sys.path)))
 
 class BssidMonitor(Realm):
@@ -158,13 +159,15 @@ class BssidMonitor(Realm):
         event_response = self.lf_query.events_last_events(event_count=1,
                                                           debug=self.debug,
                                                           errors_warnings=err_warn_list)
-        pprint(("event_response", dir(event_response)))
+        last_event_id = event_response["id"]
+
         # load a database
         response: HTTPResponse = self.lf_command.post_load(name="BLANK",
                                                            action="overwrite",
                                                            clean_dut="NA",
                                                            clean_chambers="NA",
-                                                           debug=self.debug_)
+                                                           debug=self.debug)
+
         if not response:
             raise ConnectionError("lf_command::post_load returned no response")
 
