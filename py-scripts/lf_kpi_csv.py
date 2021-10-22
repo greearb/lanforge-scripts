@@ -27,9 +27,8 @@ import time
 import argparse
 
 
-# this layout may need to change
 '''
-
+Note teh delimiter for the kpi.csv is a tab
 
 kpi.csv : specific file that is used for the database, dashboard and blog post
 A blank entry is a valid entry in some cases. 
@@ -51,7 +50,7 @@ A blank entry is a valid entry in some cases.
     Graph-Group - Items graphed together used by dashboard, For the lf_qa.py dashboard
 
 '''
-# NOTE the delimiter for the kpi.csv is a tab not a comma
+
 class lf_kpi_csv:
     def __init__(self,
                 _kpi_headers = ['Date','test-rig','test-tag','dut-hw-version','dut-sw-version','dut-model-num','dut-serial-num',
@@ -80,26 +79,21 @@ class lf_kpi_csv:
         self.kpi_dut_serial_num = _kpi_dut_serial_num
         self.kpi_test_id = _kpi_test_id
         self.kpi_rows = ""
-        #try:
-        print("self.kpi_path {kpi_path}".format(kpi_path=self.kpi_path))
-        print("self.kpi_filename {kpi_filename}".format(kpi_filename=self.kpi_filename))
-        if self.kpi_path is "":
-            kpifile = self.kpi_filename
-        else:            
-            kpifile = self.kpi_path + '/' + self.kpi_filename
-        print("kpifile {kpifile}".format(kpifile=kpifile))
-        self.kpi_file = open(kpifile,'w')
-        self.kpi_writer = csv.DictWriter(self.kpi_file, delimiter="\t", fieldnames=self.kpi_headers)
-        self.kpi_writer.writeheader()
-        #except BaseException:
-        #    print("lf_kpi_csv.py: {} WARNING unable to open".format(self.kpi_file))
+        try:
+            print("self.kpi_path {kpi_path}".format(kpi_path=self.kpi_path))
+            print("self.kpi_filename {kpi_filename}".format(kpi_filename=self.kpi_filename))
+            if self.kpi_path is "":
+                kpifile = self.kpi_filename
+            else:            
+                kpifile = self.kpi_path + '/' + self.kpi_filename
+            print("kpifile {kpifile}".format(kpifile=kpifile))
+            self.kpi_file = open(kpifile,'w')
+            self.kpi_writer = csv.DictWriter(self.kpi_file, delimiter="\t", fieldnames=self.kpi_headers)
+            self.kpi_writer.writeheader()
+        except BaseException:
+            print("lf_kpi_csv.py: {} WARNING unable to open".format(self.kpi_file))
 
         self.kpi_dict = dict()
-
-    #    self.make_kpi_dict()        
-
-    #def make_kpi_dict(self):
-
         self.kpi_dict['Date'] = '{date}'.format(date=int(time.time()))
         self.kpi_dict['test-rig'] = '{test_rig}'.format(test_rig=self.kpi_test_rig)
         self.kpi_dict['test-tag'] = '{test_tag}'.format(test_tag=self.kpi_test_tag)
@@ -130,27 +124,6 @@ class lf_kpi_csv:
         self.kpi_writer.writerow(kpi_dict)
         self.kpi_file.flush()
 
-    '''
-    Date: date of run 
-    test-rig : testbed that the tests are run on for example ct_us_001
-    test-tag : test specific information to differenciate the test,  LANforge radios used, security modes (wpa2 , open)
-    dut-hw-version : hardware version of the device under test
-    dut-sw-version : software version of the device under test
-    dut-model-num : model number / name of the device under test
-    test-priority : test-priority is arbitrary number, choosing under 95 means it goes down at bottom of blog report, and higher priority goes at top.
-    test-id : script or test name ,  AP Auto, wifi capacity, data plane, dfs
-    short-description : short description of the test
-    pass/fail : set blank for performance tests
-    numeric-score : this is the value for the y-axis (x-axis is a timestamp),  numeric value of what was measured
-    test details : what was measured in the numeric-score,  e.g. bits per second, bytes per second, upload speed, minimum cx time (ms)
-    Units : units used for the numeric-scort
-    Graph-Group - Items graphed together used by dashboard, For the lf_qa.py dashboard
-    '''
-
-    def kpi_csv_writerow(self,row):
-        self.kpi_writer.writerow(row)
-        self.kpi_file.flush()
-
 def main():
     # arguments
     parser = argparse.ArgumentParser(
@@ -165,9 +138,28 @@ lf_kpi_csv.py
 
 Summary :
 ---------
-lf_kpi_csv.py libarary 
-
+lf_kpi_csv.py library :
+    
+    Date: date of run 
+    test-rig : testbed that the tests are run on for example ct_us_001
+    test-tag : test specific information to differenciate the test,  LANforge radios used, security modes (wpa2 , open)
+    dut-hw-version : hardware version of the device under test
+    dut-sw-version : software version of the device under test
+    dut-model-num : model number / name of the device under test
+    dut-serial-num : serial number / serial number of the device under test
+    test-priority : test-priority is arbitrary number, choosing under 95 means it goes down at bottom of blog report, and higher priority goes at top.
+    test-id : script or test name ,  AP Auto, wifi capacity, data plane, dfs
+    short-description : short description of the test
+    pass/fail : set blank for performance tests
+    numeric-score : this is the value for the y-axis (x-axis is a timestamp),  numeric value of what was measured
+    test-details : what was measured in the numeric-score,  e.g. bits per second, bytes per second, upload speed, minimum cx time (ms)
+    Units : units used for the numeric-scort
+    Graph-Group - Items graphed together used by dashboard, For the lf_qa.py dashboard
+    
 Example :
+
+    This module is included to assist in filling out the kpi.csv correctly 
+    The Unit test is used for helping to become familiar with the library
 
 ---------
             ''')
