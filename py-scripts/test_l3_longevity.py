@@ -784,15 +784,22 @@ class L3VariableTime(Realm):
                 self.admin_up(sta)
 
         temp_stations_list = []
-        temp_stations_list.append(self.side_b)
+        #temp_stations_list.append(self.side_b)
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
 
-        if self.wait_for_ip(temp_stations_list, timeout_sec=120):
+        temp_stations_list_with_side_b = temp_stations_list.copy()
+        # wait for b side to get IP
+        temp_stations_list_with_side_b.append(self.side_b) 
+        print("temp_stations_list {temp_stations_list}".format(temp_stations_list=temp_stations_list))
+        print("temp_stations_list_with_side_b {temp_stations_list_with_side_b}".format(temp_stations_list_with_side_b=temp_stations_list_with_side_b))
+
+        if self.wait_for_ip(temp_stations_list_with_side_b, timeout_sec=120):
             print("ip's acquired")
         else:
-            # TODO:  Allow fail and abort at this point.
-            print("print failed to get IP's")
+            # No reason to continue
+            print("ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
+            exit(1)
 
         csv_header = self.csv_generate_column_headers()
         # print(csv_header)
@@ -1066,6 +1073,7 @@ class L3VariableTime(Realm):
                                             p["port"], endps)
 
                                         print("6g ap_ul_row {ap_ul_row}".format(ap_ul_row=ap_ul_row))
+
                                         self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                                             latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
                                                             total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row)
