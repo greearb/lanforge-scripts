@@ -619,6 +619,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                     self.test_iterations = self.test_iterations_default
 
                 iteration = 0
+                report_index = 0 # log may contain multiple runs - this helps put the meta.txt in right directory
                 for iteration in range(self.test_iterations):
                     iteration += 1
 
@@ -783,14 +784,17 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                         stdout_log_fd = open(stdout_log_txt)
                         # "Report Location:::/home/lanforge/html-reports/wifi-capacity-2021-08-17-04-02-56"
                         #
+                        
                         for line in stdout_log_fd:
                             if "Report Location" in line:
-                                meta_data_path = line.replace('"', '')
-                                meta_data_path = meta_data_path.replace('Report Location:::', '')
-                                meta_data_path = meta_data_path.split('/')[-1]
-                                meta_data_path = meta_data_path.strip()
-                                meta_data_path = self.report_path + '/' + meta_data_path + '/meta.txt'
-                                break
+                                report_index += 1
+                                if iteration == report_index:
+                                    meta_data_path = line.replace('"', '')
+                                    meta_data_path = meta_data_path.replace('Report Location:::', '')
+                                    meta_data_path = meta_data_path.split('/')[-1]
+                                    meta_data_path = meta_data_path.strip()
+                                    meta_data_path = self.report_path + '/' + meta_data_path + '/meta.txt'
+                                    break
                         stdout_log_fd.close()
                     if meta_data_path != "":
                         meta_data_fd = open(meta_data_path, 'w+')

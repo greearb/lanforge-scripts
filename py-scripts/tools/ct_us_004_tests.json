@@ -20,12 +20,24 @@
             "test_l3_longevity":{
                 "enabled":"TRUE",
                 "load_db":"skip",
+                "iterations":"2",
                 "command":"test_l3_longevity.py",
                 "args":"",
                 "args_list":[
-                    " --lfmgr LF_MGR_IP --test_duration 15s --polling_interval 5s --upstream_port eth2 ",
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 15s --polling_interval 5s --upstream_port eth2 ",
                     " use_ssid_idx=1 --radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
-                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000",
+                    " --test_rig TEST_RIG --test_tag 'l3_longevity'"
+                ]
+            },
+            "lf_qa":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
             }
         },
@@ -33,13 +45,25 @@
             "test_l3_longevity":{
                 "enabled":"TRUE",
                 "load_db":"skip",
+                "iterations":"1",
                 "command":"test_l3_longevity.py",
                 "args":"",
                 "args_list":[
-                    " --lfmgr LF_MGR_IP --test_duration 15s --polling_interval 5s --upstream_port eth2 ",
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 15s --polling_interval 5s --upstream_port eth2 ",
                     " use_ssid_idx=1 --radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
                     " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000",
+                    " --test_rig TEST_RIG --test_tag 'l3_longevity'",
                     " --ap_read --ap_test_mode"
+                ]
+            },
+            "lf_qa":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
             }
         },
@@ -143,6 +167,20 @@
                 "args":"",
                 "args_list":[
                     " "
+                ]
+            },
+            "test_l3_longevity":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "iterations":"1",
+                "command":"test_l3_longevity.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 15s --polling_interval 5s --upstream_port eth2 ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000",
+                    " --test_rig TEST_RIG --test_tag 'l3_longevity'",
+                    " --ap_read --ap_test_mode"
                 ]
             },
             "create_chamberview_dut_ATH10K_9984_wc":{
@@ -457,6 +495,20 @@
                     " "
                 ]
             },
+            "test_l3_longevity":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "iterations":"1",
+                "command":"test_l3_longevity.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 15s --polling_interval 5s --upstream_port eth2 ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000",
+                    " --test_rig TEST_RIG --test_tag 'l3_longevity'",
+                    " --ap_read --ap_test_mode"
+                ]
+            },
             "create_chamberview_dut_ATH10K_9984_wc":{
                 "enabled":"TRUE",
                 "load_db":"skip",
@@ -484,7 +536,7 @@
             "wifi_capacity_ATH10K_9984":{
                 "enabled":"TRUE",
                 "timeout":"600",
-                "iterations":"3",
+                "iterations":"1",
                 "load_db":"skip",
                 "command":"lf_wifi_capacity_test.py",
                 "args":"",
@@ -524,7 +576,7 @@
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"600",
-                "iterations":"3",
+                "iterations":"1",
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
@@ -565,7 +617,7 @@
             "wifi_capacity_AX210":{
                 "enabled":"TRUE",
                 "timeout":"600",
-                "iterations":"3",
+                "iterations":"1",
                 "load_db":"skip",
                 "command":"lf_wifi_capacity_test.py",
                 "args":"",
@@ -604,7 +656,7 @@
             "dataplane_AX210":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "iterations":"3",
+                "iterations":"1",
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
@@ -645,7 +697,7 @@
             "wifi_capacity_mt7915e":{
                 "enabled":"TRUE",
                 "timeout":"600",
-                "iterations":"3",
+                "iterations":"1",
                 "load_db":"skip",
                 "command":"lf_wifi_capacity_test.py",
                 "args":"",
@@ -684,7 +736,7 @@
             "dataplane_mt7915e":{
                 "enabled":"TRUE",
                 "load_db":"skip",
-                "iterations":"3",
+                "iterations":"1",
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
