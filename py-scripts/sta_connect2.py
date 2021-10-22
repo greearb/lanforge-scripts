@@ -311,7 +311,7 @@ class StaConnect2(LFCliBase):
         if self.passes() == False:
             if self.cleanup_on_exit:
                 print("Cleaning up...")
-                self.remove_stations()
+                #self.remove_stations()
             return False
 
         # start cx traffic
