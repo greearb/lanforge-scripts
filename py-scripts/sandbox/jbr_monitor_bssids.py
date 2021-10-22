@@ -44,6 +44,7 @@ if sys.version_info[0] != 3:
 import os
 import importlib
 import argparse
+import time
 from http.client import HTTPResponse
 from typing import Optional
 from pprint import pprint, pformat
@@ -160,6 +161,8 @@ class BssidMonitor(Realm):
                                                           debug=self.debug,
                                                           errors_warnings=err_warn_list)
         last_event_id = event_response["id"]
+        if not self.wait_for_load_to_finish(since_id=last_event_id):
+            exit(1)
 
         # load a database
         response: HTTPResponse = self.lf_command.post_load(name="BLANK",
@@ -171,9 +174,38 @@ class BssidMonitor(Realm):
         if not response:
             raise ConnectionError("lf_command::post_load returned no response")
 
+
         # create a series of stations
         for bssid in self.bssid_list:
             print("build: bssid: %s" % bssid)
+
+    def wait_for_load_to_finish(self, since_id:int=None):
+        completed = False
+        timer = 0
+        timeout = 60
+        while not completed:
+            new_events = self.lf_query.events_since(event_id=since_id)
+            if new_events:
+                for event_tup in new_events:
+                    for event_id in event_tup.keys():
+                        event_record = event_tup[event_id]
+                        # pprint(event_record)
+                        if event_record['event description'].startswith('LOAD COMPLETED'):
+                            completed = True
+                            self.lf_query.logger.warning('Scenario loaded after %s seconds' % timer)
+                            break
+            if completed:
+                break
+            else:
+                timer += 1
+                time.sleep(1)
+                if timer > timeout:
+                    completed = True
+                    print('Scenario failed to load after %s seconds' % timeout)
+                    break
+                else:
+                    print('Waiting %s out of %s seconds to load scenario' % (timer, timeout))
+        return completed
 
 
     def start(self):
