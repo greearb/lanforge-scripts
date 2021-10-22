@@ -1540,37 +1540,37 @@ class L3VariableTime(Realm):
 
         results_dict = self.kpi_csv.kpi_csv_get_dict_update_time()
         results_dict['Graph-Group'] = "Per Stations Rate DL"
-        results_dict['short-description'] = "DL bps - {sta_count} STA".format(sta_count=sta_count)
+        results_dict['short-description'] = "DL {dl} bps  pdu {dl_pdu}  {sta_count} STA".format(dl=dl,dl_pdu=dl_pdu,sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format(total_dl_bps)
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate UL"
-        results_dict['short-description'] = "UL bps - {sta_count} STA".format(sta_count=sta_count)
+        results_dict['short-description'] = "UL {ul} bps pdu {ul_pdu} {sta_count} STA".format(ul=ul,ul_pdu=ul_pdu,sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format(total_ul_bps)
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate UL+DL"
-        results_dict['short-description'] = "UL+DL bps - {sta_count} STA".format(sta_count=sta_count)
+        results_dict['short-description'] = "UL {ul} bps pdu {ul_pdu} + DL {dl} bps pud {dl_pdu}- {sta_count} STA".format(ul=ul,ul_pdu=ul_pdu,dl=dl,dl_pdu=dl_pdu,sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format((total_ul_bps + total_dl_bps))
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate DL"
-        results_dict['short-description'] = "DL LL bps - {sta_count} STA".format(sta_count=sta_count)
+        results_dict['short-description'] = "DL LL {dl} bps  pdu {dl_pdu}  {sta_count} STA".format(dl=dl,dl_pdu=dl_pdu,sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format(total_dl_ll_bps)
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate UL"
-        results_dict['short-description'] = "UL LL bps - {sta_count} STA".format(sta_count=sta_count)
+        results_dict['short-description'] = "UL LL {ul} bps pdu {ul_pdu} {sta_count} STA".format(ul=ul,ul_pdu=ul_pdu,sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format(total_ul_ll_bps)
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate UL+DL"
-        results_dict['short-description'] = "UL+DL LL bps - {sta_count} STA".format(sta_count=sta_count)
+        results_dict['short-description'] = "UL LL {ul} bps pdu {ul_pdu} + DL LL {dl} bps pud {dl_pdu}- {sta_count} STA".format(ul=ul,ul_pdu=ul_pdu,dl=dl,dl_pdu=dl_pdu,sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format((total_ul_ll_bps + total_dl_ll_bps))
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
