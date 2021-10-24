@@ -136,6 +136,27 @@
             }
         },
         "suite_wc_dp":{
+            "lf_help_check":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"lf_help_check.bash",
+                "args":"",
+                "args_list":[
+                    " "
+                ]
+            },
+            "test_l3_longevity":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"test_l3_longevity.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 15s --polling_interval 5s --upstream_port eth2 ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000",
+                    " --test_rig TEST_RIG --test_tag 'l3_longevity'"
+                ]
+            },
             "create_chamberview_dut_ATH10K_9984_wc":{
                 "enabled":"TRUE",
                 "load_db":"skip",

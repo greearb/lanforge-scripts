@@ -114,8 +114,7 @@ class lf_ap():
 
     def ap_store_dl_scheduler_stats(self,band):
         if band is "6G":
-
-        pass
+            pass
 
     def ap_store_ul_scheduler_stats(self,band):
         pass
@@ -153,7 +152,7 @@ Generic command layout:
 -----------------------
 
         ''')
-    parser.add_argument('--ap_test_mode', help='--ap_mode ',default=False)
+    parser.add_argument('--ap_test_mode', help='--ap_mode ',default=True)
     parser.add_argument('--ap_port', help='--ap_port \'/dev/ttyUSB0\'',default='/dev/ttyUSB0')
     parser.add_argument('--ap_baud', help='--ap_baud  \'115200\'',default='115200')
     parser.add_argument('--ap_cmd', help='--ap_cmd \'wl -i wl1 bs_data\'',default='wl -i wl1 bs_data')
