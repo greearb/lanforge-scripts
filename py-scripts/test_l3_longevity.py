@@ -900,6 +900,14 @@ class L3VariableTime(Realm):
                     mac_found_5g = False
                     mac_found_2g = False
                     reset_timer = 0
+                    latency = 0
+                    jitter = 0 
+                    total_ul_rate = 0
+                    total_ul_rate_ll = 0
+                    total_ul_pkts_ll = 0
+                    total_dl_rate = 0
+                    total_dl_rate_ll = 0
+                    total_dl_pkts_ll = 0
 
                     while cur_time < end_time:
                         #interval_time = cur_time + datetime.timedelta(seconds=5)
@@ -1103,10 +1111,6 @@ class L3VariableTime(Realm):
                             print("From AP stats ul: ap_stats_ul_5g_rows {}".format(ap_stats_ul_5g_rows))
 
                             channel_utilization = 0
-                            self.write_ul_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                        latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                        total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_ul_row)
-
 
                             # Query all of our ports
                             # Note: the endp eid is the shelf.resource.port.endp-id
