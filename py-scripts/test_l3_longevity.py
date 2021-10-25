@@ -893,6 +893,9 @@ class L3VariableTime(Realm):
                     total_ul_ll_bps = 0
                     endps = []
                     ap_row = []
+                    mac_found_ul_6g = False
+                    mac_found_ul_5g = False
+                    mac_found_ul_2g = False
                     mac_found_6g = False
                     mac_found_5g = False
                     mac_found_2g = False
