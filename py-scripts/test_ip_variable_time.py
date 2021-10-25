@@ -40,7 +40,6 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 sys.path.append("../py-dashboard")
 from InfluxRequest import RecordInflux
-port_probe = importlib.import_module("py-json.port_probe")
 
 
 class IPVariableTime(Realm):

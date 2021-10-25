@@ -13,7 +13,6 @@ if 'py-json' not in sys.path:
 
 from time import sleep
 from LANforge.lfcli_base import LFCliBase
-from realm import Realm
 
 
 # see https://stackoverflow.com/questions/9295439/python-json-loads-fails-with-valueerror-invalid-control-character-at-line-1-c/16544933#16544933
@@ -55,7 +54,7 @@ class ProbePort2(LFCliBase):
 
 
 def main():
-    parser = Realm.create_bare_argparse(
+    parser = LFCliBase.create_bare_argparse(
         prog=__name__,
         description='''\
     Example:
