@@ -1249,12 +1249,10 @@ class BaseSession:
                     debug: bool = False):
         responses = []
         command_obj.debug_on = False
-        first_response = command_obj.json_post(url="endsession",
-                                               debug=debug,
-                                               response_json_list=responses,
-                                               session_id_=session_id_)
-        pprint(first_response)
-        pprint(responses)
+        command_obj.json_post(url="endsession",
+                              debug=debug,
+                              response_json_list=responses,
+                              session_id_=session_id_)
 
 # End of json_api.py; subclasses defined below
 
