@@ -47,7 +47,7 @@ class ProbePort(LFCliBase):
         self.rx_duration = None
         self.data_rate = None
         folder = os.path.dirname(__file__)
-        self.df = pd.read_csv(os.path.join(folder, "mcs_snr_rssi.csv"))
+        #self.df = pd.read_csv(os.path.join(folder, "mcs_snr_rssi.csv"))
 
     def refreshProbe(self):
         self.json_post(self.probepath, {})
@@ -70,7 +70,11 @@ class ProbePort(LFCliBase):
         try:
             tx_mcs = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split(':')[1].strip('\t')
             self.tx_mcs = int(tx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
+            print("self.tx_mcs {tx_mcs}".format(tx_mcs=self.tx_mcs))
             self.tx_mbit = float(self.tx_bitrate.split(' ')[0])
+            self.calculated_data_rate_HT()
+            '''
+            # just HT for now
             if 'VHT' in self.tx_bitrate:
                 tx_mhz_ns = self.vht_calculator(self.tx_mbit, self.tx_mcs)
                 try:
@@ -80,7 +84,11 @@ class ProbePort(LFCliBase):
                     self.tx_duration = float([x for x in text if 'tx duration' in x][0].split('\t')[1].split(' ')[0])
                 except TypeError as error:
                     print('%s, %s' % (error, tx_mhz_ns))
+            '''
+            '''
+            # This code reads from a spread sheet 
             else:
+
                 tx_mhz_ns = self.ht_calculator(self.tx_mbit, self.tx_mcs)
                 self.df.index = self.df['HT']
                 nbpscs = self.df['Modulation'][self.tx_mcs]
@@ -97,6 +105,7 @@ class ProbePort(LFCliBase):
                     self.tx_ns = tx_mhz_ns['ns']
                 except TypeError:
                     print('tx_mhz_ns is None')
+            '''
         except IndexError as error:
             print(error)
 
@@ -109,6 +118,7 @@ class ProbePort(LFCliBase):
                 self.he = False
             else:
                 self.he = True
+            '''
             if 'VHT' in self.rx_bitrate:
                 rx_mhz_ns = self.vht_calculator(self.rx_mbit, self.rx_mcs)
                 try:
@@ -118,6 +128,9 @@ class ProbePort(LFCliBase):
                     self.rx_duration = float([x for x in text if 'rx duration' in x][0].split('\t')[1].split(' ')[0])
                 except TypeError as error:
                     print('%s, %s' % (error, rx_mhz_ns))
+            '''
+            '''
+            # This code reads from a spread sheet
             else:
                 rx_mhz_ns = self.ht_calculator(self.rx_mbit, self.rx_mcs)
                 self.df.index = self.df['HT']
@@ -135,6 +148,7 @@ class ProbePort(LFCliBase):
                     self.rx_ns = rx_mhz_ns['ns']
                 except TypeError:
                     print('rx_mhz_nz not found')
+            '''
         except IndexError as error:
             print(error)
 
@@ -153,6 +167,72 @@ class ProbePort(LFCliBase):
     def getBeaconSignalAvg(self):
         return ' '.join(self.signals['beacon signal avg']).replace(' ', '')
 
+    def calculated_data_rate_HT(self):
+        # TODO compare with standard for 40 MHz if values change
+        N_sd = 0 # Number of Data Subcarriers based on modulation and bandwith 
+        N_bpscs = 0# Number of coded bits per Subcarrier(Determined by the modulation, MCS) 
+        R = 0 # coding ,  (Determined by the modulation, MCS )
+        N_ss = 0 # Number of Spatial Streams
+        T_dft = 3.2 * 10**-6  # Constant for HT
+        T_gi_short = .4 * 10**-6 # Guard index.
+        T_gi_long = .8 * 10**-6 # Guard index.
+        # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
+        # the nubmer of Data Subcarriers is based on modulation and bandwith
+        bw = 20
+        if bw == 20:
+            N_sd = 52
+        elif bw == 40:
+            N_sd = 108
+        elif bw == 80:
+            N_sd = 234
+        elif bw == 160:
+            N_sd = 468
+        else:
+            print("bw needs to be know")
+            exit(1)
+        # MCS (Modulation Coding Scheme) determines the constands
+        # MCS 0 == Modulation BPSK R = 1/2 ,  N_bpscs = 1, 
+        if self.tx_mcs == 0:
+            R = 1/2
+            N_bpscs = 1
+        # MCS 1 == Modulation QPSK R = 1/2 , N_bpscs = 2
+        elif self.tx_mcs == 1:
+            R = 1/2
+            N_bpscs = 2
+        # MCS 2 == Modulation QPSK R = 3/4 , N_bpscs = 2
+        elif self.tx_mcs == 2:
+            R = 3/4
+            N_bpscs = 2
+        # MCS 3 == Modulation 16-QAM R = 1/2 , N_bpscs = 4
+        elif self.tx_mcs == 3:
+            R = 1/2
+            N_bpscs = 4
+        # MCS 4 == Modulation 16-QAM R = 3/4 , N_bpscs = 4
+        elif self.tx_mcs == 4:
+            R = 3/4
+            N_bpscs = 4
+        # MCS 5 == Modulation 64-QAM R = 2/3 , N_bpscs = 6
+        elif self.tx_mcs == 5:
+            R = 2/3
+            N_bpscs = 6
+        # MCS 6 == Modulation 64-QAM R = 3/4 , N_bpscs = 6
+        elif self.tx_mcs == 6:
+            R = 3/4
+            N_bpscs = 6
+        # MCS 7 == Modulation 64-QAM R = 5/6 , N_bpscs = 6
+        elif self.tx_mcs == 7:
+            R = 5/6
+            N_bpscs = 6
+
+
+        data_rate_gi_short = (N_sd * N_bpscs * R * N_ss) / (T_dft + T_gi_short)
+        print("data_rate gi_short {data_rate}".format(data_rate=data_rate_gi_short))
+        data_rate_gi_long = (N_sd * N_bpscs * R * N_ss) / (T_dft + T_gi_long)
+        print("data_rate gi_long {data_rate}".format(data_rate=data_rate_gi_long))
+        return data_rate_gi_short, data_rate_gi_long
+
+    '''
+    # This code reads from a spread sheet 
     def ht_calculator(self, mbit, mcs):
         df1 = self.df[self.df['HT'] == mcs]
         df1.index = df1['HT']
@@ -185,67 +265,4 @@ class ProbePort(LFCliBase):
         except KeyError as error:
             print(error)
             print('mbit: %s, mcs: %s' % (mbit, mcs))
-
-    def calculated_data_rate_HT(self,mcs):
-        # TODO compare with standard for 40 MHz if values change
-        N_sd = 0 # Number of Data Subcarriers based on modulation and bandwith 
-        N_bpscs = 0# Number of coded bits per Subcarrier(Determined by the modulation, MCS) 
-        R = 0 # coding ,  (Determined by the modulation, MCS )
-        N_ss = 0 # Number of Spatial Streams
-        T_dft = 3.2 * 10**-6  # Constant for HT
-        T_gi_short = .4 * 10**-6 # Guard index.
-        T_gi_long = .8 * 10**-6 # Guard index.
-        # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
-        # the nubmer of Data Subcarriers is based on modulation and bandwith
-        bw = 20
-        if bw == 20:
-            N_sd = 52
-        elif bw == 40:
-            N_sd = 108
-        elif bw == 80:
-            N_sd = 234
-        elif bw == 160:
-            N_sd = 468
-        else:
-            print("bw needs to be know")
-            exit(1)
-        # MCS (Modulation Coding Scheme) determines the constands
-        # MCS 0 == Modulation BPSK R = 1/2 ,  N_bpscs = 1, 
-        if mcs == 0:
-            R = 1/2
-            N_bpscs = 1
-        # MCS 1 == Modulation QPSK R = 1/2 , N_bpscs = 2
-        elif mcs == 1:
-            R = 1/2
-            N_bpscs = 2
-        # MCS 2 == Modulation QPSK R = 3/4 , N_bpscs = 2
-        elif mcs == 2:
-            R = 3/4
-            N_bpscs = 2
-        # MCS 3 == Modulation 16-QAM R = 1/2 , N_bpscs = 4
-        elif mcs == 3:
-            R = 1/2
-            N_bpscs = 4
-        # MCS 4 == Modulation 16-QAM R = 3/4 , N_bpscs = 4
-        elif mcs == 4:
-            R = 3/4
-            N_bpscs = 4
-        # MCS 5 == Modulation 64-QAM R = 2/3 , N_bpscs = 6
-        elif mcs == 5:
-            R = 2/3
-            N_bpscs = 6
-        # MCS 6 == Modulation 64-QAM R = 3/4 , N_bpscs = 6
-        elif mcs == 6:
-            R = 3/4
-            N_bpscs = 6
-        # MCS 7 == Modulation 64-QAM R = 5/6 , N_bpscs = 6
-        elif mcs ==7:
-            R = 5/6
-            N_bpscs = 6
-
-
-        data_rate_gi_short = (N_sd * N_bpscs * R * N_ss) / (T_dft + T_gi_short)
-        print("data_rate gi_short {data_rate}".format(data_rate=data_rate_gi_short))
-        data_rate_gi_long = (N_sd * N_bpscs * R * N_ss) / (T_dft + T_gi_long)
-        print("data_rate gi_long {data_rate}".format(data_rate=data_rate_gi_long))
-        return data_rate_gi_short, data_rate_gi_long
+    '''
