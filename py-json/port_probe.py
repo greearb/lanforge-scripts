@@ -4,6 +4,8 @@ from time import sleep
 import pandas as pd
 import sys
 import os
+from pprint import pprint
+
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -54,17 +56,24 @@ class ProbePort(LFCliBase):
         sleep(0.2)
         response = self.json_get(self.probepath)
         self.response = response
-        #if self.debug:
-        print("probepath (eid): {probepath}".format(probepath=self.probepath))
-        print("Probe response: {response}".format(response=self.response))
+        if self.debug:
+            print("probepath (eid): {probepath}".format(probepath=self.probepath))
+            pprint("Probe response: {response}".format(response=self.response))
         text = self.response['probe-results'][0][self.eid_str]['probe results'].split('\n')
         signals = [x.strip('\t').split('\t') for x in text if 'signal' in x]
         keys = [x[0].strip(' ').strip(':') for x in signals]
         values = [x[1].strip('dBm').strip(' ') for x in signals]
         self.signals = dict(zip(keys, values))
+
         tx_bitrate = [x for x in text if 'tx bitrate' in x][0].replace('\t', ' ')
+        print("tx_bitrate {tx_bitrate}".format(tx_bitrate=tx_bitrate))
         self.tx_bitrate = tx_bitrate.split(':')[-1].strip(' ')
+        self.tx_nss = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('NSS')[1].strip(' ')
+        print("tx_nss {tx_nss}".format(tx_nss=self.tx_nss))
+        self.tx_mhz  = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('MHz')[0].rsplit(' ')[-1].strip(' ')
+        print("tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
         rx_bitrate = [x for x in text if 'rx bitrate' in x][0].replace('\t', ' ')
+        print("rx_bitrate {rx_bitrate}".format(rx_bitrate=rx_bitrate))
         self.rx_bitrate = rx_bitrate.split(':')[-1].strip(' ')
 
         try:
@@ -72,7 +81,7 @@ class ProbePort(LFCliBase):
             self.tx_mcs = int(tx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
             print("self.tx_mcs {tx_mcs}".format(tx_mcs=self.tx_mcs))
             self.tx_mbit = float(self.tx_bitrate.split(' ')[0])
-            self.calculated_data_rate_HT()
+            self.calculated_data_rate_tx_HT()
             '''
             # just HT for now
             if 'VHT' in self.tx_bitrate:
@@ -167,7 +176,7 @@ class ProbePort(LFCliBase):
     def getBeaconSignalAvg(self):
         return ' '.join(self.signals['beacon signal avg']).replace(' ', '')
 
-    def calculated_data_rate_HT(self):
+    def calculated_data_rate_tx_HT(self):
         # TODO compare with standard for 40 MHz if values change
         N_sd = 0 # Number of Data Subcarriers based on modulation and bandwith 
         N_bpscs = 0# Number of coded bits per Subcarrier(Determined by the modulation, MCS) 
@@ -178,7 +187,12 @@ class ProbePort(LFCliBase):
         T_gi_long = .8 * 10**-6 # Guard index.
         # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
         # the nubmer of Data Subcarriers is based on modulation and bandwith
-        bw = 20
+        try:
+            bw = int(self.tx_mhz)
+        except BaseException:
+            print("port_probe.py:  {} WARNING unable to parse tx MHz (BW) , check probe output will use ")
+
+        print("Mhz {Mhz}".format(Mhz=self.tx_mhz))
         if bw == 20:
             N_sd = 52
         elif bw == 40:
@@ -190,8 +204,12 @@ class ProbePort(LFCliBase):
         else:
             print("bw needs to be know")
             exit(1)
+
+        # NSS 
+        N_ss = self.tx_nss
         # MCS (Modulation Coding Scheme) determines the constands
         # MCS 0 == Modulation BPSK R = 1/2 ,  N_bpscs = 1, 
+        # Only for HT configuration 
         if self.tx_mcs == 0:
             R = 1/2
             N_bpscs = 1
@@ -224,12 +242,18 @@ class ProbePort(LFCliBase):
             R = 5/6
             N_bpscs = 6
 
+        print("mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_short {T_gi_short}".format(
+            mcs=self.tx_mcs,N_sd=N_sd,N_bpscs=N_bpscs,R=R,N_ss=N_ss,T_dft=T_dft,T_gi_short=T_gi_short))
 
-        data_rate_gi_short = (N_sd * N_bpscs * R * N_ss) / (T_dft + T_gi_short)
-        print("data_rate gi_short {data_rate}".format(data_rate=data_rate_gi_short))
-        data_rate_gi_long = (N_sd * N_bpscs * R * N_ss) / (T_dft + T_gi_long)
-        print("data_rate gi_long {data_rate}".format(data_rate=data_rate_gi_long))
-        return data_rate_gi_short, data_rate_gi_long
+        data_rate_gi_short_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_short))/1000000
+        print("data_rate gi_short {data_rate} Mbit/s".format(data_rate=data_rate_gi_short_Mbps))
+
+        print("mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_long {T_gi_long}".format(
+            mcs=self.tx_mcs,N_sd=N_sd,N_bpscs=N_bpscs,R=R,N_ss=N_ss,T_dft=T_dft,T_gi_long=T_gi_long))
+
+        data_rate_gi_long_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_long))/1000000
+        print("data_rate gi_long {data_rate} Mbps".format(data_rate=data_rate_gi_long_Mbps))
+        return data_rate_gi_short_Mbps, data_rate_gi_long_Mbps
 
     '''
     # This code reads from a spread sheet 
