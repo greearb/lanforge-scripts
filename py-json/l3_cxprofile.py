@@ -273,6 +273,7 @@ class L3CXProfile(LFCliBase):
                 probe_results['HE status'] = probe_port.he
 
                 probe_results['TX Bitrate'] = probe_port.tx_bitrate
+                probe_results['TX Mbps'] = probe_port.tx_mbit
                 probe_results['TX MCS'] = probe_port.tx_mcs
                 probe_results['TX NSS'] = probe_port.tx_nss
                 probe_results['TX MHz'] = probe_port.tx_mhz
@@ -282,10 +283,14 @@ class L3CXProfile(LFCliBase):
 
 
                 probe_results['RX Bitrate'] = probe_port.rx_bitrate
+                probe_results['RX Mbps'] = probe_port.rx_mbit
                 probe_results['RX MCS'] = probe_port.rx_mcs
                 probe_results['RX NSS'] = probe_port.rx_nss
                 probe_results['RX MHz'] = probe_port.rx_mhz
                 probe_results['RX guard interval'] = probe_port.rx_ns
+                probe_results['RX Mbps gi short'] = probe_port.rx_data_rate_gi_short_Mbps
+                probe_results['RX Mbps gi long'] = probe_port.rx_data_rate_gi_long_Mbps
+
 
                 probe_df_initial = pd.DataFrame(probe_results.values()).transpose()
                 probe_df_initial.columns = probe_results.keys()

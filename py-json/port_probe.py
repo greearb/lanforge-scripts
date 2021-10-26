@@ -30,6 +30,7 @@ class ProbePort(LFCliBase):
         self.response = None
         self.signals = None
         self.he = None
+        self.rx_mgt_6Mb_frame = None
 
         self.tx_bitrate = None
         self.tx_mcs = None
@@ -76,9 +77,6 @@ class ProbePort(LFCliBase):
         print("tx_nss {tx_nss}".format(tx_nss=self.tx_nss))
         self.tx_mhz  = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('MHz')[0].rsplit(' ')[-1].strip(' ')
         print("tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
-        rx_bitrate = [x for x in text if 'rx bitrate' in x][0].replace('\t', ' ')
-        print("rx_bitrate {rx_bitrate}".format(rx_bitrate=rx_bitrate))
-        self.rx_bitrate = rx_bitrate.split(':')[-1].strip(' ')
 
         try:
             tx_mcs = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split(':')[1].strip('\t')
@@ -90,11 +88,28 @@ class ProbePort(LFCliBase):
         except IndexError as error:
             print(error)
 
+        rx_bitrate = [x for x in text if 'rx bitrate' in x][0].replace('\t', ' ')
+        print("rx_bitrate {rx_bitrate}".format(rx_bitrate=rx_bitrate))
+        self.rx_bitrate = rx_bitrate.split(':')[-1].strip(' ')
+        # rx will received : 6Mbps encoding is legacy frame
+        try:
+            self.rx_nss = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('NSS')[1].strip(' ')
+            print("rx_nss {rx_nss}".format(rx_nss=self.rx_nss))
+            self.rx_mhz  = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('MHz')[0].rsplit(' ')[-1].strip(' ')
+            print("rx_mhz {rx_mhz}".format(rx_mhz=self.rx_mhz))
+            self.rx_mgt_6Mb_frame = False
+        except:
+            self.rx_mgt_6Mb_frame = True
+            self.rx_nss = 0
+            self.rx_mhz = 0
+            print("received rx_mgt_6Mb_frame")
+
         try:
             rx_mcs = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split(':')[1].strip('\t')
             self.rx_mcs = int(rx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
             self.rx_actual_mcs = self.rx_mcs & 8
             self.rx_mbit = self.rx_bitrate.split(' ')[0]
+            self.calculated_data_rate_rx_HT()
             if 'HE not supported' in [x.strip('\t') for x in text if 'HE' in x]:
                 self.he = False
             else:
@@ -143,8 +158,9 @@ class ProbePort(LFCliBase):
         elif bw == 160:
             N_sd = 468
         else:
-            print("bw needs to be know")
-            exit(1)
+            print("For HT if cannot be read bw is assumed to be 20")
+            N_sd = 52
+            self.rx_mhz = 20
 
         # NSS 
         N_ss = self.tx_nss
@@ -194,3 +210,88 @@ class ProbePort(LFCliBase):
 
         self.tx_data_rate_gi_long_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_long))/1000000
         print("data_rate gi_long {data_rate} Mbps".format(data_rate=self.tx_data_rate_gi_long_Mbps))
+
+    def calculated_data_rate_rx_HT(self):
+        # TODO compare with standard for 40 MHz if values change
+        N_sd = 0 # Number of Data Subcarriers based on modulation and bandwith 
+        N_bpscs = 0# Number of coded bits per Subcarrier(Determined by the modulation, MCS) 
+        R = 0 # coding ,  (Determined by the modulation, MCS )
+        N_ss = 0 # Number of Spatial Streams
+        T_dft = 3.2 * 10**-6  # Constant for HT
+        T_gi_short = .4 * 10**-6 # Guard index.
+        T_gi_long = .8 * 10**-6 # Guard index.
+        # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
+        # the nubmer of Data Subcarriers is based on modulation and bandwith
+        if self.rx_mgt_6Mb_frame is True:
+            self.rx_mgt_6Mg_frame = False
+            self.rx_data_rate_gi_short_Mbps = None
+            self.rx_data_rate_gi_long_Mbps = None
+        else:
+            try:
+                bw = int(self.rx_mhz)
+            except BaseException:
+                print("port_probe.py:  {} WARNING unable to parse rx MHz (BW) , check probe output will use ")
+
+            print("Mhz {Mhz}".format(Mhz=self.rx_mhz))
+            if bw == 20:
+                N_sd = 52
+            elif bw == 40:
+                N_sd = 108
+            elif bw == 80:
+                N_sd = 234
+            elif bw == 160:
+                N_sd = 468
+            else:
+                print("For HT if cannot be read bw is assumed to be 20")
+                N_sd = 52
+                self.rx_mhz = 20
+
+            # NSS 
+            N_ss = self.rx_nss
+            # MCS (Modulation Coding Scheme) determines the constands
+            # MCS 0 == Modulation BPSK R = 1/2 ,  N_bpscs = 1, 
+            # Only for HT configuration 
+            if self.rx_mcs == 0:
+                R = 1/2
+                N_bpscs = 1
+            # MCS 1 == Modulation QPSK R = 1/2 , N_bpscs = 2
+            elif self.rx_mcs == 1:
+                R = 1/2
+                N_bpscs = 2
+            # MCS 2 == Modulation QPSK R = 3/4 , N_bpscs = 2
+            elif self.rx_mcs == 2:
+                R = 3/4
+                N_bpscs = 2
+            # MCS 3 == Modulation 16-QAM R = 1/2 , N_bpscs = 4
+            elif self.rx_mcs == 3:
+                R = 1/2
+                N_bpscs = 4
+            # MCS 4 == Modulation 16-QAM R = 3/4 , N_bpscs = 4
+            elif self.rx_mcs == 4:
+                R = 3/4
+                N_bpscs = 4
+            # MCS 5 == Modulation 64-QAM R = 2/3 , N_bpscs = 6
+            elif self.rx_mcs == 5:
+                R = 2/3
+                N_bpscs = 6
+            # MCS 6 == Modulation 64-QAM R = 3/4 , N_bpscs = 6
+            elif self.rx_mcs == 6:
+                R = 3/4
+                N_bpscs = 6
+            # MCS 7 == Modulation 64-QAM R = 5/6 , N_bpscs = 6
+            elif self.rx_mcs == 7:
+                R = 5/6
+                N_bpscs = 6
+
+
+            print("mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_short {T_gi_short}".format(
+                mcs=self.rx_mcs,N_sd=N_sd,N_bpscs=N_bpscs,R=R,N_ss=N_ss,T_dft=T_dft,T_gi_short=T_gi_short))
+
+            self.rx_data_rate_gi_short_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_short))/1000000
+            print("rx_data_rate gi_short {data_rate} Mbit/s".format(data_rate=self.rx_data_rate_gi_short_Mbps))
+
+            print("mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_long {T_gi_long}".format(
+                mcs=self.rx_mcs,N_sd=N_sd,N_bpscs=N_bpscs,R=R,N_ss=N_ss,T_dft=T_dft,T_gi_long=T_gi_long))
+
+            self.rx_data_rate_gi_long_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_long))/1000000
+            print("rx_data_rate gi_long {data_rate} Mbps".format(data_rate=self.rx_data_rate_gi_long_Mbps))        
