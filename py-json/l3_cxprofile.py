@@ -277,6 +277,9 @@ class L3CXProfile(LFCliBase):
                 probe_results['TX NSS'] = probe_port.tx_nss
                 probe_results['TX MHz'] = probe_port.tx_mhz
                 probe_results['TX guard interval'] = probe_port.tx_ns
+                probe_results['TX Mbps gi short'] = probe_port.tx_data_rate_gi_short_Mbps
+                probe_results['TX Mbps gi long'] = probe_port.tx_data_rate_gi_long_Mbps
+
 
                 probe_results['RX Bitrate'] = probe_port.rx_bitrate
                 probe_results['RX MCS'] = probe_port.rx_mcs

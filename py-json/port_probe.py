@@ -38,6 +38,8 @@ class ProbePort(LFCliBase):
         self.tx_mhz = None
         self.tx_ns = None
         self.tx_duration = None
+        self.tx_data_rate_gi_short_Mbps = None
+        self.tx_data_rate_gi_long_Mbps = None
 
         self.rx_bitrate = None
         self.rx_actual_mcs = None
@@ -47,9 +49,11 @@ class ProbePort(LFCliBase):
         self.rx_mhz = None
         self.rx_ns = None
         self.rx_duration = None
+        self.rx_data_rate_gi_short_Mbps = None
+        self.rx_data_rate_gi_long_Mbps = None
+
         self.data_rate = None
         folder = os.path.dirname(__file__)
-        #self.df = pd.read_csv(os.path.join(folder, "mcs_snr_rssi.csv"))
 
     def refreshProbe(self):
         self.json_post(self.probepath, {})
@@ -82,39 +86,7 @@ class ProbePort(LFCliBase):
             print("self.tx_mcs {tx_mcs}".format(tx_mcs=self.tx_mcs))
             self.tx_mbit = float(self.tx_bitrate.split(' ')[0])
             self.calculated_data_rate_tx_HT()
-            '''
-            # just HT for now
-            if 'VHT' in self.tx_bitrate:
-                tx_mhz_ns = self.vht_calculator(self.tx_mbit, self.tx_mcs)
-                try:
-                    self.tx_mhz = tx_mhz_ns['MHz']
-                    self.tx_nss = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('VHT-NSS')[1].strip(' ')
-                    self.tx_ns = tx_mhz_ns['ns']
-                    self.tx_duration = float([x for x in text if 'tx duration' in x][0].split('\t')[1].split(' ')[0])
-                except TypeError as error:
-                    print('%s, %s' % (error, tx_mhz_ns))
-            '''
-            '''
-            # This code reads from a spread sheet 
-            else:
 
-                tx_mhz_ns = self.ht_calculator(self.tx_mbit, self.tx_mcs)
-                self.df.index = self.df['HT']
-                nbpscs = self.df['Modulation'][self.tx_mcs]
-                coding = self.df['Coding'][self.tx_mcs]
-                tdft = 168.35
-                if 'short GI' in self.tx_bitrate:
-                    tgi = 0.4
-                else:
-                    tgi = 0.8
-                self.data_rate = (self.tx_mbit * nbpscs * coding * self.tx_nss) / (tdft + tgi)
-                try:
-                    self.tx_mhz = tx_mhz_ns['MHz']
-                    self.tx_nss = int(self.tx_mcs / 8) + 1
-                    self.tx_ns = tx_mhz_ns['ns']
-                except TypeError:
-                    print('tx_mhz_ns is None')
-            '''
         except IndexError as error:
             print(error)
 
@@ -127,37 +99,6 @@ class ProbePort(LFCliBase):
                 self.he = False
             else:
                 self.he = True
-            '''
-            if 'VHT' in self.rx_bitrate:
-                rx_mhz_ns = self.vht_calculator(self.rx_mbit, self.rx_mcs)
-                try:
-                    self.rx_mhz = rx_mhz_ns['MHz']
-                    self.rx_nss = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('VHT-NSS')[1].strip(' ')
-                    self.rx_ns = rx_mhz_ns['ns']
-                    self.rx_duration = float([x for x in text if 'rx duration' in x][0].split('\t')[1].split(' ')[0])
-                except TypeError as error:
-                    print('%s, %s' % (error, rx_mhz_ns))
-            '''
-            '''
-            # This code reads from a spread sheet
-            else:
-                rx_mhz_ns = self.ht_calculator(self.rx_mbit, self.rx_mcs)
-                self.df.index = self.df['HT']
-                nbpscs = self.df['Modulation'][self.rx_mcs]
-                coding = self.df['Coding'][self.rx_mcs]
-                tdft = 168.35
-                if 'short GI' in self.rx_bitrate:
-                    tgi = 0.4
-                else:
-                    tgi = 0.8
-                self.data_rate = (self.rx_mbit * nbpscs * coding * self.rx_nss) / (tdft + tgi)
-                try:
-                    self.rx_mhz = rx_mhz_ns['MHz']
-                    self.rx_nss = int(self.rx_mcs / 8) + 1
-                    self.rx_ns = rx_mhz_ns['ns']
-                except TypeError:
-                    print('rx_mhz_nz not found')
-            '''
         except IndexError as error:
             print(error)
 
@@ -245,48 +186,11 @@ class ProbePort(LFCliBase):
         print("mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_short {T_gi_short}".format(
             mcs=self.tx_mcs,N_sd=N_sd,N_bpscs=N_bpscs,R=R,N_ss=N_ss,T_dft=T_dft,T_gi_short=T_gi_short))
 
-        data_rate_gi_short_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_short))/1000000
-        print("data_rate gi_short {data_rate} Mbit/s".format(data_rate=data_rate_gi_short_Mbps))
+        self.tx_data_rate_gi_short_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_short))/1000000
+        print("data_rate gi_short {data_rate} Mbit/s".format(data_rate=self.tx_data_rate_gi_short_Mbps))
 
         print("mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_long {T_gi_long}".format(
             mcs=self.tx_mcs,N_sd=N_sd,N_bpscs=N_bpscs,R=R,N_ss=N_ss,T_dft=T_dft,T_gi_long=T_gi_long))
 
-        data_rate_gi_long_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_long))/1000000
-        print("data_rate gi_long {data_rate} Mbps".format(data_rate=data_rate_gi_long_Mbps))
-        return data_rate_gi_short_Mbps, data_rate_gi_long_Mbps
-
-    '''
-    # This code reads from a spread sheet 
-    def ht_calculator(self, mbit, mcs):
-        df1 = self.df[self.df['HT'] == mcs]
-        df1.index = df1['HT']
-        values = df1.transpose().to_dict()[mcs]
-        result = {k: v for (k, v) in values.items() if v == str(mbit)}.keys()
-        results = list(result)[0].split(',')
-        response = dict()
-        try:
-            for value in results:
-                if 'MHz' in value:
-                    response['MHz'] = value.strip('MHz')
-                if 'µs GI' in value:
-                    response['ns'] = value.strip('µs GI')
-            return response
-        except KeyError:
-            self.vht_calculator(mbit, mcs)
-
-    def vht_calculator(self, mbit, mcs):
-        df = self.df[self.df['VHT'] == mcs]
-        results = pd.concat([pd.DataFrame(x.items()) for x in df.transpose().to_dict().values()]).dropna()
-        result = list(results[results[1] == str(mbit)][0])[0]
-        response = dict()
-        try:
-            for value in result.split(','):
-                if 'MHz' in value:
-                    response['MHz'] = value.strip('MHz')
-                if 'µs GI' in value:
-                    response['ns'] = value.strip('µs GI')
-            return response
-        except KeyError as error:
-            print(error)
-            print('mbit: %s, mcs: %s' % (mbit, mcs))
-    '''
+        self.tx_data_rate_gi_long_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_long))/1000000
+        print("data_rate gi_long {data_rate} Mbps".format(data_rate=self.tx_data_rate_gi_long_Mbps))
