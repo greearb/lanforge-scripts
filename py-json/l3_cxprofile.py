@@ -293,8 +293,8 @@ class L3CXProfile(LFCliBase):
                 probe_results['RX NSS'] = probe_port.rx_nss
                 probe_results['RX MHz'] = probe_port.rx_mhz
                 #probe_results['RX guard interval'] = probe_port.rx_ns
-                probe_results['RX Mbps gi short'] = probe_port.rx_data_rate_gi_short_Mbps
-                probe_results['RX Mbps gi long'] = probe_port.rx_data_rate_gi_long_Mbps
+                probe_results['RX Mbps short GI'] = probe_port.rx_data_rate_gi_short_Mbps
+                probe_results['RX Mbps long GI'] = probe_port.rx_data_rate_gi_long_Mbps
 
 
                 probe_df_initial = pd.DataFrame(probe_results.values()).transpose()
