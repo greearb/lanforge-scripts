@@ -62,7 +62,7 @@ class ProbePort(LFCliBase):
         self.response = response
         if self.debug:
             print("probepath (eid): {probepath}".format(probepath=self.probepath))
-            pprint("Probe response: {response}".format(response=self.response))
+        #    pprint("Probe response: {response}".format(response=self.response))
         text = self.response['probe-results'][0][self.eid_str]['probe results'].split('\n')
         signals = [x.strip('\t').split('\t') for x in text if 'signal' in x]
         keys = [x[0].strip(' ').strip(':') for x in signals]
