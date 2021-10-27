@@ -72,8 +72,9 @@ class ProbePort(LFCliBase):
         tx_bitrate = [x for x in text if 'tx bitrate' in x][0].replace('\t', ' ')
         print("tx_bitrate {tx_bitrate}".format(tx_bitrate=tx_bitrate))
         self.tx_bitrate = tx_bitrate.split(':')[-1].strip(' ')
-        self.tx_mhz  = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('MHz')[0].rsplit(' ')[-1].strip(' ')
-        print("tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
+        if 'MHz' in tx_bitrate:
+            self.tx_mhz  = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('MHz')[0].rsplit(' ')[-1].strip(' ')
+            print("tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
 
         try:
             tx_mcs = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split(':')[1].strip('\t')
@@ -102,11 +103,18 @@ class ProbePort(LFCliBase):
         rx_bitrate = [x for x in text if 'rx bitrate' in x][0].replace('\t', ' ')
         print("rx_bitrate {rx_bitrate}".format(rx_bitrate=rx_bitrate))
         self.rx_bitrate = rx_bitrate.split(':')[-1].strip(' ')
+        print("self.rx_bitrate {rx_bitrate}".format(rx_bitrate=self.rx_bitrate))
         # rx will received : 6Mbps encoding is legacy frame
         try:
-            self.rx_mhz  = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('MHz')[0].rsplit(' ')[-1].strip(' ')
-            print("rx_mhz {rx_mhz}".format(rx_mhz=self.rx_mhz))
-            self.rx_mgt_6Mb_frame = False
+            if 'MHz' in rx_bitrate:
+                self.rx_mhz  = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('MHz')[0].rsplit(' ')[-1].strip(' ')
+                print("rx_mhz {rx_mhz}".format(rx_mhz=self.rx_mhz))
+                self.rx_mgt_6Mb_frame = False
+            else:
+                self.rx_mgt_6Mb_frame = True
+                self.rx_nss = 0
+                self.rx_mhz = 0
+
         except:
             self.rx_mgt_6Mb_frame = True
             self.rx_nss = 0
