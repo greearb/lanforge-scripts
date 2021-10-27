@@ -252,7 +252,12 @@ class L3CXProfile(LFCliBase):
                         for port in portdata_df['port-alias']:
                             if port in cross_connect:
                                 layer3_alias.append(port)
-                    layer3['alias'] = layer3_alias
+                    try:
+                        layer3['alias'] = layer3_alias
+                    except:
+                        print("The Stations or Connection on LANforge did not match expected, \
+                        Check if LANForge initial state correct or delete/cleanup corrects")                        
+                        exit(1)
 
                     timestamp_df = pd.merge(layer3, portdata_df, on='alias')
             else:
