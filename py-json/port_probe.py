@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import importlib
 from time import sleep
-import pandas as pd
+# import pandas as pd
 import sys
 import os
 from pprint import pprint
@@ -33,6 +33,7 @@ class ProbePort(LFCliBase):
         self.rx_mgt_6Mb_frame = None
 
         self.tx_bitrate = None
+        self.tx_actual_mcs = None
         self.tx_mcs = None
         self.tx_nss = None
         self.tx_mbit = None
@@ -54,7 +55,7 @@ class ProbePort(LFCliBase):
         self.rx_data_rate_gi_long_Mbps = None
 
         self.data_rate = None
-        folder = os.path.dirname(__file__)
+        # folder = os.path.dirname(__file__)
 
     def refreshProbe(self):
         self.json_post(self.probepath, {})
@@ -73,7 +74,6 @@ class ProbePort(LFCliBase):
         tx_bitrate = [x for x in text if 'tx bitrate' in x][0].replace('\t', ' ')
         print("tx_bitrate {tx_bitrate}".format(tx_bitrate=tx_bitrate))
         self.tx_bitrate = tx_bitrate.split(':')[-1].strip(' ')
-        self.tx_nss = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('NSS')[1].strip(' ')
         print("tx_nss {tx_nss}".format(tx_nss=self.tx_nss))
         self.tx_mhz  = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('MHz')[0].rsplit(' ')[-1].strip(' ')
         print("tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
@@ -81,7 +81,20 @@ class ProbePort(LFCliBase):
         try:
             tx_mcs = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split(':')[1].strip('\t')
             self.tx_mcs = int(tx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
-            print("self.tx_mcs {tx_mcs}".format(tx_mcs=self.tx_mcs))
+            self.tx_actual_mcs = self.tx_mcs & 8            
+            print("self.tx_mcs {tx_mcs} self.tx_actual_mcs {tx_actual_mcs}".format(tx_mcs=self.tx_mcs,tx_actual_mcs=self.tx_actual_mcs))
+            try:
+                self.tx_nss = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('NSS')[1].strip(' ')
+            except:
+                # nss is not present need to derive from MCS for HT
+                if 0 <= self.tx_mcs <= 7:
+                    self.tx_nss = 1
+                elif 8 <= self.tx_mcs <= 15:
+                    self.tx_nss = 2
+                elif 16 <= self.tx_mcs <= 23:
+                    self.tx_nss = 3
+                elif 24 <= self.tx_mcs <= 31:
+                    self.tx_nss = 4
             self.tx_mbit = float(self.tx_bitrate.split(' ')[0])
             self.calculated_data_rate_tx_HT()
 
@@ -108,6 +121,20 @@ class ProbePort(LFCliBase):
             rx_mcs = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split(':')[1].strip('\t')
             self.rx_mcs = int(rx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
             self.rx_actual_mcs = self.rx_mcs & 8
+            print("self.rx_mcs {rx_mcs} self.rx_actual_mcs {rx_actual_mcs}".format(rx_mcs=self.rx_mcs,rx_actual_mcs=self.rx_actual_mcs))
+            try:
+                self.rx_nss = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('NSS')[1].strip(' ')
+            except:
+                # nss is not present need to derive from MCS for HT
+                if 0 <= self.rx_mcs <= 7:
+                    self.rx_nss = 1
+                elif 8 <= self.rx_mcs <= 15:
+                    self.rx_nss = 2
+                elif 16 <= self.rx_mcs <= 23:
+                    self.rx_nss = 3
+                elif 24 <= self.rx_mcs <= 31:
+                    self.rx_nss = 4
+
             self.rx_mbit = self.rx_bitrate.split(' ')[0]
             self.calculated_data_rate_rx_HT()
             if 'HE not supported' in [x.strip('\t') for x in text if 'HE' in x]:
@@ -167,35 +194,35 @@ class ProbePort(LFCliBase):
         # MCS (Modulation Coding Scheme) determines the constands
         # MCS 0 == Modulation BPSK R = 1/2 ,  N_bpscs = 1, 
         # Only for HT configuration 
-        if self.tx_mcs == 0:
+        if self.tx_actual_mcs == 0:
             R = 1/2
             N_bpscs = 1
         # MCS 1 == Modulation QPSK R = 1/2 , N_bpscs = 2
-        elif self.tx_mcs == 1:
+        elif self.tx_actual_mcs == 1:
             R = 1/2
             N_bpscs = 2
         # MCS 2 == Modulation QPSK R = 3/4 , N_bpscs = 2
-        elif self.tx_mcs == 2:
+        elif self.tx_actual_mcs == 2:
             R = 3/4
             N_bpscs = 2
         # MCS 3 == Modulation 16-QAM R = 1/2 , N_bpscs = 4
-        elif self.tx_mcs == 3:
+        elif self.tx_actual_mcs == 3:
             R = 1/2
             N_bpscs = 4
         # MCS 4 == Modulation 16-QAM R = 3/4 , N_bpscs = 4
-        elif self.tx_mcs == 4:
+        elif self.tx_actual_mcs == 4:
             R = 3/4
             N_bpscs = 4
         # MCS 5 == Modulation 64-QAM R = 2/3 , N_bpscs = 6
-        elif self.tx_mcs == 5:
+        elif self.tx_actual_mcs == 5:
             R = 2/3
             N_bpscs = 6
         # MCS 6 == Modulation 64-QAM R = 3/4 , N_bpscs = 6
-        elif self.tx_mcs == 6:
+        elif self.tx_actual_mcs == 6:
             R = 3/4
             N_bpscs = 6
         # MCS 7 == Modulation 64-QAM R = 5/6 , N_bpscs = 6
-        elif self.tx_mcs == 7:
+        elif self.tx_actual_mcs == 7:
             R = 5/6
             N_bpscs = 6
 
@@ -251,35 +278,35 @@ class ProbePort(LFCliBase):
             # MCS (Modulation Coding Scheme) determines the constands
             # MCS 0 == Modulation BPSK R = 1/2 ,  N_bpscs = 1, 
             # Only for HT configuration 
-            if self.rx_mcs == 0:
+            if self.rx_actual_mcs == 0:
                 R = 1/2
                 N_bpscs = 1
             # MCS 1 == Modulation QPSK R = 1/2 , N_bpscs = 2
-            elif self.rx_mcs == 1:
+            elif self.rx_actual_mcs == 1:
                 R = 1/2
                 N_bpscs = 2
             # MCS 2 == Modulation QPSK R = 3/4 , N_bpscs = 2
-            elif self.rx_mcs == 2:
+            elif self.rx_actual_mcs == 2:
                 R = 3/4
                 N_bpscs = 2
             # MCS 3 == Modulation 16-QAM R = 1/2 , N_bpscs = 4
-            elif self.rx_mcs == 3:
+            elif self.rx_actual_mcs == 3:
                 R = 1/2
                 N_bpscs = 4
             # MCS 4 == Modulation 16-QAM R = 3/4 , N_bpscs = 4
-            elif self.rx_mcs == 4:
+            elif self.rx_actual_mcs == 4:
                 R = 3/4
                 N_bpscs = 4
             # MCS 5 == Modulation 64-QAM R = 2/3 , N_bpscs = 6
-            elif self.rx_mcs == 5:
+            elif self.rx_actual_mcs == 5:
                 R = 2/3
                 N_bpscs = 6
             # MCS 6 == Modulation 64-QAM R = 3/4 , N_bpscs = 6
-            elif self.rx_mcs == 6:
+            elif self.rx_actual_mcs == 6:
                 R = 3/4
                 N_bpscs = 6
             # MCS 7 == Modulation 64-QAM R = 5/6 , N_bpscs = 6
-            elif self.rx_mcs == 7:
+            elif self.rx_actual_mcs == 7:
                 R = 5/6
                 N_bpscs = 6
 
