@@ -244,10 +244,10 @@ class ProbePort(LFCliBase):
 
         if abs(self.tx_mbit - self.tx_data_rate_gi_short_Mbps) <= abs(self.tx_mbit - self.tx_data_rate_gi_long_Mbps):
             self.tx_mbit_calc = self.tx_data_rate_gi_short_Mbps
-            self.tx_gi = T_gi_short
+            self.tx_gi = T_gi_short 
         else:
             self.tx_mbit_calc = self.tx_data_rate_gi_long_Mbps
-            self.tx_gi = T_gi_long
+            self.tx_gi = T_gi_long 
 
 
 
@@ -341,4 +341,4 @@ class ProbePort(LFCliBase):
                 self.rx_gi = T_gi_short
             else:
                 self.rx_mbit_calc = self.rx_data_rate_gi_long_Mbps
-                self.rx_gi = T_gi_long
+                self.rx_gi = T_gi_long 

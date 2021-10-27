@@ -286,8 +286,12 @@ class L3CXProfile(LFCliBase):
                     probe_results['TX MCS'] = probe_port.tx_mcs
                 probe_results['TX NSS'] = probe_port.tx_nss
                 probe_results['TX MHz'] = probe_port.tx_mhz
-                probe_results['TX Guard Interval'] = probe_port.tx_gi
+                if probe_port.tx_gi is not None:
+                    probe_results['TX GI ns'] = (probe_port.tx_gi * 10**9)
+                else:
+                    probe_results['TX GI ns'] = probe_port.tx_gi 
                 probe_results['TX Mbps Calc'] = probe_port.tx_mbit_calc
+                probe_results['TX GI'] = probe_port.tx_gi
                 probe_results['TX Mbps short GI'] = probe_port.tx_data_rate_gi_short_Mbps
                 probe_results['TX Mbps long GI'] = probe_port.tx_data_rate_gi_long_Mbps
                 probe_results['RX Bitrate'] = probe_port.rx_bitrate
@@ -299,8 +303,12 @@ class L3CXProfile(LFCliBase):
                     probe_results['RX MCS'] = probe_port.rx_mcs
                 probe_results['RX NSS'] = probe_port.rx_nss
                 probe_results['RX MHz'] = probe_port.rx_mhz
-                probe_results['RX Guard Interval'] = probe_port.rx_gi
+                if probe_port.rx_gi is not None:
+                    probe_results['RX GI ns'] = (probe_port.rx_gi * 10**9) 
+                else:
+                    probe_results['RX GI ns'] = probe_port.rx_gi
                 probe_results['RX Mbps Calc'] = probe_port.rx_mbit_calc
+                probe_results['RX GI'] = probe_port.rx_gi
                 probe_results['RX Mbps short GI'] = probe_port.rx_data_rate_gi_short_Mbps
                 probe_results['RX Mbps long GI'] = probe_port.rx_data_rate_gi_long_Mbps
 
