@@ -112,13 +112,9 @@ class ProbePort(LFCliBase):
                 self.rx_mgt_6Mb_frame = False
             else:
                 self.rx_mgt_6Mb_frame = True
-                self.rx_nss = 0
-                self.rx_mhz = 0
 
         except:
             self.rx_mgt_6Mb_frame = True
-            self.rx_nss = 0
-            self.rx_mhz = 0
             print("received rx_mgt_6Mb_frame")
 
         try:
