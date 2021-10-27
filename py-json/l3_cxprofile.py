@@ -15,6 +15,7 @@ pandas_extensions = importlib.import_module("py-json.LANforge.pandas_extensions"
 port_probe = importlib.import_module("py-json.port_probe")
 ProbePort = port_probe.ProbePort
 
+
 class L3CXProfile(LFCliBase):
     def __init__(self,
                  lfclient_host,
@@ -130,7 +131,7 @@ class L3CXProfile(LFCliBase):
         try:
             duration_sec = self.parse_time(duration_sec).seconds
         except BaseException:
-        
+
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
             if (duration_sec <= monitor_interval_ms):
@@ -231,7 +232,7 @@ class L3CXProfile(LFCliBase):
             else:
                 pass
             layer3 = pd.DataFrame(result.values())
-            layer3.columns = ['l3-'+x for x in layer3.columns]
+            layer3.columns = ['l3-' + x for x in layer3.columns]
 
             if port_mgr_cols is not None:  # create dataframe from port mgr results
                 if 'alias' not in port_mgr_cols:
@@ -243,7 +244,7 @@ class L3CXProfile(LFCliBase):
                             print('port mgr data: %s' % dictionary)
                         result.update(dictionary)
                     portdata_df = pd.DataFrame(result.values())
-                    portdata_df.columns = ['port-'+x for x in portdata_df.columns]
+                    portdata_df.columns = ['port-' + x for x in portdata_df.columns]
                     portdata_df['alias'] = portdata_df['port-alias']
 
                     layer3_alias = list()  # Add alias to layer 3 dataframe
@@ -255,7 +256,7 @@ class L3CXProfile(LFCliBase):
                         layer3['alias'] = layer3_alias
                     except BaseException:
                         print("The Stations or Connection on LANforge did not match expected, \
-                        Check if LANForge initial state correct or delete/cleanup corrects")                        
+                        Check if LANForge initial state correct or delete/cleanup corrects")
                         exit(1)
 
                     timestamp_df = pd.merge(layer3, portdata_df, on='alias')
@@ -281,14 +282,14 @@ class L3CXProfile(LFCliBase):
                 probe_results['TX MCS ACTUAL'] = probe_port.tx_mcs
                 if probe_port.tx_mcs is not None:
                     probe_results['TX MCS'] = int(probe_port.tx_mcs) % 8
-                else:                    
+                else:
                     probe_results['TX MCS'] = probe_port.tx_mcs
                 probe_results['TX NSS'] = probe_port.tx_nss
                 probe_results['TX MHz'] = probe_port.tx_mhz
                 if probe_port.tx_gi is not None:
                     probe_results['TX GI ns'] = (probe_port.tx_gi * 10**9)
                 else:
-                    probe_results['TX GI ns'] = probe_port.tx_gi 
+                    probe_results['TX GI ns'] = probe_port.tx_gi
                 probe_results['TX Mbps Calc'] = probe_port.tx_mbit_calc
                 probe_results['TX GI'] = probe_port.tx_gi
                 probe_results['TX Mbps short GI'] = probe_port.tx_data_rate_gi_short_Mbps
@@ -303,7 +304,7 @@ class L3CXProfile(LFCliBase):
                 probe_results['RX NSS'] = probe_port.rx_nss
                 probe_results['RX MHz'] = probe_port.rx_mhz
                 if probe_port.rx_gi is not None:
-                    probe_results['RX GI ns'] = (probe_port.rx_gi * 10**9) 
+                    probe_results['RX GI ns'] = (probe_port.rx_gi * 10**9)
                 else:
                     probe_results['RX GI ns'] = probe_port.rx_gi
                 probe_results['RX Mbps Calc'] = probe_port.rx_mbit_calc
@@ -311,10 +312,9 @@ class L3CXProfile(LFCliBase):
                 probe_results['RX Mbps short GI'] = probe_port.rx_data_rate_gi_short_Mbps
                 probe_results['RX Mbps long GI'] = probe_port.rx_data_rate_gi_long_Mbps
 
-
                 probe_df_initial = pd.DataFrame(probe_results.values()).transpose()
                 probe_df_initial.columns = probe_results.keys()
-                probe_df_initial.columns = ['probe '+x for x in probe_df_initial.columns]
+                probe_df_initial.columns = ['probe ' + x for x in probe_df_initial.columns]
                 probe_df_initial['alias'] = station.split('.')[-1]
                 probe_port_df_list.append(probe_df_initial)
             probe_port_df = pd.concat(probe_port_df_list)
