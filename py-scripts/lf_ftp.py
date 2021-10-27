@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """ lf_ftp.py will verify that N clients connected on specified band and can simultaneously download/upload some amount of file from FTP server and measuring the time taken by client to download/upload the file.
-    cli- python3 lf_ftp.py --mgr localhost --mgr_port 8080 --upstream_port eth1 --ssid FTP --security open --passwd BLANK --ap_name WAC505 --ap_ip 192.168.213.90 --bands Both --directions Download --twog_radio wiphy1 --fiveg_radio wiphy0 --file_size 2MB --num_stations 40 --Both_duration 1 --traffic_duration 2 --ssh_port 22_
+    cli- python3 lf_ftp.py --mgr localhost --mgr_port 8080 --upstream_port eth1 --ssid FTP --security open --passwd BLANK --ap_name WAC505 --ap_ip 192.168.213.90 --bands Both --directions Download --twog_radio wiphy1 --fiveg_radio wiphy0 --file_size 2MB --num_stations 40 --both_duration 1 --traffic_duration 2 --ssh_port 22_
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 """
@@ -18,7 +18,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -323,9 +323,9 @@ class FtpTest(LFCliBase):
 
                     # reading uc-avg data in json format
                     uc_avg = self.json_get("layer4/list?fields=uc-avg")
-                    if data['endpoint'][i][data2[i]]['bytes-rd'] <= self.file_size_bytes:
+                    if int(data['endpoint'][i][data2[i]]['bytes-rd']) <= self.file_size_bytes:
                         data = self.json_get("layer4/list?fields=bytes-rd")
-                    if data['endpoint'][i][data2[i]]['bytes-rd'] >= self.file_size_bytes:
+                    if int(data['endpoint'][i][data2[i]]['bytes-rd']) >= self.file_size_bytes:
                         list1.append(i)
                         if list1.count(i) == 1:
                             list2.append(i)
@@ -616,7 +616,7 @@ class FtpTest(LFCliBase):
     def bar_graph(self, x_axis, image_name, dataset, color, labels, x_axis_name, y_axis_name,handles, ncol, box, fontsize):
         '''This Method will plot bar graph'''
 
-        graph = lf_bar_graph(_data_set=dataset,
+        graph = lf_graph.lf_bar_graph(_data_set=dataset,
                              _xaxis_name=x_axis_name,
                              _yaxis_name=y_axis_name,
                              _xaxis_categories=x_axis,
@@ -662,7 +662,7 @@ class FtpTest(LFCliBase):
     def generate_report(self, ftp_data, date,test_setup_info, input_setup_info):
         '''Method for generate the report'''
 
-        self.report = lf_report(_results_dir_name="ftp_test", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf")
+        self.report = lf_report.lf_report(_results_dir_name="ftp_test", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf")
         self.report.set_title("FTP Test")
         self.report.set_date(date)
         self.report.build_banner()
@@ -718,7 +718,7 @@ def main():
     parser.add_argument('--fiveg_radio', type=str, help='specify radio for 5G client', default='wiphy0')
     parser.add_argument('--twog_duration', nargs="+", help='Pass and Fail duration for 2.4G band in minutes')
     parser.add_argument('--fiveg_duration', nargs="+", help='Pass and Fail duration for 5G band in minutes')
-    parser.add_argument('--Both_duration', nargs="+", help='Pass and Fail duration for Both band in minutes')
+    parser.add_argument('--both_duration', nargs="+", help='Pass and Fail duration for Both band in minutes')
     parser.add_argument('--traffic_duration', type=int, help='duration for layer 4 traffic running')
     parser.add_argument('--ssh_port', type=int, help="specify the shh port eg 22", default=22)
 
@@ -761,12 +761,12 @@ def main():
                     index = list(args.file_sizes).index(size)
                     duration = args.fiveg_duration[index]
         else:
-            if len(args.file_sizes) is not len(args.Both_duration):
+            if len(args.file_sizes) is not len(args.both_duration):
                 raise Exception("Give proper Pass or Fail duration for 5G band")
             for size in args.file_sizes:
                 if size == file_size:
                     index = list(args.file_sizes).index(size)
-                    duration = args.Both_duration[index]
+                    duration = args.both_duration[index]
         if duration.isdigit():
             duration = int(duration)
         else:
