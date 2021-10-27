@@ -7,7 +7,6 @@ import pandas as pd
 import time
 import datetime
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -15,7 +14,6 @@ LFCliBase = lfcli_base.LFCliBase
 pandas_extensions = importlib.import_module("py-json.LANforge.pandas_extensions")
 port_probe = importlib.import_module("py-json.port_probe")
 ProbePort = port_probe.ProbePort
-
 
 class L3CXProfile(LFCliBase):
     def __init__(self,
@@ -131,16 +129,17 @@ class L3CXProfile(LFCliBase):
                 debug=False):
         try:
             duration_sec = self.parse_time(duration_sec).seconds
-        except:
+        except BaseException:
+        
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
             if (duration_sec <= monitor_interval_ms):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > monitor_interval")
-        if report_file == None:
+        if report_file is None:
             raise ValueError("Monitor requires an output file to be defined")
-        if systeminfopath == None:
+        if systeminfopath is None:
             raise ValueError("Monitor requires a system info path to be defined")
-        if created_cx == None:
+        if created_cx is None:
             raise ValueError("Monitor needs a list of Layer 3 connections")
         if (monitor_interval_ms is None) or (monitor_interval_ms < 1):
             raise ValueError("L3CXProfile::monitor wants monitor_interval >= 1 second")
@@ -254,7 +253,7 @@ class L3CXProfile(LFCliBase):
                                 layer3_alias.append(port)
                     try:
                         layer3['alias'] = layer3_alias
-                    except:
+                    except BaseException:
                         print("The Stations or Connection on LANforge did not match expected, \
                         Check if LANForge initial state correct or delete/cleanup corrects")                        
                         exit(1)
@@ -500,7 +499,7 @@ class L3CXProfile(LFCliBase):
                     self.local_realm.json_post(url, data, debug_=debug_,
                                                suppress_related_commands_=suppress_related_commands)
 
-                if tos != None:
+                if tos is not None:
                     self.local_realm.set_endp_tos(endp_a_name, tos)
                     self.local_realm.set_endp_tos(endp_b_name, tos)
 
