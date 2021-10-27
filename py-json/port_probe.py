@@ -37,8 +37,9 @@ class ProbePort(LFCliBase):
         self.tx_nss = None
         self.tx_mbit = None
         self.tx_mhz = None
-        self.tx_ns = None
+        self.tx_gi = None
         self.tx_duration = None
+        self.tx_mbit_calc = None
         self.tx_data_rate_gi_short_Mbps = None
         self.tx_data_rate_gi_long_Mbps = None
 
@@ -47,8 +48,9 @@ class ProbePort(LFCliBase):
         self.rx_nss = None
         self.rx_mbit = None
         self.rx_mhz = None
-        self.rx_ns = None
+        self.rx_gi = None
         self.rx_duration = None
+        self.rx_mbit_calc = None
         self.rx_data_rate_gi_short_Mbps = None
         self.rx_data_rate_gi_long_Mbps = None
 
@@ -240,6 +242,15 @@ class ProbePort(LFCliBase):
         self.tx_data_rate_gi_long_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_long))/1000000
         print("data_rate gi_long {data_rate} Mbps".format(data_rate=self.tx_data_rate_gi_long_Mbps))
 
+        if abs(self.tx_mbit - self.tx_data_rate_gi_short_Mbps) <= abs(self.tx_mbit - self.tx_data_rate_gi_long_Mbps):
+            self.tx_mbit_calc = self.tx_data_rate_gi_short_Mbps
+            self.tx_gi = T_gi_short
+        else:
+            self.tx_mbit_calc = self.tx_data_rate_gi_long_Mbps
+            self.tx_gi = T_gi_long
+
+
+
     def calculated_data_rate_rx_HT(self):
         # TODO compare with standard for 40 MHz if values change
         N_sd = 0 # Number of Data Subcarriers based on modulation and bandwith 
@@ -324,3 +335,10 @@ class ProbePort(LFCliBase):
 
             self.rx_data_rate_gi_long_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_long))/1000000
             print("rx_data_rate gi_long {data_rate} Mbps".format(data_rate=self.rx_data_rate_gi_long_Mbps))        
+
+            if abs(self.rx_mbit - self.rx_data_rate_gi_short_Mbps) <= abs(self.rx_mbit - self.rx_data_rate_gi_long_Mbps):
+                self.rx_mbit_calc = self.rx_data_rate_gi_short_Mbps
+                self.rx_gi = T_gi_short
+            else:
+                self.rx_mbit_calc = self.rx_data_rate_gi_long_Mbps
+                self.rx_gi = T_gi_long
