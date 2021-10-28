@@ -245,7 +245,7 @@ class L3VariableTime(Realm):
 
         self.ap_stats_ul_col_titles = ["UL Station Address", "Ul-rssi", "Ul-tid", "Ul-ampdu","Ul-mpdu", "Ul-Data-Mbps",
                                     "Ul-PHY-Mbps", "UL-BW", "Ul-MCS", "Ul-NSS", "Ul-OOW", "Ul-HOLES", 
-                                    "Ul-DUP", "Ul-Retries", "Ul-MMU", "Ul-OFDMA", "Ul-Tones", "Ul-AIR"]
+                                    "Ul-DUP", "Ul-Retries", "Ul-OFDMA", "Ul-Tones", "Ul-AIR"]
 
 
         dur = self.duration_time_to_seconds(self.test_duration)
@@ -746,10 +746,10 @@ class L3VariableTime(Realm):
 
     def read_ap_rx_report_test_mode(self):
         ap_rx_report_fake = "{}{}{}{}{}".format("root@Docsis-Gateway:~#  wl -i wl1 rx_report\n",
-                "Station Address (rssi)  tid   ampdu     mpdu  Data Mbps   PHY Mbps    bw   mcs   Nss   oow holes   dup rtries    mmu  ofdma  tones    air\n",
-                "50:E0:85:87:5B:F4 (-43dBm)   0    2062   127078       32.5      571.9    80  11.0     2     0     0    64      0     0%   100%  483.3     6%\n",
-                "50:E0:85:84:7A:E7 (-44dBm)   0    2334   144373       36.9      343.1    80  10.9     2     0     0    63      0     0%   100%  291.4    11%\n",
-                "50:E0:85:88:F4:5F (-45dBm)   0    2296   142463       36.4      346.3    80  10.9     2     0     0    64      0     0%   100%  294.1    11%\n")
+                "Station Address (rssi)  tid   ampdu     mpdu  Data Mbps   PHY Mbps    bw   mcs   Nss   oow holes   dup rtries  ofdma  tones    air\n",
+                "50:E0:85:87:5B:F4 (-43dBm)   0    2062   127078       32.5      571.9    80  11.0     2     0     0    64     0%   100%  483.3     6%\n",
+                "50:E0:85:84:7A:E7 (-44dBm)   0    2334   144373       36.9      343.1    80  10.9     2     0     0    63     0%   100%  291.4    11%\n",
+                "50:E0:85:88:F4:5F (-45dBm)   0    2296   142463       36.4      346.3    80  10.9     2     0     0    64     0%   100%  294.1    11%\n")
                 #Keep commented for testing "(overall)   -    6692   413914      105.8          -     -     -     -     -     -     -      -     -      -       -     -\n"
         return ap_rx_report_fake
 
