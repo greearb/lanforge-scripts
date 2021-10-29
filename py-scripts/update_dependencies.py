@@ -2,6 +2,7 @@
 
 import subprocess
 import argparse
+import os
 
 def main():
     parser = argparse.ArgumentParser(
@@ -33,7 +34,10 @@ def main():
     packages_failed =[]
     subprocess.call("pip3 uninstall jwt", shell=True)
     for package in packages:
-        command = "pip3 install {} >/tmp/pip3-stdout 2>/tmp/pip3-stderr".format(package)
+        if os.name == 'nt':
+            command = "pip3 install {} ".format(package)
+        else:
+            command = "pip3 install {} >/tmp/pip3-stdout 2>/tmp/pip3-stderr".format(package)
         res = subprocess.call(command, shell=True)
         if res == 0:
             print("Package {} install SUCCESS Returned Value: {} ".format(package, res))
