@@ -13,9 +13,7 @@ import sys
 import os
 import importlib
 import argparse
-from pprint import pprint
 import time
-import datetime
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -36,7 +34,6 @@ class lf_clean(Realm):
                          lfclient_port=port),
         self.host = host
         self.port = port
-        #self.cx_profile = self.new_l3_cx_profile()
 
     def cleanup(self):
         try:
@@ -123,10 +120,6 @@ class lf_clean(Realm):
 
 
 def main():
-    lfjson_host = "localhost"
-    lfjson_port = 8080
-    endp_types = "lf_udp"
-    debug = False
 
     parser = argparse.ArgumentParser(
         prog='lf_cleanup.py',
@@ -144,7 +137,8 @@ python3 ./lf_clean.py --mgr MGR
     default port is 8080
 
     clean up stations, cxs and enspoints.
-    NOTE: will only cleanup what is present in the GUI so need to iterate multiple times with lf_clean.py
+    NOTE: will only cleanup what is present in the GUI
+            So will need to iterate multiple times with script
             ''')
     parser.add_argument(
         '--mgr',
@@ -157,7 +151,8 @@ python3 ./lf_clean.py --mgr MGR
     clean = lf_clean(host=args.mgr)
     print("cleaning up stations, cxs and endpoints: start")
     clean.cleanup()
-    print("cleaning up stations, cxs and endpoints: done with current pass may need to iterate multiple times")
+    print("cleaning up stations, cxs and endpoints:\
+         done with current pass may need to iterate multiple times")
 
 
 if __name__ == "__main__":
