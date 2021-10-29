@@ -47,7 +47,7 @@ import argparse
 import time
 from http.client import HTTPResponse
 from typing import Optional
-from pprint import pprint, pformat
+from pprint import pprint
 
 path_hunks = os.path.abspath(__file__).split('/')
 while( path_hunks[-1] != 'lanforge-scripts'):
@@ -155,21 +155,20 @@ class BssidMonitor(Realm):
         self.lf_query : LFJsonQuery = self.lf_session.get_query()
 
     def build(self):
-        err_warn_list = []
-        # query for the last response
-        event_response = self.lf_query.events_last_events(event_count=1,
-                                                          debug=self.debug,
-                                                          errors_warnings=err_warn_list)
-        last_event_id = event_response["id"]
-        if not self.wait_for_load_to_finish(since_id=last_event_id):
-            exit(1)
+
+        # get last event id
+        last_event_id = self.before_load_action()
 
         # load a database
+        sys.settrace(lanforge_api.trace)
         response: HTTPResponse = self.lf_command.post_load(name="BLANK",
                                                            action="overwrite",
                                                            clean_dut="NA",
                                                            clean_chambers="NA",
                                                            debug=self.debug)
+        sys.settrace(None)
+        if not self.wait_for_load_to_finish(since_id=last_event_id):
+            exit(1)
 
         if not response:
             raise ConnectionError("lf_command::post_load returned no response")
@@ -179,7 +178,29 @@ class BssidMonitor(Realm):
         for bssid in self.bssid_list:
             print("build: bssid: %s" % bssid)
 
+    def before_load_action(self):
+        """
+        Use this
+        :return: last event ID in event list
+        """
+        err_warn_list = []
+        self.lf_command.post_show_events(p_type='all',
+                                         shelf=1,
+                                         card='all',
+                                         port='all',
+                                         endp='all')
+        time.sleep(0.1)
+        event_response = self.lf_query.events_last_events(event_count=1,
+                                                          debug=self.debug,
+                                                          errors_warnings=err_warn_list)
+        return event_response["id"]
+
     def wait_for_load_to_finish(self, since_id:int=None):
+        """
+        TODO: make this a standard method outside this module
+        :param since_id:
+        :return:
+        """
         completed = False
         timer = 0
         timeout = 60
@@ -189,7 +210,12 @@ class BssidMonitor(Realm):
                 for event_tup in new_events:
                     for event_id in event_tup.keys():
                         event_record = event_tup[event_id]
-                        # pprint(event_record)
+                        if self.debug:
+                            pprint("\n        wait_for_load_to_finish: {since} -> {id}: {descr}\n".format(
+                                since=since_id,
+                                id=event_id,
+                                descr=event_record['event description']
+                            ))
                         if event_record['event description'].startswith('LOAD COMPLETED'):
                             completed = True
                             self.lf_query.logger.warning('Scenario loaded after %s seconds' % timer)
@@ -197,6 +223,12 @@ class BssidMonitor(Realm):
             if completed:
                 break
             else:
+                if (timer % 5) == 0:
+                    self.lf_command.post_show_events(p_type='all',
+                                                     shelf=1,
+                                                     card='all',
+                                                     port='all',
+                                                     endp='all')
                 timer += 1
                 time.sleep(1)
                 if timer > timeout:
