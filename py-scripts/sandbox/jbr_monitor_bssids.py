@@ -35,6 +35,7 @@ Notes:
 TO DO NOTES:
 
 """
+import logging
 import sys
 
 if sys.version_info[0] != 3:
@@ -50,15 +51,18 @@ from typing import Optional
 from pprint import pprint
 
 path_hunks = os.path.abspath(__file__).split('/')
-while( path_hunks[-1] != 'lanforge-scripts'):
+while (path_hunks[-1] != 'lanforge-scripts'):
     path_hunks.pop()
 sys.path.append(os.path.join("/".join(path_hunks)))
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
+Logg = lanforge_api.Logg
 LFSession = lanforge_api.LFSession
 LFJsonCommand = lanforge_api.LFJsonCommand
 LFJsonQuery = lanforge_api.LFJsonQuery
+
+
 # from scenario import LoadScenario
 
 
@@ -69,6 +73,7 @@ class BssidMonitor(Realm):
                  host: str = "localhost",
                  port: int = 8080,
                  debug: bool = False,
+                 args: argparse = None,
                  radio: str = None,
                  ssid: str = None,
                  security: str = None,
@@ -83,7 +88,7 @@ class BssidMonitor(Realm):
                  layer3_cols: list[str] = None,
                  port_mgr_cols=None,
                  monitor_interval_sec: int = 10,
-                 bssid_list: list[str]=None):
+                 bssid_list: list[str] = None):
         """
                          lfclient_host="localhost",
                  lfclient_port=8080,
@@ -143,7 +148,8 @@ class BssidMonitor(Realm):
                             },
                         debug=True,
                         die_on_error=False);'''
-        self.lf_session: LFSession =\
+
+        self.lf_session: LFSession = \
             lanforge_api.LFSession(lfclient_url="http://{host}:{port}/".format(host=host, port=port),
                                    debug=debug,
                                    connection_timeout_sec=2,
@@ -151,28 +157,33 @@ class BssidMonitor(Realm):
                                    stream_warnings=True,
                                    require_session=True,
                                    exit_on_error=True)
-        self.lf_command : LFJsonCommand = self.lf_session.get_command()
-        self.lf_query : LFJsonQuery = self.lf_session.get_query()
+        if args and args.debugging:
+            pprint(args.debugging)
+            for item in args.debugging:
+                if item.startswith("tag:"):
+                    Logg.register_tag(item[item.rindex(":"):])
+                if item.startswith("method:"):
+                    Logg.register_method_name(item[item.rindex(":"):])
+
+        self.lf_command: LFJsonCommand = self.lf_session.get_command()
+        self.lf_query: LFJsonQuery = self.lf_session.get_query()
 
     def build(self):
-
         # get last event id
         last_event_id = self.before_load_action()
 
         # load a database
-        sys.settrace(lanforge_api.trace)
         response: HTTPResponse = self.lf_command.post_load(name="BLANK",
                                                            action="overwrite",
                                                            clean_dut="NA",
                                                            clean_chambers="NA",
                                                            debug=self.debug)
-        sys.settrace(None)
+
         if not self.wait_for_load_to_finish(since_id=last_event_id):
             exit(1)
 
         if not response:
             raise ConnectionError("lf_command::post_load returned no response")
-
 
         # create a series of stations
         for bssid in self.bssid_list:
@@ -193,9 +204,13 @@ class BssidMonitor(Realm):
         event_response = self.lf_query.events_last_events(event_count=1,
                                                           debug=self.debug,
                                                           errors_warnings=err_warn_list)
+        if not event_response:
+            Logg.logg(level=logging.ERROR, msg="No event_response")
+        if "id" not in event_response:
+            pprint(("event_response:", event_response))
         return event_response["id"]
 
-    def wait_for_load_to_finish(self, since_id:int=None):
+    def wait_for_load_to_finish(self, since_id: int = None):
         """
         TODO: make this a standard method outside this module
         :param since_id:
@@ -239,7 +254,6 @@ class BssidMonitor(Realm):
                     print('Waiting %s out of %s seconds to load scenario' % (timer, timeout))
         return completed
 
-
     def start(self):
         pass
 
@@ -263,6 +277,11 @@ def main():
                         type=str,
                         nargs="+",
                         help='Add an AP to the list of APs to test connections to')
+    parser.add_argument('--debugging',
+                        action='extend',
+                        type=str,
+                        nargs="+",
+                        help='Debugging for specific areas: "tag:keyword" or "method:methodname" ')
     parser.add_argument('--output_format',
                         type=str,
                         help='choose either csv or xlsx')
@@ -288,6 +307,7 @@ def main():
     parser.add_argument('--port_mgr_cols',
                         type=list[str],
                         help='titles of columns to report')
+
     args = parser.parse_args()
 
     # pprint.pprint(("args.members:", dir(args)))
@@ -295,6 +315,7 @@ def main():
     bssid_monitor = BssidMonitor(host=args.mgr,
                                  port=args.mgr_port,
                                  debug=args.debug,
+                                 args=args,
                                  radio=args.radio,
                                  ssid=args.ssid,
                                  security=args.security,
@@ -315,6 +336,7 @@ def main():
     bssid_monitor.start()
     bssid_monitor.stop()
     bssid_monitor.cleanup()
+
 
 if __name__ == "__main__":
     main()
