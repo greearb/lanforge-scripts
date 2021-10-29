@@ -70,29 +70,28 @@
     class which appends subclasses to it.
 
 ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
 import sys
+
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
-import urllib
-from urllib import request
-from urllib import error
-from urllib import parse
+from datetime import datetime
+from enum import Enum
+from enum import IntFlag
 import http.client
 from http.client import HTTPResponse
+import inspect
 import json
 import logging
 from logging import Logger
+from pprint import pprint, pformat
 import time
 import traceback
 from typing import Optional
-from datetime import datetime
-from enum import IntFlag
-from pprint import pprint
-from pprint import pformat
-from enum import Enum
-
+import urllib
+from urllib import request, error, parse
 
 SESSION_HEADER = 'X-LFJson-Session'
 LOGGER = Logger('json_api')
@@ -218,7 +217,33 @@ def print_diagnostics(url_: str = None,
 
 
 class Logg:
+    """
+    This method presently defines various log "levels" but does not yet express
+    ability to log "areas" or "keywords".
+
+    TODO:
+    - LOG BUFFER a list that only holds last 100 lines logged to it. This is useful
+    for emitting when an exception happens in a loop and you are not interested
+    in the first 10e6 log entries
+
+    - KEYWORD LOGGING: pair a --debug_kw=keyword,keyword set on the command line to only
+    recieve log output from log statements matching those keywords
+
+    - CLASS/METHOD/FUNCTION logging: --debug_fn=class.method,module.func set on the command
+    line that activates logging in the method or function listed. See inspection techniques
+    listed near this SO question https://stackoverflow.com/a/5104943/11014343
+
+    - BITWISE LOG LEVELS: --log_level=DEBUG|FILEIO|JSON|HTTP a maskable combination of enum_bitmask
+    names that combine to a value that can trigger logging.
+
+    Please also consider how log messages can be formatted:
+    https://stackoverflow.com/a/20112491/11014343:
+    logging.basicConfig(format="[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s")
+    """
     DEFAULT_LEVEL = logging.WARNING
+    DefaultLogger = LOGGER
+    method_name_list: list[str] = []
+    tag_list: list[str] = []
 
     def __init__(self,
                  log_level: int = DEFAULT_LEVEL,
@@ -243,53 +268,149 @@ class Logg:
         self.logger = Logger(name, level=log_level)
 
         if debug:
-            self.logg(level=logging.WARNING, message="Logger begun: " + self.name)
+            self.logg(level=logging.WARNING, msg="Logger begun: " + self.name)
 
-    def logg(self,
+    @classmethod
+    def logg(cls,
              level: int = logging.WARNING,
-             message: str = None):
+             msg: str = None):
         """
-
-        :param level: python logging priority
-        :param message: text to send to logging channel
-        :return: None
+        Use this *class method* to send logs to the DefaultLogger instance created when this class was created
+        :param level:
+        :param msg:
+        :return:
         """
-        if _not(message):
+        if _not(msg):
             return
         if level == logging.CRITICAL:
-            self.logger.critical(message)
+            cls.DefaultLogger.critical(msg)
+            return
+        if level == logging.ERROR:
+            cls.DefaultLogger.error(msg)
+            return
+        if level == logging.WARNING:
+            cls.DefaultLogger.warning(msg)
+            return
+        if level == logging.INFO:
+            cls.DefaultLogger.info(msg)
+            return
+        if level == logging.DEBUG:
+            cls.DefaultLogger.debug(msg)
+            return
+
+    def by_level(self,
+                 level: int = logging.WARNING,
+                 msg: str = None):
+        """
+        Use this *instance* version of the method for logging when you have a specific logger
+        customized for a purpose. Otherwise please use Logg.logg().
+        :param level: python logging priority
+        :param msg: text to send to logging channel
+        :return: None
+        """
+        if _not(msg):
+            return
+
+        if level == logging.CRITICAL:
+            self.logger.critical(msg)
+            return
 
         if level == logging.ERROR:
-            self.logger.error(message)
+            self.logger.error(msg)
+            return
 
         if level == logging.WARNING:
-            self.logger.warning(message)
+            self.logger.warning(msg)
+            return
 
         if level == logging.INFO:
-            self.logger.info(message)
+            self.logger.info(msg)
+            return
 
         if level == logging.DEBUG:
-            self.logger.debug(message)
+            self.logger.debug(msg)
+            return
+        print("UNKNOWN: " + msg)
 
     def error(self, message: str = None):
         if not message:
             return
-        self.logg(level=logging.ERROR, message=message)
+        self.logg(level=logging.ERROR, msg=message)
 
     def warning(self, message: str = None):
         if not message:
             return
-        self.logg(level=logging.WARNING, message=message)
+        self.logg(level=logging.WARNING, msg=message)
 
     def info(self, message: str = None):
         if not message:
             return
-        self.logg(level=logging.INFO, message=message)
+        self.logg(level=logging.INFO, msg=message)
 
     def debug(self, message: str = None):
         if not message:
             return
-        self.logg(level=logging.DEBUG, message=message)
+        self.logg(level=logging.DEBUG, msg=message)
+
+    @classmethod
+    def register_method_name(cls, methodname: str = None) -> None:
+        """
+        Use this method to register names of functions you want to allow logging from
+        :param methodname:
+        :return:
+        """
+        if not methodname:
+            return
+        cls.method_name_list.append(methodname)
+
+    @classmethod
+    def register_tag(cls, tag: str = None) -> None:
+        """
+        Use this method to register keywords you want to allow logging from
+        :return:
+        """
+        if not tag:
+            return
+        if tag in cls.tag_list:
+            return
+        cls.tag_list.append(tag)
+
+    @classmethod
+    def by_method(cls, msg: str = None) -> None:
+        """
+        should only log if we're in the method_list
+        reminder: https://stackoverflow.com/a/13514318/11014343
+        import inspect
+        import types
+        from typing import cast
+        this_fn_name = cat(types.FrameType, inspect.currentframe()).f_code.co_name
+        :return: None
+        """
+        try:
+            caller = inspect.currentframe().f_back.f_code.co_name
+
+            if caller in cls.method_name_list:
+                cls.logg(level=cls.DEFAULT_LEVEL, msg=f"[{caller}] {msg}")
+
+        except Exception as e:
+            pprint(e)
+            pass
+
+    @classmethod
+    def by_tag(cls, tag: str = None, msg: str = None) -> None:
+        """
+        should only log if we're in the method_list
+        reminder: https://stackoverflow.com/a/13514318/11014343
+        import inspect
+        import types
+        from typing import cast
+        this_fn_name = cat(types.FrameType, inspect.currentframe()).f_code.co_name
+        :return:
+        """
+        if tag not in cls.tag_list:
+            return
+
+        cls.logg(level=cls.DEFAULT_LEVEL, msg=f"[{tag}] {msg}")
 
 
 class BaseLFJsonRequest:
@@ -374,7 +495,7 @@ class BaseLFJsonRequest:
         if corrected_url.find(' ') >= 1:
             corrected_url = corrected_url.replace(' ', '%20')
         if debug:
-            self.logger.debug("%s: url [%s] now [%s]" % (str(__class__), url, corrected_url))
+            self.logger.by_method("%s: url [%s] now [%s]" % (str(__class__), url, corrected_url))
         return corrected_url
 
     def add_error(self, message: str = None):
@@ -445,19 +566,19 @@ class BaseLFJsonRequest:
             opener = request.build_opener(request.ProxyHandler(self.session_instance.proxy_map))
             request.install_opener(opener)
 
-        if debug:
-            self.logger.debug("formPost: url: " + url)
+        # if debug:
+            self.logger.by_method("form_post: url: " + url)
         if (post_data is not None) and (post_data is not self.No_Data):
             urlenc_data = urllib.parse.urlencode(post_data).encode("utf-8")
+            self.logger.by_method("formPost: data looks like:" + str(urlenc_data))
             if debug:
-                self.logger.debug("formPost: data looks like:" + str(urlenc_data))
                 print("formPost: url: " + url)
             myrequest = request.Request(url=url,
                                         data=urlenc_data,
                                         headers=self.default_headers)
         else:
             myrequest = request.Request(url=url, headers=self.default_headers)
-            self.logger.info("json_post: No data sent to [%s]" % url)
+            self.logger.by_method("json_post: No data sent to [%s]" % url)
 
         myrequest.headers['Content-type'] = 'application/x-www-form-urlencoded'
 
@@ -528,7 +649,7 @@ class BaseLFJsonRequest:
                 exit(1)
         responses: list[HTTPResponse] = []
         url = self.get_corrected_url(url)
-
+        self.logger.by_method("url: "+url)
         if (post_data is not None) and (post_data is not self.No_Data):
             myrequest = request.Request(url=url,
                                         method=method_,
@@ -539,7 +660,7 @@ class BaseLFJsonRequest:
                                         headers=self.default_headers,
                                         method=method_,
                                         data=post_data)
-            self.logger.info("json_post: empty post sent to [%s]" % url)
+            self.logger.by_method("empty post sent to [%s]" % url)
 
         if not connection_timeout_sec:
             if self.session_instance.get_timeout_sec():
@@ -556,10 +677,10 @@ class BaseLFJsonRequest:
         elif _is(session_id_):
             myrequest.headers[SESSION_HEADER] = str(session_id_)
         else:
-            self.logger.warning("Request sent without X-LFJson-ID header: "+url)
+            self.logger.warning("Request sent without X-LFJson-ID header: " + url)
         if debug:
-            self.logger.warning("json_post headers to "+url)
-            self.logger.warning(pformat(myrequest.headers))
+            self.logger.by_method("headers sent to: " + url)
+            self.logger.by_method(pformat(myrequest.headers))
 
         # https://stackoverflow.com/a/59635684/11014343
 
@@ -578,21 +699,21 @@ class BaseLFJsonRequest:
                 resp_data = response.read().decode('utf-8')
                 jzon_data = None
                 if debug and die_on_error:
-                    self.logger.debug(__name__ +
+                    self.logger.warning(__name__ +
                                       " ----- json_post: %d debug: --------------------------------------------" %
                                       attempt)
-                    self.logger.debug("URL: %s :%d " % (url, response.status))
-                    self.logger.debug(__name__+" ----- headers -------------------------------------------------")
+                    self.logger.warning("URL: %s :%d " % (url, response.status))
+                    self.logger.warning(__name__ + " ----- headers -------------------------------------------------")
                     if response.status != 200:
                         self.logger.error(pformat(response.getheaders()))
-                    self.logger.error(__name__+" ----- response -------------------------------------------------")
+                    self.logger.error(__name__ + " ----- response -------------------------------------------------")
                     self.logger.error(pformat(resp_data))
                     self.logger.error(" ----- -------------------------------------------------")
                 responses.append(response)
                 header_items = response.getheaders()
                 if debug:
-                    self.logger.warning("BaseJsonRequest::json_post: response headers:")
-                    self.logger.warning(pformat(header_items))
+                    self.logger.by_method("BaseJsonRequest::json_post: response headers:")
+                    self.logger.by_method(pformat(header_items))
                 if SESSION_HEADER in header_items:
                     if self.session_id != response.getheader(SESSION_HEADER):
                         self.logger.warning("established session header [%s] different from response session header[%s]"
@@ -609,11 +730,14 @@ class BaseLFJsonRequest:
                         raise ValueError("reponse_json_list needs to be type list")
                     jzon_data = json.loads(resp_data)
                     if debug:
-                        self.logger.debug(__name__+":----- json_post debug: ------------------------------------------")
+                        self.logger.debug(
+                            __name__ + ":----- json_post debug: ------------------------------------------")
                         self.logger.debug("URL: %s :%d " % (url, response.status))
-                        self.logger.debug(__name__+" ----- headers   -------------------------------------------------")
+                        self.logger.debug(
+                            __name__ + " ----- headers   -------------------------------------------------")
                         self.logger.debug(pformat(response.getheaders()))
-                        self.logger.debug(__name__+" ----- response  -------------------------------------------------")
+                        self.logger.debug(
+                            __name__ + " ----- response  -------------------------------------------------")
                         self.logger.debug(pformat(jzon_data))
                         self.logger.debug("-------------------------------------------------")
                     response_json_list.append(jzon_data)
