@@ -395,12 +395,15 @@ class cv_test(Realm):
                     break
 
             # Of if test stopped for some reason and could not generate report.
-            if not self.get_is_running(instance_name):
-                print("Detected test is not running.")
-                not_running += 1
-                if not_running > 5:
-                    break
-
+            try:
+                if not self.get_is_running(instance_name):
+                    print("Detected test is not running.")
+                    not_running += 1
+                    if not_running > 5:
+                        break
+            except Exception as e:
+                print(e)
+                
             time.sleep(1)
         self.report_name = self.get_report_location(instance_name)
         # Ensure test is closed and cleaned up
