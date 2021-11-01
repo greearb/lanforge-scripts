@@ -548,10 +548,20 @@ class LFCliBase:
             parser = argparse.ArgumentParser()
         optional = parser.add_argument_group('optional arguments')
         required = parser.add_argument_group('required arguments')
-        optional.add_argument('--mgr',            help='hostname for where LANforge GUI is running', default='localhost')
-        optional.add_argument('--mgr_port',       help='port LANforge GUI HTTP service is running on', default=8080)
-        optional.add_argument('--debug', '-d',    help='Enable debugging', default=False, action="store_true")
-        optional.add_argument('--proxy',          nargs='?', default=None, # action=ProxyAction,
+        optional.add_argument('--mgr',
+                              default='localhost',
+                              help='hostname for where LANforge GUI is running')
+        optional.add_argument('--mgr_port',
+                              default=8080,
+                              help='port LANforge GUI HTTP service is running on')
+        optional.add_argument('--debug',
+                              '-d',
+                              default=False,
+                              action="store_true",
+                              help='Enable debugging')
+        optional.add_argument('--proxy',
+                              nargs='?',
+                              default=None,  # action=ProxyAction,
                               help='Connection proxy like http://proxy.localnet:80 or https://user:pass@proxy.localnet:3128')
 
         return parser
@@ -576,35 +586,57 @@ class LFCliBase:
         required = parser.add_argument_group('required arguments')
 
         #Optional Args
-        optional.add_argument('--mgr',            help='hostname for where LANforge GUI is running', default='localhost')
-        optional.add_argument('--mgr_port',       help='port LANforge GUI HTTP service is running on', default=8080)
-        optional.add_argument('-u', '--upstream_port',
-                            help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
-                            default='1.eth1')
-        optional.add_argument('--num_stations',   help='Number of stations to create', default=0)
-        optional.add_argument('--test_id',        help='Test ID (intended to use for ws events)', default="webconsole")
-        optional.add_argument('--debug',          help='Enable debugging', default=False, action="store_true")
-        optional.add_argument('--proxy',          nargs='?', default=None,
+        optional.add_argument('--mgr',
+                              default='localhost',
+                              help='hostname for where LANforge GUI is running')
+        optional.add_argument('--mgr_port',
+                              default=8080,
+                              help='port LANforge GUI HTTP service is running on')
+        optional.add_argument('-u',
+                              '--upstream_port',
+                              default='1.eth1',
+                              help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1')
+        optional.add_argument('--num_stations',
+                              default=0,
+                              help='Number of stations to create')
+        optional.add_argument('--test_id',
+                              default="webconsole",
+                              help='Test ID (intended to use for ws events)')
+        optional.add_argument('--debug',
+                              default=False,
+                              action="store_true",
+                              help='Enable debugging')
+        optional.add_argument('--proxy',
+                              nargs='?',
+                              default=None,
                               help='Connection proxy like http://proxy.localnet:80 or https://user:pass@proxy.localnet:3128')
         if more_optional is not None:
-           for x in more_optional:
-               if 'default' in x.keys():
-                   optional.add_argument(x['name'], help=x['help'], default=x['default'])
+           for argument in more_optional:
+               if 'default' in argument.keys():
+                   optional.add_argument(argument['name'], help=argument['help'], default=argument['default'])
                else:
-                   optional.add_argument(x['name'], help=x['help'])
+                   optional.add_argument(argument['name'], help=argument['help'])
 
         #Required Args
-        required.add_argument('--radio',          help='radio EID, e.g: 1.wiphy2')
-        required.add_argument('--security',       help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', default="open")
-        required.add_argument('--ssid',           help='WiFi SSID for script objects to associate to')
-        required.add_argument('--passwd', '--password' ,'--key', help='WiFi passphrase/password/key', default="[BLANK]")
+        required.add_argument('--radio',
+                              help='radio EID, e.g: 1.wiphy2')
+        required.add_argument('--security',
+                              default="open",
+                              help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >')
+        required.add_argument('--ssid',
+                              help='WiFi SSID for script objects to associate to')
+        required.add_argument('--passwd',
+                              '--password',
+                              '--key',
+                              default="[BLANK]",
+                              help='WiFi passphrase/password/key')
 
         if more_required is not None:
-            for x in more_required:
-                if 'default' in x.keys():
-                    required.add_argument(x['name'], help=x['help'], default=x['default'])
+            for argument in more_required:
+                if 'default' in argument.keys():
+                    required.add_argument(argument['name'], help=argument['help'], default=argument['default'])
                 else:
-                    required.add_argument(x['name'], help=x['help'])
+                    required.add_argument(argument['name'], help=argument['help'])
 
         return parser
 
