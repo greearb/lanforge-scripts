@@ -236,6 +236,9 @@ class Logg:
     - BITWISE LOG LEVELS: --log_level=DEBUG|FILEIO|JSON|HTTP a maskable combination of enum_bitmask
     names that combine to a value that can trigger logging.
 
+    These reserved words may not be used as tags:
+        debug, debugging, debug_log, digest, file, gui, http, json, log, method, tag
+
     Please also consider how log messages can be formatted:
     https://stackoverflow.com/a/20112491/11014343:
     logging.basicConfig(format="[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s")
@@ -244,10 +247,24 @@ class Logg:
     DefaultLogger = LOGGER
     method_name_list: list[str] = []
     tag_list: list[str] = []
+    reserved_tags: list[str] = [
+        "debug",
+        "debugging",
+        "debug_log",
+        "digest",
+        "file",
+        "gui",
+        "http",
+        "json",
+        "log",
+        "method",
+        "tag"
+    ]
 
     def __init__(self,
                  log_level: int = DEFAULT_LEVEL,
                  name: str = None,
+                 filename: str = None,
                  debug: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
         Base class that can be used to send logging messages elsewhere. extend this
@@ -265,10 +282,14 @@ class Logg:
                 self.name = name.replace('@', self.start_time_str)
         else:
             self.name = "started-" + self.start_time_str
-        self.logger = Logger(name, level=log_level)
 
+        self.logger = Logger(name, level=log_level)
+        if filename:
+            logging.basicConfig(filename=filename, filemode="a")
         if debug:
-            self.logg(level=logging.WARNING, msg="Logger begun: " + self.name)
+            self.logg(level=logging.WARNING,
+                      msg="Logger {name} begun to {filename}".format(name=name,
+                                                                     filename=filename))
 
     @classmethod
     def logg(cls,
@@ -362,17 +383,24 @@ class Logg:
         if not methodname:
             return
         cls.method_name_list.append(methodname)
+        if methodname not in cls.tag_list:
+            cls.tag_list.append(methodname)
 
     @classmethod
     def register_tag(cls, tag: str = None) -> None:
         """
-        Use this method to register keywords you want to allow logging from
+        Use this method to register keywords you want to allow logging from.
+        There are a list of reserved tags which will not be accepted.
         :return:
         """
         if not tag:
             return
         if tag in cls.tag_list:
             return
+        if tag in cls.reserved_tags:
+            cls.logg(level=logging.ERROR,
+                     msg=f"tag [{tag}] is reserved, ignoring")
+            # note: add directly to tag_list to append a reserved tag
         cls.tag_list.append(tag)
 
     @classmethod
@@ -407,10 +435,17 @@ class Logg:
         this_fn_name = cat(types.FrameType, inspect.currentframe()).f_code.co_name
         :return:
         """
-        if tag not in cls.tag_list:
+        if (not cls.tag_list) or (tag not in cls.tag_list):
             return
 
         cls.logg(level=cls.DEFAULT_LEVEL, msg=f"[{tag}] {msg}")
+
+    def enable(self, reserved_tag: str = None) -> None:
+        if (not reserved_tag) or (reserved_tag not in self.reserved_tags):
+            return
+        if reserved_tag in self.tag_list:
+            return
+        self.tag_list.append(reserved_tag)
 
 
 class BaseLFJsonRequest:
@@ -700,8 +735,8 @@ class BaseLFJsonRequest:
                 jzon_data = None
                 if debug and die_on_error:
                     self.logger.warning(__name__ +
-                                      " ----- json_post: %d debug: --------------------------------------------" %
-                                      attempt)
+                                        " ----- json_post: %d debug: --------------------------------------------" %
+                                        attempt)
                     self.logger.warning("URL: %s :%d " % (url, response.status))
                     self.logger.warning(__name__ + " ----- headers -------------------------------------------------")
                     if response.status != 200:
