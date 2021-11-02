@@ -5,6 +5,8 @@
 
     Example script:
     './create_l3_stations.py --radio wiphy0 --ssid lanforge --password password --security wpa2'
+    './create_l3_stations.py --station_list sta00,sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2'
+    './create_l3_stations.py --station_list sta00 sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2'
 """
 
 import sys
@@ -136,6 +138,34 @@ def main():
             --ap "00:0e:8e:78:e1:76"
             --number_template 0000
             --debug
+            
+            python3 ./create_l3_stations.py
+            --upstream_port eth1
+            --radio wiphy0
+            --station_list sta00,sta01
+            --security {open|wep|wpa|wpa2|wpa3} \\
+            --mode   1
+                {"auto"   : "0",
+                "a"      : "1",
+                "b"      : "2",
+                "g"      : "3",
+                "abg"    : "4",
+                "abgn"   : "5",
+                "bgn"    : "6",
+                "bg"     : "7",
+                "abgnAC" : "8",
+                "anAC"   : "9",
+                "an"     : "10",
+                "bgnAC"  : "11",
+                "abgnAX" : "12",
+                "bgnAX"  : "13",
+            --ssid netgear
+            --password admin123
+            --a_min 1000
+            --b_min 1000
+            --ap "00:0e:8e:78:e1:76"
+            --number_template 0000
+            --debug
             ''')
 
     required_args = None
@@ -158,7 +188,7 @@ def main():
         optional_args.add_argument('--number_template',
                                    help='Start the station numbering with a particular number. Default is 0000',
                                    default=0000)
-        optional_args.add_argument('--station_list', help='Optional: User defined station names', action='append',
+        optional_args.add_argument('--station_list', help='Optional: User defined station names, can be a comma or space separated list', nargs='*',
                                    default=None)
     args = parser.parse_args()
 
@@ -171,8 +201,12 @@ def main():
                                               end_id_=num_sta + int(args.number_template) - 1, padding_number_=10000,
                                               radio=args.radio)
     else:
-        station_list = args.station_list
-
+        if ',' in args.station_list[0]:
+            station_list = args.station_list[0].split(',')
+        elif ' ' in args.station_list[0]:
+            station_list = args.station_list[0].split()
+        else:
+            station_list = args.station_list
     ip_var_test = CreateL3(host=args.mgr,
                            port=args.mgr_port,
                            number_template=str(args.number_template),
