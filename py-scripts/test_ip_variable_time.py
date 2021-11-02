@@ -374,6 +374,12 @@ python3 ./test_ip_variable_time.py
     --create_sta False          (False, means it will not create stations and use the sta_names specified below)
     --sta_names sta000,sta001,sta002 (used if --create_sta False, comma separated names of stations)
 
+    Example Command:
+    python3  ./test_ip_variable_time.py  --mgr 192.168.100.116 --radio wiphy1
+        --ssid asus11ax-5 --passwd hello123 --security wpa2 --test_duration 60s
+        --output_format excel  --traffic_type lf_tcp --a_min 1000000 --b_min 1000000
+        --upstream_port eth2  --mode "5" --layer3_cols 'name','tx rate','rx rate'
+        --port_mgr_cols 'alias','channel','activity','mode'
 
 ===============================================================================
  ** FURTHER INFORMATION **

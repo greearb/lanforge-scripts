@@ -163,6 +163,11 @@ class L3CXProfile(LFCliBase):
         layer3_fields = ",".join(layer3_cols)
         default_cols = ['Timestamp', 'Timestamp milliseconds epoch', 'Timestamp seconds epoch', 'Duration elapsed']
         default_cols.extend(layer3_cols)
+        # append alias to port_mgr_cols if not present needed later
+        if port_mgr_cols is not None:
+            if 'alias' not in port_mgr_cols:
+                port_mgr_cols.append('alias')
+
         if port_mgr_cols is not None:
             default_cols.extend(port_mgr_cols)
         header_row = default_cols
@@ -235,8 +240,6 @@ class L3CXProfile(LFCliBase):
             layer3.columns = ['l3-' + x for x in layer3.columns]
 
             if port_mgr_cols is not None:  # create dataframe from port mgr results
-                if 'alias' not in port_mgr_cols:
-                    port_mgr_cols.append('alias')
                 result = dict()
                 if type(port_mgr_response) is dict:
                     for dictionary in port_mgr_response['interfaces']:
