@@ -277,11 +277,11 @@ def main():
                         type=str,
                         nargs="+",
                         help='Add an AP to the list of APs to test connections to')
-    parser.add_argument('--debugging',
-                        action='extend',
-                        type=str,
-                        nargs="+",
-                        help='Debugging for specific areas: "tag:keyword" or "method:methodname" ')
+    #parser.add_argument('--debugging',
+    #                    action='extend',
+    #                    type=str,
+    #                    nargs="+",
+    #                    help='Debugging for specific areas: "tag:keyword" or "method:methodname" ')
     parser.add_argument('--output_format',
                         type=str,
                         help='choose either csv or xlsx')
