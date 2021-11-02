@@ -188,7 +188,7 @@ def main():
         optional_args.add_argument('--number_template',
                                    help='Start the station numbering with a particular number. Default is 0000',
                                    default=0000)
-        optional_args.add_argument('--station_list', help='Optional: User defined station names, can be a comma or space separated list', nargs='*',
+        optional_args.add_argument('--station_list', help='Optional: User defined station names, can be a comma or space separated list', nargs='+',
                                    default=None)
     args = parser.parse_args()
 
