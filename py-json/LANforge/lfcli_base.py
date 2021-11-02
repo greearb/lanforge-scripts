@@ -11,6 +11,7 @@ import string
 import datetime
 import argparse
 import re
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -21,13 +22,23 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
 debug_printer = pprint.PrettyPrinter(indent=2)
 LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
-
+if os.environ.get("LF_USE_AUTOGEN") == 1:
+    lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
+    LFSession = lanforge_api.LFSession
+    Logg = lanforge_api.Logg
 
 class LFCliBase:
 
     SHOULD_RUN  = 0     # indicates normal operation
     SHOULD_QUIT = 1     # indicates to quit loops, close files, send SIGQUIT to threads and return
     SHOULD_HALT = 2     # indicates to quit loops, send SIGABRT to threads and exit
+
+    # - LOGGING -
+    _logger = None
+    if os.environ.get("LF_USE_AUTOGEN") == 1:
+        _logger = Logg.logger
+    _method_name_list = []
+    _tag_list = []
 
     # do not use `super(LFCLiBase,self).__init__(self, host, port, _debug)
     # that is py2 era syntax and will force self into the host variable, making you
@@ -164,6 +175,41 @@ class LFCliBase:
 
     def clear_test_results(self):
         self.test_results.clear()
+
+    # - LOGGING - we want to remove old logging code
+    def log_register_method_name(self, method_name=None):
+        if not method_name:
+            return
+        if os.environ.get("LF_USE_AUTOGEN") == 1:
+            Logg.register_method_name(method_name=method_name)
+        else:
+            if method_name not in self._method_name_list:
+                self._method_name_list.append(method_name)
+        if method_name not in self._tag_list:
+            self._tag_list.append(method_name)
+
+    def log_register_tag(self, tag=None):
+        if not tag:
+            return
+        if os.environ.get("LF_USE_AUTOGEN") == 1:
+            Logg.register_tag(tag=tag)
+        else:
+            if tag not in self._tag_list:
+                self._tag_list.append(tag)
+            self._logger.register_method_name(tag=tag)
+
+    def log_enable(self, reserved_tag=None):
+        if os.environ.get("LF_USE_AUTOGEN") == 1:
+            Logg.enable(reserved_tag=reserved_tag)
+        else:
+            self.log_register_tag(reserved_tag)
+
+    def log_set_filename(self, filename=None):
+        if not filename:
+            return
+        logging.basicConfig(filename=filename)
+
+    # - END LOGGING -
 
     def json_post(self, _req_url, _data, debug_=False, suppress_related_commands_=None, response_json_list_=None):
         """
@@ -602,14 +648,30 @@ class LFCliBase:
         optional.add_argument('--test_id',
                               default="webconsole",
                               help='Test ID (intended to use for ws events)')
-        optional.add_argument('--debug',
+        optional.add_argument('-d',
+                              '--debug',
                               default=False,
                               action="store_true",
                               help='Enable debugging')
         optional.add_argument('--proxy',
                               nargs='?',
                               default=None,
-                              help='Connection proxy like http://proxy.localnet:80 or https://user:pass@proxy.localnet:3128')
+                              help="Connection proxy like http://proxy.localnet:80 \n"
+                                   + " or https://user:pass@proxy.localnet:3128")
+        optional.add_argument('--debugging',
+                              nargs="+",
+                              action="append",
+                              help="Indicate what areas you would like express debug output:\n"
+                                   + " - digest - print terse indications of lanforge_api calls\n"
+                                   + " - json - print url and json data\n"
+                                   + " - http - print HTTP headers\n"
+                                   + " - gui - ask the GUI for extra debugging in responses\n"
+                                   + " - method:method_name - enable by_method() debugging (if present)\n"
+                                   + " - tag:tagname - enable matching by_tag() debug output\n"
+                              )
+        optional.add_argument('--debug_log',
+                              default=None,
+                              help="Specify a file to send debug output to")
         if more_optional is not None:
            for argument in more_optional:
                if 'default' in argument.keys():
