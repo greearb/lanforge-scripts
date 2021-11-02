@@ -182,7 +182,7 @@ def main():
         if group.title == "optional arguments":
             optional_args = group
             break
-    if optional_args is not None:
+    if optional_args:
         optional_args.add_argument('--mode', help='Used to force mode of stations')
         optional_args.add_argument('--ap', help='Used to force a connection to a particular AP')
         optional_args.add_argument('--number_template',
@@ -190,13 +190,14 @@ def main():
                                    default=0000)
         optional_args.add_argument('--station_list', help='Optional: User defined station names, can be a comma or space separated list', nargs='+',
                                    default=None)
+        optional_args.add_argument('--no_cleanup', help="Optional: Don't cleanup existing stations", action='store_true')
     args = parser.parse_args()
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_sta = int(args.num_stations)
 
-    if args.station_list is None:
+    if not args.station_list:
         station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=int(args.number_template),
                                               end_id_=num_sta + int(args.number_template) - 1, padding_number_=10000,
                                               radio=args.radio)
@@ -224,7 +225,8 @@ def main():
                            ap=args.ap,
                            _debug_on=args.debug)
 
-    ip_var_test.pre_cleanup()
+    if not args.no_cleanup:
+        ip_var_test.pre_cleanup()
     ip_var_test.build()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
