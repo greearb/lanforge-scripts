@@ -20,7 +20,7 @@ Help()
   echo "If using the help flag, put the H flag at the end of the command after other flags."
 }
 
-while getopts ":h:s:p:w:m:A:r:F:B:U:D:L:H:" option; do
+while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:L:H:" option; do
   case "${option}" in
     h) # display Help
       Help
@@ -28,6 +28,9 @@ while getopts ":h:s:p:w:m:A:r:F:B:U:D:L:H:" option; do
       ;;
     s)
       SSID_USED=${OPTARG}
+      ;;
+    S)
+      SHORT="yes"
       ;;
     p)
       PASSWD_USED=${OPTARG}
@@ -136,7 +139,7 @@ fi
 TEST_DIR="${REPORT_DATA}/${NOW}"
 
 function run_l3_longevity() {
-  ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --mgr "$MGR"
+  ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --lfmgr "$MGR"
 }
 function testgroup_list_groups() {
   ./scenario.py --load test_l3_scenario_throughput
@@ -152,10 +155,10 @@ function testgroup_delete_group() {
   ./testgroup.py --group_name group1--del_group --debug --mgr "$MGR"
 }
 
-if [[ $MGR == "short" ]]; then
+if [[ ${#SHORT} -gt 0 ]]; then
   testCommands=(
       run_l3_longevity
-      "./test_ipv4_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --layer3_cols $COL_NAMES --debug --mgr $MGR"
+      "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --layer3_cols $COL_NAMES --debug --mgr $MGR  --traffic_type lf_udp"
   )
 else
   testCommands=(
@@ -462,13 +465,13 @@ function test() {
     echo "Errors detected"
       results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                 <td class='failure'>Failure</td>
-                <td><a href=\"/${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                <td><a href=\"/${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
+                <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                <td><a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
   else
     echo "No errors detected"
       results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                 <td class='success'>Success</td>
-                <td><a href=\"/${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
                 <td></td></tr>")
   fi
 }
@@ -548,9 +551,9 @@ function html_generator() {
         rm -f "${HOMEPATH}/html-reports/latest.html"
     fi
     ln -s "${fname}" "${HOMEPATH}/html-reports/latest.html"
-    HOSTNAME=$(ip -4 addr show enp3s0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
-    content="View the latest regression report at ${HOSTNAME}/html-reports/latest.html"
-    echo "${content}"
+    #HOSTNAME=$(ip -4 addr show enp3s0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+    #content="View the latest regression report at /html-reports/latest.html"
+    #echo "${content}"
     #mail -s "Regression Results" scripters@candelatech.com <<<$content
 }
 
@@ -558,7 +561,7 @@ results=()
 NOW=$(date +"%Y-%m-%d-%H-%M")
 NOW="${NOW/:/-}"
 TEST_DIR="${REPORT_DATA}/${NOW}"
-URL2="${HOMEPATH}/report-data/${NOW}"
+URL2="/report-data/${NOW}"
 mkdir "${TEST_DIR}"
 echo "Recording data to $TEST_DIR"
 
