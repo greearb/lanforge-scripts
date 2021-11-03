@@ -12,7 +12,7 @@ import inspect
 import traceback
 from typing import Optional
 from pprint import pprint, pformat
-from strutil import nott, iss
+from .strutil import nott, iss
 
 class Logg:
     """
@@ -92,7 +92,8 @@ class Logg:
     @classmethod
     def logg(cls,
              level: int = logging.WARNING,
-             msg: str = None):
+             tag: str = None,
+             msg: str = None) -> None:
         """
         Use this *class method* to send logs to the DefaultLogger instance created when this class was created
         :param level:
