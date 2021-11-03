@@ -131,7 +131,8 @@ def main():
         ''')
 
     parser.add_argument('--mode', help='Used to force mode of stations')
-    parser.add_argument('--sta_name', help='Name of station to be used', default=["sta0000"])
+    parser.add_argument('--sta_name', help='Optional: User defined station names, can be a comma or space separated list', nargs='+',
+                        default=["sta0000"])
 
     args = parser.parse_args()
 
