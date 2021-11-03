@@ -274,6 +274,9 @@ class L3VariableTime(Realm):
                 self.station_profile.security = ssid_security_
                 self.station_profile.number_template = self.number_template
                 self.station_profile.mode = 0
+                # place the enable and disable flags
+                # self.station_profile.desired_add_sta_flags = self.enable_flags
+                # self.station_profile.desired_add_sta_flags_mask = self.enable_flags + self.disable_flags
                 self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,
                                                      test_duration=self.duration_time_to_seconds(self.test_duration),
                                                      reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),
