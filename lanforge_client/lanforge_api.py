@@ -82,13 +82,11 @@ from enum import Enum
 from enum import IntFlag
 import http.client
 from http.client import HTTPResponse
-import inspect
 import json
 import logging
 from logging import Logger
-#  from lanforge_client.logg import Logg  
-#  from lanforge_client.strutil import * 
-from logg import Logg
+from .logg import Logg
+from .strutil import nott, iss
 from pprint import pprint, pformat
 import time
 import traceback
@@ -107,17 +105,6 @@ def _now_ms() -> int:
 def _now_sec() -> int:
     return round(time.time() * 1000 * 1000)
 
-
-def _is(text: str) -> bool:
-    if text is None:
-        return False
-    if (len(text) == 0) or (text.strip() == ""):
-        return False
-    return True
-
-
-def _not(text: str) -> bool:
-    return not _is(text=text)
 
 
 def default_proxies() -> dict:
@@ -277,7 +264,8 @@ class BaseLFJsonRequest:
         :param debug: turn on debugging
         :return: full url prepended with
         """
-        if _not(url):
+
+        if nott(url):
             raise Exception("%s: Bad url[%s]" % (__name__, url))
 
         corrected_url: str = url
@@ -288,7 +276,7 @@ class BaseLFJsonRequest:
             else:
                 corrected_url = self.session_instance.get_lfclient_url() + '/' + url
 
-        if _not(corrected_url):
+        if nott(corrected_url):
             raise Exception("%s: Bad url[%s]" % (__name__, url))
 
         if corrected_url.find('//'):
@@ -479,9 +467,9 @@ class BaseLFJsonRequest:
 
         myrequest.headers['Content-type'] = 'application/json'
         sess_id = self.session_instance.get_session_id()
-        if _is(sess_id):
+        if iss(sess_id):
             myrequest.headers[SESSION_HEADER] = str(sess_id)
-        elif _is(session_id_):
+        elif iss(session_id_):
             myrequest.headers[SESSION_HEADER] = str(session_id_)
         else:
             self.logger.warning("Request sent without X-LFJson-ID header: " + url)
@@ -769,7 +757,7 @@ class BaseLFJsonRequest:
         if not max_timeout_sec:
             max_timeout_sec = self.session_instance.max_timeout_sec
 
-        if _not(url):
+        if nott(url):
             raise ValueError("json_get called withou url")
 
         url = self.get_corrected_url(url=url)
