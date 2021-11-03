@@ -17,15 +17,19 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
 debug_printer = pprint.PrettyPrinter(indent=2)
 LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+Logg = importlib.import_module("lanforge_client.logg")
+
 if os.environ.get("LF_USE_AUTOGEN") == 1:
     lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
     LFSession = lanforge_api.LFSession
-    Logg = lanforge_api.Logg
+
+
 
 class LFCliBase:
 
@@ -34,11 +38,8 @@ class LFCliBase:
     SHOULD_HALT = 2     # indicates to quit loops, send SIGABRT to threads and exit
 
     # - LOGGING -
-    _logger = None
-    if os.environ.get("LF_USE_AUTOGEN") == 1:
-        _logger = Logg.logger
-    _method_name_list = []
-    _tag_list = []
+    _logger = logging.getLogger(__name__)
+
 
     # do not use `super(LFCLiBase,self).__init__(self, host, port, _debug)
     # that is py2 era syntax and will force self into the host variable, making you
@@ -523,6 +524,14 @@ class LFCliBase:
               mesg=None,
               filename=None,
               scriptname=None):
+        """
+        This method is used by vr_profile2, lf_create_bcast, and shadowed by base_profile.py
+        :param level:
+        :param mesg:
+        :param filename:
+        :param scriptname:
+        :return:
+        """
         if (mesg is None) or (mesg == "") or (level is None):
             return
         userhome=os.path.expanduser('~')
