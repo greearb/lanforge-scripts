@@ -54,8 +54,8 @@ class lf_clean(Realm):
             if cx_json is not None:
                 print("Removing old cross connects")
                 for name in list(cx_json):
-                    if name != 'handler' and name != 'uri':
-                        # print(name)
+                    if name != 'handler' and name != 'uri' and name != 'empty':
+                        print(name)
                         req_url = "cli-json/rm_cx"
                         data = {
                             "test_mgr": "default_tm",
@@ -83,12 +83,12 @@ class lf_clean(Realm):
             if endp_json is not None:
                 print("Removing old endpoints")
                 for name in list(endp_json['endpoint']):
-                    # print(list(name)[0])
+                    print(list(name)[0])
                     req_url = "cli-json/rm_endp"
                     data = {
                         "endp_name": list(name)[0]
                     }
-                    # print(data)
+                    print(data)
                     super().json_post(req_url, data)
                     time.sleep(.5)
                 time.sleep(1)
@@ -114,11 +114,12 @@ class lf_clean(Realm):
 
             # get and remove current stations
             if sta_json is not None:
-                print("Removing old stations")
+                # print(sta_json)
+                print("Removing old stations ")
                 for name in list(sta_json):
                     for alias in list(name):
                         if 'sta' in alias:
-                            # print(alias)
+                            print(alias)
                             info = self.name_to_eid(alias)
                             req_url = "cli-json/rm_vlan"
                             data = {
@@ -151,6 +152,8 @@ class lf_clean(Realm):
                             # print(data)
                             super().json_post(req_url, data)
                             time.sleep(.5)
+                        if ('Unknown' not in alias) and ('wlan' not in alias) and ('sta' not in alias):
+                            still_looking_sta = False
                 time.sleep(1)            
 
             else:
