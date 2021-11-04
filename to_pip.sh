@@ -11,11 +11,11 @@ Help()
   echo ""
   echo "EXPORT TO TAR FILE"
   echo "./to_pip.sh -a -t TARGET_DIR"
-  echo "The 't' flag tells to_pip where to store the tar file, -a tells it to make a tar file."
+  echo "The 't' flag tells to_pip where to store the tar file, -a tells it to not make a python wheel."
   echo "When the archive is made, you can install it on any computer with `pip install lanforge_scripts.tar.gz`"
 }
 
-ARCHIVE=0
+ARCHIVE=1
 TARGET_DIR='..'
 
 while getopts ":h:a:t:" option; do
@@ -25,7 +25,7 @@ while getopts ":h:a:t:" option; do
       exit 1
       ;;
     a) #Archive
-      ARCHIVE=1
+      ARCHIVE=0
       ;;
     t) #target dir
       TARGET_DIR=${OPTARG}
@@ -34,6 +34,11 @@ while getopts ":h:a:t:" option; do
       ;;
   esac
 done
+
+BASE=$(basename "$PWD")
+cd ..
+cp -r ${BASE} lanforge_scripts
+cd lanforge_scripts
 
 mv py-scripts/ py_scripts
 mv py-json/ py_json
