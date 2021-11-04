@@ -12,7 +12,7 @@ Help()
   echo "EXPORT TO TAR FILE"
   echo "./to_pip.sh -a -t TARGET_DIR"
   echo "The 't' flag tells to_pip where to store the tar file, -a tells it to not make a python wheel."
-  echo "When the archive is made, you can install it on any computer with `pip install lanforge_scripts.tar.gz`"
+  echo "When the archive is made, you can install it on any computer with $(pip install lanforge_scripts.tar.gz)"
 }
 
 ARCHIVE=1
@@ -37,8 +37,14 @@ done
 
 BASE=$(basename "$PWD")
 cd ..
-cp -r ${BASE} lanforge_scripts
-cd lanforge_scripts
+if [ -d "lanforge_scripts" ]
+then
+  echo "lanforge_scripts exists, please remove or rename that folder"
+  exit 1
+else
+  cp -r "${BASE}" lanforge_scripts || exit 1
+  cd lanforge_scripts || exit 1
+fi
 
 mv py-scripts/ py_scripts
 mv py-json/ py_json
@@ -70,14 +76,14 @@ __all__ = ['LFRequest', 'LFUtils', 'LANforge','LFCliBase']
 
 __title__ = 'lanforge_scripts'
 __version__ = '0.0.1'
-__author__ = 'Candela Technologies <www.candelatechnologies.com>'
+__author__ = 'Candela Technologies <www.candelatech.com>'
 __license__ = ''" > __init__.py
 
 #fix files in root
 sed -i -- 's/from LANforge/from py_json.LANforge/g' *.py
 sed -i -- 's/from py_json/from .py_json/g' *.py
 
-cd py_scripts
+cd py_scripts || exit 1
 
 echo "#from .connection_test import ConnectionTest
 from .create_bond import CreateBond
@@ -258,7 +264,7 @@ sed -i -- 's/from wlan_theoretical_sta/from ..py_json.wlan_theoretical_sta/g' *.
 sed -i -- 's/from ws_generic_monitor/from ..py_json.ws_generic_monitor/g' *.py
 sed -i -- 's/from port_utils/from ..py_json.port_utils/g' *.py
 
-cd ../py_json
+cd ../py_json || exit 1
 #Fix files in py_json
 sed -i -- 's/import realm/from realm import PortUtils/g' test_utility.py
 
@@ -364,7 +370,7 @@ sed -i -- 's/from lf_graph/from ..py_scripts.lf_graph/g' *.py
 sed -i -- 's/from create_station/from ..py_scripts.create_station/g' *.py
 sed -i -- 's/from cv_test_reports/from .cv_test_reports/g' *.py
 
-cd LANforge
+cd LANforge || exit 1
 echo "
 from .add_dut import dut_params, dut_flags
 from .add_file_endp import fe_fstype, fe_payload_list, fe_fio_flags, fe_base_endpoint_types
@@ -399,7 +405,7 @@ sed -i -- 's/LFUtils.debug_printer/debug_printer/g' *.py
 sed -i -- 's/lf_json_autogen = importlib.import_module("py-json.LANforge.lf_json_autogen")/from .lf_json_autogen import LFJsonPost/g' *.py
 sed -i -- 's/LFJsonPost = lf_json_autogen.LFJsonPost/ /g' *.py
 
-cd ../../py_dashboard
+cd ../../py_dashboard || exit 1
 echo "
 from .GrafanaRequest import GrafanaRequest
 from .InfluxRequest import RecordInflux
@@ -430,16 +436,17 @@ if [[ $ARCHIVE -eq 1 ]]; then
   mv py_dashboard lanforge_scripts
   mv py_scripts lanforge_scripts
   mv label-printer lanforge_scripts/label_printer
+  mv "auto-install-gui.py" "auto_install_gui.py"
   for i in "${py_modules[@]}"; do
-    mv $i lanforge_scripts
+    mv "$i.py" lanforge_scripts || exit 1
   done
-  rm *.pl
-  rm *.bash
+  rm ./*.pl
+  rm ./*.bash
   rm -r gui
   rm -r json
   rm -r LANforge
   rm -r __pycache__
-  mv *.py lanforge_scripts
+  mv ./*.py lanforge_scripts
   mv lanforge_scripts/setup.py .
   rm speedtest-cli
   rm WlanPro.desktop
@@ -451,3 +458,4 @@ if [[ $ARCHIVE -eq 1 ]]; then
 else
   echo "Not saving archive"
 fi
+exit 0
