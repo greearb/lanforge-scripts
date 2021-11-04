@@ -441,6 +441,7 @@ if [[ $ARCHIVE -eq 1 ]]; then
   mv wifi_diag lanforge_scripts
   #tar -zcvf ${TARGET_DIR}/lanforge_scripts.tar.gz *
   #zip ${TARGET_DIR}/lanforge_scripts.zip *
+  python3 -m pip install --upgrade build
   python3 -m build --wheel
 else
   echo "Not saving archive"
