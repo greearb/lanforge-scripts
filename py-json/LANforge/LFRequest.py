@@ -3,9 +3,10 @@
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Class holds default settings for json requests                -
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+import logging
 import sys
 import os
-import pprint
+from pprint import pprint, pformat, PrettyPrinter
 import urllib
 from urllib import request
 import json
@@ -17,7 +18,7 @@ if sys.version_info[0] != 3:
  
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-debug_printer = pprint.PrettyPrinter(indent=2)
+debug_printer = PrettyPrinter(indent=2)
 
 class LFRequest:
     Default_Base_URL = "http://localhost:8080"
@@ -26,6 +27,7 @@ class LFRequest:
     post_data = No_Data
     default_headers = { 'Accept': 'application/json'}
     proxies = None
+    logger = logging.getLogger(__name__)
 
     def __init__(self, url=None,
                  uri=None,
@@ -61,7 +63,7 @@ class LFRequest:
         #         pprint.pprint(self.proxies)
 
         if not url.startswith("http://") and not url.startswith("https://"):
-            print("No http:// or https:// found, prepending http:// to "+url)
+            self.logger.warning("No http:// or https:// found, prepending http:// to "+url)
             url = "http://" + url
         if uri is not None:
             if not url.endswith('/') and not uri.startswith('/'):
@@ -83,8 +85,7 @@ class LFRequest:
             self.requested_url = self.requested_url.replace('#', '%23')
         if (self.requested_url.find(' ') >= 1):
             self.requested_url = self.requested_url.replace(' ', '+')
-        if self.debug:
-            print("new LFRequest[%s]" % self.requested_url )
+        self.logger.debug("new LFRequest[%s]" % self.requested_url )
 
     # request first url on stack
     def formPost(self, show_error=True, debug=False, die_on_error_=False):
@@ -104,19 +105,17 @@ class LFRequest:
             request.install_opener(opener)
 
 
-        if (debug):
-            print("formPost: url: "+self.requested_url)
+        self.logger.debug("formPost: url: "+self.requested_url)
         if ((self.post_data != None) and (self.post_data is not self.No_Data)):
             urlenc_data = urllib.parse.urlencode(self.post_data).encode("utf-8")
-            if (debug):
-                print("formPost: data looks like:" + str(urlenc_data))
-                print("formPost: url: "+self.requested_url)
+            self.logger.debug("formPost: data looks like:" + str(urlenc_data))
+            self.logger.debug("formPost: url: "+self.requested_url)
             myrequest = request.Request(url=self.requested_url,
                                                 data=urlenc_data,
                                                 headers=self.default_headers)
         else:
             myrequest = request.Request(url=self.requested_url, headers=self.default_headers)
-            print("No data for this formPost?")
+            self.logger.error("No data for this formPost?")
 
         myrequest.headers['Content-type'] = 'application/x-www-form-urlencoded'
 
@@ -166,7 +165,7 @@ class LFRequest:
                                          headers=self.default_headers)
         else:
             myrequest = request.Request(url=self.requested_url, headers=self.default_headers)
-            print("No data for this jsonPost?")
+            self.logger.error("No data for this jsonPost?")
 
         myrequest.headers['Content-type'] = 'application/json'
 
@@ -176,22 +175,22 @@ class LFRequest:
             resp = urllib.request.urlopen(myrequest)
             resp_data = resp.read().decode('utf-8')
             if (debug and die_on_error_):
-                print("----- LFRequest::json_post:128 debug: --------------------------------------------")
-                print("URL: %s :%d "% (self.requested_url, resp.status))
+                self.logger.debug("----- LFRequest::json_post:128 debug: --------------------------------------------")
+                self.logger.debug("URL: %s :%d "% (self.requested_url, resp.status))
                 if resp.status != 200:
-                    debug_printer.pprint(resp.getheaders())
-                print("----- resp_data:128 -------------------------------------------------")
-                print(resp_data)
-                print("-------------------------------------------------")
+                    self.logger.debug(pformat(resp.getheaders()))
+                self.logger.debug("----- resp_data:128 -------------------------------------------------")
+                self.logger.debug(resp_data)
+                self.logger.debug("-------------------------------------------------")
             responses.append(resp)
             if response_json_list_ is not None:
                 if type(response_json_list_) is not list:
                     raise ValueError("reponse_json_list_ needs to be type list")
                 j = json.loads(resp_data)
                 if debug:
-                    print("----- LFRequest::json_post:140 debug: --------------------------------------------")
-                    debug_printer.pprint(j)
-                    print("-------------------------------------------------")
+                    self.logger.debug("----- LFRequest::json_post:140 debug: --------------------------------------------")
+                    self.logger.debug(pformat(j))
+                    self.logger.debug("-------------------------------------------------")
                 response_json_list_.append(j)
             return responses[0]
 
@@ -231,7 +230,7 @@ class LFRequest:
         if self.die_on_error == True:
             die_on_error_ = True
         if debug:
-            print("LFUtils.get: url: "+self.requested_url)
+            self.logger.debug("LFUtils.get: url: "+self.requested_url)
 
         # https://stackoverflow.com/a/59635684/11014343
         if (self.proxies is not None) and (len(self.proxies) > 0):
@@ -279,8 +278,7 @@ class LFRequest:
                 self.print_errors()
             return None
         if responses[0] == None:
-            if debug_:
-                print("No response from "+self.requested_url)
+            self.logger.debug("No response from "+self.requested_url)
             return None
         json_data = json.loads(responses[0].read().decode('utf-8'))
         return json_data
@@ -301,10 +299,10 @@ class LFRequest:
 
     def print_errors(self):
         if not self.has_errors:
-            print("---------- no errors ----------")
+            self.logger.debug("---------- no errors ----------")
             return
         for err in self.error_list:
-            print("error: %s" % err)
+            self.logger.error("error: %s" % err)
 
 def plain_get(url_=None, debug_=False, die_on_error_=False, proxies_=None):
     """
@@ -345,16 +343,16 @@ def plain_get(url_=None, debug_=False, die_on_error_=False, proxies_=None):
 
 
 def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, error_list_=None, debug_=False):
-    if debug_:
-        print("LFRequest::print_diagnostics: error_.__class__: %s"%error_.__class__)
-        debug_printer.pprint(error_)
+    logger = logging.getLogger(__name__)
+    #logger.error("LFRequest::print_diagnostics: error_.__class__: %s"%error_.__class__)
+    #logger.error(pformat(error_))
 
     if url_ is None:
-        print("WARNING LFRequest::print_diagnostics: url_ is None")
+        logger.warning("WARNING LFRequest::print_diagnostics: url_ is None")
     if request_ is None:
-        print("WARNING LFRequest::print_diagnostics: request_ is None")
+        logger.warning("WARNING LFRequest::print_diagnostics: request_ is None")
     if error_ is None:
-        print("WARNING LFRequest::print_diagnostics: error_ is None")
+        logger.warning("WARNING LFRequest::print_diagnostics: error_ is None")
 
     method = 'NA'
     if (hasattr(request_, 'method')):
@@ -380,48 +378,46 @@ def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, er
                 if headername.startswith("X-Error-"):
                     xerrors.append("%s: %s" % (headername, err_headers.get(headername)))
         if len(xerrors) > 0:
-            print(" = = LANforge Error Messages = =")
-            print(" = = URL: %s" % err_full_url)
+            logger.error(" = = LANforge Error Messages = =")
+            logger.error(" = = URL: %s" % err_full_url)
             for xerr in xerrors:
-                print(xerr)
+                logger.error(xerr)
                 if (error_list_ is not None) and isinstance(error_list_, list):
                     error_list_.append(xerr)
-            print(" = = = = = = = = = = = = = = = =")
+            logger.error(" = = = = = = = = = = = = = = = =")
 
     if (error_.__class__ is urllib.error.HTTPError):
-        if debug_:
-            print("----- LFRequest: HTTPError: --------------------------------------------")
-            print("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
+        logger.debug("----- LFRequest: HTTPError: --------------------------------------------")
+        logger.debug("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
 
         if err_code == 404:
             if (error_list_ is not None) and isinstance(error_list_, list):
                 error_list_.append("[%s HTTP %s] <%s> : %s" % (method, err_code, err_full_url, err_reason))
         else:
-            if debug_:
-                print("  Content-type:[%s] Accept[%s]" % (request_.get_header('Content-type'), request_.get_header('Accept')))
+            logger.debug("  Content-type:[%s] Accept[%s]" % (request_.get_header('Content-type'), request_.get_header('Accept')))
 
             if hasattr(request_, "data") and (request_.data is not None):
-                print("  Data:")
-                debug_printer.pprint(request_.data)
+                logger.debug("  Data:")
+                logger.debug(debug_printer.pformat(request_.data))
             elif debug_:
-                print("    <no request data>")
+                logger.debug("    <no request data>")
 
-        if debug_ and (len(err_headers) > 0):
+        if len(err_headers) > 0:
             # the HTTPError is of type HTTPMessage a subclass of email.message
-            print("  Response Headers: ")
+            logger.debug("  Response Headers: ")
             for headername in sorted(err_headers.keys()):
-                print("    %s: %s" % (headername, err_headers.get(headername)))
+                logger.debug("    %s: %s" % (headername, err_headers.get(headername)))
 
         if len(responses_) > 0:
-            print("----- Response: --------------------------------------------------------")
-            debug_printer.pprint(responses_[0].reason)
-        if debug_:
-            print("------------------------------------------------------------------------")
+            logger.debug("----- Response: --------------------------------------------------------")
+            logger.debug(debug_printer.pformat(responses_[0].reason))
+
+        logger.debug("------------------------------------------------------------------------")
         return
 
     if (error_.__class__ is urllib.error.URLError):
-        print("----- LFRequest: URLError: ---------------------------------------------")
-        print("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
-        print("------------------------------------------------------------------------")
+        logger.error("----- LFRequest: URLError: ---------------------------------------------")
+        logger.error("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
+        logger.error("------------------------------------------------------------------------")
 
 # ~LFRequest
