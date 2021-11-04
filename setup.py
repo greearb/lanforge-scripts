@@ -33,7 +33,7 @@ setup(
         'scp',
         'dash',
         'kaleido'],
-    python_required='>=3.6, <4',
+    python_requires='>=3.6, <4',
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
