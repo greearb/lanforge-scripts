@@ -92,8 +92,6 @@ from .csv_convert import CSVParcer
 from .csv_processor import L3CSVParcer
 from .csv_to_influx import CSVtoInflux
 from .csv_to_grafana import UseGrafana
-from .event_breaker import EventBreaker
-from .event_flood import EventBreaker as EventFlood
 from .example_security_connection import IPv4Test
 from .grafana_profile import UseGrafana
 from .influx import RecordInflux
@@ -101,7 +99,7 @@ from .layer3_test import Layer3Test
 from .layer4_test import HTTPTest
 from .lf_ap_auto_test import ApAutoTest
 from .lf_atten_mod_test import CreateAttenuator
-from .lf_csv import lf_csv, lf_kpi_csv
+from .lf_csv import lf_csv
 from .lf_dataplane_test import DataplaneTest
 from .lf_dfs_test import FileAdapter, CreateCtlr, L3VariableTime
 from .lf_dut_sta_vap_test import Login_DUT, LoadScenario, CreateSTA_CX
@@ -318,6 +316,7 @@ sed -i -- 's/LFCliBase = lfcli_base.LFCliBase/ /g' *.py
 sed -i -- 's/pandas_extensions = importlib.import_module("py-json.LANforge.pandas_extensions")/from .LANforge.pandas_extensions import pandas_extensions/g' *.py
 sed -i -- 's/pandas_extensions.pandas_extensions/pandas_extensions/g' *.py
 sed -i -- 's/vr_profile2 = importlib.import_module("py-json.vr_profile2")/from ..py_json import vr_profile2/g' *.py
+sed -i -- 's/port_probe = importlib.import_module("py-json.port_probe")/from ..py_json import port_probe/g' *.py
 
 # fix py_dashboard files
 sed -i -- 's/from GrafanaRequest/from ..py_dashboard.GrafanaRequest/g' *.py
