@@ -85,10 +85,10 @@ class BssidMonitor(Realm):
                  test_duration_min: str = "5m",
                  report_file: str = None,
                  output_format: str = None,
-                 layer3_cols: list[str] = None,
+                 layer3_cols: list = None,  # p3.9 list[str]
                  port_mgr_cols=None,
                  monitor_interval_sec: int = 10,
-                 bssid_list: list[str] = None):
+                 bssid_list: list = None):  # p3.9 list[str]
         """
                          lfclient_host="localhost",
                  lfclient_port=8080,
@@ -131,14 +131,15 @@ class BssidMonitor(Realm):
         self.test_duration = test_duration_min
         self.report_file: str = report_file
         self.output_format: str = output_format
-        self.port_mgr_cols: list[str] = port_mgr_cols
-        self.layer3_cols: tuple[Optional[list[str]]] = layer3_cols,
+        self.port_mgr_cols: list = port_mgr_cols  # p3.9 list[str]
+        self.layer3_cols = layer3_cols  # py 3.9.x tuple[Optional[list[str]]]
+        # self.layer3_cols: tuple = layer3_cols # py 3.7.7
         self.monitor_interval_sec: int = monitor_interval_sec
 
         if not bssid_list:
             raise ValueError("bssid list necessary to continue")
-        self.bssid_list: list[str] = bssid_list
-        self.bssid_sta_profiles: dict[str, str] = {}
+        self.bssid_list: list = bssid_list  # p 3.9: list[str]
+        self.bssid_sta_profiles: dict = {}  #p3.9: dict[str,str]
 
         '''
         session = LFSession(lfclient_url="http://localhost:8080",
@@ -273,7 +274,7 @@ def main():
 
     parser.add_argument('--mode', help='Used to force mode of stations')
     parser.add_argument('--bssid',
-                        action='extend',
+                        action='append', # action='extend' appears in py 3.9
                         type=str,
                         nargs="+",
                         help='Add an AP to the list of APs to test connections to')
@@ -302,10 +303,10 @@ def main():
                         type=int,
                         help='duration of the test in minutes')
     parser.add_argument('--layer3_cols',
-                        type=list[str],
+                        type=list,  # py3.9 list[str]
                         help='titles of columns to report')
     parser.add_argument('--port_mgr_cols',
-                        type=list[str],
+                        type=list,  # py3.9 list[str]
                         help='titles of columns to report')
 
     args = parser.parse_args()
