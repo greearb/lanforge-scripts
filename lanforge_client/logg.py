@@ -9,10 +9,10 @@ from logging import Logger
 import time
 import datetime
 import inspect
-import traceback
-from typing import Optional
-from pprint import pprint, pformat
-from .strutil import nott, iss
+# import traceback
+# from typing import Optional
+from pprint import pprint # pformat
+from .strutil import nott # iss
 
 class Logg:
     """
@@ -43,9 +43,9 @@ class Logg:
     """
     DEFAULT_LEVEL = logging.WARNING
     DefaultLogger = logging.getLogger(__name__)
-    method_name_list: list[str] = []
-    tag_list: list[str] = []
-    reserved_tags: list[str] = [
+    method_name_list: list = []  # list[str]
+    tag_list: list = []  # list[str]
+    reserved_tags: list = [  # list[str]
         "debug",
         "debugging",
         "debug_log",
@@ -72,7 +72,8 @@ class Logg:
         self.level = log_level
         self.logger: Logger
 
-        self.start_time = datetime.now()
+        # self.start_time = datetime.now() # py 3.9 maybe?
+        self.start_time = datetime.datetime.now() # py 3.9 maybe?
         self.start_time_str = time.strftime("%Y%m%d-%I:%M%:%S")
         if name:
             self.name = name
