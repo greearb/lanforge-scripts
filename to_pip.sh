@@ -159,7 +159,7 @@ from .ws_generic_monitor_test import WS_Listener" > __init__.py
 sed -i -- 's/import realm/ /g' create_vap.py lf_dut_sta_vap_test.py lf_sniff_radio.py run_cv_scenario.py sta_connect.py station_layer3.py test_client_admission.py
 sed -i -- 's/import realm/from realm import Realm/g' layer4_test.py lf_atten_mod_test.py lf_multipsk.py test_fileio.py test_ip_connection.py test_ipv4_ttls.py test_l3_WAN_LAN.py test_l3_unicast_traffic_gen.py test_l4.py testgroup.py
 sed -i -- 's/realm.Realm/Realm/g' layer4_test.py lf_atten_mod_test.py lf_multipsk.py lf_sniff_radio.py station_layer3.py test_client_admission.py test_fileio.py test_ip_connection.py
-sed -i -- 's/import realm/from realm import Realm, PortUtils/g' lf_ftp.py lf_ftp_test.py lf_webpage.py
+sed -i -- 's/import realm/from realm import Realm, PortUtils/g' lf_ftp.py lf_webpage.py
 sed -i -- 's/import realm/from realm import Realm, WifiMonitor/g' test_ipv4_ps.py
 sed -i -- 's/import l3_cxprofile/from l3_cxprofile import L3CXProfile/g' test_l3_powersave_traffic.py
 sed -i -- 's/import realm/from realm import Realm, StationProfile, WifiMonitor/g' test_l3_powersave_traffic.py
@@ -455,6 +455,7 @@ if [[ $ARCHIVE -eq 1 ]]; then
   #zip ${TARGET_DIR}/lanforge_scripts.zip *
   python3 -m pip install --upgrade build
   python3 -m build --wheel
+  echo "You can find the wheel in ../lanforge_scripts/dist/*.whl"
 else
   echo "Not saving archive"
 fi
