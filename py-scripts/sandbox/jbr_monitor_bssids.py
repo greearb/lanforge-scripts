@@ -201,14 +201,19 @@ class BssidMonitor(Realm):
                                          card='all',
                                          port='all',
                                          endp='all')
-        time.sleep(0.1)
+        time.sleep(0.2)
         event_response = self.lf_query.events_last_events(event_count=1,
                                                           debug=self.debug,
+                                                          wait_sec=1,
+                                                          max_timeout_sec=120,
                                                           errors_warnings=err_warn_list)
         if not event_response:
-            Logg.logg(level=logging.ERROR, msg="No event_response")
+            Logg.logg(level=logging.ERROR, msg="No event_response, we should have retried that")
+            return
+        # pprint(("event_response:", event_response))
         if "id" not in event_response:
             pprint(("event_response:", event_response))
+            return
         return event_response["id"]
 
     def wait_for_load_to_finish(self, since_id: int = None):
