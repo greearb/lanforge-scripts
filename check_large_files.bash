@@ -339,6 +339,14 @@ clean_old_kernels() {
             echo "/lib/modules/$f"
         done | xargs rm -rf
     fi
+    if [ -d "/boot2" ]; then
+        rm -rf /boot2/*
+        rsync -a /boot/. /boot2/
+        local dev2=`df /boot2/ |awk '/dev/{print $1}'`
+        if [ x$dev2 != x ]; then
+            /usr/sbin/grub2-install $dev2 ||:
+        fi
+    fi
 }
 
 clean_core_files() {
@@ -348,7 +356,7 @@ clean_core_files() {
         return 0
     fi
 
-    local counter=0
+   local counter=0
     if [ ! -f "$lf_core_log" ]; then
         touch "$lf_core_log"
     fi
