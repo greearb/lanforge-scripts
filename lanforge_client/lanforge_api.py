@@ -106,7 +106,6 @@ def _now_sec() -> int:
     return round(time.time() * 1000 * 1000)
 
 
-
 def default_proxies() -> dict:
     return {
         # 'http': 'http://example.com',
@@ -204,7 +203,6 @@ def print_diagnostics(url_: str = None,
         print("------------------------------------------------------------------------")
     if die_on_error_:
         exit(1)
-
 
 
 class BaseLFJsonRequest:
@@ -414,10 +412,10 @@ class BaseLFJsonRequest:
                   connection_timeout_sec: float = None,
                   max_timeout_sec: float = None,
                   die_on_error: bool = False,
-                  errors_warnings: list[str] = None,
+                  errors_warnings: list = None,    # p3.9 list[str]
                   response_json_list: list = None,
                   method_: str = 'POST',
-                  session_id_: str = "") -> Optional[HTTPResponse]:
+                  session_id_: str = "") -> Optional:  # p3.9 Optional[HTTPResponse]
         """
 
         :param url: URL to post to
@@ -442,7 +440,7 @@ class BaseLFJsonRequest:
                               % (self.session_id, self.session_instance.get_session_id()))
             if die_on_error:
                 exit(1)
-        responses: list[HTTPResponse] = []
+        responses: list = []  # p3.9 list[HTTPResponse]
         url = self.get_corrected_url(url)
         self.logger.by_method("url: "+url)
         if (post_data is not None) and (post_data is not self.No_Data):
@@ -580,7 +578,7 @@ class BaseLFJsonRequest:
                  max_timeout_sec: float = None,
                  errors_warnings: list = None,
                  die_on_error: bool = False,
-                 response_json_list: list = None) -> Optional[HTTPResponse]:
+                 response_json_list: list = None) -> Optional:  # Optional[HTTPResponse]
         if not url:
             raise ValueError("json_put requires url")
         return self.json_post(url=url,
@@ -627,7 +625,7 @@ class BaseLFJsonRequest:
             debug: bool = False,
             die_on_error: bool = False,
             method_: str = 'GET',
-            connection_timeout_sec: int = None) -> Optional[HTTPResponse]:
+            connection_timeout_sec: int = None) -> Optional:  # Optional[HTTPResponse]
         """
         Makes a HTTP GET request with specified timeout.
         :param url: Fully qualified URL to request
@@ -658,7 +656,7 @@ class BaseLFJsonRequest:
         if connection_timeout_sec:
             myrequest.timeout = connection_timeout_sec
 
-        myresponses: list[HTTPResponse] = []
+        myresponses: list = []  # list[HTTPResponse]
         try:
             myresponses.append(request.urlopen(myrequest))
             return myresponses[0]
@@ -3184,6 +3182,7 @@ class LFJsonCommand(JsonCommand):
         p_8021x_radius = 0x2000000                # Use 802.1x (RADIUS for AP).
         create_admin_down = 0x1000000000          # Station should be created admin-down.
         custom_conf = 0x20                        # Use Custom wpa_supplicant config file.
+        disable_obss_scan = 0x400000000000        # Disable OBSS SCAN feature in supplicant.
         disable_ofdma = 0x200000000000            # Disable OFDMA mode
         disable_twt = 0x100000000000              # Disable TWT mode
         disable_fast_reauth = 0x200000000         # Disable fast_reauth option for virtual stations.
