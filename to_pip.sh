@@ -34,10 +34,6 @@ while getopts ":h:a:t:" option; do
       ;;
   esac
 done
-#Rename repository so it can be imported as a package
-cd ..
-mv lanforge-scripts lanforge_scripts
-cd lanforge_scripts
 
 mv py-scripts/ py_scripts
 mv py-json/ py_json
@@ -443,8 +439,9 @@ if [[ $ARCHIVE -eq 1 ]]; then
   rm speedtest-cli
   rm WlanPro.desktop
   mv wifi_diag lanforge_scripts
-  tar -zcvf ${TARGET_DIR}/lanforge_scripts.tar.gz *
-  zip ${TARGET_DIR}/lanforge_scripts.zip *
+  #tar -zcvf ${TARGET_DIR}/lanforge_scripts.tar.gz *
+  #zip ${TARGET_DIR}/lanforge_scripts.zip *
+  python3 -m build --wheel
 else
   echo "Not saving archive"
 fi
