@@ -278,16 +278,16 @@ else
       --radio $RADIO_USED"
       #station_layer3.py
       #stations_connected.py
-      "./test_1k_clients_jedtest.py
-       --mgr $MGR
-       --mgr_port 8080
-       --sta_per_radio 300
-       --test_duration 3m
-       --a_min 1000
-       --b_min 1000
-       --a_max 0
-       --b_max 0
-       --debug"
+      #"./test_1k_clients_jedtest.py
+      # --mgr $MGR
+      # --mgr_port 8080
+      # --sta_per_radio 300
+      # --test_duration 3m
+      # --a_min 1000
+      # --b_min 1000
+      # --a_max 0
+      # --b_max 0
+      # --debug"
       #test_client_admission.py
       "./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1 --test_duration 30s --mgr $MGR" # Better tested on Kelly, where VRF is turned off
       #"./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest $TEST_HTTP_IP --debug --mgr $MGR"
