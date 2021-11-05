@@ -33,6 +33,7 @@ def main():
     packages_installed = []
     packages_failed =[]
     subprocess.call("pip3 uninstall jwt", shell=True)
+    subprocess.call('pip3 install --upgrade pip', shell=True)
     for package in packages:
         if os.name == 'nt':
             command = "pip3 install {} ".format(package)
