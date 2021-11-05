@@ -327,6 +327,7 @@ sed -i -- 's/pandas_extensions = importlib.import_module("py-json.LANforge.panda
 sed -i -- 's/pandas_extensions.pandas_extensions/pandas_extensions/g' *.py
 sed -i -- 's/vr_profile2 = importlib.import_module("py-json.vr_profile2")/from ..py_json import vr_profile2/g' *.py
 sed -i -- 's/port_probe = importlib.import_module("py-json.port_probe")/from ..py_json import port_probe/g' *.py
+sed -i -- 's/LFRequest.LFRequest/LFRequest/g' *.py
 
 # fix py_dashboard files
 sed -i -- 's/from GrafanaRequest/from ..py_dashboard.GrafanaRequest/g' *.py
