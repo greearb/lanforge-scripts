@@ -255,7 +255,7 @@ else
              #--influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
              #--influx_bucket ben \
       #"./measure_station_time_up.py --radio $RADIO_USED --num_stations 3 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --debug --report_file measure_station_time_up.txt"
-      "./modify_station.py
+      "./create_stations.py --radio $RADIO_USED --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED && ./modify_station.py
                    --radio $RADIO_USED
                    --station 1.1.sta0000
                    --security $SECURITY
@@ -311,7 +311,7 @@ else
           --influx_bucket ben --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 \
           --influx_tag testbed regression_test --influx_tag DUT ROG -o longevity.csv"
       "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
-      "./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput -m $MGR"
+      #"./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput -m $MGR"
       #./test_l3_unicast_traffic_gen
       #./test_l3_unicast_traffic_gen
       #./test_l3_WAN_LAN
