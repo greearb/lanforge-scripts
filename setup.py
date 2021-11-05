@@ -32,7 +32,7 @@ setup(
         'pexpect-serial',
         'scp',
         'dash',
-        'kaleido'],
+        'pyjwt'],
     python_requires='>=3.6, <4',
     classifiers=[
         "Programming Language :: Python :: 3",
