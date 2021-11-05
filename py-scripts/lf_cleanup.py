@@ -84,6 +84,8 @@ class lf_clean(Realm):
                 print("Removing old endpoints")
                 for name in list(endp_json['endpoint']):
                     print(list(name)[0])
+                    if name[list(name)[0]]["name"] == '':
+                        continue
                     req_url = "cli-json/rm_endp"
                     data = {
                         "endp_name": list(name)[0]
