@@ -58,7 +58,10 @@ from .py_dashboard import *
 from .py_json import *
 from .py_json import LANforge
 from .py_json.LANforge import *
-from . import ap_ctl
+try:
+    from . import ap_ctl
+except ImportError:
+    print('Pexpect_serial is not installed')
 from . import emailHelper
 from . import lf_mail
 from . import lf_tos_plus_test
