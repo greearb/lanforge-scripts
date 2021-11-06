@@ -172,12 +172,13 @@ class ProbePort(LFCliBase):
         T_dft = 3.2 * 10**-6  # Constant for HT
         T_gi_short = .4 * 10**-6  # Guard index.
         T_gi_long = .8 * 10**-6  # Guard index.
+        bw = 20 
         # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
         # the nubmer of Data Subcarriers is based on modulation and bandwith
         try:
             bw = int(self.tx_mhz)
         except BaseException:
-            print("port_probe.py:  {} WARNING unable to parse tx MHz (BW) , check probe output will use ")
+            print("port_probe.py: WARNING unable to parse tx MHz (BW) , check probe output will use {bw}".format(bw=bw))
 
         print("Mhz {Mhz}".format(Mhz=self.tx_mhz))
         if bw == 20:
