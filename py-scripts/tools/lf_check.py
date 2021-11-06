@@ -597,15 +597,15 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
             self.logger.info("failed to change to {}".format(self.scripts_wd))
 
         # no spaces after FACTORY_DFLT
-        command = "./{} {}".format("scenario.py", "--load {}".format(custom_db))
+        command = "./scenario.py --mgr {mgr} --load {db} --action {action}".format(mgr=self.lf_mgr_ip,db=custom_db,action="overwrite")
         process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    universal_newlines=True)
         # wait for the process to terminate
         out, err = process.communicate()
         errcode = process.returncode
-        print("load_custome_database errcode: {errcode}".format(errcode=errcode))
+        print("load_custom_database out: {out}  errcode: {errcode} err: {err}".format(out=out,errcode=errcode,err=err))
         # DO NOT REMOVE 15 second sleep.
-        # After every DB load, the loed changes are applied, and part of the apply is to re-build
+        # After every DB load, the load changes are applied, and part of the apply is to re-build
         # The underlying netsmith objects
         sleep(15)
 
