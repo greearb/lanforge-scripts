@@ -130,6 +130,7 @@ class lf_check():
                  _json_dut,
                  _json_test,
                  _test_suite,
+                 _db_override,
                  _production,
                  _csv_results,
                  _outfile,
@@ -140,6 +141,7 @@ class lf_check():
         self.json_dut = _json_dut
         self.json_test = _json_test
         self.test_suite = _test_suite
+        self.db_override = _db_override
         self.production_run = _production
         self.report_path = _report_path
         self.log_path = _log_path
@@ -360,12 +362,14 @@ class lf_check():
             message_txt = """{email_txt} lanforge target {lf_mgr_ip}
 Results from {hostname}:  
 Suite: {suite}
+Database: {db}
 http://{hostname}/{report}
-""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, suite=self.test_suite, hostname=hostname, report=report_url)
+""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, suite=self.test_suite, db=self.database_sqlite, hostname=hostname, report=report_url)
         else:
             message_txt = """Results from {hostname}:  
 Suite: {suite}
-http://{hostname}/{report}""".format(hostname=hostname, suite=self.test_suite, report=report_url)
+Database: {db}
+http://{hostname}/{report}""".format(hostname=hostname, suite=self.test_suite, db=self.database_sqlite, report=report_url)
 
         # Put in report information current two methods supported,
         message_txt += """
@@ -375,10 +379,10 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
 
         if (self.email_title_txt != ""):
             mail_subject = "{email} [{hostname}] {suite} {date}".format(email=self.email_title_txt, hostname=hostname,
-                                                    suite=self.test_suite, date=datetime.datetime.now())
+                                                    suite=self.test_suite, db=self.database_sqlite, date=datetime.datetime.now())
         else:
             mail_subject = "Regression Test [{hostname}] {suite} {date}".format(hostname=hostname, 
-                suite = self.test_suite, date=datetime.datetime.now())
+                suite = self.test_suite, db = self.database_sqlite, date=datetime.datetime.now())
         try:
             if self.production_run:
                 msg = message_txt.format(ip=ip)
@@ -491,10 +495,13 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
             self.test_rig = self.json_rig["test_rig_parameters"]["TEST_RIG"]
         else:
             self.logger.info("test_rig not in test_rig_parameters json")
-        if "DATABASE_SQLITE" in self.json_rig["test_rig_parameters"]:
-            self.database_sqlite = self.json_rig["test_rig_parameters"]["DATABASE_SQLITE"]
+        if self.db_override is None:
+            if "DATABASE_SQLITE" in self.json_rig["test_rig_parameters"]:
+                self.database_sqlite = self.json_rig["test_rig_parameters"]["DATABASE_SQLITE"]
+            else:
+                self.logger.info("DATABASE_SQLITE not in test_rig_parameters json")
         else:
-            self.logger.info("DATABASE_SQLITE not in test_rig_parameters json")
+            self.database_sqlite = self.db_override
         if "LF_MGR_IP" in self.json_rig["test_rig_parameters"]:
             self.lf_mgr_ip = self.json_rig["test_rig_parameters"]["LF_MGR_IP"]
         else:
@@ -962,6 +969,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     parser.add_argument('--json_dut', help="--json_dut <dut json config> ", default="", required=True)
     parser.add_argument('--json_test', help="--json_test <test json config> ", default="", required=True)
     parser.add_argument('--suite', help="--suite <suite name>  default TEST_DICTIONARY", default="TEST_DICTIONARY")
+    parser.add_argument('--db_override', help="--db_override <sqlite db>  override for json DATABASE_SQLITE''", default=None)
     parser.add_argument('--production', help="--production  stores true, sends email results to production email list",
                         action='store_true')
     parser.add_argument('--outfile', help="--outfile <Output Generic Name>  used as base name for all files generated",
@@ -1007,6 +1015,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     __dir = args.dir
     __path = args.path
 
+    db_override = args.db_override
+
     if args.production:
         production = True
         print("Email to production list")
@@ -1033,6 +1043,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                      _json_dut=json_dut,
                      _json_test=json_test,
                      _test_suite=test_suite,
+                     _db_override=db_override,
                      _production=production,
                      _csv_results=csv_results,
                      _outfile=outfile,

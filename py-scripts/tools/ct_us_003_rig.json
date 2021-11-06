@@ -7,7 +7,7 @@
     "test_rig_parameters":{
         "TEST_BED": "CT-US-003",
         "TEST_RIG": "CT-US-003",
-        "DATABASE_SQLITE": "./tools/qa_003_Oct.db",
+        "DATABASE_SQLITE": "./tools/qa_003.db",
         "LF_MGR_IP": "192.168.100.233",
         "LF_MGR_PORT": "8080",
         "LF_MGR_USER": "lanforge",
