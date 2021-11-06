@@ -596,8 +596,12 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
         except BaseException:
             self.logger.info("failed to change to {}".format(self.scripts_wd))
 
-        # no spaces after FACTORY_DFLT
-        command = "./scenario.py --mgr {mgr} --load {db} --action {action}".format(mgr=self.lf_mgr_ip,db=custom_db,action="overwrite")
+        # WARNING do not simplify the following constructed command 
+        #command = "./{} {} {} {}".format("scenario.py", "--mgr {mgr}"\
+        #    .format(mgr=self.lf_mgr_ip),"--load {db}".format(db=custom_db),"--action {action}".format(action="overwrite"))
+        command = "./{cmd} --mgr {mgr} --load {db} --action {action}".format(cmd="scenario.py",mgr=self.lf_mgr_ip,db=custom_db,action="overwrite")
+        print("command: {command}".format(command=command))
+        
         process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    universal_newlines=True)
         # wait for the process to terminate
