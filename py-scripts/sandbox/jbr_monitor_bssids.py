@@ -160,7 +160,10 @@ class BssidMonitor(Realm):
                                    exit_on_error=True)
         if args and args.debugging:
             pprint(args.debugging)
+            # we could have a nested list here?
             for item in args.debugging:
+                if (type(item) is list):
+                    item = item[0]
                 if item.startswith("tag:"):
                     Logg.register_tag(item[item.rindex(":"):])
                 if item.startswith("method:"):
@@ -202,6 +205,7 @@ class BssidMonitor(Realm):
                                          port='all',
                                          endp='all')
         time.sleep(0.2)
+
         event_response = self.lf_query.events_last_events(event_count=1,
                                                           debug=self.debug,
                                                           wait_sec=1,
