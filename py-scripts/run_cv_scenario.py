@@ -182,6 +182,7 @@ class RunCvScenario(LFCliBase):
             "cv is_built",
             "cv sync",
             "sleep 4",
+            "cv list_instances",
             "cv create '%s' 'test_ref' 'true'" % self.cv_test,
             "sleep 5",
             "cv load test_ref '%s'" % self.test_profile,
@@ -222,11 +223,10 @@ class RunCvScenario(LFCliBase):
                     print("running %s..." % command, end='')
                     response = self.json_post("/gui-json/cmd%s" % debug_par,
                                               data,
-                                              debug_=False,
+                                              debug_=debug_,
                                               response_json_list_=response_json)
                     if debug_:
-                        LFUtils.debug_printer.pprint(response_json)
-                    print("Test Instances:\n%s" % pprint.pformat(response_json['warnings']))
+                        LFUtils.debug_printer.pprint(response)
                 else:
                     response_json = []
                     print("running %s..." % command, end='')
@@ -234,8 +234,6 @@ class RunCvScenario(LFCliBase):
                     if debug_:
                         LFUtils.debug_printer.pprint(response_json)
                     print("...proceeding")
-
-
             except Exception as x:
                 print(x)
 
@@ -256,9 +254,9 @@ def main():
         prog="run_cv_scenario.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description="""LANforge Reporting Script:  Load a scenario and run a RvR report
-            Example:
-            ./load_ap_scenario.py --lfmgr 127.0.0.1 --scenario_db 'handsets' --cv_test  --test_scenario 'test-20'
-            """)
+Example:
+./load_ap_scenario.py --lfmgr 127.0.0.1 --lanforge_db 'handsets' --cv_test 'WiFi Capacity' --test_profile 'test-20'
+""")
     parser.add_argument("-m", "--lfmgr", type=str, help="address of the LANforge GUI machine (localhost is default)")
     parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)")
     parser.add_argument("-d", "--lanforge_db", type=str, help="Name of test scenario database (see Status Tab)")
