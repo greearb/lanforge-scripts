@@ -1870,7 +1870,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
     parser.add_argument('--tty', help='--tty \"/dev/ttyUSB2\" the serial interface to the AP', default="")
     parser.add_argument('--baud', help='--baud \"9600\"  AP baud rate for the serial interface', default="9600")
-    parser.add_argument('--lfmgr', help='--lfmgr <hostname for where LANforge GUI is running>', default='localhost')
+    parser.add_argument('--mgr','--lfmgr', dest='lfmgr', help='--lfmgr <hostname for where LANforge GUI is running>', default='localhost')
     parser.add_argument(
         '--test_duration',
         help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',
