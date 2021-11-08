@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 This script will create 40 clients on 5Ghz , 2.4Ghz and Both and generate layer4 traffic on LANforge ,The Webpage Download Test is designed to test the performance of the  Access Point.The goal is to  check whether the
 webpage loading time meets the expectation when clients connected on single radio as well as dual radio.
@@ -13,6 +14,8 @@ import importlib
 import time
 import argparse
 import paramiko
+from datetime import datetime
+import pandas as pd
 
  
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
@@ -462,7 +465,7 @@ class HttpDownload(Realm):
         pass
 
     def generate_graph(self, dataset, lis, bands):
-        graph = lf_bar_graph(_data_set=dataset, _xaxis_name="Stations", _yaxis_name="Time in Seconds",
+        graph = lf_graph.lf_bar_graph(_data_set=dataset, _xaxis_name="Stations", _yaxis_name="Time in Seconds",
                              _xaxis_categories=lis, _label=bands, _xticks_font=8,
                              _graph_image_name="webpage download time graph",
                              _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black', _figsize=(14, 5),
@@ -477,7 +480,7 @@ class HttpDownload(Realm):
         return graph_png
 
     def graph_2(self,dataset2, lis, bands):
-        graph_2 = lf_bar_graph(_data_set=dataset2, _xaxis_name="Stations", _yaxis_name="Download Rate in Mbps",
+        graph_2 = lf_graph.lf_bar_graph(_data_set=dataset2, _xaxis_name="Stations", _yaxis_name="Download Rate in Mbps",
                                _xaxis_categories=lis, _label=bands, _xticks_font=8,
                                _graph_image_name="webpage_speed_graph",
                                _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black',
@@ -492,7 +495,7 @@ class HttpDownload(Realm):
         return graph_png
 
     def generate_report(self,date, num_stations,duration, test_setup_info,dataset,lis,bands,threshold_2g,threshold_5g,threshold_both,dataset2,summary_table_value,result_data,test_input_infor):
-        report = lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html", _output_pdf="Webpage.pdf")
+        report = lf_report.lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html", _output_pdf="Webpage.pdf")
         report.set_title("WEBPAGE DOWNLOAD TEST")
         report.set_date(date)
         report.build_banner()
@@ -638,7 +641,7 @@ def main():
     parser.add_argument('--ssh_port', type=int, help="specify the shh port eg 22",default=22)
 
     args = parser.parse_args()
-    test_time = datetime.datetime.now()
+    test_time = datetime.now()
     test_time = test_time.strftime("%b %d %H:%M:%S")
     print("Test started at ", test_time)
     list5G = []
@@ -746,16 +749,16 @@ def main():
     result_data = final_dict
     print("result", result_data)
     print("Test Finished")
-    test_end = datetime.datetime.now()
+    test_end = datetime.now()
     test_end = test_end.strftime("%b %d %H:%M:%S")
     print("Test ended at ", test_end)
     s1 = test_time
     s2 = test_end  # for example
     FMT = '%b %d %H:%M:%S'
-    test_duration = datetime.datetime.strptime(s2, FMT) - datetime.datetime.strptime(s1, FMT)
+    test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
 
     print("total test duration ", test_duration)
-    date = str(datetime.datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
+    date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
     test_setup_info = {
             "DUT Name": args.ap_name,
             "SSID": args.ssid,
