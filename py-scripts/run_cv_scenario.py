@@ -103,10 +103,15 @@ class RunCvScenario(LFCliBase):
                 print("Unable to load database within %d sec" % self.load_timeout_sec)
                 exit(1)
             events_response = self.json_get("/events/since/%s" % previous_event_id)
-            if "events" not in events_response:
+            pronoun = None
+            if "events" in events_response:
+                pronoun = "events"
+            elif "event" in events_response:
+                pronoun = "event"
+            if not pronoun:
                 pprint.pprint(("events response", events_response))
                 raise ValueError("incorrect events response")
-            for event_o in events_response["events"]:
+            for event_o in events_response[pronoun]:
                 if load_completed:
                     break
                 for (key, record) in event_o.items():
@@ -212,6 +217,16 @@ class RunCvScenario(LFCliBase):
                     print("sleeping %d..." % nap)
                     sleep(nap)
                     print("...proceeding")
+                elif command == "cv list_instances":
+                    response_json = []
+                    print("running %s..." % command, end='')
+                    response = self.json_post("/gui-json/cmd%s" % debug_par,
+                                              data,
+                                              debug_=False,
+                                              response_json_list_=response_json)
+                    if debug_:
+                        LFUtils.debug_printer.pprint(response_json)
+                    print("Test Instances:\n%s" % pprint.pformat(response_json['warnings']))
                 else:
                     response_json = []
                     print("running %s..." % command, end='')
