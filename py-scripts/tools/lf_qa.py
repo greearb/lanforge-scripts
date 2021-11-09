@@ -472,6 +472,7 @@ class csv_sql():
                                 yaxis_title="{}".format(units_list[-1]),
                                 xaxis={'type': 'date'}
                             )
+                            kpi_fig.update_layout(autotypenumbers='convert types')
 
                             self.generate_png(df_tmp=df_tmp,
                                               group=group,
@@ -499,6 +500,8 @@ class csv_sql():
                                 yaxis_title="{units}".format(units=units_list[-1]),
                                 xaxis={'type': 'date'}
                             )
+                            kpi_fig.update_layout(autotypenumbers='convert types')
+
 
                             self.generate_png(df_tmp=df_tmp,
                                               group=group,
