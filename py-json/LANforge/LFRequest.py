@@ -176,7 +176,7 @@ class LFRequest:
             resp_data = resp.read().decode('utf-8')
             if (debug and die_on_error_):
                 self.logger.debug("----- LFRequest::json_post:128 debug: --------------------------------------------")
-                self.logger.debug("URL: %s :%d "% (self.requested_url, resp.status))
+                self.logger.debug("URL: <%s>  status: %d "% (self.requested_url, resp.status))
                 if resp.status != 200:
                     self.logger.debug(pformat(resp.getheaders()))
                 self.logger.debug("----- resp_data:128 -------------------------------------------------")
