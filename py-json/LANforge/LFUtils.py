@@ -18,7 +18,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
 LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
@@ -421,9 +420,9 @@ def find_port_eids(resource_id=1, base_url="http://localhost:8080", port_names=(
     port_url = "/port/1"
     for port_name in port_names:
         uri = "%s/%s/%s" % (port_url, resource_id, port_name)
-        lf_r = LFRequest.LFRequest(base_url, uri)
+        lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug)
         try:
-            response = lf_r.getAsJson(debug)
+            response = lf_r.getAsJson()
             if response is None:
                 continue
             port_eids.append(PortEID(response))
@@ -445,8 +444,8 @@ def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080",
         up_stations = []
         for port_name in port_list:
             uri = "%s/%s/%s?fields=device,down" % (port_url, resource_id, port_name)
-            lf_r = LFRequest.LFRequest(base_url, uri)
-            json_response = lf_r.getAsJson(debug_=False)
+            lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug_)
+            json_response = lf_r.getAsJson()
             if json_response == None:
                 if debug_:
                     print("port %s disappeared" % port_name)
@@ -472,8 +471,8 @@ def wait_until_ports_admin_up(resource_id=1, base_url="http://localhost:8080", p
         down_stations = []
         for port_name in port_list:
             uri = "%s/%s/%s?fields=device,down" % (port_url, resource_id, port_name)
-            lf_r = LFRequest.LFRequest(base_url, uri)
-            json_response = lf_r.getAsJson(debug_=False)
+            lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug_)
+            json_response = lf_r.getAsJson()
             if json_response == None:
                 if debug_:
                     print("port %s appeared" % port_name)
@@ -525,8 +524,8 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
                     ("check_url", check_url),
                 ])
             lf_r = LFRequest.LFRequest(base_url, check_url, debug_=debug)
-            json_response = lf_r.get_as_json(debug_=debug, die_on_error_=False)
-            if (json_response == None):
+            json_response = lf_r.get_as_json()
+            if json_response is None:
                 print("LFUtils::wait_until_ports_disappear:: Request returned None: [{}]".format(base_url + check_url))
             else:
                 if debug:
@@ -635,15 +634,15 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
             port_name = eid[2]
             # print("waiting for sta sta "+port_eid)
             uri = "%s/%s/%s" % (port_url, resource_id, port_name)
-            lf_r = LFRequest.LFRequest(base_url, uri)
-            json_response = lf_r.getAsJson(debug_=False)
-            if (json_response != None):
+            lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug)
+            json_response = lf_r.getAsJson()
+            if json_response is not None:
                 found_stations.append(port_name)
             else:
-                lf_r = LFRequest.LFRequest(base_url, ncshow_url)
+                lf_r = LFRequest.LFRequest(base_url, ncshow_url, debug_=debug)
                 lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "probe_flags": 5})
                 lf_r.jsonPost()
-        if (len(found_stations) < len(port_list)):
+        if len(found_stations) < len(port_list):
             sleep(2)
 
     if debug:
@@ -676,12 +675,12 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
             port_name = eid[2]
             
             uri = "%s/%s/%s" % (port_url, resource_id, port_name)
-            lf_r = LFRequest.LFRequest(base_url, uri)
-            json_response = lf_r.getAsJson(debug_=False)
-            if (json_response != None):
+            lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug)
+            json_response = lf_r.getAsJson()
+            if json_response is not None:
                 found_stations.append(port_name)
             else:
-                lf_r = LFRequest.LFRequest(base_url, ncshow_url)
+                lf_r = LFRequest.LFRequest(base_url, ncshow_url, debug_=debug)
                 lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "flags": 1})
                 lf_r.formPost()
         if (len(found_stations) < len(endp_list)):
@@ -700,7 +699,7 @@ def remove_port(resource, port_name, baseurl="http://localhost:8080/", debug=Fal
     if debug:
         print("Removing port %d.%s" % (resource, port_name))
     url = "/cli-json/rm_vlan"
-    lf_r = LFRequest.LFRequest(baseurl, url)
+    lf_r = LFRequest.LFRequest(baseurl, url, debug_=debug)
     lf_r.addPostData({
         "shelf": 1,
         "resource": resource,
@@ -722,7 +721,7 @@ def remove_cx(baseurl, cx_names, debug=False):
             "test_mgr": "all",
             "cx_name": name
         }
-        lf_r = LFRequest.LFRequest(baseurl, url)
+        lf_r = LFRequest.LFRequest(baseurl, url, debug_=debug)
         lf_r.addPostData(data)
         lf_r.jsonPost(debug)
 
@@ -735,7 +734,7 @@ def remove_endps(baseurl, endp_names, debug=False):
     if debug:
         print("Removing endp %s" % ", ".join(endp_names))
     url = "/cli-json/rm_endp"
-    lf_r = LFRequest.LFRequest(baseurl, url)
+    lf_r = LFRequest.LFRequest(baseurl, url, debug_=debug)
     for name in endp_names:
         data = {
             "endp_name": name

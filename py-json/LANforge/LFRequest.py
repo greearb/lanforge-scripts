@@ -6,7 +6,7 @@
 import logging
 import sys
 import os
-from pprint import pprint, pformat, PrettyPrinter
+from pprint import pformat, PrettyPrinter
 import urllib
 from urllib import request
 import json
@@ -220,16 +220,10 @@ class LFRequest:
                              method_='PUT')
 
     def json_delete(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None):
-       return self.get_as_json(debug_=debug,
-                             die_on_error_=die_on_error_,
-                             method_='DELETE')
+       return self.get_as_json(method_='DELETE')
 
-    def get(self, debug=False, die_on_error_=False, method_='GET'):
-        if self.debug == True:
-            debug = True
-        if self.die_on_error == True:
-            die_on_error_ = True
-        if debug:
+    def get(self, method_='GET'):
+        if self.debug:
             self.logger.debug("LFUtils.get: url: "+self.requested_url)
 
         # https://stackoverflow.com/a/59635684/11014343
@@ -239,8 +233,8 @@ class LFRequest:
             request.install_opener(opener)
 
         myrequest = request.Request(url=self.requested_url,
-                                   headers=self.default_headers,
-                                   method=method_)
+                                    headers=self.default_headers,
+                                    method=method_)
         myresponses = []
         try:
             myresponses.append(request.urlopen(myrequest))
@@ -252,7 +246,7 @@ class LFRequest:
                               responses_=myresponses,
                               error_=error,
                               error_list_=self.error_list,
-                              debug_=debug)
+                              debug_=self.debug)
 
         except urllib.error.URLError as uerror:
             print_diagnostics(url_=self.requested_url,
@@ -260,24 +254,23 @@ class LFRequest:
                               responses_=myresponses,
                               error_=uerror,
                               error_list_=self.error_list,
-                              debug_=debug)
+                              debug_=self.debug)
 
-        if die_on_error_ == True:
+        if self.die_on_error is True:
             exit(1)
         return None
 
-    def getAsJson(self, die_on_error_=False, debug_=False):
-        return self.get_as_json(die_on_error_=die_on_error_, debug_=debug_)
+    def getAsJson(self):
+        return self.get_as_json()
 
-    def get_as_json(self, die_on_error_=False, debug_=False, method_='GET'):
-        responses = []
-        j = self.get(debug=debug_, die_on_error_=die_on_error_, method_=method_)
-        responses.append(j)
+    def get_as_json(self, method_='GET'):
+        responses = list()
+        responses.append(self.get(method_=method_))
         if len(responses) < 1:
-            if debug_ and self.has_errors():
+            if self.debug and self.has_errors():
                 self.print_errors()
             return None
-        if responses[0] == None:
+        if responses[0] is None:
             self.logger.debug("No response from "+self.requested_url)
             return None
         json_data = json.loads(responses[0].read().decode('utf-8'))
@@ -355,7 +348,7 @@ def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, er
         logger.warning("WARNING LFRequest::print_diagnostics: error_ is None")
 
     method = 'NA'
-    if (hasattr(request_, 'method')):
+    if hasattr(request_, 'method'):
         method = request_.method
     err_code = 0
     err_reason = 'NA'
@@ -373,7 +366,7 @@ def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, er
     if err_code == 404:
         xerrors.append("[%s HTTP %s] <%s> : %s" % (method, err_code, err_full_url, err_reason))
     else:
-        if (len(err_headers) > 0):
+        if len(err_headers) > 0:
             for headername in sorted(err_headers.keys()):
                 if headername.startswith("X-Error-"):
                     xerrors.append("%s: %s" % (headername, err_headers.get(headername)))
@@ -386,7 +379,7 @@ def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, er
                     error_list_.append(xerr)
             logger.error(" = = = = = = = = = = = = = = = =")
 
-    if (error_.__class__ is urllib.error.HTTPError):
+    if error_.__class__ is urllib.error.HTTPError:
         logger.debug("----- LFRequest: HTTPError: --------------------------------------------")
         logger.debug("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
 
@@ -415,7 +408,7 @@ def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, er
         logger.debug("------------------------------------------------------------------------")
         return
 
-    if (error_.__class__ is urllib.error.URLError):
+    if error_.__class__ is urllib.error.URLError:
         logger.error("----- LFRequest: URLError: ---------------------------------------------")
         logger.error("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
         logger.error("------------------------------------------------------------------------")

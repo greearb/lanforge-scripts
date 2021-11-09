@@ -321,7 +321,7 @@ class LFCliBase:
                                        proxies_=self.proxy,
                                        debug_=debug_,
                                        die_on_error_=self.exit_on_error)
-            json_response = lf_r.get_as_json(debug_=debug_, die_on_error_=False)
+            json_response = lf_r.get_as_json()
             #debug_printer.pprint(json_response)
             if (json_response is None):
                 if debug_:
