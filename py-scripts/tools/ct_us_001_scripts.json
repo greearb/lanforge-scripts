@@ -268,7 +268,17 @@
                 "enabled":"TRUE",
                 "command":"./wlan_capacity_calculator.py",
                 "args":"",
-                "args_list":["-sta 11ac -t Voice -d 9 -spa 3 -ch 20 -gu 800 -high 1 -e TKIP -q Yes -ip 3 -mc 0 -b 6 12 24 54 -m 1518 -co Greenfield -cw 15 -rc Yes"]}
+                "args_list":["-sta 11ac -t Voice -d 9 -spa 3 -ch 20 -gu 800 -high 1 -e TKIP -q Yes -ip 3 -mc 0 -b 6 12 24 54 -m 1518 -co Greenfield -cw 15 -rc Yes"]},
+            "lf_qa":{
+                    "enabled":"TRUE",
+                    "timeout":"600",
+                    "load_db":"skip",
+                    "command":"./tools/lf_qa.py",
+                    "args":"",
+                    "args_list":[
+                        " --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+                    ]
+            }
         }
     }
 }

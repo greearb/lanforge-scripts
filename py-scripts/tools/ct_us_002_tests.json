@@ -139,7 +139,7 @@
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS --instance_name ATH10K_9984_wc",
                     " --upstream UPSTREAM_PORT --batch_size 1,5,15 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
-                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K_9984_'",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K_9984'",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME "
                 ]
