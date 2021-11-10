@@ -57,6 +57,8 @@ class HttpDownload(Realm):
         self.http_profile.debug = _debug_on
         self.created_cx = {}
 
+
+
     def set_values(self):
         # This method will set values according user input
         if self.bands == "5G":
@@ -156,44 +158,19 @@ class HttpDownload(Realm):
     def stop(self):
         self.http_profile.stop_cx()
 
-    def my_monitor(self):
+    def my_monitor(self, data_mon):
         # data in json format
-        data = self.local_realm.json_get("layer4/list?fields=uc-avg")
-        data1 = []
-        for i in range(len(data['endpoint'])):
-            data1.append(str(list(data['endpoint'][i]))[2:-2])
-        data2 = []
-        for i in range(self.num_sta):
-            data = self.local_realm.json_get("layer4/list?fields=uc-avg")
-            # print(type(data['endpoint'][i][data1[i]]['uc-avg']))
-            data2.append((data['endpoint'][i][data1[i]]['uc-avg']))
-        return data2
 
-    def monitor_bytes(self):
-        # data in json format
-        data = self.local_realm.json_get("layer4/list?fields=bytes-rd")
+        data = self.local_realm.json_get("layer4/%s/list?fields=name,%s" %
+                                         (','.join(self.http_profile.created_cx.keys()), data_mon.replace(' ', '+')))
+        # print(data)
         data1 = []
-        for i in range(len(data['endpoint'])):
-            data1.append(str(list(data['endpoint'][i]))[2:-2])
-        data2 = []
-        for i in range(self.num_sta):
-            data = self.local_realm.json_get("layer4/list?fields=bytes-rd")
-            # print(type(data['endpoint'][i][data1[i]]['uc-avg']))
-            data2.append((data['endpoint'][i][data1[i]]['bytes-rd']))
-        return data2
-
-    def monitor_rx(self):
-        # data in json format
-        data = self.local_realm.json_get("layer4/list?fields=rx rate")
-        data1 = []
-        for i in range(len(data['endpoint'])):
-            data1.append(str(list(data['endpoint'][i]))[2:-2])
-        data2 = []
-        for i in range(self.num_sta):
-            data = self.local_realm.json_get("layer4/list?fields=rx rate")
-            # print(type(data['endpoint'][i][data1[i]]['uc-avg']))
-            data2.append((data['endpoint'][i][data1[i]]['rx rate']))
-        return data2
+        for cx in self.http_profile.created_cx.keys():
+            for info in data['endpoint']:
+                if cx in info:
+                    data1.append(info[cx][data_mon])
+        # print(data_mon, data1)
+        return data1
 
     def postcleanup(self):
         self.http_profile.cleanup()
@@ -632,7 +609,7 @@ def main():
     parser.add_argument('--passwd', help='WiFi passphrase/password/key')
     parser.add_argument('--target_per_ten', help='number of request per 10 minutes', default=100)
     parser.add_argument('--file_size', type=str, help='specify the size of file you want to download', default='5MB')
-    parser.add_argument('--bands', nargs="+", help='specify which band testing you want to run eg 5G OR 2.4G OR 5G 2.4G', default=["5G", "2.4G", "Both"])
+    parser.add_argument('--bands', nargs="+", help='specify which band testing you want to run eg 5G OR 2.4G OR Both', default=["5G", "2.4G", "Both"])
     parser.add_argument('--duration', type=int, help='time to run traffic')
     parser.add_argument('--threshold_5g',help="Enter the threshold value for 5G Pass/Fail criteria", default="60")
     parser.add_argument('--threshold_2g',help="Enter the threshold value for 2.4G Pass/Fail criteria",default="90")
@@ -692,21 +669,19 @@ def main():
         print("time in seconds ", duration)
         time.sleep(duration)
         http.stop()
-        value = http.my_monitor()
-        value2 = http.monitor_bytes()
-        value3 = http.monitor_rx()
-        http.postcleanup()
+        uc_avg_val = http.my_monitor('uc-avg')
+        rx_bytes_val = http.my_monitor('bytes-rd')
+        rx_rate_val = http.my_monitor('rx rate')
 
         if bands == "5G":
             print("yes")
-            list5G.extend(value)
-            list5G_bytes.extend(value2)
-            list5G_speed.extend(value3)
+            list5G.extend(uc_avg_val)
+            list5G_bytes.extend(rx_bytes_val)
+            list5G_speed.extend(rx_rate_val)
             print(list5G)
             print(list5G_bytes)
             print(list5G_speed)
             final_dict['5G']['dl_time'] = list5G
-
             min5.append(min(list5G))
             final_dict['5G']['min'] = min5
             max5.append(max(list5G))
@@ -717,9 +692,9 @@ def main():
             final_dict['5G']['speed'] = list5G_speed
         elif bands == "2.4G":
             print("no")
-            list2G.extend(value)
-            list2G_bytes.extend(value2)
-            list2G_speed.extend(value3)
+            list2G.extend(uc_avg_val)
+            list2G_bytes.extend(rx_bytes_val)
+            list2G_speed.extend(rx_rate_val)
             print(list2G)
             print(list2G_bytes)
             print(list2G_speed)
@@ -733,9 +708,9 @@ def main():
             final_dict['2.4G']['bytes_rd'] = list2G_bytes
             final_dict['2.4G']['speed'] = list2G_speed
         elif bands == "Both":
-            Both.extend(value)
-            Both_bytes.extend(value2)
-            Both_speed.extend(value3)
+            Both.extend(uc_avg_val)
+            Both_bytes.extend(rx_bytes_val)
+            Both_speed.extend(rx_rate_val)
             final_dict['Both']['dl_time'] = Both
             min_both.append(min(Both))
             final_dict['Both']['min'] = min_both
@@ -745,6 +720,8 @@ def main():
             final_dict['Both']['avg'] = avg_both
             final_dict['Both']['bytes_rd'] = Both_bytes
             final_dict['Both']['speed'] = Both_speed
+
+        http.postcleanup()
 
     result_data = final_dict
     print("result", result_data)
