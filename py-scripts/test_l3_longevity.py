@@ -89,6 +89,8 @@ class L3VariableTime(Realm):
                  ssid_list,
                  ssid_password_list,
                  ssid_security_list,
+                 wifi_mode_list,
+                 enable_flags_list,
                  station_lists,
                  name_prefix,
                  outfile,
@@ -155,6 +157,8 @@ class L3VariableTime(Realm):
             self.dataplane = False
         self.ssid_list = ssid_list
         self.ssid_password_list = ssid_password_list
+        self.wifi_mode_list = wifi_mode_list
+        self.enable_flags_list = enable_flags_list
         self.station_lists = station_lists
         self.ssid_security_list = ssid_security_list
         self.reset_port_enable_list = reset_port_enable_list
@@ -263,20 +267,25 @@ class L3VariableTime(Realm):
         # if it is a dataplane test the side_a is not None and an ethernet port
         # if side_a is None then side_a is radios
         if self.dataplane == False:
-            for (radio_, ssid_, ssid_password_, ssid_security_,
-                 reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
+            for (radio_, ssid_, ssid_password_, ssid_security_, 
+                    mode_,enable_flags_,
+                    reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
                 in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list,
-                       reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
+                        wifi_mode_list, enable_flags_list,
+                        reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
                 self.station_profile = self.new_station_profile()
                 self.station_profile.lfclient_url = self.lfclient_url
                 self.station_profile.ssid = ssid_
                 self.station_profile.ssid_pass = ssid_password_
                 self.station_profile.security = ssid_security_
                 self.station_profile.number_template = self.number_template
-                self.station_profile.mode = 0
+                self.station_profile.mode = mode_
+                self.station_profile.desired_add_sta_flags = enable_flags_.copy()
+                self.station_profile.desired_add_sta_flags_mask = enable_flags_.copy() 
+
                 # place the enable and disable flags
                 # self.station_profile.desired_add_sta_flags = self.enable_flags
-                # self.station_profile.desired_add_sta_flags_mask = self.enable_flags + self.disable_flags
+                # self.station_profile.desired_add_sta_flags_mask = self.enable_flags 
                 self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,
                                                      test_duration=self.duration_time_to_seconds(self.test_duration),
                                                      reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),
@@ -1842,6 +1851,72 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 --radio "radio==wiphy0 stations==32 ssid==candelaTech-wpa2-x2048-4-1 ssid_pw==candelaTech-wpa2-x2048-4-1 security==wpa2"
 --radio "radio==wiphy1 stations==64 ssid==candelaTech-wpa2-x2048-5-3 ssid_pw==candelaTech-wpa2-x2048-5-3 security==wpa2"
 
+Setting wifi_settings per radio
+./test_l3_longevity.py  --lfmgr 192.168.100.116 --local_lf_report_dir /home/lanforge/html-reports/ --test_duration 15s 
+--polling_interval 5s --upstream_port eth2   
+--radio "radio==wiphy1 stations==4 ssid==asus11ax-5 ssid_pw==hello123 security==wpa2  mode==0 wifi_settings==wifi_settings enable_flags==('ht160_enable'|'wpa2_enable'|'80211u_enable'|'create_admin_down'|'ht160_enable') "  
+--endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 --test_rig CT-US-001 --test_tag 'l3_longevity'
+
+        wifi_mode
+        Input       : Enum Val  : Shown by nc_show_ports
+
+        AUTO        |  0        #  802.11g
+        802.11a     |  1        #  802.11a
+        b           |  2        #  802.11b
+        g           |  3        #  802.11g
+        abg         |  4        #  802.11abg
+        abgn        |  5        #  802.11abgn
+        bgn         |  6        #  802.11bgn
+        bg          |  7        #  802.11bg
+        abgnAC      |  8        #  802.11abgn-AC
+        anAC        |  9        #  802.11an-AC
+        an          | 10        #  802.11an
+        bgnAC       | 11        #  802.11bgn-AC
+        abgnAX      | 12        #  802.11abgn-AX
+                                #     a/b/g/n/AC/AX (dual-band AX) support
+        bgnAX       | 13        #  802.11bgn-AX
+        anAX        | 14        #  802.11an-AX
+        aAX         | 15        #  802.11a-AX (6E disables /n and /ac)
+
+
+        wifi_settings flags are currently defined as:
+        wpa_enable           | 0x10         # Enable WPA
+        custom_conf          | 0x20         # Use Custom wpa_supplicant config file.
+        wep_enable           | 0x200        # Use wpa_supplicant configured for WEP encryption.
+        wpa2_enable          | 0x400        # Use wpa_supplicant configured for WPA2 encryption.
+        ht40_disable         | 0x800        # Disable HT-40 even if hardware and AP support it.
+        scan_ssid            | 0x1000       # Enable SCAN-SSID flag in wpa_supplicant.
+        passive_scan         | 0x2000       # Use passive scanning (don't send probe requests).
+        disable_sgi          | 0x4000       # Disable SGI (Short Guard Interval).
+        lf_sta_migrate       | 0x8000       # OK-To-Migrate (Allow station migration between LANforge radios)
+        verbose              | 0x10000      # Verbose-Debug:  Increase debug info in wpa-supplicant and hostapd logs.
+        80211u_enable        | 0x20000      # Enable 802.11u (Interworking) feature.
+        80211u_auto          | 0x40000      # Enable 802.11u (Interworking) Auto-internetworking feature.  Always enabled currently.
+        80211u_gw            | 0x80000      # AP Provides access to internet (802.11u Interworking)
+        80211u_additional    | 0x100000     # AP requires additional step for access (802.11u Interworking)
+        80211u_e911          | 0x200000     # AP claims emergency services reachable (802.11u Interworking)
+        80211u_e911_unauth   | 0x400000     # AP provides Unauthenticated emergency services (802.11u Interworking)
+        hs20_enable          | 0x800000     # Enable Hotspot 2.0 (HS20) feature.  Requires WPA-2.
+        disable_gdaf         | 0x1000000    # AP:  Disable DGAF (used by HotSpot 2.0).
+        8021x_radius         | 0x2000000    # Use 802.1x (RADIUS for AP).
+        80211r_pmska_cache   | 0x4000000    # Enable oportunistic PMSKA caching for WPA2 (Related to 802.11r).
+        disable_ht80         | 0x8000000    # Disable HT80 (for AC chipset NICs only)
+        ibss_mode            | 0x20000000   # Station should be in IBSS mode.
+        osen_enable          | 0x40000000   # Enable OSEN protocol (OSU Server-only Authentication)
+        disable_roam         | 0x80000000   # Disable automatic station roaming based on scan results.
+        ht160_enable         | 0x100000000  # Enable HT160 mode.
+        disable_fast_reauth  | 0x200000000  # Disable fast_reauth option for virtual stations.
+        mesh_mode            | 0x400000000  # Station should be in MESH mode.
+        power_save_enable    | 0x800000000  # Station should enable power-save.  May not work in all drivers/configurations.
+        create_admin_down    | 0x1000000000 # Station should be created admin-down.
+        wds-mode             | 0x2000000000 # WDS station (sort of like a lame mesh), not supported on ath10k
+        no-supp-op-class-ie  | 0x4000000000 # Do not include supported-oper-class-IE in assoc requests.  May work around AP bugs.
+        txo-enable           | 0x8000000000 # Enable/disable tx-offloads, typically managed by set_wifi_txo command
+        use-wpa3             | 0x10000000000 # Enable WPA-3 (SAE Personal) mode.
+        use-bss-transition   | 0x80000000000 # Enable BSS transition.
+        disable-twt          | 0x100000000000 # Disable TWT mode
+
+
 
         ''')
 
@@ -1885,7 +1960,8 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
     parser.add_argument('-r', '--radio', action='append', nargs=1, help='--radio\
                         "radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\
-                        reset_port_enable==TRUE,reset_port_time_min==<min>s,reset_port_time_max==<max>s" ')
+                        wifi_settings==True,wifi_mode==<wifi_mode>,enable_flags==<enable_flags>\
+                        reset_port_enable==True,reset_port_time_min==<min>s,reset_port_time_max==<max>s" ')
 
     parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
     parser.add_argument('--ap_port', help='--ap_port \'/dev/ttyUSB0\'', default='/dev/ttyUSB0')
@@ -2083,6 +2159,10 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     ssid_security_list = []
     station_lists = []
 
+    # wifi settings configuration
+    wifi_mode_list= []
+    wifi_enable_flags_list = []
+
     # optional radio configuration
     reset_port_enable_list = []
     reset_port_time_min_list = []
@@ -2095,6 +2175,8 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
             print("radio_dict before format {}".format(radio_))
             radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('"', '').replace(
                 '[', '').replace(']', '').replace("'", "").replace(",", " ").split()))
+            #radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('"', '').split()))
+
             print("radio_dict {}".format(radio_info_dict))
 
             for key in radio_keys:
@@ -2108,7 +2190,34 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
             ssid_password_list.append(radio_info_dict['ssid_pw'])
             ssid_security_list.append(radio_info_dict['security'])
 
+            # check for wifi_settings
+            wifi_settings_keys = ['wifi_settings']
+            wifi_settings_found = True
+            for key in wifi_settings_keys:
+                if key not in radio_info_dict:
+                    print("wifi_settings_keys not enabled")
+                    wifi_settings_found = False
+                    break
+
+            if wifi_settings_found is True: 
+                # Check for additional flags
+                if set(('wifi_mode','enable_flags')).issubset(radio_info_dict.keys()):
+                    print("wifi_settings flags set")
+                else:
+                    print("wifi_settings is present wifi_mode, enable_flags need to be set")
+                    print("or remove the wifi_settings or set wifi_settings==False flag on the radio for defaults")
+                    exit(1)
+                wifi_mode_list.append(radio_info_dict['wifi_mode'])
+                enable_flags_str = radio_info_dict['enable_flags'].replace('(','').replace(')','').replace('|',',')
+                enable_flags_list = list(enable_flags_str.split(","))
+                wifi_enable_flags_list.append(enable_flags_list)
+            else:
+                wifi_mode_list.append(0)
+                wifi_enable_flags_list.append(["wpa2_enable", "80211u_enable", "create_admin_down"])
+
+            
             # check for optional radio key , currently only reset is enabled
+            # update for checking for reset_port_time_min, reset_port_time_max
             optional_radio_reset_keys = ['reset_port_enable']
             radio_reset_found = True
             for key in optional_radio_reset_keys:
@@ -2168,6 +2277,8 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
         ssid_list=ssid_list,
         ssid_password_list=ssid_password_list,
         ssid_security_list=ssid_security_list,
+        wifi_mode_list=wifi_mode_list,
+        enable_flags_list=wifi_enable_flags_list,
         station_lists=station_lists,
         name_prefix="LT-",
         outfile=csv_outfile,
