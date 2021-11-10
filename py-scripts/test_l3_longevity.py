@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''
+"""
 NAME: test_l3_longevity.py
 
 PURPOSE:
@@ -44,7 +44,7 @@ COPYRIGHT:
 Copyright 2021 Candela Technologies Inc
 
 INCLUDE_IN_README
-'''
+"""
 import argparse
 import csv
 import datetime
@@ -63,11 +63,10 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lf_report = importlib.import_module("py-scripts.lf_report")
-lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv") 
+lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
@@ -165,7 +164,7 @@ class L3VariableTime(Realm):
         self.test_duration = test_duration
         self.radio_name_list = radio_name_list
         self.number_of_stations_per_radio_list = number_of_stations_per_radio_list
-        #self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
+        # self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
         self.polling_interval_seconds = self.duration_time_to_seconds(polling_interval)
         self.cx_profile = self.new_l3_cx_profile()
         self.multicast_profile = self.new_multicast_profile()
@@ -195,7 +194,7 @@ class L3VariableTime(Realm):
 
         self.attenuators = attenuators
         self.atten_vals = atten_vals
-        if ((len(self.atten_vals) > 0) and (self.atten_vals[0] != -1) and (len(self.attenuators) == 0)):
+        if (len(self.atten_vals) > 0) and (self.atten_vals[0] != -1) and (len(self.attenuators) == 0):
             print("ERROR:  Attenuation values configured, but no Attenuator EIDs specified.\n")
             exit(1)
 
@@ -233,24 +232,22 @@ class L3VariableTime(Realm):
         # Lookup key is port-eid name
         self.port_csv_files = {}
         self.port_csv_writers = {}
-        
+
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
 
-
         # TODO:  cmd-line arg to enable/disable these stats.
         self.ap_stats_col_titles = ["Station Address", "Dl-PHY-Mbps", "Dl-Data-Mbps", "Dl-Air-Use", "Dl-Data-Use",
-                                    "Dl-Retries", "Dl-BW", "Dl-MCS", "Dl-NSS", "Dl-OFDMA", "Dl-MU-MIMO", 
+                                    "Dl-Retries", "Dl-BW", "Dl-MCS", "Dl-NSS", "Dl-OFDMA", "Dl-MU-MIMO",
                                     "Dl-Channel-Utilization"]
 
-        self.ap_stats_ul_col_titles = ["UL Station Address", "Ul-rssi", "Ul-tid", "Ul-ampdu","Ul-mpdu", "Ul-Data-Mbps",
-                                    "Ul-PHY-Mbps", "UL-BW", "Ul-MCS", "Ul-NSS", "Ul-OOW", "Ul-HOLES", 
-                                    "Ul-DUP", "Ul-Retries", "Ul-OFDMA", "Ul-Tones", "Ul-AIR"]
-
+        self.ap_stats_ul_col_titles = ["UL Station Address", "Ul-rssi", "Ul-tid", "Ul-ampdu", "Ul-mpdu", "Ul-Data-Mbps",
+                                       "Ul-PHY-Mbps", "UL-BW", "Ul-MCS", "Ul-NSS", "Ul-OOW", "Ul-HOLES",
+                                       "Ul-DUP", "Ul-Retries", "Ul-OFDMA", "Ul-Tones", "Ul-AIR"]
 
         dur = self.duration_time_to_seconds(self.test_duration)
 
-        if (self.polling_interval_seconds > dur + 1):
+        if self.polling_interval_seconds > dur + 1:
             self.polling_interval_seconds = dur - 1
 
         # Full spread-sheet data
@@ -265,8 +262,8 @@ class L3VariableTime(Realm):
         if self.dataplane == False:
             for (radio_, ssid_, ssid_password_, ssid_security_,
                  reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
-                in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list,
-                       reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
+                    in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list,
+                           reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
                 self.station_profile = self.new_station_profile()
                 self.station_profile.lfclient_url = self.lfclient_url
                 self.station_profile.ssid = ssid_
@@ -318,7 +315,7 @@ class L3VariableTime(Realm):
         return self.ap_ofdma_24g
 
     def get_kpi_csv(self):
-        #print("self.csv_kpi_file {}".format(self.csv_kpi_file.name))
+        # print("self.csv_kpi_file {}".format(self.csv_kpi_file.name))
         return self.csv_kpi_file.name
 
     # Find avg latency, jitter for connections using specified port.
@@ -334,7 +331,7 @@ class L3VariableTime(Realm):
         count = 0
         sta_name = 'no_station'
 
-        #print("endp-stats-for-port, port-eid: {}".format(eid_name))
+        # print("endp-stats-for-port, port-eid: {}".format(eid_name))
         eid = self.name_to_eid(eid_name)
         print("eid_name: {eid_name} eid: {eid}".format(eid_name=eid_name, eid=eid))
 
@@ -426,7 +423,7 @@ class L3VariableTime(Realm):
                                 endp_rx_drop_map[item] = value
                             if value_name == 'rx rate':
                                 # This hack breaks for mcast or if someone names endpoints weirdly.
-                                #print("item: ", item, " rx-bps: ", value_rx_bps)
+                                # print("item: ", item, " rx-bps: ", value_rx_bps)
                                 if item.endswith("-A"):
                                     total_dl += int(value)
                                 else:
@@ -438,9 +435,10 @@ class L3VariableTime(Realm):
                                 else:
                                     total_ul_ll += int(value)
 
-        #print("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
+        # print("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
- # This script supports resetting ports, allowing one to test AP/controller under data load
+
+    # This script supports resetting ports, allowing one to test AP/controller under data load
     # while bouncing wifi stations.  Check here to see if we should reset ports.
 
     def reset_port_check(self):
@@ -464,7 +462,7 @@ class L3VariableTime(Realm):
                         "radio: {} countdown seconds_till_reset {}".format(
                             station_profile.add_sta_data['radio'],
                             station_profile.reset_port_extra_data['seconds_till_reset']))
-                    if ((station_profile.reset_port_extra_data['seconds_till_reset'] <= 0)):
+                    if station_profile.reset_port_extra_data['seconds_till_reset'] <= 0:
                         station_profile.reset_port_extra_data['reset_port_timer_started'] = False
                         port_to_reset = random.randint(0, len(station_profile.station_names) - 1)
                         print(
@@ -489,12 +487,12 @@ class L3VariableTime(Realm):
 
         # Make sure they are gone
         count = 0
-        while (count < 10):
+        while count < 10:
             more = False
             for station_list in self.station_lists:
                 for sta in station_list:
                     rv = self.rm_port(sta, check_exists=True)
-                    if (rv):
+                    if rv:
                         more = True
             if not more:
                 break
@@ -523,7 +521,7 @@ class L3VariableTime(Realm):
             # stations, so allow skipping it.
             # Do clean cx lists so that when we re-apply them we get same endp name
             # as we had previously
-            #print("rebuild: Clearing cx profile lists.\n")
+            # print("rebuild: Clearing cx profile lists.\n")
             self.cx_profile.clean_cx_lists()
             self.multicast_profile.clean_mc_lists()
 
@@ -534,9 +532,9 @@ class L3VariableTime(Realm):
                     # use brackes on [self.side_a] to make it a list
                     these_cx, these_endp = self.cx_profile.create(endp_type=etype, side_a=[self.side_a],
                                                                   side_b=self.side_b, sleep_time=0, tos=_tos)
-                    if (etype == "lf_udp" or etype == "lf_udp6"):
+                    if etype == "lf_udp" or etype == "lf_udp6":
                         self.udp_endps = self.udp_endps + these_endp
-                    elif(etype == "lf"):
+                    elif etype == "lf":
                         self.lf_endps = self.eth_endps + these_endp
                     else:
                         self.tcp_endps = self.tcp_endps + these_endp
@@ -556,7 +554,7 @@ class L3VariableTime(Realm):
                 # Build/update connection types
                 for etype in self.endp_types:
                     if etype == "mc_udp" or etype == "mc_udp6":
-                        print("Creating Multicast connections for endpoint type: %s" % (etype))
+                        print("Creating Multicast connections for endpoint type: %s" % etype)
                         self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
                         self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
                     else:
@@ -564,7 +562,7 @@ class L3VariableTime(Realm):
                             print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s" % (etype, _tos, self.cx_profile.get_cx_count()))
                             these_cx, these_endp = self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names,
                                                                           side_b=self.side_b, sleep_time=0, tos=_tos)
-                            if (etype == "lf_udp" or etype == "lf_udp6"):
+                            if etype == "lf_udp" or etype == "lf_udp6":
                                 self.udp_endps = self.udp_endps + these_endp
                             else:
                                 self.tcp_endps = self.tcp_endps + these_endp
@@ -572,7 +570,7 @@ class L3VariableTime(Realm):
         self.cx_count = self.cx_profile.get_cx_count()
 
         if self.dataplane == True:
-            self._pass("PASS: CX build finished: created/updated:  %s connections." % (self.cx_count))
+            self._pass("PASS: CX build finished: created/updated:  %s connections." % self.cx_count)
         else:
             self._pass("PASS: Stations & CX build finished: created/updated: %s stations and %s connections." % (self.station_count, self.cx_count))
 
@@ -744,16 +742,15 @@ class L3VariableTime(Realm):
 
         return ap_stats_ul_2g
 
-
     # provide fake bs_data for testing without AP wl2 is the 6E interface, wl1 5G, wl0 2G
 
     def read_ap_rx_report_test_mode(self):
         ap_rx_report_fake = "{}{}{}{}{}".format("root@Docsis-Gateway:~#  wl -i wl1 rx_report\n",
-                "Station Address (rssi)  tid   ampdu     mpdu  Data Mbps   PHY Mbps    bw   mcs   Nss   oow holes   dup rtries  ofdma  tones    air\n",
-                "50:E0:85:87:5B:F4 (-43dBm)   0    2062   127078       32.5      571.9    80  11.0     2     0     0    64     0%   100%  483.3     6%\n",
-                "50:E0:85:84:7A:E7 (-44dBm)   0    2334   144373       36.9      343.1    80  10.9     2     0     0    63     0%   100%  291.4    11%\n",
-                "50:E0:85:88:F4:5F (-45dBm)   0    2296   142463       36.4      346.3    80  10.9     2     0     0    64     0%   100%  294.1    11%\n")
-                #Keep commented for testing "(overall)   -    6692   413914      105.8          -     -     -     -     -     -     -      -     -      -       -     -\n"
+                                                "Station Address (rssi)  tid   ampdu     mpdu  Data Mbps   PHY Mbps    bw   mcs   Nss   oow holes   dup rtries  ofdma  tones    air\n",
+                                                "50:E0:85:87:5B:F4 (-43dBm)   0    2062   127078       32.5      571.9    80  11.0     2     0     0    64     0%   100%  483.3     6%\n",
+                                                "50:E0:85:84:7A:E7 (-44dBm)   0    2334   144373       36.9      343.1    80  10.9     2     0     0    63     0%   100%  291.4    11%\n",
+                                                "50:E0:85:88:F4:5F (-45dBm)   0    2296   142463       36.4      346.3    80  10.9     2     0     0    64     0%   100%  294.1    11%\n")
+        # Keep commented for testing "(overall)   -    6692   413914      105.8          -     -     -     -     -     -     -      -     -      -       -     -\n"
         return ap_rx_report_fake
 
     def read_ap_bs_data_test_mode(self):
@@ -763,17 +760,17 @@ class L3VariableTime(Realm):
                                               "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
                                               "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
                                               "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n")
-                                              #Keep commented for testing "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
+        # Keep commented for testing "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
         # print("ap_stats_fake {}".format(ap_stats_fake))
         return ap_stats_fake
 
     def read_ap_chanim_stats_test_mode(self):
         # Create the test data as a continuous string
         ap_chanim_stats_fake = "{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl2 chanim_stats\n",
-                                               "version: 3\n",
-                                               "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
-                                               # `"0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
-                                               '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
+                                                 "version: 3\n",
+                                                 "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
+                                                 # `"0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
+                                                 '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
         # "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
         return ap_chanim_stats_fake
 
@@ -783,17 +780,17 @@ class L3VariableTime(Realm):
         self.admin_up(self.side_b)
         for station_profile in self.station_profiles:
             for sta in station_profile.station_names:
-                print("Bringing up station %s" % (sta))
+                print("Bringing up station %s" % sta)
                 self.admin_up(sta)
 
         temp_stations_list = []
-        #temp_stations_list.append(self.side_b)
+        # temp_stations_list.append(self.side_b)
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
 
         temp_stations_list_with_side_b = temp_stations_list.copy()
         # wait for b side to get IP
-        temp_stations_list_with_side_b.append(self.side_b) 
+        temp_stations_list_with_side_b.append(self.side_b)
         print("temp_stations_list {temp_stations_list}".format(temp_stations_list=temp_stations_list))
         print("temp_stations_list_with_side_b {temp_stations_list_with_side_b}".format(temp_stations_list_with_side_b=temp_stations_list_with_side_b))
 
@@ -817,7 +814,6 @@ class L3VariableTime(Realm):
         for eid_name in port_eids:
             self.csv_add_ul_port_column_headers(eid_name, self.csv_generate_ul_port_column_headers())
 
-
         # For each rate
         rate_idx = 0
         for ul in self.side_a_min_rate:
@@ -840,10 +836,10 @@ class L3VariableTime(Realm):
                 dl_pdu_str = dl_pdu
                 ul_pdu_str = ul_pdu
 
-                if (ul_pdu == "AUTO" or ul_pdu == "MTU"):
+                if ul_pdu == "AUTO" or ul_pdu == "MTU":
                     ul_pdu = "-1"
 
-                if (dl_pdu == "AUTO" or dl_pdu == "MTU"):
+                if dl_pdu == "AUTO" or dl_pdu == "MTU":
                     dl_pdu = "-1"
 
                 print("ul: %s  dl: %s  cx-count: %s  rates-are-totals: %s\n" % (ul, dl, self.cx_count, self.rates_are_totals))
@@ -885,7 +881,7 @@ class L3VariableTime(Realm):
 
                     end_time = self.parse_time(self.test_duration) + cur_time
 
-                    print("Monitoring throughput for duration: %s" % (self.test_duration))
+                    print("Monitoring throughput for duration: %s" % self.test_duration)
 
                     # Monitor test for the interval duration.
                     passes = 0
@@ -904,7 +900,7 @@ class L3VariableTime(Realm):
                     mac_found_2g = False
                     reset_timer = 0
                     latency = 0
-                    jitter = 0 
+                    jitter = 0
                     total_ul_rate = 0
                     total_ul_rate_ll = 0
                     total_ul_pkts_ll = 0
@@ -913,9 +909,9 @@ class L3VariableTime(Realm):
                     total_dl_pkts_ll = 0
 
                     while cur_time < end_time:
-                        #interval_time = cur_time + datetime.timedelta(seconds=5)
+                        # interval_time = cur_time + datetime.timedelta(seconds=5)
                         interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
-                        #print("polling_interval_seconds {}".format(self.polling_interval_seconds))
+                        # print("polling_interval_seconds {}".format(self.polling_interval_seconds))
 
                         while cur_time < interval_time:
                             cur_time = datetime.datetime.now()
@@ -952,7 +948,6 @@ class L3VariableTime(Realm):
                                 ap_chanim_stats_6g = self.read_ap_chanim_stats_6g()
                                 ap_stats_ul_6g = self.read_ap_stats_ul_6g()
 
-
                             ap_stats_6g_rows = ap_stats_6g.splitlines()
                             print("From AP stats: ap_stats_6g_rows {}".format(ap_stats_6g_rows))
 
@@ -974,7 +969,7 @@ class L3VariableTime(Realm):
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
                                 if (response is None) or ("interface" not in response):
-                                    print("6g query-port: %s: incomplete response:" % (url))
+                                    print("6g query-port: %s: incomplete response:" % url)
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
@@ -987,8 +982,8 @@ class L3VariableTime(Realm):
                                     # Parse the ap stats to find the matching mac then use that row for reporting
                                     for row in ap_stats_6g_rows:
                                         split_row = row.split()
-                                        #print("split_row {}".format(split_row))
-                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # print("split_row {}".format(split_row))
+                                        # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
                                             if split_row[0].lower() != mac.lower():
                                                 ap_row = split_row
@@ -1041,7 +1036,6 @@ class L3VariableTime(Realm):
                                         # ap information is passed with ap_row so all information needs to be contained in ap_row
                                         ap_row.append(str(channel_utilization))
 
-
                             # work though the ul rx_data 6G
                             for eid_name in port_eids:
                                 eid = self.name_to_eid(eid_name)
@@ -1049,7 +1043,7 @@ class L3VariableTime(Realm):
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
                                 if (response is None) or ("interface" not in response):
-                                    print("6g query-port: %s: incomplete response:" % (url))
+                                    print("6g query-port: %s: incomplete response:" % url)
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
@@ -1062,8 +1056,8 @@ class L3VariableTime(Realm):
                                     # Parse the ap stats to find the matching mac then use that row for reporting
                                     for row in ap_stats_ul_6g_rows:
                                         split_ul_row = row.split()
-                                        #print("split_row {}".format(split_row))
-                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # print("split_row {}".format(split_row))
+                                        # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
                                             if split_ul_row[0].lower() != mac.lower():
                                                 ap_ul_row = split_ul_row
@@ -1125,7 +1119,7 @@ class L3VariableTime(Realm):
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
                                 if (response is None) or ("interface" not in response):
-                                    print("query-port 5g: %s: incomplete response:" % (url))
+                                    print("query-port 5g: %s: incomplete response:" % url)
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
@@ -1138,8 +1132,8 @@ class L3VariableTime(Realm):
                                     # Parse the ap stats to find the matching mac then use that row for reporting
                                     for row in ap_stats_5g_rows:
                                         split_row = row.split()
-                                        #print("split_row {}".format(split_row))
-                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # print("split_row {}".format(split_row))
+                                        # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
                                             if split_row[0].lower() != mac.lower():
                                                 ap_row = split_row
@@ -1196,16 +1190,16 @@ class L3VariableTime(Realm):
 
                                         self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                                             latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row) 
+                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row)
 
-                            # work though the ul rx_data 5G
+                                        # work though the ul rx_data 5G
                             for eid_name in port_eids:
                                 eid = self.name_to_eid(eid_name)
                                 url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
                                 if (response is None) or ("interface" not in response):
-                                    print("5g query-port: %s: incomplete response:" % (url))
+                                    print("5g query-port: %s: incomplete response:" % url)
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
@@ -1218,8 +1212,8 @@ class L3VariableTime(Realm):
                                     # Parse the ap stats to find the matching mac then use that row for reporting
                                     for row in ap_stats_ul_5g_rows:
                                         split_ul_row = row.split()
-                                        #print("split_row {}".format(split_row))
-                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # print("split_row {}".format(split_row))
+                                        # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
                                             if split_ul_row[0].lower() != mac.lower():
                                                 ap_ul_row = split_ul_row
@@ -1244,8 +1238,8 @@ class L3VariableTime(Realm):
 
                                         print("5g ap_ul_row {ap_ul_row}".format(ap_ul_row=ap_ul_row))
                                         self.write_ul_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                            latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_ul_row)
+                                                               latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
+                                                               total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_ul_row)
 
                             # 2g test mode
                             if self.ap_test_mode:
@@ -1279,7 +1273,7 @@ class L3VariableTime(Realm):
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
                                 if (response is None) or ("interface" not in response):
-                                    print("2g query-port: %s: incomplete response:" % (url))
+                                    print("2g query-port: %s: incomplete response:" % url)
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
@@ -1292,8 +1286,8 @@ class L3VariableTime(Realm):
                                     # Parse the ap stats to find the matching mac then use that row for reporting
                                     for row in ap_stats_2g_rows:
                                         split_row = row.split()
-                                        #print("split_row {}".format(split_row))
-                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # print("split_row {}".format(split_row))
+                                        # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
                                             if split_row[0].lower() != mac.lower():
                                                 ap_row = split_row
@@ -1350,15 +1344,15 @@ class L3VariableTime(Realm):
 
                                         self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                                             latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row) 
-                            # work though the ul rx_data 5G
+                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row)
+                                        # work though the ul rx_data 5G
                             for eid_name in port_eids:
                                 eid = self.name_to_eid(eid_name)
                                 url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
                                 if (response is None) or ("interface" not in response):
-                                    print("5g query-port: %s: incomplete response:" % (url))
+                                    print("5g query-port: %s: incomplete response:" % url)
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
@@ -1371,8 +1365,8 @@ class L3VariableTime(Realm):
                                     # Parse the ap stats to find the matching mac then use that row for reporting
                                     for row in ap_stats_ul_2g_rows:
                                         split_ul_row = row.split()
-                                        #print("split_row {}".format(split_row))
-                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # print("split_row {}".format(split_row))
+                                        # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
                                             if split_ul_row[0].lower() != mac.lower():
                                                 ap_ul_row = split_ul_row
@@ -1397,8 +1391,8 @@ class L3VariableTime(Realm):
 
                                         print("2g ap_ul_row {ap_ul_row}".format(ap_ul_row=ap_ul_row))
                                         self.write_ul_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                            latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_ul_row)
+                                                               latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
+                                                               total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_ul_row)
                         else:
 
                             # Query all of our ports
@@ -1409,7 +1403,7 @@ class L3VariableTime(Realm):
                                 url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
                                 response = self.json_get(url)
                                 if (response is None) or ("interface" not in response):
-                                    print("query-port: %s: incomplete response:" % (url))
+                                    print("query-port: %s: incomplete response:" % url)
                                     pprint(response)
                                 else:
                                     p = response['interface']
@@ -1418,9 +1412,9 @@ class L3VariableTime(Realm):
 
                                     self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
                                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                        total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row) 
+                                                        total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row)
 
-                    # At end of test step, record KPI into kpi.csv
+                                    # At end of test step, record KPI into kpi.csv
                     self.record_kpi_csv(
                         len(temp_stations_list),
                         ul,
@@ -1432,7 +1426,6 @@ class L3VariableTime(Realm):
                         total_ul_bps,
                         total_dl_ll_bps,
                         total_ul_ll_bps)
-
 
                     # At end of test step, record KPI information. This is different the kpi.csv
                     self.record_kpi(
@@ -1494,12 +1487,12 @@ class L3VariableTime(Realm):
                      port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll]
 
         # Add in info queried from AP. 
-        #print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
-        #print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
+        # print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
+        # print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
         if len(ap_row) == len(self.ap_stats_col_titles):
-            #print("ap_row {}".format(ap_row))
+            # print("ap_row {}".format(ap_row))
             for col in ap_row:
-                #print("col {}".format(col))
+                # print("col {}".format(col))
                 row.append(col)
 
         writer = self.port_csv_writers[eid_name]
@@ -1507,7 +1500,7 @@ class L3VariableTime(Realm):
         self.port_csv_files[eid_name].flush()
 
     def write_ul_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data, latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                       total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_ul_row):
+                          total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_ul_row):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, eid_name
@@ -1517,16 +1510,16 @@ class L3VariableTime(Realm):
                      port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll]
 
         # Add in info queried from AP. 
-        #print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
-        #print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
+        # print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
+        # print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
 
-        print("ap_ul_row len {} ap_stats_ul_col_titles len {} ap_ul_row {}".format(len(ap_ul_row),len(self.ap_stats_ul_col_titles),ap_ul_row))
+        print("ap_ul_row len {} ap_stats_ul_col_titles len {} ap_ul_row {}".format(len(ap_ul_row), len(self.ap_stats_ul_col_titles), ap_ul_row))
         if len(ap_ul_row) == len(self.ap_stats_ul_col_titles):
             print("ap_ul_row {}".format(ap_ul_row))
             for col in ap_ul_row:
                 print("col {}".format(col))
                 row.append(col)
-                    
+
         writer = self.ul_port_csv_writers[eid_name]
         writer.writerow(row)
         self.ul_port_csv_files[eid_name].flush()
@@ -1540,51 +1533,49 @@ class L3VariableTime(Realm):
     def record_kpi_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps):
 
         print("NOTE:  Adding kpi to kpi.csv, sta_count {sta_count}  total-download-bps:{total_dl_bps}  upload: {total_ul_bps}  bi-directional: {total}\n".format(
-              sta_count=sta_count,total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total=(total_ul_bps + total_dl_bps)))
+            sta_count=sta_count, total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total=(total_ul_bps + total_dl_bps)))
 
         print("NOTE:  Adding kpi to kpi.csv, sta_count {sta_count}  total-download-bps:{total_dl_ll_bps}  upload: {total_ul_ll_bps}  bi-directional: {total_ll}\n".format(
-              sta_count=sta_count,total_dl_ll_bps=total_dl_ll_bps, total_ul_ll_bps=total_ul_ll_bps, total_ll=(total_ul_ll_bps + total_dl_ll_bps)))
-
+            sta_count=sta_count, total_dl_ll_bps=total_dl_ll_bps, total_ul_ll_bps=total_ul_ll_bps, total_ll=(total_ul_ll_bps + total_dl_ll_bps)))
 
         # the short description will all for more data to show up in one test-tag graph
 
         results_dict = self.kpi_csv.kpi_csv_get_dict_update_time()
         results_dict['Graph-Group'] = "Per Stations Rate DL"
-        results_dict['short-description'] = "DL {dl} bps  pdu {dl_pdu}  {sta_count} STA".format(dl=dl,dl_pdu=dl_pdu,sta_count=sta_count)
+        results_dict['short-description'] = "DL {dl} bps  pdu {dl_pdu}  {sta_count} STA".format(dl=dl, dl_pdu=dl_pdu, sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format(total_dl_bps)
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate UL"
-        results_dict['short-description'] = "UL {ul} bps pdu {ul_pdu} {sta_count} STA".format(ul=ul,ul_pdu=ul_pdu,sta_count=sta_count)
+        results_dict['short-description'] = "UL {ul} bps pdu {ul_pdu} {sta_count} STA".format(ul=ul, ul_pdu=ul_pdu, sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format(total_ul_bps)
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate UL+DL"
-        results_dict['short-description'] = "UL {ul} bps pdu {ul_pdu} + DL {dl} bps pud {dl_pdu}- {sta_count} STA".format(ul=ul,ul_pdu=ul_pdu,dl=dl,dl_pdu=dl_pdu,sta_count=sta_count)
+        results_dict['short-description'] = "UL {ul} bps pdu {ul_pdu} + DL {dl} bps pud {dl_pdu}- {sta_count} STA".format(ul=ul, ul_pdu=ul_pdu, dl=dl, dl_pdu=dl_pdu, sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format((total_ul_bps + total_dl_bps))
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate DL"
-        results_dict['short-description'] = "DL LL {dl} bps  pdu {dl_pdu}  {sta_count} STA".format(dl=dl,dl_pdu=dl_pdu,sta_count=sta_count)
+        results_dict['short-description'] = "DL LL {dl} bps  pdu {dl_pdu}  {sta_count} STA".format(dl=dl, dl_pdu=dl_pdu, sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format(total_dl_ll_bps)
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate UL"
-        results_dict['short-description'] = "UL LL {ul} bps pdu {ul_pdu} {sta_count} STA".format(ul=ul,ul_pdu=ul_pdu,sta_count=sta_count)
+        results_dict['short-description'] = "UL LL {ul} bps pdu {ul_pdu} {sta_count} STA".format(ul=ul, ul_pdu=ul_pdu, sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format(total_ul_ll_bps)
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate UL+DL"
-        results_dict['short-description'] = "UL LL {ul} bps pdu {ul_pdu} + DL LL {dl} bps pud {dl_pdu}- {sta_count} STA".format(ul=ul,ul_pdu=ul_pdu,dl=dl,dl_pdu=dl_pdu,sta_count=sta_count)
+        results_dict['short-description'] = "UL LL {ul} bps pdu {ul_pdu} + DL LL {dl} bps pud {dl_pdu}- {sta_count} STA".format(ul=ul, ul_pdu=ul_pdu, dl=dl, dl_pdu=dl_pdu, sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format((total_ul_ll_bps + total_dl_ll_bps))
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
-
 
     # Submit data to the influx db if configured to do so.
     # This is not the kpi.csv 
@@ -1643,11 +1634,7 @@ class L3VariableTime(Realm):
             station_profile.cleanup()
 
     def csv_generate_column_headers(self):
-        csv_rx_headers = ['Time epoch', 'Time', 'Monitor',
-                          'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested', 'DL-Max-Requested',
-                          'UL-Min-PDU', 'UL-Max-PDU', 'DL-Min-PDU', 'DL-Max-PDU',
-                          ]
-        csv_rx_headers.append("average_rx_data_bytes")
+        csv_rx_headers = ['Time epoch', 'Time', 'Monitor', 'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested', 'DL-Max-Requested', 'UL-Min-PDU', 'UL-Max-PDU', 'DL-Min-PDU', 'DL-Max-PDU', "average_rx_data_bytes"]
         return csv_rx_headers
 
     def csv_generate_port_column_headers(self):
@@ -1665,18 +1652,16 @@ class L3VariableTime(Realm):
 
     def csv_generate_ul_port_column_headers(self):
         csv_ul_rx_headers = ['Time epoch', 'Time', 'Station-Count',
-                          'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested', 'DL-Max-Requested',
-                          'UL-Min-PDU', 'UL-Max-PDU', 'DL-Min-PDU', 'DL-Max-PDU', 'Attenuation',
-                          'Name', 'Rx-Bps', 'Tx-Bps', 'Rx-Link-Rate', 'Tx-Link-Rate', 'RSSI', 'AP', 'Mode',
-                          'Rx-Latency', 'Rx-Jitter', 'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll'
-                          ]
+                             'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested', 'DL-Max-Requested',
+                             'UL-Min-PDU', 'UL-Max-PDU', 'DL-Min-PDU', 'DL-Max-PDU', 'Attenuation',
+                             'Name', 'Rx-Bps', 'Tx-Bps', 'Rx-Link-Rate', 'Tx-Link-Rate', 'RSSI', 'AP', 'Mode',
+                             'Rx-Latency', 'Rx-Jitter', 'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll'
+                             ]
         # Add in columns we are going to query from the AP
         for col in self.ap_stats_ul_col_titles:
             csv_ul_rx_headers.append(col)
 
         return csv_ul_rx_headers
-
-
 
     def csv_generate_kpi_column_headers(self):
         csv_rx_headers = ['Time epoch', 'Time', 'Station-Count',
@@ -1721,7 +1706,6 @@ class L3VariableTime(Realm):
         ul_port_csv_writer.writerow(headers)
         pfile.flush()
 
-
     def csv_validate_list(self, csv_list, length):
         if len(csv_list) < length:
             csv_list = csv_list + [('no data', 'no data')] * (length - len(csv_list))
@@ -1733,6 +1717,7 @@ class L3VariableTime(Realm):
             csv_file.flush()
 
     # End of the main class.
+
 
 # Check some input values.
 
@@ -1870,7 +1855,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
     parser.add_argument('--tty', help='--tty \"/dev/ttyUSB2\" the serial interface to the AP', default="")
     parser.add_argument('--baud', help='--baud \"9600\"  AP baud rate for the serial interface', default="9600")
-    parser.add_argument('--mgr','--lfmgr', dest='lfmgr', help='--lfmgr <hostname for where LANforge GUI is running>', default='localhost')
+    parser.add_argument('--mgr', '--lfmgr', dest='lfmgr', help='--lfmgr <hostname for where LANforge GUI is running>', default='localhost')
     parser.add_argument(
         '--test_duration',
         help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',
@@ -1942,7 +1927,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 
     args = parser.parse_args()
 
-    #print("args: {}".format(args))
+    # print("args: {}".format(args))
     debug = args.debug
 
     # for kpi.csv generation
@@ -1952,7 +1937,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     dut_hw_version = args.dut_hw_version
     dut_sw_version = args.dut_sw_version
     dut_model_num = args.dut_model_num
-    test_priority = args.test_priority # this may need to be set per test
+    test_priority = args.test_priority  # this may need to be set per test
     test_id = args.test_id
 
     if args.ap_read:
@@ -2113,7 +2098,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
             radio_reset_found = True
             for key in optional_radio_reset_keys:
                 if key not in radio_info_dict:
-                    #print("port reset test not enabled")
+                    # print("port reset test not enabled")
                     radio_reset_found = False
                     break
 
@@ -2137,7 +2122,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
             station_lists.append(station_list)
             index += 1
 
-    #print("endp-types: %s"%(endp_types))
+    # print("endp-types: %s"%(endp_types))
 
     ul_rates = args.side_a_min_bps.split(",")
     dl_rates = args.side_b_min_bps.split(",")
@@ -2147,14 +2132,14 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
         attenuators = []
     else:
         attenuators = args.attenuators.split(",")
-    if (args.atten_vals == ""):
+    if args.atten_vals == "":
         atten_vals = [-1]
     else:
         atten_vals = args.atten_vals.split(",")
 
-    if (len(ul_rates) != len(dl_rates)):
+    if len(ul_rates) != len(dl_rates):
         print("ERROR:  ul_rates %s and dl_rates %s arrays must be same length\n" % (len(ul_rates), len(dl_rates)))
-    if (len(ul_pdus) != len(dl_pdus)):
+    if len(ul_pdus) != len(dl_pdus):
         print("ERROR:  ul_pdus %s and dl_pdus %s arrays must be same length\n" % (len(ul_rates), len(dl_rates)))
 
     ip_var_test = L3VariableTime(
@@ -2235,7 +2220,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
     report.set_table_dataframe_from_csv(csv_kpi_file)
     report.build_table()
     report.write_html_with_timestamp()
-    #report.write_pdf(_page_size = 'A3', _orientation='Landscape')
+    # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
     report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
 
     # ap scheduler results and write to a file
