@@ -24,15 +24,28 @@ TestGroupProfile = realm.TestGroupProfile
 
 
 class CreateL4(Realm):
-    def __init__(self,
-                 ssid, security, password, sta_list, name_prefix, upstream, radio,
-                 host="localhost", port=8080, mode=0, ap=None,
-                 side_a_min_rate=56, side_a_max_rate=0,
-                 side_b_min_rate=56, side_b_max_rate=0,
-                 number_template="00000", use_ht160=False,
-                 _debug_on=False,
-                 _exit_on_error=False,
-                 _exit_on_fail=False):
+    def __init__(
+            self,
+            ssid,
+            security,
+            password,
+            sta_list,
+            name_prefix,
+            upstream,
+            radio,
+            host="localhost",
+            port=8080,
+            mode=0,
+            ap=None,
+            side_a_min_rate=56,
+            side_a_max_rate=0,
+            side_b_min_rate=56,
+            side_b_max_rate=0,
+            number_template="00000",
+            use_ht160=False,
+            _debug_on=False,
+            _exit_on_error=False,
+            _exit_on_fail=False):
         super().__init__(host, port)
         self.upstream = upstream
         self.host = host
@@ -61,7 +74,9 @@ class CreateL4(Realm):
         self.station_profile.mode = mode
         if self.ap is not None:
             self.station_profile.set_command_param("add_sta", "ap", self.ap)
-        # self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user defined variable from terminal.
+        # self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0,
+        # end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user
+        # defined variable from terminal.
 
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
@@ -74,23 +89,33 @@ class CreateL4(Realm):
     def cleanup(self):
         self.cx_profile.cleanup()
         self.station_profile.cleanup()
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
-                                           port_list=self.station_profile.station_names,
-                                           debug=self.debug)
+        LFUtils.wait_until_ports_disappear(
+            base_url=self.lfclient_url,
+            port_list=self.station_profile.station_names,
+            debug=self.debug)
 
     def build(self):
         # Build stations
-        self.station_profile.use_security(self.security, self.ssid, self.password)
+        self.station_profile.use_security(
+            self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
-        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.station_profile.set_command_param("set_port", "report_timer", 1500)
+        self.station_profile.set_command_flag(
+            "add_sta", "create_admin_down", 1)
+        self.station_profile.set_command_param(
+            "set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
+        self.station_profile.create(
+            radio=self.radio,
+            sta_names_=self.sta_list,
+            debug=self.debug)
         self._pass("PASS: Station build finished")
 
-        self.cx_profile.create(ports=self.station_profile.station_names, sleep_time=.5, debug_=self.debug,
-                               suppress_related_commands_=True)
+        self.cx_profile.create(
+            ports=self.station_profile.station_names,
+            sleep_time=.5,
+            debug_=self.debug,
+            suppress_related_commands_=True)
 
 
 def main():
@@ -140,8 +165,14 @@ python3 ./layer4.py
             required_args = group
             break
     if required_args is not None:
-        required_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
-        required_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
+        required_args.add_argument(
+            '--a_min',
+            help='--a_min bps rate minimum for side_a',
+            default=256000)
+        required_args.add_argument(
+            '--b_min',
+            help='--b_min bps rate minimum for side_b',
+            default=256000)
 
     optional_args = None
     for group in parser._action_groups:
@@ -149,16 +180,24 @@ python3 ./layer4.py
             optional_args = group
             break
     if optional_args is not None:
-        optional_args.add_argument('--mode', help='Used to force mode of stations', default=0)
-        optional_args.add_argument('--ap', help='Used to force a connection to a particular AP')
+        optional_args.add_argument(
+            '--mode',
+            help='Used to force mode of stations',
+            default=0)
+        optional_args.add_argument(
+            '--ap', help='Used to force a connection to a particular AP')
     args = parser.parse_args()
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_sta = int(args.num_stations)
 
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
-                                          radio=args.radio)
+    station_list = LFUtils.portNameSeries(
+        prefix_="sta",
+        start_id_=0,
+        end_id_=num_sta - 1,
+        padding_number_=10000,
+        radio=args.radio)
     ip_var_test = CreateL4(host=args.mgr,
                            port=args.mgr_port,
                            number_template="0000",
