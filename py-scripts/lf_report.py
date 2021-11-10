@@ -76,6 +76,7 @@ class lf_report():
             self.output_html=_output_html
             self.path_date_time = _path_date_time
             self.write_output_html = ""
+            self.write_output_index_html = ""
             self.output_pdf=_output_pdf
             self.write_output_pdf = ""
             self.banner_html = ""
@@ -269,6 +270,18 @@ class lf_report():
         except:
             print("write_html failed")
         return self.write_output_html
+
+    def write_index_html(self): 
+        self.write_output_index_html = str(self.path_date_time)+'/'+ str("index.html")
+        print("write_output_index_html: {}".format(self.write_output_index_html))
+        try:
+            test_file = open(self.write_output_index_html, "w")
+            test_file.write(self.html)
+            test_file.close()
+        except:
+            print("write_index_html failed")
+        return self.write_output_index_html
+
 
     def write_html_with_timestamp(self): 
         self.write_output_html = "{}/{}-{}".format(self.path_date_time,self.date,self.output_html)
