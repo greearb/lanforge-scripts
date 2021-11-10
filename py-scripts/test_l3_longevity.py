@@ -41,6 +41,16 @@ Example using upsteam eth1 downstream eth2
     ./test_l3_longevity.py --test_duration 20s --polling_interval 1s --upstream_port eth1 --downstream_port eth2
     --endp_type lf --rates_are_totals --side_a_min_bps=10000000,0 --side_a_min_pdu=1000 --side_b_min_bps=0,300000000 --side_b_min_pdu=1000
 
+Example using wifi_settings
+    ./test_l3_longevity.py  --lfmgr 192.168.100.116 --local_lf_report_dir
+     /home/lanforge/html-reports/ --test_duration 15s --polling_interval 5s
+     --upstream_port eth2
+     --radio "radio==wiphy1 stations==4 ssid==asus11ax-5 ssid_pw==hello123 security==wpa2
+     wifi_mode==0 wifi_settings==wifi_settings
+     enable_flags==('ht160_enable'|'wpa2_enable'|'80211u_enable'|'create_admin_down')"
+     --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000
+     --test_rig CT-US-001 --test_tag 'l3_longevity'
+
 COPYRIGHT:
 Copyright 2021 Candela Technologies Inc
 
@@ -75,6 +85,7 @@ Realm = realm.Realm
 csv_to_influx = importlib.import_module("py-scripts.csv_to_influx")
 InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")
 influx_add_parser_args = InfluxRequest.influx_add_parser_args
+RecordInflux = InfluxRequest.RecordInflux
 
 
 # This class handles running the test and generating reports.
@@ -98,19 +109,19 @@ class L3VariableTime(Realm):
                  reset_port_enable_list,
                  reset_port_time_min_list,
                  reset_port_time_max_list,
-                 side_a_min_rate=[56000],
-                 side_a_max_rate=[0],
-                 side_b_min_rate=[56000],
-                 side_b_max_rate=[0],
-                 side_a_min_pdu=["MTU"],
-                 side_a_max_pdu=[0],
-                 side_b_min_pdu=["MTU"],
-                 side_b_max_pdu=[0],
-                 user_tags=[],
+                 side_a_min_rate=None,
+                 side_a_max_rate=None,
+                 side_b_min_rate=None,
+                 side_b_max_rate=None,
+                 side_a_min_pdu=None,
+                 side_a_max_pdu=None,
+                 side_b_min_pdu=None,
+                 side_b_max_pdu=None,
+                 user_tags=None,
                  rates_are_totals=False,
                  mconn=1,
-                 attenuators=[],
-                 atten_vals=[],
+                 attenuators=None,
+                 atten_vals=None,
                  number_template="00",
                  test_duration="256s",
                  polling_interval="60s",
@@ -137,7 +148,34 @@ class L3VariableTime(Realm):
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  _proxy_str=None,
-                 _capture_signal_list=[]):
+                 _capture_signal_list=None):
+
+        self.eth_endps = []
+        self.total_stas = 0
+        if side_a_min_rate is None:
+            side_a_min_rate = [56000]
+        if side_a_max_rate is None:
+            side_a_max_rate = [0]
+        if side_b_min_rate is None:
+            side_b_min_rate = [56000]
+        if side_b_max_rate is None:
+            side_b_max_rate = [0]
+        if side_a_min_pdu is None:
+            side_a_min_pdu = ["MTU"]
+        if side_a_max_pdu is None:
+            side_a_max_pdu = [0]
+        if side_b_min_pdu is None:
+            side_b_min_pdu = ["MTU"]
+        if side_b_max_pdu is None:
+            side_b_max_pdu = [0]
+        if user_tags is None:
+            user_tags = []
+        if attenuators is None:
+            attenuators = []
+        if atten_vals is None:
+            atten_vals = []
+        if _capture_signal_list is None:
+            _capture_signal_list = []
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
                          debug_=debug,
@@ -341,6 +379,10 @@ class L3VariableTime(Realm):
         self.cx_profile.port = self.lfclient_port
         self.cx_profile.name_prefix = self.name_prefix
 
+        self.lf_endps = None
+        self.udp_endps = None
+        self.tcp_endps = None
+
     def get_ap_6g_umsched(self):
         return self.ap_6g_umsched
 
@@ -469,13 +511,13 @@ class L3VariableTime(Realm):
             our_endps[e] = e
         for endp_name in endp_list['endpoint']:
             if endp_name != 'uri' and endp_name != 'handler':
-                for item, value in endp_name.items():
+                for item, endp_value in endp_name.items():
                     if item in our_endps:
-                        endps.append(value)
+                        endps.append(endp_value)
                         print("endpoint: ", item, " value:\n")
-                        pprint(value)
+                        pprint(endp_value)
 
-                        for value_name, value in value.items():
+                        for value_name, value in endp_value.items():
                             if value_name == 'rx bytes':
                                 endp_rx_map[item] = value
                             if value_name == 'rx rate':
@@ -894,7 +936,7 @@ class L3VariableTime(Realm):
         return ap_chanim_stats_fake
 
     # Run the main body of the test logic.
-    def start(self, print_pass=False, print_fail=False):
+    def start(self, print_pass=False):
         print("Bringing up stations")
         self.admin_up(self.side_b)
         for station_profile in self.station_profiles:
@@ -2568,7 +2610,7 @@ Setting wifi_settings per radio
         default='eth1')
     parser.add_argument(
         '--downstream_port',
-        help='--downstream_port <cross connect downstream_port> example: --downstream_port eth2')
+        help='--downstream_port <cross connect downstream_port> example: --downstream_port eth2', default=None)
     parser.add_argument(
         '--polling_interval',
         help="--polling_interval <seconds>",
@@ -3053,7 +3095,7 @@ Setting wifi_settings per radio
         print("build step failed.")
         print(ip_var_test.get_fail_message())
         exit(1)
-    ip_var_test.start(False, False)
+    ip_var_test.start(False)
     ip_var_test.stop()
     if not ip_var_test.passes():
         print("Test Ended: There were Failures")
