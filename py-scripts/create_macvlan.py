@@ -63,7 +63,10 @@ class CreateMacVlan(Realm):
     def build(self):
         # Build stations
         print("Creating MACVLANs")
-        self.mvlan_profile.create(admin_down=False, sleep_time=.5, debug=self.debug)
+        self.mvlan_profile.create(
+            admin_down=False,
+            sleep_time=.5,
+            debug=self.debug)
         self._pass("PASS: MACVLAN build finished")
         self.created_ports += self.mvlan_profile.created_macvlans
 
@@ -79,7 +82,7 @@ def main():
 create_macvlan.py:
 --------------------
 Generic command layout:
-./create_macvlan.py --macvlan_parent <port> --num_ports <num ports> 
+./create_macvlan.py --macvlan_parent <port> --num_ports <num ports>
                  --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
 
 ./create_macvlan.py --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
@@ -95,28 +98,59 @@ Generic command layout:
 ./create_macvlan.py --radio 1.wiphy0 --macvlan_parent eth1 --num_ports 3
                  --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2 --connections_per_port 2
                  --netmask 255.255.240.0 --gateway 10.40.0.1
-                 
-                 You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices. 
+
+                 You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
 
 ''')
-    parser.add_argument('--num_stations', help='Number of stations to create', default=0)
+    parser.add_argument(
+        '--num_stations',
+        help='Number of stations to create',
+        default=0)
     parser.add_argument('--radio', help='radio EID, e.g: 1.wiphy2')
-    parser.add_argument('-u', '--upstream_port',
-                        help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
-                        default='1.eth1')
-    parser.add_argument('--macvlan_parent', help='specifies parent port for macvlan creation', required=True)
-    parser.add_argument('--first_port', help='specifies name of first port to be used', default=None)
-    parser.add_argument('--num_ports', help='number of ports to create', default=1)
-    parser.add_argument('--connections_per_port', help='specifies number of connections to be used per port', default=1,
-                        type=int)
-    parser.add_argument('--use_ports', help='list of comma separated ports to use with ips, \'=\' separates name and ip'
-                                            '{ port_name1=ip_addr1,port_name1=ip_addr2 }. '
-                                            'Ports without ips will be left alone', default=None)
-    parser.add_argument('--first_mvlan_ip', help='specifies first static ip address to be used or dhcp', default=None)
-    parser.add_argument('--netmask', help='specifies netmask to be used with static ip addresses', default=None)
-    parser.add_argument('--gateway', help='specifies default gateway to be used with static addressing', default=None)
-    parser.add_argument('--cxs', help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group',
-                        default=None)
+    parser.add_argument(
+        '-u',
+        '--upstream_port',
+        help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
+        default='1.eth1')
+    parser.add_argument(
+        '--macvlan_parent',
+        help='specifies parent port for macvlan creation',
+        required=True)
+    parser.add_argument(
+        '--first_port',
+        help='specifies name of first port to be used',
+        default=None)
+    parser.add_argument(
+        '--num_ports',
+        help='number of ports to create',
+        default=1)
+    parser.add_argument(
+        '--connections_per_port',
+        help='specifies number of connections to be used per port',
+        default=1,
+        type=int)
+    parser.add_argument(
+        '--use_ports',
+        help='list of comma separated ports to use with ips, \'=\' separates name and ip'
+        '{ port_name1=ip_addr1,port_name1=ip_addr2 }. '
+        'Ports without ips will be left alone',
+        default=None)
+    parser.add_argument(
+        '--first_mvlan_ip',
+        help='specifies first static ip address to be used or dhcp',
+        default=None)
+    parser.add_argument(
+        '--netmask',
+        help='specifies netmask to be used with static ip addresses',
+        default=None)
+    parser.add_argument(
+        '--gateway',
+        help='specifies default gateway to be used with static addressing',
+        default=None)
+    parser.add_argument(
+        '--cxs',
+        help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group',
+        default=None)
     args = parser.parse_args()
 
     port_list = []
@@ -126,27 +160,38 @@ Generic command layout:
             if (args.num_ports is not None) and (int(args.num_ports) > 0):
                 start_num = int(args.first_port[3:])
                 num_ports = int(args.num_ports)
-                port_list = LFUtils.port_name_series(prefix="sta", start_id=start_num, end_id=start_num + num_ports - 1,
-                                                     padding_number=10000,
-                                                     radio=args.radio)
+                port_list = LFUtils.port_name_series(
+                    prefix="sta",
+                    start_id=start_num,
+                    end_id=start_num + num_ports - 1,
+                    padding_number=10000,
+                    radio=args.radio)
         else:
-            if (args.num_ports is not None) and args.macvlan_parent is not None and (int(args.num_ports) > 0) \
-                    and args.macvlan_parent in args.first_port:
-                start_num = int(args.first_port[args.first_port.index('#') + 1:])
+            if (args.num_ports is not None) and args.macvlan_parent is not None and (
+                    int(args.num_ports) > 0) and args.macvlan_parent in args.first_port:
+                start_num = int(
+                    args.first_port[args.first_port.index('#') + 1:])
                 num_ports = int(args.num_ports)
-                port_list = LFUtils.port_name_series(prefix=args.macvlan_parent + "#", start_id=start_num,
-                                                     end_id=start_num + num_ports - 1, padding_number=100000,
-                                                     radio=args.radio)
+                port_list = LFUtils.port_name_series(
+                    prefix=args.macvlan_parent + "#",
+                    start_id=start_num,
+                    end_id=start_num + num_ports - 1,
+                    padding_number=100000,
+                    radio=args.radio)
             else:
-                raise ValueError("Invalid values for num_ports [%s], macvlan_parent [%s], and/or first_port [%s].\n"
-                                 "first_port must contain parent port and num_ports must be greater than 0"
-                                 % (args.num_ports, args.macvlan_parent, args.first_port))
+                raise ValueError(
+                    "Invalid values for num_ports [%s], macvlan_parent [%s], and/or first_port [%s].\n"
+                    "first_port must contain parent port and num_ports must be greater than 0" %
+                    (args.num_ports, args.macvlan_parent, args.first_port))
     else:
         if args.use_ports is None:
             num_ports = int(args.num_ports)
-            port_list = LFUtils.port_name_series(prefix=args.macvlan_parent + "#", start_id=0,
-                                                 end_id=num_ports - 1, padding_number=100000,
-                                                 radio=args.radio)
+            port_list = LFUtils.port_name_series(
+                prefix=args.macvlan_parent + "#",
+                start_id=0,
+                end_id=num_ports - 1,
+                padding_number=100000,
+                radio=args.radio)
         else:
             temp_list = args.use_ports.split(',')
             for port in temp_list:
@@ -157,7 +202,8 @@ Generic command layout:
                     ip_list.append(0)
 
             if len(port_list) != len(ip_list):
-                raise ValueError(temp_list, " ports must have matching ip addresses!")
+                raise ValueError(
+                    temp_list, " ports must have matching ip addresses!")
 
     if args.first_mvlan_ip is not None:
         if args.first_mvlan_ip.lower() == "dhcp":
