@@ -59,7 +59,10 @@ class CreateChamberview(cv):
         self.lfmgr = lfmgr
         self.port = port
 
-    def clean_cv_scenario(self, cv_type="Network-Connectivity", scenario_name=None):
+    def clean_cv_scenario(
+            self,
+            cv_type="Network-Connectivity",
+            scenario_name=None):
         self.rm_cv_text_blob(cv_type, scenario_name)
 
     def setup(self,
@@ -105,7 +108,8 @@ class CreateChamberview(cv):
                     line[i][0][j] = line[i][0][j].split("=")
                     for k in range(len(line[i][0][j])):
                         name = line[i][0][j][k]
-                        if str(name) == "Resource" or str(name) == "Res" or str(name) == "R":
+                        if str(name) == "Resource" or str(
+                                name) == "Res" or str(name) == "R":
                             Resource = line[i][0][j][k + 1]
                         elif str(name) == "Profile" or str(name) == "Prof" or str(name) == "P":
                             Profile = line[i][0][j][k + 1]
@@ -176,36 +180,53 @@ def main():
         For Two line scenario use --line twice as shown in example, for multi line scenario
         use --line argument to create multiple lines
         \n
-           create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name" 
-             --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1 
-                    DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=" 
-             --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 
+           create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
+             --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1
                     DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN="
-           ********************************      OR        ********************************             
+             --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1
+                    DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN="
+           ********************************      OR        ********************************
            create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
              --raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
              --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
-           
+
            """)
-    parser.add_argument("-m", "--lfmgr", type=str,
-                        help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port", type=int, default=8080,
-                        help="IP Port the LANforge GUI is listening on (8080 is default)")
-    parser.add_argument("-cs", "--create_scenario", "--create_lf_scenario", type=str,
-                        help="name of scenario to be created")
+    parser.add_argument(
+        "-m",
+        "--lfmgr",
+        type=str,
+        help="address of the LANforge GUI machine (localhost is default)")
+    parser.add_argument(
+        "-o",
+        "--port",
+        type=int,
+        default=8080,
+        help="IP Port the LANforge GUI is listening on (8080 is default)")
+    parser.add_argument(
+        "-cs",
+        "--create_scenario",
+        "--create_lf_scenario",
+        type=str,
+        help="name of scenario to be created")
     parser.add_argument("-l", "--line", action='append', nargs='+',
                         help="line number", default=[])
     parser.add_argument("-rl", "--raw_line", action='append', nargs=1,
                         help="raw lines", default=[])
-    parser.add_argument("-ds", "--delete_scenario", default=False, action='store_true',
-                        help="delete scenario (by default: False)")
+    parser.add_argument(
+        "-ds",
+        "--delete_scenario",
+        default=False,
+        action='store_true',
+        help="delete scenario (by default: False)")
     args = parser.parse_args()
 
     Create_Chamberview = CreateChamberview(lfmgr=args.lfmgr,
                                            port=args.port,
                                            )
     if args.delete_scenario:
-        Create_Chamberview.clean_cv_scenario(cv_type="Network-Connectivity", scenario_name=args.create_scenario)
+        Create_Chamberview.clean_cv_scenario(
+            cv_type="Network-Connectivity",
+            scenario_name=args.create_scenario)
 
     Create_Chamberview.setup(create_scenario=args.create_scenario,
                              line=args.line,
