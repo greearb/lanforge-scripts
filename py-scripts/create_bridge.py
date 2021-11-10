@@ -69,7 +69,8 @@ class CreateBridge(Realm):
             "resource": self.resource,
             "port": "br0",
             "current_flags": 0x80000000,
-            "interest": 0x4000  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
+            # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
+            "interest": 0x4000
         }
         self.json_post("cli-json/set_port", bridge_set_port)
 
@@ -97,11 +98,13 @@ Command example:
     --debug
             ''')
     required = parser.add_argument_group('required arguments')
-    required.add_argument('--target_device', help='Where the bridges should be connecting', required=True)
+    required.add_argument(
+        '--target_device', help='Where the bridges should be connecting', required=True)
     # required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
 
     optional = parser.add_argument_group('optional arguments')
-    optional.add_argument('--num_bridges', help='Number of bridges to Create', required=False)
+    optional.add_argument(
+        '--num_bridges', help='Number of bridges to Create', required=False)
     args = parser.parse_args()
     # if args.debug:
     #    pprint.pprint(args)
