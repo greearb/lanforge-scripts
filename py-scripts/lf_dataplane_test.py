@@ -105,7 +105,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
@@ -180,14 +180,16 @@ class DataplaneTest(cv_test):
 
         blob_test = "dataplane-test-latest-"
 
-        self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
+        # To delete old config with same name
+        self.rm_text_blob(self.config_name, blob_test)
         self.show_text_blob(None, None, False)
 
         # Test related settings
         cfg_options = []
 
         ### HERE###
-        self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
+        self.apply_cfg_options(cfg_options, self.enables,
+                               self.disables, self.raw_lines, self.raw_lines_file)
 
         # cmd line args take precedence and so come last in the cfg array.
         if self.upstream != "":
@@ -215,7 +217,8 @@ class DataplaneTest(cv_test):
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
                                  cv_cmds, ssh_port=self.ssh_port, local_lf_report_dir=self.local_lf_report_dir,
                                  graph_groups_file=self.graph_groups)
-        self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
+        # To delete old config with same name
+        self.rm_text_blob(self.config_name, blob_test)
 
 
 def main():
@@ -287,12 +290,14 @@ def main():
     }
 
       """
-                                     )
+    )
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
-    parser.add_argument('--json', help="--json <config.json> json input file", default="")
-    parser.add_argument('--influx_json', help="--influx_json <influx_config.json> influx config json input file", default="")
+    parser.add_argument(
+        '--json', help="--json <config.json> json input file", default="")
+    parser.add_argument(
+        '--influx_json', help="--influx_json <influx_config.json> influx config json input file", default="")
     parser.add_argument("-u", "--upstream", type=str, default="",
                         help="Upstream port for wifi capacity test ex. 1.1.eth2")
     parser.add_argument("--station", type=str, default="",
@@ -306,10 +311,11 @@ def main():
                         help="Specify requested upload speed.  Percentage of theoretical is also supported.  Default: 0")
     parser.add_argument("--duration", default="",
                         help="Specify duration of each traffic run")
-    parser.add_argument("--graph_groups", help="File to save graph_groups to", default=None)
+    parser.add_argument(
+        "--graph_groups", help="File to save graph_groups to", default=None)
     parser.add_argument("--report_dir", default="")
-    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",default="")
-
+    parser.add_argument("--local_lf_report_dir",
+                        help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from", default="")
 
     args = parser.parse_args()
 
@@ -320,7 +326,7 @@ def main():
                 json_data = json.load(json_config)
         except:
             print("Error reading {}".format(args.json))
-        # json configuation takes presidence to command line 
+        # json configuation takes presidence to command line
         if "mgr" in json_data:
             args.mgr = json_data["mgr"]
         if "port" in json_data:
@@ -353,7 +359,6 @@ def main():
             json_data_tmp = [[x] for x in json_data["raw_line"]]
             args.raw_line = json_data_tmp
 
-
     # use influx json config file
     if args.influx_json != "":
         try:
@@ -361,7 +366,7 @@ def main():
                 influx_json_data = json.load(influx_json_config)
         except:
             print("Error reading {}".format(args.influx_json))
-        # json configuation takes presidence to command line 
+        # json configuation takes presidence to command line
         # influx DB configuration
         if "influx_host" in influx_json_data:
             args.influx_host = influx_json_data["influx_host"]
@@ -376,27 +381,27 @@ def main():
 
     cv_base_adjust_parser(args)
 
-    CV_Test = DataplaneTest(lf_host = args.mgr,
-                            lf_port = args.port,
-                            lf_user = args.lf_user,
-                            lf_password = args.lf_password,
-                            instance_name = args.instance_name,
-                            config_name = args.config_name,
-                            upstream = args.upstream,
-                            pull_report = args.pull_report,
-                            local_lf_report_dir = args.local_lf_report_dir,
-                            load_old_cfg = args.load_old_cfg,
-                            download_speed = args.download_speed,
-                            upload_speed = args.upload_speed,
-                            duration = args.duration,
-                            dut = args.dut,
-                            station = args.station,
-                            enables = args.enable,
-                            disables = args.disable,
-                            raw_lines = args.raw_line,
-                            raw_lines_file = args.raw_lines_file,
-                            sets = args.set,
-                            graph_groups = args.graph_groups,
+    CV_Test = DataplaneTest(lf_host=args.mgr,
+                            lf_port=args.port,
+                            lf_user=args.lf_user,
+                            lf_password=args.lf_password,
+                            instance_name=args.instance_name,
+                            config_name=args.config_name,
+                            upstream=args.upstream,
+                            pull_report=args.pull_report,
+                            local_lf_report_dir=args.local_lf_report_dir,
+                            load_old_cfg=args.load_old_cfg,
+                            download_speed=args.download_speed,
+                            upload_speed=args.upload_speed,
+                            duration=args.duration,
+                            dut=args.dut,
+                            station=args.station,
+                            enables=args.enable,
+                            disables=args.disable,
+                            raw_lines=args.raw_line,
+                            raw_lines_file=args.raw_lines_file,
+                            sets=args.set,
+                            graph_groups=args.graph_groups,
                             test_rig=args.test_rig
                             )
     CV_Test.setup()
