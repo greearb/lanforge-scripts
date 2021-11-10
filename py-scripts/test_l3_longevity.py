@@ -10,7 +10,8 @@ PURPOSE:
  Supports generating connections with different ToS values.
  Supports generating tcp and/or UDP traffic types.
  Supports iterating over different PDU sizes
- Supports iterating over different requested tx rates (configurable as total or per-connection value)
+ Supports iterating over different requested tx rates
+    (configurable as total or per-connection value)
  Supports iterating over attenuation values.
  Supports testing connection between two ethernet connection - L3 dataplane
 
@@ -67,7 +68,7 @@ if sys.version_info[0] != 3:
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lf_report = importlib.import_module("py-scripts.lf_report")
-lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv") 
+lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
@@ -169,8 +170,9 @@ class L3VariableTime(Realm):
         self.test_duration = test_duration
         self.radio_name_list = radio_name_list
         self.number_of_stations_per_radio_list = number_of_stations_per_radio_list
-        #self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
-        self.polling_interval_seconds = self.duration_time_to_seconds(polling_interval)
+        # self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
+        self.polling_interval_seconds = self.duration_time_to_seconds(
+            polling_interval)
         self.cx_profile = self.new_l3_cx_profile()
         self.multicast_profile = self.new_multicast_profile()
         self.multicast_profile.name_prefix = "MLT-"
@@ -199,8 +201,10 @@ class L3VariableTime(Realm):
 
         self.attenuators = attenuators
         self.atten_vals = atten_vals
-        if ((len(self.atten_vals) > 0) and (self.atten_vals[0] != -1) and (len(self.attenuators) == 0)):
-            print("ERROR:  Attenuation values configured, but no Attenuator EIDs specified.\n")
+        if ((len(self.atten_vals) > 0) and (
+                self.atten_vals[0] != -1) and (len(self.attenuators) == 0)):
+            print(
+                "ERROR:  Attenuation values configured, but no Attenuator EIDs specified.\n")
             exit(1)
 
         self.cx_profile.mconn = mconn
@@ -237,20 +241,43 @@ class L3VariableTime(Realm):
         # Lookup key is port-eid name
         self.port_csv_files = {}
         self.port_csv_writers = {}
-        
+
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
 
-
         # TODO:  cmd-line arg to enable/disable these stats.
-        self.ap_stats_col_titles = ["Station Address", "Dl-PHY-Mbps", "Dl-Data-Mbps", "Dl-Air-Use", "Dl-Data-Use",
-                                    "Dl-Retries", "Dl-BW", "Dl-MCS", "Dl-NSS", "Dl-OFDMA", "Dl-MU-MIMO", 
-                                    "Dl-Channel-Utilization"]
+        self.ap_stats_col_titles = [
+            "Station Address",
+            "Dl-PHY-Mbps",
+            "Dl-Data-Mbps",
+            "Dl-Air-Use",
+            "Dl-Data-Use",
+            "Dl-Retries",
+            "Dl-BW",
+            "Dl-MCS",
+            "Dl-NSS",
+            "Dl-OFDMA",
+            "Dl-MU-MIMO",
+            "Dl-Channel-Utilization"]
 
-        self.ap_stats_ul_col_titles = ["UL Station Address", "Ul-rssi", "Ul-tid", "Ul-ampdu","Ul-mpdu", "Ul-Data-Mbps",
-                                    "Ul-PHY-Mbps", "UL-BW", "Ul-MCS", "Ul-NSS", "Ul-OOW", "Ul-HOLES", 
-                                    "Ul-DUP", "Ul-Retries", "Ul-OFDMA", "Ul-Tones", "Ul-AIR"]
-
+        self.ap_stats_ul_col_titles = [
+            "UL Station Address",
+            "Ul-rssi",
+            "Ul-tid",
+            "Ul-ampdu",
+            "Ul-mpdu",
+            "Ul-Data-Mbps",
+            "Ul-PHY-Mbps",
+            "UL-BW",
+            "Ul-MCS",
+            "Ul-NSS",
+            "Ul-OOW",
+            "Ul-HOLES",
+            "Ul-DUP",
+            "Ul-Retries",
+            "Ul-OFDMA",
+            "Ul-Tones",
+            "Ul-AIR"]
 
         dur = self.duration_time_to_seconds(self.test_duration)
 
@@ -266,13 +293,26 @@ class L3VariableTime(Realm):
 
         # if it is a dataplane test the side_a is not None and an ethernet port
         # if side_a is None then side_a is radios
-        if self.dataplane == False:
-            for (radio_, ssid_, ssid_password_, ssid_security_, 
-                    mode_,enable_flags_,
-                    reset_port_enable_, reset_port_time_min_, reset_port_time_max_) \
-                in zip(radio_name_list, ssid_list, ssid_password_list, ssid_security_list,
-                        wifi_mode_list, enable_flags_list,
-                        reset_port_enable_list, reset_port_time_min_list, reset_port_time_max_list):
+        if not self.dataplane:
+            for (
+                    radio_,
+                    ssid_,
+                    ssid_password_,
+                    ssid_security_,
+                    mode_,
+                    enable_flags_,
+                    reset_port_enable_,
+                    reset_port_time_min_,
+                    reset_port_time_max_) in zip(
+                    radio_name_list,
+                    ssid_list,
+                    ssid_password_list,
+                    ssid_security_list,
+                    wifi_mode_list,
+                    enable_flags_list,
+                    reset_port_enable_list,
+                    reset_port_time_min_list,
+                    reset_port_time_max_list):
                 self.station_profile = self.new_station_profile()
                 self.station_profile.lfclient_url = self.lfclient_url
                 self.station_profile.ssid = ssid_
@@ -281,15 +321,17 @@ class L3VariableTime(Realm):
                 self.station_profile.number_template = self.number_template
                 self.station_profile.mode = mode_
                 self.station_profile.desired_add_sta_flags = enable_flags_.copy()
-                self.station_profile.desired_add_sta_flags_mask = enable_flags_.copy() 
+                self.station_profile.desired_add_sta_flags_mask = enable_flags_.copy()
 
                 # place the enable and disable flags
                 # self.station_profile.desired_add_sta_flags = self.enable_flags
-                # self.station_profile.desired_add_sta_flags_mask = self.enable_flags 
-                self.station_profile.set_reset_extra(reset_port_enable=reset_port_enable_,
-                                                     test_duration=self.duration_time_to_seconds(self.test_duration),
-                                                     reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),
-                                                     reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
+                # self.station_profile.desired_add_sta_flags_mask = self.enable_flags
+                self.station_profile.set_reset_extra(
+                    reset_port_enable=reset_port_enable_,
+                    test_duration=self.duration_time_to_seconds(
+                        self.test_duration),
+                    reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),
+                    reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
                 self.station_profiles.append(self.station_profile)
         else:
             pass
@@ -327,7 +369,7 @@ class L3VariableTime(Realm):
         return self.ap_ofdma_24g
 
     def get_kpi_csv(self):
-        #print("self.csv_kpi_file {}".format(self.csv_kpi_file.name))
+        # print("self.csv_kpi_file {}".format(self.csv_kpi_file.name))
         return self.csv_kpi_file.name
 
     # Find avg latency, jitter for connections using specified port.
@@ -343,9 +385,12 @@ class L3VariableTime(Realm):
         count = 0
         sta_name = 'no_station'
 
-        #print("endp-stats-for-port, port-eid: {}".format(eid_name))
+        # print("endp-stats-for-port, port-eid: {}".format(eid_name))
         eid = self.name_to_eid(eid_name)
-        print("eid_name: {eid_name} eid: {eid}".format(eid_name=eid_name, eid=eid))
+        print(
+            "eid_name: {eid_name} eid: {eid}".format(
+                eid_name=eid_name,
+                eid=eid))
 
         # Convert all eid elements to strings
         eid[0] = str(eid[0])
@@ -355,7 +400,8 @@ class L3VariableTime(Realm):
         for endp in endps:
             pprint(endp)
             eid_endp = endp["eid"].split(".")
-            print("Comparing eid:{eid} to endp-id {eid_endp}".format(eid=eid, eid_endp=eid_endp))
+            print(
+                "Comparing eid:{eid} to endp-id {eid_endp}".format(eid=eid, eid_endp=eid_endp))
             # Look through all the endpoints (endps), to find the port the eid_name is using.
             # The eid_name that has the same Shelf, Resource, and Port as the eid_endp (looking at all the endps)
             # Then read the eid_endp to get the delay, jitter and rx rate
@@ -370,16 +416,21 @@ class L3VariableTime(Realm):
                 # only the -A endpoint will be found so need to look
 
                 count += 1
-                print("Matched: name: {name} eid:{eid} to endp-id {eid_endp}".format(name=name, eid=eid, eid_endp=eid_endp))
+                print(
+                    "Matched: name: {name} eid:{eid} to endp-id {eid_endp}".format(
+                        name=name, eid=eid, eid_endp=eid_endp))
             else:
                 name = endp["name"]
-                print("No Match: name: {name} eid:{eid} to endp-id {eid_endp}".format(name=name, eid=eid, eid_endp=eid_endp))
+                print(
+                    "No Match: name: {name} eid:{eid} to endp-id {eid_endp}".format(
+                        name=name, eid=eid, eid_endp=eid_endp))
 
         if count > 1:
             lat = int(lat / count)
             jit = int(jit / count)
 
-        # need to loop though again to find the upload and download per station if the name matched
+        # need to loop though again to find the upload and download per station
+        # if the name matched
         for endp in endps:
             if sta_name in endp["name"]:
                 name = endp["name"]
@@ -399,7 +450,9 @@ class L3VariableTime(Realm):
     # Query all endpoints to generate rx and other stats, returned
     # as an array of objects.
     def __get_rx_values(self):
-        endp_list = self.json_get("endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll", debug_=False)
+        endp_list = self.json_get(
+            "endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll",
+            debug_=False)
         endp_rx_drop_map = {}
         endp_rx_map = {}
         our_endps = {}
@@ -435,58 +488,72 @@ class L3VariableTime(Realm):
                                 endp_rx_drop_map[item] = value
                             if value_name == 'rx rate':
                                 # This hack breaks for mcast or if someone names endpoints weirdly.
-                                #print("item: ", item, " rx-bps: ", value_rx_bps)
+                                # print("item: ", item, " rx-bps: ", value_rx_bps)
                                 if item.endswith("-A"):
                                     total_dl += int(value)
                                 else:
                                     total_ul += int(value)
                             if value_name == 'rx rate ll':
-                                # This hack breaks for mcast or if someone names endpoints weirdly.
+                                # This hack breaks for mcast or if someone
+                                # names endpoints weirdly.
                                 if item.endswith("-A"):
                                     total_dl_ll += int(value)
                                 else:
                                     total_ul_ll += int(value)
 
-        #print("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
+        # print("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
- # This script supports resetting ports, allowing one to test AP/controller under data load
-    # while bouncing wifi stations.  Check here to see if we should reset ports.
+    # This script supports resetting ports, allowing one to test AP/controller under data load
+    # while bouncing wifi stations.  Check here to see if we should reset
+    # ports.
 
     def reset_port_check(self):
         for station_profile in self.station_profiles:
             if station_profile.reset_port_extra_data['reset_port_enable']:
                 if station_profile.reset_port_extra_data['reset_port_timer_started'] is False:
-                    print("reset_port_timer_started {}".format(station_profile.reset_port_extra_data['reset_port_timer_started']))
-                    print("reset_port_time_min: {}".format(station_profile.reset_port_extra_data['reset_port_time_min']))
-                    print("reset_port_time_max: {}".format(station_profile.reset_port_extra_data['reset_port_time_max']))
-                    station_profile.reset_port_extra_data['seconds_till_reset'] = \
-                        random.randint(station_profile.reset_port_extra_data['reset_port_time_min'],
-                                       station_profile.reset_port_extra_data['reset_port_time_max'])
+                    print(
+                        "reset_port_timer_started {}".format(
+                            station_profile.reset_port_extra_data['reset_port_timer_started']))
+                    print(
+                        "reset_port_time_min: {}".format(
+                            station_profile.reset_port_extra_data['reset_port_time_min']))
+                    print(
+                        "reset_port_time_max: {}".format(
+                            station_profile.reset_port_extra_data['reset_port_time_max']))
+                    station_profile.reset_port_extra_data['seconds_till_reset'] = random.randint(
+                        station_profile.reset_port_extra_data['reset_port_time_min'],
+                        station_profile.reset_port_extra_data['reset_port_time_max'])
                     station_profile.reset_port_extra_data['reset_port_timer_started'] = True
                     print(
                         "on radio {} seconds_till_reset {}".format(
                             station_profile.add_sta_data['radio'],
                             station_profile.reset_port_extra_data['seconds_till_reset']))
                 else:
-                    station_profile.reset_port_extra_data['seconds_till_reset'] = station_profile.reset_port_extra_data['seconds_till_reset'] - 1
+                    station_profile.reset_port_extra_data[
+                        'seconds_till_reset'] = station_profile.reset_port_extra_data['seconds_till_reset'] - 1
                     print(
                         "radio: {} countdown seconds_till_reset {}".format(
                             station_profile.add_sta_data['radio'],
                             station_profile.reset_port_extra_data['seconds_till_reset']))
-                    if ((station_profile.reset_port_extra_data['seconds_till_reset'] <= 0)):
+                    if ((
+                            station_profile.reset_port_extra_data['seconds_till_reset'] <= 0)):
                         station_profile.reset_port_extra_data['reset_port_timer_started'] = False
-                        port_to_reset = random.randint(0, len(station_profile.station_names) - 1)
+                        port_to_reset = random.randint(
+                            0, len(station_profile.station_names) - 1)
                         print(
                             "reset on radio {} station: {}".format(
                                 station_profile.add_sta_data['radio'],
                                 station_profile.station_names[port_to_reset]))
-                        self.reset_port(station_profile.station_names[port_to_reset])
+                        self.reset_port(
+                            station_profile.station_names[port_to_reset])
 
     # Common code to generate timestamp for CSV files.
     def time_stamp(self):
-        return time.strftime('%m_%d_%Y_%H_%M_%S', time.localtime(self.epoch_time))
+        return time.strftime('%m_%d_%Y_%H_%M_%S',
+                             time.localtime(self.epoch_time))
 
-    # Cleanup any older config that a previous run of this test may have created.
+    # Cleanup any older config that a previous run of this test may have
+    # created.
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
         self.multicast_profile.cleanup_prefix()
@@ -532,17 +599,20 @@ class L3VariableTime(Realm):
             # stations, so allow skipping it.
             # Do clean cx lists so that when we re-apply them we get same endp name
             # as we had previously
-            #print("rebuild: Clearing cx profile lists.\n")
+            # print("rebuild: Clearing cx profile lists.\n")
             self.cx_profile.clean_cx_lists()
             self.multicast_profile.clean_mc_lists()
 
         if self.dataplane:
             for etype in self.endp_types:
                 for _tos in self.tos:
-                    print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s" % (etype, _tos, self.cx_profile.get_cx_count()))
+                    print(
+                        "Creating connections for endpoint type: %s TOS: %s  cx-count: %s" %
+                        (etype, _tos, self.cx_profile.get_cx_count()))
                     # use brackes on [self.side_a] to make it a list
-                    these_cx, these_endp = self.cx_profile.create(endp_type=etype, side_a=[self.side_a],
-                                                                  side_b=self.side_b, sleep_time=0, tos=_tos)
+                    these_cx, these_endp = self.cx_profile.create(
+                        endp_type=etype, side_a=[
+                            self.side_a], side_b=self.side_b, sleep_time=0, tos=_tos)
                     if (etype == "lf_udp" or etype == "lf_udp6"):
                         self.udp_endps = self.udp_endps + these_endp
                     elif(etype == "lf"):
@@ -553,11 +623,21 @@ class L3VariableTime(Realm):
         else:
             for station_profile in self.station_profiles:
                 if not rebuild:
-                    station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
-                    station_profile.set_number_template(station_profile.number_template)
-                    print("Creating stations on radio %s" % (self.radio_name_list[index]))
+                    station_profile.use_security(
+                        station_profile.security,
+                        station_profile.ssid,
+                        station_profile.ssid_pass)
+                    station_profile.set_number_template(
+                        station_profile.number_template)
+                    print(
+                        "Creating stations on radio %s" %
+                        (self.radio_name_list[index]))
 
-                    station_profile.create(radio=self.radio_name_list[index], sta_names_=self.station_lists[index], debug=self.debug, sleep_time=0)
+                    station_profile.create(
+                        radio=self.radio_name_list[index],
+                        sta_names_=self.station_lists[index],
+                        debug=self.debug,
+                        sleep_time=0)
                     index += 1
 
                 self.station_count += len(station_profile.station_names)
@@ -565,14 +645,20 @@ class L3VariableTime(Realm):
                 # Build/update connection types
                 for etype in self.endp_types:
                     if etype == "mc_udp" or etype == "mc_udp6":
-                        print("Creating Multicast connections for endpoint type: %s" % (etype))
-                        self.multicast_profile.create_mc_tx(etype, self.side_b, etype)
-                        self.multicast_profile.create_mc_rx(etype, side_rx=station_profile.station_names)
+                        print(
+                            "Creating Multicast connections for endpoint type: %s" %
+                            (etype))
+                        self.multicast_profile.create_mc_tx(
+                            etype, self.side_b, etype)
+                        self.multicast_profile.create_mc_rx(
+                            etype, side_rx=station_profile.station_names)
                     else:
                         for _tos in self.tos:
-                            print("Creating connections for endpoint type: %s TOS: %s  cx-count: %s" % (etype, _tos, self.cx_profile.get_cx_count()))
-                            these_cx, these_endp = self.cx_profile.create(endp_type=etype, side_a=station_profile.station_names,
-                                                                          side_b=self.side_b, sleep_time=0, tos=_tos)
+                            print(
+                                "Creating connections for endpoint type: %s TOS: %s  cx-count: %s" %
+                                (etype, _tos, self.cx_profile.get_cx_count()))
+                            these_cx, these_endp = self.cx_profile.create(
+                                endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
                             if (etype == "lf_udp" or etype == "lf_udp6"):
                                 self.udp_endps = self.udp_endps + these_endp
                             else:
@@ -580,10 +666,14 @@ class L3VariableTime(Realm):
 
         self.cx_count = self.cx_profile.get_cx_count()
 
-        if self.dataplane == True:
-            self._pass("PASS: CX build finished: created/updated:  %s connections." % (self.cx_count))
+        if self.dataplane:
+            self._pass(
+                "PASS: CX build finished: created/updated:  %s connections." %
+                (self.cx_count))
         else:
-            self._pass("PASS: Stations & CX build finished: created/updated: %s stations and %s connections." % (self.station_count, self.cx_count))
+            self._pass(
+                "PASS: Stations & CX build finished: created/updated: %s stations and %s connections." %
+                (self.station_count, self.cx_count))
 
     def ap_custom_cmd(self, ap_custom_cmd):
         ap_results = ""
@@ -592,11 +682,15 @@ class L3VariableTime(Realm):
             ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
             ss = SerialSpawn(ser)
             ss.sendline(str(ap_custom_cmd))
-            ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
+            # do not detete line, waits for output
+            ss.expect([pexpect.TIMEOUT], timeout=1)
             ap_results = ss.before.decode('utf-8', 'ignore')
-            print("ap_custom_cmd: {} ap_results {}".format(ap_custom_cmd, ap_results))
+            print(
+                "ap_custom_cmd: {} ap_results {}".format(
+                    ap_custom_cmd, ap_results))
         except BaseException:
-            print("ap_custom_cmd: {} WARNING unable to read AP ".format(ap_custom_cmd))
+            print(
+                "ap_custom_cmd: {} WARNING unable to read AP ".format(ap_custom_cmd))
 
         return ap_results
 
@@ -608,7 +702,8 @@ class L3VariableTime(Realm):
             ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
             ss = SerialSpawn(ser)
             ss.sendline(str(self.ap_cmd_6g))
-            ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
+            # do not detete line, waits for output
+            ss.expect([pexpect.TIMEOUT], timeout=1)
             ap_stats_6g = ss.before.decode('utf-8', 'ignore')
             print("ap_stats_6g from AP: {}".format(ap_stats_6g))
 
@@ -625,7 +720,8 @@ class L3VariableTime(Realm):
             ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
             ss = SerialSpawn(ser)
             ss.sendline(str(self.ap_cmd_5g))
-            ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
+            # do not detete line, waits for output
+            ss.expect([pexpect.TIMEOUT], timeout=1)
             ap_stats_5g = ss.before.decode('utf-8', 'ignore')
             print("ap_stats_5g from AP: {}".format(ap_stats_5g))
 
@@ -642,7 +738,8 @@ class L3VariableTime(Realm):
             ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
             ss = SerialSpawn(ser)
             ss.sendline(str(self.ap_cmd_2g))
-            ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
+            # do not detete line, waits for output
+            ss.expect([pexpect.TIMEOUT], timeout=1)
             ap_stats_2g = ss.before.decode('utf-8', 'ignore')
             print("ap_stats_2g from AP: {}".format(ap_stats_2g))
 
@@ -659,7 +756,8 @@ class L3VariableTime(Realm):
             ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
             ss = SerialSpawn(ser)
             ss.sendline(str(self.ap_chanim_cmd_6g))
-            ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
+            # do not detete line, waits for output
+            ss.expect([pexpect.TIMEOUT], timeout=1)
             ap_chanim_stats_6g = ss.before.decode('utf-8', 'ignore')
             print("read_ap_chanim_stats_6g {}".format(ap_chanim_stats_6g))
 
@@ -676,7 +774,8 @@ class L3VariableTime(Realm):
             ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
             ss = SerialSpawn(ser)
             ss.sendline(str(self.ap_chanim_cmd_5g))
-            ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
+            # do not detete line, waits for output
+            ss.expect([pexpect.TIMEOUT], timeout=1)
             ap_chanim_stats_5g = ss.before.decode('utf-8', 'ignore')
             print("read_ap_chanim_stats_5g {}".format(ap_chanim_stats_5g))
 
@@ -693,7 +792,8 @@ class L3VariableTime(Realm):
             ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
             ss = SerialSpawn(ser)
             ss.sendline(str(self.ap_chanim_cmd_2g))
-            ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
+            # do not detete line, waits for output
+            ss.expect([pexpect.TIMEOUT], timeout=1)
             ap_chanim_stats_2g = ss.before.decode('utf-8', 'ignore')
             print("read_ap_chanim_stats_2g {}".format(ap_chanim_stats_2g))
 
@@ -710,7 +810,8 @@ class L3VariableTime(Realm):
             ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
             ss = SerialSpawn(ser)
             ss.sendline(str(self.ap_cmd_ul_6g))
-            ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
+            # do not detete line, waits for output
+            ss.expect([pexpect.TIMEOUT], timeout=1)
             ap_stats_ul_6g = ss.before.decode('utf-8', 'ignore')
             print("ap_stats_ul_6g from AP: {}".format(ap_stats_ul_6g))
 
@@ -727,7 +828,8 @@ class L3VariableTime(Realm):
             ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
             ss = SerialSpawn(ser)
             ss.sendline(str(self.ap_cmd_ul_5g))
-            ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
+            # do not detete line, waits for output
+            ss.expect([pexpect.TIMEOUT], timeout=1)
             ap_stats_ul_5g = ss.before.decode('utf-8', 'ignore')
             print("ap_stats_ul_5g from AP: {}".format(ap_stats_ul_5g))
 
@@ -744,7 +846,8 @@ class L3VariableTime(Realm):
             ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
             ss = SerialSpawn(ser)
             ss.sendline(str(self.ap_cmd_ul_2g))
-            ss.expect([pexpect.TIMEOUT], timeout=1)  # do not detete line, waits for output
+            # do not detete line, waits for output
+            ss.expect([pexpect.TIMEOUT], timeout=1)
             ap_stats_ul_2g = ss.before.decode('utf-8', 'ignore')
             print("ap_stats_ul_2g from AP: {}".format(ap_stats_ul_2g))
 
@@ -753,36 +856,40 @@ class L3VariableTime(Realm):
 
         return ap_stats_ul_2g
 
-
-    # provide fake bs_data for testing without AP wl2 is the 6E interface, wl1 5G, wl0 2G
+    # provide fake bs_data for testing without AP wl2 is the 6E interface, wl1
+    # 5G, wl0 2G
 
     def read_ap_rx_report_test_mode(self):
-        ap_rx_report_fake = "{}{}{}{}{}".format("root@Docsis-Gateway:~#  wl -i wl1 rx_report\n",
-                "Station Address (rssi)  tid   ampdu     mpdu  Data Mbps   PHY Mbps    bw   mcs   Nss   oow holes   dup rtries  ofdma  tones    air\n",
-                "50:E0:85:87:5B:F4 (-43dBm)   0    2062   127078       32.5      571.9    80  11.0     2     0     0    64     0%   100%  483.3     6%\n",
-                "50:E0:85:84:7A:E7 (-44dBm)   0    2334   144373       36.9      343.1    80  10.9     2     0     0    63     0%   100%  291.4    11%\n",
-                "50:E0:85:88:F4:5F (-45dBm)   0    2296   142463       36.4      346.3    80  10.9     2     0     0    64     0%   100%  294.1    11%\n")
-                #Keep commented for testing "(overall)   -    6692   413914      105.8          -     -     -     -     -     -     -      -     -      -       -     -\n"
+        ap_rx_report_fake = "{}{}{}{}{}".format(
+            "root@Docsis-Gateway:~#  wl -i wl1 rx_report\n",
+            "Station Address (rssi)  tid   ampdu     mpdu  Data Mbps   PHY Mbps    bw   mcs   Nss   oow holes   dup rtries  ofdma  tones    air\n",
+            "50:E0:85:87:5B:F4 (-43dBm)   0    2062   127078       32.5      571.9    80  11.0     2     0     0    64     0%   100%  483.3     6%\n",
+            "50:E0:85:84:7A:E7 (-44dBm)   0    2334   144373       36.9      343.1    80  10.9     2     0     0    63     0%   100%  291.4    11%\n",
+            "50:E0:85:88:F4:5F (-45dBm)   0    2296   142463       36.4      346.3    80  10.9     2     0     0    64     0%   100%  294.1    11%\n")
+        # Keep commented for testing "(overall)   -    6692   413914      105.8
+        # -     -     -     -     -     -     -      -     -      -       -
+        # -\n"
         return ap_rx_report_fake
 
     def read_ap_bs_data_test_mode(self):
-        ap_stats_fake = "{}{}{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl2 bs_data\n",
-                                              "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
-                                              "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
-                                              "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
-                                              "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
-                                              "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n")
-                                              #Keep commented for testing "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
+        ap_stats_fake = "{}{}{}{}{}{}".format(
+            "root@Docsis-Gateway:~# wl -i wl2 bs_data\n",
+            "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
+            "04:f0:21:82:2f:d6     1016.6       48.9       6.5%      24.4%      16.6%   80   9.7     2    0.0%    0.0%\n",
+            "50:E0:85:84:7A:E7      880.9       52.2       7.7%      26.1%      20.0%   80   8.5     2    0.0%    0.0%\n",
+            "50:E0:85:89:5D:00      840.0       47.6       6.4%      23.8%       2.3%   80   8.0     2    0.0%    0.0%\n",
+            "50:E0:85:87:5B:F4      960.7       51.5       5.9%      25.7%       0.0%   80     9     2    0.0%    0.0%\n")
+        # Keep commented for testing "- note the MAC will match ap_stats.append((overall)          -      200.2      26.5%         -         - \n")
         # print("ap_stats_fake {}".format(ap_stats_fake))
         return ap_stats_fake
 
     def read_ap_chanim_stats_test_mode(self):
         # Create the test data as a continuous string
         ap_chanim_stats_fake = "{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl2 chanim_stats\n",
-                                               "version: 3\n",
-                                               "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
-                                               # `"0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
-                                               '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
+                                                 "version: 3\n",
+                                                 "chanspec tx   inbss   obss   nocat   nopkt   doze     txop     goodtx  badtx   glitch   badplcp  knoise  idle  timestamp\n",
+                                                 # `"0xe06a  61      15      0       17      0       0       6       53      2       0       0       -91     65      343370578\n")
+                                                 '0xe06a\t41.82\t20.22\t0.00\t13.56\t0.02\t0.00\t17.58\t29.54\t1.94\t3\t0\t-90\t58\t146903490\n')
         # "0xe06a  1.67  15.00   0.00   17.00   0.00    0.00     97.33    53.00   2.00    0         0       -91     65      343370578\n")
         return ap_chanim_stats_fake
 
@@ -796,15 +903,17 @@ class L3VariableTime(Realm):
                 self.admin_up(sta)
 
         temp_stations_list = []
-        #temp_stations_list.append(self.side_b)
+        # temp_stations_list.append(self.side_b)
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
 
         temp_stations_list_with_side_b = temp_stations_list.copy()
         # wait for b side to get IP
-        temp_stations_list_with_side_b.append(self.side_b) 
-        print("temp_stations_list {temp_stations_list}".format(temp_stations_list=temp_stations_list))
-        print("temp_stations_list_with_side_b {temp_stations_list_with_side_b}".format(temp_stations_list_with_side_b=temp_stations_list_with_side_b))
+        temp_stations_list_with_side_b.append(self.side_b)
+        print("temp_stations_list {temp_stations_list}".format(
+            temp_stations_list=temp_stations_list))
+        print("temp_stations_list_with_side_b {temp_stations_list_with_side_b}".format(
+            temp_stations_list_with_side_b=temp_stations_list_with_side_b))
 
         if self.wait_for_ip(temp_stations_list_with_side_b, timeout_sec=120):
             print("ip's acquired")
@@ -820,12 +929,13 @@ class L3VariableTime(Realm):
         # dl - ports
         port_eids = self.gather_port_eids()
         for eid_name in port_eids:
-            self.csv_add_port_column_headers(eid_name, self.csv_generate_port_column_headers())
+            self.csv_add_port_column_headers(
+                eid_name, self.csv_generate_port_column_headers())
 
         port_eids = self.gather_port_eids()
         for eid_name in port_eids:
-            self.csv_add_ul_port_column_headers(eid_name, self.csv_generate_ul_port_column_headers())
-
+            self.csv_add_ul_port_column_headers(
+                eid_name, self.csv_generate_ul_port_column_headers())
 
         # For each rate
         rate_idx = 0
@@ -839,7 +949,8 @@ class L3VariableTime(Realm):
                 dl_pdu = self.side_b_min_pdu[pdu_idx]
                 pdu_idx += 1
 
-                # Adjust rate to take into account the number of connections we have.
+                # Adjust rate to take into account the number of connections we
+                # have.
                 if self.cx_count > 1 and self.rates_are_totals:
                     # Convert from string to int to do math, then back to string
                     # as that is what the cx_profile wants.
@@ -855,7 +966,9 @@ class L3VariableTime(Realm):
                 if (dl_pdu == "AUTO" or dl_pdu == "MTU"):
                     dl_pdu = "-1"
 
-                print("ul: %s  dl: %s  cx-count: %s  rates-are-totals: %s\n" % (ul, dl, self.cx_count, self.rates_are_totals))
+                print(
+                    "ul: %s  dl: %s  cx-count: %s  rates-are-totals: %s\n" %
+                    (ul, dl, self.cx_count, self.rates_are_totals))
 
                 # Set rate and pdu size config
                 self.cx_profile.side_a_min_bps = ul
@@ -894,7 +1007,9 @@ class L3VariableTime(Realm):
 
                     end_time = self.parse_time(self.test_duration) + cur_time
 
-                    print("Monitoring throughput for duration: %s" % (self.test_duration))
+                    print(
+                        "Monitoring throughput for duration: %s" %
+                        (self.test_duration))
 
                     # Monitor test for the interval duration.
                     passes = 0
@@ -913,7 +1028,7 @@ class L3VariableTime(Realm):
                     mac_found_2g = False
                     reset_timer = 0
                     latency = 0
-                    jitter = 0 
+                    jitter = 0
                     total_ul_rate = 0
                     total_ul_rate_ll = 0
                     total_ul_pkts_ll = 0
@@ -922,9 +1037,11 @@ class L3VariableTime(Realm):
                     total_dl_pkts_ll = 0
 
                     while cur_time < end_time:
-                        #interval_time = cur_time + datetime.timedelta(seconds=5)
-                        interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
-                        #print("polling_interval_seconds {}".format(self.polling_interval_seconds))
+                        # interval_time = cur_time + datetime.timedelta(seconds=5)
+                        interval_time = cur_time + \
+                            datetime.timedelta(
+                                seconds=self.polling_interval_seconds)
+                        # print("polling_interval_seconds {}".format(self.polling_interval_seconds))
 
                         while cur_time < interval_time:
                             cur_time = datetime.datetime.now()
@@ -948,7 +1065,8 @@ class L3VariableTime(Realm):
 
                         # AP OUTPUT
                         # rx_report command gives OFDMA and airtime fro the Uplink
-                        # bs_data command shows the OFDMA and MU-MIMO on the downlink 
+                        # bs_data command shows the OFDMA and MU-MIMO on the
+                        # downlink
                         if self.ap_read:
                             # 6G test mode
                             if self.ap_test_mode:
@@ -961,145 +1079,209 @@ class L3VariableTime(Realm):
                                 ap_chanim_stats_6g = self.read_ap_chanim_stats_6g()
                                 ap_stats_ul_6g = self.read_ap_stats_ul_6g()
 
-
                             ap_stats_6g_rows = ap_stats_6g.splitlines()
-                            print("From AP stats: ap_stats_6g_rows {}".format(ap_stats_6g_rows))
+                            print(
+                                "From AP stats: ap_stats_6g_rows {}".format(ap_stats_6g_rows))
 
                             ap_chanim_stats_rows_6g = ap_chanim_stats_6g.splitlines()
-                            print("From AP chanim: ap_chanim_stats_rows_6g {}".format(ap_chanim_stats_rows_6g))
+                            print(
+                                "From AP chanim: ap_chanim_stats_rows_6g {}".format(ap_chanim_stats_rows_6g))
 
                             ap_stats_ul_6g_rows = ap_stats_ul_6g.splitlines()
-                            print("From AP stats ul: ap_stats_ul_6g_rows {}".format(ap_stats_ul_6g_rows))
+                            print(
+                                "From AP stats ul: ap_stats_ul_6g_rows {}".format(ap_stats_ul_6g_rows))
 
                             channel_utilization = 0
 
                             # Query all of our ports
-                            # Note: the endp eid is the shelf.resource.port.endp-id
+                            # Note: the endp eid is the
+                            # shelf.resource.port.endp-id
                             port_eids = self.gather_port_eids()
                             # read find the bs_data
                             for eid_name in port_eids:
                                 eid = self.name_to_eid(eid_name)
-                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0],
+                                                          eid[1], eid[2])
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
-                                if (response is None) or ("interface" not in response):
-                                    print("6g query-port: %s: incomplete response:" % (url))
+                                if (response is None) or (
+                                        "interface" not in response):
+                                    print(
+                                        "6g query-port: %s: incomplete response:" %
+                                        (url))
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
                                     pprint(response)
                                     p = response['interface']
-                                    print("#### 6g From LANforge: p, response['insterface']:{}".format(p))
+                                    print(
+                                        "#### 6g From LANforge: p, response['insterface']:{}".format(p))
                                     mac = p['mac']
-                                    # print("#### From LANforge: p['mac']: {mac}".format(mac=mac))
+                                    # print("#### From LANforge: p['mac']:
+                                    # {mac}".format(mac=mac))
 
-                                    # Parse the ap stats to find the matching mac then use that row for reporting
+                                    # Parse the ap stats to find the matching
+                                    # mac then use that row for reporting
                                     for row in ap_stats_6g_rows:
                                         split_row = row.split()
-                                        #print("split_row {}".format(split_row))
-                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # print("split_row {}".format(split_row))
+                                        # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
-                                            if split_row[0].lower() != mac.lower():
+                                            if split_row[0].lower(
+                                            ) != mac.lower():
                                                 ap_row = split_row
                                                 mac_found_6g = True
                                         else:
                                             try:
                                                 # split_row[0].lower() , mac from AP
-                                                # mac.lower() , mac from LANforge
-                                                if split_row[0].lower() == mac.lower():
+                                                # mac.lower() , mac from
+                                                # LANforge
+                                                if split_row[0].lower(
+                                                ) == mac.lower():
                                                     ap_row = split_row
                                                     mac_found_6g = True
                                             except BaseException:
-                                                print("6g 'No stations are currently associated.'? from AP")
-                                                print(" since possibly no stations: excption on compare split_row[0].lower() ")
-                                    if mac_found_6g == True:
+                                                print(
+                                                    "6g 'No stations are currently associated.'? from AP")
+                                                print(
+                                                    " since possibly no stations: excption on compare split_row[0].lower() ")
+                                    if mac_found_6g:
                                         mac_found_6g = False
-                                        print("6g selected ap_row (from split_row): {}".format(ap_row))
+                                        print(
+                                            "6g selected ap_row (from split_row): {}".format(ap_row))
 
-                                        # Find latency, jitter for connections using this port.
+                                        # Find latency, jitter for connections
+                                        # using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
                                             p["port"], endps)
 
-                                        # now report the ap_chanim_stats along side of the ap_stats_6g
+                                        # now report the ap_chanim_stats along
+                                        # side of the ap_stats_6g
                                         xtop_reported = False
                                         for row in ap_chanim_stats_rows_6g:
                                             split_row = row.split()
                                             if xtop_reported:
-                                                print("6g xtop_reported row: {row}".format(row=row))
-                                                print("6g xtop_reported split_row: {split_row}".format(split_row=split_row))
+                                                print(
+                                                    "6g xtop_reported row: {row}".format(
+                                                        row=row))
+                                                print(
+                                                    "6g xtop_reported split_row: {split_row}".format(
+                                                        split_row=split_row))
                                                 try:
                                                     xtop = split_row[7]
-                                                    print("6g xtop {xtop}".format(xtop=xtop))
+                                                    print(
+                                                        "6g xtop {xtop}".format(xtop=xtop))
                                                 except BaseException:
-                                                    print("6g detected chanspec with reading chanim_stats, exception reading xtop")
+                                                    print(
+                                                        "6g detected chanspec with reading chanim_stats, exception reading xtop")
 
                                                 try:
-                                                    channel_utilization = float(100) - float(xtop)
-                                                    print("6g channel_utilization {utilization}".format(utilization=channel_utilization))
+                                                    channel_utilization = float(
+                                                        100) - float(xtop)
+                                                    print(
+                                                        "6g channel_utilization {utilization}".format(
+                                                            utilization=channel_utilization))
                                                 except BaseException:
-                                                    print("6g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
-                                                # should be only one channel utilization
+                                                    print(
+                                                        "6g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
+                                                # should be only one channel
+                                                # utilization
                                                 break
                                             else:
                                                 try:
-                                                    if split_row[0].lower() == 'chanspec':
-                                                        print("6g chanspec found xtop_reported = True")
+                                                    if split_row[0].lower(
+                                                    ) == 'chanspec':
+                                                        print(
+                                                            "6g chanspec found xtop_reported = True")
                                                         xtop_reported = True
                                                 except BaseException:
-                                                    print("6g Error reading xtop")
-                                        # ap information is passed with ap_row so all information needs to be contained in ap_row
+                                                    print(
+                                                        "6g Error reading xtop")
+                                        # ap information is passed with ap_row
+                                        # so all information needs to be
+                                        # contained in ap_row
                                         ap_row.append(str(channel_utilization))
-
 
                             # work though the ul rx_data 6G
                             for eid_name in port_eids:
                                 eid = self.name_to_eid(eid_name)
-                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0],
+                                                          eid[1], eid[2])
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
-                                if (response is None) or ("interface" not in response):
-                                    print("6g query-port: %s: incomplete response:" % (url))
+                                if (response is None) or (
+                                        "interface" not in response):
+                                    print(
+                                        "6g query-port: %s: incomplete response:" %
+                                        (url))
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
                                     pprint(response)
                                     p = response['interface']
-                                    print("#### 6g From LANforge: p, response['insterface']:{}".format(p))
+                                    print(
+                                        "#### 6g From LANforge: p, response['insterface']:{}".format(p))
                                     mac = p['mac']
-                                    # print("#### From LANforge: p['mac']: {mac}".format(mac=mac))
+                                    # print("#### From LANforge: p['mac']:
+                                    # {mac}".format(mac=mac))
 
-                                    # Parse the ap stats to find the matching mac then use that row for reporting
+                                    # Parse the ap stats to find the matching
+                                    # mac then use that row for reporting
                                     for row in ap_stats_ul_6g_rows:
                                         split_ul_row = row.split()
-                                        #print("split_row {}".format(split_row))
-                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # print("split_row {}".format(split_row))
+                                        # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
-                                            if split_ul_row[0].lower() != mac.lower():
+                                            if split_ul_row[0].lower(
+                                            ) != mac.lower():
                                                 ap_ul_row = split_ul_row
                                                 mac_found_ul_6g = True
                                         else:
                                             try:
                                                 # split_ul_row[0].lower() , mac from AP
-                                                # mac.lower() , mac from LANforge
-                                                if split_ul_row[0].lower() == mac.lower():
+                                                # mac.lower() , mac from
+                                                # LANforge
+                                                if split_ul_row[0].lower(
+                                                ) == mac.lower():
                                                     ap_ul_row = split_ul_row
                                                     mac_found_ul_6g = True
                                             except BaseException:
-                                                print("6g ul 'No stations are currently associated.'? from AP")
-                                                print(" ul since possibly no stations: excption on compare split_row[0].lower() ")
-                                    if mac_found_ul_6g == True:
+                                                print(
+                                                    "6g ul 'No stations are currently associated.'? from AP")
+                                                print(
+                                                    " ul since possibly no stations: excption on compare split_row[0].lower() ")
+                                    if mac_found_ul_6g:
                                         mac_found_ul_6g = False
-                                        print("6g ul selected ap_ul_row (from split_ul_row): {}".format(ap_ul_row))
+                                        print(
+                                            "6g ul selected ap_ul_row (from split_ul_row): {}".format(ap_ul_row))
 
-                                        # Find latency, jitter for connections using this port.
+                                        # Find latency, jitter for connections
+                                        # using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
                                             p["port"], endps)
 
-                                        print("6g ap_ul_row {ap_ul_row}".format(ap_ul_row=ap_ul_row))
+                                        print(
+                                            "6g ap_ul_row {ap_ul_row}".format(
+                                                ap_ul_row=ap_ul_row))
 
-                                        self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                            latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row)
+                                        self.write_port_csv(
+                                            len(temp_stations_list),
+                                            ul,
+                                            dl,
+                                            ul_pdu_str,
+                                            dl_pdu_str,
+                                            atten_val,
+                                            eid_name,
+                                            p,
+                                            latency,
+                                            jitter,
+                                            total_ul_rate,
+                                            total_ul_rate_ll,
+                                            total_ul_pkts_ll,
+                                            total_dl_rate,
+                                            total_dl_rate_ll,
+                                            total_dl_pkts_ll,
+                                            ap_row)
                                 #####
                             # 5G test mode
                             if self.ap_test_mode:
@@ -1114,13 +1296,16 @@ class L3VariableTime(Realm):
                                 ap_stats_ul_5g = self.read_ap_stats_ul_5g()
 
                             ap_stats_5g_rows = ap_stats_5g.splitlines()
-                            print("From AP stats: ap_stats_5g_rows {}".format(ap_stats_5g_rows))
+                            print(
+                                "From AP stats: ap_stats_5g_rows {}".format(ap_stats_5g_rows))
 
                             ap_chanim_stats_rows_5g = ap_chanim_stats_5g.splitlines()
-                            print("From AP chanim: ap_chanim_stats_rows_5g {}".format(ap_chanim_stats_rows_5g))
+                            print(
+                                "From AP chanim: ap_chanim_stats_rows_5g {}".format(ap_chanim_stats_rows_5g))
 
                             ap_stats_ul_5g_rows = ap_stats_ul_5g.splitlines()
-                            print("From AP stats ul: ap_stats_ul_5g_rows {}".format(ap_stats_ul_5g_rows))
+                            print(
+                                "From AP stats ul: ap_stats_ul_5g_rows {}".format(ap_stats_ul_5g_rows))
 
                             channel_utilization = 0
 
@@ -1130,131 +1315,212 @@ class L3VariableTime(Realm):
                             port_eids = self.gather_port_eids()
                             for eid_name in port_eids:
                                 eid = self.name_to_eid(eid_name)
-                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0],
+                                                          eid[1], eid[2])
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
-                                if (response is None) or ("interface" not in response):
-                                    print("query-port 5g: %s: incomplete response:" % (url))
+                                if (response is None) or (
+                                        "interface" not in response):
+                                    print(
+                                        "query-port 5g: %s: incomplete response:" %
+                                        (url))
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
                                     pprint(response)
                                     p = response['interface']
-                                    print("#### From LANforge: p, response['insterface']:{}".format(p))
+                                    print(
+                                        "#### From LANforge: p, response['insterface']:{}".format(p))
                                     mac = p['mac']
-                                    # print("#### From LANforge: p['mac']: {mac}".format(mac=mac))
+                                    # print("#### From LANforge: p['mac']:
+                                    # {mac}".format(mac=mac))
 
-                                    # Parse the ap stats to find the matching mac then use that row for reporting
+                                    # Parse the ap stats to find the matching
+                                    # mac then use that row for reporting
                                     for row in ap_stats_5g_rows:
                                         split_row = row.split()
-                                        #print("split_row {}".format(split_row))
-                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # print("split_row {}".format(split_row))
+                                        # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
-                                            if split_row[0].lower() != mac.lower():
+                                            if split_row[0].lower(
+                                            ) != mac.lower():
                                                 ap_row = split_row
                                                 mac_found_5g = True
                                         else:
                                             try:
                                                 # split_row[0].lower() , mac from AP
-                                                # mac.lower() , mac from LANforge
-                                                if split_row[0].lower() == mac.lower():
+                                                # mac.lower() , mac from
+                                                # LANforge
+                                                if split_row[0].lower(
+                                                ) == mac.lower():
                                                     ap_row = split_row
                                                     mac_found_5g = True
                                             except BaseException:
-                                                print("5g 'No stations are currently associated.'? from AP")
-                                                print("5g since possibly no stations: excption on compare split_row[0].lower() ")
-                                    if mac_found_5g == True:
+                                                print(
+                                                    "5g 'No stations are currently associated.'? from AP")
+                                                print(
+                                                    "5g since possibly no stations: excption on compare split_row[0].lower() ")
+                                    if mac_found_5g:
                                         mac_found_5g = False
-                                        print("5g selected ap_row (from split_row): {}".format(ap_row))
+                                        print(
+                                            "5g selected ap_row (from split_row): {}".format(ap_row))
 
-                                        # Find latency, jitter for connections using this port.
+                                        # Find latency, jitter for connections
+                                        # using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
                                             p["port"], endps)
 
-                                        # now report the ap_chanim_stats along side of the ap_stats_5g
+                                        # now report the ap_chanim_stats along
+                                        # side of the ap_stats_5g
                                         xtop_reported = False
                                         for row in ap_chanim_stats_rows_5g:
                                             split_row = row.split()
                                             if xtop_reported:
-                                                print("xtop_reported 5g row: {row}".format(row=row))
-                                                print("xtop_reported 5g split_row: {split_row}".format(split_row=split_row))
+                                                print(
+                                                    "xtop_reported 5g row: {row}".format(
+                                                        row=row))
+                                                print(
+                                                    "xtop_reported 5g split_row: {split_row}".format(
+                                                        split_row=split_row))
                                                 try:
                                                     xtop = split_row[7]
-                                                    print("5g xtop {xtop}".format(xtop=xtop))
+                                                    print(
+                                                        "5g xtop {xtop}".format(xtop=xtop))
                                                 except BaseException:
-                                                    print("5g detected chanspec with reading chanim_stats, exception reading xtop")
+                                                    print(
+                                                        "5g detected chanspec with reading chanim_stats, exception reading xtop")
 
                                                 try:
-                                                    channel_utilization = float(100) - float(xtop)
-                                                    print("5g channel_utilization {utilization}".format(utilization=channel_utilization))
+                                                    channel_utilization = float(
+                                                        100) - float(xtop)
+                                                    print(
+                                                        "5g channel_utilization {utilization}".format(
+                                                            utilization=channel_utilization))
                                                 except BaseException:
-                                                    print("5g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
-                                                # should be only one channel utilization
+                                                    print(
+                                                        "5g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
+                                                # should be only one channel
+                                                # utilization
                                                 break
                                             else:
                                                 try:
-                                                    if split_row[0].lower() == 'chanspec':
-                                                        print("5g chanspec found xtop_reported = True")
+                                                    if split_row[0].lower(
+                                                    ) == 'chanspec':
+                                                        print(
+                                                            "5g chanspec found xtop_reported = True")
                                                         xtop_reported = True
                                                 except BaseException:
-                                                    print("5g Error reading xtop")
-                                        # ap information is passed with ap_row so all information needs to be contained in ap_row
+                                                    print(
+                                                        "5g Error reading xtop")
+                                        # ap information is passed with ap_row
+                                        # so all information needs to be
+                                        # contained in ap_row
                                         ap_row.append(str(channel_utilization))
-                                        print("5g channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
-                                        print("5g ap_row {ap_row}".format(ap_row=ap_row))
+                                        print(
+                                            "5g channel_utilization {channel_utilization}".format(
+                                                channel_utilization=channel_utilization))
+                                        print(
+                                            "5g ap_row {ap_row}".format(
+                                                ap_row=ap_row))
 
-                                        self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                            latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row) 
+                                        self.write_port_csv(
+                                            len(temp_stations_list),
+                                            ul,
+                                            dl,
+                                            ul_pdu_str,
+                                            dl_pdu_str,
+                                            atten_val,
+                                            eid_name,
+                                            p,
+                                            latency,
+                                            jitter,
+                                            total_ul_rate,
+                                            total_ul_rate_ll,
+                                            total_ul_pkts_ll,
+                                            total_dl_rate,
+                                            total_dl_rate_ll,
+                                            total_dl_pkts_ll,
+                                            ap_row)
 
                             # work though the ul rx_data 5G
                             for eid_name in port_eids:
                                 eid = self.name_to_eid(eid_name)
-                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0],
+                                                          eid[1], eid[2])
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
-                                if (response is None) or ("interface" not in response):
-                                    print("5g query-port: %s: incomplete response:" % (url))
+                                if (response is None) or (
+                                        "interface" not in response):
+                                    print(
+                                        "5g query-port: %s: incomplete response:" %
+                                        (url))
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
                                     pprint(response)
                                     p = response['interface']
-                                    print("#### 5g From LANforge: p, response['insterface']:{}".format(p))
+                                    print(
+                                        "#### 5g From LANforge: p, response['insterface']:{}".format(p))
                                     mac = p['mac']
-                                    # print("#### From LANforge: p['mac']: {mac}".format(mac=mac))
+                                    # print("#### From LANforge: p['mac']:
+                                    # {mac}".format(mac=mac))
 
-                                    # Parse the ap stats to find the matching mac then use that row for reporting
+                                    # Parse the ap stats to find the matching
+                                    # mac then use that row for reporting
                                     for row in ap_stats_ul_5g_rows:
                                         split_ul_row = row.split()
-                                        #print("split_row {}".format(split_row))
-                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # print("split_row {}".format(split_row))
+                                        # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
-                                            if split_ul_row[0].lower() != mac.lower():
+                                            if split_ul_row[0].lower(
+                                            ) != mac.lower():
                                                 ap_ul_row = split_ul_row
                                                 mac_found_ul_5g = True
                                         else:
                                             try:
                                                 # split_ul_row[0].lower() , mac from AP
-                                                # mac.lower() , mac from LANforge
-                                                if split_ul_row[0].lower() == mac.lower():
+                                                # mac.lower() , mac from
+                                                # LANforge
+                                                if split_ul_row[0].lower(
+                                                ) == mac.lower():
                                                     ap_ul_row = split_ul_row
                                                     mac_found_ul_5g = True
                                             except BaseException:
-                                                print("5g ul 'No stations are currently associated.'? from AP")
-                                                print("5g ul since possibly no stations: excption on compare split_row[0].lower() ")
-                                    if mac_found_ul_5g == True:
+                                                print(
+                                                    "5g ul 'No stations are currently associated.'? from AP")
+                                                print(
+                                                    "5g ul since possibly no stations: excption on compare split_row[0].lower() ")
+                                    if mac_found_ul_5g:
                                         mac_found_ul_5g = False
-                                        print("5g ul selected ap_ul_row (from split_ul_row): {}".format(ap_ul_row))
+                                        print(
+                                            "5g ul selected ap_ul_row (from split_ul_row): {}".format(ap_ul_row))
 
-                                        # Find latency, jitter for connections using this port.
+                                        # Find latency, jitter for connections
+                                        # using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
                                             p["port"], endps)
 
-                                        print("5g ap_ul_row {ap_ul_row}".format(ap_ul_row=ap_ul_row))
-                                        self.write_ul_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                            latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_ul_row)
+                                        print(
+                                            "5g ap_ul_row {ap_ul_row}".format(
+                                                ap_ul_row=ap_ul_row))
+                                        self.write_ul_port_csv(
+                                            len(temp_stations_list),
+                                            ul,
+                                            dl,
+                                            ul_pdu_str,
+                                            dl_pdu_str,
+                                            atten_val,
+                                            eid_name,
+                                            p,
+                                            latency,
+                                            jitter,
+                                            total_ul_rate,
+                                            total_ul_rate_ll,
+                                            total_ul_pkts_ll,
+                                            total_dl_rate,
+                                            total_dl_rate_ll,
+                                            total_dl_pkts_ll,
+                                            ap_ul_row)
 
                             # 2g test mode
                             if self.ap_test_mode:
@@ -1269,165 +1535,269 @@ class L3VariableTime(Realm):
                                 ap_stats_ul_2g = self.read_ap_stats_ul_2g()
 
                             ap_stats_2g_rows = ap_stats_2g.splitlines()
-                            print("From AP stats: ap_stats_2g_rows {}".format(ap_stats_2g_rows))
+                            print(
+                                "From AP stats: ap_stats_2g_rows {}".format(ap_stats_2g_rows))
 
                             ap_chanim_stats_rows_2g = ap_chanim_stats_2g.splitlines()
-                            print("From AP chanim: ap_chanim_stats_rows_2g {}".format(ap_chanim_stats_rows_2g))
+                            print(
+                                "From AP chanim: ap_chanim_stats_rows_2g {}".format(ap_chanim_stats_rows_2g))
 
                             ap_stats_ul_2g_rows = ap_stats_ul_2g.splitlines()
-                            print("From AP stats ul: ap_stats_ul_2g_rows {}".format(ap_stats_ul_2g_rows))
+                            print(
+                                "From AP stats ul: ap_stats_ul_2g_rows {}".format(ap_stats_ul_2g_rows))
 
                             channel_utilization = 0
 
                             # Query all of our ports
-                            # Note: the endp eid is the shelf.resource.port.endp-id
+                            # Note: the endp eid is the
+                            # shelf.resource.port.endp-id
                             port_eids = self.gather_port_eids()
                             for eid_name in port_eids:
                                 eid = self.name_to_eid(eid_name)
-                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0],
+                                                          eid[1], eid[2])
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
-                                if (response is None) or ("interface" not in response):
-                                    print("2g query-port: %s: incomplete response:" % (url))
+                                if (response is None) or (
+                                        "interface" not in response):
+                                    print(
+                                        "2g query-port: %s: incomplete response:" %
+                                        (url))
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
                                     pprint(response)
                                     p = response['interface']
-                                    # print("#### From LANforge: p, response['insterface']:{}".format(p))
+                                    # print("#### From LANforge: p,
+                                    # response['insterface']:{}".format(p))
                                     mac = p['mac']
-                                    # print("#### From LANforge: p['mac']: {mac}".format(mac=mac))
+                                    # print("#### From LANforge: p['mac']:
+                                    # {mac}".format(mac=mac))
 
-                                    # Parse the ap stats to find the matching mac then use that row for reporting
+                                    # Parse the ap stats to find the matching
+                                    # mac then use that row for reporting
                                     for row in ap_stats_2g_rows:
                                         split_row = row.split()
-                                        #print("split_row {}".format(split_row))
-                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # print("split_row {}".format(split_row))
+                                        # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
-                                            if split_row[0].lower() != mac.lower():
+                                            if split_row[0].lower(
+                                            ) != mac.lower():
                                                 ap_row = split_row
                                                 mac_found_2g = True
                                         else:
                                             try:
                                                 # split_row[0].lower() , mac from AP
-                                                # mac.lower() , mac from LANforge
-                                                if split_row[0].lower() == mac.lower():
+                                                # mac.lower() , mac from
+                                                # LANforge
+                                                if split_row[0].lower(
+                                                ) == mac.lower():
                                                     ap_row = split_row
                                                     mac_found_2g = True
                                             except BaseException:
-                                                print("2g 'No stations are currently associated.'? from AP")
-                                                print("2g since possibly no stations: excption on compare split_row[0].lower() ")
-                                    if mac_found_2g == True:
+                                                print(
+                                                    "2g 'No stations are currently associated.'? from AP")
+                                                print(
+                                                    "2g since possibly no stations: excption on compare split_row[0].lower() ")
+                                    if mac_found_2g:
                                         mac_found_2g = False
-                                        print("2g selected ap_row (from split_row): {}".format(ap_row))
+                                        print(
+                                            "2g selected ap_row (from split_row): {}".format(ap_row))
 
-                                        # Find latency, jitter for connections using this port.
+                                        # Find latency, jitter for connections
+                                        # using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
                                             p["port"], endps)
 
-                                        # now report the ap_chanim_stats along side of the ap_stats_2g
+                                        # now report the ap_chanim_stats along
+                                        # side of the ap_stats_2g
                                         xtop_reported = False
                                         for row in ap_chanim_stats_rows_2g:
                                             split_row = row.split()
                                             if xtop_reported:
-                                                print("2g xtop_reported row: {row}".format(row=row))
-                                                print("2g xtop_reported split_row: {split_row}".format(split_row=split_row))
+                                                print(
+                                                    "2g xtop_reported row: {row}".format(
+                                                        row=row))
+                                                print(
+                                                    "2g xtop_reported split_row: {split_row}".format(
+                                                        split_row=split_row))
                                                 try:
                                                     xtop = split_row[7]
-                                                    print("2g xtop {xtop}".format(xtop=xtop))
+                                                    print(
+                                                        "2g xtop {xtop}".format(xtop=xtop))
                                                 except BaseException:
-                                                    print("2g detected chanspec with reading chanim_stats, exception reading xtop")
+                                                    print(
+                                                        "2g detected chanspec with reading chanim_stats, exception reading xtop")
 
                                                 try:
-                                                    channel_utilization = float(100) - float(xtop)
-                                                    print("2g channel_utilization {utilization}".format(utilization=channel_utilization))
+                                                    channel_utilization = float(
+                                                        100) - float(xtop)
+                                                    print(
+                                                        "2g channel_utilization {utilization}".format(
+                                                            utilization=channel_utilization))
                                                 except BaseException:
-                                                    print("2g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
-                                                # should be only one channel utilization
+                                                    print(
+                                                        "2g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
+                                                # should be only one channel
+                                                # utilization
                                                 break
                                             else:
                                                 try:
-                                                    if split_row[0].lower() == 'chanspec':
-                                                        print("2g chanspec found xtop_reported = True")
+                                                    if split_row[0].lower(
+                                                    ) == 'chanspec':
+                                                        print(
+                                                            "2g chanspec found xtop_reported = True")
                                                         xtop_reported = True
                                                 except BaseException:
-                                                    print("2g Error reading xtop")
-                                        # ap information is passed with ap_row so all information needs to be contained in ap_row
+                                                    print(
+                                                        "2g Error reading xtop")
+                                        # ap information is passed with ap_row
+                                        # so all information needs to be
+                                        # contained in ap_row
                                         ap_row.append(str(channel_utilization))
-                                        print("2g channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
-                                        print("2g ap_row {ap_row}".format(ap_row=ap_row))
+                                        print(
+                                            "2g channel_utilization {channel_utilization}".format(
+                                                channel_utilization=channel_utilization))
+                                        print(
+                                            "2g ap_row {ap_row}".format(
+                                                ap_row=ap_row))
 
-                                        self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                            latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row) 
+                                        self.write_port_csv(
+                                            len(temp_stations_list),
+                                            ul,
+                                            dl,
+                                            ul_pdu_str,
+                                            dl_pdu_str,
+                                            atten_val,
+                                            eid_name,
+                                            p,
+                                            latency,
+                                            jitter,
+                                            total_ul_rate,
+                                            total_ul_rate_ll,
+                                            total_ul_pkts_ll,
+                                            total_dl_rate,
+                                            total_dl_rate_ll,
+                                            total_dl_pkts_ll,
+                                            ap_row)
                             # work though the ul rx_data 5G
                             for eid_name in port_eids:
                                 eid = self.name_to_eid(eid_name)
-                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0],
+                                                          eid[1], eid[2])
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
-                                if (response is None) or ("interface" not in response):
-                                    print("5g query-port: %s: incomplete response:" % (url))
+                                if (response is None) or (
+                                        "interface" not in response):
+                                    print(
+                                        "5g query-port: %s: incomplete response:" %
+                                        (url))
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
                                     pprint(response)
                                     p = response['interface']
-                                    print("#### 2g From LANforge: p, response['insterface']:{}".format(p))
+                                    print(
+                                        "#### 2g From LANforge: p, response['insterface']:{}".format(p))
                                     mac = p['mac']
-                                    # print("#### From LANforge: p['mac']: {mac}".format(mac=mac))
+                                    # print("#### From LANforge: p['mac']:
+                                    # {mac}".format(mac=mac))
 
-                                    # Parse the ap stats to find the matching mac then use that row for reporting
+                                    # Parse the ap stats to find the matching
+                                    # mac then use that row for reporting
                                     for row in ap_stats_ul_2g_rows:
                                         split_ul_row = row.split()
-                                        #print("split_row {}".format(split_row))
-                                        #print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # print("split_row {}".format(split_row))
+                                        # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
-                                            if split_ul_row[0].lower() != mac.lower():
+                                            if split_ul_row[0].lower(
+                                            ) != mac.lower():
                                                 ap_ul_row = split_ul_row
                                                 mac_found_ul_2g = True
                                         else:
                                             try:
                                                 # split_ul_row[0].lower() , mac from AP
-                                                # mac.lower() , mac from LANforge
-                                                if split_ul_row[0].lower() == mac.lower():
+                                                # mac.lower() , mac from
+                                                # LANforge
+                                                if split_ul_row[0].lower(
+                                                ) == mac.lower():
                                                     ap_ul_row = split_ul_row
                                                     mac_found_ul_2g = True
                                             except BaseException:
-                                                print("2g ul 'No stations are currently associated.'? from AP")
-                                                print("2g ul since possibly no stations: excption on compare split_row[0].lower() ")
-                                    if mac_found_ul_2g == True:
+                                                print(
+                                                    "2g ul 'No stations are currently associated.'? from AP")
+                                                print(
+                                                    "2g ul since possibly no stations: excption on compare split_row[0].lower() ")
+                                    if mac_found_ul_2g:
                                         mac_found_ul_2g = False
-                                        print("2g ul selected ap_ul_row (from split_ul_row): {}".format(ap_ul_row))
+                                        print(
+                                            "2g ul selected ap_ul_row (from split_ul_row): {}".format(ap_ul_row))
 
-                                        # Find latency, jitter for connections using this port.
+                                        # Find latency, jitter for connections
+                                        # using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
                                             p["port"], endps)
 
-                                        print("2g ap_ul_row {ap_ul_row}".format(ap_ul_row=ap_ul_row))
-                                        self.write_ul_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                            latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                            total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_ul_row)
+                                        print(
+                                            "2g ap_ul_row {ap_ul_row}".format(
+                                                ap_ul_row=ap_ul_row))
+                                        self.write_ul_port_csv(
+                                            len(temp_stations_list),
+                                            ul,
+                                            dl,
+                                            ul_pdu_str,
+                                            dl_pdu_str,
+                                            atten_val,
+                                            eid_name,
+                                            p,
+                                            latency,
+                                            jitter,
+                                            total_ul_rate,
+                                            total_ul_rate_ll,
+                                            total_ul_pkts_ll,
+                                            total_dl_rate,
+                                            total_dl_rate_ll,
+                                            total_dl_pkts_ll,
+                                            ap_ul_row)
                         else:
 
                             # Query all of our ports
-                            # Note: the endp eid is the shelf.resource.port.endp-id
+                            # Note: the endp eid is the
+                            # shelf.resource.port.endp-id
                             port_eids = self.gather_port_eids()
                             for eid_name in port_eids:
                                 eid = self.name_to_eid(eid_name)
-                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0],
+                                                          eid[1], eid[2])
                                 response = self.json_get(url)
-                                if (response is None) or ("interface" not in response):
-                                    print("query-port: %s: incomplete response:" % (url))
+                                if (response is None) or (
+                                        "interface" not in response):
+                                    print(
+                                        "query-port: %s: incomplete response:" % (url))
                                     pprint(response)
                                 else:
                                     p = response['interface']
                                     latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
                                         p["port"], endps)
 
-                                    self.write_port_csv(len(temp_stations_list), ul, dl, ul_pdu_str, dl_pdu_str, atten_val, eid_name, p,
-                                                        latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                                                        total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row) 
+                                    self.write_port_csv(
+                                        len(temp_stations_list),
+                                        ul,
+                                        dl,
+                                        ul_pdu_str,
+                                        dl_pdu_str,
+                                        atten_val,
+                                        eid_name,
+                                        p,
+                                        latency,
+                                        jitter,
+                                        total_ul_rate,
+                                        total_ul_rate_ll,
+                                        total_ul_pkts_ll,
+                                        total_dl_rate,
+                                        total_dl_rate_ll,
+                                        total_dl_pkts_ll,
+                                        ap_row)
 
                     # At end of test step, record KPI into kpi.csv
                     self.record_kpi_csv(
@@ -1442,8 +1812,8 @@ class L3VariableTime(Realm):
                         total_dl_ll_bps,
                         total_ul_ll_bps)
 
-
-                    # At end of test step, record KPI information. This is different the kpi.csv
+                    # At end of test step, record KPI information. This is
+                    # different the kpi.csv
                     self.record_kpi(
                         len(temp_stations_list),
                         ul,
@@ -1456,32 +1826,42 @@ class L3VariableTime(Realm):
                         total_dl_ll_bps,
                         total_ul_ll_bps)
 
-                    # At end of test if requested store upload and download stats
+                    # At end of test if requested store upload and download
+                    # stats
                     if self.ap_scheduler_stats:
                         # get the (UL) Upload 6g scheduler statistics
-                        self.ap_6g_umsched += self.ap_custom_cmd('wl -i wl2 dump umsched')
+                        self.ap_6g_umsched += self.ap_custom_cmd(
+                            'wl -i wl2 dump umsched')
                         # get the (DL) Download 6g schduler staticstics
-                        self.ap_6g_msched += self.ap_custom_cmd('wl -i wl2 dump msched')
+                        self.ap_6g_msched += self.ap_custom_cmd(
+                            'wl -i wl2 dump msched')
 
                         # get the (UL) Upload 5g scheduler statistics
-                        self.ap_5g_umsched += self.ap_custom_cmd('wl -i wl1 dump umsched')
+                        self.ap_5g_umsched += self.ap_custom_cmd(
+                            'wl -i wl1 dump umsched')
                         # get the (DL) Download 5g schduler staticstics
-                        self.ap_5g_msched += self.ap_custom_cmd('wl -i wl1 dump msched')
+                        self.ap_5g_msched += self.ap_custom_cmd(
+                            'wl -i wl1 dump msched')
 
                         # get the (UL) Upload 24g scheduler statistics
-                        self.ap_24g_umsched += self.ap_custom_cmd('wl -i wl0 dump umsched')
+                        self.ap_24g_umsched += self.ap_custom_cmd(
+                            'wl -i wl0 dump umsched')
                         # get the (DL) Download 24g schduler staticstics
-                        self.ap_24g_msched += self.ap_custom_cmd('wl -i wl0 dump msched')
+                        self.ap_24g_msched += self.ap_custom_cmd(
+                            'wl -i wl0 dump msched')
 
                     if self.ap_ofdma_stats:
                         # provide OFDMA stats 6GHz
-                        self.ap_ofdma_6g += self.ap_custom_cmd('wl -i wl2 muinfo -v')
+                        self.ap_ofdma_6g += self.ap_custom_cmd(
+                            'wl -i wl2 muinfo -v')
 
                         # provide OFDMA stats 5GHz
-                        self.ap_ofdma_5g += self.ap_custom_cmd('wl -i wl1 muinfo -v')
+                        self.ap_ofdma_5g += self.ap_custom_cmd(
+                            'wl -i wl1 muinfo -v')
 
                         # provide OFDMA stats 2.4GHz
-                        self.ap_ofdma_24g += self.ap_custom_cmd('wl -i wl0 muinfo -v')
+                        self.ap_ofdma_24g += self.ap_custom_cmd(
+                            'wl -i wl0 muinfo -v')
 
                     # Stop connections.
                     self.cx_profile.stop_cx()
@@ -1490,52 +1870,115 @@ class L3VariableTime(Realm):
                     cur_time = datetime.datetime.now()
 
                     if passes == expected_passes:
-                        self._pass("PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" % (ul, dl, ul_pdu, dl_pdu), print_pass)
+                        self._pass(
+                            "PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" %
+                            (ul, dl, ul_pdu, dl_pdu), print_pass)
 
-    def write_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data, latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                       total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_row):
+    def write_port_csv(
+            self,
+            sta_count,
+            ul,
+            dl,
+            ul_pdu,
+            dl_pdu,
+            atten,
+            eid_name,
+            port_data,
+            latency,
+            jitter,
+            total_ul_rate,
+            total_ul_rate_ll,
+            total_ul_pkts_ll,
+            total_dl_rate,
+            total_dl_rate_ll,
+            total_dl_pkts_ll,
+            ap_row):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, eid_name
                ]
 
-        row = row + [port_data['bps rx'], port_data['bps tx'], port_data['rx-rate'], port_data['tx-rate'],
-                     port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll]
+        row = row + [port_data['bps rx'],
+                     port_data['bps tx'],
+                     port_data['rx-rate'],
+                     port_data['tx-rate'],
+                     port_data['signal'],
+                     port_data['ap'],
+                     port_data['mode'],
+                     latency,
+                     jitter,
+                     total_ul_rate,
+                     total_ul_rate_ll,
+                     total_ul_pkts_ll,
+                     total_dl_rate,
+                     total_dl_rate_ll,
+                     total_dl_pkts_ll]
 
-        # Add in info queried from AP. 
-        #print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
-        #print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
+        # Add in info queried from AP.
+        # print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
+        # print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
         if len(ap_row) == len(self.ap_stats_col_titles):
-            #print("ap_row {}".format(ap_row))
+            # print("ap_row {}".format(ap_row))
             for col in ap_row:
-                #print("col {}".format(col))
+                # print("col {}".format(col))
                 row.append(col)
 
         writer = self.port_csv_writers[eid_name]
         writer.writerow(row)
         self.port_csv_files[eid_name].flush()
 
-    def write_ul_port_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, eid_name, port_data, latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll,
-                       total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, ap_ul_row):
+    def write_ul_port_csv(
+            self,
+            sta_count,
+            ul,
+            dl,
+            ul_pdu,
+            dl_pdu,
+            atten,
+            eid_name,
+            port_data,
+            latency,
+            jitter,
+            total_ul_rate,
+            total_ul_rate_ll,
+            total_ul_pkts_ll,
+            total_dl_rate,
+            total_dl_rate_ll,
+            total_dl_pkts_ll,
+            ap_ul_row):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, eid_name
                ]
 
-        row = row + [port_data['bps rx'], port_data['bps tx'], port_data['rx-rate'], port_data['tx-rate'],
-                     port_data['signal'], port_data['ap'], port_data['mode'], latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll]
+        row = row + [port_data['bps rx'],
+                     port_data['bps tx'],
+                     port_data['rx-rate'],
+                     port_data['tx-rate'],
+                     port_data['signal'],
+                     port_data['ap'],
+                     port_data['mode'],
+                     latency,
+                     jitter,
+                     total_ul_rate,
+                     total_ul_rate_ll,
+                     total_ul_pkts_ll,
+                     total_dl_rate,
+                     total_dl_rate_ll,
+                     total_dl_pkts_ll]
 
-        # Add in info queried from AP. 
-        #print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
-        #print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
+        # Add in info queried from AP.
+        # print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
+        # print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
 
-        print("ap_ul_row len {} ap_stats_ul_col_titles len {} ap_ul_row {}".format(len(ap_ul_row),len(self.ap_stats_ul_col_titles),ap_ul_row))
+        print("ap_ul_row len {} ap_stats_ul_col_titles len {} ap_ul_row {}".format(
+            len(ap_ul_row), len(self.ap_stats_ul_col_titles), ap_ul_row))
         if len(ap_ul_row) == len(self.ap_stats_ul_col_titles):
             print("ap_ul_row {}".format(ap_ul_row))
             for col in ap_ul_row:
                 print("col {}".format(col))
                 row.append(col)
-                    
+
         writer = self.ul_port_csv_writers[eid_name]
         writer.writerow(row)
         self.ul_port_csv_files[eid_name].flush()
@@ -1546,58 +1989,88 @@ class L3VariableTime(Realm):
                                 'test details','Units','Graph-Group','Subtest-Pass','Subtest-Fail'],
     '''
 
-    def record_kpi_csv(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps):
+    def record_kpi_csv(
+            self,
+            sta_count,
+            ul,
+            dl,
+            ul_pdu,
+            dl_pdu,
+            atten,
+            total_dl_bps,
+            total_ul_bps,
+            total_dl_ll_bps,
+            total_ul_ll_bps):
 
         print("NOTE:  Adding kpi to kpi.csv, sta_count {sta_count}  total-download-bps:{total_dl_bps}  upload: {total_ul_bps}  bi-directional: {total}\n".format(
-              sta_count=sta_count,total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total=(total_ul_bps + total_dl_bps)))
+              sta_count=sta_count, total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total=(total_ul_bps + total_dl_bps)))
 
         print("NOTE:  Adding kpi to kpi.csv, sta_count {sta_count}  total-download-bps:{total_dl_ll_bps}  upload: {total_ul_ll_bps}  bi-directional: {total_ll}\n".format(
-              sta_count=sta_count,total_dl_ll_bps=total_dl_ll_bps, total_ul_ll_bps=total_ul_ll_bps, total_ll=(total_ul_ll_bps + total_dl_ll_bps)))
+              sta_count=sta_count, total_dl_ll_bps=total_dl_ll_bps, total_ul_ll_bps=total_ul_ll_bps, total_ll=(total_ul_ll_bps + total_dl_ll_bps)))
 
-
-        # the short description will all for more data to show up in one test-tag graph
+        # the short description will all for more data to show up in one
+        # test-tag graph
 
         results_dict = self.kpi_csv.kpi_csv_get_dict_update_time()
         results_dict['Graph-Group'] = "Per Stations Rate DL"
-        results_dict['short-description'] = "DL {dl} bps  pdu {dl_pdu}  {sta_count} STA".format(dl=dl,dl_pdu=dl_pdu,sta_count=sta_count)
+        results_dict['short-description'] = "DL {dl} bps  pdu {dl_pdu}  {sta_count} STA".format(
+            dl=dl, dl_pdu=dl_pdu, sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format(total_dl_bps)
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate UL"
-        results_dict['short-description'] = "UL {ul} bps pdu {ul_pdu} {sta_count} STA".format(ul=ul,ul_pdu=ul_pdu,sta_count=sta_count)
+        results_dict['short-description'] = "UL {ul} bps pdu {ul_pdu} {sta_count} STA".format(
+            ul=ul, ul_pdu=ul_pdu, sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format(total_ul_bps)
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate UL+DL"
-        results_dict['short-description'] = "UL {ul} bps pdu {ul_pdu} + DL {dl} bps pud {dl_pdu}- {sta_count} STA".format(ul=ul,ul_pdu=ul_pdu,dl=dl,dl_pdu=dl_pdu,sta_count=sta_count)
-        results_dict['numeric-score'] = "{}".format((total_ul_bps + total_dl_bps))
+        results_dict['short-description'] = "UL {ul} bps pdu {ul_pdu} + DL {dl} bps pud {dl_pdu}- {sta_count} STA".format(
+            ul=ul, ul_pdu=ul_pdu, dl=dl, dl_pdu=dl_pdu, sta_count=sta_count)
+        results_dict['numeric-score'] = "{}".format(
+            (total_ul_bps + total_dl_bps))
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate DL"
-        results_dict['short-description'] = "DL LL {dl} bps  pdu {dl_pdu}  {sta_count} STA".format(dl=dl,dl_pdu=dl_pdu,sta_count=sta_count)
+        results_dict['short-description'] = "DL LL {dl} bps  pdu {dl_pdu}  {sta_count} STA".format(
+            dl=dl, dl_pdu=dl_pdu, sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format(total_dl_ll_bps)
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate UL"
-        results_dict['short-description'] = "UL LL {ul} bps pdu {ul_pdu} {sta_count} STA".format(ul=ul,ul_pdu=ul_pdu,sta_count=sta_count)
+        results_dict['short-description'] = "UL LL {ul} bps pdu {ul_pdu} {sta_count} STA".format(
+            ul=ul, ul_pdu=ul_pdu, sta_count=sta_count)
         results_dict['numeric-score'] = "{}".format(total_ul_ll_bps)
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         results_dict['Graph-Group'] = "Per Stations Rate UL+DL"
-        results_dict['short-description'] = "UL LL {ul} bps pdu {ul_pdu} + DL LL {dl} bps pud {dl_pdu}- {sta_count} STA".format(ul=ul,ul_pdu=ul_pdu,dl=dl,dl_pdu=dl_pdu,sta_count=sta_count)
-        results_dict['numeric-score'] = "{}".format((total_ul_ll_bps + total_dl_ll_bps))
+        results_dict['short-description'] = "UL LL {ul} bps pdu {ul_pdu} + DL LL {dl} bps pud {dl_pdu}- {sta_count} STA".format(
+            ul=ul, ul_pdu=ul_pdu, dl=dl, dl_pdu=dl_pdu, sta_count=sta_count)
+        results_dict['numeric-score'] = "{}".format(
+            (total_ul_ll_bps + total_dl_ll_bps))
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
-
     # Submit data to the influx db if configured to do so.
-    # This is not the kpi.csv 
-    def record_kpi(self, sta_count, ul, dl, ul_pdu, dl_pdu, atten, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps):
+    # This is not the kpi.csv
+
+    def record_kpi(
+            self,
+            sta_count,
+            ul,
+            dl,
+            ul_pdu,
+            dl_pdu,
+            atten,
+            total_dl_bps,
+            total_ul_bps,
+            total_dl_ll_bps,
+            total_ul_ll_bps):
 
         tags = dict()
         tags['requested-ul-bps'] = ul
@@ -1614,20 +2087,29 @@ class L3VariableTime(Realm):
 
         now = str(datetime.datetime.utcnow().isoformat())
 
-        print("NOTE:  Adding kpi to influx, total-download-bps: %s  upload: %s  bi-directional: %s\n" %
-              (total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)))
+        print(
+            "NOTE:  Adding kpi to influx, total-download-bps: %s  upload: %s  bi-directional: %s\n" %
+            (total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)))
 
         if self.influxdb is not None:
-            self.influxdb.post_to_influx("total-download-bps", total_dl_bps, tags, now)
-            self.influxdb.post_to_influx("total-upload-bps", total_ul_bps, tags, now)
-            self.influxdb.post_to_influx("total-bi-directional-bps", total_ul_bps + total_dl_bps, tags, now)
+            self.influxdb.post_to_influx(
+                "total-download-bps", total_dl_bps, tags, now)
+            self.influxdb.post_to_influx(
+                "total-upload-bps", total_ul_bps, tags, now)
+            self.influxdb.post_to_influx(
+                "total-bi-directional-bps",
+                total_ul_bps +
+                total_dl_bps,
+                tags,
+                now)
 
         if self.csv_kpi_file:
             row = [self.epoch_time, self.time_stamp(), sta_count,
                    ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                    atten,
                    total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps),
-                   total_dl_ll_bps, total_ul_ll_bps, (total_ul_ll_bps + total_dl_ll_bps)
+                   total_dl_ll_bps, total_ul_ll_bps, (
+                       total_ul_ll_bps + total_dl_ll_bps)
                    ]
             # Add values for any user specified tags
             for k in self.user_tags:
@@ -1652,20 +2134,52 @@ class L3VariableTime(Realm):
             station_profile.cleanup()
 
     def csv_generate_column_headers(self):
-        csv_rx_headers = ['Time epoch', 'Time', 'Monitor',
-                          'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested', 'DL-Max-Requested',
-                          'UL-Min-PDU', 'UL-Max-PDU', 'DL-Min-PDU', 'DL-Max-PDU',
-                          ]
+        csv_rx_headers = [
+            'Time epoch',
+            'Time',
+            'Monitor',
+            'UL-Min-Requested',
+            'UL-Max-Requested',
+            'DL-Min-Requested',
+            'DL-Max-Requested',
+            'UL-Min-PDU',
+            'UL-Max-PDU',
+            'DL-Min-PDU',
+            'DL-Max-PDU',
+        ]
         csv_rx_headers.append("average_rx_data_bytes")
         return csv_rx_headers
 
     def csv_generate_port_column_headers(self):
-        csv_rx_headers = ['Time epoch', 'Time', 'Station-Count',
-                          'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested', 'DL-Max-Requested',
-                          'UL-Min-PDU', 'UL-Max-PDU', 'DL-Min-PDU', 'DL-Max-PDU', 'Attenuation',
-                          'Name', 'Rx-Bps', 'Tx-Bps', 'Rx-Link-Rate', 'Tx-Link-Rate', 'RSSI', 'AP', 'Mode',
-                          'Rx-Latency', 'Rx-Jitter', 'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll'
-                          ]
+        csv_rx_headers = [
+            'Time epoch',
+            'Time',
+            'Station-Count',
+            'UL-Min-Requested',
+            'UL-Max-Requested',
+            'DL-Min-Requested',
+            'DL-Max-Requested',
+            'UL-Min-PDU',
+            'UL-Max-PDU',
+            'DL-Min-PDU',
+            'DL-Max-PDU',
+            'Attenuation',
+            'Name',
+            'Rx-Bps',
+            'Tx-Bps',
+            'Rx-Link-Rate',
+            'Tx-Link-Rate',
+            'RSSI',
+            'AP',
+            'Mode',
+            'Rx-Latency',
+            'Rx-Jitter',
+            'Ul-Rx-Goodput-bps',
+            'Ul-Rx-Rate-ll',
+            'Ul-Rx-Pkts-ll',
+            'Dl-Rx-Goodput-bps',
+            'Dl-Rx-Rate-ll',
+            'Dl-Rx-Pkts-ll']
         # Add in columns we are going to query from the AP
         for col in self.ap_stats_col_titles:
             csv_rx_headers.append(col)
@@ -1673,27 +2187,61 @@ class L3VariableTime(Realm):
         return csv_rx_headers
 
     def csv_generate_ul_port_column_headers(self):
-        csv_ul_rx_headers = ['Time epoch', 'Time', 'Station-Count',
-                          'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested', 'DL-Max-Requested',
-                          'UL-Min-PDU', 'UL-Max-PDU', 'DL-Min-PDU', 'DL-Max-PDU', 'Attenuation',
-                          'Name', 'Rx-Bps', 'Tx-Bps', 'Rx-Link-Rate', 'Tx-Link-Rate', 'RSSI', 'AP', 'Mode',
-                          'Rx-Latency', 'Rx-Jitter', 'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll'
-                          ]
+        csv_ul_rx_headers = [
+            'Time epoch',
+            'Time',
+            'Station-Count',
+            'UL-Min-Requested',
+            'UL-Max-Requested',
+            'DL-Min-Requested',
+            'DL-Max-Requested',
+            'UL-Min-PDU',
+            'UL-Max-PDU',
+            'DL-Min-PDU',
+            'DL-Max-PDU',
+            'Attenuation',
+            'Name',
+            'Rx-Bps',
+            'Tx-Bps',
+            'Rx-Link-Rate',
+            'Tx-Link-Rate',
+            'RSSI',
+            'AP',
+            'Mode',
+            'Rx-Latency',
+            'Rx-Jitter',
+            'Ul-Rx-Goodput-bps',
+            'Ul-Rx-Rate-ll',
+            'Ul-Rx-Pkts-ll',
+            'Dl-Rx-Goodput-bps',
+            'Dl-Rx-Rate-ll',
+            'Dl-Rx-Pkts-ll']
         # Add in columns we are going to query from the AP
         for col in self.ap_stats_ul_col_titles:
             csv_ul_rx_headers.append(col)
 
         return csv_ul_rx_headers
 
-
-
     def csv_generate_kpi_column_headers(self):
-        csv_rx_headers = ['Time epoch', 'Time', 'Station-Count',
-                          'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested', 'DL-Max-Requested',
-                          'UL-Min-PDU', 'UL-Max-PDU', 'DL-Min-PDU', 'DL-Max-PDU', 'Attenuation',
-                          'Total-Download-Bps', 'Total-Upload-Bps', 'Total-UL/DL-Bps',
-                          'Total-Download-LL-Bps', 'Total-Upload-LL-Bps', 'Total-UL/DL-LL-Bps'
-                          ]
+        csv_rx_headers = [
+            'Time epoch',
+            'Time',
+            'Station-Count',
+            'UL-Min-Requested',
+            'UL-Max-Requested',
+            'DL-Min-Requested',
+            'DL-Max-Requested',
+            'UL-Min-PDU',
+            'UL-Max-PDU',
+            'DL-Min-PDU',
+            'DL-Max-PDU',
+            'Attenuation',
+            'Total-Download-Bps',
+            'Total-Upload-Bps',
+            'Total-UL/DL-Bps',
+            'Total-Download-LL-Bps',
+            'Total-Upload-LL-Bps',
+            'Total-UL/DL-LL-Bps']
         for k in self.user_tags:
             csv_rx_headers.append(k[0])
 
@@ -1702,7 +2250,8 @@ class L3VariableTime(Realm):
     # Write initial headers to csv file.
     def csv_add_column_headers(self, headers):
         if self.csv_kpi_file is not None:
-            self.csv_kpi_writer.writerow(self.csv_generate_kpi_column_headers())
+            self.csv_kpi_writer.writerow(
+                self.csv_generate_kpi_column_headers())
             self.csv_kpi_file.flush()
 
     # Write initial headers to port csv file.
@@ -1730,10 +2279,10 @@ class L3VariableTime(Realm):
         ul_port_csv_writer.writerow(headers)
         pfile.flush()
 
-
     def csv_validate_list(self, csv_list, length):
         if len(csv_list) < length:
-            csv_list = csv_list + [('no data', 'no data')] * (length - len(csv_list))
+            csv_list = csv_list + [('no data', 'no data')] * \
+                (length - len(csv_list))
         return csv_list
 
     def csv_add_row(self, row, writer, csv_file):
@@ -1749,9 +2298,18 @@ class L3VariableTime(Realm):
 def valid_endp_types(_endp_type):
     etypes = _endp_type.split(',')
     for endp_type in etypes:
-        valid_endp_type = ['lf', 'lf_udp', 'lf_udp6', 'lf_tcp', 'lf_tcp6', 'mc_udp', 'mc_udp6']
+        valid_endp_type = [
+            'lf',
+            'lf_udp',
+            'lf_udp6',
+            'lf_tcp',
+            'lf_tcp6',
+            'mc_udp',
+            'mc_udp6']
         if not (str(endp_type) in valid_endp_type):
-            print('invalid endp_type: %s. Valid types lf, lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6' % endp_type)
+            print(
+                'invalid endp_type: %s. Valid types lf, lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6' %
+                endp_type)
             exit(1)
     return _endp_type
 
@@ -1852,9 +2410,10 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp m
 --radio "radio==wiphy1 stations==64 ssid==candelaTech-wpa2-x2048-5-3 ssid_pw==candelaTech-wpa2-x2048-5-3 security==wpa2"
 
 Setting wifi_settings per radio
-./test_l3_longevity.py  --lfmgr 192.168.100.116 --local_lf_report_dir /home/lanforge/html-reports/ --test_duration 15s 
---polling_interval 5s --upstream_port eth2   
---radio "radio==wiphy1 stations==4 ssid==asus11ax-5 ssid_pw==hello123 security==wpa2  mode==0 wifi_settings==wifi_settings enable_flags==('ht160_enable'|'wpa2_enable'|'80211u_enable'|'create_admin_down'|'ht160_enable') "  
+./test_l3_longevity.py  --lfmgr 192.168.100.116 --local_lf_report_dir /home/lanforge/html-reports/ --test_duration 15s
+--polling_interval 5s --upstream_port eth2
+--radio "radio==wiphy1 stations==4 ssid==asus11ax-5 ssid_pw==hello123 security==wpa2  mode==0 wifi_settings==wifi_settings
+    enable_flags==('ht160_enable'|'wpa2_enable'|'80211u_enable'|'create_admin_down'|'ht160_enable') "
 --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 --test_rig CT-US-001 --test_tag 'l3_longevity'
 
         wifi_mode
@@ -1924,13 +2483,34 @@ Setting wifi_settings per radio
         '--local_lf_report_dir',
         help='--local_lf_report_dir override the report path, primary use when running test in test suite',
         default="")
-    parser.add_argument("--test_rig", default="", help="test rig for kpi.csv, testbed that the tests are run on")
-    parser.add_argument("--test_tag", default="", help="test tag for kpi.csv,  test specific information to differenciate the test")
-    parser.add_argument("--dut_hw_version", default="", help="dut hw version for kpi.csv, hardware version of the device under test")
-    parser.add_argument("--dut_sw_version", default="", help="dut sw version for kpi.csv, software version of the device under test")
-    parser.add_argument("--dut_model_num", default="", help="dut model for kpi.csv,  model number / name of the device under test")
-    parser.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
-    parser.add_argument("--test_id", default="l3 Longevity", help="test-id for kpi.csv,  script or test name")
+    parser.add_argument(
+        "--test_rig",
+        default="",
+        help="test rig for kpi.csv, testbed that the tests are run on")
+    parser.add_argument(
+        "--test_tag",
+        default="",
+        help="test tag for kpi.csv,  test specific information to differenciate the test")
+    parser.add_argument(
+        "--dut_hw_version",
+        default="",
+        help="dut hw version for kpi.csv, hardware version of the device under test")
+    parser.add_argument(
+        "--dut_sw_version",
+        default="",
+        help="dut sw version for kpi.csv, software version of the device under test")
+    parser.add_argument(
+        "--dut_model_num",
+        default="",
+        help="dut model for kpi.csv,  model number / name of the device under test")
+    parser.add_argument(
+        "--test_priority",
+        default="",
+        help="dut model for kpi.csv,  test-priority is arbitrary number")
+    parser.add_argument(
+        "--test_id",
+        default="l3 Longevity",
+        help="test-id for kpi.csv,  script or test name")
     '''
     Other values that are included in the kpi.csv row.
     short-description : short description of the test
@@ -1941,46 +2521,131 @@ Setting wifi_settings per radio
     Graph-Group - For the lf_qa.py dashboard
 
     '''
-    parser.add_argument('-o', '--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
+    parser.add_argument(
+        '-o',
+        '--csv_outfile',
+        help="--csv_outfile <Output file for csv data>",
+        default="")
 
-    parser.add_argument('--tty', help='--tty \"/dev/ttyUSB2\" the serial interface to the AP', default="")
-    parser.add_argument('--baud', help='--baud \"9600\"  AP baud rate for the serial interface', default="9600")
-    parser.add_argument('--mgr','--lfmgr', dest='lfmgr', help='--lfmgr <hostname for where LANforge GUI is running>', default='localhost')
+    parser.add_argument(
+        '--tty',
+        help='--tty \"/dev/ttyUSB2\" the serial interface to the AP',
+        default="")
+    parser.add_argument(
+        '--baud',
+        help='--baud \"9600\"  AP baud rate for the serial interface',
+        default="9600")
+    parser.add_argument(
+        '--mgr',
+        '--lfmgr',
+        dest='lfmgr',
+        help='--lfmgr <hostname for where LANforge GUI is running>',
+        default='localhost')
     parser.add_argument(
         '--test_duration',
         help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',
         default='3m')
-    parser.add_argument('--tos', help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric', default="BE")
-    parser.add_argument('--debug', help='--debug flag present debug on  enable debugging', action='store_true')
-    parser.add_argument('-t', '--endp_type', help='--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\"  Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6',
-                        default='lf_udp', type=valid_endp_types)
-    parser.add_argument('-u', '--upstream_port', help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1', default='eth1')
-    parser.add_argument('--downstream_port', help='--downstream_port <cross connect downstream_port> example: --downstream_port eth2')
-    parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='60s')
+    parser.add_argument(
+        '--tos',
+        help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',
+        default="BE")
+    parser.add_argument(
+        '--debug',
+        help='--debug flag present debug on  enable debugging',
+        action='store_true')
+    parser.add_argument(
+        '-t',
+        '--endp_type',
+        help=(
+            '--endp_type <types of traffic> example --endp_type \"lf_udp lf_tcp mc_udp\" '
+            ' Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6'),
+        default='lf_udp',
+        type=valid_endp_types)
+    parser.add_argument(
+        '-u',
+        '--upstream_port',
+        help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',
+        default='eth1')
+    parser.add_argument(
+        '--downstream_port',
+        help='--downstream_port <cross connect downstream_port> example: --downstream_port eth2')
+    parser.add_argument(
+        '--polling_interval',
+        help="--polling_interval <seconds>",
+        default='60s')
 
-    parser.add_argument('-r', '--radio', action='append', nargs=1, help='--radio\
-                        "radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security>\
-                        wifi_settings==True,wifi_mode==<wifi_mode>,enable_flags==<enable_flags>\
-                        reset_port_enable==True,reset_port_time_min==<min>s,reset_port_time_max==<max>s" ')
-
-    parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
-    parser.add_argument('--ap_port', help='--ap_port \'/dev/ttyUSB0\'', default='/dev/ttyUSB0')
-    parser.add_argument('--ap_baud', help='--ap_baud \'115200\'', default='115200')
-    # note wl2 is the 6G interface , check the MAC ifconfig -a of the interface to the AP BSSID connection (default may be eth8)
-    parser.add_argument('--ap_cmd_6g', help='ap_cmd_6g \'wl -i wl2 bs_data\'', default="wl -i wl2 bs_data")
-    # note wl1 is the 5G interface , check the MAC ifconfig -a of the interface to the AP BSSID connection (default may be eth7)
-    parser.add_argument('--ap_cmd_5g', help='ap_cmd_5g \'wl -i wl1 bs_data\'', default="wl -i wl1 bs_data")
-    # note wl1 is the 2.4G interface , check the MAC ifconfig -a of the interface to the AP BSSID connection (default may be eth6)
-    parser.add_argument('--ap_cmd_2g', help='ap_cmd_2g \'wl -i wl0 bs_data\'', default="wl -i wl0 bs_data")
-    # note wl2 is the 6G interface , check the MAC ifconfig -a of the interface to the AP BSSID connection (default may be eth8)
-    parser.add_argument('--ap_cmd_ul_6g', help='ap_cmd_ul_6g \'wl -i wl2 rx_report\'', default="wl -i wl2 rx_report")
-    # note wl1 is the 5G interface , check the MAC ifconfig -a of the interface to the AP BSSID connection (default may be eth7)
-    parser.add_argument('--ap_cmd_ul_5g', help='ap_cmd_ul_5g \'wl -i wl1 rx_report\'', default="wl -i wl1 rx_report")
-    # note wl1 is the 2.4G interface , check the MAC ifconfig -a of the interface to the AP BSSID connection (default may be eth6)
-    parser.add_argument('--ap_cmd_ul_2g', help='ap_cmd_ul_2g \'wl -i wl0 rx_report\'', default="wl -i wl0 rx_report")
-    parser.add_argument('--ap_chanim_cmd_6g', help='ap_chanim_cmd_6g \'wl -i wl2 chanim_stats\'', default="wl -i wl2 chanim_stats")
-    parser.add_argument('--ap_chanim_cmd_5g', help='ap_chanim_cmd_5g \'wl -i wl1 chanim_stats\'', default="wl -i wl1 chanim_stats")
-    parser.add_argument('--ap_chanim_cmd_2g', help='ap_chanim_cmd_2g \'w1 -i wl0 chanim_stats\'', default="wl -i wl0 chanim_stats")
+    parser.add_argument(
+        '-r', '--radio',
+        action='append',
+        nargs=1,
+        help=(' --radio'
+              ' "radio==<number_of_wiphy stations=<=number of stations>'
+              ' ssid==<ssid> ssid_pw==<ssid password> security==<security> '
+              ' wifi_settings==True wifi_mode==<wifi_mode>'
+              ' enable_flags==<enable_flags> '
+              ' reset_port_enable==True reset_port_time_min==<min>s'
+              ' reset_port_time_max==<max>s" ')
+    )
+    parser.add_argument(
+        '--ap_read',
+        help='--ap_read  flag present enable reading ap',
+        action='store_true')
+    parser.add_argument(
+        '--ap_port',
+        help='--ap_port \'/dev/ttyUSB0\'',
+        default='/dev/ttyUSB0')
+    parser.add_argument(
+        '--ap_baud',
+        help='--ap_baud \'115200\'',
+        default='115200')
+    # note wl2 is the 6G interface , check the MAC ifconfig -a of the
+    # interface to the AP BSSID connection (default may be eth8)
+    parser.add_argument(
+        '--ap_cmd_6g',
+        help='ap_cmd_6g \'wl -i wl2 bs_data\'',
+        default="wl -i wl2 bs_data")
+    # note wl1 is the 5G interface , check the MAC ifconfig -a of the
+    # interface to the AP BSSID connection (default may be eth7)
+    parser.add_argument(
+        '--ap_cmd_5g',
+        help='ap_cmd_5g \'wl -i wl1 bs_data\'',
+        default="wl -i wl1 bs_data")
+    # note wl1 is the 2.4G interface , check the MAC ifconfig -a of the
+    # interface to the AP BSSID connection (default may be eth6)
+    parser.add_argument(
+        '--ap_cmd_2g',
+        help='ap_cmd_2g \'wl -i wl0 bs_data\'',
+        default="wl -i wl0 bs_data")
+    # note wl2 is the 6G interface , check the MAC ifconfig -a of the
+    # interface to the AP BSSID connection (default may be eth8)
+    parser.add_argument(
+        '--ap_cmd_ul_6g',
+        help='ap_cmd_ul_6g \'wl -i wl2 rx_report\'',
+        default="wl -i wl2 rx_report")
+    # note wl1 is the 5G interface , check the MAC ifconfig -a of the
+    # interface to the AP BSSID connection (default may be eth7)
+    parser.add_argument(
+        '--ap_cmd_ul_5g',
+        help='ap_cmd_ul_5g \'wl -i wl1 rx_report\'',
+        default="wl -i wl1 rx_report")
+    # note wl1 is the 2.4G interface , check the MAC ifconfig -a of the
+    # interface to the AP BSSID connection (default may be eth6)
+    parser.add_argument(
+        '--ap_cmd_ul_2g',
+        help='ap_cmd_ul_2g \'wl -i wl0 rx_report\'',
+        default="wl -i wl0 rx_report")
+    parser.add_argument(
+        '--ap_chanim_cmd_6g',
+        help='ap_chanim_cmd_6g \'wl -i wl2 chanim_stats\'',
+        default="wl -i wl2 chanim_stats")
+    parser.add_argument(
+        '--ap_chanim_cmd_5g',
+        help='ap_chanim_cmd_5g \'wl -i wl1 chanim_stats\'',
+        default="wl -i wl1 chanim_stats")
+    parser.add_argument(
+        '--ap_chanim_cmd_2g',
+        help='ap_chanim_cmd_2g \'w1 -i wl0 chanim_stats\'',
+        default="wl -i wl0 chanim_stats")
     parser.add_argument(
         '--ap_scheduler_stats',
         help='--ap_scheduler_stats flag to clear stats run test then dump ul and dl stats to file',
@@ -1990,35 +2655,64 @@ Setting wifi_settings per radio
         help='--ap_ofdma_stats flag to clear stats run test then dumps wl -i wl1 muinfo -v and wl 0i wl0 muinof -v to file',
         action='store_true')
 
-    parser.add_argument('--ap_test_mode', help='ap_test_mode flag present use ap canned data', action='store_true')
+    parser.add_argument(
+        '--ap_test_mode',
+        help='ap_test_mode flag present use ap canned data',
+        action='store_true')
 
-    parser.add_argument('-amr', '--side_a_min_bps',
-                        help='--side_a_min_bps, requested downstream min tx rate, comma separated list for multiple iterations.  Default 256k', default="256000")
-    parser.add_argument('-amp', '--side_a_min_pdu',
-                        help='--side_a_min_pdu, downstream pdu size, comma separated list for multiple iterations.  Default MTU', default="MTU")
-    parser.add_argument('-bmr', '--side_b_min_bps',
-                        help='--side_b_min_bps, requested upstream min tx rate, comma separated list for multiple iterations.  Default 256000', default="256000")
-    parser.add_argument('-bmp', '--side_b_min_pdu',
-                        help='--side_b_min_pdu, upstream pdu size, comma separated list for multiple iterations. Default MTU', default="MTU")
-    parser.add_argument("--rates_are_totals", default=False,
-                        help="Treat configured rates as totals instead of using the un-modified rate for every connection.", action='store_true')
-    parser.add_argument("--multiconn", default=1,
-                        help="Configure multi-conn setting for endpoints.  Default is 1 (auto-helper is enabled by default as well).")
+    parser.add_argument(
+        '-amr',
+        '--side_a_min_bps',
+        help='--side_a_min_bps, requested downstream min tx rate, comma separated list for multiple iterations.  Default 256k',
+        default="256000")
+    parser.add_argument(
+        '-amp',
+        '--side_a_min_pdu',
+        help='--side_a_min_pdu, downstream pdu size, comma separated list for multiple iterations.  Default MTU',
+        default="MTU")
+    parser.add_argument(
+        '-bmr',
+        '--side_b_min_bps',
+        help='--side_b_min_bps, requested upstream min tx rate, comma separated list for multiple iterations.  Default 256000',
+        default="256000")
+    parser.add_argument(
+        '-bmp',
+        '--side_b_min_pdu',
+        help='--side_b_min_pdu, upstream pdu size, comma separated list for multiple iterations. Default MTU',
+        default="MTU")
+    parser.add_argument(
+        "--rates_are_totals",
+        default=False,
+        help="Treat configured rates as totals instead of using the un-modified rate for every connection.",
+        action='store_true')
+    parser.add_argument(
+        "--multiconn",
+        default=1,
+        help="Configure multi-conn setting for endpoints.  Default is 1 (auto-helper is enabled by default as well).")
 
     parser.add_argument(
         '--attenuators',
         help='--attenuators,  comma separated list of attenuator module eids:  shelf.resource.atten-serno.atten-idx',
         default="")
-    parser.add_argument('--atten_vals', help='--atten_vals,  comma separated list of attenuator settings in ddb units (1/10 of db)', default="")
+    parser.add_argument(
+        '--atten_vals',
+        help='--atten_vals,  comma separated list of attenuator settings in ddb units (1/10 of db)',
+        default="")
 
     influx_add_parser_args(parser)
 
-    parser.add_argument("--cap_ctl_out", help="--cap_ctl_out, switch the controller output will be captured", action='store_true')
-    parser.add_argument("--wait", help="--wait <time> , time to wait at the end of the test", default='0')
+    parser.add_argument(
+        "--cap_ctl_out",
+        help="--cap_ctl_out, switch the controller output will be captured",
+        action='store_true')
+    parser.add_argument(
+        "--wait",
+        help="--wait <time> , time to wait at the end of the test",
+        default='0')
 
     args = parser.parse_args()
 
-    #print("args: {}".format(args))
+    # print("args: {}".format(args))
     debug = args.debug
 
     # for kpi.csv generation
@@ -2028,7 +2722,7 @@ Setting wifi_settings per radio
     dut_hw_version = args.dut_hw_version
     dut_sw_version = args.dut_sw_version
     dut_model_num = args.dut_model_num
-    test_priority = args.test_priority # this may need to be set per test
+    # test_priority = args.test_priority  # this may need to be set per test
     test_id = args.test_id
 
     if args.ap_read:
@@ -2109,7 +2803,8 @@ Setting wifi_settings per radio
     else:
         radios = None
 
-    # Create report, when running with the test framework (lf_check.py) results need to be in the same directory
+    # Create report, when running with the test framework (lf_check.py)
+    # results need to be in the same directory
     if local_lf_report_dir != "":
         report = lf_report.lf_report(
             _path=local_lf_report_dir,
@@ -2127,17 +2822,18 @@ Setting wifi_settings per radio
     print("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
 
     kpi_csv = lf_kpi_csv.lf_kpi_csv(
-        _kpi_path = kpi_path,
-        _kpi_test_rig = test_rig,
-        _kpi_test_tag = test_tag,
-        _kpi_dut_hw_version = dut_hw_version,
-        _kpi_dut_sw_version = dut_sw_version,
-        _kpi_dut_model_num = dut_model_num,
-        _kpi_test_id = test_id)
+        _kpi_path=kpi_path,
+        _kpi_test_rig=test_rig,
+        _kpi_test_tag=test_tag,
+        _kpi_dut_hw_version=dut_hw_version,
+        _kpi_dut_sw_version=dut_sw_version,
+        _kpi_dut_model_num=dut_model_num,
+        _kpi_test_id=test_id)
 
     if args.csv_outfile is not None:
         current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        csv_outfile = "{}_{}-test_l3_longevity.csv".format(args.csv_outfile, current_time)
+        csv_outfile = "{}_{}-test_l3_longevity.csv".format(
+            args.csv_outfile, current_time)
         csv_outfile = report.file_add_path(csv_outfile)
         print("csv output file : {}".format(csv_outfile))
 
@@ -2160,7 +2856,7 @@ Setting wifi_settings per radio
     station_lists = []
 
     # wifi settings configuration
-    wifi_mode_list= []
+    wifi_mode_list = []
     wifi_enable_flags_list = []
 
     # optional radio configuration
@@ -2173,19 +2869,34 @@ Setting wifi_settings per radio
         for radio_ in radios:
             radio_keys = ['radio', 'stations', 'ssid', 'ssid_pw', 'security']
             print("radio_dict before format {}".format(radio_))
-            radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('"', '').replace(
-                '[', '').replace(']', '').replace("'", "").replace(",", " ").split()))
-            #radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('"', '').split()))
+            radio_info_dict = dict(
+                map(
+                    lambda x: x.split('=='),
+                    str(radio_).replace(
+                        '"',
+                        '').replace(
+                        '[',
+                        '').replace(
+                        ']',
+                        '').replace(
+                        "'",
+                        "").replace(
+                            ",",
+                        " ").split()))
+            # radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('"', '').split()))
 
             print("radio_dict {}".format(radio_info_dict))
 
             for key in radio_keys:
                 if key not in radio_info_dict:
-                    print("missing config, for the {}, all of the following need to be present {} ".format(key, radio_keys))
+                    print(
+                        "missing config, for the {}, all of the following need to be present {} ".format(
+                            key, radio_keys))
                     exit(1)
 
             radio_name_list.append(radio_info_dict['radio'])
-            number_of_stations_per_radio_list.append(radio_info_dict['stations'])
+            number_of_stations_per_radio_list.append(
+                radio_info_dict['stations'])
             ssid_list.append(radio_info_dict['ssid'])
             ssid_password_list.append(radio_info_dict['ssid_pw'])
             ssid_security_list.append(radio_info_dict['security'])
@@ -2199,54 +2910,67 @@ Setting wifi_settings per radio
                     wifi_settings_found = False
                     break
 
-            if wifi_settings_found is True: 
+            if wifi_settings_found is True:
                 # Check for additional flags
-                if set(('wifi_mode','enable_flags')).issubset(radio_info_dict.keys()):
+                if set(('wifi_mode', 'enable_flags')).issubset(
+                        radio_info_dict.keys()):
                     print("wifi_settings flags set")
                 else:
-                    print("wifi_settings is present wifi_mode, enable_flags need to be set")
-                    print("or remove the wifi_settings or set wifi_settings==False flag on the radio for defaults")
+                    print(
+                        "wifi_settings is present wifi_mode, enable_flags need to be set")
+                    print(
+                        "or remove the wifi_settings or set wifi_settings==False flag on the radio for defaults")
                     exit(1)
                 wifi_mode_list.append(radio_info_dict['wifi_mode'])
-                enable_flags_str = radio_info_dict['enable_flags'].replace('(','').replace(')','').replace('|',',')
+                enable_flags_str = radio_info_dict['enable_flags'].replace(
+                    '(', '').replace(')', '').replace('|', ',')
                 enable_flags_list = list(enable_flags_str.split(","))
                 wifi_enable_flags_list.append(enable_flags_list)
             else:
                 wifi_mode_list.append(0)
-                wifi_enable_flags_list.append(["wpa2_enable", "80211u_enable", "create_admin_down"])
+                wifi_enable_flags_list.append(
+                    ["wpa2_enable", "80211u_enable", "create_admin_down"])
 
-            
             # check for optional radio key , currently only reset is enabled
             # update for checking for reset_port_time_min, reset_port_time_max
             optional_radio_reset_keys = ['reset_port_enable']
             radio_reset_found = True
             for key in optional_radio_reset_keys:
                 if key not in radio_info_dict:
-                    #print("port reset test not enabled")
+                    # print("port reset test not enabled")
                     radio_reset_found = False
                     break
 
             if radio_reset_found:
-                reset_port_enable_list.append(radio_info_dict['reset_port_enable'])
-                reset_port_time_min_list.append(radio_info_dict['reset_port_time_min'])
-                reset_port_time_max_list.append(radio_info_dict['reset_port_time_max'])
+                reset_port_enable_list.append(
+                    radio_info_dict['reset_port_enable'])
+                reset_port_time_min_list.append(
+                    radio_info_dict['reset_port_time_min'])
+                reset_port_time_max_list.append(
+                    radio_info_dict['reset_port_time_max'])
             else:
                 reset_port_enable_list.append(False)
                 reset_port_time_min_list.append('0s')
                 reset_port_time_max_list.append('0s')
 
         index = 0
-        for (radio_name_, number_of_stations_per_radio_) in zip(radio_name_list, number_of_stations_per_radio_list):
+        for (radio_name_, number_of_stations_per_radio_) in zip(
+                radio_name_list, number_of_stations_per_radio_list):
             number_of_stations = int(number_of_stations_per_radio_)
             if number_of_stations > MAX_NUMBER_OF_STATIONS:
-                print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
+                print("number of stations per radio exceeded max of : {}".format(
+                    MAX_NUMBER_OF_STATIONS))
                 quit(1)
-            station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=1 + index * 1000, end_id_=number_of_stations + index * 1000,
-                                                  padding_number_=10000, radio=radio_name_)
+            station_list = LFUtils.portNameSeries(
+                prefix_="sta",
+                start_id_=1 + index * 1000,
+                end_id_=number_of_stations + index * 1000,
+                padding_number_=10000,
+                radio=radio_name_)
             station_lists.append(station_list)
             index += 1
 
-    #print("endp-types: %s"%(endp_types))
+    # print("endp-types: %s"%(endp_types))
 
     ul_rates = args.side_a_min_bps.split(",")
     dl_rates = args.side_b_min_bps.split(",")
@@ -2262,9 +2986,13 @@ Setting wifi_settings per radio
         atten_vals = args.atten_vals.split(",")
 
     if (len(ul_rates) != len(dl_rates)):
-        print("ERROR:  ul_rates %s and dl_rates %s arrays must be same length\n" % (len(ul_rates), len(dl_rates)))
+        print(
+            "ERROR:  ul_rates %s and dl_rates %s arrays must be same length\n" %
+            (len(ul_rates), len(dl_rates)))
     if (len(ul_pdus) != len(dl_pdus)):
-        print("ERROR:  ul_pdus %s and dl_pdus %s arrays must be same length\n" % (len(ul_rates), len(dl_rates)))
+        print(
+            "ERROR:  ul_pdus %s and dl_pdus %s arrays must be same length\n" %
+            (len(ul_rates), len(dl_rates)))
 
     ip_var_test = L3VariableTime(
         endp_types=endp_types,
@@ -2331,7 +3059,9 @@ Setting wifi_settings per radio
         print("Test Ended: There were Failures")
         print(ip_var_test.get_fail_message())
 
-    print("Pausing {} seconds after run for manual inspection before we clean up.".format(args.wait))
+    print(
+        "Pausing {} seconds for manual inspection before clean up.".format(
+            args.wait))
     time.sleep(int(args.wait))
     ip_var_test.cleanup()
     if ip_var_test.passes():
@@ -2346,7 +3076,7 @@ Setting wifi_settings per radio
     report.set_table_dataframe_from_csv(csv_kpi_file)
     report.build_table()
     report.write_html_with_timestamp()
-    #report.write_pdf(_page_size = 'A3', _orientation='Landscape')
+    # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
     report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
 
     # ap scheduler results and write to a file
