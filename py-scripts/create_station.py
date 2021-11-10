@@ -12,7 +12,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -74,23 +74,31 @@ class CreateStation(Realm):
 
     def build(self):
         # Build stations
-        self.station_profile.use_security(self.security, self.ssid, self.password)
+        self.station_profile.use_security(
+            self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
 
         print("Creating stations")
-        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.station_profile.set_command_param("set_port", "report_timer", 1500)
+        self.station_profile.set_command_flag(
+            "add_sta", "create_admin_down", 1)
+        self.station_profile.set_command_param(
+            "set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         if self.set_txo_data is not None:
-            self.station_profile.set_wifi_txo(txo_ena=self.set_txo_data["txo_enable"],
-                                              tx_power=self.set_txo_data["txpower"],
-                                              pream=self.set_txo_data["pream"],
-                                              mcs=self.set_txo_data["mcs"],
-                                              nss=self.set_txo_data["nss"],
-                                              bw=self.set_txo_data["bw"],
-                                              retries=self.set_txo_data["retries"],
-                                              sgi=self.set_txo_data["sgi"], )
-        self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
+            self.station_profile.set_wifi_txo(
+                txo_ena=self.set_txo_data["txo_enable"],
+                tx_power=self.set_txo_data["txpower"],
+                pream=self.set_txo_data["pream"],
+                mcs=self.set_txo_data["mcs"],
+                nss=self.set_txo_data["nss"],
+                bw=self.set_txo_data["bw"],
+                retries=self.set_txo_data["retries"],
+                sgi=self.set_txo_data["sgi"],
+            )
+        self.station_profile.create(
+            radio=self.radio,
+            sta_names_=self.sta_list,
+            debug=self.debug)
         if self.up:
             self.station_profile.admin_up()
 
@@ -98,7 +106,7 @@ class CreateStation(Realm):
 
 
 def main():
-    parser = LFCliBase.create_basic_argparse( # see create_basic_argparse in ../py-json/LANforge/lfcli_base.py
+    parser = LFCliBase.create_basic_argparse(  # see create_basic_argparse in ../py-json/LANforge/lfcli_base.py
         prog='create_station.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -119,21 +127,32 @@ def main():
             --debug
             ''')
     required = parser.add_argument_group('required arguments')
-    required.add_argument('--start_id', help='--start_id <value> default 0', default=0)
+    required.add_argument(
+        '--start_id',
+        help='--start_id <value> default 0',
+        default=0)
 
     optional = parser.add_argument_group('Optional arguments')
-    optional.add_argument('--mode', help='Mode for your station (as a number)',default=0)
-    optional.add_argument('--station_flag', help='station flags to add', required=False, default=None, action='append')
+    optional.add_argument(
+        '--mode',
+        help='Mode for your station (as a number)',
+        default=0)
+    optional.add_argument(
+        '--station_flag',
+        help='station flags to add',
+        required=False,
+        default=None,
+        action='append')
 
     args = parser.parse_args()
     # if args.debug:
     #    pprint.pprint(args)
     #    time.sleep(5)
-    if (args.radio is None):
+    if args.radio is None:
         raise ValueError("--radio required")
 
     start_id = 0
-    if (args.start_id != 0):
+    if args.start_id != 0:
         start_id = int(args.start_id)
 
     num_sta = 2
@@ -148,7 +167,7 @@ def main():
                                             radio=args.radio)
 
     print("station_list {}".format(station_list))
-    set_txo_data={
+    set_txo_data = {
         "txo_enable": 1,
         "txpower": 255,
         "pream": 0,
@@ -174,6 +193,7 @@ def main():
 
     create_station.build()
     print('Created %s stations' % num_sta)
+
 
 if __name__ == "__main__":
     main()
