@@ -47,7 +47,9 @@ class CreateL3(Realm):
         self.name_prefix = name_prefix
         # self.station_profile = self.new_station_profile()
         # self.station_profile.lfclient_url = self.lfclient_url
-        # self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user defined variable from terminal.
+        # self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0,
+        # end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user
+        # defined variable from terminal.
         self.cx_profile = self.new_l3_cx_profile()
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
@@ -92,6 +94,7 @@ def main(args):
         ip_var_test.exit_fail()
     print(f'Created {num_sta} stations and connections')
 
+
 if __name__ == "__main__":
     parser = LFCliBase.create_basic_argparse(
         prog='create_l3.py',
@@ -101,13 +104,36 @@ if __name__ == "__main__":
             ''',
         description='''\
         ''')
-    parser.add_argument('--min_rate_a', help='--min_rate_a bps rate minimum for side_a', default=56000)
-    parser.add_argument('--min_rate_b', help='--min_rate_b bps rate minimum for side_b', default=56000)
-    parser.add_argument('--endp_a', help='--endp_a station list', default=[], action="append", required=True)
-    parser.add_argument('--endp_b', help='--upstream port', default="eth2", required=True)
-    parser.add_argument('--mode', help='Used to force mode of stations', default=0)
-    parser.add_argument('--ap', help='Used to force a connection to a particular AP')
-    parser.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000', default=0000)
+    parser.add_argument(
+        '--min_rate_a',
+        help='--min_rate_a bps rate minimum for side_a',
+        default=56000)
+    parser.add_argument(
+        '--min_rate_b',
+        help='--min_rate_b bps rate minimum for side_b',
+        default=56000)
+    parser.add_argument(
+        '--endp_a',
+        help='--endp_a station list',
+        default=[],
+        action="append",
+        required=True)
+    parser.add_argument(
+        '--endp_b',
+        help='--upstream port',
+        default="eth2",
+        required=True)
+    parser.add_argument(
+        '--mode',
+        help='Used to force mode of stations',
+        default=0)
+    parser.add_argument(
+        '--ap',
+        help='Used to force a connection to a particular AP')
+    parser.add_argument(
+        '--number_template',
+        help='Start the station numbering with a particular number. Default is 0000',
+        default=0000)
     args = parser.parse_args()
 
     main(args)
