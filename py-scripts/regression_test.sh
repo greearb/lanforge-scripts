@@ -159,9 +159,7 @@ if [[ ${#SHORT} -gt 0 ]]; then
   testCommands=(
       # run_l3_longevity
       # "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --layer3_cols $COL_NAMES --debug --mgr $MGR  --traffic_type lf_udp"
-      "./lf_ap_auto_test.py \
-       --mgr ${MGR} --port 8080 --lf_user lanforge --lf_password lanforge \
-       --instance_name ap-auto-instance \
+    	"./lf_ap_auto_test.py --mgr ${MGR} --port 8080 --lf_user lanforge --lf_password lanforge --instance_name ap-auto-instance \
        --config_name test_con \
        --upstream 1.1.eth2 \
        --dut5_0 'linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:25 (2)' \
@@ -170,17 +168,7 @@ if [[ ${#SHORT} -gt 0 ]]; then
        --max_stations_5 100 \
        --max_stations_dual 200 \
        --radio2 1.1.wiphy0 \
-       --radio2 1.1.wiphy1 \
-       --set 'Basic Client Connectivity' 1 \
-       --set 'Multi Band Performance' 1 \
-       --set 'Skip 2.4Ghz Tests' 1 \
-       --set 'Skip 5Ghz Tests' 1 \
-       --set 'Throughput vs Pkt Size' 0 \
-       --set 'Capacity' 0 \
-       --set 'Stability' 0 \
-       --set 'Band-Steering' 0 \
-       --set 'Multi-Station Throughput vs Pkt Size' 0 \
-       --set 'Long-Term' 0 \
+       --radio2 1.1.wiphy1 --set 'Basic Client Connectivity' 1 --set 'Multi Band Performance' 1 --set 'Skip 2.4Ghz Tests' 1 --set 'Skip 5Ghz Tests' 1 --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Stability' 0 --set 'Band-Steering' 0  --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0 \
        --pull_report \
        --influx_host c7-graphana \
        --influx_port 8086 \
@@ -506,7 +494,7 @@ function test() {
   echo_print
   echo "$testcommand"
   start=$(date +%s)
-  eval "$testcommand" 1> "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
+  { eval "$testcommand" 2>&1 >&3 3>&- | tee "${TEST_DIR}/${NAME}_stderr.txt" 3>&-; } > "${TEST_DIR}/${NAME}.txt" 3>&1
   chmod 664 "${TEST_DIR}/${NAME}.txt"
   FILESIZE=$(stat -c%s "${TEST_DIR}/${NAME}_stderr.txt") || 0
   end=$(date +%s)
