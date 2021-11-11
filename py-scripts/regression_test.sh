@@ -494,6 +494,8 @@ function test() {
   echo_print
   echo "$testcommand"
   start=$(date +%s)
+  # this command saves stdout and stderr to the stdout file, and has a special file for stderr text.
+  # Modified from https://unix.stackexchange.com/a/364176/327076
   { eval "$testcommand" 2>&1 >&3 3>&- | tee "${TEST_DIR}/${NAME}_stderr.txt" 3>&-; } > "${TEST_DIR}/${NAME}.txt" 3>&1
   chmod 664 "${TEST_DIR}/${NAME}.txt"
   FILESIZE=$(stat -c%s "${TEST_DIR}/${NAME}_stderr.txt") || 0
