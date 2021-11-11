@@ -157,18 +157,45 @@ function testgroup_delete_group() {
 
 if [[ ${#SHORT} -gt 0 ]]; then
   testCommands=(
-      run_l3_longevity
-      "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --layer3_cols $COL_NAMES --debug --mgr $MGR  --traffic_type lf_udp"
+      # run_l3_longevity
+      # "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --layer3_cols $COL_NAMES --debug --mgr $MGR  --traffic_type lf_udp"
+      "./lf_ap_auto_test.py
+              --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
+              --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth2 \
+              --dut5_0 '$DUT5 (2)' \
+              --dut2_0 '$DUT2 (1)' \
+              --max_stations_2 100 \
+              --max_stations_5 100 \
+              --max_stations_dual 200 \
+              --radio2 1.1.wiphy0 \
+              --radio2 1.1.wiphy1 \
+              --set 'Basic Client Connectivity' 1 \
+              --set 'Multi Band Performance' 1 \
+              --set 'Skip 2.4Ghz Tests' 1 \
+              --set 'Skip 5Ghz Tests' 1
+              --set 'Throughput vs Pkt Size' 0 \
+              --set 'Capacity' 0 \
+              --set 'Stability' 0 \
+              --set 'Band-Steering' 0 \
+              --set 'Multi-Station Throughput vs Pkt Size' 0 \
+              --set 'Long-Term' 0 \
+              --pull_report \
+              --influx_host c7-graphana \
+              --influx_port 8086 \
+              --influx_org Candela \
+              --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
+              --influx_bucket ben \
+              --influx_tag testbed Ferndale-01"
   )
 else
   testCommands=(
       "./create_bond.py --network_dev_list eth0,eth1 --debug --mgr $MGR"
       "./create_bridge.py --radio $RADIO_USED --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR"
-      "./create_chamberview.py -m $MGR -cs \"regression_test\" \
-      --line \"Resource=1.1 Profile=STA-AC Amount=1 Uses-1 $RADIO_USED Freq=-1 DUT=TEST DUT_RADIO=$RADIO_USED Traffic=http\" \
-      --line \"Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 DUT=Test DUT_RADIO=$RADIO_USED Traffic=http\""
+      "./create_chamberview.py -m $MGR -cs 'regression_test' \
+      --line 'Resource=1.1 Profile=STA-AC Amount=1 Uses-1 $RADIO_USED Freq=-1 DUT=TEST DUT_RADIO=$RADIO_USED Traffic=http' \
+      --line 'Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 DUT=Test DUT_RADIO=$RADIO_USED Traffic=http'"
       "./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut \
-      --ssid \"ssid_idx=0 ssid=\"$SSID_USED\" security=\"$SECURITY\" password=\"$PASSWD_USED\" bssid=04:f0:21:2c:41:84\""
+      --ssid 'ssid_idx=0 ssid='$SSID_USED' security='$SECURITY' password='$PASSWD_USED' bssid=04:f0:21:2c:41:84'"
       "./create_l3.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR --endp_a wiphy0 --endp_b wiphy1"
       "./create_l3_stations.py --mgr $MGR --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug"
       "./create_l4.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
@@ -191,15 +218,33 @@ else
       #./grafana_profile
       "./layer3_test.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED"
       "./layer4_test.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
-      "./lf_ap_auto_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
+      "./lf_ap_auto_test.py
+        --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
         --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth2 \
-        --dut5_0 \"$DUT5 (2)\" --dut2_0 \"$DUT2 (1)\" --max_stations_2 100 --max_stations_5 100 --max_stations_dual 200 \
-        --radio2 1.1.wiphy0 --radio2 1.1.wiphy1 --set \"Basic Client Connectivity\" 1 --set \"Multi Band Performance\" 1 \
-        --set \"Skip 2.4Ghz Tests\" 1 --set \"Skip 5Ghz Tests\" 1 --set \"Throughput vs Pkt Size\" 0 --set \"Capacity\" 0 \
-        --set \"Stability\" 0 --set \"Band-Steering\" 0 --set \"Multi-Station Throughput vs Pkt Size\" 0 \
-        --set \"Long-Term\" 0 --pull_report --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
+        --dut5_0 '$DUT5 (2)' \
+        --dut2_0 '$DUT2 (1)' \
+        --max_stations_2 100 \
+        --max_stations_5 100 \
+        --max_stations_dual 200 \
+        --radio2 1.1.wiphy0 \
+        --radio2 1.1.wiphy1 \
+        --set 'Basic Client Connectivity' 1 \
+        --set 'Multi Band Performance' 1 \
+        --set 'Skip 2.4Ghz Tests' 1 \
+        --set 'Skip 5Ghz Tests' 1
+        --set 'Throughput vs Pkt Size' 0 \
+        --set 'Capacity' 0 \
+        --set 'Stability' 0 \
+        --set 'Band-Steering' 0 \
+        --set 'Multi-Station Throughput vs Pkt Size' 0 \
+        --set 'Long-Term' 0 \
+        --pull_report \
+        --influx_host c7-graphana \
+        --influx_port 8086 \
+        --influx_org Candela \
         --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-        --influx_bucket ben --influx_tag testbed Ferndale-01"
+        --influx_bucket ben \
+        --influx_tag testbed Ferndale-01"
       "./lf_atten_mod_test.py --host $MGR --debug"
       #./lf_csv
       #./lf_dataplane_config
@@ -216,7 +261,7 @@ else
           #--num_sta 1 --sta_id 1 --ssid $SSID_USED --security $SECURITY --upstream $UPSTREAM \
           #--protocol lf_udp --min_mbps 1000 --max_mbps 10000 --duration 1"
       "./lf_graph.py --mgr $MGR"
-      "./lf_mesh_test.py --mgr $MGR --upstream $UPSTREAM --raw_line \"selected_dut2 RootAP wactest $BSSID\""
+      "./lf_mesh_test.py --mgr $MGR --upstream $UPSTREAM --raw_line 'selected_dut2 RootAP wactest $BSSID'"
       #"./lf_multipsk.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --debug"
       "./lf_report.py"
       "./lf_report_test.py"
@@ -225,13 +270,13 @@ else
                     --instance_name rx-sensitivity-instance --config_name test_con --upstream 1.1.eth2 \
                     --dut linksys-8450 --duration 15s --station 1.1.sta01500 \
                     --download_speed 85% --upload_speed 0 \
-                    --raw_line \"txo_preamble\: VHT\" \
-                    --raw_line \"txo_mcs\: 4 OFDM, HT, VHT;5 OFDM, HT, VHT;6 OFDM, HT, VHT;7 OFDM, HT, VHT\" \
-                    --raw_line \"spatial_streams\: 3\" \
-                    --raw_line \"bandw_options\: 80\" \
-                    --raw_line \"txo_sgi\: ON\" \
-                    --raw_line \"txo_retries\: No Retry\" \
-                    --raw_line \"txo_txpower\: 17\" \
+                    --raw_line 'txo_preamble\: VHT' \
+                    --raw_line 'txo_mcs\: 4 OFDM, HT, VHT;5 OFDM, HT, VHT;6 OFDM, HT, VHT;7 OFDM, HT, VHT' \
+                    --raw_line 'spatial_streams\: 3' \
+                    --raw_line 'bandw_options\: 80' \
+                    --raw_line 'txo_sgi\: ON' \
+                    --raw_line 'txo_retries\: No Retry' \
+                    --raw_line 'txo_txpower\: 17' \
                     --test_rig Testbed-01 --pull_report \
                     --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
                     --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
@@ -304,8 +349,8 @@ else
       "./test_ipv4_ps.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./test_ipv4_ttls.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./test_l3_longevity.py --mgr $MGR --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.$UPSTREAM \
-          --radio \"radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open\" \
-          --radio \"radio==1.1.wiphy1 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open\" \
+          --radio 'radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open' \
+          --radio 'radio==1.1.wiphy1 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open' \
           --test_duration 5s --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
           --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
           --influx_bucket ben --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 \
@@ -457,23 +502,25 @@ function test() {
   echo "Test $CURR_TEST_NAME"
 
   echo_print
-  echo "$i"
+  echo "$testcommand"
   start=$(date +%s)
-  $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
+  $testcommand > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
   chmod 664 "${TEST_DIR}/${NAME}.txt"
   FILESIZE=$(stat -c%s "${TEST_DIR}/${NAME}_stderr.txt") || 0
   end=$(date +%s)
   execution="$((end-start))"
   if (( FILESIZE > 0)); then
     echo "Errors detected"
-      results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
+      results+=("<tr><td>${CURR_TEST_NAME}</td>
+                <td class='scriptdetails'>${testcommand}</td>
                 <td class='failure'>Failure</td>
                 <td>${execution}</td>
                 <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
                 <td><a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
   else
     echo "No errors detected"
-      results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
+      results+=("<tr><td>${CURR_TEST_NAME}</td>
+                <td class='scriptdetails'>${testcommand}</td>
                 <td class='success'>Success</td>
                 <td>${execution}</td>
                 <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
@@ -481,11 +528,11 @@ function test() {
   fi
 }
 
-function run_test()  {
+function start_tests()  {
   if [[ ${#A} -gt 0 ]]; then
-    for i in "${testCommands[@]}"; do
+    for testcommand in "${testCommands[@]}"; do
       NAME=$(cat < /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
-      CURR_TEST_NAME=${i%%.py*}
+      CURR_TEST_NAME=${testcommand%%.py*}
       CURR_TEST_NAME=${CURR_TEST_NAME#./*}
       #CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
       if [[ $A == "$CURR_TEST_NAME" ]]; then
@@ -493,9 +540,9 @@ function run_test()  {
       fi
     done
   else
-    for i in "${testCommands[@]}"; do
+    for testcommand in "${testCommands[@]}"; do
       NAME=$(cat < /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
-      CURR_TEST_NAME=${i%%.py*}
+      CURR_TEST_NAME=${testcommand%%.py*}
       CURR_TEST_NAME=${CURR_TEST_NAME#./*}
       #CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
       test
@@ -571,5 +618,5 @@ URL2="/report-data/${NOW}"
 mkdir "${TEST_DIR}"
 echo "Recording data to $TEST_DIR"
 
-run_test
+start_tests
 html_generator
