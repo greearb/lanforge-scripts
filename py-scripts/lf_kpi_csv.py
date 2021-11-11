@@ -117,7 +117,7 @@ class lf_kpi_csv:
         return self.kpi_dict
 
     def kpi_csv_get_dict_update_time(self):
-        self.kpi_dict['Date'] = '{date}'.format(date=int(time.time()))
+        self.kpi_dict['Date'] = '{date}'.format(date=round(time.time() * 1000))
         return self.kpi_dict
 
     def kpi_csv_write_dict(self,kpi_dict):
