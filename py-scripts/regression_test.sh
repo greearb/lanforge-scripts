@@ -458,19 +458,24 @@ function test() {
 
   echo_print
   echo "$i"
+  start=$(date +%s)
   $i > "${TEST_DIR}/${NAME}.txt" 2> "${TEST_DIR}/${NAME}_stderr.txt"
   chmod 664 "${TEST_DIR}/${NAME}.txt"
   FILESIZE=$(stat -c%s "${TEST_DIR}/${NAME}_stderr.txt") || 0
+  end=$(date +%s)
+  execution="$((end-start))"
   if (( FILESIZE > 0)); then
     echo "Errors detected"
       results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                 <td class='failure'>Failure</td>
+                <td>${execution}</td>
                 <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
                 <td><a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
   else
     echo "No errors detected"
       results+=("<tr><td>${CURR_TEST_NAME}</td><td class='scriptdetails'>${i}</td>
                 <td class='success'>Success</td>
+                <td>${execution}</td>
                 <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
                 <td></td></tr>")
   fi
@@ -536,6 +541,7 @@ function html_generator() {
         <th onclick=\"sortTable(0)\">Command Name</th>
         <th onclick=\"sortTable(1)\">Command</th>
         <th onclick=\"sortTable(2)\">Status</th>
+        <th onclick=\"sortTable(3)\">Execution time</th>
         <th onclick=\"sortTable(3)\">STDOUT</th>
         <th onclick=\"sortTable(4)\">STDERR</th>
     </tr>"
