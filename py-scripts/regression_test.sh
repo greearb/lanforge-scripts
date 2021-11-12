@@ -272,12 +272,12 @@ else
                     --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
                     --influx_bucket ben \
                     --influx_tag testbed Ferndale-01"
-      "./lf_sniff_radio.py
-                               --mgr $MGR
-                               --mgr_port 8080
-                               --outfile /home/lanforge/test_sniff.pcap
-                               --duration 20
-                               --channel 52
+      "./lf_sniff_radio.py \
+                               --mgr $MGR \
+                               --mgr_port 8080 \
+                               --outfile /home/lanforge/test_sniff.pcap \
+                               --duration 20 \
+                               --channel 52 \
                                --radio_mode AUTO"
       "./lf_snp_test.py --mgr $MGR"
       "./lf_tr398_test.py --mgr $MGR"
@@ -290,27 +290,24 @@ else
              #--influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
              #--influx_bucket ben \
       #"./measure_station_time_up.py --radio $RADIO_USED --num_stations 3 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --debug --report_file measure_station_time_up.txt"
-      "./create_stations.py --radio $RADIO_USED --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED && ./modify_station.py
-                   --radio $RADIO_USED
-                   --station 1.1.sta0000
-                   --security $SECURITY
-                   --ssid $SSID_USED
-                   --passwd $PASSWD_USED
-                   --enable_flag osen_enable
-                   --disable_flag ht160_enable
+      "./create_stations.py --radio $RADIO_USED --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED && ./modify_station.py \
+                   --radio $RADIO_USED \
+                   --station 1.1.sta0000 \
+                   --security $SECURITY \
+                   --ssid $SSID_USED \
+                   --passwd $PASSWD_USED \
+                   --enable_flag osen_enable \
+                   --disable_flag ht160_enable \
                    --debug"
-      "./modify_vap.py --radio $RADIO_USED --vap 1.1.vap0000 --security $SECURITY --ssid $SSID_USED \
-       --passwd $PASSWD_USED --enable_flag osen_enable --disable_flag ht160_enable --debug"
+      "./modify_vap.py --radio $RADIO_USED --vap 1.1.vap0000 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --enable_flag osen_enable --disable_flag ht160_enable --debug"
       #recordinflux.py
-      "./rvr_scenario.py --lfmgr $MGR --lanforge_db 'handsets' --cv_test Dataplane \
-          --test_profile http --cv_scenario ct-us-001"
+      "./rvr_scenario.py --lfmgr $MGR --lanforge_db 'handsets' --cv_test Dataplane --test_profile http --cv_scenario ct-us-001"
       #scenario.py
       #"./sta_connect2.py --dest 192.168.100.209 --dut_ssid OpenWrt-2 --dut_bssid 24:F5:A2:08:21:6C"
       #./sta_connect_bssid_mac.py
        "./sta_connect_example.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED"
       #sta_connect.py
-      "./sta_scan_test.py --ssid $SSID_USED --security $SECURITY --passwd $PASSWD_USED \
-      --radio $RADIO_USED"
+      "./sta_scan_test.py --ssid $SSID_USED --security $SECURITY --passwd $PASSWD_USED --radio $RADIO_USED"
       #station_layer3.py
       #stations_connected.py
       #"./test_1k_clients_jedtest.py
@@ -338,13 +335,7 @@ else
       "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --debug --mgr $MGR --ipv6 --traffic_type lf_udp"
       "./test_ipv4_ps.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./test_ipv4_ttls.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
-      "./test_l3_longevity.py --mgr $MGR --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.$UPSTREAM \
-          --radio 'radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open' \
-          --radio 'radio==1.1.wiphy1 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open' \
-          --test_duration 5s --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
-          --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-          --influx_bucket ben --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 \
-          --influx_tag testbed regression_test --influx_tag DUT ROG -o longevity.csv"
+      "./test_l3_longevity.py --mgr $MGR --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.$UPSTREAM --radio 'radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open' --radio 'radio==1.1.wiphy1 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open' --test_duration 5s --influx_host c7-graphana --influx_port 8086 --influx_org Candela --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== --influx_bucket ben --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000  --influx_tag testbed regression_test --influx_tag DUT ROG -o longevity.csv"
       "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       #"./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput -m $MGR"
       #./test_l3_unicast_traffic_gen
@@ -577,12 +568,12 @@ function html_generator() {
 		<h4>$LAST_COMMIT</h4>
 		<table border ='1' id='myTable2'>
 		<tr>
-        <th onclick=\"sortTable(0)\">Command Name</th>
-        <th onclick=\"sortTable(1)\">Command</th>
-        <th onclick=\"sortTable(2)\">Status</th>
-        <th onclick=\"sortTable(3)\">Execution time</th>
-        <th onclick=\"sortTable(3)\">STDOUT</th>
-        <th onclick=\"sortTable(4)\">STDERR</th>
+        <th onclick=\"sortTable('myTable2', 0)\">Command Name</th>
+        <th onclick=\"sortTable('myTable2', 1)\">Command</th>
+        <th onclick=\"sortTable('myTable2', 2)\">Status</th>
+        <th onclick=\"sortTable('myTable2', 3)\">Execution time</th>
+        <th onclick=\"sortTable('myTable2', 4)\">STDOUT</th>
+        <th onclick=\"sortTable('myTable2', 5)\">STDERR</th>
     </tr>"
     tail="</body>
 		</html>"
