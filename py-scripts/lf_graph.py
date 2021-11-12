@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pdfkit
 from matplotlib.colors import ListedColormap
-
+import argparse
  
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -412,8 +412,40 @@ class lf_line_graph():
         print("{}.csv".format(self.graph_image_name))
         return "%s.png" % self.graph_image_name
 
-# Unit Test
-if __name__ == "__main__":
+def main():
+    # arguments
+    parser = argparse.ArgumentParser(
+        prog='lf_graph.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+            lf_graph.py : unit test in lf_graph.py for exersizing the lf_graph.py library
+            ''',
+        description='''\
+-----------------            
+NAME: lf_graph.py
+
+PURPOSE:
+Common Library for generating graphs for LANforge output
+
+SETUP:
+/lanforge/html-reports directory needs to be present or output generated in local file
+
+EXAMPLE:
+see: /py-scritps/lf_report_test.py for example
+
+COPYWRITE
+    Copyright 2021 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
+
+INCLUDE_IN_README
+---------------------
+            ''')
+    parser.add_argument('--mgr','--lfmgr', dest='lfmgr', help='sample argument: where LANforge GUI is running', default='localhost')    
+    # the args parser is not really used , this is so the report is not generated when testing 
+    # the imports with --help
+    args = parser.parse_args()
+    print("LANforge manager {lfmgr}".format(lfmgr=args.lfmgr))
+
     output_html_1 = "graph_1.html"
     output_pdf_1 = "graph_1.pdf"
 
@@ -467,3 +499,8 @@ if __name__ == "__main__":
     # sudo apt install ./wkhtmltox_0.12.6-1.focal_amd64.deb
     options = {"enable-local-file-access": None}  # prevent eerror Blocked access to file
     pdfkit.from_file(output_html_2, output_pdf_2, options=options)
+
+# Unit Test
+if __name__ == "__main__":
+    main()    
+

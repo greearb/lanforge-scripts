@@ -39,16 +39,33 @@ lf_scatter_graph = lf_graph.lf_scatter_graph
 lf_stacked_graph = lf_graph.lf_stacked_graph
 lf_horizontal_stacked_graph = lf_graph.lf_horizontal_stacked_graph
 
-
 # Unit Test
-if __name__ == "__main__":
+def main():
     # Testing: generate data frame
-
     parser = argparse.ArgumentParser(
         prog="lf_report_test.py",
         formatter_class=argparse.RawTextHelpFormatter,
-        description="Tests reporting library")
-    parser.add_argument('--lfmgr', help='sample argument: where LANforge GUI is running', default='localhost')    
+        description='''\
+-----------------   
+NAME: lf_report_test.py
+
+PURPOSE: 
+Common file for testing lf_report and lf_graph Library generates html and pdf output
+
+SETUP:  
+/lanforge/html-reports directory needs to be present or output generated in local file
+
+EXAMPLE:  
+./lf_report_test.py : currently script does not accept input
+
+COPYWRITE
+    Copyright 2021 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
+
+INCLUDE_IN_README
+''')
+
+    parser.add_argument('--mgr','--lfmgr', dest='lfmgr', help='sample argument: where LANforge GUI is running', default='localhost')
     # the args parser is not really used , this is so the report is not generated when testing 
     # the imports with --help
     args = parser.parse_args()
@@ -227,3 +244,5 @@ if __name__ == "__main__":
     # report.write_pdf(_page_size = 'Legal', _orientation='Portrait')
 
     # report.generate_report()
+if __name__ == "__main__":
+    main()
