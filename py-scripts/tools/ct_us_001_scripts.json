@@ -66,21 +66,31 @@
                     " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 --local_lf_report_dir REPORT_PATH"]}
         },
         "suite_test":{
-            "create_l3_stations":{
+            "lf_cleanup":{
                 "enabled":"TRUE",
                 "load_db":"NONE",
-                "command":"create_l3_stations.py",
+                "command":"lf_cleanup.py",
                 "args":"",
-                "args_list":[" --mgr LF_MGR_IP ",
+                "args_list":["--mgr LF_MGR_IP --cxs --sta"
+                ]
+            },
+            "layer3_test":{
+                "enabled":"TRUE",
+                "load_db":"NONE",
+                "timeout":"60",
+                "command":"layer3_test.py",
+                "args":"",
+                "args_list":[" --mgr LF_MGR_IP --upstream_port UPSTREAM_PORT",
                     " use_ssid_idx=1 --radio wiphy1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
                 ]
             },
-            "create_l4":{
+            "layer4_test":{
                 "enabled":"TRUE",
                 "load_db":"NONE",
-                "command":"create_l4.py",
+                "timeout":"60",
+                "command":"layer4_test.py",
                 "args":"",
-                "args_list":[" --mgr LF_MGR_IP ",
+                "args_list":[" --mgr LF_MGR_IP --upstream_port UPSTREAM_PORT",
                     " use_ssid_idx=1 --radio wiphy1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
                 ]
             },
@@ -103,24 +113,6 @@
                 "args":"",
                 "args_list":[
                     " "
-                ]
-            },
-            "create_l3_stations":{
-                "enabled":"TRUE",
-                "load_db":"NONE",
-                "command":"create_l3_stations.py",
-                "args":"",
-                "args_list":[" --mgr LF_MGR_IP ",
-                    " use_ssid_idx=1 --radio wiphy1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
-                ]
-            },
-            "create_l4":{
-                "enabled":"TRUE",
-                "load_db":"NONE",
-                "command":"create_l4.py",
-                "args":"",
-                "args_list":[" --mgr LF_MGR_IP ",
-                    " use_ssid_idx=1 --radio wiphy1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
                 ]
             },
             "create_chamberview_dut_ATH10K_9984__wc":{
@@ -204,7 +196,6 @@
                     " --set DUT_SET_NAME"
                 ]
             },
-
             "test_l3_longevity":{
                 "enabled":"TRUE",
                 "load_db":"NONE",
@@ -374,6 +365,15 @@
                 "command":"create_l4.py",
                 "args":"",
                 "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --debug"]},
+            "create_l3_stations":{
+                    "enabled":"TRUE",
+                    "load_db":"NONE",
+                    "command":"create_l3_stations.py",
+                    "args":"",
+                    "args_list":[" --mgr LF_MGR_IP ",
+                        " use_ssid_idx=1 --radio wiphy1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
+                    ]
+            },    
             "create_macvlan":{
                 "enabled":"TRUE",
                 "command":"create_macvlan.py",

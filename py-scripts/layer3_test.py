@@ -21,7 +21,7 @@ Realm = realm.Realm
 class Layer3Test(Realm):
 
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, radio="wiphy1", sta_prefix="sta", start_id=0, num_sta=2,
-                 dut_ssid="lexusdut", dut_security="open", dut_passwd="[BLANK]", upstream="eth1", name_prefix="L3Test",
+                 dut_ssid="lexusdut", dut_security="open", dut_passwd="[BLANK]", upstream="1.1.eth1", name_prefix="L3Test",
                  traffic_type="lf_udp",
                  side_a_min_rate=256000, side_a_max_rate=0,
                  side_b_min_rate=256000, side_b_max_rate=0,
@@ -137,7 +137,11 @@ class Layer3Test(Realm):
         pass
 
 def main():
-    # This has --mgr, --mgr_port and --debug
+    # Realm.create_basic_argparse defined in 
+    # /py-json/LANforge/lfcli_base.py  
+    # args --mgr --mgr_port --upstream_port --num_stations --test_id 
+    # --debug --proxy --debugging --debug_log
+    # --radio --security --ssid --passwd
     parser = Realm.create_basic_argparse(
         prog="layer3_test.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -157,6 +161,7 @@ def main():
     obj = Layer3Test(lfclient_host=args.mgr, lfclient_port=args.mgr_port,
                      duration=args.test_duration, session_id=args.session_id,
                      traffic_type=args.traffic_type,
+                     upstream=args.upstream_port,
                      dut_ssid=args.ssid, dut_passwd=args.passwd, dut_security=args.security, num_sta=args.num_client,
                      side_a_min_rate=args.side_a_min_speed, side_b_min_rate=args.side_b_min_speed, radio=args.radio,_debug_on=args.debug)
     obj.precleanup()
