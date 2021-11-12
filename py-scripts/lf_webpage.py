@@ -160,15 +160,18 @@ class HttpDownload(Realm):
 
     def my_monitor(self, data_mon):
         # data in json format
-
-        data = self.local_realm.json_get("layer4/%s/list?fields=name,%s" %
+        data = self.local_realm.json_get("layer4/%s/list?fields=%s" %
                                          (','.join(self.http_profile.created_cx.keys()), data_mon.replace(' ', '+')))
         # print(data)
         data1 = []
-        for cx in self.http_profile.created_cx.keys():
-            for info in data['endpoint']:
-                if cx in info:
-                    data1.append(info[cx][data_mon])
+        data = data['endpoint']
+        if self.num_sta == 1:
+            data1.append(data[data_mon])
+        else:
+            for cx in self.http_profile.created_cx.keys():
+                for info in data:
+                    if cx in info:
+                        data1.append(info[cx][data_mon])
         # print(data_mon, data1)
         return data1
 
@@ -672,6 +675,7 @@ def main():
         uc_avg_val = http.my_monitor('uc-avg')
         rx_bytes_val = http.my_monitor('bytes-rd')
         rx_rate_val = http.my_monitor('rx rate')
+        http.postcleanup()
 
         if bands == "5G":
             print("yes")
@@ -720,8 +724,6 @@ def main():
             final_dict['Both']['avg'] = avg_both
             final_dict['Both']['bytes_rd'] = Both_bytes
             final_dict['Both']['speed'] = Both_speed
-
-        http.postcleanup()
 
     result_data = final_dict
     print("result", result_data)
