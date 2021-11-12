@@ -87,10 +87,10 @@ class PortEID:
         port_name = p_port_name
 
     def __init__(self, json_response):
-        if json_response == None:
+        if json_response is None:
             raise Exception("No json input")
         json_s = json_response
-        if json_response['interface'] != None:
+        if json_response['interface'] is not None:
             json_s = json_response['interface']
 
         debug_printer(json_s)
@@ -446,7 +446,7 @@ def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080",
             uri = "%s/%s/%s?fields=device,down" % (port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug_)
             json_response = lf_r.getAsJson()
-            if json_response == None:
+            if json_response is None:
                 if debug_:
                     print("port %s disappeared" % port_name)
                 continue
@@ -473,7 +473,7 @@ def wait_until_ports_admin_up(resource_id=1, base_url="http://localhost:8080", p
             uri = "%s/%s/%s?fields=device,down" % (port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug_)
             json_response = lf_r.getAsJson()
-            if json_response == None:
+            if json_response is None:
                 if debug_:
                     print("port %s appeared" % port_name)
                 continue
