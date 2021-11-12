@@ -250,11 +250,6 @@ class IPVariableTime(Realm):
             print("Port Manager column names are...")
             print(port_mgr_cols)
 
-        print("Layer 3 Endp column names are...")
-        print(layer3_cols)
-        print("Port Manager column names are...")
-        print(port_mgr_cols)
-
         try:
             monitor_interval = Realm.parse_time(self.monitor_interval).total_seconds()
         except ValueError as error:
@@ -311,7 +306,7 @@ class IPVariableTime(Realm):
             if not self.passes():
                 print(self.get_fail_message())
                 self.exit_fail()
-            LFUtils.wait_until_ports_admin_up(port_list=self.sta_list)
+            LFUtils.wait_until_ports_admin_up(port_list=self.sta_list, debug_=self.debug)
 
             if self.passes():
                 self.success()
