@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+# script moved to sandbox 11/11/2021 - needs updates
+
 import sys
 import os
 import importlib
