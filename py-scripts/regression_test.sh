@@ -206,8 +206,8 @@ else
       --passwd $PASSWD_USED --radio 1.1.$RADIO_USED --security wpa2 --debug --mgr $MGR"
       #./ftp_html.py
       #./grafana_profile
-      "./layer3_test.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED"
-      "./layer4_test.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
+      # "./layer3_test.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED"
+      # "./layer4_test.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
       "./lf_ap_auto_test.py \
         --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
         --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth2 \
@@ -290,7 +290,7 @@ else
              #--influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
              #--influx_bucket ben \
       #"./measure_station_time_up.py --radio $RADIO_USED --num_stations 3 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --debug --report_file measure_station_time_up.txt"
-      "./create_stations.py --radio $RADIO_USED --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED && ./modify_station.py \
+      "./create_station.py --radio $RADIO_USED --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED && ./modify_station.py \
                    --radio $RADIO_USED \
                    --station 1.1.sta0000 \
                    --security $SECURITY \
