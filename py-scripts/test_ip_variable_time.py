@@ -320,6 +320,9 @@ class IPVariableTime(Realm):
 
 
 def main():
+    # Realm args parser is one directory up then traverse into /py-json/LANforge/lfcli_base.py
+    # search for create_basic_argsparse
+    # --mgr --mgr_port --upstream_port --num_stations --radio --security --ssid --passwd
     parser = Realm.create_basic_argparse(
         prog='test_ip_variable_time.py',
         formatter_class=argparse.RawTextHelpFormatter,
