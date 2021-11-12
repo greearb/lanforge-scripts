@@ -221,7 +221,7 @@ else
         --set 'Basic Client Connectivity' 1 \
         --set 'Multi Band Performance' 1 \
         --set 'Skip 2.4Ghz Tests' 1 \
-        --set 'Skip 5Ghz Tests' 1
+        --set 'Skip 5Ghz Tests' 1 \
         --set 'Throughput vs Pkt Size' 0 \
         --set 'Capacity' 0 \
         --set 'Stability' 0 \
