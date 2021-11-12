@@ -67,31 +67,29 @@
         },
         "suite_test":{
             "lf_cleanup":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "load_db":"NONE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":["--mgr LF_MGR_IP --cxs --sta"
                 ]
             },
-            "layer3_test":{
+            "lf_report_test":{
                 "enabled":"TRUE",
                 "load_db":"NONE",
                 "timeout":"60",
-                "command":"layer3_test.py",
+                "command":"lf_report_test.py",
                 "args":"",
-                "args_list":[" --mgr LF_MGR_IP --upstream_port UPSTREAM_PORT",
-                    " use_ssid_idx=1 --radio wiphy1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
+                "args_list":[" --mgr LF_MGR_IP "
                 ]
             },
-            "layer4_test":{
+            "lf_graph":{
                 "enabled":"TRUE",
                 "load_db":"NONE",
                 "timeout":"60",
-                "command":"layer4_test.py",
+                "command":"lf_graph.py",
                 "args":"",
-                "args_list":[" --mgr LF_MGR_IP --upstream_port UPSTREAM_PORT",
-                    " use_ssid_idx=1 --radio wiphy1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
+                "args_list":[" --mgr LF_MGR_IP "
                 ]
             },
             "lf_qa":{
@@ -408,6 +406,25 @@
                 "command":"./wlan_capacity_calculator.py",
                 "args":"",
                 "args_list":["-sta 11ac -t Voice -d 9 -spa 3 -ch 20 -gu 800 -high 1 -e TKIP -q Yes -ip 3 -mc 0 -b 6 12 24 54 -m 1518 -co Greenfield -cw 15 -rc Yes"]},
+            "lf_report_test":{
+                "enabled":"TRUE",
+                "load_db":"NONE",
+                "timeout":"60",
+                "command":"lf_report_test.py",
+                "args":"",
+                "args_list":[" --mgr LF_MGR_IP "
+                ]
+            },
+            "lf_graph":{
+                "enabled":"TRUE",
+                "load_db":"NONE",
+                "timeout":"60",
+                "command":"lf_graph.py",
+                "args":"",
+                "args_list":[" --mgr LF_MGR_IP "
+                ]
+            },
+        
             "lf_qa":{
                     "enabled":"TRUE",
                     "timeout":"600",
