@@ -328,6 +328,10 @@ def main():
         description='''\
 test_ip_variable_time.py:
 --------------------
+Report:
+The report will be in /home/lanforge/report-data/<timestamp>_test_ip_variable_time .   
+if the directory it not present it "should" place it in the local directory from where the script was run. 
+
 Generic command layout:
 
 python3 ./test_ip_variable_time.py
@@ -521,6 +525,13 @@ python3 ./test_ip_variable_time.py
          'wifi retries'
          
     Can't decide what columns to use? You can just use 'all' to select all available columns from both tables.
+
+
+    Example command:
+    ./test_ip_variable_time.py  --mgr 192.168.100.116 --radio wiphy1 --ssid asus11ax-5 --passwd hello123 --security wpa2 
+        --test_duration 60s --output_format csv  --traffic_type lf_tcp --a_min 600000000 --b_min 600000000  
+        --upstream_port eth2  --mode "5" --layer3_cols 'name','tx rate','rx rate' --port_mgr_cols 'alias','channel','activity','mode'
+        --num_stations 1
             ''')
 
     parser.add_argument('--mode', help='Used to force mode of stations')

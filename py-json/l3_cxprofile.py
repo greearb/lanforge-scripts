@@ -231,8 +231,8 @@ class L3CXProfile(LFCliBase):
             result = dict()  # create dataframe from layer 3 results
             if type(layer_3_response) is dict:
                 for dictionary in layer_3_response['endpoint']:
-                    if debug:
-                        print('layer_3_data: %s' % dictionary)
+                    # if debug:
+                    print('layer_3_data: %s' % dictionary)
                     result.update(dictionary)
             else:
                 pass
@@ -242,11 +242,25 @@ class L3CXProfile(LFCliBase):
             if port_mgr_cols is not None:  # create dataframe from port mgr results
                 result = dict()
                 if type(port_mgr_response) is dict:
-                    for dictionary in port_mgr_response['interfaces']:
+                    print("port_mgr_response {pmr}".format(pmr=port_mgr_response))
+                    if 'interfaces' in port_mgr_response:
+                        for dictionary in port_mgr_response['interfaces']:
+                            if debug:
+                                print('port mgr data: %s' % dictionary)
+                            result.update(dictionary)
+
+                    elif 'interface' in port_mgr_response:
+                        dict_update = {port_mgr_response['interface']['alias']: port_mgr_response['interface']}
                         if debug:
-                            print('port mgr data: %s' % dictionary)
-                        result.update(dictionary)
+                            print(dict_update)
+                        result.update(dict_update)
+                        if debug:
+                            print(result)
+                    else:
+                        print('interfaces and interface not in port_mgr_response')
+                        exit(1)
                     portdata_df = pd.DataFrame(result.values())
+                    print("portdata_df {pd}".format(pd=portdata_df))
                     portdata_df.columns = ['port-' + x for x in portdata_df.columns]
                     portdata_df['alias'] = portdata_df['port-alias']
 
@@ -279,7 +293,6 @@ class L3CXProfile(LFCliBase):
                 probe_results['Signal per Chain'] = probe_port.getSignalPerChain()
                 probe_results['Beacon Avg Signal'] = probe_port.getBeaconSignalAvg()
                 # probe_results['HE status'] = probe_port.he
-
                 probe_results['TX Bitrate'] = probe_port.tx_bitrate
                 probe_results['TX Mbps'] = probe_port.tx_mbit
                 probe_results['TX MCS ACTUAL'] = probe_port.tx_mcs
