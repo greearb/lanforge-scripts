@@ -199,35 +199,35 @@ class ProbePort(LFCliBase):
         # MCS (Modulation Coding Scheme) determines the constands
         # MCS 0 == Modulation BPSK R = 1/2 ,  N_bpscs = 1,
         # Only for HT configuration
-        if self.tx_mcs == 0 or self.tx_mcs == 16 or self.tx_mcs == 24:
+        if self.tx_mcs == 0 or self.tx_mcs == 8 or self.tx_mcs == 16 or self.tx_mcs == 24:
             R = 1 / 2
             N_bpscs = 1
         # MCS 1 == Modulation QPSK R = 1/2 , N_bpscs = 2
-        elif self.tx_mcs == 1 or self.tx_mcs == 17 or self.tx_mcs == 25:
+        elif self.tx_mcs == 1 or self.tx_mcs == 9 or self.tx_mcs == 17 or self.tx_mcs == 25:
             R = 1 / 2
             N_bpscs = 2
         # MCS 2 == Modulation QPSK R = 3/4 , N_bpscs = 2
-        elif self.tx_mcs == 2 or self.tx_mcs == 18 or self.tx_mcs == 26:
+        elif self.tx_mcs == 2 or self.tx_mcs == 10 or self.tx_mcs == 18 or self.tx_mcs == 26:
             R = 3 / 4
             N_bpscs = 2
         # MCS 3 == Modulation 16-QAM R = 1/2 , N_bpscs = 4
-        elif self.tx_mcs == 3 or self.tx_mcs == 19 or self.tx_mcs == 27:
+        elif self.tx_mcs == 3 or self.tx_mcs == 11 or self.tx_mcs == 19 or self.tx_mcs == 27:
             R = 1 / 2
             N_bpscs = 4
         # MCS 4 == Modulation 16-QAM R = 3/4 , N_bpscs = 4
-        elif self.tx_mcs == 4 or self.tx_mcs == 20 or self.tx_mcs == 28:
+        elif self.tx_mcs == 4 or self.tx_mcs == 12 or self.tx_mcs == 20 or self.tx_mcs == 28:
             R = 3 / 4
             N_bpscs = 4
         # MCS 5 == Modulation 64-QAM R = 2/3 , N_bpscs = 6
-        elif self.tx_mcs == 5 or self.tx_mcs == 21 or self.tx_mcs == 29:
+        elif self.tx_mcs == 5 or self.tx_mcs == 13 or self.tx_mcs == 21 or self.tx_mcs == 29:
             R = 2 / 3
             N_bpscs = 6
         # MCS 6 == Modulation 64-QAM R = 3/4 , N_bpscs = 6
-        elif self.tx_mcs == 6 or self.tx_mcs == 22 or self.tx_mcs == 30:
+        elif self.tx_mcs == 6 or self.tx_mcs == 14 or self.tx_mcs == 22 or self.tx_mcs == 30:
             R = 3 / 4
             N_bpscs = 6
         # MCS 7 == Modulation 64-QAM R = 5/6 , N_bpscs = 6
-        elif self.tx_mcs == 7 or self.tx_mcs == 23 or self.tx_mcs == 31:
+        elif self.tx_mcs == 7 or self.tx_mcs == 15 or self.tx_mcs == 23 or self.tx_mcs == 31:
             R = 5 / 6
             N_bpscs = 6
 
@@ -290,35 +290,35 @@ class ProbePort(LFCliBase):
             # MCS (Modulation Coding Scheme) determines the constands
             # MCS 0 == Modulation BPSK R = 1/2 ,  N_bpscs = 1,
             # Only for HT configuration
-            if self.rx_mcs == 0 or self.rx_mcs == 16 or self.rx_mcs == 24:
+            if self.rx_mcs == 0 or self.rx_mcs == 8 or self.rx_mcs == 16 or self.rx_mcs == 24:
                 R = 1 / 2
                 N_bpscs = 1
             # MCS 1 == Modulation QPSK R = 1/2 , N_bpscs = 2
-            elif self.rx_mcs == 1 or self.rx_mcs == 17 or self.rx_mcs == 25:
+            elif self.rx_mcs == 1 or self.rx_mcs == 9 or self.rx_mcs == 17 or self.rx_mcs == 25:
                 R = 1 / 2
                 N_bpscs = 2
             # MCS 2 == Modulation QPSK R = 3/4 , N_bpscs = 2
-            elif self.rx_mcs == 2 or self.rx_mcs == 18 or self.rx_mcs == 26:
+            elif self.rx_mcs == 2 or self.rx_mcs == 10 or self.rx_mcs == 18 or self.rx_mcs == 26:
                 R = 3 / 4
                 N_bpscs = 2
             # MCS 3 == Modulation 16-QAM R = 1/2 , N_bpscs = 4
-            elif self.rx_mcs == 3 or self.rx_mcs == 19 or self.rx_mcs == 27:
+            elif self.rx_mcs == 3 or self.rx_mcs == 11 or self.rx_mcs == 19 or self.rx_mcs == 27:
                 R = 1 / 2
                 N_bpscs = 4
             # MCS 4 == Modulation 16-QAM R = 3/4 , N_bpscs = 4
-            elif self.rx_mcs == 4 or self.rx_mcs == 20 or self.rx_mcs == 28:
+            elif self.rx_mcs == 4 or self.rx_mcs == 12 or self.rx_mcs == 20 or self.rx_mcs == 28:
                 R = 3 / 4
                 N_bpscs = 4
             # MCS 5 == Modulation 64-QAM R = 2/3 , N_bpscs = 6
-            elif self.rx_mcs == 5 or self.rx_mcs == 21 or self.rx_mcs == 29:
+            elif self.rx_mcs == 5 or self.rx_mcs == 13 or self.rx_mcs == 21 or self.rx_mcs == 29:
                 R = 2 / 3
                 N_bpscs = 6
             # MCS 6 == Modulation 64-QAM R = 3/4 , N_bpscs = 6
-            elif self.rx_mcs == 6 or self.rx_mcs == 22 or self.rx_mcs == 30:
+            elif self.rx_mcs == 6 or self.rx_mcs == 14 or self.rx_mcs == 22 or self.rx_mcs == 30:
                 R = 3 / 4
                 N_bpscs = 6
             # MCS 7 == Modulation 64-QAM R = 5/6 , N_bpscs = 6
-            elif self.rx_mcs == 7 or self.rx_mcs == 23 or self.rx_mcs == 31:
+            elif self.rx_mcs == 7 or self.rx_mcs == 15 or self.rx_mcs == 23 or self.rx_mcs == 31:
                 R = 5 / 6
                 N_bpscs = 6
 

@@ -48,7 +48,7 @@ class IPVariableTime(Realm):
                  security=None,
                  password=None,
                  sta_list=None,
-                 create_sta=True,
+                 use_existing_sta=False,
                  name_prefix=None,
                  upstream=None,
                  radio=None,
@@ -88,7 +88,7 @@ class IPVariableTime(Realm):
         self.port = port
         self.ssid = ssid
         self.sta_list = sta_list
-        self.create_sta = create_sta
+        self.use_existing_sta = use_existing_sta
         self.security = security
         self.password = password
         self.radio = radio
@@ -104,24 +104,26 @@ class IPVariableTime(Realm):
         #     "max_trying_ifup": 15,
         #     "max_station_bringup": 6
         # })
-        self.name_prefix = name_prefix
-        self.test_duration = test_duration
+
         self.station_profile = self.new_station_profile()
-        self.cx_profile = self.new_l3_cx_profile()
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.password
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
         self.station_profile.debug = self.debug
-
         self.station_profile.use_ht160 = use_ht160
         if self.station_profile.use_ht160:
             self.station_profile.mode = 9
         self.station_profile.mode = mode
         if self.ap is not None:
             self.station_profile.set_command_param("add_sta", "ap", self.ap)
+        if self.use_existing_sta is True:
+            self.station_profile.station_names = self.sta_list
 
+        self.name_prefix = name_prefix
+        self.test_duration = test_duration
+        self.cx_profile = self.new_l3_cx_profile()
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
         self.ipv6 = ipv6
@@ -143,44 +145,48 @@ class IPVariableTime(Realm):
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
     def start(self, print_pass=False, print_fail=False):
-        if self.create_sta:
-            self.station_profile.admin_up()
-            # to-do- check here if upstream port got IP
-            temp_stas = self.station_profile.station_names.copy()
-
-            if self.wait_for_ip(temp_stas, ipv4=not self.ipv6, ipv6=self.ipv6):
-                self._pass("All stations got IPs")
-            else:
-                self._fail("Stations failed to get IPs")
-                self.exit_fail()
+        # if self.use_existing_station is False:
+        # to-do- check here if upstream port got IP
+        self.station_profile.admin_up()
+        temp_stas = self.station_profile.station_names.copy()
+        print("temp_stas {temp_stas}".format(temp_stas=temp_stas))
+        if self.wait_for_ip(temp_stas, ipv4=not self.ipv6, ipv6=self.ipv6):
+            self._pass("All stations got IPs")
+        else:
+            self._fail("Stations failed to get IPs")
+            self.exit_fail()
         self.cx_profile.start_cx()
 
     def stop(self):
         self.cx_profile.stop_cx()
-        if self.create_sta:
-            self.station_profile.admin_down()
+        self.station_profile.admin_down()
 
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
-        if self.create_sta:
+        # do not clean up station if existed prior to test
+        if self.use_existing_sta is False:
             for sta in self.sta_list:
                 self.rm_port(sta, check_exists=True)
 
     def cleanup(self):
         self.cx_profile.cleanup()
-        if self.create_sta:
+        if self.use_existing_sta is False:
             self.station_profile.cleanup()
             LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
                                                debug=self.debug)
 
     def build(self):
-        if self.create_sta:
-            self.station_profile.use_security(self.security, self.ssid, self.password)
-            self.station_profile.set_number_template(self.number_template)
+        self.station_profile.use_security(self.security, self.ssid, self.password)
+        self.station_profile.set_number_template(self.number_template)
+        # print("sta_list {}".format(self.sta_list))
+        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+        self.station_profile.set_command_param("set_port", "report_timer", 1500)
+        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+
+        if self.use_existing_sta is True:
+            print("Use Existing Stations: {sta_list}".format(sta_list=self.sta_list))
+        else:
             print("Creating stations")
-            self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-            self.station_profile.set_command_param("set_port", "report_timer", 1500)
-            self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
             self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
             self._pass("PASS: Station build finished")
 
@@ -222,7 +228,8 @@ class IPVariableTime(Realm):
 
         self.build()
         # exit()
-        if self.create_sta:
+        # CMR What is this code doing
+        if self.use_existing_sta is False:
             if not self.passes():
                 print(self.get_fail_message())
                 self.exit_fail()
@@ -302,7 +309,7 @@ class IPVariableTime(Realm):
                                 debug=self.debug)
 
         self.stop()
-        if self.create_sta:
+        if self.use_existing_sta is False:
             if not self.passes():
                 print(self.get_fail_message())
                 self.exit_fail()
@@ -526,14 +533,39 @@ python3 ./test_ip_variable_time.py
          
     Can't decide what columns to use? You can just use 'all' to select all available columns from both tables.
 
+    This script uses two args parsers one in the script the second is Realm args parser
+    Realm args parser is one directory up then traverse into /py-json/LANforge/lfcli_base.py
+    search for create_basic_argsparse
+     --mgr --mgr_port --upstream_port --num_stations --radio --security --ssid --passwd
+
 
     Example command:
-    ./test_ip_variable_time.py  --mgr 192.168.100.116 --radio wiphy1 --ssid asus11ax-5 --passwd hello123 --security wpa2 
-        --test_duration 60s --output_format csv  --traffic_type lf_tcp --a_min 600000000 --b_min 600000000  
-        --upstream_port eth2  --mode "5" --layer3_cols 'name','tx rate','rx rate' --port_mgr_cols 'alias','channel','activity','mode'
-        --num_stations 1
+    1. Use Existing station ,  Note: put the resource.shelf.wifi-sta  (below is 1.1.wlan4),
+        The station needs to configured with the ssid, passwd, security and mode in the LANforge GUI
+    ./test_ip_variable_time.py  --mgr 192.168.0.100  --radio wiphy4 --ssid ssid_5g --passwd pass_5g
+        --security wpa2 --test_duration 60s --output_format csv  --traffic_type lf_tcp
+        --a_min 600000000 --b_min 600000000  --upstream_port eth2 --mode '5'
+        --layer3_cols 'name','tx rate','rx rate'  --port_mgr_cols 'alias','channel','activity','mode'
+        --use_existing_sta --sta_names 1.1.wlan4
+
+    2. Create a one station (script default is 1 if --num_stations not entered)
+    ./test_ip_variable_time.py  --mgr 192.168.0.100    --radio wiphy6 --ssid ssid_5g --passwd pass_5g
+        --security wpa2 --test_duration 60s --output_format csv  --traffic_type lf_tcp
+        --a_min 600000000 --b_min 600000000  --upstream_port eth2 --mode '5'
+        --layer3_cols 'name','tx rate','rx rate'  --port_mgr_cols 'alias','channel','activity','mode'
+
+    3. Create two stations
+    ./test_ip_variable_time.py  --mgr 192.168.0.100    --radio wiphy1 --ssid ssid_5g --passwd pass_5g
+        --security wpa2 --test_duration 60s --output_format csv  --traffic_type lf_tcp
+        --a_min 600000000 --b_min 600000000  --upstream_port eth2 --mode '5'
+        --layer3_cols 'name','tx rate','rx rate'  --port_mgr_cols 'alias','channel','activity','mode'
+        --num_stations 2
+
             ''')
 
+    # Realm args parser is one directory up then traverse into /py-json/LANforge/lfcli_base.py
+    # search for create_basic_argsparse
+    # --mgr --mgr_port --upstream_port --num_stations --radio --security --ssid --passwd
     parser.add_argument('--mode', help='Used to force mode of stations')
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
     parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp, udp, tcp], type will be '
@@ -564,21 +596,30 @@ python3 ./test_ip_variable_time.py
     parser.add_argument('--influx_mgr',
                         help='IP address of the server your Influx database is hosted if different from your LANforge Manager',
                         default=None)
-    parser.add_argument('--create_sta', help='Used to force a connection to a particular AP', default=True)
+    parser.add_argument('--use_existing_sta', help='Used an existing stationsto a particular AP', action='store_true')
     parser.add_argument('--sta_names', help='Used to force a connection to a particular AP', default="sta0000")
     args = parser.parse_args()
 
-    num_sta = 2
+    num_sta = 1
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
+        print("one")
         num_sta = int(args.num_stations)
-    if args.create_sta:
+    if args.use_existing_sta is False:
+        print("two")
         station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1,
                                               padding_number_=10000,
                                               radio=args.radio)
     else:
+        print("three")
         station_list = args.sta_names.split(",")
-    # Create directory
+    
+    print("args.num_stations: {create}".format(create=args.num_stations))
+    print("args.sta_names: {create}".format(create=args.sta_names))
+    print("args.use_existing_sta: {create} {typeof}".format(create=args.use_existing_sta, typeof=type(args.use_existing_sta)))
+    print("station_list: {sta}".format(sta=station_list))
+    
 
+    # Create directory
     # if file path with output file extension is not given...
     # check if home/lanforge/report-data exists. if not, save
     # in new folder based in current file's directory
@@ -604,7 +645,7 @@ python3 ./test_ip_variable_time.py
                                  port=args.mgr_port,
                                  number_template="0000",
                                  sta_list=station_list,
-                                 create_sta=args.create_sta,
+                                 use_existing_sta=args.use_existing_sta,
                                  name_prefix="VT",
                                  upstream=args.upstream_port,
                                  ssid=args.ssid,
