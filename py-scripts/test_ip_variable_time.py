@@ -313,7 +313,6 @@ class IPVariableTime(Realm):
             if not self.passes():
                 print(self.get_fail_message())
                 self.exit_fail()
-            LFUtils.wait_until_ports_admin_up(port_list=self.sta_list, debug_=self.debug)
 
             if self.passes():
                 self.success()
