@@ -342,7 +342,7 @@ class L3CXProfile(LFCliBase):
             timestamp_data.append(timestamp_df)
             time.sleep(monitor_interval_ms)
         df = pd.concat(timestamp_data)
-        df = df.drop('alias', 1)
+        df = df.drop('alias', axis=1)
         df.to_csv(str(report_file), index=False)
 
         # comparison to last report / report inputted
