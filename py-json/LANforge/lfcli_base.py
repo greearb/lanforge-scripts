@@ -239,7 +239,7 @@ class LFCliBase:
                     del _data['suppress_postexec_cli']
                 if 'suppress_postexec_method' in _data:
                     del _data['suppress_postexec_method']
-            elif suppress_related_commands_ == False:
+            elif suppress_related_commands_ is False:
                 _data['suppress_preexec_cli'] = False
                 _data['suppress_preexec_method'] = False
                 _data['suppress_postexec_cli'] = False
@@ -536,11 +536,9 @@ class LFCliBase:
             return
         userhome=os.path.expanduser('~')
         session = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':','-')
-        if filename == None:
-            try:
+        if filename is None:
+            if os.path.isdir("%s/report-data/%s" % (userhome, session)):
                 os.mkdir("%s/report-data/%s" % (userhome, session))
-            except:
-                pass
             filename = ("%s/report-data/%s/%s.log" % (userhome,session,scriptname))
         import logging
         logging.basicConfig(filename=filename, level=logging.DEBUG)
@@ -742,8 +740,8 @@ class LFCliBase:
     def get_seconds(self, timestamp):
         return (timestamp - datetime.datetime(1970,1,1)).total_seconds()
 
-    def replace_special_char(self, str):
-        return str.replace('+', ' ').replace('_', ' ').strip(' ')
+    def replace_special_char(self, special_str):
+        return special_str.replace('+', ' ').replace('_', ' ').strip(' ')
 
     Help_Mode = """Station WiFi modes: use the number value below:
                 auto   : 0,
