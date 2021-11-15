@@ -81,9 +81,9 @@ class LFRequest:
 
         # finding '#' prolly indicates a macvlan (eth1#0)
         # finding ' ' prolly indicates a field name that should imply %20
-        if (self.requested_url.find('#') >= 1):
+        if self.requested_url.find('#') >= 1:
             self.requested_url = self.requested_url.replace('#', '%23')
-        if (self.requested_url.find(' ') >= 1):
+        if self.requested_url.find(' ') >= 1:
             self.requested_url = self.requested_url.replace(' ', '+')
         self.logger.debug("new LFRequest[%s]" % self.requested_url )
 
@@ -94,7 +94,7 @@ class LFRequest:
     def form_post(self, show_error=True, debug=False, die_on_error_=False):
         if self.die_on_error:
             die_on_error_ = True
-        if (debug == False) and (self.debug == True):
+        if (debug is False) and (self.debug is True):
             debug = True
         responses = []
         urlenc_data = ""
@@ -106,7 +106,7 @@ class LFRequest:
 
 
         self.logger.debug("formPost: url: "+self.requested_url)
-        if ((self.post_data != None) and (self.post_data is not self.No_Data)):
+        if (self.post_data is not None) and (self.post_data is not self.No_Data):
             urlenc_data = urllib.parse.urlencode(self.post_data).encode("utf-8")
             self.logger.debug("formPost: data looks like:" + str(urlenc_data))
             self.logger.debug("formPost: url: "+self.requested_url)
@@ -141,7 +141,7 @@ class LFRequest:
                               error_list_=self.error_list,
                               debug_=debug)
 
-        if (die_on_error_ == True) or (self.die_on_error == True):
+        if (die_on_error_ is True) or (self.die_on_error is True):
             exit(1)
         return None
 
@@ -149,7 +149,7 @@ class LFRequest:
         return self.json_post(show_error=show_error, debug=debug, die_on_error_=die_on_error_, response_json_list_=response_json_list_)
 
     def json_post(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None, method_='POST'):
-        if (debug == False) and (self.debug == True):
+        if (debug is False) and (self.debug is True):
             debug = True
         if self.die_on_error:
             die_on_error_ = True
@@ -158,7 +158,7 @@ class LFRequest:
             opener = urllib.request.build_opener(request.ProxyHandler(self.proxies))
             urllib.request.install_opener(opener)
 
-        if ((self.post_data != None) and (self.post_data is not self.No_Data)):
+        if (self.post_data is not None) and (self.post_data is not self.No_Data):
             myrequest = request.Request(url=self.requested_url,
                                          method=method_,
                                          data=json.dumps(self.post_data).encode("utf-8"),
@@ -174,7 +174,7 @@ class LFRequest:
         try:
             resp = urllib.request.urlopen(myrequest)
             resp_data = resp.read().decode('utf-8')
-            if (debug and die_on_error_):
+            if debug and die_on_error_:
                 self.logger.debug("----- LFRequest::json_post:128 debug: --------------------------------------------")
                 self.logger.debug("URL: <%s>  status: %d "% (self.requested_url, resp.status))
                 if resp.status != 200:
@@ -208,7 +208,7 @@ class LFRequest:
                               error_=uerror,
                               debug_=debug)
 
-        if die_on_error_ == True:
+        if die_on_error_:
             exit(1)
         return None
 
@@ -330,7 +330,7 @@ def plain_get(url_=None, debug_=False, die_on_error_=False, proxies_=None):
                           error_=uerror,
                           debug_=debug_)
 
-    if die_on_error_ == True:
+    if die_on_error_:
         exit(1)
     return None
 
