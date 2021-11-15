@@ -538,8 +538,10 @@ class LFCliBase:
         session = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':','-')
         if filename is None:
             if not os.path.isdir("%s/report-data/%s" % (userhome, session)):
+                if not os.path.isdir('%s/report-data' % userhome):
+                    os.mkdir('%s/report-data' % userhome)
                 os.mkdir("%s/report-data/%s" % (userhome, session))
-            filename = ("%s/report-data/%s/%s.log" % (userhome,session,scriptname))
+            filename = ("%s/report-data/%s/%s.log" % (userhome, session, scriptname))
         import logging
         logging.basicConfig(filename=filename, level=logging.DEBUG)
         if level == "debug":
