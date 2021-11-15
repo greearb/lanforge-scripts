@@ -449,7 +449,7 @@ class StationProfile:
         else:
             my_sta_names = sta_names_
 
-        if (len(my_sta_names) >= 15) or (suppress_related_commands_ == True):
+        if (len(my_sta_names) >= 15) or suppress_related_commands_:
             self.add_sta_data["suppress_preexec_cli"] = "yes"
             self.add_sta_data["suppress_preexec_method"] = 1
             self.set_port_data["suppress_preexec_cli"] = "yes"
