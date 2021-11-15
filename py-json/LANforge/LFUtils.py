@@ -555,15 +555,16 @@ def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=F
     """
     return wait_until_ports_appear(base_url, port_list, debug=debug)
 
-def name_to_eid(input, non_port=False):
+
+def name_to_eid(eid_input, non_port=False):
     rv = [1, 1, "", ""]
     info = []
-    if (input is None) or (input == ""):
-        raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % input)
-    if type(input) is not str:
-        raise ValueError("name_to_eid wants string formatted like '1.2.name', not a tuple or list or [%s]" % type(input))
+    if (eid_input is None) or (eid_input == ""):
+        raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % eid_input)
+    if type(eid_input) is not str:
+        raise ValueError("name_to_eid wants string formatted like '1.2.name', not a tuple or list or [%s]" % type(eid_input))
 
-    info = input.split('.')
+    info = eid_input.split('.')
     if len(info) == 1:
         rv[2] = info[0] # just port name
         return rv
