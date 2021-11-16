@@ -29,7 +29,7 @@ def main():
         text = open(os.path.join(args.path, file)).read()
         results_file = dict()
         results_file['argparse'] = 'argparse.' in text
-        if results_file['argparse'] is True:
+        if results_file['argparse']:
             results_file['create_basic'] = 'create_basic_argparse' in text
             results_file['create_bare'] = 'create_bare_argparse' in text
             results_file['prog'] = 'prog=' in text
