@@ -196,7 +196,7 @@ def main():
         if args.folder is not None:
             Ghost.upload_images(args.folder)
 
-    if args.kpi_to_ghost is True:
+    if args.kpi_to_ghost:
         Ghost.kpi(args.authors,
                   args.folders,
                   args.parent_folder,
