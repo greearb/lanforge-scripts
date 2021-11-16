@@ -217,7 +217,7 @@ class StaConnect2(LFCliBase):
         pprint.pprint(self.station_profile)
         if self.station_profile.up is None:
             self._fail("Incorrect station profile, missing profile.up")
-        if self.station_profile.up == False:
+        if not self.station_profile.up:
             print("\nBringing ports up...")
             data = {"shelf": 1,
                      "resource": self.resource,
@@ -309,7 +309,7 @@ class StaConnect2(LFCliBase):
             else:
                 self._pass("%s connected to AP: %s  With IP: %s" % (sta_name, ap, ip))
 
-        if self.passes() == False:
+        if not self.passes():
             if self.cleanup_on_exit:
                 print("Cleaning up...")
                 self.remove_stations()
@@ -484,7 +484,7 @@ Example:
     staConnect.stop()
     run_results = staConnect.get_result_list()
     is_passing = staConnect.passes()
-    if is_passing == False:
+    if not is_passing:
         print("FAIL:  Some tests failed")
     else:
         print("PASS:  All tests pass")
