@@ -74,7 +74,7 @@ class VRProfile(BaseProfile):
 
     def vr_eid_to_url(self, eid_str=None, debug=False):
         debug |= self.debug
-        if (eid_str is None) or ("" == eid_str) or (eid_str.index(".") < 1):
+        if (eid_str is None) or (eid_str == "") or (eid_str.index(".") < 1):
             raise ValueError("vr_eid_to_url cannot read eid[%s]" % eid_str)
         hunks = eid_str.split(".")
         if len(hunks) > 3:
@@ -111,7 +111,7 @@ class VRProfile(BaseProfile):
                           resource=1,
                           debug=False):
         debug |= self.debug
-        if (resource is None) or (resource == 0) or ("" == resource):
+        if (resource is None) or (resource == 0) or (resource == ""):
             raise ValueError("resource needs to be a number greater than 1")
 
         router_map = self.router_list(resource=resource, debug=debug)
@@ -334,9 +334,9 @@ class VRProfile(BaseProfile):
         :return: True if area is inside listed virtual router(s)
         """
         debug |= self.debug
-        if (resource is None) or (resource == 0) or ("" == resource):
+        if (resource is None) or (resource == 0) or (resource == ""):
             raise ValueError("resource needs to be a number greater than 1")
-        if (vrcx_rect is None) or type(vrcx_rect ) or ("" == resource):
+        if (vrcx_rect is None) or type(vrcx_rect) or (resource == ""):
             raise ValueError("resource needs to be a number greater than 1")
         router_list = self.router_list(resource=resource, debug=debug)
         #router_list = self.json_get("/vr/1/%s/%s?fields=eid,x,y,height,width")
