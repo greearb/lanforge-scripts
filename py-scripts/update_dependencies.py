@@ -26,7 +26,7 @@ def main():
     packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'bokeh','pyarrow', 'websocket-client', 'xlsxwriter',\
         'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search', 'pyserial', 'pexpect-serial' ,'scp',\
         'dash', 'kaleido']
-    if args.pyjwt is True:
+    if args.pyjwt:
         packages.append('pyjwt')
     else:
         print('Not installing PyJWT')
