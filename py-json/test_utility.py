@@ -14,7 +14,7 @@ import threading
 import re
 import json
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -57,14 +57,14 @@ class ClientVisualization(LFCliBase, threading.Thread):
                     print(i[j]['port type'])
                     if i[j]['port type'] == "WIFI-STA" and i[j]['parent dev'] == "wiphy1" and i[j]['alias'] != 'wlan1':
                         #print(j)
-                        if i[j]['down'] == False and i[j]['phantom'] == False and i[j]['ip'] == '0.0.0.0':
+                        if i[j]['down'] is False and i[j]['phantom'] is False and i[j]['ip'] == '0.0.0.0':
                             self.scanning += 1
-                        elif i[j]['down'] == False and i[j]['phantom'] == True:
+                        elif i[j]['down'] is False and i[j]['phantom'] is True:
                             self.phantom += 1
-                        elif i[j]['down'] == True and i[j]['phantom'] == True:
+                        elif i[j]['down'] is True and i[j]['phantom'] is True:
                             self.phantom += 1
                             self.client_data['phantom'].append(self.phantom)
-                        elif i[j]['down'] == True and i[j]['phantom'] == False:
+                        elif i[j]['down'] is True and i[j]['phantom'] is False:
                             self.down += 1
                         elif i[j]['ip'] != "0.0.0.0":
                             self.ip += 1
