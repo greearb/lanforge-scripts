@@ -22,7 +22,7 @@ lf_report = lf_report.lf_report
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 
-class csv_sql():
+class csv_sql:
     def __init__(self,
                  _path='.',
                  _file='kpi.csv',
@@ -582,16 +582,15 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         database=__database, table=__table,
         server=__server, store=args.store, png=args.png))
 
-    if(__path == '' and args.store):
+    if __path == '' and args.store:
         print("--path <path of kpi.csv> must be entered if --store ,  exiting")
         exit(1)
-
-    if(args.png and args.store is False):
-        print("if --png set to create png files then --store must also be set, exiting")
-        exit(1)
-
-    if args.store is False and args.png is False:
-        print("Need to enter an action of --store --png ")
+    elif not args.store:
+        if args.png:
+            print("if --png set to create png files then --store must also be set, exiting")
+            exit(1)
+        elif not args.png:
+            print("Need to enter an action of --store --png ")
 
     # create report class for reporting
     report = lf_report(_path=__path,
