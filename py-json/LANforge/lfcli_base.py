@@ -239,7 +239,7 @@ class LFCliBase:
                     del _data['suppress_postexec_cli']
                 if 'suppress_postexec_method' in _data:
                     del _data['suppress_postexec_method']
-            elif suppress_related_commands_ is False:
+            elif not suppress_related_commands_:
                 _data['suppress_preexec_cli'] = False
                 _data['suppress_preexec_method'] = False
                 _data['suppress_postexec_cli'] = False
