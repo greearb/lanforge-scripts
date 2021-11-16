@@ -122,7 +122,7 @@ class HTTPProfile(LFCliBase):
             resource = self.local_realm.name_to_eid(port_name)[1]
             name = self.local_realm.name_to_eid(port_name)[2]
 
-            if upload_name != None:
+            if upload_name is not None:
                 name = upload_name
 
             if http:
@@ -155,7 +155,7 @@ class HTTPProfile(LFCliBase):
             if (url is None) or (url == ""):
                 raise ValueError("HTTPProfile::create: url unset")
 
-            if upload_name ==None:
+            if upload_name is None:
                 endp_data = {
                     "alias": name + "_l4",
                     "shelf": shelf,
