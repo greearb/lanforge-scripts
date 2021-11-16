@@ -146,14 +146,22 @@ class MeshTest(cvtest):
                  upload_speed="56Kbps",
                  download_speed="85%",
                  duration="60s",
-                 enables=[],
-                 disables=[],
-                 raw_lines=[],
+                 enables=None,
+                 disables=None,
+                 raw_lines=None,
                  raw_lines_file="",
-                 sets=[],
+                 sets=None,
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
+        if enables is None:
+            enables = []
+        if disables is None:
+            disables = []
+        if raw_lines is None:
+            raw_lines = []
+        if sets is None:
+            sets = []
         self.lf_host = lf_host
         self.lf_port = lf_port
         self.lf_user = lf_user
