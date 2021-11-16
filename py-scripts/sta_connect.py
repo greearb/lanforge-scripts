@@ -267,7 +267,7 @@ class StaConnect(LFCliBase):
             else:
                 self._pass("%s connected to AP: %s  With IP: %s" % (sta_name, ap, ip))
 
-        if self.passes() == False:
+        if not self.passes():
             if self.cleanup_on_exit:
                 print("Cleaning up...")
                 self.remove_stations()
@@ -532,17 +532,14 @@ Example:
 
     run_results = staConnect.get_result_list()
 
-    
-    is_passing = staConnect.passes()
-    if is_passing == False:
+    if not staConnect.passes():
         print("FAIL:  Some tests failed")
     else:
         print("PASS:  All tests pass")
 
     print(staConnect.get_all_message())
 
-    is_passing = staConnect.passes()
-    if is_passing == False:
+    if not staConnect.passes():
         print("FAIL:  Some tests failed")
     else:
         print("PASS:  All tests pass")
