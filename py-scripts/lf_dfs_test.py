@@ -1176,7 +1176,7 @@ class L3VariableTime(Realm):
     def reset_port_check(self):
         for station_profile in self.station_profiles:
             if station_profile.reset_port_extra_data['reset_port_enable']:
-                if station_profile.reset_port_extra_data['reset_port_timer_started'] == False:
+                if not station_profile.reset_port_extra_data['reset_port_timer_started']:
                     logg.info("reset_port_time_min: {}".format(station_profile.reset_port_extra_data['reset_port_time_min']))
                     logg.info("reset_port_time_max: {}".format(station_profile.reset_port_extra_data['reset_port_time_max']))
                     station_profile.reset_port_extra_data['seconds_till_reset'] = \
@@ -1526,7 +1526,7 @@ class L3VariableTime(Realm):
         gain_ = "0"
 
         frequency_ = self.dfs_get_frequency(channel)
-        if frequency_ == None:
+        if frequency_ is None:
             logg.info("frequency_ is : {}".format(frequency_))
             exit(1)
 
@@ -1715,8 +1715,8 @@ class L3VariableTime(Realm):
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 self.reset_port_check()
-                if((cur_time > dfs_time) and dfs_radar_sent == False):
-                    if(self.dfs):
+                if cur_time > dfs_time and not dfs_radar_sent:
+                    if self.dfs:
                         self.dfs_send_radar(initial_channel)
                         dfs_radar_sent = True
                     else:
