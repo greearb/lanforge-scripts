@@ -170,7 +170,7 @@ class L3VariableTimeLongevity(LFCliBase):
 
         timeout = 20
         done = False
-        while timeout > 0 and done == False:
+        while timeout > 0 and not done:
             time.sleep( 1)
             port_r = self.json_get("/port/1/1/list?fields=alias")
             if self.debug:
