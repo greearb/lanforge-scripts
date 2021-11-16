@@ -178,9 +178,8 @@ class lf_clean(Realm):
             # also clean the endp when cleaning cxs
             still_looking_cxs = self.cxs_clean()
             still_looking_endp = self.endp_clean()
-            print("clean_cxs: still_looking_cxs {looking_cxs} still_looking_endp {looking_endp}"\
-                    .format(looking_cxs=still_looking_cxs,looking_endp=still_looking_endp))
-        if self.clean_endp and not clean_cxs:
+            print("clean_cxs: still_looking_cxs {looking_cxs} still_looking_endp {looking_endp}".format(looking_cxs=still_looking_cxs,looking_endp=still_looking_endp))
+        if self.clean_endp and not self.clean_cxs:
             still_looking_endp = self.endp_clean()
             print("clean_endp: still_looking_endp {looking_endp}".format(looking_endp=still_looking_endp))
 
