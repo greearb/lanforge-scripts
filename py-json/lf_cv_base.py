@@ -27,15 +27,15 @@ class ChamberViewBase(LFCliBase):
     def remove_text_blobs(self):
         pass
 
-    def add_text_blobs(self, type="", name="", data="", debug=False):
-        data = {'type': type,
+    def add_text_blobs(self, text_type="", name="", data="", debug=False):
+        data = {'type': text_type,
                 'name': name,
                 "text": data
                 }
         self.json_post("/cli-json/add_text_blob/", data, debug_=debug)
 
-    def get_text_blob(self, type="", name="", debug=False):
-        data = {'type': type,
+    def get_text_blob(self, text_type="", name="", debug=False):
+        data = {'type': text_type,
                 'name': name,
                 }
         return self.json_post("/cli-json/show_text_blob/", data, debug_=debug)
