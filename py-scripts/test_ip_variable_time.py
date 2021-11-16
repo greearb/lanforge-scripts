@@ -118,7 +118,7 @@ class IPVariableTime(Realm):
         self.station_profile.mode = mode
         if self.ap is not None:
             self.station_profile.set_command_param("add_sta", "ap", self.ap)
-        if self.use_existing_sta is True:
+        if self.use_existing_sta:
             self.station_profile.station_names = self.sta_list
 
         self.name_prefix = name_prefix
@@ -145,7 +145,7 @@ class IPVariableTime(Realm):
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
     def start(self, print_pass=False, print_fail=False):
-        # if self.use_existing_station is False:
+        # if self.use_existing_station:
         # to-do- check here if upstream port got IP
         self.station_profile.admin_up()
         temp_stas = self.station_profile.station_names.copy()
@@ -164,13 +164,13 @@ class IPVariableTime(Realm):
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
         # do not clean up station if existed prior to test
-        if self.use_existing_sta is False:
+        if not self.use_existing_sta:
             for sta in self.sta_list:
                 self.rm_port(sta, check_exists=True)
 
     def cleanup(self):
         self.cx_profile.cleanup()
-        if self.use_existing_sta is False:
+        if not self.use_existing_sta:
             self.station_profile.cleanup()
             LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
                                                debug=self.debug)
@@ -183,7 +183,7 @@ class IPVariableTime(Realm):
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
 
-        if self.use_existing_sta is True:
+        if self.use_existing_sta:
             print("Use Existing Stations: {sta_list}".format(sta_list=self.sta_list))
         else:
             print("Creating stations")
@@ -229,7 +229,7 @@ class IPVariableTime(Realm):
         self.build()
         # exit()
         # CMR What is this code doing
-        if self.use_existing_sta is False:
+        if not self.use_existing_sta:
             if not self.passes():
                 print(self.get_fail_message())
                 self.exit_fail()
@@ -309,7 +309,7 @@ class IPVariableTime(Realm):
                                 debug=self.debug)
 
         self.stop()
-        if self.use_existing_sta is False:
+        if not self.use_existing_sta:
             if not self.passes():
                 print(self.get_fail_message())
                 self.exit_fail()
@@ -603,7 +603,7 @@ python3 ./test_ip_variable_time.py
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         print("one")
         num_sta = int(args.num_stations)
-    if args.use_existing_sta is False:
+    if not args.use_existing_sta:
         print("two")
         station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1,
                                               padding_number_=10000,
