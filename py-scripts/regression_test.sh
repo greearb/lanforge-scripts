@@ -154,6 +154,10 @@ function testgroup_delete_group() {
   ./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003
   ./testgroup.py --group_name group1--del_group --debug --mgr "$MGR"
 }
+function create_bridge_and_station() {
+  ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
+  ./create_bridge.py --radio $RADIO_USED --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR
+}
 
 if [[ ${#SHORT} -gt 0 ]]; then
   testCommands=(
@@ -168,7 +172,9 @@ if [[ ${#SHORT} -gt 0 ]]; then
        --max_stations_5 100 \
        --max_stations_dual 200 \
        --radio2 1.1.wiphy0 \
-       --radio2 1.1.wiphy1 --set 'Basic Client Connectivity' 1 --set 'Multi Band Performance' 1 --set 'Skip 2.4Ghz Tests' 1 --set 'Skip 5Ghz Tests' 1 --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Stability' 0 --set 'Band-Steering' 0  --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0 \
+       --radio2 1.1.wiphy1 --set 'Basic Client Connectivity' 1 --set 'Multi Band Performance' 1 --set 'Skip 2.4Ghz Tests' 1 \
+       --set 'Skip 5Ghz Tests' 1 --set 'Throughput vs Pkt Size' 0 --set 'Capacity' 0 --set 'Stability' 0 \
+       --set 'Band-Steering' 0  --set 'Multi-Station Throughput vs Pkt Size' 0 --set 'Long-Term' 0 \
        --pull_report \
        --influx_host c7-graphana \
        --influx_port 8086 \
@@ -180,7 +186,7 @@ if [[ ${#SHORT} -gt 0 ]]; then
 else
   testCommands=(
       "./create_bond.py --network_dev_list eth0,eth1 --debug --mgr $MGR"
-      "./create_bridge.py --radio $RADIO_USED --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR"
+      create_bridge_and_station
       "./create_chamberview.py -m $MGR -cs 'regression_test' \
       --line 'Resource=1.1 Profile=STA-AC Amount=1 Uses-1 $RADIO_USED Freq=-1 DUT=TEST DUT_RADIO=$RADIO_USED Traffic=http' \
       --line 'Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 DUT=Test DUT_RADIO=$RADIO_USED Traffic=http'"
@@ -255,7 +261,7 @@ else
       #"./lf_multipsk.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --debug"
       "./lf_report.py"
       "./lf_report_test.py"
-      "./lf_rvr_test.py"
+      # "./lf_rvr_test.py"
       "./lf_rx_sensitivity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
                     --instance_name rx-sensitivity-instance --config_name test_con --upstream 1.1.eth2 \
                     --dut linksys-8450 --duration 15s --station 1.1.sta01500 \
