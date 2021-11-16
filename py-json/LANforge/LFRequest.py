@@ -94,7 +94,7 @@ class LFRequest:
     def form_post(self, show_error=True, debug=False, die_on_error_=False):
         if self.die_on_error:
             die_on_error_ = True
-        if (debug is False) and (self.debug is True):
+        if not debug and self.debug:
             debug = True
         responses = []
         urlenc_data = ""
@@ -141,7 +141,7 @@ class LFRequest:
                               error_list_=self.error_list,
                               debug_=debug)
 
-        if (die_on_error_ is True) or (self.die_on_error is True):
+        if die_on_error_ or self.die_on_error:
             exit(1)
         return None
 
@@ -149,7 +149,7 @@ class LFRequest:
         return self.json_post(show_error=show_error, debug=debug, die_on_error_=die_on_error_, response_json_list_=response_json_list_)
 
     def json_post(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None, method_='POST'):
-        if (debug is False) and (self.debug is True):
+        if not debug and self.debug:
             debug = True
         if self.die_on_error:
             die_on_error_ = True
@@ -256,7 +256,7 @@ class LFRequest:
                               error_list_=self.error_list,
                               debug_=self.debug)
 
-        if self.die_on_error is True:
+        if self.die_on_error:
             exit(1)
         return None
 
