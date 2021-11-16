@@ -423,7 +423,7 @@ class L3VariableTime(Realm):
     def reset_port_check(self):
         for station_profile in self.station_profiles:
             if station_profile.reset_port_extra_data['reset_port_enable']:
-                if station_profile.reset_port_extra_data['reset_port_timer_started'] is False:
+                if not station_profile.reset_port_extra_data['reset_port_timer_started']:
                     print("reset_port_timer_started {}".format(station_profile.reset_port_extra_data['reset_port_timer_started']))
                     print("reset_port_time_min: {}".format(station_profile.reset_port_extra_data['reset_port_time_min']))
                     print("reset_port_time_max: {}".format(station_profile.reset_port_extra_data['reset_port_time_max']))
