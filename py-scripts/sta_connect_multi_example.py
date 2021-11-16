@@ -64,7 +64,7 @@ Example of how to instantiate StaConnect and run the test
         print("** endp: "+endp_name)
         pprint.pprint(test.resulting_endpoints[endp_name])
     '''
-    if is_passing == False:
+    if not is_passing:
         # run_results = staConnect.get_failed_result_list()
         fail_message = test.get_fail_message()
         print("Some tests failed:\n" + fail_message)
@@ -78,7 +78,7 @@ Example of how to instantiate StaConnect and run the test
     test.dut_passwd = "jedway-wpa2-x2048-5-1"
     test.run()
     is_passing = test.passes()
-    if is_passing == False:
+    if not is_passing:
         # run_results = staConnect.get_failed_result_list()
         fail_message = test.get_fail_message()
         print("Some tests failed:\n" + fail_message)
@@ -86,7 +86,7 @@ Example of how to instantiate StaConnect and run the test
     else:
         print("Tests pass")
 
-    if test.cleanup_on_exit == True:
+    if test.cleanup_on_exit:
         test.remove_stations()
 
 
