@@ -534,7 +534,7 @@ function start_tests()  {
 }
 
 function html_generator() {
-    LAST_COMMIT=$(git log --pretty=oneline | tail -n 1)
+    LAST_COMMIT=$(git log --pretty=oneline | head -n 1)
     header="<html>
 		<head>
 		<title>Regression Test Results $NOW</title>
