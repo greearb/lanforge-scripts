@@ -65,7 +65,7 @@ def main():
     #staConnect.finish()
     staConnect.cleanup()
     is_passing = staConnect.passes()
-    if is_passing == False:
+    if not is_passing:
         # run_results = staConnect.get_failed_result_list()
         fail_message = staConnect.get_fail_message()
         print("Some tests failed:\n" + fail_message)
