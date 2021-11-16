@@ -552,7 +552,7 @@ class L3VariableTime(Realm):
     def reset_port_check(self):
         for station_profile in self.station_profiles:
             if station_profile.reset_port_extra_data['reset_port_enable']:
-                if station_profile.reset_port_extra_data['reset_port_timer_started'] is False:
+                if not station_profile.reset_port_extra_data['reset_port_timer_started']:
                     print(
                         "reset_port_timer_started {}".format(
                             station_profile.reset_port_extra_data['reset_port_timer_started']))
@@ -2952,7 +2952,7 @@ Setting wifi_settings per radio
                     wifi_settings_found = False
                     break
 
-            if wifi_settings_found is True:
+            if wifi_settings_found:
                 # Check for additional flags
                 if set(('wifi_mode', 'enable_flags')).issubset(
                         radio_info_dict.keys()):
