@@ -196,9 +196,9 @@ class L4CXProfile(LFCliBase):
                 raise ValueError("L4CXProfile::monitor wants duration_sec > 1 second")
             if (duration_sec <= monitor_interval):
                 raise ValueError("L4CXProfile::monitor wants duration_sec > monitor_interval")
-        if report_file == None:
+        if report_file is None:
             raise ValueError("Monitor requires an output file to be defined")
-        if created_cx == None:
+        if created_cx is None:
             raise ValueError("Monitor needs a list of Layer 4 connections")
         if (monitor_interval is None) or (monitor_interval < 1):
             raise ValueError("L4CXProfile::monitor wants monitor_interval >= 1 second")
