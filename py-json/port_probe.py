@@ -265,7 +265,7 @@ class ProbePort(LFCliBase):
         T_gi_long = .8 * 10**-6  # Guard index.
         # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
         # the nubmer of Data Subcarriers is based on modulation and bandwith
-        if self.rx_mgt_6Mb_frame is True:
+        if self.rx_mgt_6Mb_frame:
             self.rx_mgt_6Mg_frame = False
             self.rx_data_rate_gi_short_Mbps = None
             self.rx_data_rate_gi_long_Mbps = None
