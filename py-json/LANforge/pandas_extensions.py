@@ -81,7 +81,7 @@ class pandas_extensions:
                             print(for_loop_df1.at[0, col])
                             print(for_loop_df2.at[0, col])
                             if type(for_loop_df1.at[0, col]) == str and type(for_loop_df2.at[0, col]) == str:
-                                if (' ' in for_loop_df1.at[0, col]) == True:
+                                if (' ' in for_loop_df1.at[0, col]):
                                     # do subtraction
                                     new_value = float(for_loop_df1.at[0, col].split(" ")[0]) - float(
                                         for_loop_df2.at[0, col].split(" ")[0])
