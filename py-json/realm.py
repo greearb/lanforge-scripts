@@ -525,7 +525,7 @@ class Realm(LFCliBase):
 
     # removes port by eid/eidpn
     def remove_vlan_by_eid(self, eid):
-        if (eid is None) or ("" == eid):
+        if (eid is None) or (eid == ""):
             raise ValueError("removeVlanByEid wants eid like 1.1.sta0 but given[%s]" % eid)
         hunks = self.name_to_eid(eid)
         # print("- - - - - - - - - - - - - - - - -")
