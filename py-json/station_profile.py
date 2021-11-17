@@ -359,7 +359,7 @@ class StationProfile:
     def cleanup(self, desired_stations=None, delay=0.03, debug_=False):
         print("Cleaning up stations")
 
-        if (desired_stations is None):
+        if desired_stations is None:
             desired_stations = self.station_names
 
         if len(desired_stations) < 1:
@@ -371,7 +371,9 @@ class StationProfile:
             self.local_realm.rm_port(port_eid, check_exists=True, debug_=debug_)
             time.sleep(delay)
         # And now see if they are gone
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_stations)
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
+                                           port_list=desired_stations,
+                                           debug=debug_)
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
     def create(self, radio,
