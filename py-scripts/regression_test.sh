@@ -162,7 +162,11 @@ function create_bridge_and_station() {
 if [[ ${#SHORT} -gt 0 ]]; then
   testCommands=(
       # run_l3_longevity
-      # "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --layer3_cols $COL_NAMES --debug --mgr $MGR  --traffic_type lf_udp"
+      "./test_ip_connection.py --radio $RADIO_USED --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
+      "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --layer3_cols $COL_NAMES --debug --mgr $MGR  --traffic_type lf_udp"
+      "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --layer3_cols $COL_NAMES --debug --mgr $MGR  --traffic_type lf_udp"
+      "./test_ip_connection.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR --ipv6"
+      "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --debug --mgr $MGR --ipv6 --traffic_type lf_udp"
     	"./lf_ap_auto_test.py --mgr ${MGR} --port 8080 --lf_user lanforge --lf_password lanforge --instance_name ap-auto-instance \
        --config_name test_con \
        --upstream 1.1.eth2 \
@@ -286,7 +290,7 @@ else
                                --channel 52 \
                                --radio_mode AUTO"
       "./lf_snp_test.py --mgr $MGR"
-      "./lf_tr398_test.py --mgr $MGR"
+      "./lf_tr398_test.py --mgr $MGR --upstream $UPSTREAM"
       #./lf_webpage
       "./lf_wifi_capacity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
              --instance_name this_inst --config_name test_con --upstream 1.1.eth2 --batch_size 1,5,25,50,100 --loop_iter 1 \
@@ -296,7 +300,8 @@ else
              #--influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
              #--influx_bucket ben \
       #"./measure_station_time_up.py --radio $RADIO_USED --num_stations 3 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --debug --report_file measure_station_time_up.txt"
-      "./create_station.py --radio $RADIO_USED --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED && ./modify_station.py \
+      "./create_station.py --mgr $MGR --radio $RADIO_USED --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED && ./modify_station.py \
+                   --mgr $MGR \
                    --radio $RADIO_USED \
                    --station 1.1.sta0000 \
                    --security $SECURITY \
@@ -305,7 +310,6 @@ else
                    --enable_flag osen_enable \
                    --disable_flag ht160_enable \
                    --debug"
-      "./modify_vap.py --radio $RADIO_USED --vap 1.1.vap0000 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --enable_flag osen_enable --disable_flag ht160_enable --debug"
       #recordinflux.py
       "./rvr_scenario.py --lfmgr $MGR --lanforge_db 'handsets' --cv_test Dataplane --test_profile http --cv_scenario ct-us-001"
       #scenario.py
