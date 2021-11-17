@@ -52,7 +52,7 @@
                 "command":"./tools/lf_qa.py",
                 "args":"",
                 "args_list":[
-                    " --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
             }
         }
