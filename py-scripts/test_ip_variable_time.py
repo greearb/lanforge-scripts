@@ -82,7 +82,8 @@ class IPVariableTime(Realm):
         if layer3_cols is None:
             layer3_cols = ['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate']
         super().__init__(lfclient_host=host,
-                         lfclient_port=port),
+                         lfclient_port=port,
+                         debug_=_debug_on),
         self.upstream = upstream
         self.host = host
         self.port = port
@@ -166,7 +167,7 @@ class IPVariableTime(Realm):
         # do not clean up station if existed prior to test
         if not self.use_existing_sta:
             for sta in self.sta_list:
-                self.rm_port(sta, check_exists=True)
+                self.rm_port(sta, check_exists=True, debug_=False)
 
     def cleanup(self):
         self.cx_profile.cleanup()
