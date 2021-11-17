@@ -553,8 +553,15 @@ class StationProfile:
             self.add_sta_data["flags"] = self.add_named_flags(self.desired_add_sta_flags, add_sta.add_sta_flags)
             self.add_sta_data["flags_mask"] = self.add_named_flags(self.desired_add_sta_flags_mask,
                                                                    add_sta.add_sta_flags)
+
+            station_eid = self.local_realm.name_to_eid(station)
+            station_shelf = station_eid[0]
+            station_resource = station_eid[1]
+            station_port = station_eid[2]
             self.add_sta_data["radio"] = radio
-            self.add_sta_data["sta_name"] = station
+            self.add_sta_data["shelf"] = station_shelf
+            self.add_sta_data["resource"] = station_resource
+            self.add_sta_data["sta_name"] = station_port
             self.add_sta_data["ssid"] = 'NA'
             self.add_sta_data["key"] = 'NA'
             self.add_sta_data['mac'] = 'NA'
