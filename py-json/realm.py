@@ -224,14 +224,15 @@ class Realm(LFCliBase):
                                            port_list=sta_list,
                                            debug=debug_)
 
-    def rm_port(self, port_eid, check_exists=True, debug_=False):
+    def rm_port(self, port_eid, check_exists=True, debug_=None):
         if port_eid is None:
             raise ValueError("realm.rm_port: want a port eid like 1.1.eth1")
-        debug_ |= self.debug
+        if debug_ is None:
+            debug_ = self.debug
         req_url = "/cli-json/rm_vlan"
         eid = self.name_to_eid(port_eid)
         if check_exists:
-            if not self.port_exists(port_eid):
+            if not self.port_exists(port_eid, debug=debug_):
                 return False
 
         data = {
@@ -239,13 +240,16 @@ class Realm(LFCliBase):
             "resource": eid[1],
             "port": eid[2]
             }
-        rsp = self.json_post(req_url, data, debug_=debug_)
+        self.json_post(req_url, data, debug_=debug_)
         return True
 
-    def port_exists(self, port_eid):
+    def port_exists(self, port_eid, debug=None):
+        if debug is None:
+            debug = self.debug
         eid = self.name_to_eid(port_eid)
-        current_stations = self.json_get("/port/%s/%s/%s?fields=alias" % (eid[0], eid[1], eid[2]))
-        if not current_stations is None:
+        current_stations = self.json_get("/port/%s/%s/%s?fields=alias" % (eid[0], eid[1], eid[2]),
+                                         debug_=debug)
+        if current_stations is not None:
             return True
         return False
 
