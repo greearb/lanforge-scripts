@@ -28,7 +28,7 @@ class csv_sql:
                  _file='kpi.csv',
                  _database='qa_db',
                  _table='qa_table',
-                 _server='http://192.168.95.6/',
+                 _server='',
                  _cut='/home/lanforge/',
                  _png=False):
         self.path = _path
@@ -544,8 +544,8 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         default='qa_table')
     parser.add_argument(
         '--server',
-        help='--server http://<server ip>/   default: http://192.168.95.6/',
-        default='http://192.168.95.6/')
+        help="--server http://<server ip>/  example: http://192.168.95.6/ default: ''",
+        default='')
     parser.add_argument(
         '--cut',
         help='--cut /home/lanforge/ used to adjust server path default: /home/lanforge/',

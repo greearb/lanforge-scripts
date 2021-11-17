@@ -131,6 +131,7 @@ class lf_check():
                  _json_dut,
                  _json_test,
                  _test_suite,
+                 _test_server,
                  _db_override,
                  _production,
                  _csv_results,
@@ -142,6 +143,7 @@ class lf_check():
         self.json_dut = _json_dut
         self.json_test = _json_test
         self.test_suite = _test_suite
+        self.test_server = _test_server
         self.db_override = _db_override
         self.production_run = _production
         self.report_path = _report_path
@@ -797,6 +799,10 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(
                             'REPORT_PATH', self.report_path)
 
+                    if 'TEST_SERVER' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(
+                            'TEST_SERVER', self.test_server)
+
                     if 'DUT_SET_NAME' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('DUT_SET_NAME',
                                                                                             self.dut_set_name)
@@ -1146,6 +1152,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         help="--suite <suite name>  default TEST_DICTIONARY",
         default="TEST_DICTIONARY")
     parser.add_argument(
+        '--server',
+        help="--server http://<server ip>/  example: http://192.168.95.6/ default: ''",
+        default='')        
+    parser.add_argument(
         '--db_override',
         help="--db_override <sqlite db>  override for json DATABASE_SQLITE''",
         default=None)
@@ -1191,6 +1201,9 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
     # select test suite
     test_suite = args.suite
+
+    test_server = args.server
+
     __dir = args.dir
     __path = args.path
 
@@ -1222,6 +1235,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                      _json_dut=json_dut,
                      _json_test=json_test,
                      _test_suite=test_suite,
+                     _test_server=test_server,
                      _db_override=db_override,
                      _production=production,
                      _csv_results=csv_results,
