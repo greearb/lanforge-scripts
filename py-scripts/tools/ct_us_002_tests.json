@@ -85,7 +85,7 @@
                 ]
             }
         },
-        "suite_wc_dp":{
+        "suite_wc_dp_nightly":{
             "lf_help_check":{
                 "enabled":"TRUE",
                 "load_db":"skip",
