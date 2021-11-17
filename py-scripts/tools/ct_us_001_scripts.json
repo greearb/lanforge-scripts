@@ -97,6 +97,12 @@
                 "args_list":[" --mgr LF_MGR_IP "
                 ]
             },
+            "test_ip_variable_time0-ipv4":{
+                "enabled":"TRUE",
+                "command":"test_ip_variable_time.py",
+                "args":"",
+                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --test_duration 15s --output_format excel --layer3_cols name,tx_bytes,rx_bytes,dropped --traffic_type lf_udp --debug"]
+            },
             "lf_qa":{
                 "enabled":"TRUE",
                 "timeout":"600",
@@ -116,6 +122,15 @@
                 "args":"",
                 "args_list":[
                     " "
+                ]
+            },
+            "lf_cleanup":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"lf_cleanup.py",
+                "args":"",
+                "args_list":[
+                    "--mgr LF_MGR_IP --cxs --sta "
                 ]
             },
             "create_chamberview_dut_ATH10K_9984__wc":{
