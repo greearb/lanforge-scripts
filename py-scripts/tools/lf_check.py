@@ -1007,8 +1007,8 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                         elif 'error ' in text.lower():
                             self.test_result = "Test Errors"
                             background = self.background_red
-                        elif 'tests failed':
-                            self.test_result = "Tests Failed"
+                        elif 'tests failed' in text.lower():
+                            self.test_result = "Some Tests Failed"
                             background = self.background_orange
                         else:
                             self.test_result = "Success"
