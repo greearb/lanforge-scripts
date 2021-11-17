@@ -1005,7 +1005,10 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                         # leave the space in after error to not pick up tx
                         # errors or rx errors
                         elif 'error ' in text.lower():
-                            self.test_result = "Test Fail"
+                            self.test_result = "Test Errors"
+                            background = self.background_red
+                        elif 'tests failed':
+                            self.test_result = "Tests Failed"
                             background = self.background_orange
                         else:
                             self.test_result = "Success"
