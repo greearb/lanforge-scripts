@@ -307,14 +307,14 @@ class LFCliBase:
                 exit(1)
         return json_response
 
-    def json_get(self, _req_url, debug_=False):
-        debug_ |= self.debug
+    def json_get(self, _req_url, debug_=None):
         # if debug_:
         #     print("json_get: "+_req_url)
         #     print("json_get: proxies:")
         #     pprint.pprint(self.proxy)
+        if debug_ is None:
+            debug_ = self.debug
         json_response = None
-        # print("----- GET ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
         try:
             lf_r = LFRequest.LFRequest(url=self.lfclient_url,
                                        uri=_req_url,
@@ -322,8 +322,7 @@ class LFCliBase:
                                        debug_=debug_,
                                        die_on_error_=self.exit_on_error)
             json_response = lf_r.get_as_json()
-            #debug_printer.pprint(json_response)
-            if (json_response is None):
+            if json_response is None:
                 if debug_:
                     if hasattr(lf_r, 'print_errors'):
                         lf_r.print_errors()
