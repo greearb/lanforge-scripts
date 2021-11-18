@@ -4,6 +4,7 @@ import subprocess
 import argparse
 import os
 
+
 def main():
     parser = argparse.ArgumentParser(
         prog="update_dependencies.py",
@@ -23,15 +24,15 @@ def main():
     args = parser.parse_args()
 
     print("Installing Script Python3 Dependencies")
-    packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'bokeh','pyarrow', 'websocket-client', 'xlsxwriter',\
-        'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search', 'pyserial', 'pexpect-serial' ,'scp',\
-        'dash', 'kaleido']
+    packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'bokeh', 'pyarrow', 'websocket-client',
+                'xlsxwriter', 'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search', 'pyserial',
+                'pexpect-serial', 'scp', 'dash', 'kaleido']
     if args.pyjwt:
         packages.append('pyjwt')
     else:
         print('Not installing PyJWT')
     packages_installed = []
-    packages_failed =[]
+    packages_failed = []
     subprocess.call("pip3 uninstall jwt", shell=True)
     subprocess.call('pip3 install --upgrade pip', shell=True)
     for package in packages:
@@ -53,6 +54,7 @@ def main():
     if not packages_failed:
         return
     print("Packages Failed (Some scripts may not need these packages): {}".format(packages_failed))
+
 
 if __name__ == "__main__":
     main()
