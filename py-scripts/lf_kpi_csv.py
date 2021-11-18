@@ -20,8 +20,6 @@ INCLUDE_IN_README
 '''
 # may need pandas if a data frame is passed in
 # import pandas as pd
-import sys
-import os
 import csv
 import time
 import argparse
@@ -82,7 +80,7 @@ class lf_kpi_csv:
         try:
             print("self.kpi_path {kpi_path}".format(kpi_path=self.kpi_path))
             print("self.kpi_filename {kpi_filename}".format(kpi_filename=self.kpi_filename))
-            if self.kpi_path is "":
+            if self.kpi_path == "":
                 kpifile = self.kpi_filename
             else:            
                 kpifile = self.kpi_path + '/' + self.kpi_filename
