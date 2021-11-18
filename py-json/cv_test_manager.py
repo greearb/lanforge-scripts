@@ -87,7 +87,7 @@ class cv_test(Realm):
     def __init__(self,
                  lfclient_host="localhost",
                  lfclient_port=8080,
-                 lf_report_dir=""
+                 lf_report_dir=None
                  ):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port)
@@ -150,7 +150,7 @@ class cv_test(Realm):
         rsp = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=False, response_json_list_=response_json)
         try:
             if response_json[0]["LAST"]["warnings"].startswith("Unknown"):
-                print("Unknown command?\n");
+                print("Unknown command?\n")
                 pprint(response_json)
         except:
             # Ignore un-handled structs at this point, let calling code deal with it.
@@ -306,7 +306,7 @@ class cv_test(Realm):
     # cv_cmds:  Array of raw chamber-view commands, such as "cv click 'button-name'"
     #    These (and the sets) are applied after the test is created and before it is started.
     def create_and_run_test(self, load_old_cfg, test_name, instance_name, config_name, sets,
-                            pull_report, lf_host, lf_user, lf_password, cv_cmds, local_lf_report_dir="", ssh_port=22,
+                            pull_report, lf_host, lf_user, lf_password, cv_cmds, local_lf_report_dir=None, ssh_port=22,
                             graph_groups_file=None):
         load_old = "false"
         if load_old_cfg:
@@ -340,14 +340,14 @@ class cv_test(Realm):
 
         response = self.start_test(instance_name)
         if response[0]["LAST"]["response"].__contains__("Could not find instance:"):
-            print("ERROR:  start_test failed: ", response[0]["LAST"]["response"], "\n");
+            print("ERROR:  start_test failed: ", response[0]["LAST"]["response"], "\n")
             # pprint(response)
             exit(1)
 
         not_running = 0
         while True:
             cmd = "cv get_and_close_dialog"
-            dialog = self.run_cv_cmd(cmd);
+            dialog = self.run_cv_cmd(cmd)
             if dialog[0]["LAST"]["response"] != "NO-DIALOG":
                 print("Popup Dialog:\n")
                 print(dialog[0]["LAST"]["response"])
@@ -396,7 +396,7 @@ class cv_test(Realm):
 
         # Clean up any remaining popups.
         while True:
-            dialog = self.run_cv_cmd(cmd);
+            dialog = self.run_cv_cmd(cmd)
             if dialog[0]["LAST"]["response"] != "NO-DIALOG":
                 print("Popup Dialog:\n")
                 print(dialog[0]["LAST"]["response"])
@@ -406,7 +406,7 @@ class cv_test(Realm):
     # Takes cmd-line args struct or something that looks like it.
     # See csv_to_influx.py::influx_add_parser_args for options, or --help.
     def check_influx_kpi(self, args):
-        if self.lf_report_dir == "":
+        if self.lf_report_dir is None:
             # Nothing to report on.
             print("Not submitting to influx, no report-dir.\n")
             return
@@ -428,12 +428,12 @@ class cv_test(Realm):
 
         # lf_wifi_capacity_test.py may be run / initiated by a remote system against a lanforge
         # the local_lf_report_dir is where data is stored,  if there is no local_lf_report_dir then the test is run directly on lanforge
-        if self.local_lf_report_dir == "":
-            csv_path = "%s/kpi.csv" % (self.lf_report_dir)
+        if self.local_lf_report_dir is None:
+            csv_path = "%s/kpi.csv" % self.lf_report_dir
         else:
             kpi_location = self.local_lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
             # the local_lf_report_dir is the parent directory,  need to get the directory name
-            csv_path = "%s/kpi.csv" % (kpi_location)
+            csv_path = "%s/kpi.csv" % kpi_location
         
         print("Attempt to submit kpi: ", csv_path)
         print("Posting to influx...\n")
@@ -513,7 +513,7 @@ class cv_test(Realm):
 
     def get_popup_info_and_close(self):
         cmd = "cv get_and_close_dialog"
-        dialog = self.run_cv_cmd(cmd);
+        dialog = self.run_cv_cmd(cmd)
         if dialog[0]["LAST"]["response"] != "NO-DIALOG":
             print("Popup Dialog:\n")
             print(dialog[0]["LAST"]["response"])
