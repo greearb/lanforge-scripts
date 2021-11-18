@@ -25,8 +25,11 @@ def main():
         prog='sta_connect_example.py',
         formatter_class=argparse.RawTextHelpFormatter
     )
+    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
 
     args = parser.parse_args()
+
+    monitor_interval = LFCliBase.parse_time(args.test_duration).total_seconds()
     if args.upstream_port is None:
         args.upstream_port = "eth2"
     if args.ssid is None:
@@ -37,7 +40,7 @@ def main():
         args.security = sta_connect.WPA2
     if args.radio is None:
         args.radio = "wiphy0"
-    staConnect = StaConnect(args.mgr, args.mgr_port, _debugOn=args.debug)
+    staConnect = StaConnect(args.mgr, args.mgr_port, _debugOn=args.debug, _runtime_sec=monitor_interval)
     staConnect.sta_mode = 0
     staConnect.upstream_resource = 1
     staConnect.upstream_port = args.upstream_port
@@ -46,12 +49,12 @@ def main():
     staConnect.dut_security = args.security
     staConnect.dut_ssid = args.ssid
     staConnect.dut_passwd = args.passwd
-    staConnect.station_names = [ "sta000" ]
+    staConnect.station_names = ["sta000"]
     staConnect.setup()
     staConnect.start()
     time.sleep(20)
     staConnect.stop()
-    #staConnect.finish()
+    # staConnect.finish()
     staConnect.cleanup()
     is_passing = staConnect.passes()
     if not is_passing:
@@ -67,5 +70,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-#
