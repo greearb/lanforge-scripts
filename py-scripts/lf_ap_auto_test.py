@@ -199,17 +199,29 @@ class ApAutoTest(cvtest):
                  max_stations_2=100,
                  max_stations_5=100,
                  max_stations_dual=200,
-                 radio2=[],
-                 radio5=[],
-                 enables=[],
-                 disables=[],
-                 raw_lines=[],
+                 radio2=None,
+                 radio5=None,
+                 enables=None,
+                 disables=None,
+                 raw_lines=None,
                  raw_lines_file="",
-                 sets=[],
+                 sets=None,
                  graph_groups=None
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
+        if radio2 is None:
+            radio2 = []
+        if radio5 is None:
+            radio5 = []
+        if enables is None:
+            enables = []
+        if disables is None:
+            disables = []
+        if raw_lines is None:
+            raw_lines = []
+        if sets is None:
+            sets = []
         self.lf_host = lf_host
         self.lf_port = lf_port
         self.lf_user = lf_user
