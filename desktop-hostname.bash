@@ -16,7 +16,7 @@ fill_color=${my_mac//:/}
 fill_color=${fill_color:6:12}
 X=220
 Y=150
-convert -pointsize 80 -fill "#$fill_color" \
+convert -pointsize 80 -fill "#$fill_color" -stroke black -strokewidth 1 \
   -draw "text $X,$Y \"$my_hostname\"" \
   -draw "text $X,$(( Y + 75 )) \"$my_dev $my_ip\"" \
   -draw "text $X,$(( Y + 150 )) \"$my_mac\"" \
