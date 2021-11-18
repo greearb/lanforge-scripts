@@ -154,13 +154,12 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+from lf_report import lf_report
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-lf_report = importlib.import_module("py-scripts.lf_report")
 # lf_graph = importlib.import_module("py-scripts.lf_graph")
 # lf_bar_graph = lf_graph.lf_bar_graph
 
@@ -901,7 +900,7 @@ class L3VariableTime(Realm):
                 _exit_on_error=False,
                 _exit_on_fail=False,
                 _proxy_str=None,
-                _capture_signal_list=[]):
+                 _capture_signal_list=None):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
                          debug_=debug,
@@ -909,6 +908,8 @@ class L3VariableTime(Realm):
                          _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)
+        if _capture_signal_list is None:
+            _capture_signal_list = []
         self.scheme = _scheme
         self.port   = _port
         self.series = _series
@@ -1774,7 +1775,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     # Create a report instanciate a reporting class
     #
     ###############################################
-    report = lf_report(_results_dir_name = "Scaling_and_Performance",_output_html="snp.html",_output_pdf="snp.pdf")
+    report = lf_report(_results_dir_name = "Scaling_and_Performance", _output_html="snp.html", _output_pdf="snp.pdf")
 
     if args.csv_outfile != None:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
