@@ -10,7 +10,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -24,20 +23,23 @@ class TestStatusMessage(LFCliBase):
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        self.exit_on_error = False
+        self.status_msg_url = "/status-msg"
+        self.session_url = None
+        self.msg_count = 0
         self.deep_clean = _deep_clean
         self.check_connect()
 
     def build(self):
         """create a new session"""
         new_session = uuid1()
-        self.status_msg_url = "/status-msg"
-        self.session_url = "/status-msg/"+str(new_session)
+        self.session_url = "/status-msg/" + str(new_session)
         # print("----- ----- ----- ----- ----- PUT ----- ----- ----- ----- ----- ----- ")
         self.json_put(self.session_url, _data={})
 
         # we should see list of sessions
         try:
-            #print("----- ----- ----- ----- ----- GET ----- ----- ----- ----- ----- ----- ")
+            # print("----- ----- ----- ----- ----- GET ----- ----- ----- ----- ----- ----- ")
             session_response = self.json_get(self.status_msg_url)
             if self.debug:
                 pprint(session_response)
@@ -47,7 +49,7 @@ class TestStatusMessage(LFCliBase):
             if len(session_response["sessions"]) < 2:
                 self._fail("why do we have less than two sessions?")
             for session in session_response["sessions"]:
-                #print("----- ----- ----- ----- ----- SESSION ----- ----- ----- ----- ----- ----- ")
+                # print("----- ----- ----- ----- ----- SESSION ----- ----- ----- ----- ----- ----- ")
                 pprint(session)
             self._pass("session created")
         except ValueError as ve:
@@ -55,12 +57,12 @@ class TestStatusMessage(LFCliBase):
             self._fail(ve)
         return
 
-    def start(self, print_pass=False, print_fail=False):
+    def start(self):
         """
         create a series of messages
         :return: None
         """
-        #print("----- ----- ----- ----- ----- START ----- %s ----- ----- ----- ----- ----- " % self.session_url)
+        # print("----- ----- ----- ----- ----- START ----- %s ----- ----- ----- ----- ----- " % self.session_url)
         message_response = self.json_get(self.session_url)
         if self.debug:
             pprint(message_response)
@@ -71,21 +73,21 @@ class TestStatusMessage(LFCliBase):
             if len(messages_a) > 0:
                 self._fail("we should have zero messages")
 
-        for msg_num in ( 1, 2, 3, 4, 5 ):
-            #print("----- ----- ----- ----- ----- ----- %s ----- ----- ----- ----- ----- " % msg_num)
-            #print("session url: "+self.session_url)
+        for msg_num in (1, 2, 3, 4, 5):
+            # print("----- ----- ----- ----- ----- ----- %s ----- ----- ----- ----- ----- " % msg_num)
+            # print("session url: "+self.session_url)
             self.msg_count = msg_num
             self.json_post(self.session_url, {
                 "key": "test_status_message.py",
-                "content-type":"application/json",
-                "message":"message %s"%msg_num
+                "content-type": "application/json",
+                "message": "message %s" % msg_num
             })
             message_response = self.json_get(self.session_url)
             if len(message_response["messages"]) != msg_num:
                 pprint(message_response)
-                self._fail("we should have %s messages"%msg_num)
+                self._fail("we should have %s messages" % msg_num)
 
-        self._pass("created and listed %s messages counted"%msg_num)
+        self._pass("created and listed %s messages counted" % msg_num)
 
     def stop(self):
         """
@@ -99,13 +101,12 @@ class TestStatusMessage(LFCliBase):
         msg_num = 0
         for message_o in message_list_response["messages"]:
             msg_url = message_o["_links"]
-            print("Message url: "+msg_url)
+            print("Message url: " + msg_url)
             message_response = self.json_get(msg_url)
             if self.debug:
                 pprint(message_response)
-            for message_o in message_response["messages"]:
+            for content_o in message_response["messages"]:
                 msg_num += 1
-                content_o = message_o
                 print("id %s" % content_o["message_id"])
                 print("key %s" % content_o["message"]["key"])
                 print("content-type %s" % content_o["message"]["content-type"])
@@ -125,7 +126,6 @@ class TestStatusMessage(LFCliBase):
         last_link = ""
         msg_num = 0
         for message_o in message_list_response["messages"]:
-            msg_url = message_o["_links"]
             # print("Delete Message url: "+msg_url)
             last_link = message_o["_links"]
             msg_num += 1
@@ -157,7 +157,7 @@ class TestStatusMessage(LFCliBase):
         elif "empty" in message_list_response:
             msg_num = 0
 
-        if (msg_num == 0):
+        if msg_num == 0:
             self._pass("deleted all messages in session")
         else:
             self._fail("failed to delete all messages in session")
@@ -166,8 +166,8 @@ class TestStatusMessage(LFCliBase):
         try:
             if self.debug:
                 print("--- del -------------------- -------------------- --------------------")
-            self.exit_on_error=False
-            message_response = self.json_delete(self.session_url, debug_=False)
+            self.exit_on_error = False
+            self.json_delete(self.session_url, debug_=False)
             if self.debug:
                 print("--- ~del -------------------- -------------------- --------------------")
         except ValueError as ve:
@@ -193,8 +193,7 @@ class TestStatusMessage(LFCliBase):
         try:
             if self.debug:
                 print("--- del -------------------- -------------------- --------------------")
-            self.exit_on_error=False
-            message_response = self.json_delete(self.session_url+"/this", debug_=False)
+            self.json_delete(self.session_url + "/this", debug_=False)
             if self.debug:
                 print("--- ~del -------------------- -------------------- --------------------")
         except ValueError as ve:
@@ -208,7 +207,7 @@ class TestStatusMessage(LFCliBase):
         for session_o in session_list:
             if session_o["_links"] == self.session_url:
                 counter += 1
-                self._fail("session not deleted: "+session_o["_links"])
+                self._fail("session not deleted: " + session_o["_links"])
                 break
         if counter == 0:
             self._pass("session correctly deleted")
@@ -222,14 +221,14 @@ class TestStatusMessage(LFCliBase):
         counter = 0
         for session_o in session_list:
             counter += 1
-            self.json_delete(session_o["_links"]+"/all")
+            self.json_delete(session_o["_links"] + "/all")
         print("cleaned %s sessions" % counter)
         counter = 0
         for session_o in session_list:
             if session_o["session-id"] == "0":
                 continue
             counter += 1
-            self.json_delete(session_o["_links"]+"/this")
+            self.json_delete(session_o["_links"] + "/this")
         print("deleted %s sessions" % counter)
 
 
@@ -258,10 +257,10 @@ Actions can be:
     list        : list messages from session
     delete      : delete message, all messages using session/all or session using session/this
 """)
-    parser.add_argument('--session',    type=str, help='explicit session or session/message-id')
+    parser.add_argument('--session', type=str, help='explicit session or session/message-id')
     parser.add_argument('--deep_clean', type=bool, help='remove all messages and all sessions')
-    parser.add_argument('--key',        type=str, help='how to key the message')
-    parser.add_argument('--message',    type=str, help='message to include')
+    parser.add_argument('--key', type=str, help='how to key the message')
+    parser.add_argument('--message', type=str, help='message to include')
     args = parser.parse_args()
 
     status_messages = TestStatusMessage(args.mgr,
@@ -271,11 +270,11 @@ Actions can be:
                                         _exit_on_fail=False)
     if args.action == "new":
         if args.session is not None:
-            status_messages.json_put("/status-msg/"+args.session, {})
+            status_messages.json_put("/status-msg/" + args.session, {})
         else:
             a_uuid = uuid1()
-            status_messages.json_put("/status-msg/"+str(a_uuid), {})
-            print("created session /status-msg/"+str(a_uuid))
+            status_messages.json_put("/status-msg/" + str(a_uuid), {})
+            print("created session /status-msg/" + str(a_uuid))
         return
 
     if args.action == "update":
@@ -288,7 +287,7 @@ Actions can be:
         if args.message is None:
             print("requires --message")
             return
-        status_messages.json_post("/status-msg/"+args.session, {
+        status_messages.json_post("/status-msg/" + args.session, {
             "key": args.key,
             "content-type": "text/plain",
             "message": args.message
@@ -300,7 +299,7 @@ Actions can be:
             response_o = status_messages.json_get("/status-msg/")
             pprint(response_o["sessions"])
         else:
-            response_o = status_messages.json_get("/status-msg/"+args.session)
+            response_o = status_messages.json_get("/status-msg/" + args.session)
             pprint(response_o["messages"])
         return
 
@@ -311,7 +310,7 @@ Actions can be:
         if args.key is None:
             print("requires --key")
             return
-        response_o = status_messages.json_get("/status-msg/%s/%s"%(args.session, args.key))
+        response_o = status_messages.json_get("/status-msg/%s/%s" % (args.session, args.key))
         pprint(response_o)
         return
 
@@ -319,10 +318,9 @@ Actions can be:
         if args.session is None:
             print("requires --session")
             return
-        response_o = status_messages.json_delete("/status-msg/"+args.session)
+        response_o = status_messages.json_delete("/status-msg/" + args.session)
         pprint(response_o)
         return
-
 
     if args.action == "run_test":
         if args.deep_clean:
@@ -331,7 +329,7 @@ Actions can be:
         if not status_messages.passes():
             print(status_messages.get_fail_message())
             exit(1)
-        status_messages.start(False, False)
+        status_messages.start()
         status_messages.stop()
         if not status_messages.passes():
             print(status_messages.get_fail_message())
@@ -340,6 +338,7 @@ Actions can be:
         if status_messages.passes():
             print("Full test passed, all messages read and cleaned up")
         exit(0)
+
 
 if __name__ == "__main__":
     main()
