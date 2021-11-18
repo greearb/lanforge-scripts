@@ -172,7 +172,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
@@ -225,7 +224,7 @@ class ApAutoTest(cvtest):
         self.lf_host = lf_host
         self.lf_port = lf_port
         self.lf_user = lf_user
-        self.lf_password =lf_password
+        self.lf_password = lf_password
         self.instance_name = instance_name
         self.config_name = config_name
         self.upstream = upstream
@@ -252,13 +251,12 @@ class ApAutoTest(cvtest):
         # Nothing to do at this time.
         return
 
-
     def run(self):
         self.sync_cv()
         time.sleep(2)
         self.sync_cv()
 
-        blob_test = "%s-"%(self.test_name)
+        blob_test = "%s-" % self.test_name
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
         self.show_text_blob(None, None, False)
@@ -268,12 +266,12 @@ class ApAutoTest(cvtest):
 
         ridx = 0
         for r in self.radio2:
-            cfg_options.append("radio2-%i: %s"%(ridx, r[0]))
+            cfg_options.append("radio2-%i: %s" % (ridx, r[0]))
             ridx += 1
 
         ridx = 0
         for r in self.radio5:
-            cfg_options.append("radio5-%i: %s"%(ridx, r[0]))
+            cfg_options.append("radio5-%i: %s" % (ridx, r[0]))
             ridx += 1
 
         self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
@@ -306,7 +304,6 @@ class ApAutoTest(cvtest):
 
 
 def main():
-
     parser = argparse.ArgumentParser(
         prog="lf_ap_auto_test.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -332,7 +329,7 @@ def main():
       --influx_bucket ben \\
       --influx_tag testbed Ferndale-01
       """
-                                     )
+    )
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
     parser.add_argument("-u", "--upstream", type=str, default="",
@@ -353,39 +350,42 @@ def main():
                         help="Specify 2.4Ghz radio.  May be specified multiple times.")
     parser.add_argument("--radio5", action='append', nargs=1, default=[],
                         help="Specify 5Ghz radio.  May be specified multiple times.")
-    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",default="")
+    parser.add_argument("--local_lf_report_dir",
+                        help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",
+                        default="")
 
     args = parser.parse_args()
 
     cv_base_adjust_parser(args)
 
-    CV_Test = ApAutoTest(lf_host = args.mgr,
-                         lf_port = args.port,
-                         lf_user = args.lf_user,
-                         lf_password = args.lf_password,
-                         instance_name = args.instance_name,
-                         config_name = args.config_name,
-                         upstream = args.upstream,
-                         pull_report = args.pull_report,
-                         local_lf_report_dir = args.local_lf_report_dir,
-                         dut5_0 = args.dut5_0,
-                         dut2_0 = args.dut2_0,
-                         load_old_cfg = args.load_old_cfg,
-                         max_stations_2 = args.max_stations_2,
-                         max_stations_5 = args.max_stations_5,
-                         max_stations_dual = args.max_stations_dual,
-                         radio2 = args.radio2,
-                         radio5 = args.radio5,
-                         enables = args.enable,
-                         disables = args.disable,
-                         raw_lines = args.raw_line,
-                         raw_lines_file = args.raw_lines_file,
-                         sets = args.set
+    CV_Test = ApAutoTest(lf_host=args.mgr,
+                         lf_port=args.port,
+                         lf_user=args.lf_user,
+                         lf_password=args.lf_password,
+                         instance_name=args.instance_name,
+                         config_name=args.config_name,
+                         upstream=args.upstream,
+                         pull_report=args.pull_report,
+                         local_lf_report_dir=args.local_lf_report_dir,
+                         dut5_0=args.dut5_0,
+                         dut2_0=args.dut2_0,
+                         load_old_cfg=args.load_old_cfg,
+                         max_stations_2=args.max_stations_2,
+                         max_stations_5=args.max_stations_5,
+                         max_stations_dual=args.max_stations_dual,
+                         radio2=args.radio2,
+                         radio5=args.radio5,
+                         enables=args.enable,
+                         disables=args.disable,
+                         raw_lines=args.raw_line,
+                         raw_lines_file=args.raw_lines_file,
+                         sets=args.set
                          )
     CV_Test.setup()
     CV_Test.run()
 
     CV_Test.check_influx_kpi(args)
+
 
 if __name__ == "__main__":
     main()
