@@ -25,17 +25,6 @@ def main():
         prog='sta_connect_example.py',
         formatter_class=argparse.RawTextHelpFormatter
     )
-    required_args=None
-    for group in parser._action_groups:
-        if group.title == "required arguments":
-            required_args=group
-            break;
-
-    optional_args=None
-    for group in parser._action_groups:
-        if group.title == "optional arguments":
-            optional_args=group
-            break;
 
     args = parser.parse_args()
     if args.upstream_port is None:
@@ -48,7 +37,7 @@ def main():
         args.security = sta_connect.WPA2
     if args.radio is None:
         args.radio = "wiphy0"
-    staConnect = StaConnect("localhost", 8080, _debugOn=False)
+    staConnect = StaConnect(args.mgr, args.mgr_port, _debugOn=args.debug)
     staConnect.sta_mode = 0
     staConnect.upstream_resource = 1
     staConnect.upstream_port = args.upstream_port
