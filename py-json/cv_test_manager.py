@@ -9,13 +9,11 @@ import importlib
 import time
 import json
 from pprint import pprint
-import argparse
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -106,7 +104,7 @@ class cv_test(Realm):
 
         print("adding- " + text + " " + "to test config")
 
-        rsp = self.json_post(req_url, data)
+        self.json_post(req_url, data)
         # time.sleep(1)
 
     # Tell LANforge GUI Chamber View to launch a test
@@ -119,22 +117,22 @@ class cv_test(Realm):
         cmd = "cv load '{0}' '{1}'".format(instance, scenario)
         self.run_cv_cmd(cmd)
 
-    #load test config for a chamber view test instance.
+    # load test config for a chamber view test instance.
     def load_test_config(self, test_config, instance):
         cmd = "cv load '{0}' '{1}'".format(instance, test_config)
         self.run_cv_cmd(cmd)
 
-    #start the test
+    # start the test
     def start_test(self, instance):
         cmd = "cv click '%s' Start" % instance
         return self.run_cv_cmd(cmd)
 
-    #close test
+    # close test
     def close_test(self, instance):
         cmd = "cv click '%s' 'Close'" % instance
         self.run_cv_cmd(cmd)
 
-    #Cancel
+    # Cancel
     def cancel_test(self, instance):
         cmd = "cv click '%s' Cancel" % instance
         self.run_cv_cmd(cmd)
@@ -142,61 +140,61 @@ class cv_test(Realm):
     # Send chamber view commands to the LANforge GUI
     def run_cv_cmd(self, command):
         response_json = []
-        req_url = "/gui-json/cmd"
         data = {
             "cmd": command
         }
         debug_par = ""
-        rsp = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=False, response_json_list_=response_json)
+        self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=False, response_json_list_=response_json)
         try:
             if response_json[0]["LAST"]["warnings"].startswith("Unknown"):
                 print("Unknown command?\n")
                 pprint(response_json)
-        except:
-            # Ignore un-handled structs at this point, let calling code deal with it.
+            else:
+                pass
+        finally:
             pass
         return response_json
 
-    #For auto save report
+    # For auto save report
     def auto_save_report(self, instance):
         cmd = "cv click %s 'Auto Save Report'" % instance
         self.run_cv_cmd(cmd)
 
-    #To get the report location
+    # To get the report location
     def get_report_location(self, instance):
         cmd = "cv get %s 'Report Location:'" % instance
         location = self.run_cv_cmd(cmd)
         return location
 
-    #To get if test is running or not
+    # To get if test is running or not
     def get_is_running(self, instance):
         cmd = "cv get %s 'StartStop'" % instance
         val = self.run_cv_cmd(cmd)
-        #pprint(val)
+        # pprint(val)
         return val[0]["LAST"]["response"] == 'StartStop::Stop'
 
-    #To save to html
+    # To save to html
     def save_html(self, instance):
         cmd = "cv click %s 'Save HTML'" % instance
         self.run_cv_cmd(cmd)
 
-    #Check if test instance exists
+    # Check if test instance exists
     def get_exists(self, instance):
         cmd = "cv exists %s" % instance
         val = self.run_cv_cmd(cmd)
-        #pprint(val)
+        # pprint(val)
         return val[0]["LAST"]["response"] == 'YES'
 
-    #Check if chamberview is built
+    # Check if chamberview is built
     def get_cv_is_built(self):
         cmd = "cv is_built"
         val = self.run_cv_cmd(cmd)
-        #pprint(val)
+        # pprint(val)
         rv = val[0]["LAST"]["response"] == 'YES'
         print("is-built: ", rv)
         return rv
 
-    #delete the test instance
+    # delete the test instance
     def delete_instance(self, instance):
         cmd = "cv delete %s" % instance
         self.run_cv_cmd(cmd)
@@ -205,9 +203,9 @@ class cv_test(Realm):
         tries = 0
         while True:
             if self.get_exists(instance):
-                print("Waiting %i/60 for test instance: %s to be deleted."%(tries, instance))
+                print("Waiting %i/60 for test instance: %s to be deleted." % (tries, instance))
                 tries += 1
-                if (tries > 60):
+                if tries > 60:
                     break
                 time.sleep(1)
             else:
@@ -217,15 +215,15 @@ class cv_test(Realm):
         tries = 0
         while True:
             if not self.get_cv_is_built():
-                print("Waiting %i/60 for Chamber-View to be built."%(tries))
+                print("Waiting %i/60 for Chamber-View to be built." % tries)
                 tries += 1
-                if (tries > 60):
+                if tries > 60:
                     break
                 time.sleep(1)
             else:
                 break
 
-    #Get port listing
+    # Get port listing
     def get_ports(self, url="/ports/"):
         response = self.json_get(url)
         return response
@@ -235,12 +233,12 @@ class cv_test(Realm):
         response_json = []
         data = {"type": "Plugin-Settings"}
         if config_name and blob_test_name:
-            data["name"] = "%s%s"%(blob_test_name, config_name)  # config name
+            data["name"] = "%s%s" % (blob_test_name, config_name)  # config name
         else:
             data["name"] = "ALL"
         if brief:
             data["brief"] = "brief"
-        self.json_post(req_url, data,  response_json_list_=response_json)
+        self.json_post(req_url, data, response_json_list_=response_json)
         return response_json
 
     def rm_text_blob(self, config_name, blob_test_name):
@@ -249,17 +247,18 @@ class cv_test(Realm):
             "type": "Plugin-Settings",
             "name": str(blob_test_name + config_name),  # config name
         }
-        rsp = self.json_post(req_url, data)
+        self.json_post(req_url, data)
 
-    def rm_cv_text_blob(self, type="Network-Connectivity", name=None):
+    def rm_cv_text_blob(self, cv_type="Network-Connectivity", name=None):
         req_url = "/cli-json/rm_text_blob"
         data = {
-            "type": type,
+            "type": cv_type,
             "name": name,  # config name
         }
-        rsp = self.json_post(req_url, data)
+        self.json_post(req_url, data)
 
-    def apply_cfg_options(self, cfg_options, enables, disables, raw_lines, raw_lines_file):
+    @staticmethod
+    def apply_cfg_options(cfg_options, enables, disables, raw_lines, raw_lines_file):
 
         # Read in calibration data and whatever else.
         if raw_lines_file != "":
@@ -271,10 +270,10 @@ class cv_test(Realm):
             fp.close()
 
         for en in enables:
-            cfg_options.append("%s: 1"%(en[0]))
+            cfg_options.append("%s: 1" % (en[0]))
 
         for en in disables:
-            cfg_options.append("%s: 0"%(en[0]))
+            cfg_options.append("%s: 0" % (en[0]))
 
         for r in raw_lines:
             cfg_options.append(r[0])
@@ -318,7 +317,7 @@ class cv_test(Realm):
             if response[0]["LAST"]["response"] == "OK":
                 break
             else:
-                print("Could not create test, try: %i/60:\n"%(start_try))
+                print("Could not create test, try: %i/60:\n" % start_try)
                 pprint(response)
                 start_try += 1
                 if start_try > 60:
@@ -381,6 +380,8 @@ class cv_test(Realm):
                         print("SCP failed, user %s, password %s, dest %s" % (lf_user, lf_password, lf_host))
                         raise e  # Exception("Could not find Reports")
                     break
+            else:
+                print('Not reporting to kpi file')
 
             # Of if test stopped for some reason and could not generate report.
             if not self.get_is_running(instance_name):
@@ -416,7 +417,7 @@ class cv_test(Realm):
             print("Not submitting to influx, influx_host not configured.\n")
             return
 
-        print("Creating influxdb connection, host: %s:%s org: %s  token: %s  bucket: %s\n"%
+        print("Creating influxdb connection, host: %s:%s org: %s  token: %s  bucket: %s\n" %
               (args.influx_host, args.influx_port, args.influx_org, args.influx_token, args.influx_bucket))
         # lfjson_host would be if we are reading out of LANforge or some other REST
         # source, which we are not.  So dummy those out.
@@ -434,7 +435,7 @@ class cv_test(Realm):
             kpi_location = self.local_lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
             # the local_lf_report_dir is the parent directory,  need to get the directory name
             csv_path = "%s/kpi.csv" % kpi_location
-        
+
         print("Attempt to submit kpi: ", csv_path)
         print("Posting to influx...\n")
         influxdb.csv_to_influx(csv_path)
@@ -465,7 +466,7 @@ class cv_test(Realm):
             "text": text_blob
         }
 
-        rsp = self.json_post(req_url, data)
+        self.json_post(req_url, data)
 
     def pass_raw_lines_to_cv(self,
                              scenario_name="Automation",
@@ -476,7 +477,7 @@ class cv_test(Realm):
             "name": scenario_name,
             "text": Rawline
         }
-        rsp = self.json_post(req_url, data)
+        self.json_post(req_url, data)
 
         # This is for chamber view buttons
 
@@ -502,13 +503,12 @@ class cv_test(Realm):
     def run_cv_cmd(self, command):  # Send chamber view commands
         response_json = []
         req_url = "/gui-json/cmd"
-        data = {
-            "cmd": command
-        }
-        rsp = self.json_post(req_url, data, debug_=False, response_json_list_=response_json)
+        data = {"cmd": command}
+        self.json_post(req_url, data, debug_=False, response_json_list_=response_json)
         return response_json
 
-    def get_response_string(self, response):
+    @staticmethod
+    def get_response_string(response):
         return response[0]["LAST"]["response"]
 
     def get_popup_info_and_close(self):
