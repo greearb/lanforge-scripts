@@ -120,8 +120,8 @@ MGRLEN=${#MGR}
 COL_NAMES="name,tx_bytes,rx_bytes,dropped"
 
 if [[ ${#DUT2} -eq 0 ]]; then
-  DUT5="linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:25"
-  DUT2="linksys-8450 Default-SSID-2g c4:41:1e:f5:3f:24"
+  DUT5="linksys-8450 j-wpa2-153 c4:41:1e:f5:3f:25 (1)"
+  DUT2="linksys-8450 j-wpa2-153 c4:41:1e:f5:3f:25 (1)"
 fi
 #CURR_TEST_NUM=0
 CURR_TEST_NAME="BLANK"
@@ -161,9 +161,36 @@ function create_bridge_and_station() {
 
 if [[ ${#SHORT} -gt 0 ]]; then
   testCommands=(
-      # run_l3_longevity
-      "./sta_connect_example.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM --test_duration 30s"
-      "./sta_connect.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM --test_duration 15s"
+      "./lf_ap_auto_test.py \
+              --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
+              --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth1 \
+              --dut5_0 '$DUT5' \
+              --dut2_0 '$DUT2' \
+              --max_stations_2 100 \
+              --max_stations_5 100 \
+              --max_stations_dual 200 \
+              --radio2 1.1.wiphy0 \
+              --radio2 1.1.wiphy1 \
+              --set 'Basic Client Connectivity' 1 \
+              --set 'Multi Band Performance' 1 \
+              --set 'Skip 2.4Ghz Tests' 1 \
+              --set 'Skip 5Ghz Tests' 1 \
+              --set 'Throughput vs Pkt Size' 0 \
+              --set 'Capacity' 0 \
+              --set 'Stability' 0 \
+              --set 'Band-Steering' 0 \
+              --set 'Multi-Station Throughput vs Pkt Size' 0 \
+              --set 'Long-Term' 0 \
+              --pull_report \
+              --influx_host c7-graphana \
+              --influx_port 8086 \
+              --influx_org Candela \
+              --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
+              --influx_bucket ben \
+              --influx_tag testbed Ferndale-01 \
+              --local_lf_report_dir /home/matthew/html-reports/"
+
+
   )
 else
   testCommands=(
@@ -198,9 +225,9 @@ else
       # "./layer4_test.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY"
       "./lf_ap_auto_test.py \
         --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
-        --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth2 \
-        --dut5_0 '$DUT5 (2)' \
-        --dut2_0 '$DUT2 (1)' \
+        --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth1 \
+        --dut5_0 '$DUT5' \
+        --dut2_0 '$DUT2' \
         --max_stations_2 100 \
         --max_stations_5 100 \
         --max_stations_dual 200 \
