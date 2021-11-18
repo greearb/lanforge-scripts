@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''
+"""
 NAME: lf_kpi_csv.py
 
 PURPOSE:
@@ -17,13 +17,12 @@ COPYWRITE
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README
-'''
+"""
 # may need pandas if a data frame is passed in
 # import pandas as pd
 import csv
 import time
 import argparse
-
 
 '''
 Note teh delimiter for the kpi.csv is a tab
@@ -49,21 +48,25 @@ A blank entry is a valid entry in some cases.
 
 '''
 
+
 class lf_kpi_csv:
     def __init__(self,
-                _kpi_headers = ['Date','test-rig','test-tag','dut-hw-version','dut-sw-version','dut-model-num','dut-serial-num',
-                                'test-priority','test-id','short-description','pass/fail','numeric-score',
-                                'test details','Units','Graph-Group','Subtest-Pass','Subtest-Fail'],
-                _kpi_filename = 'kpi.csv', #Currently this is the only file name accepted
-                _kpi_path = "",
-                _kpi_test_rig = "TEST_RIG",
-                _kpi_test_tag = "TEST_TAG",
-                _kpi_dut_hw_version = "HW_VERSION",
-                _kpi_dut_sw_version = "SW_VERSION",
-                _kpi_dut_model_num = "MODEL_NUM",
-                _kpi_dut_serial_num = "SERIAL_NUM",
-                _kpi_test_id = "TEST_ID"
-                ):
+                 _kpi_headers=None,
+                 _kpi_filename='kpi.csv',  # Currently this is the only file name accepted
+                 _kpi_path="",
+                 _kpi_test_rig="TEST_RIG",
+                 _kpi_test_tag="TEST_TAG",
+                 _kpi_dut_hw_version="HW_VERSION",
+                 _kpi_dut_sw_version="SW_VERSION",
+                 _kpi_dut_model_num="MODEL_NUM",
+                 _kpi_dut_serial_num="SERIAL_NUM",
+                 _kpi_test_id="TEST_ID"
+                 ):
+        if _kpi_headers is None:
+            _kpi_headers = ['Date', 'test-rig', 'test-tag', 'dut-hw-version', 'dut-sw-version', 'dut-model-num',
+                            'dut-serial-num',
+                            'test-priority', 'test-id', 'short-description', 'pass/fail', 'numeric-score',
+                            'test details', 'Units', 'Graph-Group', 'Subtest-Pass', 'Subtest-Fail']
         self.kpi_headers = _kpi_headers
         self.kpi_filename = _kpi_filename
         self.kpi_full_path = ''
@@ -82,13 +85,13 @@ class lf_kpi_csv:
             print("self.kpi_filename {kpi_filename}".format(kpi_filename=self.kpi_filename))
             if self.kpi_path == "":
                 kpifile = self.kpi_filename
-            else:            
+            else:
                 kpifile = self.kpi_path + '/' + self.kpi_filename
             print("kpifile {kpifile}".format(kpifile=kpifile))
-            self.kpi_file = open(kpifile,'w')
+            self.kpi_file = open(kpifile, 'w')
             self.kpi_writer = csv.DictWriter(self.kpi_file, delimiter="\t", fieldnames=self.kpi_headers)
             self.kpi_writer.writeheader()
-        except BaseException:
+        except:
             print("lf_kpi_csv.py: {} WARNING unable to open".format(self.kpi_file))
 
         self.kpi_dict = dict()
@@ -110,17 +113,14 @@ class lf_kpi_csv:
         self.kpi_dict['Subtest-Pass'] = ''
         self.kpi_dict['Subtest-Fail'] = ''
 
-
-    def kpi_csv_get_dict(self):
-        return self.kpi_dict
-
     def kpi_csv_get_dict_update_time(self):
         self.kpi_dict['Date'] = '{date}'.format(date=round(time.time() * 1000))
         return self.kpi_dict
 
-    def kpi_csv_write_dict(self,kpi_dict):
+    def kpi_csv_write_dict(self, kpi_dict):
         self.kpi_writer.writerow(kpi_dict)
         self.kpi_file.flush()
+
 
 def main():
     # arguments
@@ -166,12 +166,18 @@ Example :
         '--local_lf_report_dir',
         help='--local_lf_report_dir override the report path, primary use when running test in test suite',
         default="")
-    parser.add_argument("--test_rig", default="lanforge", help="test rig for kpi.csv, testbed that the tests are run on")
-    parser.add_argument("--test_tag", default="kpi_generation", help="test tag for kpi.csv,  test specific information to differenciate the test")
-    parser.add_argument("--dut_hw_version", default="hw_01", help="dut hw version for kpi.csv, hardware version of the device under test")
-    parser.add_argument("--dut_sw_version", default="sw_01", help="dut sw version for kpi.csv, software version of the device under test")
-    parser.add_argument("--dut_model_num", default="can_ap", help="dut model for kpi.csv,  model number / name of the device under test")
-    parser.add_argument("--test_priority", default="95", help="dut model for kpi.csv,  test-priority is arbitrary number")
+    parser.add_argument("--test_rig", default="lanforge",
+                        help="test rig for kpi.csv, testbed that the tests are run on")
+    parser.add_argument("--test_tag", default="kpi_generation",
+                        help="test tag for kpi.csv,  test specific information to differenciate the test")
+    parser.add_argument("--dut_hw_version", default="hw_01",
+                        help="dut hw version for kpi.csv, hardware version of the device under test")
+    parser.add_argument("--dut_sw_version", default="sw_01",
+                        help="dut sw version for kpi.csv, software version of the device under test")
+    parser.add_argument("--dut_model_num", default="can_ap",
+                        help="dut model for kpi.csv,  model number / name of the device under test")
+    parser.add_argument("--test_priority", default="95",
+                        help="dut model for kpi.csv,  test-priority is arbitrary number")
     parser.add_argument("--test_id", default="kpi_unit_test", help="test-id for kpi.csv,  script or test name")
     '''
     Other values that are included in the kpi.csv row.
@@ -185,29 +191,18 @@ Example :
 
     args = parser.parse_args()
 
-    local_lf_report_dir = args.local_lf_report_dir
-
-    test_rig = args.test_rig
-    test_tag = args.test_tag
-    dut_hw_version = args.dut_hw_version
-    dut_sw_version = args.dut_sw_version
-    dut_model_num = args.dut_model_num
-    test_priority = args.test_priority # this may need to be set per test
-    test_id = args.test_id
-
     # Get the report path to create the kpi.csv path
     # kpi_path = report.get_report_path() in normal use case would get from lf_report.py library
-    kpi_path = local_lf_report_dir = args.local_lf_report_dir
     kpi_csv = lf_kpi_csv(
-        _kpi_path = kpi_path,
-        _kpi_test_rig = test_rig,
-        _kpi_test_tag = test_tag,
-        _kpi_dut_hw_version = dut_hw_version,
-        _kpi_dut_sw_version = dut_sw_version,
-        _kpi_dut_model_num = dut_model_num,
-        _kpi_test_id = test_id)
+        _kpi_path=args.local_lf_report_dir,
+        _kpi_test_rig=args.test_rig,
+        _kpi_test_tag=args.test_tag,
+        _kpi_dut_hw_version=args.dut_hw_version,
+        _kpi_dut_sw_version=args.dut_sw_version,
+        _kpi_dut_model_num=args.dut_model_num,
+        _kpi_test_id=args.test_id)
 
-    results_dict = kpi_csv.kpi_csv_get_dict()
+    results_dict = kpi_csv.kpi_dict
 
     results_dict['Graph-Group'] = "graph_group"
     results_dict['short-description'] = "short_description"
@@ -219,7 +214,6 @@ Example :
 
     kpi_csv.kpi_csv_write_dict(results_dict)
 
-
     # reuse the dictionary
     results_dict['Graph-Group'] = "graph_group_1_5"
     results_dict['short-description'] = "short_description_1_5"
@@ -229,17 +223,17 @@ Example :
     kpi_csv.kpi_csv_write_dict(results_dict)
 
     # append to a row to the existing dictionary
-    results_dict_2 = kpi_csv.kpi_csv_get_dict()
+    results_dict_2 = kpi_csv.kpi_dict
     # modify an entry
     results_dict_2['test-tag'] = 'kpi_generation_2'
-    results_dict['Graph-Group'] = "graph_group"
-    results_dict['short-description'] = "short_description"
-    results_dict['numeric-score'] = "100"
-    results_dict['Units'] = "Mbps"
+    results_dict_2['Graph-Group'] = "graph_group"
+    results_dict_2['short-description'] = "short_description"
+    results_dict_2['numeric-score'] = "100"
+    results_dict_2['Units'] = "Mbps"
     print("results_dict_2 {results_dict_2}".format(results_dict_2=results_dict_2))
     print("date 2 {date}".format(date=results_dict_2['Date']))
     kpi_csv.kpi_csv_write_dict(results_dict_2)
 
 
 if __name__ == "__main__":
-    main()    
+    main()
