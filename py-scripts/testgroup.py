@@ -22,13 +22,17 @@ Realm = realm.Realm
 class TestGroup(LFCliBase):
     def __init__(self, host, port,
                  group_name=None,
-                 add_cx_list=[],
-                 rm_cx_list=[],
+                 add_cx_list=None,
+                 rm_cx_list=None,
                  tg_action=None,
                  cx_action=None,
                  list_groups=None,
                  show_group=None):
 
+        if add_cx_list is None:
+            add_cx_list = []
+        if rm_cx_list is None:
+            rm_cx_list = []
         self.local_realm = realm.Realm(lfclient_host=host, lfclient_port=port)
         self.tg_profile = self.local_realm.new_test_group_profile()
         if group_name is None and list_groups is None and (tg_action is not None or cx_action is not None or
@@ -42,13 +46,15 @@ class TestGroup(LFCliBase):
         self.cx_action = cx_action
         self.list_groups = list_groups
         self.show_group = show_group
-        if add_cx_list is not None and len(add_cx_list) == 1 and ',' in add_cx_list[0]:
-            self.add_cx_list = add_cx_list[0].split(',')
+        if add_cx_list:
+            if len(add_cx_list) == 1 and ',' in add_cx_list[0]:
+                self.add_cx_list = add_cx_list[0].split(',')
         else:
             self.add_cx_list = add_cx_list
 
-        if rm_cx_list is not None and len(rm_cx_list) == 1 and ',' in rm_cx_list[0]:
-            self.rm_cx_list = rm_cx_list[0].split(',')
+        if rm_cx_list:
+            if len(rm_cx_list) == 1 and ',' in rm_cx_list[0]:
+                self.rm_cx_list = rm_cx_list[0].split(',')
         else:
             self.rm_cx_list = rm_cx_list
 
