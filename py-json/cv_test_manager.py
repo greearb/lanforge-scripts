@@ -137,24 +137,6 @@ class cv_test(Realm):
         cmd = "cv click '%s' Cancel" % instance
         self.run_cv_cmd(cmd)
 
-    # Send chamber view commands to the LANforge GUI
-    def run_cv_cmd(self, command):
-        response_json = []
-        data = {
-            "cmd": command
-        }
-        debug_par = ""
-        self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=False, response_json_list_=response_json)
-        try:
-            if response_json[0]["LAST"]["warnings"].startswith("Unknown"):
-                print("Unknown command?\n")
-                pprint(response_json)
-            else:
-                pass
-        finally:
-            pass
-        return response_json
-
     # For auto save report
     def auto_save_report(self, instance):
         cmd = "cv click %s 'Auto Save Report'" % instance
