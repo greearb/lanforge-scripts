@@ -411,11 +411,11 @@ class cv_test(Realm):
 
         # lf_wifi_capacity_test.py may be run / initiated by a remote system against a lanforge
         # the local_lf_report_dir is where data is stored,  if there is no local_lf_report_dir then the test is run directly on lanforge
-        if self.local_lf_report_dir is None:
+        if self.lf_report_dir:
             csv_path = "%s/kpi.csv" % self.lf_report_dir
         else:
-            kpi_location = self.local_lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
-            # the local_lf_report_dir is the parent directory,  need to get the directory name
+            kpi_location = self.lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
+            # the lf_report_dir is the parent directory,  need to get the directory name
             csv_path = "%s/kpi.csv" % kpi_location
 
         print("Attempt to submit kpi: ", csv_path)
