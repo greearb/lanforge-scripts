@@ -138,7 +138,6 @@ class DataplaneTest(cv_test):
                  raw_lines_file="",
                  sets=[],
                  graph_groups=None,
-                 report_dir="",
                  test_rig=""
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
@@ -164,7 +163,6 @@ class DataplaneTest(cv_test):
         self.raw_lines_file = raw_lines_file
         self.sets = sets
         self.graph_groups = graph_groups
-        self.report_dir = report_dir
         self.ssh_port = ssh_port
         self.local_lf_report_dir = local_lf_report_dir
         self.test_rig = test_rig
@@ -313,7 +311,6 @@ def main():
                         help="Specify duration of each traffic run")
     parser.add_argument(
         "--graph_groups", help="File to save graph_groups to", default=None)
-    parser.add_argument("--report_dir", default="")
     parser.add_argument("--local_lf_report_dir",
                         help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from", default="")
 
