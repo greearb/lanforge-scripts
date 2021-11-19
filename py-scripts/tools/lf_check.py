@@ -874,8 +874,8 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                     self.test_start_time = str(datetime.datetime.now().strftime(
                         "%Y-%m-%d-%H-%M-%S")).replace(':', '-')
                     print(
-                        "Test start: {time}".format(
-                            time=self.test_start_time))
+                        "Test start: {time} Timeout: {timeout}".format(
+                            time=self.test_start_time,timeout=self.test_timeout))
                     start_time = datetime.datetime.now()
                     try:
                         process = subprocess.Popen(command_to_run, shell=False, stdout=stdout_log, stderr=stderr_log,
@@ -1099,9 +1099,9 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                     # self.logger.info("row: {}".format(row))
                     self.logger.info("test: {} executed".format(test))
 
-                else:
-                    self.logger.info(
-                        "enable value {} invalid for test: {}, test skipped".format(self.test_dict[test]['enabled'], test))
+            else:
+                self.logger.info(
+                    "enable value {} for test: {} ".format(self.test_dict[test]['enabled'], test))
         self.finish_html_results()
 
 

@@ -2546,6 +2546,10 @@ Setting wifi_settings per radio
         default="",
         help="dut model for kpi.csv,  model number / name of the device under test")
     parser.add_argument(
+        "--dut_serial_num",
+        default="",
+        help="dut serial for kpi.csv, serial number / serial number of the device under test")
+    parser.add_argument(
         "--test_priority",
         default="",
         help="dut model for kpi.csv,  test-priority is arbitrary number")
@@ -2764,6 +2768,7 @@ Setting wifi_settings per radio
     dut_hw_version = args.dut_hw_version
     dut_sw_version = args.dut_sw_version
     dut_model_num = args.dut_model_num
+    dut_serial_num = args.dut_serial_num
     # test_priority = args.test_priority  # this may need to be set per test
     test_id = args.test_id
 
@@ -2870,6 +2875,7 @@ Setting wifi_settings per radio
         _kpi_dut_hw_version=dut_hw_version,
         _kpi_dut_sw_version=dut_sw_version,
         _kpi_dut_model_num=dut_model_num,
+        _kpi_dut_serial_num=dut_serial_num,
         _kpi_test_id=test_id)
 
     if args.csv_outfile is not None:

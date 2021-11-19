@@ -428,7 +428,7 @@ class csv_sql:
                         self.dut_serial_num_list = list(
                             set(list(df_tmp['dut-serial-num'])))
                         if self.dut_serial_num_list[0] is not None:
-                            self.dut_serial_num_ = self.dut_serial_num_list[0]
+                            self.dut_serial_num = self.dut_serial_num_list[0]
 
                         print(
                             "In png DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}" .format(
