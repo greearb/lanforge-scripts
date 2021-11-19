@@ -16,7 +16,7 @@ from pprint import pprint
 
 # ---- ---- ---- ---- LANforge Base Imports ---- ---- ---- ----
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LANforge = importlib.import_module("py-json.LANforge")
@@ -28,8 +28,6 @@ LFCliBase = lfcli_base.LFCliBase
 
 l3_cxprofile = importlib.import_module("py-json.l3_cxprofile")
 L3CXProfile = l3_cxprofile.L3CXProfile
-l3_cxprofile2 = importlib.import_module("py-json.l3_cxprofile2")
-L3CXProfile2 = l3_cxprofile2.L3CXProfile2
 l4_cxprofile = importlib.import_module("py-json.l4_cxprofile")
 L4CXProfile = l4_cxprofile.L4CXProfile
 lf_attenmod = importlib.import_module("py-json.lf_attenmod")
@@ -62,6 +60,7 @@ lfdata = importlib.import_module("py-json.lfdata")
 LFDataCollection = lfdata.LFDataCollection
 vr_profile2 = importlib.import_module("py-json.vr_profile2")
 VRProfile = vr_profile2.VRProfile
+
 
 def wpa_ent_list():
     return [
@@ -239,7 +238,7 @@ class Realm(LFCliBase):
             "shelf": eid[0],
             "resource": eid[1],
             "port": eid[2]
-            }
+        }
         self.json_post(req_url, data, debug_=debug_)
         return True
 
@@ -409,7 +408,8 @@ class Realm(LFCliBase):
                         name = list(endp_list[idx])[0]
                         found_endps[name] = name
                 except:
-                    print("non-fatal exception endp_list = list(endp_list['endpoint'] did not exist, will wait some more")
+                    print(
+                        "non-fatal exception endp_list = list(endp_list['endpoint'] did not exist, will wait some more")
 
             for req in these_endp:
                 if not req in found_endps:
@@ -451,7 +451,7 @@ class Realm(LFCliBase):
 
         return not wait_more
 
-    #def wait_until_database_loaded(self):
+    # def wait_until_database_loaded(self):
 
     # Returns map of all stations with port+type == WIFI-STATION
     # Key is the EID, value is the map of key/values for the port values.
@@ -522,9 +522,9 @@ class Realm(LFCliBase):
             "shelf": eid_toks[0],
             "resource": eid_toks[1],
             "serno": eid_toks[2],
-            "atten_idx":eid_toks[3],
-            "val":atten_ddb,
-            }
+            "atten_idx": eid_toks[3],
+            "val": atten_ddb,
+        }
         self.json_post(req_url, data)
 
     # removes port by eid/eidpn
@@ -613,7 +613,7 @@ class Realm(LFCliBase):
 
     def name_to_eid(self, eid, debug=False, non_port=False):
         if debug:
-            self.logg(level="debug", mesg="name_to_eid: "+str(eid))
+            self.logg(level="debug", mesg="name_to_eid: " + str(eid))
         if (type(eid) is list) or (type(eid) is tuple):
             return eid
         return LFUtils.name_to_eid(eid, non_port=non_port)
@@ -764,7 +764,6 @@ class Realm(LFCliBase):
             raise ValueError("time_string must be of type str. Type %s provided" % type(time_string))
         return duration_sec
 
-
     def remove_all_stations(self, resource):
         port_list = self.station_list()
         sta_list = []
@@ -837,80 +836,74 @@ class Realm(LFCliBase):
         link = self.lfclient_url + link
         info = ()
 
-    def new_station_profile(self, ver = 1):
+    def new_station_profile(self, ver=1):
         if ver == 1:
             station_prof = StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
-        #elif ver == 2:
-            # import station_profile2
-            # station_prof = station_profile2.StationProfile2(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
+        # elif ver == 2:
+        # import station_profile2
+        # station_prof = station_profile2.StationProfile2(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
         return station_prof
 
-    def new_multicast_profile(self, ver = 1):
+    def new_multicast_profile(self, ver=1):
         if ver == 1:
             multi_prof = MULTICASTProfile(self.lfclient_host, self.lfclient_port,
-                                      local_realm=self, debug_=self.debug, report_timer_=3000)
-        #elif ver == 2:
-            # import multicast_profile2
-            # multi_prof = multicast_profile2.MULTICASTProfile2(self.lfclient_host, self.lfclient_port,
-            #                           local_realm=self, debug_=self.debug, report_timer_=3000)
+                                          local_realm=self, debug_=self.debug, report_timer_=3000)
+        # elif ver == 2:
+        # import multicast_profile2
+        # multi_prof = multicast_profile2.MULTICASTProfile2(self.lfclient_host, self.lfclient_port,
+        #                           local_realm=self, debug_=self.debug, report_timer_=3000)
         return multi_prof
 
-    def new_wifi_monitor_profile(self, resource_=1, debug_=False, up_=False, ver = 1):
+    def new_wifi_monitor_profile(self, resource_=1, debug_=False, up_=False, ver=1):
         if ver == 1:
             wifi_mon_prof = WifiMonitor(self.lfclient_url,
-                                    local_realm=self,
-                                    resource_=resource_,
-                                    up=up_,
-                                    debug_=(self.debug or debug_))
-        #elif ver == 2:
-            # import wifi_monitor_profile2
-            # wifi_mon_prof = wifi_monitor_profile2.WifiMonitor2(self.lfclient_url,
-            #                         local_realm=self,
-            #                         resource_=resource_,
-            #                         up=up_,
-            #                         debug_=(self.debug or debug_))
+                                        local_realm=self,
+                                        resource_=resource_,
+                                        up=up_,
+                                        debug_=(self.debug or debug_))
+        # elif ver == 2:
+        # import wifi_monitor_profile2
+        # wifi_mon_prof = wifi_monitor_profile2.WifiMonitor2(self.lfclient_url,
+        #                         local_realm=self,
+        #                         resource_=resource_,
+        #                         up=up_,
+        #                         debug_=(self.debug or debug_))
         return wifi_mon_prof
 
-    def new_l3_cx_profile(self, ver=1):
-        if ver == 1:
-            cx_prof = L3CXProfile(self.lfclient_host,
-                              self.lfclient_port,
-                              local_realm=self,
-                              debug_=self.debug,
-                              report_timer_=3000)
-        elif ver == 2:
-            cx_prof = L3CXProfile2(self.lfclient_host,
-                              self.lfclient_port,
-                              local_realm=self,
-                              debug_=self.debug,
-                              report_timer_=3000)
-        return cx_prof
+    def new_l3_cx_profile(self):
+        return L3CXProfile(self.lfclient_host,
+                           self.lfclient_port,
+                           local_realm=self,
+                           debug_=self.debug,
+                           report_timer_=3000)
 
     def new_l4_cx_profile(self, ver=1):
         if ver == 1:
             cx_prof = L4CXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        #elif ver == 2:
-            # import l4_cxprofile2
-            # cx_prof = l4_cxprofile2.L4CXProfile2(self.lfclient_host,
-            #                   self.lfclient_port,
-            #                   local_realm=self,
-            #                   debug_=self.debug,
-            #                   report_timer_=3000)
+        # elif ver == 2:
+        # import l4_cxprofile2
+        # cx_prof = l4_cxprofile2.L4CXProfile2(self.lfclient_host,
+        #                   self.lfclient_port,
+        #                   local_realm=self,
+        #                   debug_=self.debug,
+        #                   report_timer_=3000)
         return cx_prof
+
     def new_attenuator_profile(self, ver=1):
         if ver == 1:
             atten_prof = ATTENUATORProfile(self.lfclient_host, self.lfclient_port, debug_=self.debug)
-        return  atten_prof
+        return atten_prof
+
     def new_generic_endp_profile(self, ver=1):
-        if ver == 1 :
+        if ver == 1:
             endp_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        #elif ver == 2:
-            # import gen_cxprofile2
-            # endp_prof = gen_cxprofile2.GenCXProfile(self.lfclient_host,
-            #                   self.lfclient_port,
-            #                   local_realm=self,
-            #                   debug_=self.debug,
-            #                   report_timer_=3000)
+        # elif ver == 2:
+        # import gen_cxprofile2
+        # endp_prof = gen_cxprofile2.GenCXProfile(self.lfclient_host,
+        #                   self.lfclient_port,
+        #                   local_realm=self,
+        #                   debug_=self.debug,
+        #                   report_timer_=3000)
         return endp_prof
 
     def new_generic_cx_profile(self, ver=1):
@@ -920,19 +913,19 @@ class Realm(LFCliBase):
         """
         if ver == 1:
             cx_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        #elif ver == 2:
-            # import gen_cxprofile2
-            # cx_prof = gen_cxprofile2.GenCXProfile(self.lfclient_host,
-            #                   self.lfclient_port,
-            #                   local_realm=self,
-            #                   debug_=self.debug,
-            #                   report_timer_=3000)
+        # elif ver == 2:
+        # import gen_cxprofile2
+        # cx_prof = gen_cxprofile2.GenCXProfile(self.lfclient_host,
+        #                   self.lfclient_port,
+        #                   local_realm=self,
+        #                   debug_=self.debug,
+        #                   report_timer_=3000)
         return cx_prof
 
     def new_vap_profile(self, ver=1):
         if ver == 1:
             vap_prof = VAPProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
-                              debug_=self.debug)
+                                  debug_=self.debug)
         # elif ver == 2:
         #     import vap_profile2
         #     vap_prof = vap_profile2.VAPProfile2(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
@@ -944,7 +937,7 @@ class Realm(LFCliBase):
                             debug=self.debug)
         return vr_prof
 
-    def new_http_profile(self, ver = 1):
+    def new_http_profile(self, ver=1):
         if ver == 1:
             http_prof = HTTPProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         # elif ver == 2:
@@ -952,7 +945,7 @@ class Realm(LFCliBase):
         #     http_prof = http_profile2.HTTPProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return http_prof
 
-    def new_fio_endp_profile(self, ver = 1):
+    def new_fio_endp_profile(self, ver=1):
         if ver == 1:
             cx_prof = FIOEndpProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         # elif ver == 2:
@@ -960,7 +953,7 @@ class Realm(LFCliBase):
         #     cx_prof = fio_endp_profile2.FIOEndpProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return cx_prof
 
-    def new_dut_profile(self, ver = 1):
+    def new_dut_profile(self, ver=1):
         if ver == 1:
             dut_profile = DUTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         # elif ver == 2:
@@ -968,9 +961,10 @@ class Realm(LFCliBase):
         #     dut_profile = dut_profile2.DUTProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
         return dut_profile
 
-    def new_mvlan_profile(self, ver = 1):
+    def new_mvlan_profile(self, ver=1):
         if ver == 1:
-            mac_vlan_profile = MACVLANProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+            mac_vlan_profile = MACVLANProfile(self.lfclient_host, self.lfclient_port, local_realm=self,
+                                              debug_=self.debug)
         # elif ver == 2:
         #     import mac_vlan_profile2
         #     mac_vlan_profile = mac_vlan_profile2.MACVLANProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
@@ -979,9 +973,10 @@ class Realm(LFCliBase):
     def new_qvlan_profile(self):
         return QVLANProfile(self.host, self.port, local_realm=self, debug_=self.debug)
 
-    def new_test_group_profile(self, ver = 1):
+    def new_test_group_profile(self, ver=1):
         if ver == 1:
-            test_group_profile = TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+            test_group_profile = TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self,
+                                                  debug_=self.debug)
         # elif ver == 2:
         #     import test_group_profile2
         #     test_group_profile = test_group_profile2.TestGroupProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
@@ -989,6 +984,7 @@ class Realm(LFCliBase):
 
     def new_lf_data_collection(self):
         return LFDataCollection(local_realm=self)
+
 
 class PacketFilter():
 
