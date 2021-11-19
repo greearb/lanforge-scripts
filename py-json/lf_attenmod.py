@@ -72,7 +72,7 @@ class ATTENUATORProfile(LFCliBase):
     def create(self):
         if int(self.atten_val) > 955:
             raise ValueError("Attenuation ddB value must be 955 or less")
-        if int(self.atten_idx) > 7:
+        if int(self.atten_idx) > 7 or self.atten_idx == 'all':
             raise ValueError("Attenuation ddB value must be 7 or less")
         print("Setting Attenuator...")
         self.set_command_param("set_attenuator", "serno", self.atten_serno)
