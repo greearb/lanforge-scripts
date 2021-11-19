@@ -178,6 +178,7 @@ cv_test_manager = importlib.import_module("py-json.cv_test_manager")
 cvtest = cv_test_manager.cv_test
 cv_add_base_parser = cv_test_manager.cv_add_base_parser
 cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 
 class ApAutoTest(cvtest):
@@ -187,10 +188,11 @@ class ApAutoTest(cvtest):
                  lf_user="lanforge",
                  lf_password="lanforge",
                  ssh_port=22,
-                 local_lf_report_dir="",
+                 local_lf_report_dir=None,
+                 lf_report_dir=None,
                  instance_name="ap_auto_instance",
                  config_name="ap_auto_config",
-                 upstream="1.1.eth1",
+                 upstream=None,
                  pull_report=False,
                  dut5_0="NA",
                  dut2_0="NA",
@@ -245,6 +247,7 @@ class ApAutoTest(cvtest):
         self.sets = sets
         self.ssh_port = ssh_port
         self.graph_groups = graph_groups
+        self.lf_report_dir = lf_report_dir
         self.local_lf_report_dir = local_lf_report_dir
 
     def setup(self):
@@ -277,8 +280,8 @@ class ApAutoTest(cvtest):
         self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
 
         # Command line args take precedence.
-        if self.upstream != "":
-            cfg_options.append("upstream_port: " + self.upstream)
+        if self.upstream:
+            cfg_options.append("upstream-port: %s" % self.upstream)
         if self.dut5_0 != "":
             cfg_options.append("dut5-0: " + self.dut5_0)
         if self.dut2_0 != "":
@@ -332,7 +335,7 @@ def main():
     )
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
-    parser.add_argument("-u", "--upstream", type=str, default="",
+    parser.add_argument("-u", "--upstream", type=str, required=True,
                         help="Upstream port for wifi capacity test ex. 1.1.eth1")
 
     parser.add_argument("--max_stations_2", type=int, default=-1,
@@ -353,6 +356,9 @@ def main():
     parser.add_argument("--local_lf_report_dir",
                         help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",
                         default="")
+    parser.add_argument("--lf_report_dir",
+                        help="--lf_report_dir <where to pull reports from>  default '' put where dataplane script run from",
+                        default="")
 
     args = parser.parse_args()
 
@@ -367,6 +373,7 @@ def main():
                          upstream=args.upstream,
                          pull_report=args.pull_report,
                          local_lf_report_dir=args.local_lf_report_dir,
+                         lf_report_dir=args.lf_report_dir,
                          dut5_0=args.dut5_0,
                          dut2_0=args.dut2_0,
                          load_old_cfg=args.load_old_cfg,
