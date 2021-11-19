@@ -55,9 +55,9 @@ def cv_add_base_parser(parser):
     parser.add_argument("-c", "--config_name", type=str, default="cv_dflt_cfg",
                         help="Config file name")
 
-    parser.add_argument("-r", "--pull_report", default=False, action='store_true',
+    parser.add_argument("-r", "--pull_report", action='store_true',
                         help="pull reports from lanforge (by default: False)")
-    parser.add_argument("--load_old_cfg", default=False, action='store_true',
+    parser.add_argument("--load_old_cfg", action='store_true',
                         help="Should we first load defaults from previous run of the capacity test?  Default is False")
 
     parser.add_argument("--enable", action='append', nargs=1, default=[],
