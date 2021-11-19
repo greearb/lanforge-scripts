@@ -2,7 +2,8 @@
 import datetime
 import random
 import string
-from pprint import pprint
+from pprint import pformat
+
 
 class BaseProfile:
     def __init__(self, local_realm, debug=False):
@@ -11,9 +12,8 @@ class BaseProfile:
         self.debug = debug or local_realm.debug
         self.profiles = []
 
-
     def json_get(self, _req_url, debug_=False):
-        return self.parent_realm.json_get(_req_url, debug_=False)
+        return self.parent_realm.json_get(_req_url, debug_=debug_)
 
     def json_post(self, req_url=None, data=None, debug_=False, suppress_related_commands_=None):
         return self.parent_realm.json_post(_req_url=req_url,
@@ -34,52 +34,56 @@ class BaseProfile:
         return self.parent_realm.rm_cx(cx_name)
 
     def rm_endp(self, ename, debug_=False, suppress_related_commands_=True):
-        self.parent_realm.rm_endp(ename, debug_=False, suppress_related_commands_=True)
+        self.parent_realm.rm_endp(ename, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
 
     def name_to_eid(self, eid):
         return self.parent_realm.name_to_eid(eid)
 
     def set_endp_tos(self, ename, _tos, debug_=False, suppress_related_commands_=True):
-        return self.parent_realm.set_endp_tos(ename, _tos, debug_=False, suppress_related_commands_=True)
+        return self.parent_realm.set_endp_tos(ename, _tos, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
 
     def wait_until_endps_appear(self, these_endp, debug=False):
-        return self.parent_realm.wait_until_endps_appear(these_endp, debug=False)
+        return self.parent_realm.wait_until_endps_appear(these_endp, debug=debug)
 
     def wait_until_cxs_appear(self, these_cx, debug=False):
-        return self.parent_realm.wait_until_cxs_appear(these_cx, debug=False)
+        return self.parent_realm.wait_until_cxs_appear(these_cx, debug=debug)
 
     def logg(self, message=None, audit_list=None):
         if audit_list is None:
             self.parent_realm.logg(message)
         for item in audit_list:
-            if (item is None):
+            if item is None:
                 continue
-            message += ("\n" + pprint.pformat(item, indent=4))
+            message += ("\n" + pformat(item, indent=4))
         self.parent_realm.logg(message)
 
-    def replace_special_char(self, str):
-        return str.replace('+', ' ').replace('_', ' ').strip(' ')
+    @staticmethod
+    def replace_special_char(original):
+        return original.replace('+', ' ').replace('_', ' ').strip(' ')
 
     # @deprecate me
-    def get_milliseconds(self, timestamp):
-        return (timestamp - datetime.datetime(1970,1,1)).total_seconds()*1000
+    @staticmethod
+    def get_milliseconds(timestamp):
+        return (timestamp - datetime.datetime(1970, 1, 1)).total_seconds() * 1000
 
     # @deprecate me
-    def get_seconds(self, timestamp):
-        return (timestamp - datetime.datetime(1970,1,1)).total_seconds()
+    @staticmethod
+    def get_seconds(timestamp):
+        return (timestamp - datetime.datetime(1970, 1, 1)).total_seconds()
 
-    def read_file(self, filename):
+    @staticmethod
+    def read_file(filename):
         filename = open(filename, 'r')
         return [line.split(',') for line in filename.readlines()]
 
-    #Function to create random characters made of letters
-    def random_chars(self, size, chars=None):
+    # Function to create random characters made of letters
+    @staticmethod
+    def random_chars(size, chars=None):
         if chars is None:
             chars = string.ascii_letters
-        return ''.join(random.choice(chars) for x in range(size))
+        return ''.join(random.choice(chars) for _ in range(size))
 
-
-    #--------------- create file path / find file path code - to be put into functions
+    # --------------- create file path / find file path code - to be put into functions
     # #Find file path to save data/csv to:
     #     if args.report_file is None:
     #         new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
@@ -100,7 +104,7 @@ class BaseProfile:
     #             print('Not supporting this report format or cannot find report format provided. Defaulting to csv data file output type, naming it data.csv.')
     #             report_f = str(path) + '/data.csv'
     #             output = 'csv'
-                
+
     #     else:
     #         report_f = args.report_file
     #         if args.output_format is None:
@@ -118,5 +122,3 @@ class BaseProfile:
     #             exit(1)
     #         else:
     #             compared_rept=args.compared_report
-
-    
