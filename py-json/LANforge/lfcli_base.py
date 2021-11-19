@@ -50,7 +50,9 @@ class LFCliBase:
                  _exit_on_fail=False,
                  _local_realm=None,
                  _proxy_str=None,
-                 _capture_signal_list=[]):
+                 _capture_signal_list=None):
+        if _capture_signal_list is None:
+            _capture_signal_list = []
         self.fail_pref = "FAILED: "
         self.pass_pref = "PASSED: "
         self.lfclient_host = _lfjson_host
@@ -82,7 +84,7 @@ class LFCliBase:
 
         if len(_capture_signal_list) > 0:
             for zignal in _capture_signal_list:
-                self.captured_signal(zignal, self.my_captured_signal)
+                self.captured_signal(zignal)
         #
 
     def _finish(self):
@@ -149,7 +151,8 @@ class LFCliBase:
                 print("sending signal %s to thread %s" % (signum, name))
             # do a thing
 
-    def my_captured_signal(self, signum):
+    @staticmethod
+    def my_captured_signal(signum):
         """
         Override me to process signals, otherwise superclass signal handler is called.
         You may use _finish() or _halt() to indicate finishing soon or halting immediately.
@@ -205,7 +208,8 @@ class LFCliBase:
         else:
             self.log_register_tag(reserved_tag)
 
-    def log_set_filename(self, filename=None):
+    @staticmethod
+    def log_set_filename(filename=None):
         if not filename:
             return
         logging.basicConfig(filename=filename)
@@ -399,7 +403,8 @@ class LFCliBase:
 
         return reverse_map
 
-    def error(self, exception):
+    @staticmethod
+    def error(exception):
         # print("lfcli_base error: %s" % exception)
         pprint.pprint(exception)
         traceback.print_exception(Exception, exception, exception.__traceback__, chain=True)
@@ -513,16 +518,17 @@ class LFCliBase:
         #     pprint.pprint(self.proxy)
 
 
-    def logg2(self, level="debug", mesg=None):
+    @staticmethod
+    def logg2(level="debug", mesg=None):
         if (mesg is None) or (mesg == ""):
             return
         print("[{level}]: {msg}".format(level=level, msg=mesg))
 
-    def logg(self,
-              level=None,
-              mesg=None,
-              filename=None,
-              scriptname=None):
+    @staticmethod
+    def logg(level=None,
+             mesg=None,
+             filename=None,
+             scriptname=None):
         """
         This method is used by vr_profile2, lf_create_bcast, and shadowed by base_profile.py
         :param level:
@@ -725,23 +731,28 @@ class LFCliBase:
         }
         self.json_post("/cli-json/add_event", data, debug_=debug_)
 
-    def read_file(self, filename):
+    @staticmethod
+    def read_file(filename):
         filename = open(filename, 'r')
         return [line.split(',') for line in filename.readlines()]
 
     #Function creates random characters made of letters
-    def random_chars(self, size, chars=None):
+    @staticmethod
+    def random_chars(size, chars=None):
         if chars is None:
             chars = string.ascii_letters
         return ''.join(random.choice(chars) for x in range(size))
 
-    def get_milliseconds(self, timestamp):
+    @staticmethod
+    def get_milliseconds(timestamp):
         return (timestamp - datetime.datetime(1970,1,1)).total_seconds()*1000
 
-    def get_seconds(self, timestamp):
+    @staticmethod
+    def get_seconds(timestamp):
         return (timestamp - datetime.datetime(1970,1,1)).total_seconds()
 
-    def replace_special_char(self, special_str):
+    @staticmethod
+    def replace_special_char(special_str):
         return special_str.replace('+', ' ').replace('_', ' ').strip(' ')
 
     Help_Mode = """Station WiFi modes: use the number value below:
