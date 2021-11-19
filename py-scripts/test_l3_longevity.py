@@ -3126,7 +3126,8 @@ Setting wifi_settings per radio
     report.write_html_with_timestamp()
     report.write_index_html()
     # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
-    report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
+    # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
+    report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
     # ap scheduler results and write to a file
     if ap_scheduler_stats:
