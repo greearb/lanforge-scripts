@@ -166,9 +166,6 @@ if [[ ${#SHORT} -gt 0 ]]; then
               --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth1 \
               --dut5_0 '$DUT5' \
               --dut2_0 '$DUT2' \
-              --max_stations_2 100 \
-              --max_stations_5 100 \
-              --max_stations_dual 200 \
               --radio2 1.1.wiphy0 \
               --radio2 1.1.wiphy1 \
               --set 'Basic Client Connectivity' 1 \
@@ -228,9 +225,9 @@ else
         --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth1 \
         --dut5_0 '$DUT5' \
         --dut2_0 '$DUT2' \
-        --max_stations_2 100 \
-        --max_stations_5 100 \
-        --max_stations_dual 200 \
+        --max_stations_2 64 \
+        --max_stations_5 64 \
+        --max_stations_dual 64 \
         --radio2 1.1.wiphy0 \
         --radio2 1.1.wiphy1 \
         --set 'Basic Client Connectivity' 1 \
