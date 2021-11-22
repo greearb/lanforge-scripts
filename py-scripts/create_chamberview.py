@@ -90,47 +90,45 @@ class CreateChamberview(cv):
             Freq = "-1"
             VLAN = ""
 
-            for i in range(len(line)):
-                if " " in line[i][0]:
-                    line[i][0] = (re.split(' ', line[i][0]))
-                elif "," in line[i][0]:
-                    line[i][0] = (re.split(',', line[i][0]))
-                elif ", " in line[i][0]:
-                    line[i][0] = (re.split(',', line[i][0]))
-                elif " ," in line[i][0]:
-                    line[i][0] = (re.split(',', line[i][0]))
+            for item in line:
+                if " " in item[0]:
+                    item[0] = (re.split(' ', item[0]))
+                elif "," in item[0]:
+                    item[0] = (re.split(',', item[0]))
+                elif ", " in item[0]:
+                    item[0] = (re.split(',', item[0]))
+                elif " ," in item[0]:
+                    item[0] = (re.split(',', item[0]))
                 else:
                     print("Wrong arguments entered !")
                     exit(1)
 
                 print("creating %s scenario" % scenario_name)
-                for j in range(len(line[i][0])):
-                    line[i][0][j] = line[i][0][j].split("=")
-                    for k in range(len(line[i][0][j])):
-                        name = line[i][0][j][k]
-                        if str(name) == "Resource" or str(
-                                name) == "Res" or str(name) == "R":
-                            Resource = line[i][0][j][k + 1]
-                        elif str(name) == "Profile" or str(name) == "Prof" or str(name) == "P":
-                            Profile = line[i][0][j][k + 1]
-                        elif str(name) == "Amount" or str(name) == "Sta" or str(name) == "A":
-                            Amount = line[i][0][j][k + 1]
-                        elif str(name) == "Uses-1" or str(name) == "U1" or str(name) == "U-1":
-                            Uses1 = line[i][0][j][k + 1]
-                        elif str(name) == "Uses-2" or str(name) == "U2" or str(name) == "U-2":
-                            Uses2 = line[i][0][j][k + 1]
-                        elif str(name) == "Freq" or str(name) == "Freq" or str(name) == "F":
-                            Freq = line[i][0][j][k + 1]
-                        elif str(name) == "DUT" or str(name) == "dut" or str(name) == "D":
-                            DUT = line[i][0][j][k + 1]
-                        elif str(name) == "DUT_Radio" or str(name) == "dr" or str(name) == "DR":
-                            DUT_Radio = line[i][0][j][k + 1]
-                        elif str(name) == "Traffic" or str(name) == "Traf" or str(name) == "T":
-                            Traffic = line[i][0][j][k + 1]
-                        elif str(name) == "VLAN" or str(name) == "Vlan" or str(name) == "V":
-                            VLAN = line[i][0][j][k + 1]
-                        else:
-                            continue
+                for sub_item in item[0]:
+                    sub_item = sub_item.split("=")
+                    if sub_item[0] == "Resource" or str(
+                            sub_item[0]) == "Res" or sub_item[0] == "R":
+                        Resource = sub_item[1]
+                    elif sub_item[0] == "Profile" or sub_item[0] == "Prof" or sub_item[0] == "P":
+                        Profile = sub_item[1]
+                    elif sub_item[0] == "Amount" or sub_item[0] == "Sta" or sub_item[0] == "A":
+                        Amount = sub_item[1]
+                    elif sub_item[0] == "Uses-1" or sub_item[0] == "U1" or sub_item[0] == "U-1":
+                        Uses1 = sub_item[1]
+                    elif sub_item[0] == "Uses-2" or sub_item[0] == "U2" or sub_item[0] == "U-2":
+                        Uses2 = sub_item[1]
+                    elif sub_item[0] == "Freq" or sub_item[0] == "Freq" or sub_item[0] == "F":
+                        Freq = sub_item[1]
+                    elif sub_item[0] == "DUT" or sub_item[0] == "dut" or sub_item[0] == "D":
+                        DUT = sub_item[1]
+                    elif sub_item[0] == "DUT_Radio" or sub_item[0] == "dr" or sub_item[0] == "DR":
+                        DUT_Radio = sub_item[1]
+                    elif sub_item[0] == "Traffic" or sub_item[0] == "Traf" or sub_item[0] == "T":
+                        Traffic = sub_item[1]
+                    elif sub_item[0] == "VLAN" or sub_item[0] == "Vlan" or sub_item[0] == "V":
+                        VLAN = sub_item[1]
+                    else:
+                        continue
 
                 self.add_text_blob_line(scenario_name,
                                         Resource,
