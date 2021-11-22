@@ -2,6 +2,7 @@
 
 import logging
 from random import choice
+logging.basicConfig()
 
 
 class ContextFilter(logging.Filter):
