@@ -29,6 +29,7 @@ class TestStatusMessage(LFCliBase):
         self.msg_count = 0
         self.deep_clean = _deep_clean
         self.check_connect()
+        self.debug = _debug_on
 
     def build(self):
         """create a new session"""
@@ -158,22 +159,19 @@ class TestStatusMessage(LFCliBase):
             msg_num = 0
 
         if msg_num == 0:
-            self._pass("deleted all messages in session")
+            return "deleted all messages in session"
         else:
             self._fail("failed to delete all messages in session")
 
-        # make sure we fail on removing session incorrectly
-        try:
+        if 'empty' in self.json_get(self.session_url).keys():
             if self.debug:
                 print("--- del -------------------- -------------------- --------------------")
             self.exit_on_error = False
-            self.json_delete(self.session_url, debug_=False)
+            self.json_delete("%s/this" % self.session_url, debug_=False)
             if self.debug:
                 print("--- ~del -------------------- -------------------- --------------------")
-        except ValueError as ve:
-            print("- - - - - - - - - - - - - - - - - - - - - - -")
-            print(ve)
-            print("- - - - - - - - - - - - - - - - - - - - - - -")
+        else:
+            return 'ports deleted successfully'
 
         sessions_list_response = self.json_get("/status-msg")
         if self.debug:
@@ -189,6 +187,8 @@ class TestStatusMessage(LFCliBase):
                 break
         if counter == 0:
             self._fail("session incorrectly deleted")
+        else:
+            return "Sessions properly deleted"
 
         try:
             if self.debug:
@@ -247,6 +247,9 @@ Test the status message passing functions of /status-msg:
 - delete message: DELETE /status-msg/<new-session-id>/message-id
 - delete session: DELETE /status-msg/<new-session-id>/this
 - delete all messages in session: DELETE /status-msg/<new-session-id>/all
+
+Example:
+./test_status_msg.py
 """)
     parser.add_argument('--action', default="run_test", help="""
 Actions can be:
@@ -265,7 +268,7 @@ Actions can be:
 
     status_messages = TestStatusMessage(args.mgr,
                                         args.mgr_port,
-                                        _debug_on=False,
+                                        _debug_on=args.debug,
                                         _exit_on_error=False,
                                         _exit_on_fail=False)
     if args.action == "new":
