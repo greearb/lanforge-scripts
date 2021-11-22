@@ -131,7 +131,7 @@ class lf_check():
                  _json_dut,
                  _json_test,
                  _test_suite,
-                 _test_server,
+                 _server_override,
                  _db_override,
                  _production,
                  _csv_results,
@@ -143,7 +143,7 @@ class lf_check():
         self.json_dut = _json_dut
         self.json_test = _json_test
         self.test_suite = _test_suite
-        self.test_server = _test_server
+        self.server_override = _server_override
         self.db_override = _db_override
         self.production_run = _production
         self.report_path = _report_path
@@ -186,6 +186,7 @@ class lf_check():
         self.upstream_port = ""
 
         # results
+        self.test_server = ""
         self.database_sqlite = ""
         self.test_start_time = ""
         self.test_end_time = ""
@@ -547,6 +548,16 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
             self.test_rig = self.json_rig["test_rig_parameters"]["TEST_RIG"]
         else:
             self.logger.info("test_rig not in test_rig_parameters json")
+
+        if self.server_override is None:
+            if "TEST_SERVER" in self.json_rig["test_rig_parameters"]:
+                self.test_server = self.json_rig["test_rig_parameters"]["TEST_SERVER"]
+            else:
+                self.logger.info(
+                    "TEST_SERVER not in test_rig_parameters json")
+        else:
+            self.test_server = self.server_override
+
         if self.db_override is None:
             if "DATABASE_SQLITE" in self.json_rig["test_rig_parameters"]:
                 self.database_sqlite = self.json_rig["test_rig_parameters"]["DATABASE_SQLITE"]
@@ -875,7 +886,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                         "%Y-%m-%d-%H-%M-%S")).replace(':', '-')
                     print(
                         "Test start: {time} Timeout: {timeout}".format(
-                            time=self.test_start_time,timeout=self.test_timeout))
+                            time=self.test_start_time, timeout=self.test_timeout))
                     start_time = datetime.datetime.now()
                     try:
                         process = subprocess.Popen(command_to_run, shell=False, stdout=stdout_log, stderr=stderr_log,
@@ -1155,9 +1166,9 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         help="--suite <suite name>  default TEST_DICTIONARY",
         default="TEST_DICTIONARY")
     parser.add_argument(
-        '--server',
-        help="--server http://<server ip>/  example: http://192.168.95.6/ default: ''",
-        default='')        
+        '--server_override',
+        help="--server_override http://<server ip>/  example: http://192.168.95.6/",
+        default=None)
     parser.add_argument(
         '--db_override',
         help="--db_override <sqlite db>  override for json DATABASE_SQLITE''",
@@ -1204,12 +1215,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
     # select test suite
     test_suite = args.suite
-
-    test_server = args.server
-
     __dir = args.dir
     __path = args.path
 
+    server_override = args.server_override
     db_override = args.db_override
 
     if args.production:
@@ -1238,7 +1247,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                      _json_dut=json_dut,
                      _json_test=json_test,
                      _test_suite=test_suite,
-                     _test_server=test_server,
+                     _server_override=server_override,
                      _db_override=db_override,
                      _production=production,
                      _csv_results=csv_results,
