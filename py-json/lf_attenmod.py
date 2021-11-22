@@ -70,10 +70,12 @@ class ATTENUATORProfile(LFCliBase):
             raise ValueError('No attenuators in response')
 
     def create(self):
+        if self.atten_idx == 'all':
+            self.atten_idx = 8
         if int(self.atten_val) > 955:
             raise ValueError("Attenuation ddB value must be 955 or less")
-        if int(self.atten_idx) > 7 or self.atten_idx == 'all':
-            raise ValueError("Attenuation ddB value must be 7 or less")
+        if int(self.atten_idx) > 7:
+            raise ValueError("Attenuation idx value must be 7 or less")
         print("Setting Attenuator...")
         self.set_command_param("set_attenuator", "serno", self.atten_serno)
         self.set_command_param("set_attenuator", "atten_idx", self.atten_idx)
