@@ -167,6 +167,7 @@ class lf_check():
 
         # LANforge information
         self.lanforge_system_node_version = ""
+        self.lanforge_fedora_version = ""
         self.lanforge_kernel_version = ""
         self.lanforge_server_version_full = ""
         self.lanforge_server_version = ""
@@ -295,6 +296,21 @@ class lf_check():
         ssh.close()
         time.sleep(1)
         return self.lanforge_system_node_version
+
+    def get_lanforge_fedora_version(self):
+        # creating shh client object we use this object to connect to router
+        ssh = paramiko.SSHClient()
+        # automatically adds the missing host key
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(hostname=self.lf_mgr_ip, port=22, username=self.lf_mgr_user, password=self.lf_mgr_pass,
+                    allow_agent=False, look_for_keys=False, banner_timeout=600)
+        stdin, stdout, stderr = ssh.exec_command('cat /etc/fedora-release')
+        self.lanforge_fedora_version = stdout.readlines()
+        self.lanforge_fedora_version = [line.replace(
+            '\n', '') for line in self.lanforge_fedora_version]
+        ssh.close()
+        time.sleep(1)
+        return self.lanforge_fedora_version
 
     def get_lanforge_kernel_version(self):
         # creating shh client object we use this object to connect to router
@@ -980,6 +996,9 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                             "lanforge_kernel_version {lanforge_kernel_version}\n".format(
                                 lanforge_kernel_version=self.lanforge_kernel_version[0]))
                         meta_data_fd.write(
+                            "lanforge_fedora_version {lanforge_fedora_version}\n".format(
+                                lanforge_fedora_version=self.lanforge_fedora_version[0]))
+                        meta_data_fd.write(
                             "lanforge_gui_version_full {lanforge_gui_version_full}\n".format(
                                 lanforge_gui_version_full=self.lanforge_gui_version_full))
                         meta_data_fd.write(
@@ -1210,6 +1229,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # Test-rig information information
     lanforge_system_node_version = 'NO_LF_NODE_VER'
     scripts_git_sha = 'NO_GIT_SHA'
+    lanforge_fedora_version = 'NO_FEDORA_VER'
     lanforge_kernel_version = 'NO_KERNEL_VER'
     lanforge_server_version_full = 'NO_LF_SERVER_VER'
 
@@ -1292,6 +1312,14 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         print("lanforge_system_node_version exception")
 
     try:
+        lanforge_fedora_version = check.get_lanforge_fedora_version()
+        print("lanforge_fedora_version {fedora_ver}".format(
+            fedora_ver=lanforge_fedora_version))
+    except BaseException:
+        print("lanforge_fedora_version exception, tests aborted check lanforge ip")
+        exit(1)
+
+    try:
         lanforge_kernel_version = check.get_lanforge_kernel_version()
         print("lanforge_kernel_version {kernel_ver}".format(
             kernel_ver=lanforge_kernel_version))
@@ -1365,6 +1393,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # LANforge and scripts config for results
     lf_test_setup = pd.DataFrame()
     lf_test_setup['LANforge'] = lanforge_system_node_version
+    lf_test_setup['fedora version'] = lanforge_fedora_version
     lf_test_setup['kernel version'] = lanforge_kernel_version
     lf_test_setup['server version'] = lanforge_server_version_full
     lf_test_setup['gui version'] = lanforge_gui_version
