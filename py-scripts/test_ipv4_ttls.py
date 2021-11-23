@@ -63,7 +63,7 @@ class TTLSTest(Realm):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(lfclient_host=host, lfclient_port=port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.ssid = ssid
