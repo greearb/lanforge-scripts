@@ -21,5 +21,6 @@ def main():
     logging.error('This is error output, level 3')
     logging.critical('This is error output, level 4')
 
+
 if __name__ == "__main__":
     main()
