@@ -657,6 +657,7 @@ class LFCliBase:
                               default='1.eth1',
                               help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1')
         optional.add_argument('--num_stations',
+                              type=int,
                               default=0,
                               help='Number of stations to create')
         optional.add_argument('--test_id',
@@ -664,7 +665,6 @@ class LFCliBase:
                               help='Test ID (intended to use for ws events)')
         optional.add_argument('-d',
                               '--debug',
-                              default=False,
                               action="store_true",
                               help='Enable debugging')
         optional.add_argument('--proxy',
