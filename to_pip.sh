@@ -105,8 +105,6 @@ from .csv_to_grafana import UseGrafana
 from .example_security_connection import IPv4Test
 from .grafana_profile import UseGrafana
 from .influx import RecordInflux
-from .layer3_test import Layer3Test
-from .layer4_test import HTTPTest
 from .lf_ap_auto_test import ApAutoTest
 from .lf_atten_mod_test import CreateAttenuator
 from .lf_csv import lf_csv
