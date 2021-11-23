@@ -205,7 +205,7 @@ else
       "./create_qvlan.py --first_qvlan_ip 192.168.1.50 --mgr $MGR --qvlan_parent eth1"
       "./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./create_vap.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
-      "./create_vr.py --mgr $MGR --vr_name 2.vr0 --ports 2.br0,2.vap2 --services 1.br0=dhcp,nat --services 1.vr0=radvd --debug"
+      #"./create_vr.py --mgr $MGR --vr_name 2.vr0 --ports 2.br0,2.vap2 --services 1.br0=dhcp,nat --services 1.vr0=radvd --debug"
       #./csv_convert
       #./csv_processor
       #./csv_to_grafana
