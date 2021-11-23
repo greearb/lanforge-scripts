@@ -13,8 +13,6 @@ if sys.version_info[0] != 3:
  
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
@@ -22,7 +20,7 @@ test_ip_variable_time = importlib.import_module("py-scripts.test_ip_variable_tim
 IPVariableTime = test_ip_variable_time.IPVariableTime
 
 
-class TTLSTest(LFCliBase):
+class TTLSTest(Realm):
     def __init__(self, host="localhost", port=8080,
                  ssid="[BLANK]",
                  security="wpa2",
@@ -65,7 +63,7 @@ class TTLSTest(LFCliBase):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        super().__init__(lfclient_host=host, lfclient_port=port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.ssid = ssid
@@ -111,13 +109,12 @@ class TTLSTest(LFCliBase):
         self.timeout = 120
         self.number_template = number_template
         self.debug = _debug_on
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.station_profile = self.local_realm.new_station_profile()
+        self.station_profile = self.new_station_profile()
         self.vap = vap
         self.upstream_port = "eth1"
         self.upstream_resource = 1
         if self.vap:
-            self.vap_profile = self.local_realm.new_vap_profile()
+            self.vap_profile = self.new_vap_profile()
             self.vap_profile.vap_name = "TestNet"
 
         self.station_profile.lfclient_url = self.lfclient_url
@@ -319,7 +316,7 @@ class TTLSTest(LFCliBase):
 
 
 def main():
-    parser = LFCliBase.create_basic_argparse(
+    parser = Realm.create_basic_argparse(
         prog='test_ipv4_ttls.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -359,7 +356,7 @@ test_ipv4_ttls.py:
     parser.add_argument('--vap', help='Create VAP on host device', default=True)
     args = parser.parse_args()
     num_sta = 2
-    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+    if args.num_stations:
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
 
