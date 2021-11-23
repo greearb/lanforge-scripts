@@ -250,6 +250,7 @@ class lf_check():
             "get_scripts_get_sha exit_code: {exit_code}".format(
                 exit_code=exit_code))
         scripts_git_sha = commit_hash.decode('utf-8', 'ignore')
+        scripts_git_sha = scripts_git_sha.replace('\n','')
         return scripts_git_sha
 
     '''
