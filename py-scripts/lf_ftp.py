@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """ lf_ftp.py will verify that N clients connected on specified band and can simultaneously download/upload some amount of file from FTP server and measuring the time taken by client to download/upload the file.
-    cli- python3 lf_ftp.py --mgr localhost --mgr_port 8080 --upstream_port eth1 --ssid FTP --security open --passwd BLANK --ap_name WAC505 --ap_ip 192.168.213.90 --bands Both --directions Download --twog_radio wiphy1 --fiveg_radio wiphy0 --file_size 2MB --num_stations 40 --both_duration 1 --traffic_duration 2 --ssh_port 22_
+    cli- ./lf_ftp.py --ssid <SSID> --passwd <PASSWORD>  --file_sizes 2MB --fiveg_duration 4 --mgr 192.168.1.101 --traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 """
@@ -705,7 +705,14 @@ def main():
     parser = argparse.ArgumentParser(
         prog='lf_ftp.py',
         formatter_class=argparse.RawTextHelpFormatter,
-        description="FTP Test Script")
+        description='''\
+---------------------------
+FTP Test Script - lf_ftp.py
+---------------------------
+CLI Example: 
+./lf_ftp.py --ssid <SSID> --passwd <PASSWORD> --file_sizes 2MB --fiveg_duration 4 --mgr 192.168.1.101 --traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
+---------------------------
+                    ''')
     parser.add_argument('--mgr', help='hostname for where LANforge GUI is running', default='localhost')
     parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on', default=8080)
     parser.add_argument('--upstream_port', help='non-station port that generates traffic: eg: eth1', default='eth1')
