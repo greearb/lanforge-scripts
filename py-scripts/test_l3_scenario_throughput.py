@@ -235,12 +235,12 @@ def PortUtility(host, port, duration, report_name, scenario, detail):
     offset = int(round(time.time() * 1000))
     for _ in range(0, int(duration)):
         temp = 0
-        for _ in cx_names:
-            temp = temp + int(lf_utils.local_realm.json_get("/cx/" + i).get(i).get('bps rx a'))
+        for cx_name in cx_names:
+            temp = temp + int(lf_utils.local_realm.json_get("/cx/" + cx_name).get(cx_name).get('bps rx a'))
             # temp=temp+lf_utils.local_realm.json_get("/cx/"+i).get(i).get('bps rx b')
-        for _ in vap_names:
+        for vap_name in vap_names:
             Total_Throughput_VAP_Side.append(
-                int(vap_measure_obj.json_get("/port/1/1/" + str(i)).get('interface').get('bps rx')))
+                int(vap_measure_obj.json_get("/port/1/1/" + str(vap_name)).get('interface').get('bps rx')))
         absolute_time.append(datetime.now().strftime("%H:%M:%S"))
         temp_time.append(int(round(time.time() * 1000) - offset))
         Total_Throughput_CX_Side.append(temp)
