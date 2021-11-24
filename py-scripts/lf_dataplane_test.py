@@ -105,7 +105,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
@@ -255,37 +254,37 @@ def main():
 
     Sample <name>.json between using eth1 and eth2 
     {
-	    "mgr":"192.168.0.101",
-	    "port":"8080",
-	    "lf_user":"lanforge",
-	    "lf_password":"lanforge",
-	    "instance_name":"dataplane-instance",
-	    "config_name":"test_con",
-	    "upstream":"1.1.eth1",
-	    "dut":"asus_5g",
-	    "duration":"15s",
-	    "station":"1.1.eth2",
-	    "download_speed":"85%",
-	    "upload_speed":"0",	
-	    "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit", "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
+        "mgr":"192.168.0.101",
+        "port":"8080",
+        "lf_user":"lanforge",
+        "lf_password":"lanforge",
+        "instance_name":"dataplane-instance",
+        "config_name":"test_con",
+        "upstream":"1.1.eth1",
+        "dut":"asus_5g",
+        "duration":"15s",
+        "station":"1.1.eth2",
+        "download_speed":"85%",
+        "upload_speed":"0",	
+        "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit", "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
     }
-			
+        
     Sample <name>.json between using eth1 and station 1.1.sta0002
     {
-	    "mgr":"192.168.0.101",
-	    "port":"8080",
-	    "lf_user":"lanforge",
-	    "lf_password":"lanforge",
-	    "instance_name":"dataplane-instance",
-	    "config_name":"test_con",
-	    "upstream":"1.1.eth1",
-	    "dut":"asus_5g",
-	    "duration":"15s",
-	    "station":"1.1.sta0002",
-	    "download_speed":"85%",
-	    "upload_speed":"0",	
-	    "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit", "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
-    }
+        "mgr":"192.168.0.101",
+        "port":"8080",
+        "lf_user":"lanforge",
+        "lf_password":"lanforge",
+        "instance_name":"dataplane-instance",
+        "config_name":"test_con",
+        "upstream":"1.1.eth1",
+        "dut":"asus_5g",
+        "duration":"15s",
+        "station":"1.1.sta0002",
+        "download_speed":"85%",
+        "upload_speed":"0",	
+        "raw_line":  ["pkts: Custom;60;MTU", "cust_pkt_sz: 88 1200", "directions: DUT Transmit", "traffic_types: UDP", "bandw_options: 20", "spatial_streams: 1"]
+}
 
       """
     )
@@ -312,7 +311,8 @@ def main():
     parser.add_argument(
         "--graph_groups", help="File to save graph_groups to", default=None)
     parser.add_argument("--local_lf_report_dir",
-                        help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from", default="")
+                        help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",
+                        default="")
 
     args = parser.parse_args()
 
