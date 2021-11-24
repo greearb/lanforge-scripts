@@ -83,6 +83,9 @@ class CreateCtlr:
         self.tx_power = _tx_power
         self.cap_ctl_out = _cap_ctl_out
         self.client_density = 0
+        self.wlan = None
+        self.wlanID = None
+        self.wlanSSID = None
 
     def verify_controller(self, client_density):
         self.client_density = client_density
