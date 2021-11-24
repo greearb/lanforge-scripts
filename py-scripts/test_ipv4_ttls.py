@@ -64,6 +64,7 @@ class TTLSTest(Realm):
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on, _exit_on_fail=_exit_on_fail)
+        self.resulting_endpoints = {}
         self.host = host
         self.port = port
         self.ssid = ssid
@@ -154,7 +155,6 @@ class TTLSTest(Realm):
     def build(self,
               extra_securities=None):
         # Build stations
-        keyphrase = "[BLANK]"
 
         self.station_profile.use_security(self.security, self.ssid, passwd=self.password)
         if extra_securities is not None:
@@ -277,7 +277,6 @@ class TTLSTest(Realm):
                                            debug=self.debug)
 
     def collect_endp_stats(self, endp_map, traffic_type="TCP"):
-        self.resulting_endpoints = {}
         print("Collecting Data")
         fields = "?fields=name,tx+bytes,rx+bytes"
         for (cx_name, endps) in endp_map.items():
@@ -301,7 +300,6 @@ class TTLSTest(Realm):
 
                 self.compare_vals("test" + traffic_type + "-B TX", ptest_b_tx)
                 self.compare_vals("test" + traffic_type + "-B RX", ptest_b_rx)
-
 
             except Exception as e:
                 print("Is this the function having the error?")
