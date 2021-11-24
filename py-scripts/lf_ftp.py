@@ -28,13 +28,14 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
+lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 
 
 class FtpTest(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, sta_prefix="sta", start_id=0, num_sta=None,
                  dut_ssid=None, dut_security=None, dut_passwd=None, file_size=None, band=None, twog_radio=None,
                  fiveg_radio=None, upstream="eth1", _debug_on=False, _exit_on_error=False, _exit_on_fail=False,
-                 direction=None, duration=None, traffic_duration=None, ssh_port=None):
+                 direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         print("Test is about to start")
         self.host = lfclient_host
@@ -49,6 +50,7 @@ class FtpTest(LFCliBase):
         self.password = dut_passwd
         self.requests_per_ten = 1
         self.band = band
+        self.kpi_csv = kpi_csv
         self.file_size = file_size
         self.direction = direction
         self.twog_radio = twog_radio
