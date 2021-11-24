@@ -95,10 +95,6 @@ class CreateChamberview(cv):
                     item[0] = (re.split(' ', item[0]))
                 elif "," in item[0]:
                     item[0] = (re.split(',', item[0]))
-                elif ", " in item[0]:
-                    item[0] = (re.split(',', item[0]))
-                elif " ," in item[0]:
-                    item[0] = (re.split(',', item[0]))
                 else:
                     print("Wrong arguments entered !")
                     exit(1)
