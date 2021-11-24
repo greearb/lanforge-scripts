@@ -317,12 +317,12 @@ def main():
     args = parser.parse_args()
 
     # use json config file
-    if args.json != "":
-        try:
+    if args.json:
+        if os.path.exists(args.json):
             with open(args.json, 'r') as json_config:
                 json_data = json.load(json_config)
-        except:
-            print("Error reading {}".format(args.json))
+        else:
+            return FileNotFoundError("Error reading {}".format(args.json))
         # json configuation takes presidence to command line
         if "mgr" in json_data:
             args.mgr = json_data["mgr"]
@@ -357,12 +357,12 @@ def main():
             args.raw_line = json_data_tmp
 
     # use influx json config file
-    if args.influx_json != "":
-        try:
-            with open(args.influx_json, 'r') as influx_json_config:
-                influx_json_data = json.load(influx_json_config)
-        except:
-            print("Error reading {}".format(args.influx_json))
+    if args.influx_json:
+        if os.path.exists(args.influx_json):
+            with open(args.influx_json, 'r') as json_config:
+                influx_json_data = json.load(json_config)
+        else:
+            return FileNotFoundError("Error reading {}".format(args.influx_json))
         # json configuation takes presidence to command line
         # influx DB configuration
         if "influx_host" in influx_json_data:
