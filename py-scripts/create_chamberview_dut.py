@@ -121,10 +121,8 @@ class DUT(dut):
                     self.ssid[j]['security'] = self.ssid[j]['security'].split(
                         '|')
                     for security in self.ssid[j]['security']:
-                        try:
+                        if security.lower() in flags:
                             flag |= flags[security.lower()]
-                        except BaseException:
-                            pass
                 self.ssid[j]['flag'] = flag
 
                 if 'bssid' not in self.ssid[j].keys():
