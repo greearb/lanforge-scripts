@@ -1155,11 +1155,11 @@ class L3VariableTime(Realm):
                                 else:
                                     # print("response".format(response))
                                     pprint(response)
-                                    p = response['interface']
+                                    port_data = response['interface']
                                     print(
-                                        "#### 6g From LANforge: p, response['insterface']:{}".format(p))
-                                    mac = p['mac']
-                                    # print("#### From LANforge: p['mac']:
+                                        "#### 6g From LANforge: port_data, response['insterface']:{}".format(p))
+                                    mac = port_data['mac']
+                                    # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
 
                                     # Parse the ap stats to find the matching
@@ -1260,11 +1260,11 @@ class L3VariableTime(Realm):
                                 else:
                                     # print("response".format(response))
                                     pprint(response)
-                                    p = response['interface']
+                                    port_data = response['interface']
                                     print(
-                                        "#### 6g From LANforge: p, response['insterface']:{}".format(p))
-                                    mac = p['mac']
-                                    # print("#### From LANforge: p['mac']:
+                                        "#### 6g From LANforge: port_data, response['insterface']:{}".format(p))
+                                    mac = port_data['mac']
+                                    # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
 
                                     # Parse the ap stats to find the matching
@@ -1314,7 +1314,7 @@ class L3VariableTime(Realm):
                                             dl_pdu_str,
                                             atten_val,
                                             eid_name,
-                                            p,
+                                            port_data,
                                             latency,
                                             jitter,
                                             total_ul_rate,
@@ -1370,11 +1370,11 @@ class L3VariableTime(Realm):
                                 else:
                                     # print("response".format(response))
                                     pprint(response)
-                                    p = response['interface']
+                                    port_data = response['interface']
                                     print(
-                                        "#### From LANforge: p, response['insterface']:{}".format(p))
-                                    mac = p['mac']
-                                    # print("#### From LANforge: p['mac']:
+                                        "#### From LANforge: port_data, response['insterface']:{}".format(p))
+                                    mac = port_data['mac']
+                                    # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
 
                                     # Parse the ap stats to find the matching
@@ -1473,7 +1473,7 @@ class L3VariableTime(Realm):
                                             dl_pdu_str,
                                             atten_val,
                                             eid_name,
-                                            p,
+                                            port_data,
                                             latency,
                                             jitter,
                                             total_ul_rate,
@@ -1500,11 +1500,11 @@ class L3VariableTime(Realm):
                                 else:
                                     # print("response".format(response))
                                     pprint(response)
-                                    p = response['interface']
+                                    port_data = response['interface']
                                     print(
-                                        "#### 5g From LANforge: p, response['insterface']:{}".format(p))
-                                    mac = p['mac']
-                                    # print("#### From LANforge: p['mac']:
+                                        "#### 5g From LANforge: port_data, response['insterface']:{}".format(p))
+                                    mac = port_data['mac']
+                                    # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
 
                                     # Parse the ap stats to find the matching
@@ -1553,7 +1553,7 @@ class L3VariableTime(Realm):
                                             dl_pdu_str,
                                             atten_val,
                                             eid_name,
-                                            p,
+                                            port_data,
                                             latency,
                                             jitter,
                                             total_ul_rate,
@@ -1609,11 +1609,11 @@ class L3VariableTime(Realm):
                                 else:
                                     # print("response".format(response))
                                     pprint(response)
-                                    p = response['interface']
-                                    # print("#### From LANforge: p,
+                                    port_data = response['interface']
+                                    # print("#### From LANforge: port_data,
                                     # response['insterface']:{}".format(p))
-                                    mac = p['mac']
-                                    # print("#### From LANforge: p['mac']:
+                                    mac = port_data['mac']
+                                    # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
 
                                     # Parse the ap stats to find the matching
@@ -1712,7 +1712,7 @@ class L3VariableTime(Realm):
                                             dl_pdu_str,
                                             atten_val,
                                             eid_name,
-                                            p,
+                                            port_data,
                                             latency,
                                             jitter,
                                             total_ul_rate,
@@ -1738,11 +1738,11 @@ class L3VariableTime(Realm):
                                 else:
                                     # print("response".format(response))
                                     pprint(response)
-                                    p = response['interface']
+                                    port_data = response['interface']
                                     print(
-                                        "#### 2g From LANforge: p, response['insterface']:{}".format(p))
-                                    mac = p['mac']
-                                    # print("#### From LANforge: p['mac']:
+                                        "#### 2g From LANforge: port_data, response['insterface']:{}".format(p))
+                                    mac = port_data['mac']
+                                    # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
 
                                     # Parse the ap stats to find the matching
@@ -1791,7 +1791,7 @@ class L3VariableTime(Realm):
                                             dl_pdu_str,
                                             atten_val,
                                             eid_name,
-                                            p,
+                                            port_data,
                                             latency,
                                             jitter,
                                             total_ul_rate,
@@ -1818,7 +1818,7 @@ class L3VariableTime(Realm):
                                         "query-port: %s: incomplete response:" % (url))
                                     pprint(response)
                                 else:
-                                    p = response['interface']
+                                    port_data = response['interface']
                                     latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
                                         p["port"], endps)
 
@@ -1830,7 +1830,7 @@ class L3VariableTime(Realm):
                                         dl_pdu_str,
                                         atten_val,
                                         eid_name,
-                                        p,
+                                        port_data,
                                         latency,
                                         jitter,
                                         total_ul_rate,
