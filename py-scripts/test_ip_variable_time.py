@@ -72,6 +72,7 @@ class IPVariableTime(Realm):
                  influx_org=None,
                  influx_token=None,
                  influx_bucket=None,
+                 influx_tag=None,
                  compared_report=None,
                  ipv6=False,
                  _debug_on=False,
@@ -117,7 +118,7 @@ class IPVariableTime(Realm):
         if self.station_profile.use_ht160:
             self.station_profile.mode = 9
         self.station_profile.mode = mode
-        if self.ap is not None:
+        if self.ap:
             self.station_profile.set_command_param("add_sta", "ap", self.ap)
         if self.use_existing_sta:
             self.station_profile.station_names = self.sta_list
@@ -138,6 +139,7 @@ class IPVariableTime(Realm):
         self.influx_org = influx_org
         self.influx_token = influx_token
         self.influx_bucket = influx_bucket
+        self.influx_tag = influx_tag
         self.compared_report = compared_report
         self.cx_profile.name_prefix = self.name_prefix
         self.cx_profile.side_a_min_bps = side_a_min_rate
@@ -145,7 +147,7 @@ class IPVariableTime(Realm):
         self.cx_profile.side_b_min_bps = side_b_min_rate
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
-    def start(self, print_pass=False, print_fail=False):
+    def start(self):
         # if self.use_existing_station:
         # to-do- check here if upstream port got IP
         self.station_profile.admin_up()
@@ -199,10 +201,10 @@ class IPVariableTime(Realm):
         if self.report_file is None:
             new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
                                                                                                      '-') + '_test_ip_variable_time'  # create path name
-            try:
+            if os.path.exists('/home/lanforge/report-data'):
                 path = os.path.join('/home/lanforge/report-data/', new_file_path)
                 os.mkdir(path)
-            except:
+            else:
                 curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                 path = os.path.join(curr_dir_path, new_file_path)
                 os.mkdir(path)
@@ -237,7 +239,7 @@ class IPVariableTime(Realm):
 
         try:
             layer3connections = ','.join([[*x.keys()][0] for x in self.json_get('endp')['endpoint']])
-        except:
+        except ValueError:
             raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
 
         if type(self.layer3_cols) is not list:
@@ -264,7 +266,7 @@ class IPVariableTime(Realm):
             print(error)
             return ValueError(
                 "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. ")
-        self.start(False, False)
+        self.start()
 
         if self.influx_org is not None:
             grapher = RecordInflux(_influx_host=self.influx_host,
@@ -275,11 +277,9 @@ class IPVariableTime(Realm):
             devices = [station.split('.')[-1] for station in self.sta_list]
             tags = dict()
             tags['script'] = 'test_ip_variable_time'
-            try:
+            if self.influx_tag:
                 for k in self.influx_tag:
                     tags[k[0]] = k[1]
-            except:
-                pass
             grapher.monitor_port_data(longevity=Realm.parse_time(self.test_duration).total_seconds(),
                                       devices=devices,
                                       monitor_interval=Realm.parse_time(self.monitor_interval).total_seconds(),
@@ -617,7 +617,6 @@ python3 ./test_ip_variable_time.py
     print("args.sta_names: {create}".format(create=args.sta_names))
     print("args.use_existing_sta: {create} {typeof}".format(create=args.use_existing_sta, typeof=type(args.use_existing_sta)))
     print("station_list: {sta}".format(sta=station_list))
-    
 
     # Create directory
     # if file path with output file extension is not given...
@@ -626,7 +625,7 @@ python3 ./test_ip_variable_time.py
 
     CX_TYPES = ("tcp", "udp", "lf_tcp", "lf_udp")
 
-    if (args.traffic_type is None) or (args.traffic_type not in CX_TYPES):
+    if not args.traffic_type or (args.traffic_type not in CX_TYPES):
         print("cx_type needs to be lf_tcp, lf_udp, tcp, or udp, bye")
         exit(1)
 
@@ -668,6 +667,7 @@ python3 ./test_ip_variable_time.py
                                  influx_org=args.influx_org,
                                  influx_token=args.influx_token,
                                  influx_bucket=args.influx_bucket,
+                                 influx_tag=args.influx_tag,
                                  compared_report=args.compared_report,
                                  ipv6=args.ipv6,
                                  traffic_type=args.traffic_type,
