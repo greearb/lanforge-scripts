@@ -20,6 +20,8 @@ Help()
   echo "If using the help flag, put the H flag at the end of the command after other flags."
 }
 
+pip3 install --user -r ../requirements.txt --upgrade
+
 while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:L:H:" option; do
   case "${option}" in
     h) # display Help
