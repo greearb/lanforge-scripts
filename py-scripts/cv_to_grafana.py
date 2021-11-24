@@ -84,8 +84,10 @@ DataplaneTest = lf_dataplane_test.DataplaneTest
 grafana_profile = importlib.import_module("py-scripts.grafana_profile")
 UseGrafana = grafana_profile.UseGrafana
 lf_ap_auto_test = importlib.import_module("py-scripts.lf_ap_auto_test")
+ApAutoTest = lf_ap_auto_test.ApAutoTest
 
 cv_add_base_parser = cv_test_manager.cv_add_base_parser
+cv_base_adjust_parser = cv_add_base_parser.cv_base_adjust_parser
 
 
 def main():
