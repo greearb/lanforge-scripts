@@ -22,7 +22,7 @@ Help()
 
 pip3 install --user -r ../requirements.txt --upgrade
 
-while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:L:H:" option; do
+while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:" option; do
   case "${option}" in
     h) # display Help
       Help
@@ -61,9 +61,6 @@ while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:L:H:" option; do
     D)
       DUT5=${OPTARG}
       DUT2=${OPTARG}
-      ;;
-    L)
-      LANFORGE_DUT=${OPTARG}
       ;;
     H)
       ./lf_help_check.bash
