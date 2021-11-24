@@ -167,16 +167,6 @@ def main():
                                             radio=args.radio)
 
     print("station_list {}".format(station_list))
-    set_txo_data = {
-        "txo_enable": 1,
-        "txpower": 255,
-        "pream": 0,
-        "mcs": 0,
-        "nss": 0,
-        "bw": 3,
-        "retries": 1,
-        "sgi": 0
-    }
 
     create_station = CreateStation(_host=args.mgr,
                                    _port=args.mgr_port,
