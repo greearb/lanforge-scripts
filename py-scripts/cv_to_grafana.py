@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''
+"""
 This script loads and builds a Chamber View Scenario, runs WiFi Capacity Test, runs Dataplane Test,
 and posts the results to Influx.
 There are optional arguments which will create a Grafana dashboard which will import the data posted to
@@ -59,7 +59,7 @@ AP Auto test has the following argument:
 DUT syntax is somewhat tricky:  DUT-name SSID BSID (bssid-idx), example: linksys-8450 Default-SSID-5gl c4:41:1e:f5:3f:25 (2)
 * radio2: Specify 2.4Ghz radio.  May be specified multiple times.
 * radio5: Specify 5Ghz radio.  May be specified multiple times.
-'''
+"""
 import sys
 import os
 import importlib
@@ -70,7 +70,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lf_wifi_capacity_test = importlib.import_module("py-scripts.lf_wifi_capacity_test")
@@ -79,7 +78,7 @@ cv_test_manager = importlib.import_module("py-json.cv_test_manager")
 create_chamberview = importlib.import_module("py-scripts.create_chamberview")
 CreateChamberview = create_chamberview.CreateChamberview
 create_chamberview_dut = importlib.import_module("py-scripts.create_chamberview_dut")
-DUT = create_chamberview_dut.DUT 
+DUT = create_chamberview_dut.DUT
 lf_dataplane_test = importlib.import_module("py-scripts.lf_dataplane_test")
 DataplaneTest = lf_dataplane_test.DataplaneTest
 grafana_profile = importlib.import_module("py-scripts.grafana_profile")
@@ -87,7 +86,6 @@ UseGrafana = grafana_profile.UseGrafana
 lf_ap_auto_test = importlib.import_module("py-scripts.lf_ap_auto_test")
 
 cv_add_base_parser = cv_test_manager.cv_add_base_parser
-
 
 
 def main():
@@ -173,7 +171,7 @@ def main():
     parser.add_argument('--grafana_port', help='Grafana port if different from 3000', default=3000)
     parser.add_argument('--grafana_host', help='Grafana host', default='localhost')
 
-    #Flags for AP-Auto Test config
+    # Flags for AP-Auto Test config
 
     parser.add_argument("--max_stations_2", type=int, default=-1,
                         help="Specify maximum 2.4Ghz stations")
@@ -191,14 +189,15 @@ def main():
     parser.add_argument("--radio5", action='append', nargs=1, default=[],
                         help="Specify 5Ghz radio.  May be specified multiple times.")
 
-    #Flags for Grafana
+    # Flags for Grafana
 
     parser.add_argument('--dashboard_title', help='Titles of dashboards', default=None, action='append')
     parser.add_argument('--scripts', help='Scripts to graph in Grafana', default=None, action='append')
     parser.add_argument('--title', help='title of your Grafana Dashboard', default=None)
     parser.add_argument('--testbed', help='Which testbed you want to query', default=None)
-    parser.add_argument('--graph_groups_file', help='File which determines how you want to filter your graphs on your dashboard',
-                          default=None)
+    parser.add_argument('--graph_groups_file',
+                        help='File which determines how you want to filter your graphs on your dashboard',
+                        default=None)
     parser.add_argument('--kpi', help='KPI file(s) which you want to graph form', action='append', default=None)
     parser.add_argument('--datasource', help='Name of Influx database if different from InfluxDB', default='InfluxDB')
     parser.add_argument('--from_date', help='Date you want to start your Grafana dashboard from', default='now-1y')
