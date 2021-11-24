@@ -27,7 +27,6 @@ import os
 import importlib
 import argparse
 import time
-import logging
 import paramiko as pm
 from paramiko.ssh_exception import NoValidConnectionsError as exception
 import xlsxwriter
@@ -81,7 +80,7 @@ class Login_DUT:
             self.CLIENT.connect(self.host, username=self.USERNAME, password=self.PASSWORD,timeout=10)
             return None    
         except exception as error:
-            self.CLIENT = 0;
+            self.CLIENT = 0
             return None
 
 
@@ -313,107 +312,30 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description="Test Scenario of DUT Temperature measurement along with simultaneous throughput on VAP as well as stations")
     
-    parser.add_argument("-m", "--manager", type=str, help="Enter the address of Lanforge Manager (By default localhost)")
+    parser.add_argument("-m", "--manager", type=str, help="Enter the address of Lanforge Manager (By default localhost)", default="localhost")
     parser.add_argument("-sc", "--scenario", type=str, help="Enter the Name of the Scenario you want to load (by Default DFLT)")
     parser.add_argument("-r", "--radio", type=str, help="Enter the radio on which you want to create a station/s on ")
-    parser.add_argument("-n", "--num_sta", type=int, help="Enter the Number of Stations You want to create")
-    parser.add_argument("-i", "--sta_id", type=int, help="Enter Station id [for sta001, enter 1]")
+    parser.add_argument("-n", "--num_sta", type=int, help="Enter the Number of Stations You want to create", default=0)
+    parser.add_argument("-i", "--sta_id", type=int, help="Enter Station id [for sta001, enter 1]", default=0)
     parser.add_argument("-ss", "--ssid", type=str, help="Enter the ssid, with which you want to associate your stations (Enter the SSID of DUT AP)")
-    parser.add_argument("-up", "--upstream", type=str, help="Enter the upstream ethernet port")
-    parser.add_argument("-sec", "--security", type=str, help="Enter the security type [open, wep, wpa, wpa2]")
-    parser.add_argument("-p", "--password", type=str, help="Enter the password if security is not open")
-    parser.add_argument("-pr", "--protocol", type=str, help="Enter the protocol on which you want to run your connections [lf_udp, lf_tcp]")
-    parser.add_argument("-mn", "--min_mbps", type=str, help="Enter the Minimum Rate")
-    parser.add_argument("-mx", "--max_mbps", type=str, help="Enter the Maximum Rate")
-    parser.add_argument("-t", "--duration", type=int, help="Enter the Time for which you want to run test (In Minutes)")
-    parser.add_argument("-o", "--report_name", type=str, help="Enter the Name of the Output file ('Report.xlsx')")
-    args = None
+    parser.add_argument("-up", "--upstream", type=str, help="Enter the upstream ethernet port", default='br0000')
+    parser.add_argument("-sec", "--security", type=str, help="Enter the security type [open, wep, wpa, wpa2]", default='open')
+    parser.add_argument("-p", "--password", type=str, help="Enter the password if security is not open", default='[Blank]')
+    parser.add_argument("-pr", "--protocol", type=str, help="Enter the protocol on which you want to run your connections [lf_udp, lf_tcp]", default='lf_udp')
+    parser.add_argument("-mn", "--min_mbps", type=int, help="Enter the Minimum Rate", default=1000)
+    parser.add_argument("-mx", "--max_mbps", type=int, help="Enter the Maximum Rate")
+    parser.add_argument("-t", "--duration", type=int, help="Enter the Time for which you want to run test (In Minutes)", default=15)
+    parser.add_argument("-o", "--report_name", type=str, help="Enter the Name of the Output file ('Report.xlsx')", default='report.xlsx')
      
-    try:
-      args = parser.parse_args()
-      # Lanforge Manager IP Address
-      if (args.manager is None):
-         manager = "localhost"
-      if (args.manager is not None):
-         manager = args.manager
+    args = parser.parse_args()
       
-      # Scenario Name
-      if (args.scenario is not None):
-         scenario = args.scenario
-      # Radio Name
-      if (args.radio is not None):
-         radio = args.radio
-      
-      # Number of Stations
-      if (args.num_sta is None):
-         num_sta = 0
-      if (args.num_sta is not None):
-         num_sta = args.num_sta   
-      
-      # Station ID
-      if (args.sta_id is None):
-         sta_id = '0'
-      if (args.sta_id is not None):
-         sta_id = args.sta_id
-      
-      # SSID
-      if (args.ssid is not None):
-         ssid = args.ssid
-      if (args.ssid is not None):
-         ssid = args.ssid
+    min_bps = args.min_mbps*1000000
 
-      # Security (Open by Default)
-      if (args.security is None):
-         security = 'open'
-      if (args.security is not None):
-         security = args.security
-
-      # Password (if Security is not Open)
-      if (args.password is not None):
-         password = args.password
-      if (args.password == 'open'):
-         password = "[Blank]"
-      if (args.password is None):
-         password = "[Blank]"
-      
-      # Upstream Port (By default br0000)
-      if (args.upstream is None):
-         upstream = 'br0000'
-      if (args.upstream is not None):
-         upstream = args.upstream
-      
-      # Protocol (By Default lf_udp)
-      if (args.protocol is not None):
-         protocol = args.protocol
-      if (args.protocol is None):
-         protocol = 'lf_udp'
-      
-      #Min BPS
-      if (args.min_mbps is not None):
-         min_bps = int(args.min_mbps)*1000000
-      if (args.min_mbps is None):
-         min_bps = int(1000)*1000000
-      if (args.max_mbps is None ):
-         max_bps = int(1000)*1000000
-
-      if (args.min_mbps is not None):
-         min_bps = int(args.min_mbps)*1000000
-      if (args.max_mbps is not None and args.max_mbps != "same"):
+    if (args.max_mbps is not None and args.max_mbps != "same"):
          max_bps = int(args.max_mbps)*1000000
-      if (args.max_mbps is not None and args.max_mbps == "same"):
+    if (args.max_mbps is not None and args.max_mbps == "same"):
          max_bps = args.min_mbps
-      if (args.duration is not None):
-         duration = (args.duration * 60)/5
-      if (args.report_name is not None):
-         report_name = args.report_name
-      if (args.duration is None):
-         duration = (1 * 60)/5
-      if (args.report_name is None):
-         report_name = "report.xlsx"
-    except Exception as e:
-      logging.exception(e)
-      
-      exit(2)
+
     
 
     
@@ -423,7 +345,7 @@ def main():
     #Loading the Scenario on Lanforge_1 (Here Considered as DUT) [Created VAP With SSID 'lexusap' on wiphy0 with eth1 as backhaul]
     Scenario_1 = LoadScenario("192.168.200.18", 8080, "Lexus_DUT")
     
-    dut_traffic_profile = CreateSTA_CX("192.168.200.18", 8080, "wiphy1", 1, 0, 'lanforge_ap', 'open', password, 'br0000', 'lf_udp', min_bps, max_bps)
+    dut_traffic_profile = CreateSTA_CX("192.168.200.18", 8080, "wiphy1", 1, 0, 'lanforge_ap', 'open', args.password, 'br0000', 'lf_udp', args.min_bps, args.max_bps)
     dut_traffic_profile.build()
 
     print("DUT All Set... Lets setup Lanforge")
@@ -432,10 +354,10 @@ def main():
     #Loading the Scenario on Lanforge_2 (Here Considered as LANFORGE Test) [Created VAP With SSID 'lanforge_ap' on wiphy0 with eth2 as backhaul]
     
     DB_Lanforge_2 = "LANforge_TEST"
-    Scenario_2 = LoadScenario(manager, 8080, scenario)
+    Scenario_2 = LoadScenario(args.manager, 8080, args.scenario)
     
 
-    lf_traffic_profile = CreateSTA_CX(manager, 8080, radio, num_sta, sta_id, ssid, security, password, upstream, protocol, min_bps, max_bps)
+    lf_traffic_profile = CreateSTA_CX(args.manager, 8080, args.radio, args.num_sta, args.sta_id, args.ssid, args.security, args.password, args.upstream, args.protocol, args.min_bps, args.max_bps)
     lf_traffic_profile.build()
 
     print("Lanforge System is All set... Lets start and Measure")
@@ -448,7 +370,7 @@ def main():
     print("Collecting Throughput Values...")
 
     # Object to Measure Throughput at VAP Side
-    vap_measure_obj = VAP_Measure(manager, 8080)
+    vap_measure_obj = VAP_Measure(args.manager, 8080)
 
     #
     dut_temp_obj = Login_DUT(1, "Thread-1", "192.168.200.18")
@@ -458,7 +380,7 @@ def main():
     throughput_vap =[]
     
     # This loop will get the Data from All the endpoints and sum up to give total Throughput over time
-    for i in range(0,int(duration)):
+    for i in range(0,int(args.duration)):
         temp=0
         for j in lf_traffic_profile.endp:
             y=lf_traffic_profile.local_realm.json_get("/endp/"+j).get('endpoint').get('rx rate')
@@ -472,7 +394,7 @@ def main():
     print(throughput_sta)
     dut_traffic_profile.cleanup()
     lf_traffic_profile.cleanup()
-    GenerateReport(throughput_sta, throughput_vap, dut_temp_obj.data_core1, dut_temp_obj.data_core2, duration, report_name)
+    GenerateReport(throughput_sta, throughput_vap, dut_temp_obj.data_core1, dut_temp_obj.data_core2, args.duration, args.report_name)
         
 
     
