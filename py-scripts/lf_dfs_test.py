@@ -10,14 +10,13 @@ import re
 import csv
 import random
 import logging
+import argparse
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
-
-import argparse
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
@@ -103,8 +102,8 @@ class CreateCtlr:
             logg.info(pss)
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
-                .format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -119,7 +118,7 @@ class CreateCtlr:
                 pat = "%s\s+\S+\s+\S+\s+\S+\s+\S+.*  \S+\s+\S+\s+(\S+)\s+\[" % self.ap
                 # logg.info("AP line: %s"%(line))
                 m = re.search(pat, line)
-                if m != None:
+                if m:
                     sta_count = m.group(1)
                     logg.info("AP line: %s" % line)
                     logg.info("sta-count: %s" % sta_count)
@@ -173,8 +172,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}"
-                .format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -205,8 +204,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
         return pss
@@ -233,8 +232,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -261,8 +260,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -290,8 +289,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -319,8 +318,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -345,8 +344,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
 
@@ -374,8 +373,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -400,8 +399,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
 
@@ -430,8 +429,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -463,8 +462,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -494,8 +493,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -529,8 +528,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -556,8 +555,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -584,8 +583,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -614,8 +613,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -646,8 +645,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -677,8 +676,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -706,8 +705,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -732,8 +731,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
 
@@ -761,8 +760,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -787,8 +786,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
 
@@ -815,8 +814,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -853,9 +852,9 @@ class CreateCtlr:
                     if (str(controller_channel) in str(element_list[8])) and (
                             str(self.chan_width) in str(element_list[5])):
                         logg.info(
-                            "ap {} configuration successful: channel {} in expected {}  chan_width {} in expected {}"
-                            .format(element_list[0], controller_channel, element_list[8], self.chan_width,
-                                    element_list[5]))
+                            "ap {} configuration successful: channel {} in expected {}  chan_width {} in expected {}".format(
+                                element_list[0], controller_channel, element_list[8], self.chan_width,
+                                element_list[5]))
                     else:
                         logg.info("WARNING ap {} configuration: channel {} in expected {}  chan_width {} in expected {}"
                                   .format(element_list[0], controller_channel, element_list[8], self.chan_width,
@@ -942,11 +941,9 @@ class L3VariableTime(Realm):
                  reset_port_time_max_list,
                  csv_started=False,
                  side_a_min_bps=560000,
-                 side_a_max_bps=0,
                  side_a_min_pdu=1518,
                  side_a_max_pdu=0,
                  side_b_min_bps=560000,
-                 side_b_max_bps=0,
                  side_b_min_pdu=1518,
                  side_b_max_pdu=0,
                  number_template="00",
@@ -959,7 +956,7 @@ class L3VariableTime(Realm):
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  _proxy_str=None,
-                 _capture_signal_list=[]):
+                 _capture_signal_list=None):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
                          debug_=debug,
@@ -967,6 +964,9 @@ class L3VariableTime(Realm):
                          _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)
+        if _capture_signal_list is None:
+            _capture_signal_list = []
+        self.total_stas = 0
         self.dfs = _dfs
         self.dfs_time = _dfs_time
         self.radar_duration = _radar_duration
@@ -1111,12 +1111,15 @@ class L3VariableTime(Realm):
 
         csv_rx_drop_percent_data.extend([self.epoch_time, self.time_stamp(), 'rx_drop_percent'])
         # remove multi cast since downstream only if selected
-        for key in [key for key in rx_drop_percent if "mtx" in key]: del rx_drop_percent[key]
+        for key in [key for key in rx_drop_percent if "mtx" in key]:
+            del rx_drop_percent[key]
 
         if "upstream" in self.test_config_dict.values():
-            for key in [key for key in rx_drop_percent if "-A" in key]: del rx_drop_percent[key]
+            for key in [key for key in rx_drop_percent if "-A" in key]:
+                del rx_drop_percent[key]
         elif "downstream" in self.test_config_dict.values():
-            for key in [key for key in rx_drop_percent if "-B" in key]: del rx_drop_percent[key]
+            for key in [key for key in rx_drop_percent if "-B" in key]:
+                del rx_drop_percent[key]
 
         filtered_values = [v for _, v in rx_drop_percent.items() if v != 0]
         average_rx_drop_percent = sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
@@ -1141,7 +1144,6 @@ class L3VariableTime(Realm):
     def __compare_vals(self, old_list, new_list):
         passes = 0
         expected_passes = 0
-        csv_performance_values = []
         csv_rx_headers = []
         csv_rx_row_data = []
         csv_result_row_data = []
@@ -1153,8 +1155,10 @@ class L3VariableTime(Realm):
         #    csv_rx_row_data.append(self.test_config_dict[key])
         #    csv_rx_delta_row_data.append(self.test_config_dict[key])
 
-        for key in [key for key in old_list if "mtx" in key]: del old_list[key]
-        for key in [key for key in new_list if "mtx" in key]: del new_list[key]
+        for key in [key for key in old_list if "mtx" in key]:
+            del old_list[key]
+        for key in [key for key in new_list if "mtx" in key]:
+            del new_list[key]
 
         filtered_values = [v for _, v in new_list.items() if v != 0]
         average_rx = sum(filtered_values) / len(filtered_values) if len(filtered_values) != 0 else 0
@@ -1163,10 +1167,12 @@ class L3VariableTime(Realm):
         new_evaluate_list = new_list.copy()
         print("new_evaluate_list before", new_evaluate_list)
         if "upstream" in self.test_config_dict.values():
-            for key in [key for key in new_evaluate_list if "-A" in key]: del new_evaluate_list[key]
+            for key in [key for key in new_evaluate_list if "-A" in key]:
+                del new_evaluate_list[key]
             print("upstream in dictionary values")
         elif "downstream" in self.test_config_dict.values():
-            for key in [key for key in new_evaluate_list if "-B" in key]: del new_evaluate_list[key]
+            for key in [key for key in new_evaluate_list if "-B" in key]:
+                del new_evaluate_list[key]
             print("downstream in dictionary values")
         # follow code left in for now, provides the best 5 worst 5
         '''print("new_evaluate_list after",new_evaluate_list)
@@ -1181,10 +1187,12 @@ class L3VariableTime(Realm):
 
         old_evaluate_list = old_list.copy()
         if "upstream" in self.test_config_dict.values():
-            for key in [key for key in old_evaluate_list if "-A" in key]: del old_evaluate_list[key]
+            for key in [key for key in old_evaluate_list if "-A" in key]:
+                del old_evaluate_list[key]
             print("upstream in dictionary values")
         elif "downstream" in self.test_config_dict.values():
-            for key in [key for key in old_evaluate_list if "-B" in key]: del old_evaluate_list[key]
+            for key in [key for key in old_evaluate_list if "-B" in key]:
+                del old_evaluate_list[key]
             print("downstream in dictionary values")
 
         if len(old_evaluate_list) == len(new_evaluate_list):
@@ -1318,10 +1326,11 @@ class L3VariableTime(Realm):
                 else:
                     station_profile.reset_port_extra_data['seconds_till_reset'] = station_profile.reset_port_extra_data[
                                                                                       'seconds_till_reset'] - 1
-                    if self.debug: logg.info(
-                        "radio: {} countdown seconds_till_reset {}".format(station_profile.add_sta_data['radio'],
-                                                                           station_profile.reset_port_extra_data[
-                                                                               'seconds_till_reset']))
+                    if self.debug:
+                        logg.info(
+                            "radio: {} countdown seconds_till_reset {}".format(station_profile.add_sta_data['radio'],
+                                                                               station_profile.reset_port_extra_data[
+                                                                                   'seconds_till_reset']))
                     if station_profile.reset_port_extra_data['seconds_till_reset'] <= 0:
                         station_profile.reset_port_extra_data['reset_port_timer_started'] = False
                         port_to_reset = random.randint(0, len(station_profile.station_names) - 1)
@@ -1332,7 +1341,6 @@ class L3VariableTime(Realm):
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
         self.multicast_profile.cleanup_prefix()
-        self.total_stas = 0
         for station_list in self.station_lists:
             for sta in station_list:
                 self.rm_port(sta, check_exists=True)
@@ -1388,8 +1396,7 @@ class L3VariableTime(Realm):
                 self.admin_up(sta)
                 client_density += 1
 
-        temp_stations_list = []
-        temp_stations_list.append(self.side_b)
+        temp_stations_list = [self.side_b]
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
         # need algorithm for setting time default 
@@ -1424,19 +1431,15 @@ class L3VariableTime(Realm):
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
         logg.info("controller_show_ap_summary:::  pss {}".format(pss))
         if self.series == "9800":
             searchap = False
-            cc_mac = ""
             cc_ch = ""
-            cc_bw = ""
-            cc_power = ""
-            cc_dbm = ""
             for line in pss.splitlines():
                 if line.startswith("---------"):
                     searchap = True
@@ -1444,9 +1447,9 @@ class L3VariableTime(Realm):
                 # if the pattern changes save the output of the advanced command and re parse https://regex101.com
                 if searchap:
                     pat = "%s\s+(\S+)\s+(%s)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+dBm\)+\s+(\S+)+\s" % (
-                    self.ap, self.ap_slot)
+                        self.ap, self.ap_slot)
                     m = re.search(pat, line)
-                    if m != None:
+                    if m:
                         if m.group(2) == self.ap_slot:
                             cc_mac = m.group(1)
                             cc_slot = m.group(2)
@@ -1470,12 +1473,7 @@ class L3VariableTime(Realm):
                             break
         else:
             searchap = False
-            cc_mac = ""
             cc_ch = ""
-            cc_bw = ""
-            cc_power = ""
-            cc_dbm = ""
-            ch_count = ""
             for line in pss.splitlines():
                 if line.startswith("---------"):
                     searchap = True
@@ -1484,7 +1482,7 @@ class L3VariableTime(Realm):
                 if searchap:
                     pat = "%s\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm" % self.ap
                     m = re.search(pat, line)
-                    if m != None:
+                    if m:
                         cc_mac = m.group(1)
                         cc_ch = m.group(2)  # (132,136,140,144)
                         cc_power = m.group(3)
@@ -1525,21 +1523,22 @@ class L3VariableTime(Realm):
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
         blacklist_time = ""
         for line in pss.splitlines():
             pat = 'Channel\s+%s\S+\s+(\S+)\s+\S+\s+remaining' % self.chan_5ghz
             m = re.search(pat, line)
-            if m != None:
+            if m:
                 blacklist_time = m.group(1)
                 logg.info("dfs_channel: {} blacklist_time: {}".format(self.chan_5ghz, blacklist_time))
 
         return blacklist_time
 
-    def dfs_waveforms(self, waveform):
+    @staticmethod
+    def dfs_waveforms(waveform):
         # 1, 2, 3, 4, 5, 11, 12, 13, 14, 15, 16
         # "FCCO" , "FCC1" , "FCC2" , "FCC3", "FCC4", "FCC5", "ETSI1", "ETSI2", "ETSI3", "ETSI4", "ETSI5", "ETSI6"
         if waveform == "FCCO":
@@ -1593,7 +1592,8 @@ class L3VariableTime(Realm):
 
         return width, interval, count
 
-    def dfs_get_frequency(self, channel):
+    @staticmethod
+    def dfs_get_frequency(channel):
         # possibly have a dictionary
 
         if channel == "36":
@@ -1667,8 +1667,6 @@ class L3VariableTime(Realm):
         width_ = "1"
         interval_ = "1428"
         count_ = "18"
-        frequency_ = "5260000"  # channel 52
-        # sweep_time_ = "1000"
         sweep_time_ = "0"
         if_gain_ = "40"
         bb_gain_ = "20"
@@ -1797,10 +1795,8 @@ class L3VariableTime(Realm):
                      "--user", self.ap_dict['ap_user'], "--passwd", self.ap_dict['ap_pw'], "--tty",
                      self.ap_dict['ap_tty'], "--baud", self.ap_dict['ap_baud'], "--action", "show_log"],
                     capture_output=True, check=True)
-                try:
+                if ap_info:
                     pss = ap_info.stdout.decode('utf-8', 'ignore')
-                except:
-                    logg.info("ap_info was of type NoneType will set pss empty")
 
             except subprocess.CalledProcessError as process_error:
                 logg.info("###################################################")
@@ -1815,7 +1811,7 @@ class L3VariableTime(Realm):
                 logg.info("ap: CAC_EXPIRY_EVT {}".format(line))
                 pat = 'changed to DFS channel\s+(\S+),\s+\S+\s+\S+\s+\S+\s+(\S+)'
                 m = re.search(pat, line)
-                if m != None:
+                if m:
                     dfs_channel = m.group(1)
                     cac_time = m.group(2)
                     logg.info("dfs_channel: {} cac_time: {}".format(dfs_channel, cac_time))
@@ -1828,7 +1824,7 @@ class L3VariableTime(Realm):
                 logg.info("ap: CAC_EXPIRY_EVT {}".format(line))
                 pat = 'CAC_EXPIRY_EVT:\s+\S+\s+\S+\s+\S+\s\S+\s\S+\s(\S+)'
                 m = re.search(pat, line)
-                if m != None:
+                if m:
                     dfs_channel = m.group(1)
                     logg.info("dfs_channel: {}".format(dfs_channel))
                     logg.info("dfs_channel line: {}".format(line))
@@ -1839,9 +1835,6 @@ class L3VariableTime(Realm):
     def start(self, print_pass=False, print_fail=False):
         best_max_tp_mbps = 0
         best_csv_rx_row_data = " "
-        max_tp_mbps = 0
-        csv_rx_row_data = " "
-        Result = False
 
         # verify the AP CAC timer and experation
         self.ap_cac_verify()
@@ -2009,12 +2002,14 @@ class L3VariableTime(Realm):
             self.csv_results_writer.writerow(headers)
             self.csv_results.flush()
 
-    def csv_validate_list(self, csv_list, length):
+    @staticmethod
+    def csv_validate_list(csv_list, length):
         if len(csv_list) < length:
             csv_list = csv_list + [('no data', 'no data')] * (length - len(csv_list))
         return csv_list
 
-    def csv_add_row(self, row, writer, csv_file):  # can make two calls eventually
+    @staticmethod
+    def csv_add_row(row, writer, csv_file):  # can make two calls eventually
         if csv_file is not None:
             writer.writerow(row)
             csv_file.flush()
@@ -2046,8 +2041,6 @@ def main():
     global logg
     lfjson_host = "localhost"
     lfjson_port = 8080
-    endp_types = "lf_udp"
-    debug_on = False
 
     parser = argparse.ArgumentParser(
         prog='lf_dfs_test.py',
@@ -2322,8 +2315,7 @@ Sample script 2/11/2021
 
     parser.add_argument('-ctp', '--controller_tx_power',
                         help='--controller_tx_power <1 | 2 | 3 | 4 | 5 | 6 | 7 | 8>  1 is highest power default NA NA means no change',
-                        default="NA"
-                        , choices=["1", "2", "3", "4", "5", "6", "7", "8", "NA"])
+                        default="NA", choices=["1", "2", "3", "4", "5", "6", "7", "8", "NA"])
     parser.add_argument('-dfs', '--controller_dfs', help='--controller_dfs, switch to enable dfs testing',
                         action='store_true')
     parser.add_argument('-dft', '--controller_dfs_time',
@@ -2360,8 +2352,8 @@ Sample script 2/11/2021
 
     # to do add wifimode
     parser.add_argument('-r', '--radio', action='append', nargs=1, help='--radio  \
-                        \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" '
-                        , required=False)
+                        \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" ',
+                        required=False)
     parser.add_argument('-amr', '--side_a_min_bps',
                         help='--side_a_min_bps, station min tx bits per second default 9600', default=9600)
     parser.add_argument('-amp', '--side_a_min_pdu', help='--side_a_min_pdu ,  station ipdu size default 1518',
@@ -2393,7 +2385,6 @@ Sample script 2/11/2021
 
     controller_args = args
 
-    # logg.info("args: {}".format(args))
     debug_on = args.debug
 
     ##################################################################
@@ -2406,9 +2397,6 @@ Sample script 2/11/2021
     if args.polling_interval:
         polling_interval = args.polling_interval
 
-    if args.endp_type:
-        endp_types = args.endp_type
-
     if args.mgr:
         lfjson_host = args.mgr
 
@@ -2418,7 +2406,7 @@ Sample script 2/11/2021
     if args.radio:
         radios = args.radio
 
-    if args.csv_outfile != None:
+    if args.csv_outfile:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
         csv_outfile = "{}_{}.csv".format(args.csv_outfile, current_time)
         csv_results = "results_{}_{}.csv".format(args.csv_outfile, current_time)
@@ -2492,7 +2480,6 @@ Sample script 2/11/2021
     formatter = logging.Formatter(FORMAT)
     logg = logging.getLogger(__name__)
     logg.setLevel(logging.DEBUG)
-    file_handler = None
     if args.log:
         file_handler = logging.FileHandler(outfile_log, "w")
 
@@ -2652,8 +2639,7 @@ Sample script 2/11/2021
                                                                         controller_ap_mode != __ap_mode_set or
                                                                         controller_tx_power != __tx_power_set or
                                                                         controller_chan_5ghz != __chan_5ghz_set or
-                                                                        controller_chan_24ghz != __chan_24ghz_set
-                                                                ):
+                                                                        controller_chan_24ghz != __chan_24ghz_set):
                                                                     logg.info(
                                                                         "###############################################")
                                                                     logg.info("# NEW CONTROLLER CONFIG")
@@ -2740,12 +2726,10 @@ Sample script 2/11/2021
                                                                                  ap_dict['ap_baud'], "--action",
                                                                                  "clear_log"], capture_output=True,
                                                                                 check=True)  # stdout=subprocess.PIPE)
-                                                                            try:
+                                                                            if ap_info:
                                                                                 pss = ap_info.stdout.decode('utf-8',
                                                                                                             'ignore')
-                                                                            except:
-                                                                                logg.info(
-                                                                                    "ap_info was of type NoneType will set pss empty")
+                                                                            else:
                                                                                 pss = "empty"
                                                                         except subprocess.CalledProcessError as process_error:
                                                                             logg.info(
@@ -2780,10 +2764,10 @@ Sample script 2/11/2021
                                                                                  ap_dict['ap_baud'], "--action",
                                                                                  "show_log"], capture_output=True,
                                                                                 check=True)  # stdout=subprocess.PIPE
-                                                                            try:
+                                                                            if ap_info:
                                                                                 pss = ap_info.stdout.decode('utf-8',
                                                                                                             'ignore')
-                                                                            except:
+                                                                            else:
                                                                                 logg.info(
                                                                                     "ap_info was of type NoneType will set pss empty")
                                                                                 pss = "empty"
@@ -2866,10 +2850,10 @@ Sample script 2/11/2021
                                                                                      "--action", "show_log"],
                                                                                     capture_output=True, check=True)
 
-                                                                                try:
+                                                                                if ap_info:
                                                                                     pss = ap_info.stdout.decode('utf-8',
                                                                                                                 'ignore')
-                                                                                except:
+                                                                                else:
                                                                                     logg.info(
                                                                                         "ap_info was of type NoneType will set pss empty")
                                                                                     pss = "empty"
@@ -2897,7 +2881,7 @@ Sample script 2/11/2021
                                                                                 logg.info("ap: {}".format(line))
                                                                                 pat = 'CAC_EXPIRY_EVT:\s+\S+\s+\S+\s+\S+\s\S+\s\S+\s(\S+)'
                                                                                 m = re.search(pat, line)
-                                                                                if m != None:
+                                                                                if m:
                                                                                     __dfs_channel = m.group(1)
                                                                                     logg.info(
                                                                                         "__dfs_channel: {}".format(
@@ -2922,17 +2906,19 @@ Sample script 2/11/2021
                                                                     logg.info(
                                                                         "###############################################")
                                                                     logg.info(
-                                                                        "controller_ap: {} controller_band: {} controller_chan_width: {} controller_ap_mode: {} controller_tx_power: {} controller_chan_5ghz: {} controller_chan_24ghz: {}"
-                                                                        .format(controller_ap, controller_band,
-                                                                                controller_chan_width,
-                                                                                controller_ap_mode, controller_tx_power,
-                                                                                controller_chan_5ghz,
-                                                                                controller_chan_24ghz))
+                                                                        "controller_ap: {} controller_band: {} controller_chan_width: {} controller_ap_mode: {} controller_tx_power: {} controller_chan_5ghz: {} controller_chan_24ghz: {}".format(
+                                                                            controller_ap, controller_band,
+                                                                            controller_chan_width,
+                                                                            controller_ap_mode,
+                                                                            controller_tx_power,
+                                                                            controller_chan_5ghz,
+                                                                            controller_chan_24ghz))
                                                                     logg.info(
-                                                                        "__ap_set: {} __band_set: {} __chan_width_set: {} __ap_mode_set: {} __tx_power_set: {} __chan_5ghz_set: {} __chan_24ghz_set: {}"
-                                                                        .format(__ap_set, __band_set, __chan_width_set,
-                                                                                __ap_mode_set, __tx_power_set,
-                                                                                __chan_5ghz_set, __chan_24ghz_set))
+                                                                        "__ap_set: {} __band_set: {} __chan_width_set: {} __ap_mode_set: {} __tx_power_set: {} __chan_5ghz_set: {} __chan_24ghz_set: {}".format(
+                                                                            __ap_set, __band_set,
+                                                                            __chan_width_set,
+                                                                            __ap_mode_set, __tx_power_set,
+                                                                            __chan_5ghz_set, __chan_24ghz_set))
                                                                 logg.info("controller_wifi_mode {}".format(
                                                                     controller_wifimode))
                                                                 pss = controller.controller_show_ap_summary()
@@ -2940,11 +2926,7 @@ Sample script 2/11/2021
                                                                     "controller_show_ap_summary:::  pss {}".format(pss))
                                                                 if args.controller_series == "9800":
                                                                     searchap = False
-                                                                    cc_mac = ""
                                                                     cc_ch = ""
-                                                                    cc_bw = ""
-                                                                    cc_power = ""
-                                                                    cc_dbm = ""
                                                                     for line in pss.splitlines():
                                                                         if line.startswith("---------"):
                                                                             searchap = True
@@ -2952,9 +2934,9 @@ Sample script 2/11/2021
                                                                         # if the pattern changes save the output of the advanced command and re parse https://regex101.com
                                                                         if searchap:
                                                                             pat = "%s\s+(\S+)\s+(%s)\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+(\S+)\s+dBm\)+\s+(\S+)+\s" % (
-                                                                            __ap_set, __ap_slot)
+                                                                                __ap_set, __ap_slot)
                                                                             m = re.search(pat, line)
-                                                                            if m != None:
+                                                                            if m:
                                                                                 if m.group(2) == __ap_slot:
                                                                                     cc_mac = m.group(1)
                                                                                     cc_slot = m.group(2)
@@ -2998,12 +2980,7 @@ Sample script 2/11/2021
                                                                                     break
                                                                 else:
                                                                     searchap = False
-                                                                    cc_mac = ""
                                                                     cc_ch = ""
-                                                                    cc_bw = ""
-                                                                    cc_power = ""
-                                                                    cc_dbm = ""
-                                                                    ch_count = ""
                                                                     for line in pss.splitlines():
                                                                         if line.startswith("---------"):
                                                                             searchap = True
@@ -3013,7 +2990,7 @@ Sample script 2/11/2021
                                                                             pat = "%s\s+(\S+)\s+\S+\s+\S+\s+\S+\s+(\S+)\s+(\S+)\s+\(\s*(\S+)\s+dBm" % (
                                                                                 __ap_set)
                                                                             m = re.search(pat, line)
-                                                                            if m != None:
+                                                                            if m:
                                                                                 cc_mac = m.group(1)
                                                                                 cc_ch = m.group(2)  # (132,136,140,144)
                                                                                 cc_power = m.group(3)
@@ -3184,11 +3161,9 @@ Sample script 2/11/2021
                                                                     reset_port_time_max_list=reset_port_time_max_list,
                                                                     csv_started=__csv_started,
                                                                     side_a_min_bps=side_a_min_bps,
-                                                                    side_a_max_bps=0,
                                                                     side_a_min_pdu=controller_packet_size,
                                                                     side_a_max_pdu=0,
                                                                     side_b_min_bps=side_b_min_bps,
-                                                                    side_b_max_bps=0,
                                                                     side_b_min_pdu=controller_packet_size,
                                                                     side_b_max_pdu=0,
                                                                     number_template="00",
@@ -3203,7 +3178,7 @@ Sample script 2/11/2021
                                                                     logg.info("build step failed.")
                                                                     logg.info(ip_var_test.get_fail_message())
                                                                     exit(1)
-                                                                client_density = ip_var_test.station_bringup()
+                                                                ip_var_test.station_bringup()
                                                                 # controller.verify_controller(client_density)
                                                                 ip_var_test.start(False, False)
                                                                 ip_var_test.stop()
