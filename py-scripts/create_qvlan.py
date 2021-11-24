@@ -86,6 +86,7 @@ def main():
         default=None)
     parser.add_argument(
         '--num_ports',
+        type=int,
         help='number of ports to create',
         default=1)
     parser.add_argument(
@@ -135,29 +136,26 @@ def main():
     update_group_args['cxs'] = args.cxs
     port_list = []
     ip_list = []
-    if args.first_port is not None and args.use_ports is not None:
+    if args.first_port and args.use_ports:
         if args.first_port.startswith("sta"):
-            if (args.num_ports is not None) and (int(args.num_ports) > 0):
+            if args.num_ports and args.num_ports > 0:
                 start_num = int(args.first_port[3:])
-                num_ports = int(args.num_ports)
                 port_list = LFUtils.port_name_series(
                     prefix="sta",
                     start_id=start_num,
-                    end_id=start_num + num_ports - 1,
+                    end_id=start_num + args.num_ports - 1,
                     padding_number=10000,
                     radio=args.radio)
                 print(1)
         else:
-            if (args.num_ports is not None) and args.qvlan_parent is not None and (
-                    int(args.num_ports) > 0) and args.qvlan_parent in args.first_port:
+            if args.num_ports and args.qvlan_parent and (args.num_ports > 0) and args.qvlan_parent in args.first_port:
                 start_num = int(
                     args.first_port[args.first_port.index('#') + 1:])
-                num_ports = int(args.num_ports)
                 port_list = LFUtils.port_name_series(
                     prefix=str(
                         args.qvlan_parent) + "#",
                     start_id=start_num,
-                    end_id=start_num + num_ports - 1,
+                    end_id=start_num + args.num_ports - 1,
                     padding_number=10000,
                     radio=args.radio)
                 print(2)
@@ -167,7 +165,7 @@ def main():
                     "first_port must contain parent port and num_ports must be greater than 0" %
                     (args.num_ports, args.qvlan_parent, args.first_port))
     else:
-        if args.use_ports is None:
+        if not args.use_ports:
             num_ports = int(args.num_ports)
             port_list = LFUtils.port_name_series(
                 prefix=str(
@@ -204,7 +202,7 @@ def main():
                                ip_list=ip_list,
                                debug=args.debug)
     create_qvlan.build()
-    print('Created %s QVLAN stations' % num_ports)
+    print('Created %s QVLAN stations' % args.num_ports)
 
 
 if __name__ == "__main__":
