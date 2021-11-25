@@ -55,7 +55,7 @@ Realm = realm.Realm
 
 class GenTest(LFCliBase):
     def __init__(self, ssid, security, passwd, sta_list, client, name_prefix, upstream, host="localhost", port=8080,
-                 number_template="000", test_duration="5m", type="lfping", dest=None, cmd =None,
+                 number_template="000", test_duration="5m", test_type="lfping", dest=None, cmd =None,
                  interval=1, radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
                  file_output=None,
                  loop_count=None,
@@ -86,7 +86,7 @@ class GenTest(LFCliBase):
         self.station_profile.mode = 0
 
         self.generic_endps_profile.name = name_prefix
-        self.generic_endps_profile.type = type
+        self.generic_endps_profile.type = test_type
         self.generic_endps_profile.dest = dest
         self.generic_endps_profile.cmd = cmd
         self.generic_endps_profile.interval = interval
@@ -281,7 +281,7 @@ python3 ./test_generic.py
                            radio=args.radio,
                            sta_list=station_list,
                            name_prefix="GT",
-                           type=args.type,
+                           test_type=args.type,
                            dest=args.dest,
                            cmd=args.cmd,
                            interval=1,
