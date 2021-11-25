@@ -96,7 +96,7 @@ class L3PowersaveTraffic(LFCliBase):
                             cx_rx_map[item] = value_rx
         return cx_rx_map
 
-    def start(self, print_pass=False, print_fail=False):
+    def start(self):
         # start one test, measure
         # start second test, measure
         cur_time = datetime.datetime.now()
