@@ -22,13 +22,13 @@ class StationsConnected(LFCliBase):
         super().__init__(_lfjson_host=lfjson_host, _lfjson_port=lfjson_port)
         self.localrealm = Realm(lfclient_host=lfjson_host, lfclient_port=lfjson_port)
         self.check_connect()
+        fields = "_links,port,alias,ip,ap,port+type"
+        self.station_results = self.localrealm.find_ports_like("sta*", fields, debug_=False)
 
     def run(self):
         self.clear_test_results()
-        fields = "_links,port,alias,ip,ap,port+type"
-        self.station_results = self.localrealm.find_ports_like("sta*", fields, debug_=False)
         # pprint(self.station_results)
-        if (self.station_results is None) or (len(self.station_results) < 1):
+        if not self.station_results or (len(self.station_results) < 1):
             self.get_failed_result_list()
             return False
         return True
