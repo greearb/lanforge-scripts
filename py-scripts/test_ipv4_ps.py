@@ -10,7 +10,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -22,7 +21,7 @@ Realm = realm.Realm
 
 class IPV4VariableTime(LFCliBase):
     def __init__(self, ssid, security, password, sta_list, name_prefix, upstream, radio,
-                host="localhost", port=8080,
+                 host="localhost", port=8080,
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
                  number_template="00000", test_duration="5m", use_ht160=False,
@@ -78,7 +77,8 @@ class IPV4VariableTime(LFCliBase):
                             cx_rx_map[item] = value_rx
         return cx_rx_map
 
-    def __compare_vals(self, old_list, new_list):
+    @staticmethod
+    def __compare_vals(old_list, new_list):
         passes = 0
         expected_passes = 0
         if len(old_list) == len(new_list):
@@ -172,7 +172,6 @@ class IPV4VariableTime(LFCliBase):
 
 
 def main():
-
     parser = LFCliBase.create_basic_argparse(
         prog='test_ipv4_variable_time.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -194,17 +193,11 @@ Generic command layout:
 --test_duration 2m
 --debug
         ''')
-    required = None
-    for agroup in parser._action_groups:
-        if agroup.title == "required arguments":
-            required = agroup
-    #if required is not None:
-
     optional = None
     for agroup in parser._action_groups:
         if agroup.title == "optional arguments":
             optional = agroup
-    if optional is not None: 
+    if optional is not None:
         optional.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
         optional.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
         optional.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
@@ -215,8 +208,7 @@ Generic command layout:
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
 
-
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000,
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
                                           radio=args.radio)
 
     ip_var_test = IPV4VariableTime(host=args.mgr, port=args.mgr_port,
