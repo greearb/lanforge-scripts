@@ -155,6 +155,9 @@ Command example:
 
     args = parser.parse_args()
 
+    if args.report_file.split('.')[-1] not in ['pkl','csv','xlsx']:
+        raise NameError('Please make sure your file name ends with either pkl, csv, or xlsx')
+
     dictionary = dict()
     for num_sta in list(filter(lambda x: (x % 2 == 0), [*range(0, args.num_stations)])):
         print(num_sta)
@@ -185,7 +188,14 @@ Command example:
     df['duration'] = df['Stations Up'] - df['Start']
     for variable in ['built duration', 'duration']:
         df[variable] = [x.total_seconds() for x in df[variable]]
-    df.to_pickle(args.report_file)
+    if 'pkl' in args.report_file:
+        df.to_pickle(args.report_file)
+    if 'csv' in args.report_file:
+        df.to_csv(args.report_file)
+    if 'xlsx' in args.report_file:
+        df.to_excel(args.report_file)
+    else:
+
 
 
 if __name__ == "__main__":
