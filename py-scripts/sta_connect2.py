@@ -159,8 +159,8 @@ class StaConnect2(LFCliBase):
                 sta_url = self.get_station_url(sta_name)
                 response = self.json_get(sta_url)
                 if (response is not None) and (response["interface"] is not None):
-                    for sta_name in self.station_names:
-                        LFUtils.removePort(self.resource, sta_name, self.lfclient_url)
+                    for station in self.station_names:
+                        LFUtils.removePort(self.resource, station, self.lfclient_url)
             LFUtils.wait_until_ports_disappear(self.lfclient_url, self.station_names)
 
         # Create stations and turn dhcp on
@@ -437,12 +437,6 @@ Example:
     if args.port is not None:
         lfjson_port = args.port
 
-    on_flags = [1, "1", "on", "yes", "true"]
-    debug_v = False
-    if args.debug is not None:
-        if args.debug in on_flags:
-            debug_v = True
-
     staConnect = StaConnect2(lfjson_host, lfjson_port,
                              debug_=True,
                              _influx_db=args.influx_db,
@@ -486,7 +480,7 @@ Example:
 
     time.sleep(staConnect.runtime_secs)
     staConnect.stop()
-    run_results = staConnect.get_result_list()
+    staConnect.get_result_list()
     is_passing = staConnect.passes()
     if not is_passing:
         print("FAIL:  Some tests failed")
