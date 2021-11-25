@@ -15,7 +15,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -68,11 +67,11 @@ class StaConnect2(LFCliBase):
         self.upstream_url = None  # defer construction
         self.station_names = []
         if _sta_name is not None:
-            self.station_names = [ _sta_name ]
+            self.station_names = [_sta_name]
         self.sta_prefix = _sta_prefix
         self.bringup_time_sec = _bringup_time_sec
         # self.localrealm :Realm = Realm(lfclient_host=host, lfclient_port=port) # py > 3.6
-        self.localrealm = Realm(lfclient_host=host, lfclient_port=port) # py > 3.6
+        self.localrealm = Realm(lfclient_host=host, lfclient_port=port)  # py > 3.6
         self.resulting_stations = {}
         self.resulting_endpoints = {}
         self.station_profile = None
@@ -117,23 +116,23 @@ class StaConnect2(LFCliBase):
         counter = 0
         # print("there are %d results" % len(self.station_results))
         fields = "_links,port,alias,ip,ap,port+type"
-        self.station_results = self.localrealm.find_ports_like("%s*"%self.sta_prefix, fields, debug_=False)
+        self.station_results = self.localrealm.find_ports_like("%s*" % self.sta_prefix, fields, debug_=False)
         if (self.station_results is None) or (len(self.station_results) < 1):
             self.get_failed_result_list()
-        for eid,record in self.station_results.items():
-            #print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
-            #pprint(eid)
-            #pprint(record)
+        for eid, record in self.station_results.items():
+            # print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
+            # pprint(eid)
+            # pprint(record)
             if record["ap"] == bssid:
                 counter += 1
-            #print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
+            # print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
         return counter
 
     def clear_test_results(self):
         self.resulting_stations = {}
         self.resulting_endpoints = {}
         super().clear_test_results()
-        #super(StaConnect, self).clear_test_results().test_results.clear()
+        # super(StaConnect, self).clear_test_results().test_results.clear()
 
     def setup(self, extra_securities=[]):
         self.clear_test_results()
@@ -181,7 +180,8 @@ class StaConnect2(LFCliBase):
         for security in extra_securities:
             self.station_profile.add_security_extra(security=security)
         print("Adding new stations ", end="")
-        self.station_profile.create(radio=self.radio, sta_names_=self.station_names, up_=False, debug=self.debug, suppress_related_commands_=True)
+        self.station_profile.create(radio=self.radio, sta_names_=self.station_names, up_=False, debug=self.debug,
+                                    suppress_related_commands_=True)
         LFUtils.wait_until_ports_appear(self.lfclient_url, self.station_names, debug=self.debug)
 
         # Create UDP endpoints
@@ -192,13 +192,13 @@ class StaConnect2(LFCliBase):
         self.l3_udp_profile.side_b_min_pdu = 1500
         self.l3_udp_profile.report_timer = 1000
         self.l3_udp_profile.name_prefix = "udp"
-        port_list = list(self.localrealm.find_ports_like("%s+"%self.sta_prefix))
+        port_list = list(self.localrealm.find_ports_like("%s+" % self.sta_prefix))
         if (port_list is None) or (len(port_list) < 1):
-            raise ValueError("Unable to find ports named '%s'+"%self.sta_prefix)
+            raise ValueError("Unable to find ports named '%s'+" % self.sta_prefix)
         self.l3_udp_profile.create(endp_type="lf_udp",
-                                    side_a=port_list,
-                                    side_b="%d.%s" % (self.resource, self.upstream_port),
-                                    suppress_related_commands=True)
+                                   side_a=port_list,
+                                   side_b="%d.%s" % (self.resource, self.upstream_port),
+                                   suppress_related_commands=True)
 
         # Create TCP endpoints
         self.l3_tcp_profile = self.localrealm.new_l3_cx_profile()
@@ -207,9 +207,9 @@ class StaConnect2(LFCliBase):
         self.l3_tcp_profile.name_prefix = "tcp"
         self.l3_tcp_profile.report_timer = 1000
         self.l3_tcp_profile.create(endp_type="lf_tcp",
-                                    side_a=list(self.localrealm.find_ports_like("%s+"%self.sta_prefix)),
-                                    side_b="%d.%s" % (self.resource, self.upstream_port),
-                                    suppress_related_commands=True)
+                                   side_a=list(self.localrealm.find_ports_like("%s+" % self.sta_prefix)),
+                                   side_b="%d.%s" % (self.resource, self.upstream_port),
+                                   suppress_related_commands=True)
 
     def start(self):
         if self.station_profile is None:
@@ -220,9 +220,9 @@ class StaConnect2(LFCliBase):
         if not self.station_profile.up:
             print("\nBringing ports up...")
             data = {"shelf": 1,
-                     "resource": self.resource,
-                     "port": "ALL",
-                     "probe_flags": 1}
+                    "resource": self.resource,
+                    "port": "ALL",
+                    "probe_flags": 1}
             self.json_post("/cli-json/nc_show_ports", data)
             self.station_profile.admin_up()
             LFUtils.waitUntilPortsAdminUp(self.resource, self.lfclient_url, self.station_names)
@@ -269,7 +269,7 @@ class StaConnect2(LFCliBase):
                     else:
                         connected_stations[sta_name] = sta_url
             data = {
-                "shelf":1,
+                "shelf": 1,
                 "resource": self.resource,
                 "port": "ALL",
                 "probe_flags": 1
@@ -281,7 +281,7 @@ class StaConnect2(LFCliBase):
 
         for sta_name in self.station_names:
             sta_url = self.get_station_url(sta_name)
-            station_info = self.json_get(sta_url) # + "?fields=port,ip,ap")
+            station_info = self.json_get(sta_url)  # + "?fields=port,ip,ap")
             if station_info is None:
                 print("unable to query %s" % sta_url)
             self.resulting_stations[sta_url] = station_info
@@ -295,13 +295,14 @@ class StaConnect2(LFCliBase):
                 print(" %s +AP %s, " % (sta_name, ap), end="")
                 if self.dut_bssid != "":
                     if self.dut_bssid.lower() == ap.lower():
-                        self._pass(sta_name+" connected to BSSID: " + ap)
+                        self._pass(sta_name + " connected to BSSID: " + ap)
                         # self.test_results.append("PASSED: )
                         # print("PASSED: Connected to BSSID: "+ap)
                     else:
-                        self._fail("%s connected to wrong BSSID, requested: %s  Actual: %s" % (sta_name, self.dut_bssid, ap))
+                        self._fail(
+                            "%s connected to wrong BSSID, requested: %s  Actual: %s" % (sta_name, self.dut_bssid, ap))
             else:
-                self._fail(sta_name+" did not connect to AP")
+                self._fail(sta_name + " did not connect to AP")
                 return False
 
             if ip == "0.0.0.0":
@@ -326,7 +327,7 @@ class StaConnect2(LFCliBase):
 
     def collect_endp_stats(self, endp_map):
         print("Collecting Data")
-        fields="/all"
+        fields = "/all"
         for (cx_name, endps) in endp_map.items():
             try:
                 endp_url = "/endp/%s%s" % (endps[0], fields)
@@ -335,7 +336,7 @@ class StaConnect2(LFCliBase):
                 ptest_a_tx = endp_json['endpoint']['tx bytes']
                 ptest_a_rx = endp_json['endpoint']['rx bytes']
 
-                #ptest = self.json_get("/endp/%s?fields=tx+bytes,rx+bytes" % cx_names[cx_name]["b"])
+                # ptest = self.json_get("/endp/%s?fields=tx+bytes,rx+bytes" % cx_names[cx_name]["b"])
                 endp_url = "/endp/%s%s" % (endps[1], fields)
                 endp_json = self.json_get(endp_url)
                 self.resulting_endpoints[endp_url] = endp_json
@@ -351,7 +352,6 @@ class StaConnect2(LFCliBase):
 
             except Exception as e:
                 self.error(e)
-
 
     def stop(self):
         # stop cx traffic
@@ -385,8 +385,9 @@ class StaConnect2(LFCliBase):
                 curr_endp_names.append(endp_names[1])
             for (cx_name, endp_names) in self.l3_tcp_profile.created_cx.items():
                 curr_endp_names.append(endp_names[0])
-                curr_endp_names.append(endp_names[1])        
-            removeEndps(self.lfclient_url, curr_endp_names, debug= self.debug)
+                curr_endp_names.append(endp_names[1])
+            removeEndps(self.lfclient_url, curr_endp_names, debug=self.debug)
+
 
 # ~class
 
@@ -420,11 +421,14 @@ Example:
     parser.add_argument("--dut_bssid", type=str, help="DUT BSSID to which we expect to connect.")
     parser.add_argument("--debug", type=str, help="enable debugging")
     parser.add_argument("--prefix", type=str, help="Station prefix. Default: 'sta'", default='sta')
-    parser.add_argument("--bringup_time", type=int, help="Seconds to wait for stations to associate and aquire IP. Default: 300", default=300)
+    parser.add_argument("--bringup_time", type=int,
+                        help="Seconds to wait for stations to associate and aquire IP. Default: 300", default=300)
     parser.add_argument('--influx_user', help='Username for your Influx database', default=None)
     parser.add_argument('--influx_passwd', help='Password for your Influx database', default=None)
     parser.add_argument('--influx_db', help='Name of your Influx database', default=None)
-    parser.add_argument('--influx_host', help='Host of your influx database if different from the system you are running on', default='localhost')
+    parser.add_argument('--influx_host',
+                        help='Host of your influx database if different from the system you are running on',
+                        default='localhost')
     parser.add_argument('--monitor_interval', help='How frequently you want to append to your database', default='5s')
 
     args = parser.parse_args()
@@ -433,7 +437,7 @@ Example:
     if args.port is not None:
         lfjson_port = args.port
 
-    on_flags = [ 1, "1", "on", "yes", "true" ]
+    on_flags = [1, "1", "on", "yes", "true"]
     debug_v = False
     if args.debug is not None:
         if args.debug in on_flags:
@@ -441,10 +445,10 @@ Example:
 
     staConnect = StaConnect2(lfjson_host, lfjson_port,
                              debug_=True,
-                             _influx_db = args.influx_db,
-                             _influx_passwd = args.influx_passwd,
-                             _influx_user = args.influx_user,
-                             _influx_host = args.influx_host,
+                             _influx_db=args.influx_db,
+                             _influx_passwd=args.influx_passwd,
+                             _influx_user=args.influx_user,
+                             _influx_host=args.influx_host,
                              _exit_on_fail=True,
                              _exit_on_error=False)
 
@@ -472,10 +476,10 @@ Example:
         staConnect.dut_security = args.dut_security
     if (args.prefix is not None) or (args.prefix != "sta"):
         staConnect.sta_prefix = args.prefix
-    staConnect.station_names = [ "%s0000"%args.prefix ]
+    staConnect.station_names = ["%s0000" % args.prefix]
     staConnect.bringup_time_sec = args.bringup_time
 
-   # staConnect.cleanup()
+    # staConnect.cleanup()
     staConnect.setup()
     staConnect.start()
     print("napping %f sec" % staConnect.runtime_secs)
@@ -491,6 +495,7 @@ Example:
     print(staConnect.get_all_message())
 
     staConnect.cleanup()
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
