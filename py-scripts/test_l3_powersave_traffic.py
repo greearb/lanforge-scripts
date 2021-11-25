@@ -6,12 +6,10 @@ import time
 import datetime
 import argparse
 
-
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -41,17 +39,17 @@ class L3PowersaveTraffic(LFCliBase):
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=False)
         # upload
         self.cx_prof_upload = l3_cxprofile.L3CXProfile(self.host, self.port, self.local_realm,
-                                                side_a_min_bps=side_a_min_rate, side_b_min_bps=0,
-                                                side_a_max_bps=side_a_max_rate, side_b_max_bps=0,
-                                                side_a_min_pdu=pdu_size, side_a_max_pdu=pdu_size,
-                                                side_b_min_pdu=0, side_b_max_pdu=0, debug_=False)
+                                                       side_a_min_bps=side_a_min_rate, side_b_min_bps=0,
+                                                       side_a_max_bps=side_a_max_rate, side_b_max_bps=0,
+                                                       side_a_min_pdu=pdu_size, side_a_max_pdu=pdu_size,
+                                                       side_b_min_pdu=0, side_b_max_pdu=0, debug_=False)
 
         # download
         self.cx_prof_download = l3_cxprofile.L3CXProfile(self.host, self.port, self.local_realm,
-                                                  side_a_min_bps=0, side_b_min_bps=side_b_min_rate,
-                                                  side_a_max_bps=0, side_b_max_bps=side_b_max_rate,
-                                                  side_a_min_pdu=0, side_a_max_pdu=0,
-                                                  side_b_min_pdu=pdu_size, side_b_max_pdu=pdu_size, debug_=False)
+                                                         side_a_min_bps=0, side_b_min_bps=side_b_min_rate,
+                                                         side_a_max_bps=0, side_b_max_bps=side_b_max_rate,
+                                                         side_a_min_pdu=0, side_a_max_pdu=0,
+                                                         side_b_min_pdu=pdu_size, side_b_max_pdu=pdu_size, debug_=False)
         self.test_duration = test_duration
         self.station_profile = realm.StationProfile(self.lfclient_url, self.local_realm, ssid=self.ssid,
                                                     ssid_pass=self.password,
@@ -80,9 +78,11 @@ class L3PowersaveTraffic(LFCliBase):
         self.cx_prof_upload.name_prefix = "UDP_up"
         self.cx_prof_download.name_prefix = "UDP_down"
         print("Creating upload cx profile ")
-        self.cx_prof_upload.create(endp_type="lf_udp", side_a=self.station_profile.station_names, side_b="1.eth1", sleep_time=.05)
+        self.cx_prof_upload.create(endp_type="lf_udp", side_a=self.station_profile.station_names, side_b="1.eth1",
+                                   sleep_time=.05)
         print("Creating download cx profile")
-        self.cx_prof_download.create(endp_type="lf_udp", side_a=self.station_profile.station_names, side_b="1.eth1", sleep_time=.05)
+        self.cx_prof_download.create(endp_type="lf_udp", side_a=self.station_profile.station_names, side_b="1.eth1",
+                                     sleep_time=.05)
 
     def __get_rx_values(self):
         cx_list = self.json_get("/endp/list?fields=name,rx+bytes", debug_=False)
@@ -113,7 +113,7 @@ class L3PowersaveTraffic(LFCliBase):
         self.station_profile.admin_up()
         # self.new_monitor.set_flag()
         # print(self.station_profile.station_names)
-        if  self.local_realm.wait_for_ip(self.station_profile.station_names):
+        if self.local_realm.wait_for_ip(self.station_profile.station_names):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
