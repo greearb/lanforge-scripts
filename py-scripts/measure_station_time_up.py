@@ -15,7 +15,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -34,7 +33,7 @@ class MeasureTimeUp(Realm):
                  _port=None,
                  _num_sta=None,
                  _number_template="00000",
-                 _radio=["wiphy0", "wiphy1"],
+                 _radio=None,
                  _proxy_str=None,
                  _debug_on=False,
                  _up=True,
@@ -49,6 +48,8 @@ class MeasureTimeUp(Realm):
                  _clean_dut="no"):
         super().__init__(_host,
                          _port)
+        if _radio is None:
+            _radio = ["wiphy0", "wiphy1"]
         self.host = _host
         self.port = _port
         self.ssid = _ssid
@@ -155,7 +156,7 @@ Command example:
 
     args = parser.parse_args()
 
-    if args.report_file.split('.')[-1] not in ['pkl','csv','xlsx']:
+    if args.report_file.split('.')[-1] not in ['pkl', 'csv', 'xlsx']:
         raise NameError('Please make sure your file name ends with either pkl, csv, or xlsx')
 
     dictionary = dict()
@@ -193,7 +194,7 @@ Command example:
     if 'csv' in args.report_file:
         df.to_csv(args.report_file)
     if 'xlsx' in args.report_file:
-        df.to_excel(args.report_file)      
+        df.to_excel(args.report_file)
 
 
 if __name__ == "__main__":
