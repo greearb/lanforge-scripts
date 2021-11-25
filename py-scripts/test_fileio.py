@@ -75,15 +75,19 @@ class FileIOTest(LFCliBase):
                  use_test_groups=False,
                  write_only_test_group=None,
                  read_only_test_group=None,
-                 port_list=[],
+                 port_list=None,
                  ip_list=None,
                  connections_per_port=1,
                  mode="both",
-                 update_group_args={"name": None, "action": None, "cxs": None},
+                 update_group_args=None,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        if port_list is None:
+            port_list = []
+        if update_group_args is None:
+            update_group_args = {"name": None, "action": None, "cxs": None}
         self.host = host
         self.port = port
         self.radio = radio
@@ -658,8 +662,7 @@ Generic command layout:
     tg_group = parser.add_mutually_exclusive_group()
     tg_group.add_argument('--add_to_group', help='name of test group to add cxs to', default=None)
     tg_group.add_argument('--del_from_group', help='name of test group to delete cxs from', default=None)
-    parser.add_argument('--cxs', help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group'
-                        , default=None)
+    parser.add_argument('--cxs', help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group', default=None)
     args = parser.parse_args()
 
     update_group_args = {
