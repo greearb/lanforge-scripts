@@ -134,7 +134,9 @@ class StaConnect2(LFCliBase):
         super().clear_test_results()
         # super(StaConnect, self).clear_test_results().test_results.clear()
 
-    def setup(self, extra_securities=[]):
+    def setup(self, extra_securities=None):
+        if extra_securities is None:
+            extra_securities = []
         self.clear_test_results()
         self.check_connect()
         upstream_json = self.json_get("%s?fields=alias,phantom,down,port,ip" % self.get_upstream_url(), debug_=False)
@@ -227,7 +229,7 @@ class StaConnect2(LFCliBase):
             self.station_profile.admin_up()
             LFUtils.waitUntilPortsAdminUp(self.resource, self.lfclient_url, self.station_names)
 
-        if self.influx_db is not None:
+        if self.influx_db:
             grapher = RecordInflux(_influx_host=self.influx_host,
                                    _influx_db=self.influx_db,
                                    _influx_user=self.influx_user,
@@ -275,7 +277,7 @@ class StaConnect2(LFCliBase):
                 "probe_flags": 1
             }
             self.json_post("/cli-json/nc_show_ports", data)
-            if self.influx_db is not None:
+            if self.influx_db:
                 grapher.getdata()
         LFUtils.wait_until_ports_appear()
 
