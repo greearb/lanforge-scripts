@@ -54,7 +54,7 @@ class RunCvScenario(LFCliBase):
         self.json_post("/cli-json/load", data)
         self.wait_for_db_load_and_sync()
 
-        port_counter = 0;
+        port_counter = 0
         attempts = 6
         while (attempts > 0) and (port_counter > 0):
             sleep(1)
@@ -72,7 +72,7 @@ class RunCvScenario(LFCliBase):
 
         if (port_counter != 0) and (attempts == 0):
             print("There appears to be a vAP in this database, quitting.")
-            pprint(alias_map);
+            pprint(alias_map)
             exit(1)
 
         data = {
