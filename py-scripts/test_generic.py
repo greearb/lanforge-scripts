@@ -105,7 +105,7 @@ class GenTest(LFCliBase):
         else:
             return True
 
-    def start(self, print_pass=False, print_fail=False):
+    def start(self):
         self.station_profile.admin_up()
         temp_stas = []
         for station in self.sta_list.copy():
@@ -235,10 +235,10 @@ python3 ./test_generic.py
     if args.report_file is None:
         new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
                                                                                                  '-') + '-test_generic'  # create path name
-        try:
+        if not os.path.exists('/home/lanforge/report-data/'):
             path = os.path.join('/home/lanforge/report-data/', new_file_path)
             os.mkdir(path)
-        except:
+        else:
             curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             path = os.path.join(curr_dir_path, new_file_path)
             os.mkdir(path)
@@ -316,9 +316,10 @@ python3 ./test_generic.py
 
     try:
         genconnections = ','.join([[*x.keys()][0] for x in generic_test.json_get('generic')['endpoints']])
-    except:
+    except ValueError as error:
         raise ValueError(
-            '1. Enable the generic tab in LANforge GUI , if still fails 2. Try setting the upstream port flag if your device does not have an eth1 port')
+            '1. Enable the generic tab in LANforge GUI , if still fails 2. Try setting the upstream port flag if your device does not have an eth1 port \n'
+            '%s' % error)
 
     if type(args.gen_cols) is not list:
         generic_cols = list(args.gen_cols.split(","))
@@ -341,9 +342,10 @@ python3 ./test_generic.py
         monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
     except ValueError as error:
         print(ValueError(
-            "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. "))
+            "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. \n"
+            "%s" % error))
         exit(1)
-    generic_test.start(False, False)
+    generic_test.start()
     generic_test.generic_endps_profile.monitor(generic_cols=generic_cols,
                                                sta_list=station_list,
                                                # port_mgr_cols=port_mgr_cols,
