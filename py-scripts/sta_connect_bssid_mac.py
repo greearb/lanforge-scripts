@@ -64,17 +64,14 @@ class client_connect(Realm):
             print(station_name)
             self.station_profile.cleanup(stat_list)
 
-            try:
-                if self.bssid[station_name] is not None or self.bssid[station_name] != "":
-                    self.station_profile.set_command_param("add_sta", "ap", bssid_list[station_name])
-            except:
+            if self.bssid[station_name]:
+                self.station_profile.set_command_param("add_sta", "ap", bssid_list[station_name])
+            else:
                 self.station_profile.set_command_param("add_sta", "ap", "DEFAULT")
 
-            try:
-                if self.mac[station_name] is not None or self.mac[station_name] != "":
-                    self.station_profile.add_sta_data["mac"] = mac_list[station_name]
-                    print(self.mac[station_name])
-            except:
+            if self.mac[station_name]:
+                self.station_profile.add_sta_data["mac"] = mac_list[station_name]
+            else:
                 self.station_profile.add_sta_data["mac"] = "xx:xx:xx:xx:*:*"
 
             print(stat_list)
