@@ -221,12 +221,8 @@ class CreateSTA_CX(LFCliBase):
                 del_sta_names.append(tname)
         except Exception as x:
             self.local_realm.error(x)
-        try:
-            LFUtils.waitUntilPortsDisappear(base_url=self.local_realm.lfclient_url, port_list=del_sta_names, debug=True)
-            print("Ports Successfully Cleaned up")
-            return 0
-        except:
-            print("Ports Successfully Cleaned up")
+        LFUtils.waitUntilPortsDisappear(base_url=self.local_realm.lfclient_url, port_list=del_sta_names, debug=True)
+        print("Ports Successfully Cleaned up")
         time.sleep(5)
         return 0
 
