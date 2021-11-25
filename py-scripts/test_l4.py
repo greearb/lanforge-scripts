@@ -312,10 +312,6 @@ python3 ./test_l4.py
         except:
             path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             print('Saving file to local directory')
-    else:
-        pass
-
-    if args.report_file is None:
         if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
                                   'xlsx']:
             rpt_file = path + '/data.' + args.output_format
@@ -324,6 +320,7 @@ python3 ./test_l4.py
             rpt_file = path + '/data.xlsx'
     else:
         rpt_file = args.report_file
+
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
                                           radio=args.radio)
 
