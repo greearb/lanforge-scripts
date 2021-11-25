@@ -193,9 +193,7 @@ Command example:
     if 'csv' in args.report_file:
         df.to_csv(args.report_file)
     if 'xlsx' in args.report_file:
-        df.to_excel(args.report_file)
-    else:
-
+        df.to_excel(args.report_file)      
 
 
 if __name__ == "__main__":
