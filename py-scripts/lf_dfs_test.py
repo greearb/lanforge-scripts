@@ -3156,7 +3156,7 @@ Sample script 2/11/2021
                                                                     debug_on=debug_on,
                                                                     wait_timeout=wait_timeout,
                                                                     outfile=csv_outfile,
-                                                                    results=csv_results,
+                                                                    results=args.csv_results,
                                                                     test_keys=test_keys,
                                                                     test_config=test_config,
                                                                     reset_port_enable_list=reset_port_enable_list,
@@ -3170,8 +3170,8 @@ Sample script 2/11/2021
                                                                     side_b_min_pdu=controller_packet_size,
                                                                     side_b_max_pdu=0,
                                                                     number_template="00",
-                                                                    test_duration=test_duration,
-                                                                    polling_interval=polling_interval,
+                                                                    test_duration=args.test_duration,
+                                                                    polling_interval=args.polling_interval,
                                                                     lfclient_host=lfjson_host,
                                                                     lfclient_port=lfjson_port)
                                                                 __csv_started = True
