@@ -103,7 +103,7 @@ class MeasureTimeUp(Realm):
         self._pass("PASS: Station build finished")
 
     def scenario(self):
-        if self.load is not None:
+        if self.load:
             data = {
                 "name": self.load,
                 "action": self.action,
@@ -117,13 +117,13 @@ class MeasureTimeUp(Realm):
             print("Loading database %s" % self.load)
             self.json_post("/cli-json/load", data)
 
-        elif self.start is not None:
+        elif self.start:
             print("Starting test group %s..." % self.start)
             self.json_post("/cli-json/start_group", {"name": self.start})
-        elif self.stop is not None:
+        elif self.stop:
             print("Stopping test group %s..." % self.stop)
             self.json_post("/cli-json/stop_group", {"name": self.stop})
-        elif self.quiesce is not None:
+        elif self.quiesce:
             print("Quiescing test group %s..." % self.quiesce)
             self.json_post("/cli-json/quiesce_group", {"name": self.quiesce})
 
@@ -151,35 +151,33 @@ Command example:
             ''')
     required = parser.add_argument_group('required arguments')
     required.add_argument('--report_file', help='where you want to store results', required=True)
+    parser.add_argument('--database', help='Which database to load', default='FACTORY_DFLT')
 
     args = parser.parse_args()
 
     dictionary = dict()
-    for num_sta in list(filter(lambda x: (x % 2 == 0), [*range(0, 200)])):
+    for num_sta in list(filter(lambda x: (x % 2 == 0), [*range(0, args.num_stations)])):
         print(num_sta)
-        try:
-            create_station = MeasureTimeUp(_host=args.mgr,
-                                           _port=args.mgr_port,
-                                           _ssid=args.ssid,
-                                           _password=args.passwd,
-                                           _security=args.security,
-                                           _num_sta=num_sta,
-                                           _radio=["wiphy0", "wiphy1"],
-                                           _proxy_str=args.proxy,
-                                           _debug_on=args.debug,
-                                           _load='FACTORY_DFLT')
-            create_station.scenario()
-            time.sleep(5.0 + num_sta / 10)
-            start = datetime.datetime.now()
-            create_station.build()
-            built = datetime.datetime.now()
-            create_station.station_up()
-            stationsup = datetime.datetime.now()
-            dictionary[num_sta] = [start, built, stationsup]
-            create_station.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=station_list)
-            time.sleep(5.0 + num_sta / 20)
-        except:
-            pass
+        create_station = MeasureTimeUp(_host=args.mgr,
+                                       _port=args.mgr_port,
+                                       _ssid=args.ssid,
+                                       _password=args.passwd,
+                                       _security=args.security,
+                                       _num_sta=num_sta,
+                                       _radio=["wiphy0", "wiphy7"],
+                                       _proxy_str=args.proxy,
+                                       _debug_on=args.debug,
+                                       _load=args.database)
+        create_station.scenario()
+        time.sleep(5.0 + num_sta / 10)
+        start = datetime.datetime.now()
+        create_station.build()
+        built = datetime.datetime.now()
+        create_station.station_up()
+        stationsup = datetime.datetime.now()
+        dictionary[num_sta] = [start, built, stationsup]
+        create_station.wait_until_ports_disappear()
+        time.sleep(5.0 + num_sta / 20)
     df = pd.DataFrame.from_dict(dictionary).transpose()
     df.columns = ['Start', 'Built', 'Stations Up']
     df['built duration'] = df['Built'] - df['Start']
