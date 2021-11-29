@@ -593,7 +593,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -627,7 +628,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -654,7 +656,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -683,7 +686,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -714,7 +718,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -744,7 +749,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -772,7 +778,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -797,7 +804,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
 
@@ -825,7 +833,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -850,7 +859,8 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                        process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
 
@@ -877,7 +887,8 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -914,11 +925,12 @@ class CreateCtlr:
                     if (str(controller_channel) in str(element_list[8])) and (
                             str(self.chan_width) in str(element_list[5])):
                         logg.info(
-                            "ap {} configuration successful: channel {} in expected {}  chan_width {} in expected {}".format(element_list[0],
-                                                                                                                             controller_channel,
-                                                                                                                             element_list[8],
-                                                                                                                             self.chan_width,
-                                                                                                                             element_list[5]))
+                            "ap {} configuration successful: channel {} in expected {}  chan_width {} in expected {}".format(
+                                element_list[0],
+                                controller_channel,
+                                element_list[8],
+                                self.chan_width,
+                                element_list[5]))
                     else:
                         logg.info("WARNING ap {} configuration: channel {} in expected {}  chan_width {} in expected {}"
                                   .format(element_list[0], controller_channel, element_list[8], self.chan_width,
@@ -1866,7 +1878,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-c', '--csv_output', help="Generate csv output", default=True)
 
     parser.add_argument('-r', '--radio', action='append', nargs=1, help='--radio  \
-                        \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" ', required=False)
+                        \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" ',
+                        required=False)
     parser.add_argument('-ul_bps', '--side_a_tx_min_bps',
                         help='--side_a_tx_min_bps , upload (A side tx) min tx rate bps  default 256000 500000000',
                         default="256000 1000000000")
@@ -1880,7 +1893,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-noc', '--no_controller', help='-noc / --no_controller no configuration of the controller',
                         action='store_true')
     parser.add_argument('-nos', '--no_stations', help='-nos / --no_stations , no stations', action='store_true')
-    parser.add_argument('-wto', '--wait_timeout', type=int, help='-wto / --wait_timeout , time to wait for stations to get IP ',
+    parser.add_argument('-wto', '--wait_timeout', type=int,
+                        help='-wto / --wait_timeout , time to wait for stations to get IP ',
                         default="360")
     parser.add_argument('-ptc', '--print_test_config',
                         help='-ptc / --print_test_config , print out the test configuration and exit',
@@ -2531,10 +2545,10 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                 logg.info(
                                                                     "###################################################################")
                                                                 logg.info(
-                                                                    "# TEST RUNNING direction:{} ul: {} ,  TEST RUNNING dl: {}"
-                                                                        .format(controller_direction,
-                                                                                side_a_tx_min_bps_ul,
-                                                                                side_b_tx_min_bps_dl))
+                                                                    "# TEST RUNNING direction:{} ul: {} ,  TEST RUNNING dl: {}".format(
+                                                                        controller_direction,
+                                                                        side_a_tx_min_bps_ul,
+                                                                        side_b_tx_min_bps_dl))
                                                                 logg.info(
                                                                     "####################################################################")
                                                                 test_config = "AP=={} Band=={} chan_5ghz=={} chan_24ghz=={} wifi_mode=={} BW=={} encryption=={} ap_mode=={} clients=={} packet_type=={} direction=={} pdu=={}".format(
@@ -2564,8 +2578,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                             controller_ap_mode != __ap_mode_set or
                                                                             controller_tx_power != __tx_power_set or
                                                                             controller_chan_5ghz != __chan_5ghz_set or
-                                                                            controller_chan_24ghz != __chan_24ghz_set
-                                                                    ):
+                                                                            controller_chan_24ghz != __chan_24ghz_set):
                                                                         logg.info(
                                                                             "###############################################")
                                                                         logg.info(
@@ -2594,8 +2607,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                             controller_ap_mode != __ap_mode_set or
                                                                             controller_tx_power != __tx_power_set or
                                                                             controller_chan_5ghz != __chan_5ghz_set or
-                                                                            controller_chan_24ghz != __chan_24ghz_set
-                                                                    ):
+                                                                            controller_chan_24ghz != __chan_24ghz_set):
                                                                         logg.info(
                                                                             "###############################################")
                                                                         logg.info(
@@ -2670,19 +2682,19 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                         logg.info(
                                                                             "###############################################")
                                                                         logg.info(
-                                                                            "controller_ap: {} controller_band: {} controller_chan_width: {} controller_ap_mode: {} controller_tx_power: {} controller_chan_5ghz: {} controller_chan_24ghz: {}"
-                                                                                .format(controller_ap, controller_band,
-                                                                                        controller_chan_width,
-                                                                                        controller_ap_mode,
-                                                                                        controller_tx_power,
-                                                                                        controller_chan_5ghz,
-                                                                                        controller_chan_24ghz))
+                                                                            "controller_ap: {} controller_band: {} controller_chan_width: {} controller_ap_mode: {} controller_tx_power: {} controller_chan_5ghz: {} controller_chan_24ghz: {}".format(
+                                                                                controller_ap, controller_band,
+                                                                                controller_chan_width,
+                                                                                controller_ap_mode,
+                                                                                controller_tx_power,
+                                                                                controller_chan_5ghz,
+                                                                                controller_chan_24ghz))
                                                                         logg.info(
-                                                                            "__ap_set: {} __band_set: {} __chan_width_set: {} __ap_mode_set: {} __tx_power_set: {} __chan_5ghz_set: {} __chan_24ghz_set: {}"
-                                                                                .format(__ap_set, __band_set,
-                                                                                        __chan_width_set, __ap_mode_set,
-                                                                                        __tx_power_set, __chan_5ghz_set,
-                                                                                        __chan_24ghz_set))
+                                                                            "__ap_set: {} __band_set: {} __chan_width_set: {} __ap_mode_set: {} __tx_power_set: {} __chan_5ghz_set: {} __chan_24ghz_set: {}".format(
+                                                                                __ap_set, __band_set,
+                                                                                __chan_width_set, __ap_mode_set,
+                                                                                __tx_power_set, __chan_5ghz_set,
+                                                                                __chan_24ghz_set))
                                                                     logg.info("controller_wifi_mode {}".format(
                                                                         controller_wifimode))
                                                                     logg.info("radios {}".format(radios))
@@ -2757,9 +2769,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                     station_lists = []
                                                                     for (
                                                                             radio_name_,
-                                                                            number_of_stations_per_radio_) in zip(
-                                                                        radio_name_list,
-                                                                        number_of_stations_per_radio_list):
+                                                                            number_of_stations_per_radio_) in zip(radio_name_list, number_of_stations_per_radio_list):
                                                                         number_of_stations = int(
                                                                             number_of_stations_per_radio_)
                                                                         if number_of_stations > MAX_NUMBER_OF_STATIONS:
