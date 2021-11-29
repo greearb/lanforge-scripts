@@ -593,8 +593,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -628,8 +627,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -656,8 +654,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -686,8 +683,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                        format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -718,8 +714,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                        format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -749,8 +744,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -778,8 +772,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                        format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -804,8 +797,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                        format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
 
@@ -833,8 +825,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                        format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
         else:
@@ -859,8 +850,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                        format(process_error.returncode, process_error.output))
+                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
 
@@ -887,8 +877,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".
-                    format(process_error.returncode, process_error.output))
+                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
 
@@ -925,9 +914,11 @@ class CreateCtlr:
                     if (str(controller_channel) in str(element_list[8])) and (
                             str(self.chan_width) in str(element_list[5])):
                         logg.info(
-                            "ap {} configuration successful: channel {} in expected {}  chan_width {} in expected {}"
-                                .format(element_list[0], controller_channel, element_list[8], self.chan_width,
-                                        element_list[5]))
+                            "ap {} configuration successful: channel {} in expected {}  chan_width {} in expected {}".format(element_list[0],
+                                                                                                                             controller_channel,
+                                                                                                                             element_list[8],
+                                                                                                                             self.chan_width,
+                                                                                                                             element_list[5]))
                     else:
                         logg.info("WARNING ap {} configuration: channel {} in expected {}  chan_width {} in expected {}"
                                   .format(element_list[0], controller_channel, element_list[8], self.chan_width,
@@ -1876,8 +1867,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-c', '--csv_output', help="Generate csv output", default=True)
 
     parser.add_argument('-r', '--radio', action='append', nargs=1, help='--radio  \
-                        \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" '
-                        , required=False)
+                        \"radio==<number_of_wiphy stations=<=number of stations> ssid==<ssid> ssid_pw==<ssid password> security==<security> wifimode==<wifimode>\" ', required=False)
     parser.add_argument('-ul_bps', '--side_a_tx_min_bps',
                         help='--side_a_tx_min_bps , upload (A side tx) min tx rate bps  default 256000 500000000',
                         default="256000 1000000000")
