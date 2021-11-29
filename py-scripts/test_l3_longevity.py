@@ -1151,7 +1151,7 @@ class L3VariableTime(Realm):
                                     pprint(response)
                                     port_data = response['interface']
                                     print(
-                                        "#### 6g From LANforge: port_data, response['insterface']:{}".format(p))
+                                        "#### 6g From LANforge: port_data, response['insterface']:{}".format(port_data))
                                     mac = port_data['mac']
                                     # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
@@ -1188,7 +1188,7 @@ class L3VariableTime(Realm):
 
                                         # Find latency, jitter for connections
                                         # using this port.
-                                        self.get_endp_stats_for_port(p["port"], endps)
+                                        self.get_endp_stats_for_port(port_data["port"], endps)
 
                                         # now report the ap_chanim_stats along
                                         # side of the ap_stats_6g
@@ -1206,19 +1206,13 @@ class L3VariableTime(Realm):
                                                     xtop = split_row[7]
                                                     print(
                                                         "6g xtop {xtop}".format(xtop=xtop))
+                                                    channel_utilization = float(
+                                                            100) - float(xtop)
+                                                    print("6g channel_utilization {utilization}".format(utilization=channel_utilization))
                                                 except BaseException:
                                                     print(
                                                         "6g detected chanspec with reading chanim_stats, exception reading xtop")
 
-                                                try:
-                                                    channel_utilization = float(
-                                                        100) - float(xtop)
-                                                    print(
-                                                        "6g channel_utilization {utilization}".format(
-                                                            utilization=channel_utilization))
-                                                except BaseException:
-                                                    print(
-                                                        "6g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
                                                 # should be only one channel
                                                 # utilization
                                                 break
@@ -1255,7 +1249,7 @@ class L3VariableTime(Realm):
                                     pprint(response)
                                     port_data = response['interface']
                                     print(
-                                        "#### 6g From LANforge: port_data, response['insterface']:{}".format(p))
+                                        "#### 6g From LANforge: port_data, response['insterface']:{}".format(port_data))
                                     mac = port_data['mac']
                                     # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
@@ -1293,7 +1287,7 @@ class L3VariableTime(Realm):
                                         # Find latency, jitter for connections
                                         # using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
-                                            p["port"], endps)
+                                            port_data["port"], endps)
 
                                         print(
                                             "6g ap_ul_row {ap_ul_row}".format(
@@ -1365,7 +1359,7 @@ class L3VariableTime(Realm):
                                     pprint(response)
                                     port_data = response['interface']
                                     print(
-                                        "#### From LANforge: port_data, response['insterface']:{}".format(p))
+                                        "#### From LANforge: port_data, response['insterface']:{}".format(port_data))
                                     mac = port_data['mac']
                                     # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
@@ -1403,7 +1397,7 @@ class L3VariableTime(Realm):
                                         # Find latency, jitter for connections
                                         # using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
-                                            p["port"], endps)
+                                            port_data["port"], endps)
 
                                         # now report the ap_chanim_stats along
                                         # side of the ap_stats_5g
@@ -1495,7 +1489,7 @@ class L3VariableTime(Realm):
                                     pprint(response)
                                     port_data = response['interface']
                                     print(
-                                        "#### 5g From LANforge: port_data, response['insterface']:{}".format(p))
+                                        "#### 5g From LANforge: port_data, response['insterface']:{}".format(port_data))
                                     mac = port_data['mac']
                                     # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
@@ -1533,7 +1527,7 @@ class L3VariableTime(Realm):
                                         # Find latency, jitter for connections
                                         # using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
-                                            p["port"], endps)
+                                            port_data["port"], endps)
 
                                         print(
                                             "5g ap_ul_row {ap_ul_row}".format(
@@ -1642,7 +1636,7 @@ class L3VariableTime(Realm):
                                         # Find latency, jitter for connections
                                         # using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
-                                            p["port"], endps)
+                                            port_data["port"], endps)
 
                                         # now report the ap_chanim_stats along
                                         # side of the ap_stats_2g
@@ -1733,7 +1727,7 @@ class L3VariableTime(Realm):
                                     pprint(response)
                                     port_data = response['interface']
                                     print(
-                                        "#### 2g From LANforge: port_data, response['insterface']:{}".format(p))
+                                        "#### 2g From LANforge: port_data, response['insterface']:{}".format(port_data))
                                     mac = port_data['mac']
                                     # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
@@ -1771,7 +1765,7 @@ class L3VariableTime(Realm):
                                         # Find latency, jitter for connections
                                         # using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
-                                            p["port"], endps)
+                                            port_data["port"], endps)
 
                                         print(
                                             "2g ap_ul_row {ap_ul_row}".format(
@@ -1813,7 +1807,7 @@ class L3VariableTime(Realm):
                                 else:
                                     port_data = response['interface']
                                     latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
-                                        p["port"], endps)
+                                        port_data["port"], endps)
 
                                     self.write_port_csv(
                                         len(temp_stations_list),
