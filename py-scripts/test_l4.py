@@ -304,12 +304,11 @@ python3 ./test_l4.py
 
             # Create directory
     if args.report_file is None:
-        try:
-            homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':',
-                                                                                      '-') + 'test_l4'
+        if os.path.isdir('/home/lanforge/report-data'):
+            homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':', '-') + 'test_l4'
             path = os.path.join('/home/lanforge/report-data/', homedir)
             os.mkdir(path)
-        except:
+        else:
             path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             print('Saving file to local directory')
         if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
@@ -349,10 +348,7 @@ python3 ./test_l4.py
     ip_test.build()
     ip_test.start()
 
-    try:
-        layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.local_realm.json_get('layer4')['endpoint']])
-    except:
-        pass
+    layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.local_realm.json_get('layer4')['endpoint']])
     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
                                report_file=rpt_file,
                                duration_sec=ip_test.local_realm.parse_time(args.test_duration).total_seconds(),
