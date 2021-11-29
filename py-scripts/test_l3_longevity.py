@@ -901,7 +901,8 @@ class L3VariableTime(Realm):
     # provide fake bs_data for testing without AP wl2 is the 6E interface, wl1
     # 5G, wl0 2G
 
-    def read_ap_rx_report_test_mode(self):
+    @staticmethod
+    def read_ap_rx_report_test_mode():
         ap_rx_report_fake = "{}{}{}{}{}".format(
             "root@Docsis-Gateway:~#  wl -i wl1 rx_report\n",
             "Station Address (rssi)  tid   ampdu     mpdu  Data Mbps   PHY Mbps    bw   mcs   Nss   oow holes   dup rtries  ofdma  tones    air\n",
@@ -913,7 +914,8 @@ class L3VariableTime(Realm):
         # -\n"
         return ap_rx_report_fake
 
-    def read_ap_bs_data_test_mode(self):
+    @staticmethod
+    def read_ap_bs_data_test_mode():
         ap_stats_fake = "{}{}{}{}{}{}".format(
             "root@Docsis-Gateway:~# wl -i wl2 bs_data\n",
             "Station Address   PHY Mbps  Data Mbps    Air Use   Data Use    Retries   bw   mcs   Nss   ofdma mu-mimo\n",
@@ -925,7 +927,8 @@ class L3VariableTime(Realm):
         # print("ap_stats_fake {}".format(ap_stats_fake))
         return ap_stats_fake
 
-    def read_ap_chanim_stats_test_mode(self):
+    @staticmethod
+    def read_ap_chanim_stats_test_mode():
         # Create the test data as a continuous string
         ap_chanim_stats_fake = "{}{}{}{}".format("root@Docsis-Gateway:~# wl -i wl2 chanim_stats\n",
                                                  "version: 3\n",
@@ -2175,7 +2178,8 @@ class L3VariableTime(Realm):
         for station_profile in self.station_profiles:
             station_profile.cleanup()
 
-    def csv_generate_column_headers(self):
+    @staticmethod
+    def csv_generate_column_headers():
         csv_rx_headers = [
             'Time epoch',
             'Time',
@@ -2321,13 +2325,15 @@ class L3VariableTime(Realm):
         ul_port_csv_writer.writerow(headers)
         pfile.flush()
 
-    def csv_validate_list(self, csv_list, length):
+    @staticmethod
+    def csv_validate_list(csv_list, length):
         if len(csv_list) < length:
             csv_list = csv_list + [('no data', 'no data')] * \
                 (length - len(csv_list))
         return csv_list
 
-    def csv_add_row(self, row, writer, csv_file):
+    @staticmethod
+    def csv_add_row(row, writer, csv_file):
         if csv_file is not None:
             writer.writerow(row)
             csv_file.flush()
