@@ -392,6 +392,10 @@ class csv_sql:
         print("test_rig_list: {}".format(test_rig_list))
 
         # TODO determin the subtest pass and fail graph
+        # df is sorted by date oldest to newest
+        # get the test_run for last run
+        # query the db for  all pass and fail or last run 
+        # put in table
 
         # create the rest of the graphs
         for test_rig in test_rig_list:
