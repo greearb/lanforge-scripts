@@ -17,7 +17,7 @@ import paramiko
 from datetime import datetime
 import pandas as pd
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -57,8 +57,6 @@ class HttpDownload(Realm):
         self.http_profile.debug = _debug_on
         self.created_cx = {}
 
-
-
     def set_values(self):
         # This method will set values according user input
         if self.bands == "5G":
@@ -67,7 +65,7 @@ class HttpDownload(Realm):
             self.radio = [self.twog_radio]
         elif self.bands == "Both":
             self.radio = [self.fiveg_radio, self.twog_radio]
-            print( self.radio)
+            print(self.radio)
             self.num_sta = self.num_sta // 2
 
     def precleanup(self):
@@ -121,7 +119,7 @@ class HttpDownload(Realm):
             self.station_profile.create(radio=rad, sta_names_=self.station_list, debug=self.local_realm.debug)
             self.local_realm.wait_until_ports_appear(sta_list=self.station_list)
             self.station_profile.admin_up()
-            if self.local_realm.wait_for_ip(self.station_list,timeout_sec=60):
+            if self.local_realm.wait_for_ip(self.station_list, timeout_sec=60):
                 self.local_realm._pass("All stations got IPs")
             else:
                 self.local_realm._fail("Stations failed to get IPs")
@@ -181,7 +179,7 @@ class HttpDownload(Realm):
         LFUtils.wait_until_ports_disappear(base_url=self.local_realm.lfclient_url, port_list=self.station_profile.station_names,
                                            debug=self.debug)
 
-    def file_create(self,ssh_port):
+    def file_create(self, ssh_port):
         ip = self.host
         user = "root"
         pswd = "lanforge"
@@ -211,13 +209,13 @@ class HttpDownload(Realm):
         time.sleep(1)
         return output
 
-    def download_time_in_sec(self,result_data):
+    def download_time_in_sec(self, result_data):
         self.resullt_data = result_data
         download_time = dict.fromkeys(result_data.keys())
         for i in download_time:
             try:
                 download_time[i] = result_data[i]['dl_time']
-            except:
+            except BaseException:
                 download_time[i] = []
         print(download_time)
         lst = []
@@ -253,13 +251,13 @@ class HttpDownload(Realm):
                 dataset.append(dwnld_time["Both"])
         return dataset
 
-    def speed_in_Mbps(self,result_data):
+    def speed_in_Mbps(self, result_data):
         self.resullt_data = result_data
         speed = dict.fromkeys(result_data.keys())
         for i in speed:
             try:
                 speed[i] = result_data[i]['speed']
-            except:
+            except BaseException:
                 speed[i] = []
         print(speed)
         lst = []
@@ -341,7 +339,7 @@ class HttpDownload(Realm):
                 pass_fail_list.append("PASS")
                 sumry2.append("PASS")
             # BOTH
-            if float(z11[2]) == 0.0 or float(z11[2]) > float(threshold_both) :
+            if float(z11[2]) == 0.0 or float(z11[2]) > float(threshold_both):
                 var = "FAIL"
                 pass_fail_list.append(var)
                 sumryB.append("FAIL")
@@ -446,35 +444,36 @@ class HttpDownload(Realm):
 
     def generate_graph(self, dataset, lis, bands):
         graph = lf_graph.lf_bar_graph(_data_set=dataset, _xaxis_name="Stations", _yaxis_name="Time in Seconds",
-                             _xaxis_categories=lis, _label=bands, _xticks_font=8,
-                             _graph_image_name="webpage download time graph",
-                             _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black', _figsize=(14, 5),
-                             _grp_title="Download time taken by each client", _xaxis_step=1, _show_bar_value=True,
-                             _text_font=6, _text_rotation=60,
-                             _legend_loc="upper right",
-                             _legend_box=(1, 1.15),
-                             _enable_csv=True
-                             )
+                                      _xaxis_categories=lis, _label=bands, _xticks_font=8,
+                                      _graph_image_name="webpage download time graph",
+                                      _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black', _figsize=(14, 5),
+                                      _grp_title="Download time taken by each client", _xaxis_step=1, _show_bar_value=True,
+                                      _text_font=6, _text_rotation=60,
+                                      _legend_loc="upper right",
+                                      _legend_box=(1, 1.15),
+                                      _enable_csv=True
+                                      )
         graph_png = graph.build_bar_graph()
         print("graph name {}".format(graph_png))
         return graph_png
 
-    def graph_2(self,dataset2, lis, bands):
+    def graph_2(self, dataset2, lis, bands):
         graph_2 = lf_graph.lf_bar_graph(_data_set=dataset2, _xaxis_name="Stations", _yaxis_name="Download Rate in Mbps",
-                               _xaxis_categories=lis, _label=bands, _xticks_font=8,
-                               _graph_image_name="webpage_speed_graph",
-                               _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black',
-                               _figsize=(14, 5),
-                               _grp_title="Download rate for each client (Mbps)", _xaxis_step=1, _show_bar_value=True,
-                               _text_font=6, _text_rotation=60,
-                               _legend_loc="upper right",
-                               _legend_box=(1, 1.15),
-                               _enable_csv=True
-        )
+                                        _xaxis_categories=lis, _label=bands, _xticks_font=8,
+                                        _graph_image_name="webpage_speed_graph",
+                                        _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black',
+                                        _figsize=(14, 5),
+                                        _grp_title="Download rate for each client (Mbps)", _xaxis_step=1, _show_bar_value=True,
+                                        _text_font=6, _text_rotation=60,
+                                        _legend_loc="upper right",
+                                        _legend_box=(1, 1.15),
+                                        _enable_csv=True
+                                        )
         graph_png = graph_2.build_bar_graph()
         return graph_png
 
-    def generate_report(self,date, num_stations,duration, test_setup_info,dataset,lis,bands,threshold_2g,threshold_5g,threshold_both,dataset2,summary_table_value,result_data,test_input_infor):
+    def generate_report(self, date, num_stations, duration, test_setup_info, dataset, lis, bands, threshold_2g,
+                        threshold_5g, threshold_both, dataset2, summary_table_value, result_data, test_input_infor):
         report = lf_report.lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html", _output_pdf="Webpage.pdf")
         report.set_title("WEBPAGE DOWNLOAD TEST")
         report.set_date(date)
@@ -594,7 +593,8 @@ class HttpDownload(Realm):
         html_file = report.write_html()
         print("returned file {}".format(html_file))
         print(html_file)
-        report.write_pdf()
+        report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -614,11 +614,11 @@ def main():
     parser.add_argument('--file_size', type=str, help='specify the size of file you want to download', default='5MB')
     parser.add_argument('--bands', nargs="+", help='specify which band testing you want to run eg 5G OR 2.4G OR Both', default=["5G", "2.4G", "Both"])
     parser.add_argument('--duration', type=int, help='time to run traffic')
-    parser.add_argument('--threshold_5g',help="Enter the threshold value for 5G Pass/Fail criteria", default="60")
-    parser.add_argument('--threshold_2g',help="Enter the threshold value for 2.4G Pass/Fail criteria",default="90")
-    parser.add_argument('--threshold_both',help="Enter the threshold value for Both Pass/Fail criteria" , default="50")
+    parser.add_argument('--threshold_5g', help="Enter the threshold value for 5G Pass/Fail criteria", default="60")
+    parser.add_argument('--threshold_2g', help="Enter the threshold value for 2.4G Pass/Fail criteria", default="90")
+    parser.add_argument('--threshold_both', help="Enter the threshold value for Both Pass/Fail criteria", default="50")
     parser.add_argument('--ap_name', help="specify the ap model ", default="TestAP")
-    parser.add_argument('--ssh_port', type=int, help="specify the shh port eg 22",default=22)
+    parser.add_argument('--ssh_port', type=int, help="specify the ssh port eg 22", default=22)
 
     args = parser.parse_args()
     test_time = datetime.now()
@@ -631,14 +631,14 @@ def main():
     list2G_bytes = []
     list2G_speed = []
     Both = []
-    Both_bytes =[]
-    Both_speed =[]
+    Both_bytes = []
+    Both_speed = []
     dict_keys = []
     dict_keys.extend(args.bands)
     # print(dict_keys)
     final_dict = dict.fromkeys(dict_keys)
     # print(final_dict)
-    dict1_keys = ['dl_time', 'min', 'max', 'avg','bytes_rd', 'speed']
+    dict1_keys = ['dl_time', 'min', 'max', 'avg', 'bytes_rd', 'speed']
     for i in final_dict:
         final_dict[i] = dict.fromkeys(dict1_keys)
     print(final_dict)
@@ -720,7 +720,7 @@ def main():
             final_dict['Both']['min'] = min_both
             max_both.append(max(Both))
             final_dict['Both']['max'] = max_both
-            avg_both.append((sum(Both) /args.num_stations))
+            avg_both.append((sum(Both) / args.num_stations))
             final_dict['Both']['avg'] = avg_both
             final_dict['Both']['bytes_rd'] = Both_bytes
             final_dict['Both']['speed'] = Both_speed
@@ -739,36 +739,41 @@ def main():
     print("total test duration ", test_duration)
     date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
     test_setup_info = {
-            "DUT Name": args.ap_name,
-            "SSID": args.ssid,
-            "Test Duration": test_duration,
+        "DUT Name": args.ap_name,
+        "SSID": args.ssid,
+        "Test Duration": test_duration,
     }
-    test_input_infor={
-        "LANforge ip":args.mgr,
-        "File Size" : args.file_size,
-        "Bands" : args.bands,
+    test_input_infor = {
+        "LANforge ip": args.mgr,
+        "File Size": args.file_size,
+        "Bands": args.bands,
         "Upstream": args.upstream_port,
         "Stations": args.num_stations,
-        "SSID" :args.ssid,
+        "SSID": args.ssid,
         "Security": args.security,
-        "Duration" : args.duration,
+        "Duration": args.duration,
         "Contact": "support@candelatech.com"
     }
     http1 = HttpDownload(lfclient_host=args.mgr, lfclient_port=args.mgr_port,
-                            upstream=args.upstream_port, num_sta=args.num_stations,
-                            security=args.security,
-                            ssid=args.ssid, password=args.passwd,
-                            target_per_ten=args.target_per_ten,
-                            file_size=args.file_size, bands=args.bands,
-                            twog_radio=args.twog_radio,
-                            fiveg_radio=args.fiveg_radio)
+                         upstream=args.upstream_port, num_sta=args.num_stations,
+                         security=args.security,
+                         ssid=args.ssid, password=args.passwd,
+                         target_per_ten=args.target_per_ten,
+                         file_size=args.file_size, bands=args.bands,
+                         twog_radio=args.twog_radio,
+                         fiveg_radio=args.fiveg_radio)
     dataset = http1.download_time_in_sec(result_data=result_data)
     lis = []
     for i in range(1, args.num_stations + 1):
         lis.append(i)
 
-    dataset2= http1.speed_in_Mbps(result_data=result_data)
-    data = http1.summary_calculation(result_data=result_data, bands=args.bands, threshold_5g=args.threshold_5g , threshold_2g= args.threshold_2g, threshold_both=args.threshold_both)
+    dataset2 = http1.speed_in_Mbps(result_data=result_data)
+    data = http1.summary_calculation(
+        result_data=result_data,
+        bands=args.bands,
+        threshold_5g=args.threshold_5g,
+        threshold_2g=args.threshold_2g,
+        threshold_both=args.threshold_both)
 
     summary_table_value = {
         "": args.bands,
@@ -779,6 +784,7 @@ def main():
                           bands=args.bands, threshold_2g=args.threshold_2g, threshold_5g=args.threshold_5g,
                           threshold_both=args.threshold_both, dataset2=dataset2,
                           summary_table_value=summary_table_value, result_data=result_data, test_input_infor=test_input_infor)
+
 
 if __name__ == '__main__':
     main()
