@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-'''
+"""
 NAME: test_l3_longevity.py
 
 PURPOSE:
@@ -55,7 +55,7 @@ COPYRIGHT:
 Copyright 2021 Candela Technologies Inc
 
 INCLUDE_IN_README
-'''
+"""
 import argparse
 import csv
 import datetime
@@ -319,7 +319,7 @@ class L3VariableTime(Realm):
 
         dur = self.duration_time_to_seconds(self.test_duration)
 
-        if (self.polling_interval_seconds > dur + 1):
+        if self.polling_interval_seconds > dur + 1:
             self.polling_interval_seconds = dur - 1
 
         # Full spread-sheet data
@@ -607,12 +607,12 @@ class L3VariableTime(Realm):
 
         # Make sure they are gone
         count = 0
-        while (count < 10):
+        while count < 10:
             more = False
             for station_list in self.station_lists:
                 for sta in station_list:
                     rv = self.rm_port(sta, check_exists=True)
-                    if (rv):
+                    if rv:
                         more = True
             if not more:
                 break
@@ -655,9 +655,9 @@ class L3VariableTime(Realm):
                     these_cx, these_endp = self.cx_profile.create(
                         endp_type=etype, side_a=[
                             self.side_a], side_b=self.side_b, sleep_time=0, tos=_tos)
-                    if (etype == "lf_udp" or etype == "lf_udp6"):
+                    if etype == "lf_udp" or etype == "lf_udp6":
                         self.udp_endps = self.udp_endps + these_endp
-                    elif(etype == "lf"):
+                    elif etype == "lf":
                         self.lf_endps = self.eth_endps + these_endp
                     else:
                         self.tcp_endps = self.tcp_endps + these_endp
@@ -689,7 +689,7 @@ class L3VariableTime(Realm):
                     if etype == "mc_udp" or etype == "mc_udp6":
                         print(
                             "Creating Multicast connections for endpoint type: %s" %
-                            (etype))
+                            etype)
                         self.multicast_profile.create_mc_tx(
                             etype, self.side_b, etype)
                         self.multicast_profile.create_mc_rx(
@@ -701,7 +701,7 @@ class L3VariableTime(Realm):
                                 (etype, _tos, self.cx_profile.get_cx_count()))
                             these_cx, these_endp = self.cx_profile.create(
                                 endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
-                            if (etype == "lf_udp" or etype == "lf_udp6"):
+                            if etype == "lf_udp" or etype == "lf_udp6":
                                 self.udp_endps = self.udp_endps + these_endp
                             else:
                                 self.tcp_endps = self.tcp_endps + these_endp
@@ -711,7 +711,7 @@ class L3VariableTime(Realm):
         if self.dataplane:
             self._pass(
                 "PASS: CX build finished: created/updated:  %s connections." %
-                (self.cx_count))
+                self.cx_count)
         else:
             self._pass(
                 "PASS: Stations & CX build finished: created/updated: %s stations and %s connections." %
@@ -941,7 +941,7 @@ class L3VariableTime(Realm):
         self.admin_up(self.side_b)
         for station_profile in self.station_profiles:
             for sta in station_profile.station_names:
-                print("Bringing up station %s" % (sta))
+                print("Bringing up station %s" % sta)
                 self.admin_up(sta)
 
         temp_stations_list = []
@@ -1002,10 +1002,10 @@ class L3VariableTime(Realm):
                 dl_pdu_str = dl_pdu
                 ul_pdu_str = ul_pdu
 
-                if (ul_pdu == "AUTO" or ul_pdu == "MTU"):
+                if ul_pdu == "AUTO" or ul_pdu == "MTU":
                     ul_pdu = "-1"
 
-                if (dl_pdu == "AUTO" or dl_pdu == "MTU"):
+                if dl_pdu == "AUTO" or dl_pdu == "MTU":
                     dl_pdu = "-1"
 
                 print(
@@ -1051,7 +1051,7 @@ class L3VariableTime(Realm):
 
                     print(
                         "Monitoring throughput for duration: %s" %
-                        (self.test_duration))
+                        self.test_duration)
 
                     # Monitor test for the interval duration.
                     passes = 0
@@ -1150,7 +1150,7 @@ class L3VariableTime(Realm):
                                         "interface" not in response):
                                     print(
                                         "6g query-port: %s: incomplete response:" %
-                                        (url))
+                                        url)
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
@@ -1255,7 +1255,7 @@ class L3VariableTime(Realm):
                                         "interface" not in response):
                                     print(
                                         "6g query-port: %s: incomplete response:" %
-                                        (url))
+                                        url)
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
@@ -1365,7 +1365,7 @@ class L3VariableTime(Realm):
                                         "interface" not in response):
                                     print(
                                         "query-port 5g: %s: incomplete response:" %
-                                        (url))
+                                        url)
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
@@ -1495,7 +1495,7 @@ class L3VariableTime(Realm):
                                         "interface" not in response):
                                     print(
                                         "5g query-port: %s: incomplete response:" %
-                                        (url))
+                                        url)
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
@@ -1604,7 +1604,7 @@ class L3VariableTime(Realm):
                                         "interface" not in response):
                                     print(
                                         "2g query-port: %s: incomplete response:" %
-                                        (url))
+                                        url)
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
@@ -1733,7 +1733,7 @@ class L3VariableTime(Realm):
                                         "interface" not in response):
                                     print(
                                         "5g query-port: %s: incomplete response:" %
-                                        (url))
+                                        url)
                                     pprint(response)
                                 else:
                                     # print("response".format(response))
@@ -1815,7 +1815,7 @@ class L3VariableTime(Realm):
                                 if (response is None) or (
                                         "interface" not in response):
                                     print(
-                                        "query-port: %s: incomplete response:" % (url))
+                                        "query-port: %s: incomplete response:" % url)
                                     pprint(response)
                                 else:
                                     port_data = response['interface']
@@ -3170,16 +3170,16 @@ Setting wifi_settings per radio
         attenuators = []
     else:
         attenuators = args.attenuators.split(",")
-    if (args.atten_vals == ""):
+    if args.atten_vals == "":
         atten_vals = [-1]
     else:
         atten_vals = args.atten_vals.split(",")
 
-    if (len(ul_rates) != len(dl_rates)):
+    if len(ul_rates) != len(dl_rates):
         print(
             "ERROR:  ul_rates %s and dl_rates %s arrays must be same length\n" %
             (len(ul_rates), len(dl_rates)))
-    if (len(ul_pdus) != len(dl_pdus)):
+    if len(ul_pdus) != len(dl_pdus):
         print(
             "ERROR:  ul_pdus %s and dl_pdus %s arrays must be same length\n" %
             (len(ul_rates), len(dl_rates)))
