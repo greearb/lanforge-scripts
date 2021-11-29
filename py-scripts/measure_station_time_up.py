@@ -153,6 +153,7 @@ Command example:
     required = parser.add_argument_group('required arguments')
     required.add_argument('--report_file', help='where you want to store results', required=True)
     parser.add_argument('--database', help='Which database to load', default='FACTORY_DFLT')
+    parser.add_argument('--radio2', help='second radio to create stations on', default='wiphy7')
 
     args = parser.parse_args()
 
@@ -168,7 +169,7 @@ Command example:
                                        _password=args.passwd,
                                        _security=args.security,
                                        _num_sta=num_sta,
-                                       _radio=["wiphy0", "wiphy7"],
+                                       _radio=[args.radio, args.radio2],
                                        _proxy_str=args.proxy,
                                        _debug_on=args.debug,
                                        _load=args.database)
