@@ -1048,7 +1048,7 @@ class L3VariableTime(Realm):
 
                     cur_time = datetime.datetime.now()
                     print("Getting initial values.")
-                    old_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
+                    self.__get_rx_values()
 
                     end_time = self.parse_time(self.test_duration) + cur_time
 
@@ -1063,7 +1063,6 @@ class L3VariableTime(Realm):
                     total_ul_bps = 0
                     total_dl_ll_bps = 0
                     total_ul_ll_bps = 0
-                    endps = []
                     ap_row = []
                     mac_found_ul_6g = False
                     mac_found_ul_5g = False
@@ -1072,14 +1071,6 @@ class L3VariableTime(Realm):
                     mac_found_5g = False
                     mac_found_2g = False
                     reset_timer = 0
-                    latency = 0
-                    jitter = 0
-                    total_ul_rate = 0
-                    total_ul_rate_ll = 0
-                    total_ul_pkts_ll = 0
-                    total_dl_rate = 0
-                    total_dl_rate_ll = 0
-                    total_dl_pkts_ll = 0
 
                     while cur_time < end_time:
                         # interval_time = cur_time + datetime.timedelta(seconds=5)
@@ -1197,8 +1188,7 @@ class L3VariableTime(Realm):
 
                                         # Find latency, jitter for connections
                                         # using this port.
-                                        latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
-                                            p["port"], endps)
+                                        self.get_endp_stats_for_port(p["port"], endps)
 
                                         # now report the ap_chanim_stats along
                                         # side of the ap_stats_6g
@@ -1912,8 +1902,6 @@ class L3VariableTime(Realm):
                     self.cx_profile.stop_cx()
                     self.multicast_profile.stop_mc()
 
-                    cur_time = datetime.datetime.now()
-
                     if passes == expected_passes:
                         self._pass(
                             "PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" %
@@ -2180,20 +2168,9 @@ class L3VariableTime(Realm):
 
     @staticmethod
     def csv_generate_column_headers():
-        csv_rx_headers = [
-            'Time epoch',
-            'Time',
-            'Monitor',
-            'UL-Min-Requested',
-            'UL-Max-Requested',
-            'DL-Min-Requested',
-            'DL-Max-Requested',
-            'UL-Min-PDU',
-            'UL-Max-PDU',
-            'DL-Min-PDU',
-            'DL-Max-PDU',
-        ]
-        csv_rx_headers.append("average_rx_data_bytes")
+        csv_rx_headers = ['Time epoch', 'Time', 'Monitor', 'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested',
+                          'DL-Max-Requested', 'UL-Min-PDU', 'UL-Max-PDU', 'DL-Min-PDU', 'DL-Max-PDU',
+                          "average_rx_data_bytes"]
         return csv_rx_headers
 
     def csv_generate_port_column_headers(self):
@@ -2294,7 +2271,7 @@ class L3VariableTime(Realm):
         return csv_rx_headers
 
     # Write initial headers to csv file.
-    def csv_add_column_headers(self, headers):
+    def csv_add_column_headers(self):
         if self.csv_kpi_file is not None:
             self.csv_kpi_writer.writerow(
                 self.csv_generate_kpi_column_headers())
@@ -2367,7 +2344,6 @@ def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
     endp_types = "lf_udp"
-    debug = False
 
     parser = argparse.ArgumentParser(
         prog='test_l3_longevity.py',
@@ -3329,21 +3305,21 @@ Setting wifi_settings per radio
         print("getting ofdma ap data and writing to a file")
         file_date = report.get_date()
 
-        ap_ofdma_6g_data = ip_var_test.get_ap_ofdma_6g()
+        ip_var_test.get_ap_ofdma_6g()
         ap_ofdma_6g = "{}-{}".format(file_date, "ap_ofdma_6g_data.txt")
         ap_ofdma_6g = report.file_add_path(ap_ofdma_6g)
         ap_ofdma_6g_data = open(ap_ofdma_6g, "w")
         ap_ofdma_6g_data.write(str(ap_ofdma_6g_data))
         ap_ofdma_6g_data.close()
 
-        ap_ofdma_5g_data = ip_var_test.get_ap_ofdma_5g()
+        ip_var_test.get_ap_ofdma_5g()
         ap_ofdma_5g = "{}-{}".format(file_date, "ap_ofdma_5g_data.txt")
         ap_ofdma_5g = report.file_add_path(ap_ofdma_5g)
         ap_ofdma_5g_data = open(ap_ofdma_5g, "w")
         ap_ofdma_5g_data.write(str(ap_ofdma_5g_data))
         ap_ofdma_5g_data.close()
 
-        ap_ofdma_24g_data = ip_var_test.get_ap_ofdma_24g()
+        ip_var_test.get_ap_ofdma_24g()
         ap_ofdma_24g = "{}-{}".format(file_date, "ap_ofdma_24g_data.txt")
         ap_ofdma_24g = report.file_add_path(ap_ofdma_24g)
         ap_ofdma_24g_data = open(ap_ofdma_24g, "w")
