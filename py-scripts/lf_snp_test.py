@@ -1535,7 +1535,6 @@ def valid_endp_types(_endp_type):
 ############################################################
 def main():
     global logg
-    lfjson_host = "localhost"
     lfjson_port = 8080
     debug_on = False
 
@@ -1881,7 +1880,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     parser.add_argument('-noc', '--no_controller', help='-noc / --no_controller no configuration of the controller',
                         action='store_true')
     parser.add_argument('-nos', '--no_stations', help='-nos / --no_stations , no stations', action='store_true')
-    parser.add_argument('-wto', '--wait_timeout', help='-wto / --wait_timeout , time to wait for stations to get IP ',
+    parser.add_argument('-wto', '--wait_timeout', type=int, help='-wto / --wait_timeout , time to wait for stations to get IP ',
                         default="360")
     parser.add_argument('-ptc', '--print_test_config',
                         help='-ptc / --print_test_config , print out the test configuration and exit',
@@ -1900,23 +1899,6 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     ###############################################################
     # Gather Test Data
     ###############################################################
-    if args.test_duration:
-        test_duration = args.test_duration
-
-    if args.polling_interval:
-        polling_interval = args.polling_interval
-
-    if args.mgr:
-        lfjson_host = args.mgr
-
-    if args.upstream_port:
-        side_b = args.upstream_port
-
-    if args.radio:
-        radios = args.radio
-
-    if args.wait_timeout:
-        wait_timeout = int(args.wait_timeout)
 
     if args.controller_scheme:
         __scheme = args.controller_scheme
@@ -2400,8 +2382,8 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
         "controller_data_encryptions ('-cde','--controller_data_encryptions') {}".format(controller_data_encryptions))
     logg.info("controller_side_a_tx_min_bps ('-amr','--side_a_tx_min_bps'): {}".format(controller_side_a_tx_min_bps))
     logg.info("controller_side_b_tx_min_bps ('-bmr','--side_b_tx_min_bps'): {}".format(controller_side_b_tx_min_bps))
-    logg.info("test duration ('-d','--test_duration'): {}".format(test_duration))
-    logg.info("polling_interval ('-pi','--polling_interval'): {}".format(polling_interval))
+    logg.info("test duration ('-d','--test_duration'): {}".format(args.test_duration))
+    logg.info("polling_interval ('-pi','--polling_interval'): {}".format(args.polling_interval))
 
     if args.radio:
         logg.info("radios from command line used")
@@ -2822,7 +2804,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                         _ap_dict=ap_dict,
                                                                         endp_type=controller_packet_type,
                                                                         tos=args.tos,
-                                                                        side_b=side_b,
+                                                                        side_b=args.upstream_port,
                                                                         radio_name_list=radio_name_list,
                                                                         number_of_stations_per_radio_list=number_of_stations_per_radio_list,
                                                                         ssid_list=ssid_list,
@@ -2832,7 +2814,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                         station_lists=station_lists,
                                                                         name_prefix="LT-",
                                                                         debug_on=debug_on,
-                                                                        wait_timeout=wait_timeout,
+                                                                        wait_timeout=args.wait_timeout,
                                                                         outfile=csv_outfile,
                                                                         results=csv_results,
                                                                         test_keys=test_keys,
@@ -2850,9 +2832,9 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
                                                                         side_b_min_pdu=controller_pdu,
                                                                         side_b_max_pdu=0,
                                                                         number_template="00",
-                                                                        test_duration=test_duration,
-                                                                        polling_interval=polling_interval,
-                                                                        lfclient_host=lfjson_host,
+                                                                        test_duration=args.test_duration,
+                                                                        polling_interval=args.polling_interval,
+                                                                        lfclient_host=args.mgr,
                                                                         lfclient_port=lfjson_port)
                                                                     __csv_started = True
                                                                     ip_var_test.pre_cleanup()
