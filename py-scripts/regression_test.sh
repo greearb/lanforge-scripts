@@ -20,12 +20,7 @@ Help()
   echo "If using the help flag, put the H flag at the end of the command after other flags."
 }
 
-if [ -d "/home/lanforge/lanforge_env" ];
-then
-  pip3 install --upgrade lanforge-scripts
-else
-  pip3 install --user -r ../requirements.txt --upgrade
-fi
+if [ -d "/home/lanforge/lanforge_env"] && pip3 install --upgrade lanforge-scripts || pip3 install --user -r ../requirements.txt --upgrade
 
 while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:" option; do
   case "${option}" in
@@ -529,13 +524,13 @@ function test() {
     STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
   else
     echo "No errors detected"
+      results+=("<tr><td>${CURR_TEST_NAME}</td>
+                <td class='scriptdetails'>${testcommand}</td>
+                <td class='success'>Success</td>
+                <td>${execution}</td>
+                <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                <td></td></tr>")
   fi
-  results+=("<tr><td>${CURR_TEST_NAME}</td>
-            <td class='scriptdetails'>${testcommand}</td>
-            <td class='${TEXTCLASS}'>${TDTEXT}</td>
-            <td>${execution}</td>
-            <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-            <td>${STDERR}</td></tr>")
 }
 
 function start_tests()  {
@@ -562,51 +557,54 @@ function start_tests()  {
 
 function html_generator() {
     LAST_COMMIT=$(git log --pretty=oneline | head -n 1)
-    header="<html>
-		<head>
-		<title>Regression Test Results $NOW</title>
-		<style>
-		.success {
-			background-color:green;
-		}
-		.failure {
-			background-color:red;
-		}
-    .partial_failure {
-      background-color:yellow;
-    }
-		table {
-			border: 1px solid gray;
-		}
-		td {
-			margin: 0;
-			padding: 2px;
-			font-family: 'Courier New',courier,sans-serif;
-		}
-		h1, h2, h3, h4 {
-			font-family: 'Century Gothic',Arial,sans,sans-serif;
-		}
-		.scriptdetails {
-			font-size: 10px;
-		}
-		</style>
-		<script src=\"sortabletable.js\"></script>
-		</head>
-		<body>
-		<h1>Regression Results</h1>
-		<h4>$NOW</h4>
-		<h4>$LAST_COMMIT</h4>
-		<table border ='1' id='myTable2'>
-		<tr>
-        <th onclick=\"sortTable('myTable2', 0)\">Command Name</th>
-        <th onclick=\"sortTable('myTable2', 1)\">Command</th>
-        <th onclick=\"sortTable('myTable2', 2)\">Status</th>
-        <th onclick=\"sortTable('myTable2', 3)\">Execution time</th>
-        <th onclick=\"sortTable('myTable2', 4)\">STDOUT</th>
-        <th onclick=\"sortTable('myTable2', 5)\">STDERR</th>
-    </tr>"
-    tail="</body>
-		</html>"
+    header="<!DOCTYPE html>
+<html>
+<head>
+<title>Regression Test Results $NOW</title>
+<style>
+.success {
+    background-color:green;
+}
+.failure {
+    background-color:red;
+}
+.partial_failure {
+  background-color:yellow;
+}
+table {
+    border: 1px solid gray;
+}
+td {
+    margin: 0;
+    padding: 2px;
+    font-family: 'Courier New',courier,sans-serif;
+}
+h1, h2, h3, h4 {
+    font-family: 'Century Gothic',Arial,sans,sans-serif;
+}
+.scriptdetails {
+    font-size: 10px;
+}
+</style>
+<script src=\"sortabletable.js\"></script>
+</head>
+<body>
+    <h1>Regression Results</h1>
+    <h4>$NOW</h4>
+    <h4>$LAST_COMMIT</h4>
+    <table border ='1' id='myTable2'>
+    <thead>
+        <tr>
+            <th onclick=\"sortTable('myTable2', 0)\">Command Name</th>
+            <th onclick=\"sortTable('myTable2', 1)\">Command</th>
+            <th onclick=\"sortTable('myTable2', 2)\">Status</th>
+            <th onclick=\"sortTable('myTable2', 3)\">Execution time</th>
+            <th onclick=\"sortTable('myTable2', 4)\">STDOUT</th>
+            <th onclick=\"sortTable('myTable2', 5)\">STDERR</th>
+        </tr>
+    </thead>
+    <tbody>"
+    tail="</body></html>"
 
     fname="${HOMEPATH}/html-reports/regression_file-${NOW}.html"
     echo "$header"  >> "$fname"
