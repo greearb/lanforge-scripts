@@ -352,7 +352,7 @@ else
       #./test_l3_unicast_traffic_gen
       #./test_l3_unicast_traffic_gen
       #./test_l3_WAN_LAN
-      "./test_l4.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
+      "./test_l4.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR --test_duration 15s"
       "./test_status_msg.py --debug --mgr $MGR" #this is all which is needed to run
       "./test_wanlink.py --name my_wanlink4 --latency_A 20 --latency_B 69 --rate 1000 --jitter_A 53 --jitter_B 73 --jitter_freq 6 --drop_A 12 --drop_B 11 --debug --mgr $MGR"
       #./test_wpa_passphrases
