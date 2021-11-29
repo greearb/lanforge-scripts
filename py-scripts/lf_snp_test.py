@@ -1971,7 +1971,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     ###############################################
     report = lf_report(_results_dir_name="Scaling_and_Performance", _output_html="snp.html", _output_pdf="snp.pdf")
 
-    if args.csv_outfile != None:
+    if args.csv_outfile:
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
         csv_outfile = "details_{}_{}.csv".format(args.csv_outfile, current_time)
         csv_outfile = report.file_add_path(csv_outfile)
@@ -2885,7 +2885,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     # Build Results
     #
     ##########################################
-    if args.csv_outfile != None:
+    if args.csv_outfile:
         logg.info("Report CSV Details: {}".format(csv_outfile))
         logg.info("Report CSV Results: {}".format(csv_results))
         report.set_title("Scaling And Performance")
