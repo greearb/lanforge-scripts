@@ -291,13 +291,21 @@ class TR398v2Test(cvtest):
                  raw_lines_file="",
                  dut5="",
                  dut2="",
-                 enables=[],
-                 disables=[],
-                 raw_lines=[],
-                 sets=[],
+                 enables=None,
+                 disables=None,
+                 raw_lines=None,
+                 sets=None,
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
+        if enables is None:
+            enables = []
+        if disables is None:
+            disables = []
+        if raw_lines is None:
+            raw_lines = []
+        if sets is None:
+            sets = []
         self.lf_host = lf_host
         self.lf_port = lf_port
         self.lf_user = lf_user
