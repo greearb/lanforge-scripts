@@ -969,7 +969,7 @@ class L3VariableTime(Realm):
 
         csv_header = self.csv_generate_column_headers()
         # print(csv_header)
-        self.csv_add_column_headers(csv_header)
+        self.csv_add_column_headers()
 
         # dl - ports
         port_eids = self.gather_port_eids()
@@ -3084,7 +3084,7 @@ Setting wifi_settings per radio
 
             if wifi_settings_found:
                 # Check for additional flags
-                if set(('wifi_mode', 'enable_flags')).issubset(
+                if {'wifi_mode', 'enable_flags'}.issubset(
                         radio_info_dict.keys()):
                     print("wifi_settings flags set")
                 else:
