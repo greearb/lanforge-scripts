@@ -398,6 +398,8 @@ class StaConnect2(LFCliBase):
 
 
 def main():
+    lfjson_host = "localhost"
+    lfjson_port = 8080
     parser = argparse.ArgumentParser(
         prog="sta_connect2.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -405,8 +407,8 @@ def main():
 Example:
 ./sta_connect2.py --dest 192.168.100.209 --dut_ssid OpenWrt-2 --dut_bssid 24:F5:A2:08:21:6C
 """)
-    parser.add_argument("-d", "--dest", "--mgr", type=str, help="address of the LANforge GUI machine (localhost is default)", default='localhost')
-    parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)", default=8080)
+    parser.add_argument("-d", "--dest", type=str, help="address of the LANforge GUI machine (localhost is default)")
+    parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)")
     parser.add_argument("-u", "--user", type=str, help="TBD: credential login/username")
     parser.add_argument("-p", "--passwd", type=str, help="TBD: credential password")
     parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1")
@@ -432,8 +434,12 @@ Example:
     parser.add_argument('--monitor_interval', help='How frequently you want to append to your database', default='5s')
 
     args = parser.parse_args()
+    if args.dest is not None:
+        lfjson_host = args.dest
+    if args.port is not None:
+        lfjson_port = args.port
 
-    staConnect = StaConnect2(args.dest, args.port,
+    staConnect = StaConnect2(lfjson_host, lfjson_port,
                              debug_=True,
                              _influx_db=args.influx_db,
                              _influx_passwd=args.influx_passwd,
