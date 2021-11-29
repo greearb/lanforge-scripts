@@ -347,11 +347,11 @@ class WiFiCapacityTest(cv_test):
                  security="open",
                  paswd="[BLANK]",
                  ssid="",
-                 enables=[],
-                 disables=[],
-                 raw_lines=[],
+                 enables=None,
+                 disables=None,
+                 raw_lines=None,
                  raw_lines_file="",
-                 sets=[],
+                 sets=None,
                  influx_host="localhost",
                  influx_port=8086,
                  report_dir="",
@@ -362,6 +362,14 @@ class WiFiCapacityTest(cv_test):
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
+        if enables is None:
+            enables = []
+        if disables is None:
+            disables = []
+        if raw_lines is None:
+            raw_lines = []
+        if sets is None:
+            sets = []
         self.lfclient_host = lfclient_host
         self.lf_port = lf_port
         self.lf_user = lf_user
@@ -534,7 +542,7 @@ def main():
     parser.add_argument("--report_dir", default="")
     parser.add_argument("--scenario", default="")
     parser.add_argument("--graph_groups", help="File to save graph groups to", default=None)
-    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",default="")
+    parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from", default="")
 
     args = parser.parse_args()
 
