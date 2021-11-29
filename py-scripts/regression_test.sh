@@ -300,7 +300,7 @@ else
              #--influx_host c7-graphana --influx_port 8086 --influx_org Candela \
              #--influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
              #--influx_bucket ben \
-      "./measure_station_time_up.py --radio $RADIO_USED --num_stations 3 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --debug --report_file measure_station_time_up.txt"
+      "./measure_station_time_up.py --radio $RADIO_USED --num_stations 3 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED --debug --report_file measure_station_time_up.pkl"
       "./create_station.py --mgr $MGR --radio $RADIO_USED --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED && ./modify_station.py \
                    --mgr $MGR \
                    --radio $RADIO_USED \
