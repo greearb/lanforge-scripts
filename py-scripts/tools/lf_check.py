@@ -1066,7 +1066,7 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                     if self.test_result == "Success":
                         self.tests_success += 1
                     elif self.test_result == "Failure":
-                        self.tests_failed += 1
+                        self.tests_failure += 1
                     elif self.test_result == "TIMEOUT":
                         self.tests_timeout += 1
 
