@@ -561,7 +561,11 @@ function html_generator() {
 <html>
 <head>
 <title>Regression Test Results $NOW</title>
+<link rel='stylesheet' href='report.css' />
 <style>
+body {
+    font-family: 'Century Gothic';
+}
 .success {
     background-color:green;
 }
@@ -577,7 +581,7 @@ table {
 td {
     margin: 0;
     padding: 2px;
-    font-family: 'Courier New',courier,sans-serif;
+    font-family: 'Century Gothic','Courier New',courier,sans-serif;
 }
 h1, h2, h3, h4 {
     font-family: 'Century Gothic',Arial,sans,sans-serif;
