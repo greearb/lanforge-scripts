@@ -9,7 +9,6 @@ import time
 import datetime
 import json
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -396,11 +395,10 @@ class GenCXProfile(LFCliBase):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
         if gen_results['endpoints'] is not None:
             pprint(gen_results['endpoints'])
-            #for name in gen_results['endpoints']:
-               # pprint(name.items)
-                #for k,v in name.items():
+            # for name in gen_results['endpoints']:
+            # pprint(name.items)
+            # for k,v in name.items():
         exit(1)
-
 
     def choose_speedtest_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
@@ -409,11 +407,12 @@ class GenCXProfile(LFCliBase):
                 for k, v in name.items():
                     if v['last results'] is not None and v['name'] in self.created_endp and v['last results'] != '':
                         last_results = json.loads(v['last results'])
-                        if last_results['download'] is None and last_results['upload'] is None and last_results['ping'] is None:
+                        if last_results['download'] is None and last_results['upload'] is None and last_results[
+                            'ping'] is None:
                             return False, v['name']
                         elif last_results['download'] >= self.speedtest_min_dl and \
-                             last_results['upload'] >= self.speedtest_min_up and \
-                             last_results['ping'] <= self.speedtest_max_ping:
+                                last_results['upload'] >= self.speedtest_min_up and \
+                                last_results['ping'] <= self.speedtest_max_ping:
                             return True, v['name']
 
     def choose_generic_command(self):
@@ -462,7 +461,8 @@ class GenCXProfile(LFCliBase):
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
                 raise ValueError(
-                    'Filename %s has an extension that does not match output format %s .' % (report_file, output_format))
+                    'Filename %s has an extension that does not match output format %s .' % (
+                    report_file, output_format))
         else:
             output_format = report_file.split('.')[-1]
 
@@ -602,7 +602,9 @@ class GenCXProfile(LFCliBase):
             exit(1)
             # append compared df to created one
             if output_format.lower() != 'csv':
-                pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
+                pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format,
+                                             save_path=report_file)
         else:
             if output_format.lower() != 'csv':
-                pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
+                pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format,
+                                             save_path=report_file)
