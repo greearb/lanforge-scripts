@@ -159,6 +159,7 @@ class lf_check():
         self.tests_run = 0
         self.tests_success = 0
         self.tests_failure = 0
+        self.tests_some_failure = 0
         self.tests_timeout = 0
         self.results_col_titles = [
             "Test", "Command", "Result", "STDOUT", "STDERR"]
@@ -1067,6 +1068,8 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                         self.tests_success += 1
                     elif self.test_result == "Failure":
                         self.tests_failure += 1
+                    elif self.test_result == "Some Tests Failed":
+                        self.tests_some_failure += 1
                     elif self.test_result == "TIMEOUT":
                         self.tests_timeout += 1
 
@@ -1422,6 +1425,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     lf_test_summary = pd.DataFrame()
     lf_test_summary['Tests Run'] = [check.tests_run]
     lf_test_summary['Success'] = [check.tests_success]
+    lf_test_summary['Some Tests Failed'] = [check.tests_some_failure]
     lf_test_summary['Failure'] = [check.tests_failure]
     lf_test_summary['Timeout'] = [check.tests_timeout]
 
