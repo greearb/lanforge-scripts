@@ -235,7 +235,7 @@ python3 ./test_generic.py
     if args.report_file is None:
         new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
                                                                                                  '-') + '-test_generic'  # create path name
-        if not os.path.exists('/home/lanforge/report-data/'):
+        if os.path.exists('/home/lanforge/report-data/'):
             path = os.path.join('/home/lanforge/report-data/', new_file_path)
             os.mkdir(path)
         else:
