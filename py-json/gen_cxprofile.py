@@ -175,7 +175,7 @@ class GenCXProfile(LFCliBase):
                         resource = port_info[1]
                         shelf = port_info[0]
                         name = port_info[2]
-                    except:
+                    except ValueError:
                         raise ValueError("Unexpected name for port_name %s" % port_name)
 
                     # this naming convention follows what you see when you use
@@ -442,7 +442,7 @@ class GenCXProfile(LFCliBase):
                 debug=False):
         try:
             duration_sec = self.parse_time(duration_sec).seconds
-        except:
+        except ValueError:
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("GenCXProfile::monitor wants duration_sec > 1 second")
             if duration_sec <= monitor_interval_ms:
