@@ -277,7 +277,9 @@ class GenCXProfile(LFCliBase):
             })
         time.sleep(sleep_time)
 
-    def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
+    def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None):
+        if ports is None:
+            ports = []
         if self.debug:
             debug_ = True
         post_data = []
