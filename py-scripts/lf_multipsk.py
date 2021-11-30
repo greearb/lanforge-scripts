@@ -268,11 +268,10 @@ class MultiPsk(Realm):
                 y = station_ip[j].split('.')
                 if x[0] == y[0] and x[1] == y[1]:
                     print("station got ip from vlan")
-                    x = "Pass"
+                    return "Pass"
                 else:
                     print("station did not got ip from vlan")
-                    x = "Fail"
-        return x
+                    return "Fail"
 
     def compare_nonvlan_ip_nat(self):
         non_vlan_sta_ip = self.get_non_vlan_sta_ip()
@@ -321,6 +320,7 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description="lanforge webpage download Test Script")
     parser.add_argument('--n_vlan', help="type number of vlan using in test eg 1 or 2", default=1)
+    parser.add_argument('--mode', help="Mode for lf_multipsk", default=None)
     args = parser.parse_args()
 
     input_data = [{
