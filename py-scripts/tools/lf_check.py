@@ -156,6 +156,10 @@ class lf_check():
         self.outfile = _outfile
         self.outfile_name = _outfile_name
         self.test_result = "Failure"
+        self.tests_run = 0
+        self.tests_success = 0
+        self.tests_failure = 0
+        self.tests_timeout = 0
         self.results_col_titles = [
             "Test", "Command", "Result", "STDOUT", "STDERR"]
         self.html_results = ""
@@ -250,7 +254,7 @@ class lf_check():
             "get_scripts_get_sha exit_code: {exit_code}".format(
                 exit_code=exit_code))
         scripts_git_sha = commit_hash.decode('utf-8', 'ignore')
-        scripts_git_sha = scripts_git_sha.replace('\n','')
+        scripts_git_sha = scripts_git_sha.replace('\n', '')
         return scripts_git_sha
 
     '''
@@ -1056,6 +1060,16 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                         self.test_result = "Time Out"
                         background = self.background_purple
 
+                    # Total up test, tests success, tests failure, tests
+                    # timeouts
+                    self.tests_run += 1
+                    if self.test_result == "Success":
+                        self.tests_success += 1
+                    elif self.test_result == "Failure":
+                        self.tests_failed += 1
+                    elif self.test_result == "TIMEOUT":
+                        self.tests_timeout += 1
+
                     if 'lf_qa' in command:
                         line_list = open(stdout_log_txt).readlines()
                         for line in line_list:
@@ -1405,6 +1419,12 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # Successfully gathered LANforge information Run Tests
     check.run_script_test()
 
+    lf_test_summary = pd.DataFrame()
+    lf_test_summary['Tests Run'] = [check.tests_run]
+    lf_test_summary['Success'] = [check.tests_success]
+    lf_test_summary['Failure'] = [check.tests_failure]
+    lf_test_summary['Timeout'] = [check.tests_timeout]
+
     # generate output reports
     test_rig = check.get_test_rig()
     report.set_title(
@@ -1421,6 +1441,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     report.set_table_title("LANForge Radios")
     report.build_table_title()
     report.set_table_dataframe(lf_radio_df)
+    report.build_table()
+    report.set_table_title("LF Check Test Summary")
+    report.build_table_title()
+    report.set_table_dataframe(lf_test_summary)
     report.build_table()
     report.set_table_title("LF Check Test Results")
     report.build_table_title()
