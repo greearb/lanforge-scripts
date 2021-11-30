@@ -48,7 +48,7 @@ class GenCXProfile(LFCliBase):
             if self.cmd == "":
                 raise ValueError("Please ensure cmd has been set correctly")
         elif self.type == "speedtest":
-            self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % (sta_name)
+            self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % sta_name
         elif self.type == "iperf3" and self.dest is not None:
             self.cmd = "iperf3 --forceflush --format k --precision 4 -c %s -t 60 --tos 0 -b 1K --bind_dev %s -i 1 " \
                        "--pidfile /tmp/lf_helper_iperf3_%s.pid" % (self.dest, sta_name, gen_name)
@@ -131,7 +131,7 @@ class GenCXProfile(LFCliBase):
             if self.cmd == "":
                 raise ValueError("Please ensure cmd has been set correctly")
         elif self.type == "speedtest":
-            self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % (sta_name)
+            self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % sta_name
         elif self.type == "iperf3" and self.dest is not None:
             self.cmd = "iperf3 --forceflush --format k --precision 4 -c %s -t 60 --tos 0 -b 1K --bind_dev %s -i 1 " \
                        "--pidfile /tmp/lf_helper_iperf3_test.pid" % (self.dest, sta_name)
@@ -407,8 +407,7 @@ class GenCXProfile(LFCliBase):
                 for k, v in name.items():
                     if v['last results'] is not None and v['name'] in self.created_endp and v['last results'] != '':
                         last_results = json.loads(v['last results'])
-                        if last_results['download'] is None and last_results['upload'] is None and last_results[
-                            'ping'] is None:
+                        if last_results['download'] is None and last_results['upload'] is None and last_results['ping'] is None:
                             return False, v['name']
                         elif last_results['download'] >= self.speedtest_min_dl and \
                                 last_results['upload'] >= self.speedtest_min_up and \
@@ -417,7 +416,7 @@ class GenCXProfile(LFCliBase):
 
     def choose_generic_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if (gen_results['endpoints'] is not None):
+        if gen_results['endpoints'] is not None:
             for name in gen_results['endpoints']:
                 for k, v in name.items():
                     if v['name'] in self.created_endp and not v['name'].endswith('1'):
@@ -446,7 +445,7 @@ class GenCXProfile(LFCliBase):
         except:
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("GenCXProfile::monitor wants duration_sec > 1 second")
-            if (duration_sec <= monitor_interval_ms):
+            if duration_sec <= monitor_interval_ms:
                 raise ValueError("GenCXProfile::monitor wants duration_sec > monitor_interval")
         if report_file is None:
             raise ValueError("Monitor requires an output file to be defined")
@@ -461,8 +460,7 @@ class GenCXProfile(LFCliBase):
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
                 raise ValueError(
-                    'Filename %s has an extension that does not match output format %s .' % (
-                    report_file, output_format))
+                    'Filename %s has an extension that does not match output format %s .' % (report_file, output_format))
         else:
             output_format = report_file.split('.')[-1]
 
