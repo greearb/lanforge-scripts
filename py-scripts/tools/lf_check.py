@@ -1178,7 +1178,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     parser.add_argument(
         '--dir',
         help="--dir <results directory>",
-        default="lf_check")
+        default="")
     parser.add_argument(
         '--path',
         help="--path <results path>",
@@ -1253,7 +1253,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
     # select test suite
     test_suite = args.suite
-    __dir = args.dir
+    if args.dir == "":
+        __dir = "lf_check_{suite}".format(suite=test_suite)
+    else:
+        __dir = args.dir
     __path = args.path
 
     server_override = args.server_override
@@ -1269,13 +1272,13 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # create report class for reporting
     report = lf_report.lf_report(_path=__path,
                                  _results_dir_name=__dir,
-                                 _output_html="lf_check.html",
-                                 _output_pdf="lf_check.pdf")
+                                 _output_html="{dir}.html".format(dir=__dir),
+                                 _output_pdf="{dir}.pdf".format(dir=__dir))
 
     current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-    csv_results = "lf_check{}-{}.csv".format(args.outfile, current_time)
+    csv_results = "{dir}-{outfile}-{current_time}.csv".format(dir=__dir,outfile=args.outfile,current_time=current_time)
     csv_results = report.file_add_path(csv_results)
-    outfile_name = "lf_check-{}-{}".format(args.outfile, current_time)
+    outfile_name = "{dir}-{outfile}-{current_time}".format(dir=__dir,outfile=args.outfile,current_time=current_time)
     outfile = report.file_add_path(outfile_name)
     report_path = report.get_report_path()
     log_path = report.get_log_path()
