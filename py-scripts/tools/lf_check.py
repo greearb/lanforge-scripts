@@ -211,7 +211,7 @@ class lf_check():
         self.dut_hw = "DUT_HW_NA"
         self.dut_sw = "DUT_SW_NA"
         self.dut_model = "DUT_MODEL_NA"
-        self.dut_serial = "DUT_SERIAL_NA"
+        self.dut_serial = "DUT_SN_NA"
 
         self.dut_wireless_network_dict = {}
 
@@ -664,8 +664,8 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
         else:
             self.logger.info("DUT_MODEL not in test_dut json")
 
-        if "DUT_SERIAL" in self.json_dut["test_dut"]:
-            self.dut_serial = self.json_dut["test_dut"]["DUT_SERIAL"]
+        if "DUT_SN" in self.json_dut["test_dut"]:
+            self.dut_serial = self.json_dut["test_dut"]["DUT_SN"]
         else:
             self.logger.info("DUT_SERIAL not in test_dut json")
 
@@ -819,9 +819,9 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                     if 'DUT_MODEL' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(
                             'DUT_MODEL', self.dut_model)
-                    if 'DUT_SERIAL' in self.test_dict[test]['args']:
+                    if 'DUT_SN' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace(
-                            'DUT_SERIAL', self.dut_serial)
+                            'DUT_SN', self.dut_serial)
 
                     if 'UPSTREAM_PORT' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('UPSTREAM_PORT',
