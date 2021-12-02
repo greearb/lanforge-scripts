@@ -24,7 +24,7 @@ def main():
     args = parser.parse_args()
 
     print("Installing Script Python3 Dependencies")
-    packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'bokeh', 'pyarrow', 'websocket-client',
+    packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'pyarrow', 'websocket-client',
                 'xlsxwriter', 'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search', 'pyserial',
                 'pexpect-serial', 'scp', 'dash', 'kaleido']
     if args.pyjwt:
