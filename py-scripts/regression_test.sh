@@ -20,7 +20,12 @@ Help()
   echo "If using the help flag, put the H flag at the end of the command after other flags."
 }
 
-if [ -d "/home/lanforge/lanforge_env"] && pip3 install --upgrade lanforge-scripts || pip3 install --user -r ../requirements.txt --upgrade
+if [ -d "/home/lanforge/lanforge_env" ];
+then
+  pip3 install --upgrade lanforge-scripts
+else
+  pip3 install --user -r ../requirements.txt --upgrade
+fi
 
 while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:" option; do
   case "${option}" in
@@ -524,13 +529,13 @@ function test() {
     STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
   else
     echo "No errors detected"
-      results+=("<tr><td>${CURR_TEST_NAME}</td>
-                <td class='scriptdetails'>${testcommand}</td>
-                <td class='success'>Success</td>
-                <td>${execution}</td>
-                <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                <td></td></tr>")
   fi
+  results+=("<tr><td>${CURR_TEST_NAME}</td>
+            <td class='scriptdetails'>${testcommand}</td>
+            <td class='success'>Success</td>
+            <td>${execution}</td>
+            <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+            <td></td></tr>")
 }
 
 function start_tests()  {
