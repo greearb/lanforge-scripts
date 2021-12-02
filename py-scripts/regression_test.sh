@@ -20,7 +20,12 @@ Help()
   echo "If using the help flag, put the H flag at the end of the command after other flags."
 }
 
-if [ -d "/home/lanforge/lanforge_env"] && pip3 install --upgrade lanforge-scripts || pip3 install --user -r ../requirements.txt --upgrade
+if [ -d "/home/lanforge/lanforge_env" ];
+then
+  pip3 install --upgrade lanforge-scripts
+else
+  pip3 install --user -r ../requirements.txt --upgrade
+fi
 
 while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:" option; do
   case "${option}" in
@@ -499,28 +504,38 @@ function test() {
   start=$(date +%s)
   # this command saves stdout and stderr to the stdout file, and has a special file for stderr text.
   # Modified from https://unix.stackexchange.com/a/364176/327076
-  { eval "$testcommand" 2>&1 >&3 3>&- | tee "${TEST_DIR}/${NAME}_stderr.txt" 3>&-; } > "${TEST_DIR}/${NAME}.txt" 3>&1
-  chmod 664 "${TEST_DIR}/${NAME}.txt"
-  FILESIZE=$(stat -c%s "${TEST_DIR}/${NAME}_stderr.txt") || 0
+  FILENAME="${TEST_DIR}/${NAME}"
+  { eval "$testcommand" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } > "${FILENAME}.txt" 3>&1
+  chmod 664 "${FILENAME}.txt"
+  FILESIZE=$(stat -c%s "${FILENAME}_stderr.txt") || 0
   end=$(date +%s)
   execution="$((end-start))"
-  if (( FILESIZE > 0)); then
+  TEXT=$(cat "${FILENAME}".txt)
+  STDERR=""
+  if [[ "tests failed" == *"${TEXT}" ]]
+  then 
+    TEXTCLASS="partial_failure"
+    TDTEXT="Partial Failure"
+  else 
+    TEXTCLASS="success"
+    TDTEXT="Success"
+  fi
+
+  if (( FILESIZE > 0))
+  then
     echo "Errors detected"
-      results+=("<tr><td>${CURR_TEST_NAME}</td>
-                <td class='scriptdetails'>${testcommand}</td>
-                <td class='failure'>Failure</td>
-                <td>${execution}</td>
-                <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                <td><a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a></td></tr>")
+    TEXTCLASS="failure"
+    TDTEXT="Failure"
+    STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
   else
     echo "No errors detected"
-      results+=("<tr><td>${CURR_TEST_NAME}</td>
-                <td class='scriptdetails'>${testcommand}</td>
-                <td class='success'>Success</td>
-                <td>${execution}</td>
-                <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                <td></td></tr>")
   fi
+  results+=("<tr><td>${CURR_TEST_NAME}</td>
+            <td class='scriptdetails'>${testcommand}</td>
+            <td class='${TEXTCLASS}'>${TDTEXT}</td>
+            <td>${execution}</td>
+            <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+            <td>${STDERR}</td></tr>")
 }
 
 function start_tests()  {
