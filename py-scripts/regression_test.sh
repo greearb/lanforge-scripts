@@ -572,6 +572,9 @@ function html_generator() {
 		.failure {
 			background-color:red;
 		}
+    .partial_failure {
+      background-color:yellow;
+    }
 		table {
 			border: 1px solid gray;
 		}
