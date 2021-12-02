@@ -532,10 +532,10 @@ function test() {
   fi
   results+=("<tr><td>${CURR_TEST_NAME}</td>
             <td class='scriptdetails'>${testcommand}</td>
-            <td class='success'>Success</td>
+            <td class='${TEXTCLASS}'>$TDTEXT</td>
             <td>${execution}</td>
             <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-            <td></td></tr>")
+            <td>${STDERR}</td></tr>")
 }
 
 function start_tests()  {
