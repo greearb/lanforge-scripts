@@ -826,39 +826,18 @@ class Realm(LFCliBase):
         link = self.lfclient_url + link
         info = ()
 
-    def new_station_profile(self, ver=1):
-        if ver == 1:
-            station_prof = StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
-        # elif ver == 2:
-        # import station_profile2
-        # station_prof = station_profile2.StationProfile2(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
-        return station_prof
+    def new_station_profile(self):
+        return StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
 
-    def new_multicast_profile(self, ver=1):
-        if ver == 1:
-            multi_prof = MULTICASTProfile(self.lfclient_host, self.lfclient_port,
-                                          local_realm=self, debug_=self.debug, report_timer_=3000)
-        # elif ver == 2:
-        # import multicast_profile2
-        # multi_prof = multicast_profile2.MULTICASTProfile2(self.lfclient_host, self.lfclient_port,
-        #                           local_realm=self, debug_=self.debug, report_timer_=3000)
-        return multi_prof
+    def new_multicast_profile(self):
+        return MULTICASTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug, report_timer_=3000)
 
-    def new_wifi_monitor_profile(self, resource_=1, debug_=False, up_=False, ver=1):
-        if ver == 1:
-            wifi_mon_prof = WifiMonitor(self.lfclient_url,
-                                        local_realm=self,
-                                        resource_=resource_,
-                                        up=up_,
-                                        debug_=(self.debug or debug_))
-        # elif ver == 2:
-        # import wifi_monitor_profile2
-        # wifi_mon_prof = wifi_monitor_profile2.WifiMonitor2(self.lfclient_url,
-        #                         local_realm=self,
-        #                         resource_=resource_,
-        #                         up=up_,
-        #                         debug_=(self.debug or debug_))
-        return wifi_mon_prof
+    def new_wifi_monitor_profile(self, resource_=1, debug_=False, up_=False):
+        return WifiMonitor(self.lfclient_url,
+                           local_realm=self,
+                           resource_=resource_,
+                           up=up_,
+                           debug_=(self.debug or debug_))
 
     def new_l3_cx_profile(self):
         return L3CXProfile(self.lfclient_host,
@@ -867,60 +846,25 @@ class Realm(LFCliBase):
                            debug_=self.debug,
                            report_timer_=3000)
 
-    def new_l4_cx_profile(self, ver=1):
-        if ver == 1:
-            cx_prof = L4CXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        # elif ver == 2:
-        # import l4_cxprofile2
-        # cx_prof = l4_cxprofile2.L4CXProfile2(self.lfclient_host,
-        #                   self.lfclient_port,
-        #                   local_realm=self,
-        #                   debug_=self.debug,
-        #                   report_timer_=3000)
-        return cx_prof
+    def new_l4_cx_profile(self):
+        return L4CXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
-    def new_attenuator_profile(self, ver=1):
-        if ver == 1:
-            atten_prof = ATTENUATORProfile(self.lfclient_host, self.lfclient_port, debug_=self.debug)
-        return atten_prof
+    def new_attenuator_profile(self):
+        return ATTENUATORProfile(self.lfclient_host, self.lfclient_port, debug_=self.debug)
 
-    def new_generic_endp_profile(self, ver=1):
-        if ver == 1:
-            endp_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        # elif ver == 2:
-        # import gen_cxprofile2
-        # endp_prof = gen_cxprofile2.GenCXProfile(self.lfclient_host,
-        #                   self.lfclient_port,
-        #                   local_realm=self,
-        #                   debug_=self.debug,
-        #                   report_timer_=3000)
-        return endp_prof
+    def new_generic_endp_profile(self):
+        return GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
-    def new_generic_cx_profile(self, ver=1):
+    def new_generic_cx_profile(self):
         """
         @deprecated
         :return: new GenCXProfile
         """
-        if ver == 1:
-            cx_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        # elif ver == 2:
-        # import gen_cxprofile2
-        # cx_prof = gen_cxprofile2.GenCXProfile(self.lfclient_host,
-        #                   self.lfclient_port,
-        #                   local_realm=self,
-        #                   debug_=self.debug,
-        #                   report_timer_=3000)
-        return cx_prof
+        return GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
-    def new_vap_profile(self, ver=1):
-        if ver == 1:
-            vap_prof = VAPProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
-                                  debug_=self.debug)
-        # elif ver == 2:
-        #     import vap_profile2
-        #     vap_prof = vap_profile2.VAPProfile2(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
-        #                       debug_=self.debug)
-        return vap_prof
+    def new_vap_profile(self):
+        return VAPProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
+                          debug_=self.debug)
 
     # def new_vr_profile(self):
     # return VRProfile(local_realm=self,
@@ -953,12 +897,12 @@ class PacketFilter:
     @staticmethod
     def get_filter_wlan_assoc_packets(ap_mac, sta_mac):
         return "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
-                 "-Y \"(wlan.addr==%s or wlan.addr==%s) and wlan.fc.type_subtype<=3\" " % (ap_mac, sta_mac)
+               "-Y \"(wlan.addr==%s or wlan.addr==%s) and wlan.fc.type_subtype<=3\" " % (ap_mac, sta_mac)
 
     @staticmethod
     def get_filter_wlan_null_packets(ap_mac, sta_mac):
         return "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
-                 "-Y \"(wlan.addr==%s or wlan.addr==%s) and wlan.fc.type_subtype==44\" " % (ap_mac, sta_mac)
+               "-Y \"(wlan.addr==%s or wlan.addr==%s) and wlan.fc.type_subtype==44\" " % (ap_mac, sta_mac)
 
     @staticmethod
     def run_filter(pcap_file, file_filter):
