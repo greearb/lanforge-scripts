@@ -1,9 +1,11 @@
 import paramiko
 from scp import SCPClient
 
+
 class lanforge_reports:
 
-    def pull_reports(self, hostname="localhost", port=22, username="lanforge", password="lanforge",
+    @staticmethod
+    def pull_reports(hostname="localhost", port=22, username="lanforge", password="lanforge",
                      report_location="/home/lanforge/html-reports/",
                      report_dir="../../../reports/"):
         ssh = paramiko.SSHClient()
@@ -14,4 +16,3 @@ class lanforge_reports:
         with SCPClient(ssh.get_transport()) as scp:
             scp.get(remote_path=report_location, local_path=report_dir, recursive=True)
             scp.close()
-
