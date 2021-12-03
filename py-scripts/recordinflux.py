@@ -72,7 +72,7 @@ def main():
                                   tags=tags)
 
     else:
-        from influx import RecordInflux
+        from influx_utils import RecordInflux
         grapher = RecordInflux(_influx_host=args.mgr,
                                _influx_port=args.mgr_port,
                                _influx_db=args.influx_db,
