@@ -112,7 +112,6 @@ class Realm(LFCliBase):
         self.check_connect()
         self.chan_to_freq = {}
         self.freq_to_chan = {}
-        freq = 0
         chan = 1
         for freq in range(2412, 2472, 5):
             self.freq_to_chan[freq] = chan
@@ -255,7 +254,6 @@ class Realm(LFCliBase):
     def admin_up(self, port_eid):
         # print("186 admin_up port_eid: "+port_eid)
         eid = self.name_to_eid(port_eid)
-        shelf = eid[0]
         resource = eid[1]
         port = eid[2]
         request = LFUtils.port_up_request(resource_id=resource, port_name=port)
@@ -265,7 +263,6 @@ class Realm(LFCliBase):
 
     def admin_down(self, port_eid):
         eid = self.name_to_eid(port_eid)
-        shelf = eid[0]
         resource = eid[1]
         port = eid[2]
         request = LFUtils.port_down_request(resource_id=resource, port_name=port)
@@ -273,7 +270,6 @@ class Realm(LFCliBase):
 
     def reset_port(self, port_eid):
         eid = self.name_to_eid(port_eid)
-        shelf = eid[0]
         resource = eid[1]
         port = eid[2]
         request = LFUtils.port_reset_request(resource_id=resource, port_name=port)
@@ -356,8 +352,7 @@ class Realm(LFCliBase):
             dbg_param = "?__debug=1"
 
         while last_response != "YES":
-            response = self.json_post("/gui-json/cmd%s" % dbg_param, data, debug_=debug_,
-                                      response_json_list_=response_json)
+            self.json_post("/gui-json/cmd%s" % dbg_param, data, debug_=debug_, response_json_list_=response_json)
             # LFUtils.debug_printer.pprint(response_json)
             last_response = response_json[0]["LAST"]["response"]
             if last_response != "YES":
@@ -489,7 +484,6 @@ class Realm(LFCliBase):
 
     # Returns list of all ports
     def port_list(self):
-        sta_list = []
         response = super().json_get("/port/list?fields=all")
         if (response is None) or ("interfaces" not in response):
             print("port_list: incomplete response:")
@@ -827,11 +821,6 @@ class Realm(LFCliBase):
                 "endpoint": "all"
             }
             self.json_post(req_url, data)
-            req_url = "cli-json/show_cx"
-            data = {
-                "test_mgr": "all",
-                "cross_connect": "all"
-            }
 
     def parse_link(self, link):
         link = self.lfclient_url + link
