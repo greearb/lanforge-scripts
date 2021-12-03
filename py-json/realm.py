@@ -248,7 +248,7 @@ class Realm(LFCliBase):
         eid = self.name_to_eid(port_eid)
         current_stations = self.json_get("/port/%s/%s/%s?fields=alias" % (eid[0], eid[1], eid[2]),
                                          debug_=debug)
-        if current_stations is not None:
+        if current_stations:
             return True
         return False
 
@@ -321,13 +321,13 @@ class Realm(LFCliBase):
 
     def cleanup_cxe_prefix(self, prefix):
         cx_list = self.cx_list()
-        if cx_list is not None:
+        if cx_list:
             for cx_name in cx_list:
                 if cx_name.startswith(prefix):
                     self.rm_cx(cx_name)
 
         endp_list = self.json_get("/endp/list")
-        if endp_list is not None:
+        if endp_list:
             if 'endpoint' in endp_list:
                 endp_list = list(endp_list['endpoint'])
                 for idx in range(len(endp_list)):
@@ -401,7 +401,7 @@ class Realm(LFCliBase):
             found_endps = {}
             if debug:
                 print("Waiting on endpoint endp_list {}".format(endp_list))
-            if (endp_list is not None) and ("items" not in endp_list):
+            if endp_list and ("items" not in endp_list):
                 try:
                     endp_list = list(endp_list['endpoint'])
                     for idx in range(len(endp_list)):
@@ -434,7 +434,7 @@ class Realm(LFCliBase):
             found_cxs = {}
             cx_list = self.cx_list()
             not_cx = ['warnings', 'errors', 'handler', 'uri', 'items']
-            if cx_list is not None:
+            if cx_list:
                 for cx_name in cx_list:
                     if cx_name in not_cx:
                         continue
@@ -747,7 +747,7 @@ class Realm(LFCliBase):
         if isinstance(time_string, str):
             pattern = re.compile("^(\d+)([dhms]$)")
             td = pattern.match(time_string)
-            if td is not None:
+            if td:
                 dur_time = int(td.group(1))
                 dur_measure = str(td.group(2))
                 if dur_measure == "d":
@@ -767,7 +767,7 @@ class Realm(LFCliBase):
     def remove_all_stations(self, resource):
         port_list = self.station_list()
         sta_list = []
-        if sta_list is not None:
+        if port_list:
             print("Removing all stations")
             for item in list(port_list):
                 if "sta" in list(item)[0]:
@@ -786,7 +786,7 @@ class Realm(LFCliBase):
         endp_list = self.json_get("/endp/list")
         if "items" in endp_list or "empty" in endp_list:
             return
-        if endp_list is not None or endp_list:
+        if endp_list:
             print("Removing all endps")
             endp_list = list(endp_list['endpoint'])
             for endp_name in range(len(endp_list)):
@@ -805,7 +805,7 @@ class Realm(LFCliBase):
         try:
             cx_list = list(self.cx_list())
             not_cx = ['warnings', 'errors', 'handler', 'uri', 'items', 'empty']
-            if cx_list is not None:
+            if cx_list:
                 print("Removing all cxs")
                 for cx_name in cx_list:
                     if cx_name in not_cx:
