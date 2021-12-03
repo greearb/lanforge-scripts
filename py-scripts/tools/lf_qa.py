@@ -53,6 +53,10 @@ class csv_sql:
         self.dut_hw_version = "NA"
         self.dut_serial_num_list = "NA"
         self.dut_serial_num = "NA"
+        self.subtest_passed = 0
+        self.subtest_failed = 0
+        self.subtest_total = 0
+        self.test_run = ""
 
     # Helper methods
     def get_test_rig_list(self):
@@ -139,7 +143,7 @@ class csv_sql:
             print("exception reading test_run from {_kpi_path}".format(
                 _kpi_path=_kpi_path))
 
-        if test_run is "NA":
+        if test_run == "NA":
             try:
                 test_run = _kpi_path.rsplit('/', 2)[0]
                 print("try harder test_run {test_run}".format(test_run=test_run))
@@ -355,6 +359,92 @@ class csv_sql:
         self.html_results += """<br>"""
         self.html_results += """<br>"""
 
+    # TODO determin the subtest pass and fail graph
+    # df is sorted by date oldest to newest
+    # get the test_run for last run
+    # query the db for  all pass and fail or last run 
+    # put in table
+    def sub_test_information(self):
+        print("generate table and graph from subtest data per run: {}".format(
+            time.time()))
+        # https://datacarpentry.org/python-ecology-lesson/09-working-with-sql/index.html-
+        self.conn = sqlite3.connect(self.database)
+        # current connection is sqlite3 /TODO move to SQLAlchemy
+        df3 = pd.read_sql_query(
+            "SELECT * from {}".format(self.table), self.conn)
+        # sort by date from oldest to newest.
+        try:
+            df3 = df3.sort_values(by='Date')
+        except BaseException:
+            print(("Database empty reading subtest: "
+                "KeyError(key) when sorting by Date for db: {db},"
+                " check Database name, path to kpi, typo in path, exiting".format(db=self.database)))
+            exit(1)
+        self.conn.close()
+
+        # test_run are used for detemining the subtest-pass, subtest-fail
+        test_run_list = list(df3['test_run'])
+        print("test_run_list first [0] {}".format(test_run_list[0]))
+        print("test_run_list last [-1] {}".format(test_run_list[-1]))
+        test_run_list = list(sorted(set(test_run_list)))
+        print("test_run_list first [0] {}".format(test_run_list[0]))
+        print("test_run_list last [-1] {}".format(test_run_list[-1]))
+
+
+        self.test_run = test_run_list[-1]
+        # collect this runs subtest totals
+        df_tmp = df3.loc[df3['test_run'] == self.test_run ]
+        subtest_passed_list = list(df_tmp['Subtest-Pass'])
+        subtest_failed_list = list(df_tmp['Subtest-Fail'])
+
+        try:
+            self.subtest_passed = int(sum(subtest_passed_list))
+            self.subtest_failed = int(sum(subtest_failed_list))
+            self.subtest_total = self.subtest_passed + self.subtest_failed
+        except BaseException:
+            warning_msg = ("WARNING subtest values need to be filtered or"
+            " Test is not behaving in filling out subtest values")
+            print ("{warn}".format(warn=warning_msg),file=sys.stderr)
+            print ("{warn}".format(warn=warning_msg),file=sys.stdout)
+            self.subtest_passed = 0
+            self.subtest_failed = 0
+            self.subtest_total = 0
+            
+        print("{run} subtest Total:{total} Pass:{passed} Fail:{failed}".format(
+            run=self.test_run, total=self.subtest_total,passed=self.subtest_passed,failed=self.subtest_failed 
+        ))
+
+        # extract the DUT information from last run
+        self.dut_model_num_list = list(set(list(df_tmp['dut-model-num'])))
+        self.dut_model_num_list = [x for x in self.dut_model_num_list if x is not None]
+        if self.dut_model_num_list:
+            self.dut_model_num = self.dut_model_num_list[-1]
+
+        self.dut_sw_version_list = list(set(list(df_tmp['dut-sw-version'])))
+        self.dut_sw_version_list = [x for x in self.dut_sw_version_list if x is not None]
+        if self.dut_sw_version_list:
+            self.dut_sw_version = self.dut_sw_version_list[-1]
+
+        self.dut_hw_version_list = list(set(list(df_tmp['dut-hw-version'])))
+        self.dut_hw_version_list = [x for x in self.dut_hw_version_list if x is not None]
+        if self.dut_hw_version_list:
+            self.dut_hw_version = self.dut_hw_version_list[-1]
+
+        self.dut_serial_num_list = list(set(list(df_tmp['dut-serial-num'])))
+        self.dut_serial_num_list = [x for x in self.dut_serial_num_list if x is not None]
+        if self.dut_serial_num_list[-1]:
+            self.dut_serial_num = self.dut_serial_num_list[-1]
+        
+        print(
+            "In png DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}" .format(
+                DUT=self.dut_model_num,
+                SW=self.dut_sw_version,
+                HW=self.dut_hw_version,
+                SN=self.dut_serial_num))
+                
+
+
+
     def generate_graph_png(self):
         print(
             "generate png and html to display, generate time: {}".format(
@@ -383,19 +473,14 @@ class csv_sql:
         # print("dataframe df3 {df3}".format(df3=df3))
 
         test_tag_list = list(df3['test-tag'])
-        test_tag_list = list(set(test_tag_list))
+        test_tag_list = list(sorted(set(test_tag_list)))
         # print("test_tag_list: {}".format(test_tag_list) )
 
         test_rig_list = list(df3['test-rig'])
-        test_rig_list = list(set(test_rig_list))
+        test_rig_list = list(sorted(set(test_rig_list)))
         self.test_rig_list = test_rig_list
         print("test_rig_list: {}".format(test_rig_list))
 
-        # TODO determin the subtest pass and fail graph
-        # df is sorted by date oldest to newest
-        # get the test_run for last run
-        # query the db for  all pass and fail or last run 
-        # put in table
 
         # create the rest of the graphs
         for test_rig in test_rig_list:
@@ -412,34 +497,11 @@ class csv_sql:
                         kpi_path_list = list(df_tmp['kpi_path'])
 
                         # get Device Under Test Information ,
-                        # the set reduces the redundency , list puts it back into a list
-                        # the [0] will get the latest versions for the report
-                        self.dut_model_num_list = list(
-                            set(list(df_tmp['dut-model-num'])))
-                        print(
-                            "in png self.dut_model_num_list {dut_model_num_list}".format(
-                                dut_model_num_list=self.dut_model_num_list))
-                        if self.dut_model_num_list[0] is not None:
-                            self.dut_model_num = self.dut_model_num_list[0]
-                        self.dut_sw_version_list = list(
-                            set(list(df_tmp['dut-sw-version'])))
-                        if self.dut_sw_version_list[0] is not None:
-                            self.dut_sw_version = self.dut_sw_version_list[0]
-                        self.dut_hw_version_list = list(
-                            set(list(df_tmp['dut-hw-version'])))
-                        if self.dut_hw_version_list[0] is not None:
-                            self.dut_hw_version = self.dut_hw_version_list[0]
-                        self.dut_serial_num_list = list(
-                            set(list(df_tmp['dut-serial-num'])))
-                        if self.dut_serial_num_list[0] is not None:
-                            self.dut_serial_num = self.dut_serial_num_list[0]
-
-                        print(
-                            "In png DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}" .format(
-                                DUT=self.dut_model_num_list,
-                                SW=self.dut_sw_version_list,
-                                HW=self.dut_hw_version_list,
-                                SN=self.dut_serial_num_list))
+                        # the set command uses a hash , sorted puts it back in order
+                        # the set reduces the redundency the filster removes None
+                        # list puts it back into a list 
+                        # This code is since the dut is not passed in to lf_qa.py when
+                        # regernation of graphs from db
 
                         units_list = list(df_tmp['Units'])
                         print(
@@ -591,10 +653,11 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         exit(1)
     elif not args.store:
         if args.png:
-            print("if --png set to create png files then --store must also be set, exiting")
-            exit(1)
+            print("if --png set to create png files from database")
         elif not args.png:
             print("Need to enter an action of --store --png ")
+            exit(1)
+
 
     # create report class for reporting
     report = lf_report(_path=__path,
@@ -610,9 +673,12 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         _server=__server,
         _cut=__cut,
         _png=__png)
+    # csv_dash.sub_test_information()
+
     if args.store:
         csv_dash.store()
     if args.png:
+        csv_dash.sub_test_information()
         csv_dash.generate_graph_png()
 
         # generate output reports
@@ -653,6 +719,17 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         print("suite_html {}".format(suite_html))
         report.set_custom_html(suite_html)
         report.build_custom()
+
+        # sub test summary
+        lf_subtest_summary = pd.DataFrame()
+        lf_subtest_summary['Subtest Total'] = [csv_dash.subtest_total]
+        lf_subtest_summary['Subtest Passed'] = [csv_dash.subtest_passed]
+        lf_subtest_summary['Subtest Falied'] = [csv_dash.subtest_failed]
+
+        report.set_table_title("Suite Subtest Summary")
+        report.build_table_title()
+        report.set_table_dataframe(lf_subtest_summary)
+        report.build_table()
 
         # png summary of test
         report.set_table_title("Suite Summary")
