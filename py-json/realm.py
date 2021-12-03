@@ -355,12 +355,12 @@ class Realm(LFCliBase):
         if debug_:
             dbg_param = "?__debug=1"
 
-        while (last_response != "YES"):
+        while last_response != "YES":
             response = self.json_post("/gui-json/cmd%s" % dbg_param, data, debug_=debug_,
                                       response_json_list_=response_json)
             # LFUtils.debug_printer.pprint(response_json)
             last_response = response_json[0]["LAST"]["response"]
-            if (last_response != "YES"):
+            if last_response != "YES":
                 last_response = None
                 response_json = []
                 time.sleep(1)
@@ -414,10 +414,10 @@ class Realm(LFCliBase):
             for req in these_endp:
                 if not req in found_endps:
                     if debug:
-                        print("Waiting on endpoint: %s" % (req))
+                        print("Waiting on endpoint: %s" % req)
                     wait_more = True
             count += 1
-            if (count > 100):
+            if count > 100:
                 break
 
         return not wait_more
@@ -443,10 +443,10 @@ class Realm(LFCliBase):
             for req in these_cx:
                 if not req in found_cxs:
                     if debug:
-                        print("Waiting on CX: %s" % (req))
+                        print("Waiting on CX: %s" % req)
                     wait_more = True
             count += 1
-            if (count > 100):
+            if count > 100:
                 break
 
         return not wait_more
@@ -464,7 +464,7 @@ class Realm(LFCliBase):
         sta_map = {}
         temp_map = LFUtils.portListToAliasMap(response)
         for k, v in temp_map.items():
-            if (v['port type'] == "WIFI-STA"):
+            if v['port type'] == "WIFI-STA":
                 sta_map[k] = v
         temp_map.clear()
         del temp_map
@@ -563,7 +563,7 @@ class Realm(LFCliBase):
                 if debug_:
                     print("- prelim - - - - - - - - - - - - - - - - - - -")
                     pprint(record)
-                if (record["port type"] == "WIFI-STA"):
+                if record["port type"] == "WIFI-STA":
                     prelim_map[name] = record
 
             except Exception as x:
@@ -652,7 +652,7 @@ class Realm(LFCliBase):
 
             for sta_eid in station_list:
                 if debug:
-                    print("checking sta-eid: %s" % (sta_eid))
+                    print("checking sta-eid: %s" % sta_eid)
                 eid = self.name_to_eid(sta_eid)
 
                 response = super().json_get("/port/%s/%s/%s?fields=alias,ip,port+type,ipv6+address" %
@@ -670,7 +670,7 @@ class Realm(LFCliBase):
                     if v['ip'] in waiting_states:
                         wait_more = True
                         if debug:
-                            print("Waiting for port %s to get IPv4 Address." % (sta_eid))
+                            print("Waiting for port %s to get IPv4 Address." % sta_eid)
                     else:
                         if sta_eid not in stas_with_ips:
                             stas_with_ips[sta_eid] = {'ipv4': v['ip']}
@@ -689,7 +689,7 @@ class Realm(LFCliBase):
                     else:
                         wait_more = True
                         if debug:
-                            print("Waiting for port %s to get IPv6 Address." % (sta_eid))
+                            print("Waiting for port %s to get IPv6 Address." % sta_eid)
 
             if wait_more:
                 time.sleep(1)
@@ -705,7 +705,7 @@ class Realm(LFCliBase):
             raise ValueError("check for num curr ips expects non-empty list of ports")
         for sta_eid in station_list:
             if debug:
-                print("checking sta-eid: %s" % (sta_eid))
+                print("checking sta-eid: %s" % sta_eid)
             eid = self.name_to_eid(sta_eid)
             response = super().json_get("/port/%s/%s/%s?fields=alias,ip,port+type,ipv6+address" %
                                         (eid[0], eid[1], eid[2]))
@@ -718,9 +718,9 @@ class Realm(LFCliBase):
                 break
             if ipv4:
                 v = response['interface']
-                if (v['ip'] in waiting_states):
+                if v['ip'] in waiting_states:
                     if debug:
-                        print("Waiting for port %s to get IPv4 Address." % (sta_eid))
+                        print("Waiting for port %s to get IPv4 Address." % sta_eid)
                 else:
                     if debug:
                         print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
@@ -730,9 +730,9 @@ class Realm(LFCliBase):
                         num_sta_with_ips += 1
             if ipv6:
                 v = response['interface']
-                if (v['ip'] in waiting_states):
+                if v['ip'] in waiting_states:
                     if debug:
-                        print("Waiting for port %s to get IPv6 Address." % (sta_eid))
+                        print("Waiting for port %s to get IPv6 Address." % sta_eid)
 
                 else:
                     if debug:
@@ -985,7 +985,7 @@ class Realm(LFCliBase):
         return LFDataCollection(local_realm=self)
 
 
-class PacketFilter():
+class PacketFilter:
 
     def get_filter_wlan_assoc_packets(self, ap_mac, sta_mac):
         filter = "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
