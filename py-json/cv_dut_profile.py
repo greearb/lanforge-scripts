@@ -40,9 +40,12 @@ class cv_dut(LFCliBase):
         self.lan_port = "[BLANK]"
         self.api_id = "0"
         self.flags_mask = "NA"
-        if desired_dut_flags is not None:
+        if desired_dut_flags:
             self.dut_flags = desired_dut_flags
             self.dut_flags_mask = desired_dut_flags_mask
+            if self.dut_flags:
+                self.flags = self.add_named_flags(self.dut_flags, add_dut_flags)
+                self.flags_mask = self.add_named_flags(self.dut_flags_mask, add_dut_flags)
 
     def add_named_flags(self, desired_list, command_ref):
         if desired_list is None:
@@ -80,11 +83,6 @@ class cv_dut(LFCliBase):
                    top_left_x="NA",
                    top_left_y="NA",
                    ):
-        try:
-            self.flags = self.add_named_flags(self.dut_flags, add_dut_flags)
-            self.flags_mask = self.add_named_flags(self.dut_flags_mask, add_dut_flags)
-        except:
-            pass
         response_json = []
         req_url = "/cli-json/add_dut"
         data = {
