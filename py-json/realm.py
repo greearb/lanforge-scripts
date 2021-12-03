@@ -946,7 +946,7 @@ class Realm(LFCliBase):
     def new_dut_profile(self):
         return DUTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
-    def new_mvlan_profile(self)
+    def new_mvlan_profile(self):
         return MACVLANProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
     def new_qvlan_profile(self):
