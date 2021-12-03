@@ -51,8 +51,7 @@ class ClientVisualization(LFCliBase, threading.Thread):
             self.ip = 0
             self.down = 0
             self.phantom = 0
-            for i in self.json_get("/port/list?fields=port,alias,parent%20dev,down,phantom,ip,port%20type")[
-                'interfaces']:
+            for i in self.json_get("/port/list?fields=port,alias,parent%20dev,down,phantom,ip,port%20type")['interfaces']:
 
                 for j in i:
                     print(i[j]['port type'])
@@ -84,7 +83,7 @@ class ClientVisualization(LFCliBase, threading.Thread):
                 break
 
 
-class CreateHTML():
+class CreateHTML:
     def __init__(self, path="", test_name="", time_snap="", dut_ssid="", test_conf_data={}, objective="",
                  test_results={}, chart_data={}, chart_params={}):
         self.head = """
@@ -239,16 +238,16 @@ class CreateHTML():
         self.report = self.head + self.test_conf + self.objective + self.summary_results + self.chart + self.detail_result + self.end
 
 
-class RuntimeUpdates():
+class RuntimeUpdates:
     def __init__(self, session_id, init_data):
         self.session_id = session_id
         self.init_data = init_data
         f = open(updates_path, 'r+')
         data = f.read()
         f.close()
-        obj = data[data.find('{'): data.rfind('}') + 1]
-        obj = re.sub('[\']', '"', obj)
-        data = json.loads(obj)
+        self.obj = data[data.find('{'): data.rfind('}') + 1]
+        self.obj = re.sub('[\']', '"', self.obj)
+        data = json.loads(self.obj)
         print(data)
         data["web_updates"].append({"ID": self.session_id, "data": self.init_data})
         print(data)
@@ -262,9 +261,9 @@ class RuntimeUpdates():
         f = open(updates_path, 'r+')
         data = f.read()
         f.close()
-        obj = data[data.find('{'): data.rfind('}') + 1]
-        obj = re.sub('[\']', '"', obj)
-        data = json.loads(obj)
+        data_obj = data[data.find('{'): data.rfind('}') + 1]
+        data_obj = re.sub('[\']', '"', data_obj)
+        data = json.loads(data_obj)
 
         for update in data["web_updates"]:
             if update["ID"] == self.session_id:
