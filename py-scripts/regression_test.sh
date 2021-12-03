@@ -76,7 +76,7 @@ fi
 
 #SCENARIO_CHECK="$(python3 -c "import requests; print(requests.get('http://${MGR}:8080/events/').status_code)")"
 #if [[ ${SCENARIO_CHECK} -eq 200 ]]; then
-#  pass
+#  :
 #else
 #  echo "${SCENARIO_CHECK}"
 #  echo "Your LANforge Manager is out of date. Regression test requires LANforge version 5.4.4 or higher in order to run"
@@ -540,12 +540,16 @@ function test() {
   else
     echo "No errors detected"
   fi
-  results+=("<tr><td>${CURR_TEST_NAME}</td>
-            <td class='scriptdetails'>${testcommand}</td>
-            <td class='${TEXTCLASS}'>$TDTEXT</td>
-            <td>${execution}</td>
-            <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-            <td>${STDERR}</td></tr>")
+  results+=("<tr>
+    <td class='testname'>${CURR_TEST_NAME}</td>
+    <td class='${TEXTCLASS}'>$TDTEXT</td>
+    <td>${execution}</td>
+    <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+    <td>${STDERR}</td>
+</tr>
+<tr>
+    <td colspan='5' class='scriptdetails'>${testcommand}</td>
+</tr>")
 }
 
 function start_tests()  {
@@ -591,18 +595,25 @@ body {
   background-color:yellow;
 }
 table {
-    border: 1px solid gray;
+    border: 0 none;
+    border-collapse: collapse;
 }
 td {
     margin: 0;
     padding: 2px;
-    font-family: 'Century Gothic','Courier New',courier,sans-serif;
+    font-family: 'Century Gothic',Arial,Verdana,Tahoma,'Trebuchet MS',Impact,sans-serif;
+    border: 1px solid gray;
 }
 h1, h2, h3, h4 {
-    font-family: 'Century Gothic',Arial,sans,sans-serif;
+    font-family: 'Century Gothic',Arial,Verdana,Tahoma,'Trebuchet MS',Impact,sans-serif;
 }
 .scriptdetails {
     font-size: 10px;
+    font-family:'Lucida Typewriter','Andale Mono','Courier New',Courier,FreeMono,monospace;
+}
+td.testname {
+    font-size:14px;
+    font-weight: bold;
 }
 </style>
 <script src=\"sortabletable.js\"></script>
@@ -615,7 +626,6 @@ h1, h2, h3, h4 {
     <thead>
         <tr>
             <th onclick=\"sortTable('myTable2', 0)\">Command Name</th>
-            <th onclick=\"sortTable('myTable2', 1)\">Command</th>
             <th onclick=\"sortTable('myTable2', 2)\">Status</th>
             <th onclick=\"sortTable('myTable2', 3)\">Execution time</th>
             <th onclick=\"sortTable('myTable2', 4)\">STDOUT</th>
