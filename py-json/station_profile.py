@@ -300,17 +300,17 @@ class StationProfile:
                     pprint(set_port.set_port_current_flags)
                     pprint(set_port.set_port_interest_flags)
                 return
-            if (param_name in set_port.set_port_cmd_flags):
+            if param_name in set_port.set_port_cmd_flags:
                 if (value == 1) and (param_name not in self.desired_set_port_cmd_flags):
                     self.desired_set_port_cmd_flags.append(param_name)
                 elif value == 0:
                     self.desired_set_port_cmd_flags.remove(param_name)
-            elif (param_name in set_port.set_port_current_flags):
+            elif param_name in set_port.set_port_current_flags:
                 if (value == 1) and (param_name not in self.desired_set_port_current_flags):
                     self.desired_set_port_current_flags.append(param_name)
                 elif value == 0:
                     self.desired_set_port_current_flags.remove(param_name)
-            elif (param_name in set_port.set_port_interest_flags):
+            elif param_name in set_port.set_port_interest_flags:
                 if (value == 1) and (param_name not in self.desired_set_port_interest_flags):
                     self.desired_set_port_interest_flags.append(param_name)
                 elif value == 0:
@@ -442,7 +442,6 @@ class StationProfile:
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port", debug_=debug)
         wifi_extra_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra", debug_=debug)
         wifi_txo_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_txo", debug_=debug)
-        my_sta_names = []
         # add radio here
         if (num_stations > 0) and (len(sta_names_) < 1):
             # print("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
@@ -505,13 +504,13 @@ class StationProfile:
                 continue
 
             # print("- 3264 - ## %s ##  add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
-            json_response = add_sta_r.jsonPost(debug=self.debug)
+            add_sta_r.jsonPost(debug=self.debug)
             finished_sta.append(eidn)
             # print("- ~3264 - %s - add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
             time.sleep(0.01)
             set_port_r.addPostData(self.set_port_data)
             # print("- 3270 -- %s --  set_port_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
-            json_response = set_port_r.jsonPost(debug)
+            set_port_r.jsonPost(debug)
             # print("- ~3270 - %s - set_port_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
             time.sleep(0.01)
 
@@ -521,10 +520,10 @@ class StationProfile:
             self.wifi_txo_data["port"] = name
             if self.wifi_extra_data_modified:
                 wifi_extra_r.addPostData(self.wifi_extra_data)
-                json_response = wifi_extra_r.jsonPost(debug)
+                wifi_extra_r.jsonPost(debug)
             if self.wifi_txo_data_modified:
                 wifi_txo_r.addPostData(self.wifi_txo_data)
-                json_response = wifi_txo_r.jsonPost(debug)
+                wifi_txo_r.jsonPost(debug)
 
             # append created stations to self.station_names
             self.station_names.append("%s.%s.%s" % (radio_shelf, radio_resource, name))
@@ -536,7 +535,7 @@ class StationProfile:
         # and set ports up
         if dry_run:
             return
-        if (self.up):
+        if self.up:
             self.admin_up()
 
         # for sta_name in self.station_names:
@@ -574,4 +573,4 @@ class StationProfile:
                 print(self.lfclient_url + "/cli_json/add_sta")
                 print(self.add_sta_data)
             add_sta_r.addPostData(self.add_sta_data)
-            json_response = add_sta_r.jsonPost(self.debug)
+            add_sta_r.jsonPost(self.debug)
