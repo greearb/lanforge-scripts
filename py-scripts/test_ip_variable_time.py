@@ -38,8 +38,8 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-sys.path.append("../py-dashboard")
-from InfluxRequest import RecordInflux
+InfluxRequest = importlib.import_module('py-dashboard.InfluxRequest')
+RecordInflux = InfluxRequest.RecordInflux
 
 
 class IPVariableTime(Realm):
