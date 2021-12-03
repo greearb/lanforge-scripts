@@ -99,17 +99,17 @@ class QVLANProfile(LFCliBase):
                     pprint(set_port.set_port_current_flags)
                     pprint(set_port.set_port_interest_flags)
                 return
-            if (param_name in set_port.set_port_cmd_flags):
+            if param_name in set_port.set_port_cmd_flags:
                 if (value == 1) and (param_name not in self.desired_set_port_cmd_flags):
                     self.desired_set_port_cmd_flags.append(param_name)
                 elif value == 0:
                     self.desired_set_port_cmd_flags.remove(param_name)
-            elif (param_name in set_port.set_port_current_flags):
+            elif param_name in set_port.set_port_current_flags:
                 if (value == 1) and (param_name not in self.desired_set_port_current_flags):
                     self.desired_set_port_current_flags.append(param_name)
                 elif value == 0:
                     self.desired_set_port_current_flags.remove(param_name)
-            elif (param_name in set_port.set_port_interest_flags):
+            elif param_name in set_port.set_port_interest_flags:
                 if (value == 1) and (param_name not in self.desired_set_port_interest_flags):
                     self.desired_set_port_interest_flags.append(param_name)
                 elif value == 0:
