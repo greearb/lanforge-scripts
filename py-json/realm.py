@@ -743,7 +743,8 @@ class Realm(LFCliBase):
                         num_sta_with_ips += 1
         return num_sta_with_ips
 
-    def duration_time_to_seconds(self, time_string):
+    @staticmethod
+    def duration_time_to_seconds(time_string):
         if isinstance(time_string, str):
             pattern = re.compile("^(\d+)([dhms]$)")
             td = pattern.match(time_string)
@@ -802,7 +803,7 @@ class Realm(LFCliBase):
         # remove endpoints
         # nc show endpoints
         # nc show cross connects
-        try:
+        if self.cx_list():
             cx_list = list(self.cx_list())
             not_cx = ['warnings', 'errors', 'handler', 'uri', 'items', 'empty']
             if cx_list:
@@ -816,7 +817,7 @@ class Realm(LFCliBase):
                         "cx_name": cx_name
                     }
                     self.json_post(req_url, data)
-        except:
+        else:
             print("no cxs to remove")
 
         if remove_all_endpoints:
@@ -987,17 +988,20 @@ class Realm(LFCliBase):
 
 class PacketFilter:
 
-    def get_filter_wlan_assoc_packets(self, ap_mac, sta_mac):
+    @staticmethod
+    def get_filter_wlan_assoc_packets(ap_mac, sta_mac):
         filter = "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
                  "-Y \"(wlan.addr==%s or wlan.addr==%s) and wlan.fc.type_subtype<=3\" " % (ap_mac, sta_mac)
         return filter
 
-    def get_filter_wlan_null_packets(self, ap_mac, sta_mac):
+    @staticmethod
+    def get_filter_wlan_null_packets(ap_mac, sta_mac):
         filter = "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
                  "-Y \"(wlan.addr==%s or wlan.addr==%s) and wlan.fc.type_subtype==44\" " % (ap_mac, sta_mac)
         return filter
 
-    def run_filter(self, pcap_file, filter):
+    @staticmethod
+    def run_filter(pcap_file, filter):
         filename = "/tmp/tshark_dump.txt"
         cmd = "tshark -r %s %s > %s" % (pcap_file, filter, filename)
         # print("CMD: ", cmd)
