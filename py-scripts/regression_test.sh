@@ -259,7 +259,7 @@ else
         --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
         --influx_bucket ben \
         --influx_tag testbed Ferndale-01"
-      "./lf_atten_mod_test.py --host $MGR --debug"
+      #"./lf_atten_mod_test.py --host $MGR --debug"
       #./lf_csv
       #./lf_dataplane_config
       "./lf_dataplane_test.py --mgr $MGR --lf_user lanforge --lf_password lanforge \
