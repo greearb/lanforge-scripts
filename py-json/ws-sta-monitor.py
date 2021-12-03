@@ -18,6 +18,7 @@ import traceback
 from time import sleep
 import websocket
 import re
+
 try:
     import thread
 except ImportError:
@@ -27,25 +28,23 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
-
-cre={
-    "phy":              re.compile(r'^(1\.\d+):\s+(\S+)\s+\(phy', re.I),
-    "ifname":           re.compile(r'(1\.\d+):\s+IFNAME=(\S+)\s+', re.I),
-    "port":             re.compile(r'Port (\S+)', re.I),
-    "connected":        re.compile(r'.*?CTRL-EVENT-CONNECTED - Connection to ([a-f0-9:]+) complete', re.I),
-    "associated":       re.compile(r'^.*?Associated with ([a-f0-9:]+)$', re.I),
-    "auth":             re.compile(r'.*: auth ([a-f0-9:]+) -> ([a-f0-9:]+) status: 0: Successful', re.I),
-    "authenticated":    re.compile(r'.*?Authenticated with ([a-f0-9:]+)', re.I),
-    "associating":      re.compile(r'.*?Trying to associate with ([a-f0-9:]+)', re.I),
-    "authenticating":   re.compile(r'.*?[>]SME: Trying to authenticate with ([a-f0-9:]+)', re.I),
+cre = {
+    "phy": re.compile(r'^(1\.\d+):\s+(\S+)\s+\(phy', re.I),
+    "ifname": re.compile(r'(1\.\d+):\s+IFNAME=(\S+)\s+', re.I),
+    "port": re.compile(r'Port (\S+)', re.I),
+    "connected": re.compile(r'.*?CTRL-EVENT-CONNECTED - Connection to ([a-f0-9:]+) complete', re.I),
+    "associated": re.compile(r'^.*?Associated with ([a-f0-9:]+)$', re.I),
+    "auth": re.compile(r'.*: auth ([a-f0-9:]+) -> ([a-f0-9:]+) status: 0: Successful', re.I),
+    "authenticated": re.compile(r'.*?Authenticated with ([a-f0-9:]+)', re.I),
+    "associating": re.compile(r'.*?Trying to associate with ([a-f0-9:]+)', re.I),
+    "authenticating": re.compile(r'.*?[>]SME: Trying to authenticate with ([a-f0-9:]+)', re.I),
 }
 
-ignore=[
+ignore = [
     ": scan finished",
     ": scan started",
     ": scan aborted: ",
@@ -68,12 +67,13 @@ ignore=[
 ]
 
 rebank = {
-    "ifname" : re.compile("IFNAME=(\S+)")
+    "ifname": re.compile("IFNAME=(\S+)")
 }
 websock = None
 host = "localhost"
 base_url = None
 port = 8081
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 def usage():
@@ -94,7 +94,7 @@ def main():
     base_url = "unset"
     try:
         args = parser.parse_args()
-        if (args.host is None):
+        if args.host is None:
             host = "localhost"
         elif (type(args) is tuple) or (type(args) is list):
             host = args.host[0]
@@ -104,7 +104,7 @@ def main():
         base_url = "ws://%s:%s" % (host, port)
 
     except Exception as e:
-        print("Exception: "+e)
+        print("Exception: " + e)
         logging.exception(e)
         usage()
         exit(2)
@@ -125,79 +125,74 @@ def sock_filter(wsock, text):
     resource = None
 
     for test in ignore:
-        if (test in text):
-            if (debug):
-                print ("                ignoring ",text)
-            return;
+        if test in text:
+            if debug:
+                print("                ignoring ", text)
+            return
 
     try:
         message = json.loads(text)
-    except Exception as ex:
-        print ("Json Exception: ", repr(ex))
-        traceback.print_exc()
-
-    try:
         # big generic filter for wifi-message or details keys
         try:
-            if ("details" in message.keys()):
+            if "details" in message.keys():
                 for test in ignore:
-                    if (test in message["details"]):
-                        return;
+                    if test in message["details"]:
+                        return
         except KeyError:
             print("Message lacks key 'details'")
 
         try:
-            if ("wifi-event" in message.keys()):
+            if "wifi-event" in message.keys():
                 for test in ignore:
                     # print ("      is ",test, " in ", message["wifi-event"])
-                    if (test in message["wifi-event"]):
-                        return;
+                    if test in message["wifi-event"]:
+                        return
         except KeyError:
             print("Message lacks key 'wifi-event'")
 
-        if (("time" in message.keys()) and ("timestamp" in message.keys())):
+        if ("time" in message.keys()) and ("timestamp" in message.keys()):
             return
 
-        if ("name" in message.keys()):
+        if "name" in message.keys():
             station_name = message["name"]
-        if ("resource" in message.keys()):
+        if "resource" in message.keys():
             resource = "1.", message["resource"]
 
-        if ("event_type" in message.keys()):
+        if "event_type" in message.keys():
             match_result = cre["port"].match(message["details"])
-            if (match_result is not None):
+            if match_result is not None:
                 station_name = match_result.group(1)
 
-            if (message["is_alert"]):
+            if message["is_alert"]:
                 print("alert: ", message["details"])
                 # LFUtils.debug_printer.pprint(message)
                 return
             else:
                 # LFUtils.debug_printer.pprint(message)
-                if (" IP change from " in message["details"]):
-                    if (" to 0.0.0.0" in messsage["details"]):
+                if " IP change from " in message["details"]:
+                    if " to 0.0.0.0" in message["details"]:
                         print("e: %s.%s lost IP address", [resource, station_name])
                     else:
                         print("e: %s.%s gained IP address", [resource, station_name])
-                if ("Link DOWN" in message["details"]):
+                if "Link DOWN" in message["details"]:
                     return  # duplicates alert
 
                 print("event: ", message["details"])
                 return
 
-        if ("wifi-event" in message.keys()):
-            if ("CTRL-EVENT-CONNECTED" in message["wifi-event"]):
+        if "wifi-event" in message.keys():
+            if "CTRL-EVENT-CONNECTED" in message["wifi-event"]:
                 # redunant
                 return
             if (("CTRL-EVENT-CONNECTED - Connection to " in message["wifi-event"]) and (
                     " complete" in message["wifi-event"])):
-                return;
-            if ((": assoc " in message["wifi-event"]) and ("status: 0: Successful" in message["wifi-event"])):
                 return
-            if ((station_name is None) or (resource is None)):
+            if (": assoc " in message["wifi-event"]) and ("status: 0: Successful" in message["wifi-event"]):
+                return
+            if (station_name is None) or (resource is None):
                 try:
                     match_result = cre["phy"].match(message["wifi-event"])
-                    if (match_result is not None):
+                    if match_result is not None:
                         # LFUtils.debug_printer.pprint(match_result)
                         # LFUtils.debug_printer.pprint(match_result.groups())
                         resource = match_result.group(1)
@@ -206,7 +201,7 @@ def sock_filter(wsock, text):
                         match_result = cre["ifname"].match(message["wifi-event"])
                         # LFUtils.debug_printer.pprint(match_result)
                         # LFUtils.debug_printer.pprint(match_result.groups())
-                        if (match_result is not None):
+                        if match_result is not None:
                             resource = match_result.group(1)
                             station_name = match_result.group(2)
                         else:
@@ -221,9 +216,9 @@ def sock_filter(wsock, text):
                     sleep(1)
 
             # print ("Determined station name: as %s.%s"%(resource, station_name))
-            if ((": auth ") and ("status: 0: Successful" in message["wifi-event"])):
+            if ": auth " and ("status: 0: Successful" in message["wifi-event"]):
                 match_result = cre["auth"].match(message["wifi-event"])
-                if (match_result and match_result.groups()):
+                if match_result and match_result.groups():
                     bssid = match_result.group(1)
                     print("station %s.%s auth with %s" % (resource, station_name, bssid))
                     return
@@ -231,9 +226,9 @@ def sock_filter(wsock, text):
                     print("station %s.%s auth with ??" % (resource, station_name))
                     LFUtils.debug_printer.pprint(match_result)
 
-            if ("Associated with " in message["wifi-event"]):
+            if "Associated with " in message["wifi-event"]:
                 match_result = cre["associated"].match(message["wifi-event"])
-                if (match_result and match_result.groups()):
+                if match_result and match_result.groups():
                     bssid = match_result.group(1)
                     print("station %s.%s assocated with %s" % (resource, station_name, bssid))
                     return
@@ -241,9 +236,9 @@ def sock_filter(wsock, text):
                     print("station %s.%s assocated with ??" % (resource, station_name))
                     LFUtils.debug_printer.pprint(match_result)
 
-            if (" - Connection to " in message["wifi-event"]):
+            if " - Connection to " in message["wifi-event"]:
                 match_result = cre["connected"].match(message["wifi-event"])
-                if (match_result and match_result.groups()):
+                if match_result and match_result.groups():
                     bssid = match_result.group(1)
                     print("station %s.%s connected to %s" % (resource, station_name, bssid))
                     return
@@ -251,14 +246,14 @@ def sock_filter(wsock, text):
                     print("station %s.%s connected to ??" % (resource, station_name))
                     LFUtils.debug_printer.pprint(match_result)
 
-            if ("disconnected" in message["wifi-event"]):
+            if "disconnected" in message["wifi-event"]:
                 print("Station %s.%s down" % (resource, station_name))
                 return
 
-            if ("Trying to associate with " in message["wifi-event"]):
+            if "Trying to associate with " in message["wifi-event"]:
                 match_result = cre["associating"].match(message["wifi-event"])
 
-                if (match_result and match_result.groups()):
+                if match_result and match_result.groups():
                     bssid = match_result.group(1)
                     print("station %s.%s associating with %s" % (resource, station_name, bssid))
                     return
@@ -266,10 +261,10 @@ def sock_filter(wsock, text):
                     print("station %s.%s associating with ??" % (resource, station_name))
                     LFUtils.debug_printer.pprint(match_result)
 
-            if ("Trying to authenticate" in message["wifi-event"]):
+            if "Trying to authenticate" in message["wifi-event"]:
                 match_result = cre["authenticating"].match(message["wifi-event"])
 
-                if (match_result and match_result.groups()):
+                if match_result and match_result.groups():
                     bssid = match_result.group(1)
                     print("station %s.%s authenticating with %s" % (resource, station_name, bssid))
                     return
@@ -277,10 +272,10 @@ def sock_filter(wsock, text):
                     print("station %s.%s authenticating with ??" % (resource, station_name))
                     LFUtils.debug_printer.pprint(match_result)
 
-            if ("Authenticated" in message["wifi-event"]):
+            if "Authenticated" in message["wifi-event"]:
                 match_result = cre["authenticed"].match(message["wifi-event"])
                 LFUtils.debug_printer.pprint(match_result)
-                if (match_result and match_result.groups()):
+                if match_result and match_result.groups():
                     bssid = match_result.group(1)
                     print("station %s.%s authenticated with %s" % (resource, station_name, bssid))
                 else:
@@ -290,6 +285,10 @@ def sock_filter(wsock, text):
         else:
             print("\nUnhandled: ")
             LFUtils.debug_printer.pprint(message)
+
+    except Exception as ex:
+        traceback.print_exc()
+        raise ("Json Exception: ", repr(ex))
 
     except KeyError as kerr:
         print("# ----- Bad Key: ----- ----- ----- ----- ----- ----- ----- ----- ----- -----")
@@ -316,6 +315,7 @@ def sock_filter(wsock, text):
         print("# ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----")
         sleep(1)
         return
+
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 def m_error(wsock, err):
@@ -354,7 +354,6 @@ def start_websocket(uri, websock):
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':
     main()
-
 
 ####
 ####
