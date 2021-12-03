@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-'''
+"""
 
 Candela Technologies Inc.
 Info : Standard Script for WLAN Capaity Calculator
@@ -13,7 +13,7 @@ This Script has three classes :
           3. ac11_calculator : It will take all the user input of 802.11ac station,calculate Intermediate values and Theoretical values.
 All classes have different functions: input_parameter() that calculates intermediate values and generate theroretical data
 
-'''
+"""
 
 import argparse
 import json
@@ -22,8 +22,7 @@ import json
 # Class to take all user input (802.11a/b/g Standard)
 
 
-
-class abg11_calculator():
+class abg11_calculator:
 
     def __init__(self, Traffic_Type, PHY_Bit_Rate, Encryption, QoS, MAC_Frame_802_11, Basic_Rate_Set, Preamble,
                  slot_name, Codec_Type, RTS_CTS_Handshake, CTS_to_self):
@@ -39,19 +38,16 @@ class abg11_calculator():
         self.RTS_CTS_Handshake = RTS_CTS_Handshake
         self.CTS_to_self = CTS_to_self
 
-
-
-
     # This function is for calculate intermediate values and Theoretical values
 
     @staticmethod
     def create_argparse(prog=None, formatter_class=None, epilog=None, description=None):
         if (prog is not None) or (formatter_class is not None) or (epilog is not None) or (description is not None):
             ap = argparse.ArgumentParser(prog=prog,
-                                             formatter_class=formatter_class,
-                                             allow_abbrev=True,
-                                             epilog=epilog,
-                                             description=description)
+                                         formatter_class=formatter_class,
+                                         allow_abbrev=True,
+                                         epilog=epilog,
+                                         description=description)
         else:
             ap = argparse.ArgumentParser()
 
@@ -329,7 +325,7 @@ class abg11_calculator():
 
         # CWmin_str (leave alone for default)
 
-        if (PHY_Bit_Rate_int == 1 or PHY_Bit_Rate_int == 2 or PHY_Bit_Rate_int == 5 or PHY_Bit_Rate_int == 11):
+        if PHY_Bit_Rate_int == 1 or PHY_Bit_Rate_int == 2 or PHY_Bit_Rate_int == 5 or PHY_Bit_Rate_int == 11:
             CWmin_str = 31
         else:
             if (
@@ -376,7 +372,7 @@ class abg11_calculator():
 
         # PHY Bit Rate of Control Frames
 
-        if (PHY_Bit_Rate_int == 1 or PHY_Bit_Rate_int == 2 or PHY_Bit_Rate_int == 5 or PHY_Bit_Rate_int == 11):
+        if PHY_Bit_Rate_int == 1 or PHY_Bit_Rate_int == 2 or PHY_Bit_Rate_int == 5 or PHY_Bit_Rate_int == 11:
             data = 1
         else:
             data = 6
@@ -406,7 +402,7 @@ class abg11_calculator():
             Preamble_1 = float(192)
 
         if (PHY_Bit == 1) or (PHY_Bit == 2) or (PHY_Bit == 5.5) or (PHY_Bit == 11):
-            Ttxframe = (14 * 8) / PHY_Bit + (Preamble_1)
+            Ttxframe = (14 * 8) / PHY_Bit + Preamble_1
 
             Ttxframe_new = format(Ttxframe, '.2f')
         else:
@@ -415,7 +411,7 @@ class abg11_calculator():
 
         # RTS/CTS Handshake Overhead
 
-        if (PHY_Bit_Rate_int == 1 or PHY_Bit_Rate_int == 2 or PHY_Bit_Rate_int == 5 or PHY_Bit_Rate_int == 11):
+        if PHY_Bit_Rate_int == 1 or PHY_Bit_Rate_int == 2 or PHY_Bit_Rate_int == 5 or PHY_Bit_Rate_int == 11:
             SIFS_value = float(10)
         else:
             SIFS_value = float(16)
@@ -425,7 +421,7 @@ class abg11_calculator():
 
         elif "Yes" in self.RTS_CTS_Handshake:
             if (PHY_Bit == 1) or (PHY_Bit == 2) or (PHY_Bit == 5.5) or (PHY_Bit == 11):
-                RTS_CTS_Handshake = ((20 + 14) * 8) / PHY_Bit + (Preamble_1)
+                RTS_CTS_Handshake = ((20 + 14) * 8) / PHY_Bit + Preamble_1
 
             else:
                 RTS_CTS_Handshake = int(((20 + 14) * 8 + 22 + PHY_Bit * 4 - 1) / (PHY_Bit * 4)) * 4 + 2 * 20
@@ -441,26 +437,26 @@ class abg11_calculator():
                 CTS_to_self_Handshake = 0
             else:
                 if (PHY_Bit == 1) or (PHY_Bit == 2) or (PHY_Bit == 5.5) or (PHY_Bit == 11):
-                    CTS_to_self_Handshake = (14 * 8) / PHY_Bit + (Preamble_1) + SIFS_value
+                    CTS_to_self_Handshake = (14 * 8) / PHY_Bit + Preamble_1 + SIFS_value
                 else:
                     CTS_to_self_Handshake = int(
                         (14 * 8 + 22 + PHY_Bit * 4 - 1) / (PHY_Bit * 4)) * 4 + 20 + SIFS_value
 
         # DIFS calulation
 
-        if (PHY_Bit_Rate_int == 1 or PHY_Bit_Rate_int == 2 or PHY_Bit_Rate_int == 5 or PHY_Bit_Rate_int == 11):
+        if PHY_Bit_Rate_int == 1 or PHY_Bit_Rate_int == 2 or PHY_Bit_Rate_int == 5 or PHY_Bit_Rate_int == 11:
             DIFS_value = 50
-        elif ("Short" in self.slot_name):
+        elif "Short" in self.slot_name:
             DIFS_value = 34
         else:
             DIFS_value = 50
 
         # MeanBackoff calculation
 
-        if (PHY_Bit_Rate_int == 1 or PHY_Bit_Rate_int == 2 or PHY_Bit_Rate_int == 5 or PHY_Bit_Rate_int == 11):
+        if PHY_Bit_Rate_int == 1 or PHY_Bit_Rate_int == 2 or PHY_Bit_Rate_int == 5 or PHY_Bit_Rate_int == 11:
             c4 = (CWmin_str * 20 / 2)
             MeanBackoff_value = float(c4)
-        elif ("Short" in self.slot_name):
+        elif "Short" in self.slot_name:
             d2 = (CWmin_str * 9 / 2)
             MeanBackoff_value = float(d2)
         else:
@@ -474,7 +470,7 @@ class abg11_calculator():
         Nbits_value = (MAC_MPDU_Size * 8)
 
         # Tmac, time for MAC frame and  Tplcp, time for MAC PLCP
-        if (PHY_Bit_Rate_int == 1 or PHY_Bit_Rate_int == 2 or PHY_Bit_Rate_int == 5 or PHY_Bit_Rate_int == 11):
+        if PHY_Bit_Rate_int == 1 or PHY_Bit_Rate_int == 2 or PHY_Bit_Rate_int == 5 or PHY_Bit_Rate_int == 11:
             Tmac_value = Nbits_value / yellow_cell
             if "Short" in self.Preamble:
                 Tplcp = float(96)
@@ -597,8 +593,6 @@ class abg11_calculator():
             IP_Throughput_C6_new = "N/A"
             IP_Throughput_C7_new = "N/A"
 
-
-
         Voice_Call = Max_Frame_Rate_C1 / Codec_Frame_rate
         Voice_Call_value = round(Voice_Call)
 
@@ -620,18 +614,18 @@ class abg11_calculator():
             self.Estimated_MOS_Score = "N/A"
             self.Maximum_Bidirectional_Voice_Calls = "N/A"
         else:
-            if (Voice_Call_value <= 1):
+            if Voice_Call_value <= 1:
                 Maximum_Bidirectional_Voice_Calls1 = self.Max_Frame_Rate_C1_round / Codec_Frame_rate
-            elif (Voice_Call_value <= 2):
+            elif Voice_Call_value <= 2:
                 Maximum_Bidirectional_Voice_Calls1 = Max_Frame_Rate_C2_round / Codec_Frame_rate
-            elif (Voice_Call_value <= 5):
+            elif Voice_Call_value <= 5:
                 Maximum_Bidirectional_Voice_Calls1 = Max_Frame_Rate_C3_round / Codec_Frame_rate
 
-            elif (Voice_Call_value <= 10):
+            elif Voice_Call_value <= 10:
                 Maximum_Bidirectional_Voice_Calls1 = Max_Frame_Rate_C4_round / Codec_Frame_rate
-            elif (Voice_Call_value <= 20):
+            elif Voice_Call_value <= 20:
                 Maximum_Bidirectional_Voice_Calls1 = Max_Frame_Rate_C5_round / Codec_Frame_rate
-            elif (Voice_Call_value <= 50):
+            elif Voice_Call_value <= 50:
                 Maximum_Bidirectional_Voice_Calls1 = Max_Frame_Rate_C6_round / Codec_Frame_rate
             else:
                 Maximum_Bidirectional_Voice_Calls1 = Max_Frame_Rate_C7_round / Codec_Frame_rate
@@ -644,18 +638,17 @@ class abg11_calculator():
 
                 else:
                     Estimated_MOS_Score_1 = 1 + 0.035 * self.Maximum_Theoretical_R_value + self.Maximum_Theoretical_R_value * (
-                                self.Maximum_Theoretical_R_value - 60) * (
+                            self.Maximum_Theoretical_R_value - 60) * (
                                                     100 - self.Maximum_Theoretical_R_value) * 7 * 0.000001
                     self.Estimated_MOS_Score = round(Estimated_MOS_Score_1, 2)
-
-
 
     def get_result(self):
 
         print("\n" + "******************Station : 11abgCalculator*****************************" + "\n")
         print("Theoretical Maximum Offered Load" + "\n")
         print("1 Client:")
-        All_theoretical_output = {'Packet Interval(usec)': self.Client_1_new, 'Max Frame Rate(fps)': self.Max_Frame_Rate_C1_round,
+        All_theoretical_output = {'Packet Interval(usec)': self.Client_1_new,
+                                  'Max Frame Rate(fps)': self.Max_Frame_Rate_C1_round,
                                   'Max. Offered Load (802.11)(Mb/s)': self.Max_Offered_Load_C1_new,
                                   'Offered Load Per 802.11 Client(Mb/s)': self.Offered_Load_Per_Client1_new,
                                   'Offered Load (802.3 Side)(Mb/s)': self.Offered_Load_C1_new,
@@ -677,9 +670,10 @@ class n11_calculator(abg11_calculator):
     def __init__(self, Traffic_Type, Data_Voice_MCS, Channel_Bandwidth, Guard_Interval_value, Highest_Basic_str,
                  Encryption, QoS,
                  IP_Packets_MSDU_str, MAC_Frames_per_A_MPDU_str, BSS_Basic_Rate, MAC_MPDU_Size_Data_Traffic,
-                 Codec_Type, PLCP, CWmin, RTS_CTS_Handshake, CTS_to_self,PHY_Bit_Rate=None,MAC_Frame_802_11=None,Basic_Rate_Set=None,Preamble=None,slot_name=None):
+                 Codec_Type, PLCP, CWmin, RTS_CTS_Handshake, CTS_to_self, PHY_Bit_Rate=None, MAC_Frame_802_11=None,
+                 Basic_Rate_Set=None, Preamble=None, slot_name=None):
         super().__init__(Traffic_Type, PHY_Bit_Rate, Encryption, QoS, MAC_Frame_802_11, Basic_Rate_Set, Preamble,
-                 slot_name, Codec_Type, RTS_CTS_Handshake, CTS_to_self)
+                         slot_name, Codec_Type, RTS_CTS_Handshake, CTS_to_self)
         self.Data_Voice_MCS = Data_Voice_MCS
         self.Channel_Bandwidth = Channel_Bandwidth
         self.Guard_Interval_value = Guard_Interval_value
@@ -690,7 +684,6 @@ class n11_calculator(abg11_calculator):
         self.MAC_MPDU_Size_Data_Traffic = MAC_MPDU_Size_Data_Traffic
         self.PLCP = PLCP
         self.CWmin = CWmin
-
 
     # This function is for calculate intermediate values and Theoretical values
 
@@ -875,7 +868,7 @@ class n11_calculator(abg11_calculator):
             MAC_MPDU_Size = int(self.MAC_MPDU_Size_Data_Traffic)
 
         else:
-            if ((IP_Packets_MSDU == 0)):
+            if IP_Packets_MSDU == 0:
                 MAC_MPDU_Size = (Codec_IP_Packet_Size + 28 + QoS_Hdr + Encrypt_Hdr + 8)
 
             else:
@@ -890,7 +883,7 @@ class n11_calculator(abg11_calculator):
 
 
         else:
-            MSDU_1 = (MAC_MPDU_Size - 28 - QoS_Hdr - Encrypt_Hdr - (IP_Packets_MSDU) * (14 + 3))
+            MSDU_1 = (MAC_MPDU_Size - 28 - QoS_Hdr - Encrypt_Hdr - IP_Packets_MSDU * (14 + 3))
             MSDU_final = MSDU_1 / IP_Packets_MSDU
 
         if MSDU_final < 0:
@@ -1076,7 +1069,7 @@ class n11_calculator(abg11_calculator):
 
         # g22 A-MPDU Pad
 
-        if ((MAC_Frames_per_A_MPDU == 0)):
+        if MAC_Frames_per_A_MPDU == 0:
             MPDU_Pad = int(0)
 
         else:
@@ -1087,7 +1080,7 @@ class n11_calculator(abg11_calculator):
         # c26 Nbits, Bits per MAC PPDU
 
         MAC_Frames_per_A_MPDU_loc = MAC_Frames_per_A_MPDU + 1
-        if (MAC_Frames_per_A_MPDU == 0):
+        if MAC_Frames_per_A_MPDU == 0:
             Nbits_Bits_per_MAC_PPDU = MAC_MPDU_Size * 8
 
         else:
@@ -1100,7 +1093,7 @@ class n11_calculator(abg11_calculator):
             Guard_Interval_1 = 1
         elif "800" in self.Guard_Interval_value:
             Guard_Interval_1 = 0
-        calculation = (((Data_Voice_MCS_int > 7 and PLCP_Configuration_int == 2) or PLCP_Configuration_int == 1))
+        calculation = ((Data_Voice_MCS_int > 7 and PLCP_Configuration_int == 2) or PLCP_Configuration_int == 1)
         if (Guard_Interval_1 == 1) and calculation:
             Tsymbol_Data_Symbol_Period = 3.60
 
@@ -1132,7 +1125,7 @@ class n11_calculator(abg11_calculator):
             (22 + 32 * 8 + PHY_Bit_Rate_of_Control_Frames * 4 - 1) / (PHY_Bit_Rate_of_Control_Frames * 4)) * 4 + 20
 
         # g20 Use BlockAck
-        if (MAC_Frames_per_A_MPDU == 0):
+        if MAC_Frames_per_A_MPDU == 0:
             Use_BlockAck = False
 
         else:
@@ -1228,14 +1221,14 @@ class n11_calculator(abg11_calculator):
         Client_14_new = format(Max_PPDU_Rate_7, '.2f')
 
         # c44 Max_MAC_MPDU_Rate_1
-        if (MAC_Frames_per_A_MPDU > 0):
-            Max_MAC_MPDU_Rate_1 = (MAC_Frames_per_A_MPDU) * Max_PPDU_Rate_1
-            Max_MAC_MPDU_Rate_2 = (MAC_Frames_per_A_MPDU) * Max_PPDU_Rate_2
-            Max_MAC_MPDU_Rate_3 = (MAC_Frames_per_A_MPDU) * Max_PPDU_Rate_3
-            Max_MAC_MPDU_Rate_4 = (MAC_Frames_per_A_MPDU) * Max_PPDU_Rate_4
-            Max_MAC_MPDU_Rate_5 = (MAC_Frames_per_A_MPDU) * Max_PPDU_Rate_5
-            Max_MAC_MPDU_Rate_6 = (MAC_Frames_per_A_MPDU) * Max_PPDU_Rate_6
-            Max_MAC_MPDU_Rate_7 = (MAC_Frames_per_A_MPDU) * Max_PPDU_Rate_7
+        if MAC_Frames_per_A_MPDU > 0:
+            Max_MAC_MPDU_Rate_1 = MAC_Frames_per_A_MPDU * Max_PPDU_Rate_1
+            Max_MAC_MPDU_Rate_2 = MAC_Frames_per_A_MPDU * Max_PPDU_Rate_2
+            Max_MAC_MPDU_Rate_3 = MAC_Frames_per_A_MPDU * Max_PPDU_Rate_3
+            Max_MAC_MPDU_Rate_4 = MAC_Frames_per_A_MPDU * Max_PPDU_Rate_4
+            Max_MAC_MPDU_Rate_5 = MAC_Frames_per_A_MPDU * Max_PPDU_Rate_5
+            Max_MAC_MPDU_Rate_6 = MAC_Frames_per_A_MPDU * Max_PPDU_Rate_6
+            Max_MAC_MPDU_Rate_7 = MAC_Frames_per_A_MPDU * Max_PPDU_Rate_7
         else:
             Max_MAC_MPDU_Rate_1 = Max_PPDU_Rate_1
             Max_MAC_MPDU_Rate_2 = Max_PPDU_Rate_2
@@ -1255,14 +1248,14 @@ class n11_calculator(abg11_calculator):
 
         # Max MAC MSDU Rate
 
-        if (IP_Packets_MSDU > 0):
-            Max_MAC_MSDU_Rate_1 = (IP_Packets_MSDU) * Max_MAC_MPDU_Rate_1
-            Max_MAC_MSDU_Rate_2 = (IP_Packets_MSDU) * Max_MAC_MPDU_Rate_2
-            Max_MAC_MSDU_Rate_3 = (IP_Packets_MSDU) * Max_MAC_MPDU_Rate_3
-            Max_MAC_MSDU_Rate_4 = (IP_Packets_MSDU) * Max_MAC_MPDU_Rate_4
-            Max_MAC_MSDU_Rate_5 = (IP_Packets_MSDU) * Max_MAC_MPDU_Rate_5
-            Max_MAC_MSDU_Rate_6 = (IP_Packets_MSDU) * Max_MAC_MPDU_Rate_6
-            Max_MAC_MSDU_Rate_7 = (IP_Packets_MSDU) * Max_MAC_MPDU_Rate_7
+        if IP_Packets_MSDU > 0:
+            Max_MAC_MSDU_Rate_1 = IP_Packets_MSDU * Max_MAC_MPDU_Rate_1
+            Max_MAC_MSDU_Rate_2 = IP_Packets_MSDU * Max_MAC_MPDU_Rate_2
+            Max_MAC_MSDU_Rate_3 = IP_Packets_MSDU * Max_MAC_MPDU_Rate_3
+            Max_MAC_MSDU_Rate_4 = IP_Packets_MSDU * Max_MAC_MPDU_Rate_4
+            Max_MAC_MSDU_Rate_5 = IP_Packets_MSDU * Max_MAC_MPDU_Rate_5
+            Max_MAC_MSDU_Rate_6 = IP_Packets_MSDU * Max_MAC_MPDU_Rate_6
+            Max_MAC_MSDU_Rate_7 = IP_Packets_MSDU * Max_MAC_MPDU_Rate_7
 
         else:
             Max_MAC_MSDU_Rate_1 = Max_MAC_MPDU_Rate_1
@@ -1458,15 +1451,13 @@ class n11_calculator(abg11_calculator):
         else:
             self.Maximum_Bidirectional_Voice_Calls = round(Maximum_Bidirectional, 2)
 
-
-
     def get_result(self):
 
         print("\n" + "******************Station : 11nCalculator*****************************" + "\n")
         print("Theoretical Maximum Offered Load" + "\n")
         print("1 Client:")
         All_theoretical_output = {'MAC PPDU Interval(usec)': self.Client_1_new,
-                                   'Max PPDU Rate(fps)': self.Client_8_new,
+                                  'Max PPDU Rate(fps)': self.Client_8_new,
                                   'Max MAC MPDU Rate': self.Client_15_new,
                                   'Max MAC MSDU Rate': self.Client_22_new,
                                   'Max. 802.11 MAC Frame Data Rate(Mb/s)': self.Client_29_new,
@@ -1488,19 +1479,17 @@ class n11_calculator(abg11_calculator):
 
 class ac11_calculator(n11_calculator):
 
-
-
     def __init__(self, Traffic_Type, Data_Voice_MCS, spatial, Channel_Bandwidth, Guard_Interval_value,
-                 Highest_Basic_str, Encryption, QoS,IP_Packets_MSDU_str, MAC_Frames_per_A_MPDU_str, BSS_Basic_Rate, MAC_MPDU_Size_Data_Traffic,
-                 Codec_Type, CWmin, RTS_CTS,PLCP = None,RTS_CTS_Handshake=None,CTS_to_self=None):
+                 Highest_Basic_str, Encryption, QoS, IP_Packets_MSDU_str, MAC_Frames_per_A_MPDU_str, BSS_Basic_Rate,
+                 MAC_MPDU_Size_Data_Traffic,
+                 Codec_Type, CWmin, RTS_CTS, PLCP=None, RTS_CTS_Handshake=None, CTS_to_self=None):
         super().__init__(Traffic_Type, Data_Voice_MCS, Channel_Bandwidth, Guard_Interval_value, Highest_Basic_str,
-                 Encryption, QoS,
-                 IP_Packets_MSDU_str, MAC_Frames_per_A_MPDU_str, BSS_Basic_Rate, MAC_MPDU_Size_Data_Traffic,
-                 Codec_Type, PLCP, CWmin, RTS_CTS_Handshake, CTS_to_self)
+                         Encryption, QoS,
+                         IP_Packets_MSDU_str, MAC_Frames_per_A_MPDU_str, BSS_Basic_Rate, MAC_MPDU_Size_Data_Traffic,
+                         Codec_Type, PLCP, CWmin, RTS_CTS_Handshake, CTS_to_self)
 
         self.spatial = spatial
         self.RTS_CTS = RTS_CTS
-
 
     # This function is for calculate intermediate values and Theoretical values
 
@@ -1695,7 +1684,7 @@ class ac11_calculator(n11_calculator):
             MAC_MPDU_Size = int(self.MAC_MPDU_Size_Data_Traffic)
 
         else:
-            if (IP_Packets_MSDU == 0):
+            if IP_Packets_MSDU == 0:
                 MAC_MPDU_Size = (Codec_IP_Packet_Size + 28 + QoS_Hdr + Encrypt_Hdr + 8)
 
             else:
@@ -1711,8 +1700,8 @@ class ac11_calculator(n11_calculator):
 
 
         else:
-            MSDU_1 = (MAC_MPDU_Size - 28 - QoS_Hdr - Encrypt_Hdr - (IP_Packets_MSDU) * (14 + 3))
-            MSDU_final = (int(MSDU_1 / (IP_Packets_MSDU)))
+            MSDU_1 = (MAC_MPDU_Size - 28 - QoS_Hdr - Encrypt_Hdr - IP_Packets_MSDU * (14 + 3))
+            MSDU_final = (int(MSDU_1 / IP_Packets_MSDU))
         if MSDU_final < 0:
             MSDU = MSDU_final - 1
         else:
@@ -1775,7 +1764,7 @@ class ac11_calculator(n11_calculator):
         elif "800" in self.Guard_Interval_value:
             Guard_Interval_1 = 0
 
-        calculation = (((Data_Voice_MCS_int > 7 and plcp == 2) or plcp == 1))
+        calculation = ((Data_Voice_MCS_int > 7 and plcp == 2) or plcp == 1)
 
         if (Guard_Interval_1 == 1) and calculation:
             Tsymbol_Data_Symbol_Period = 3.60
@@ -1839,7 +1828,7 @@ class ac11_calculator(n11_calculator):
         # Nbits, Bits per MAC PPDU
         # A-MPDU Pad
 
-        if ((MAC_Frames_per_A_MPDU == 0)):
+        if MAC_Frames_per_A_MPDU == 0:
             MPDU_Pad = int(0)
 
         else:
@@ -1848,7 +1837,7 @@ class ac11_calculator(n11_calculator):
             MPDU_Pad = int((y % 4))
 
         MAC_Frames_per_A_MPDU_loc = MAC_Frames_per_A_MPDU + 1
-        if (MAC_Frames_per_A_MPDU == 0):
+        if MAC_Frames_per_A_MPDU == 0:
             Nbits_Bits_per_MAC_PPDU = MAC_MPDU_Size * 8
 
         else:
@@ -1925,7 +1914,7 @@ class ac11_calculator(n11_calculator):
         # c37 Ack Response Overhead
         # g20 Use BlockAck
 
-        if (MAC_Frames_per_A_MPDU == 0):
+        if MAC_Frames_per_A_MPDU == 0:
             Use_BlockAck = False
         else:
             Use_BlockAck = True
@@ -1987,14 +1976,14 @@ class ac11_calculator(n11_calculator):
 
         # c44 Max_MAC_MPDU_Rate_1
 
-        if (MAC_Frames_per_A_MPDU > 0):
-            Max_MAC_MPDU_Rate_1 = (MAC_Frames_per_A_MPDU) * Max_PPDU_Rate_1
-            Max_MAC_MPDU_Rate_2 = (MAC_Frames_per_A_MPDU) * Max_PPDU_Rate_2
-            Max_MAC_MPDU_Rate_3 = (MAC_Frames_per_A_MPDU) * Max_PPDU_Rate_3
-            Max_MAC_MPDU_Rate_4 = (MAC_Frames_per_A_MPDU) * Max_PPDU_Rate_4
-            Max_MAC_MPDU_Rate_5 = (MAC_Frames_per_A_MPDU) * Max_PPDU_Rate_5
-            Max_MAC_MPDU_Rate_6 = (MAC_Frames_per_A_MPDU) * Max_PPDU_Rate_6
-            Max_MAC_MPDU_Rate_7 = (MAC_Frames_per_A_MPDU) * Max_PPDU_Rate_7
+        if MAC_Frames_per_A_MPDU > 0:
+            Max_MAC_MPDU_Rate_1 = MAC_Frames_per_A_MPDU * Max_PPDU_Rate_1
+            Max_MAC_MPDU_Rate_2 = MAC_Frames_per_A_MPDU * Max_PPDU_Rate_2
+            Max_MAC_MPDU_Rate_3 = MAC_Frames_per_A_MPDU * Max_PPDU_Rate_3
+            Max_MAC_MPDU_Rate_4 = MAC_Frames_per_A_MPDU * Max_PPDU_Rate_4
+            Max_MAC_MPDU_Rate_5 = MAC_Frames_per_A_MPDU * Max_PPDU_Rate_5
+            Max_MAC_MPDU_Rate_6 = MAC_Frames_per_A_MPDU * Max_PPDU_Rate_6
+            Max_MAC_MPDU_Rate_7 = MAC_Frames_per_A_MPDU * Max_PPDU_Rate_7
         else:
             Max_MAC_MPDU_Rate_1 = Max_PPDU_Rate_1
             Max_MAC_MPDU_Rate_2 = Max_PPDU_Rate_2
@@ -2014,14 +2003,14 @@ class ac11_calculator(n11_calculator):
 
         # Max MAC MSDU Rate
 
-        if (IP_Packets_MSDU > 0):
-            Max_MAC_MSDU_Rate_1 = (IP_Packets_MSDU) * Max_MAC_MPDU_Rate_1
-            Max_MAC_MSDU_Rate_2 = (IP_Packets_MSDU) * Max_MAC_MPDU_Rate_2
-            Max_MAC_MSDU_Rate_3 = (IP_Packets_MSDU) * Max_MAC_MPDU_Rate_3
-            Max_MAC_MSDU_Rate_4 = (IP_Packets_MSDU) * Max_MAC_MPDU_Rate_4
-            Max_MAC_MSDU_Rate_5 = (IP_Packets_MSDU) * Max_MAC_MPDU_Rate_5
-            Max_MAC_MSDU_Rate_6 = (IP_Packets_MSDU) * Max_MAC_MPDU_Rate_6
-            Max_MAC_MSDU_Rate_7 = (IP_Packets_MSDU) * Max_MAC_MPDU_Rate_7
+        if IP_Packets_MSDU > 0:
+            Max_MAC_MSDU_Rate_1 = IP_Packets_MSDU * Max_MAC_MPDU_Rate_1
+            Max_MAC_MSDU_Rate_2 = IP_Packets_MSDU * Max_MAC_MPDU_Rate_2
+            Max_MAC_MSDU_Rate_3 = IP_Packets_MSDU * Max_MAC_MPDU_Rate_3
+            Max_MAC_MSDU_Rate_4 = IP_Packets_MSDU * Max_MAC_MPDU_Rate_4
+            Max_MAC_MSDU_Rate_5 = IP_Packets_MSDU * Max_MAC_MPDU_Rate_5
+            Max_MAC_MSDU_Rate_6 = IP_Packets_MSDU * Max_MAC_MPDU_Rate_6
+            Max_MAC_MSDU_Rate_7 = IP_Packets_MSDU * Max_MAC_MPDU_Rate_7
 
         else:
             Max_MAC_MSDU_Rate_1 = Max_MAC_MPDU_Rate_1
@@ -2162,8 +2151,10 @@ class ac11_calculator(n11_calculator):
                 if self.Maximum_Theoretical_R_value > 100:
                     self.Estimated_MOS_Score = 4.5
                 else:
-                    Estimated_MOS_Score_1 = (1 + 0.035 * self.Maximum_Theoretical_R_value + self.Maximum_Theoretical_R_value * (
-                            self.Maximum_Theoretical_R_value - 60) * (100 - self.Maximum_Theoretical_R_value) * 7 * 0.000001)
+                    Estimated_MOS_Score_1 = (
+                                1 + 0.035 * self.Maximum_Theoretical_R_value + self.Maximum_Theoretical_R_value * (
+                                self.Maximum_Theoretical_R_value - 60) * (
+                                            100 - self.Maximum_Theoretical_R_value) * 7 * 0.000001)
                     self.Estimated_MOS_Score = format(Estimated_MOS_Score_1, '.2f')
 
         # Voice_Call_Range
@@ -2206,7 +2197,6 @@ class ac11_calculator(n11_calculator):
             self.Maximum_Bidirectional_Voice_Calls = "N/A"
         else:
             self.Maximum_Bidirectional_Voice_Calls = round(Maximum_Bidirectional, 2)
-
 
     def get_result(self):
 
