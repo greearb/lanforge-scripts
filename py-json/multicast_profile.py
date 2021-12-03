@@ -4,7 +4,6 @@ import os
 import importlib
 import pprint
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -32,7 +31,8 @@ class MULTICASTProfile(LFCliBase):
         self.name_prefix = name_prefix_
         self.number_template = number_template_
 
-    def clean_mc_lists(self):
+    @staticmethod
+    def clean_mc_lists():
         # Clean out our local lists, this by itself does NOT remove anything from LANforge manager.
         # but, if you are trying to modify existing connections, then clearing these arrays and
         # re-calling 'create' will do the trick.
@@ -52,7 +52,7 @@ class MULTICASTProfile(LFCliBase):
             debug_ = True
 
         for endp_name in self.get_mc_names():
-            print("Starting mcast endpoint: %s" % (endp_name))
+            print("Starting mcast endpoint: %s" % endp_name)
             json_data = {
                 "endp_name": endp_name
             }
@@ -78,15 +78,15 @@ class MULTICASTProfile(LFCliBase):
     def cleanup_prefix(self):
         self.local_realm.cleanup_cxe_prefix(self.name_prefix)
 
-    def cleanup(self, suppress_related_commands=None, debug_ = False):
+    def cleanup(self, suppress_related_commands=None, debug_=False):
         if self.debug:
             debug_ = True
 
         for endp_name in self.get_mc_names():
             self.local_realm.rm_endp(endp_name, debug_=debug_, suppress_related_commands_=suppress_related_commands)
 
-    def create_mc_tx(self, endp_type, side_tx,  mcast_group="224.9.9.9", mcast_dest_port=9999,
-                    suppress_related_commands=None, debug_=False):
+    def create_mc_tx(self, endp_type, side_tx, mcast_group="224.9.9.9", mcast_dest_port=9999,
+                     suppress_related_commands=None, debug_=False):
         if self.debug:
             debug_ = True
 
@@ -95,8 +95,6 @@ class MULTICASTProfile(LFCliBase):
         side_tx_resource = side_tx_info[1]
         side_tx_port = side_tx_info[2]
         side_tx_name = "%smtx-%s-%i" % (self.name_prefix, side_tx_port, len(self.created_mc))
-
-        json_data = []
 
         # add_endp mcast-xmit-sta 1 1 side_tx mc_udp -1 NO 4000000 0 NO 1472 0 INCREASING NO 32 0 0
         json_data = {
@@ -138,8 +136,8 @@ class MULTICASTProfile(LFCliBase):
         these_endp = [side_tx_name]
         self.local_realm.wait_until_endps_appear(these_endp, debug=debug_)
 
-    def create_mc_rx(self, endp_type, side_rx,  mcast_group="224.9.9.9", mcast_dest_port=9999,
-                    suppress_related_commands=None, debug_=False):
+    def create_mc_rx(self, endp_type, side_rx, mcast_group="224.9.9.9", mcast_dest_port=9999,
+                     suppress_related_commands=None, debug_=False):
         if self.debug:
             debug_ = True
 
