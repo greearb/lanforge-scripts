@@ -5,7 +5,6 @@ import importlib
 from pprint import pprint
 import time
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -144,10 +143,10 @@ class QVLANProfile(LFCliBase):
                 "shelf": self.shelf,
                 "resource": self.resource,
                 "port": self.local_realm.name_to_eid(self.qvlan_parent)[2],
-                "vid": i+1
+                "vid": i + 1
             }
             self.created_qvlans.append("%s.%s.%s#%d" % (self.shelf, self.resource,
-                                                          self.qvlan_parent, int(
+                                                        self.qvlan_parent, int(
                 self.desired_qvlans[i][self.desired_qvlans[i].index('#') + 1:])))
             self.local_realm.json_post(req_url, data)
             time.sleep(sleep_time)
