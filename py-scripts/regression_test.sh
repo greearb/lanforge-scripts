@@ -70,7 +70,7 @@ while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:" option; do
   esac
 done
 
-SCENARIO_CHECK="$(python -c "import requests; print(requests.get('http://${MGR}:8080/events/since=time/1h').status_code)")"
+SCENARIO_CHECK="$(python -c "import requests; print(requests.get('http://${MGR}:8080/events/').status_code)")"
 if [[ ${SCENARIO_CHECK} -eq 200 ]]; then
   pass
 else
@@ -272,9 +272,9 @@ else
           --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
           --influx_bucket ben \
           --influx_tag testbed Ferndale-01"
-      "./lf_dut_sta_vap_test.py --manager $MGR --radio $RADIO_USED \
-          --num_sta 1 --sta_id 1 --ssid $SSID_USED --security $SECURITY --upstream $UPSTREAM \
-          --protocol lf_udp --min_mbps 1000 --max_mbps 10000 --duration 1"
+      #"./lf_dut_sta_vap_test.py --manager $MGR --radio $RADIO_USED \
+      #    --num_sta 1 --sta_id 1 --ssid $SSID_USED --security $SECURITY --upstream $UPSTREAM \
+      #    --protocol lf_udp --min_mbps 1000 --max_mbps 10000 --duration 1"
       "./lf_graph.py --mgr $MGR"
       "./lf_mesh_test.py --mgr $MGR --upstream $UPSTREAM --raw_line 'selected_dut2 RootAP wactest $BSSID'"
       "./lf_multipsk.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --debug"
