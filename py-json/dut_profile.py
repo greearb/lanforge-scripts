@@ -50,7 +50,7 @@ class DUTProfile(LFCliBase):
         self.append = []
 
     def set_param(self, name, value):
-        if (name in self.__dict__):
+        if name in self.__dict__:
             self.__dict__[name] = value
 
     def create(self, name=None, param_=None, flags=None, flags_mask=None, notes=None):
@@ -63,7 +63,7 @@ class DUTProfile(LFCliBase):
             raise ValueError("cannot create/update DUT record lacking a name")
 
         for param in add_dut.dut_params:
-            if (param.name in self.__dict__):
+            if param.name in self.__dict__:
                 if (self.__dict__[param.name] is not None) \
                         and (self.__dict__[param.name] != "NA"):
                     data[param.name] = self.__dict__[param.name]
