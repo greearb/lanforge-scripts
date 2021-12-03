@@ -139,7 +139,9 @@ class L4CXProfile(LFCliBase):
                 self.json_post(req_url, data)
                 # pprint(data)
 
-    def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
+    def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None):
+        if ports is None:
+            ports = []
         cx_post_data = []
         for port_name in ports:
             print("port_name: {} len: {} self.local_realm.name_to_eid(port_name): {}".format(port_name,
