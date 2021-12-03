@@ -20,12 +20,6 @@ Help()
   echo "If using the help flag, put the H flag at the end of the command after other flags."
 }
 
-if [ -d "/home/lanforge/lanforge_env" ];
-then
-  pip3 install --upgrade lanforge-scripts
-else
-  pip3 install --user -r ../requirements.txt --upgrade
-fi
 
 while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:" option; do
   case "${option}" in
@@ -75,6 +69,20 @@ while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:" option; do
       ;;
   esac
 done
+
+SCENARIO_CHECK=$(python -c "import requests; print(requests.get('http://${MGR}:8080/events/since=time/1h'))")
+if [[ ${SCENARIO_CHECK} != 200 ]]; then
+  echo "Your LANforge Manager is out of date. Regression test requires LANforge version 5.4.4 or higher in order to run"
+  echo "Please upgrade your LANforge using instructions found at https://www.candelatech.com/downloads.php#releases"
+  exit 1
+fi
+
+if [ -d "/home/lanforge/lanforge_env" ]
+then
+  pip3 install --upgrade lanforge-scripts
+else
+  pip3 install --user -r ../requirements.txt --upgrade
+fi
 
 if [[ ${#SSID_USED} -eq 0 ]]; then #Network credentials
   SSID_USED="jedway-wpa2-x2048-5-3"
