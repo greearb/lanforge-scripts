@@ -158,8 +158,8 @@ from .ws_generic_monitor_test import WS_Listener" > __init__.py
 
 # Fix files in py_scripts
 sed -i -- 's/import realm/ /g' create_vap.py lf_dut_sta_vap_test.py lf_sniff_radio.py run_cv_scenario.py sta_connect.py station_layer3.py test_client_admission.py
-sed -i -- 's/import realm/from realm import Realm/g' layer4_test.py lf_atten_mod_test.py lf_multipsk.py test_fileio.py test_ip_connection.py test_ipv4_ttls.py test_l3_WAN_LAN.py test_l3_unicast_traffic_gen.py test_l4.py testgroup.py
-sed -i -- 's/realm.Realm/Realm/g' layer4_test.py lf_atten_mod_test.py lf_multipsk.py lf_sniff_radio.py station_layer3.py test_client_admission.py test_fileio.py test_ip_connection.py
+sed -i -- 's/import realm/from realm import Realm/g' lf_atten_mod_test.py lf_multipsk.py test_fileio.py test_ip_connection.py test_ipv4_ttls.py test_l3_WAN_LAN.py test_l3_unicast_traffic_gen.py test_l4.py testgroup.py
+sed -i -- 's/realm.Realm/Realm/g' lf_atten_mod_test.py lf_multipsk.py lf_sniff_radio.py station_layer3.py test_client_admission.py test_fileio.py test_ip_connection.py
 sed -i -- 's/import realm/from realm import Realm, PortUtils/g' lf_ftp.py lf_webpage.py
 sed -i -- 's/import realm/from realm import Realm, WifiMonitor/g' test_ipv4_ps.py
 sed -i -- 's/import l3_cxprofile/from l3_cxprofile import L3CXProfile/g' test_l3_powersave_traffic.py
@@ -167,7 +167,7 @@ sed -i -- 's/import realm/from realm import Realm, StationProfile, WifiMonitor/g
 sed -i -- 's/import realm/from realm import Realm, PacketFilter/g' tip_station_powersave.py
 sed -i -- 's/from generic_cx import GenericCx/ /g' *.py
 sed -i -- 's/import wlan_theoretical_sta/from wlan_theoretical_sta import abg11_calculator, n11_calculator, ac11_calculator/g' wlan_capacity_calculator.py
-sed -i -- 's/sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))/ /g' *.py
+sed -i -- 's/sys.path.append(os.path.join(os.path.abspath(__file__ + "..\/..\/..\/")))/ /g' *.py
 
 #Change importlib to pip compliant method
 #sed -i -- 's/import importlib/ /g' *.py
@@ -232,7 +232,7 @@ sed -i -- 's/PortUtils = realm.PortUtils/ /g' *.py
 sed -i -- 's/Realm = realm.Realm/ /g' *.py
 sed -i -- 's/lf_csv = lf_csv.lf_csv/ /g' *.py
 sed -i -- 's/TestGroupProfile = realm.TestGroupProfile/ /g' *.py
-sed -i -- 's/sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))/ /g' *.py
+sed -i -- 's/sys.path.append(os.path.join(os.path.abspath(__file__ + "..\/..\/..\/")))/ /g' *.py
 
 sed -i -- 's/from influxdb/from .influxdb/g' *.py
 sed -i -- 's/py-scripts/py_scripts/g' *.py
