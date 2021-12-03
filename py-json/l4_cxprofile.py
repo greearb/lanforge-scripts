@@ -195,13 +195,13 @@ class L4CXProfile(LFCliBase):
                 arguments=None,
                 iterations=0,
                 debug=False):
-        try:
+        if duration_sec:
             duration_sec = LFCliBase.parse_time(duration_sec).seconds
-        except:
+        else:
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("L4CXProfile::monitor wants duration_sec > 1 second")
-            if duration_sec <= monitor_interval:
-                raise ValueError("L4CXProfile::monitor wants duration_sec > monitor_interval")
+        if duration_sec <= monitor_interval:
+            raise ValueError("L4CXProfile::monitor wants duration_sec > monitor_interval")
         if report_file is None:
             raise ValueError("Monitor requires an output file to be defined")
         if created_cx is None:
