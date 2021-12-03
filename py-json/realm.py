@@ -412,7 +412,7 @@ class Realm(LFCliBase):
                         "non-fatal exception endp_list = list(endp_list['endpoint'] did not exist, will wait some more")
 
             for req in these_endp:
-                if not req in found_endps:
+                if req not in found_endps:
                     if debug:
                         print("Waiting on endpoint: %s" % req)
                     wait_more = True
@@ -441,7 +441,7 @@ class Realm(LFCliBase):
                     found_cxs[cx_name] = cx_name
 
             for req in these_cx:
-                if not req in found_cxs:
+                if req not in found_cxs:
                     if debug:
                         print("Waiting on CX: %s" % req)
                     wait_more = True
