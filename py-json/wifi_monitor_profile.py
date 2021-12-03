@@ -46,7 +46,7 @@ class WifiMonitor:
             raise ValueError("No radio %s.%s found" % (resource_, radio_))
 
         eid = "1.%s.%s" % (resource_, radio_)
-        #frequency = 0
+        # frequency = 0
         country = 0
         if eid in jr:
             country = jr[eid]["country"]
@@ -73,7 +73,7 @@ class WifiMonitor:
         })
 
     def set_flag(self, param_name, value):
-        if (param_name not in add_monitor.flags):
+        if param_name not in add_monitor.flags:
             raise ValueError("Flag '%s' does not exist for add_monitor, consult add_monitor.py" % param_name)
         if (value == 1) and (param_name not in self.flag_names):
             self.flag_names.append(param_name)
@@ -97,13 +97,13 @@ class WifiMonitor:
             if (existing_ports is None) or ("interfaces" not in existing_ports) or ("interface" not in existing_ports):
                 print("No monitor names found to delete")
                 return
-            if ("interfaces" in existing_ports):
+            if "interfaces" in existing_ports:
                 for eid, info in existing_ports["interfaces"].items():
                     LFUtils.removePort(resource=resource_,
                                        port_name=info["alias"],
                                        baseurl=self.lfclient_url,
                                        debug=self.debug)
-            if ("interface" in existing_ports):
+            if "interface" in existing_ports:
                 for eid, info in existing_ports["interface"].items():
                     LFUtils.removePort(resource=resource_,
                                        port_name=info["alias"],
@@ -132,4 +132,3 @@ class WifiMonitor:
             "duration": duration_sec
         }
         self.local_realm.json_post("/cli-json/sniff_port", _data=data)
-
