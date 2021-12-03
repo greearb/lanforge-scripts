@@ -13,13 +13,11 @@ WS_Listener has three arguments in general : lfclient_host, _scriptname, _callba
 
 """
 
-class WS_Listener():
+
+class WS_Listener:
     def __init__(self, lfclient_host="localhost", _scriptname=None, _callback=None):
         import websocket
         self.scriptname = _scriptname
         websocket.enableTrace(True)
-        self.ws = websocket.WebSocketApp("ws://"+lfclient_host+":8081", on_message=_callback)
+        self.ws = websocket.WebSocketApp("ws://" + lfclient_host + ":8081", on_message=_callback)
         self.ws.run_forever()
-
-
-
