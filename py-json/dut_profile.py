@@ -97,7 +97,6 @@ class DUTProfile(LFCliBase):
                 "dut": self.name,
                 "text": "[BLANK]"
             }, self.debug)
-            notebytes = None
             for line in self.notes:
                 notebytes = base64.b64encode(line.encode('ascii'))
                 if self.debug:
@@ -110,7 +109,6 @@ class DUTProfile(LFCliBase):
                     "text-64": notebytes.decode('ascii')
                 }, self.debug)
         if (self.append is not None) and (len(self.append) > 0):
-            notebytes = None
             for line in self.append:
                 notebytes = base64.b64encode(line.encode('ascii'))
                 if self.debug:
