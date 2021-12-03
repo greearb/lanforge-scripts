@@ -990,20 +990,18 @@ class PacketFilter:
 
     @staticmethod
     def get_filter_wlan_assoc_packets(ap_mac, sta_mac):
-        filter = "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
+        return "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
                  "-Y \"(wlan.addr==%s or wlan.addr==%s) and wlan.fc.type_subtype<=3\" " % (ap_mac, sta_mac)
-        return filter
 
     @staticmethod
     def get_filter_wlan_null_packets(ap_mac, sta_mac):
-        filter = "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
+        return "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
                  "-Y \"(wlan.addr==%s or wlan.addr==%s) and wlan.fc.type_subtype==44\" " % (ap_mac, sta_mac)
-        return filter
 
     @staticmethod
-    def run_filter(pcap_file, filter):
+    def run_filter(pcap_file, file_filter):
         filename = "/tmp/tshark_dump.txt"
-        cmd = "tshark -r %s %s > %s" % (pcap_file, filter, filename)
+        cmd = "tshark -r %s %s > %s" % (pcap_file, file_filter, filename)
         # print("CMD: ", cmd)
         os.system(cmd)
         lines = []
