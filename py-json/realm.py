@@ -94,7 +94,7 @@ class Realm(LFCliBase):
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  _proxy_str=None,
-                 _capture_signal_list=[]):
+                 _capture_signal_list=None):
         super().__init__(_lfjson_host=lfclient_host,
                          _lfjson_port=lfclient_port,
                          _debug=debug_,
@@ -103,6 +103,8 @@ class Realm(LFCliBase):
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)
 
+        if _capture_signal_list is None:
+            _capture_signal_list = []
         self.debug = debug_
         # if debug_:
         #     print("Realm _proxy_str: %s" % _proxy_str)
