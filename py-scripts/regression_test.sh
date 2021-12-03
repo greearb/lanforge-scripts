@@ -74,15 +74,15 @@ if [[ ${#MGR} -eq 0 ]]; then # Allow the user to change the radio they test agai
   MGR="localhost"
 fi
 
-SCENARIO_CHECK="$(python3 -c "import requests; print(requests.get('http://${MGR}:8080/events/').status_code)")"
-if [[ ${SCENARIO_CHECK} -eq 200 ]]; then
-  pass
-else
-  echo "${SCENARIO_CHECK}"
-  echo "Your LANforge Manager is out of date. Regression test requires LANforge version 5.4.4 or higher in order to run"
-  echo "Please upgrade your LANforge using instructions found at https://www.candelatech.com/downloads.php#releases"
-  exit 1
-fi
+#SCENARIO_CHECK="$(python3 -c "import requests; print(requests.get('http://${MGR}:8080/events/').status_code)")"
+#if [[ ${SCENARIO_CHECK} -eq 200 ]]; then
+#  pass
+#else
+#  echo "${SCENARIO_CHECK}"
+#  echo "Your LANforge Manager is out of date. Regression test requires LANforge version 5.4.4 or higher in order to run"
+#  echo "Please upgrade your LANforge using instructions found at https://www.candelatech.com/downloads.php#releases"
+#  exit 1
+#fi
 
 if [ -d "/home/lanforge/lanforge_env" ]
 then

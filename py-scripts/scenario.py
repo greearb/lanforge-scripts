@@ -4,6 +4,7 @@ import os
 import importlib
 import argparse
 import time
+import requests
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -21,10 +22,8 @@ Realm = realm.Realm
 def get_events(event_log, value):
     results = []
     for event in event_log:
-        try:
+        if event.values():
             results.append(list(event.values())[0][value])
-        except:
-            pass
     return results
 
 
@@ -54,6 +53,7 @@ class LoadScenario(Realm):
                  stop=None,
                  quiesce=None,
                  timeout=120,
+                 code=None,
                  debug=False):
         super().__init__(lfclient_host=mgr,
                          lfclient_port=mgr_port,
@@ -67,9 +67,13 @@ class LoadScenario(Realm):
         self.stop = stop
         self.quiesce = quiesce
         self.timeout = timeout
+        self.code = code
+        self.starting_events = None
 
-        starting_events = self.json_get('/events/since=time/1h')
+    def start_test(self):
+        self.starting_events = self.json_get('/events/since=time/1h')
 
+    def load_scenario(self):
         if self.scenario is not None:
             data = {
                 "name": self.scenario,
@@ -93,12 +97,14 @@ class LoadScenario(Realm):
             print("Quiescing test group %s..." % self.quiesce)
             self.json_post("/cli-json/quiesce_group", {"name": self.quiesce})
 
+    def check_if_complete(self):
         completed = False
         timer = 0
         while not completed:
             current_events = self.json_get('/events/since=time/1h')
-            new_events = find_new_events(starting_events, current_events)
-            target_events = [event for event in get_events(new_events, 'event description') if event.startswith('LOAD COMPLETED')]
+            new_events = find_new_events(self.starting_events, current_events)
+            target_events = [event for event in get_events(new_events, 'event description') if
+                             event.startswith('LOAD COMPLETED')]
             if 'LOAD-DB:  Load attempt has been completed.' in get_events(new_events, 'event description'):
                 completed = True
                 print('Scenario %s fully loaded after %s seconds' % (self.scenario, timer))
@@ -153,16 +159,29 @@ def main():
     parser.add_argument('--timeout', help='Stop trying to load scenario after this many seconds', default=120)
     args = parser.parse_args()
 
-    LoadScenario(mgr=args.mgr,
-                 scenario=args.load,
-                 action=args.action,
-                 clean_dut=args.clean_dut,
-                 clean_chambers=args.clean_chambers,
-                 start=args.start,
-                 stop=args.stop,
-                 quiesce=args.quiesce,
-                 timeout=args.timeout,
-                 debug=args.debug)
+    code = requests.get('http://%s:8080/events' % args.mgr)
+    scenario = LoadScenario(mgr=args.mgr,
+                            scenario=args.load,
+                            action=args.action,
+                            clean_dut=args.clean_dut,
+                            clean_chambers=args.clean_chambers,
+                            start=args.start,
+                            stop=args.stop,
+                            quiesce=args.quiesce,
+                            timeout=args.timeout,
+                            code=code,
+                            debug=args.debug)
+    if code == 200:
+        scenario.start_test()
+
+    scenario.load_scenario()
+
+    if code != 200:
+        print('sleeping 30 seconds, please upgrade your LANforge for a better experience, more information at https://www.candelatech.com/downloads.php#releases')
+        time.sleep(30)
+
+    if code == 200:
+        scenario.check_if_complete()
 
     # scenario_loader.load_scenario()
 
