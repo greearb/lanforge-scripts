@@ -46,7 +46,7 @@ def main(args={}):
     print(lf_r.get_as_json())
 
     # remove old wanlinks
-    if (num_wanlinks > 0):
+    if num_wanlinks > 0:
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/rm_cx")
         lf_r.addPostData({
          'test_mgr': 'all',
@@ -59,7 +59,7 @@ def main(args={}):
         json_response = lf_r.getAsJson()
         LFUtils.debug_printer.pprint(json_response)
         for key, value in json_response.items():
-            if (isinstance(value, dict) and "_links" in value):
+            if isinstance(value, dict) and "_links" in value:
                 num_wanlinks = 1
     except urllib.error.HTTPError as error:
         print("Error code "+error.code)
@@ -139,18 +139,18 @@ def main(args={}):
 
     # start wanlink once we see it
     seen = 0
-    while (seen < 1):
+    while seen < 1:
         sleep(1)
         lf_r = LFRequest.LFRequest(base_url+"/wl/"+args['name']+"?fields=name,state,_links")
         try:
             json_response = lf_r.getAsJson()
-            if (json_response is None):
+            if json_response is None:
                 continue
             LFUtils.debug_printer.pprint(json_response)
             for key, value in json_response.items():
-                if (isinstance(value, dict)):
-                    if ("_links" in value):
-                        if (value["name"] == args['name']):
+                if isinstance(value, dict):
+                    if "_links" in value:
+                        if value["name"] == args['name']:
                             seen = 1
                         else:
                             pass
@@ -176,18 +176,18 @@ def main(args={}):
     # lf_r.jsonPost()
 
     running = 0
-    while (running < 1):
+    while running < 1:
         sleep(1)
         lf_r = LFRequest.LFRequest(base_url+"/wl/"+args['name']+"?fields=name,state,_links")
         try:
             json_response = lf_r.getAsJson()
-            if (json_response is None):
+            if json_response is None:
                 continue
             for key, value in json_response.items():
-                if (isinstance(value, dict)):
-                    if ("_links" in value):
-                        if (value["name"] == args['name']):
-                            if (value["state"].startswith("Run")):
+                if isinstance(value, dict):
+                    if "_links" in value:
+                        if value["name"] == args['name']:
+                            if value["state"].startswith("Run"):
                                 LFUtils.debug_printer.pprint(json_response)
                                 running = 1
 
@@ -294,16 +294,16 @@ if __name__ == '__main__':
         "latency": parseargs.latency,
         "latency_A": (parseargs.latency_A if parseargs.latency_A is not None else parseargs.latency),
         "latency_B": (parseargs.latency_B if parseargs.latency_B is not None else parseargs.latency),
-        "rate": (parseargs.rate),
+        "rate": parseargs.rate,
         "rate_A": (parseargs.rate_A if parseargs.rate_A is not None else parseargs.rate),
         "rate_B": (parseargs.rate_B if parseargs.rate_B is not None else parseargs.rate),
-        "jitter": (parseargs.jitter),
+        "jitter": parseargs.jitter,
         "jitter_A": (parseargs.jitter_A if parseargs.jitter_A is not None else parseargs.jitter),
         "jitter_B": (parseargs.jitter_B if parseargs.jitter_B is not None else parseargs.jitter),
-        "jitter_freq": (parseargs.jitter),
+        "jitter_freq": parseargs.jitter,
         "jitter_freq_A": (parseargs.jitter_freq_A if parseargs.jitter_freq_A is not None else parseargs.jitter_freq),
         "jitter_freq_B": (parseargs.jitter_freq_B if parseargs.jitter_freq_B is not None else parseargs.jitter_freq),
-        "drop": (parseargs.drop),
+        "drop": parseargs.drop,
         "drop_A": (parseargs.drop_A if parseargs.drop_A is not None else parseargs.drop),
         "drop_B": (parseargs.drop_B if parseargs.drop_B is not None else parseargs.drop),
     }
