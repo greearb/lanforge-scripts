@@ -121,7 +121,9 @@ class FIOEndpProfile(LFCliBase):
                 self.json_post(req_url, data)
                 # pprint(data)
 
-    def create(self, ports=[], connections_per_port=1, sleep_time=.5, debug_=False, suppress_related_commands_=None):
+    def create(self, ports=None, connections_per_port=1, sleep_time=.5, debug_=False, suppress_related_commands_=None):
+        if ports is None:
+            ports = []
         cx_post_data = []
         for port_name in ports:
             for num_connection in range(connections_per_port):
