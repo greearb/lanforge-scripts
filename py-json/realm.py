@@ -937,50 +937,23 @@ class Realm(LFCliBase):
     # return VRProfile(local_realm=self,
     # debug=self.debug)
 
-    def new_http_profile(self, ver=1):
-        if ver == 1:
-            http_prof = HTTPProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        # elif ver == 2:
-        #     import http_profile2
-        #     http_prof = http_profile2.HTTPProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        return http_prof
+    def new_http_profile(self):
+        return HTTPProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
-    def new_fio_endp_profile(self, ver=1):
-        if ver == 1:
-            cx_prof = FIOEndpProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        # elif ver == 2:
-        #     import fio_endp_profile2
-        #     cx_prof = fio_endp_profile2.FIOEndpProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        return cx_prof
+    def new_fio_endp_profile(self):
+        return FIOEndpProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
-    def new_dut_profile(self, ver=1):
-        if ver == 1:
-            dut_profile = DUTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        # elif ver == 2:
-        #     import dut_profile2
-        #     dut_profile = dut_profile2.DUTProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        return dut_profile
+    def new_dut_profile(self):
+        return DUTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
-    def new_mvlan_profile(self, ver=1):
-        if ver == 1:
-            mac_vlan_profile = MACVLANProfile(self.lfclient_host, self.lfclient_port, local_realm=self,
-                                              debug_=self.debug)
-        # elif ver == 2:
-        #     import mac_vlan_profile2
-        #     mac_vlan_profile = mac_vlan_profile2.MACVLANProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        return mac_vlan_profile
+    def new_mvlan_profile(self)
+        return MACVLANProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
     def new_qvlan_profile(self):
         return QVLANProfile(self.host, self.port, local_realm=self, debug_=self.debug)
 
-    def new_test_group_profile(self, ver=1):
-        if ver == 1:
-            test_group_profile = TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self,
-                                                  debug_=self.debug)
-        # elif ver == 2:
-        #     import test_group_profile2
-        #     test_group_profile = test_group_profile2.TestGroupProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        return test_group_profile
+    def new_test_group_profile(self):
+        return TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
     def new_lf_data_collection(self):
         return LFDataCollection(local_realm=self)
