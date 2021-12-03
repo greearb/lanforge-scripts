@@ -70,8 +70,11 @@ while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:" option; do
   esac
 done
 
-SCENARIO_CHECK=$(python -c "import requests; print(requests.get('http://${MGR}:8080/events/since=time/1h'))")
-if [[ ${SCENARIO_CHECK} != 200 ]]; then
+SCENARIO_CHECK="$(python -c "import requests; print(requests.get('http://${MGR}:8080/events/since=time/1h').status_code)")"
+if [[ ${SCENARIO_CHECK} -eq 200 ]]; then
+  pass
+else
+  echo "${SCENARIO_CHECK}"
   echo "Your LANforge Manager is out of date. Regression test requires LANforge version 5.4.4 or higher in order to run"
   echo "Please upgrade your LANforge using instructions found at https://www.candelatech.com/downloads.php#releases"
   exit 1
