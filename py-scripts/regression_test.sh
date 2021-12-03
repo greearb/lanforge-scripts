@@ -74,7 +74,7 @@ if [[ ${#MGR} -eq 0 ]]; then # Allow the user to change the radio they test agai
   MGR="localhost"
 fi
 
-SCENARIO_CHECK="$(python -c "import requests; print(requests.get('http://${MGR}:8080/events/').status_code)")"
+SCENARIO_CHECK="$(python3 -c "import requests; print(requests.get('http://${MGR}:8080/events/').status_code)")"
 if [[ ${SCENARIO_CHECK} -eq 200 ]]; then
   pass
 else
