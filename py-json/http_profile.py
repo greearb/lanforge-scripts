@@ -4,7 +4,6 @@ import os
 import importlib
 import time
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 port_utils = importlib.import_module("py-json.port_utils")
@@ -26,7 +25,7 @@ class HTTPProfile(LFCliBase):
         self.direction = "dl"
         self.dest = "/dev/null"
         self.port_util = PortUtils(self.local_realm)
-        self.max_speed = 0 #infinity
+        self.max_speed = 0  # infinity
         self.quiesce_after = 0  # infinity
 
     def check_errors(self, debug=False):
@@ -92,7 +91,9 @@ class HTTPProfile(LFCliBase):
                 self.json_post(req_url, data)
                 # pprint(data)
 
-    def map_sta_ips(self, sta_list=[]):
+    def map_sta_ips(self, sta_list=None):
+        if sta_list is None:
+            sta_list = []
         for sta_eid in sta_list:
             eid = self.local_realm.name_to_eid(sta_eid)
             sta_list = self.json_get("/port/%s/%s/%s?fields=alias,ip" %
@@ -100,8 +101,11 @@ class HTTPProfile(LFCliBase):
             if sta_list['interface'] is not None:
                 self.ip_map[sta_list['interface']['alias']] = sta_list['interface']['ip']
 
-    def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False,
-               https=False, user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None, https_ip=None):
+    def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False,
+               https=False, user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None,
+               https_ip=None):
+        if ports is None:
+            ports = []
         cx_post_data = []
         self.map_sta_ips(ports)
         print("Create CXs...")
@@ -144,7 +148,7 @@ class HTTPProfile(LFCliBase):
                 self.port_util.set_ftp(port_name=name, resource=resource, on=True)
                 if user is not None and passwd is not None and source is not None:
                     if ftp_ip is not None:
-                        ip_addr=ftp_ip
+                        ip_addr = ftp_ip
                     url = "%s ftp://%s:%s@%s%s %s" % (self.direction, user, passwd, ip_addr, source, self.dest)
                     print("###### url:{}".format(url))
                 else:
