@@ -195,6 +195,9 @@ class lf_check():
         # results
         self.test_server = ""
         self.database_sqlite = ""
+        self.suite_start_time = ""
+        self.suite_end_time = ""
+        self.suite_duration = ""
         self.test_start_time = ""
         self.test_end_time = ""
         self.duration = ""
@@ -712,6 +715,13 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
     def run_script_test(self):
         self.start_html_results()
         self.start_csv_results()
+        # Suite start time 
+        suite_start_time = datetime.datetime.now()
+        self.suite_start_time = str(datetime.datetime.now().strftime(
+                        "%Y-%m-%d-%H-%M-%S")).replace(':', '-')
+        self.logger.info("Suite Start Time {suite_time}".format(
+            suite_time=self.suite_start_time))
+
         # Configure Tests
         for test in self.test_dict:
             if self.test_dict[test]['enabled'] == "FALSE":
@@ -1151,6 +1161,17 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
             else:
                 self.logger.info(
                     "enable value {} for test: {} ".format(self.test_dict[test]['enabled'], test))
+
+        suite_end_time = datetime.datetime.now()
+        self.suite_end_time = str(datetime.datetime.now().strftime(
+                        "%Y-%m-%d-%H-%M-%S")).replace(':', '-')
+        self.logger.info("Suite End Time: {suite_time}".format(
+            suite_time=self.suite_end_time))
+        suite_time_delta = suite_end_time - suite_start_time
+        self.suite_duration  = "{day}d {seconds}s {msec} ms".format(
+            day=suite_time_delta.days, seconds=suite_time_delta.seconds, msec=suite_time_delta.microseconds)
+        self.logger.info("Suite Duration:  {suite_duration}".format(
+            suite_duration=self.suite_duration))        
         self.finish_html_results()
 
 
@@ -1433,6 +1454,12 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # Successfully gathered LANforge information Run Tests
     check.run_script_test()
 
+    lf_suite_time = pd.DataFrame()
+    lf_suite_time['Suite Start'] = [check.suite_start_time]
+    lf_suite_time['Suite End'] = [check.suite_end_time]
+    lf_suite_time['Suite Duration'] = [check.suite_duration]
+
+
     lf_test_summary = pd.DataFrame()
     lf_test_summary['Tests Run'] = [check.tests_run]
     lf_test_summary['Success'] = [check.tests_success]
@@ -1457,11 +1484,15 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     report.build_table_title()
     report.set_table_dataframe(lf_radio_df)
     report.build_table()
-    report.set_table_title("LF Check Test Summary")
+    report.set_table_title("LF Check Suite Run")
+    report.build_table_title()
+    report.set_table_dataframe(lf_suite_time)
+    report.build_table()
+    report.set_table_title("LF Check Suite Summary")
     report.build_table_title()
     report.set_table_dataframe(lf_test_summary)
     report.build_table()
-    report.set_table_title("LF Check Test Results")
+    report.set_table_title("LF Check Suite Results")
     report.build_table_title()
     html_results = check.get_html_results()
     report.set_custom_html(html_results)
