@@ -106,6 +106,7 @@ import argparse
 import json
 import subprocess
 import csv
+import shutil
 import shlex
 import paramiko
 import pandas as pd
@@ -1216,6 +1217,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                         default="")
     parser.add_argument('--logfile', help="--logfile <logfile Name>  logging for output of lf_check.py script",
                         default="lf_check.log")
+    parser.add_argument(
+        '--update_latest',
+        help="--update_latest  copy latest results to top dir",
+        action='store_true')
 
     args = parser.parse_args()
 
@@ -1469,7 +1474,54 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
     print("lf_check_html_report: " + html_report)
     check.send_results_email(report_file=html_report)
+    # 
+    if args.update_latest:
+        report_path = os.path.dirname(html_report)
+        parent_report_dir = os.path.dirname(report_path)
 
+        # copy results to lastest so someone may see the latest.
+        # duplicates html_report file up one directory is the destination
+        html_report_latest = parent_report_dir + "/{dir}_latest.html".format(dir=__dir)
+
+        banner_src_png = report_path + "/banner.png"
+        banner_dest_png = parent_report_dir + "/banner.png"
+        CandelaLogo_src_png = report_path + "/CandelaLogo2-90dpi-200x90-trans.png"
+        CandelaLogo_dest_png = parent_report_dir + "/CandelaLogo2-90dpi-200x90-trans.png"
+        CandelaLogo_small_src_png = report_path + "/candela_swirl_small-72h.png"
+        CandelaLogo_small_dest_png = parent_report_dir + "/candela_swirl_small-72h.png"
+        report_src_css = report_path + "/report.css"
+        report_dest_css = parent_report_dir + "/report.css"
+        custom_src_css = report_path + "/custom.css"
+        custom_dest_css = parent_report_dir + "/custom.css"
+        font_src_woff = report_path + "/CenturyGothic.woff"
+        font_dest_woff = parent_report_dir + "/CenturyGothic.woff"
+
+        # pprint.pprint([
+        #    ('banner_src', banner_src_png),
+        #    ('banner_dest', banner_dest_png),
+        #    ('CandelaLogo_src_png', CandelaLogo_src_png),
+        #    ('CandelaLogo_dest_png', CandelaLogo_dest_png),
+        #    ('report_src_css', report_src_css),
+        #    ('custom_src_css', custom_src_css)
+        # ])
+
+        # copy one directory above
+        try:
+            shutil.copyfile(html_report, html_report_latest)
+        except BaseException:
+            print("unable to copy results from {html} to {html_latest}".format(html=html_report, html_latest=html_report_latest))
+            print("check permissions on {html_report_latest}".format(html_report_latest=html_report_latest))
+
+        # copy banner and logo up one directory,
+        shutil.copyfile(banner_src_png, banner_dest_png)
+        shutil.copyfile(CandelaLogo_src_png, CandelaLogo_dest_png)
+        shutil.copyfile(report_src_css, report_dest_css)
+        shutil.copyfile(custom_src_css, custom_dest_css)
+        shutil.copyfile(font_src_woff, font_dest_woff)
+        shutil.copyfile(CandelaLogo_small_src_png, CandelaLogo_small_dest_png)
+
+        # print out locations of results
+        print("html_report_latest: {latest}".format(latest=html_report_latest))
 
 if __name__ == '__main__':
     main()
