@@ -432,7 +432,7 @@ class csv_sql:
 
         self.dut_serial_num_list = list(set(list(df_tmp['dut-serial-num'])))
         self.dut_serial_num_list = [x for x in self.dut_serial_num_list if x is not None]
-        if self.dut_serial_num_list[-1]:
+        if self.dut_serial_num_list:
             self.dut_serial_num = self.dut_serial_num_list[-1]
         
         print(
