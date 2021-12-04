@@ -1227,27 +1227,30 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # load test config file information either <config>.json
     json_rig = ""
     try:
-        print("args.json_rig {rig}".format(rig=args.json_rig))
+        print("reading json_rig: {rig}".format(rig=args.json_rig))
         with open(args.json_rig, 'r') as json_rig_config:
             json_rig = json.load(json_rig_config)
-    except BaseException:
-        print("Error reading {}".format(args.json_rig))
+    except json.JSONDecodeError as err:
+        print("ERROR reading {json}, ERROR: {error} ".format(json=args.json_rig,error=err))
+        exit(1)
 
     json_dut = ""
     try:
-        print("args.json_dut {dut}".format(dut=args.json_dut))
+        print("reading json_dut: {dut}".format(dut=args.json_dut))
         with open(args.json_dut, 'r') as json_dut_config:
             json_dut = json.load(json_dut_config)
-    except BaseException:
-        print("Error reading {}".format(args.json_dut))
+    except json.JSONDecodeError as err:
+        print("ERROR reading {json}, ERROR: {error} ".format(json=args.json_dut,error=err))
+        exit(1)
 
     json_test = ""
     try:
-        print("args.json_test {}".format(args.json_test))
+        print("reading json_test:  {}".format(args.json_test))
         with open(args.json_test, 'r') as json_test_config:
             json_test = json.load(json_test_config)
-    except BaseException:
-        print("Error reading {}".format(args.json_test))
+    except json.JSONDecodeError as err:
+        print("ERROR reading {json}, ERROR: {error} ".format(json=args.json_test,error=err))
+        exit(1)
 
     # Test-rig information information
     lanforge_system_node_version = 'NO_LF_NODE_VER'
@@ -1328,21 +1331,21 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         scripts_git_sha = check.get_scripts_git_sha()
         print("git_sha {sha}".format(sha=scripts_git_sha))
     except BaseException:
-        print("git_sha read exception ")
+        print("WARNING: git_sha read exception unable to read")
 
     try:
         lanforge_system_node_version = check.get_lanforge_system_node_version()
         print("lanforge_system_node_version {system_node_ver}".format(
             system_node_ver=lanforge_system_node_version))
     except BaseException:
-        print("lanforge_system_node_version exception")
+        print("WARNING: lanforge_system_node_version exception")
 
     try:
         lanforge_fedora_version = check.get_lanforge_fedora_version()
         print("lanforge_fedora_version {fedora_ver}".format(
             fedora_ver=lanforge_fedora_version))
     except BaseException:
-        print("lanforge_fedora_version exception, tests aborted check lanforge ip")
+        print("ERROR: lanforge_fedora_version exception, tests aborted check lanforge ip")
         exit(1)
 
     try:
@@ -1350,7 +1353,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         print("lanforge_kernel_version {kernel_ver}".format(
             kernel_ver=lanforge_kernel_version))
     except BaseException:
-        print("lanforge_kernel_version exception, tests aborted check lanforge ip")
+        print("ERROR: lanforge_kernel_version exception, tests aborted check lanforge ip")
         exit(1)
 
     try:
@@ -1358,7 +1361,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         print("lanforge_server_version_full {lanforge_server_version_full}".format(
             lanforge_server_version_full=lanforge_server_version_full))
     except BaseException:
-        print("lanforge_server_version exception, tests aborted check lanforge ip")
+        print("ERROR: lanforge_server_version exception, tests aborted check lanforge ip")
         exit(1)
 
     try:
@@ -1366,7 +1369,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         print("lanforge_gui_version_full {lanforge_gui_version_full}".format(
             lanforge_gui_version_full=lanforge_gui_version_full))
     except BaseException:
-        print("lanforge_gui_version exception, tests aborted check lanforge ip")
+        print("ERROR: lanforge_gui_version exception, tests aborted check lanforge ip")
         exit(1)
 
     try:
@@ -1396,7 +1399,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                 try:
                     firmware_version = lanforge_radio_json[key]['firmware version']
                 except BaseException:
-                    print("5.4.3 radio fw version not in /radiostatus/all")
+                    print("5.4.3 radio fw version not in /radiostatus/all ")
                     firmware_version = "5.4.3 N/A"
 
                 lf_radio_df = lf_radio_df.append(
