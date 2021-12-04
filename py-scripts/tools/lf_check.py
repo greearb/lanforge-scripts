@@ -1126,20 +1126,23 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                         self.html_results += """<td></td>"""
 
                     self.html_results += """</tr>"""
-                    # TODO - plase copy button at end and selectable , so
+                    # TODO - place copy button at end and selectable , so
                     # individual sections may be copied
                     if command != short_cmd:
-                        '''self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
+                        # Hover and copy button snows up
+                        self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
                             <span class='copybtn'>Copy</span>
                              <tt onclick='copyTextToClipboard(this)'>{command}</tt>
                              </td></tr>
-                             """.format(command=command)'''
-                        self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
+                             """.format(command=command)
+                        # TODO - place a point button for not have the copy
+                        # hover, no copy button
+                        '''self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
                              <tt onclick='copyTextToClipboard(this)'>{command}</tt>
                              </td></tr>
                              """.format(command=command)
-
-                        # nocopy
+                        '''
+                        # nocopy - example
                         '''
                         self.html_results += f"""<tr><td colspan='8' class='scriptdetails'>
                              <tt>{command}</tt>
