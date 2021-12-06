@@ -53,7 +53,6 @@ class LoadScenario(Realm):
                  stop=None,
                  quiesce=None,
                  timeout=120,
-                 code=None,
                  debug=False):
         super().__init__(lfclient_host=mgr,
                          lfclient_port=mgr_port,
@@ -67,7 +66,7 @@ class LoadScenario(Realm):
         self.stop = stop
         self.quiesce = quiesce
         self.timeout = timeout
-        self.code = code
+        self.BuildVersion = self.json_get('/')['VersionInfo']['BuildVersion']
         self.starting_events = None
 
     def start_test(self):
@@ -159,7 +158,6 @@ def main():
     parser.add_argument('--timeout', help='Stop trying to load scenario after this many seconds', default=120)
     args = parser.parse_args()
 
-    code = requests.get('http://%s:8080/events' % args.mgr)
     scenario = LoadScenario(mgr=args.mgr,
                             scenario=args.load,
                             action=args.action,
@@ -169,18 +167,17 @@ def main():
                             stop=args.stop,
                             quiesce=args.quiesce,
                             timeout=args.timeout,
-                            code=code,
                             debug=args.debug)
-    if code == 200:
+    if scenario.BuildVersion == '5.4.4':
         scenario.start_test()
 
     scenario.load_scenario()
 
-    if code != 200:
+    if scenario.BuildVersion != '5.4.4':
         print('sleeping 30 seconds, please upgrade your LANforge for a better experience, more information at https://www.candelatech.com/downloads.php#releases')
         time.sleep(30)
 
-    if code == 200:
+    if scenario.BuildVersion == '5.4.4':
         scenario.check_if_complete()
 
     # scenario_loader.load_scenario()
