@@ -21,7 +21,7 @@ Realm = realm.Realm
 
 class IPV4VariableTime(LFCliBase):
     def __init__(self, ssid, security, password, sta_list, name_prefix, upstream, radio,
-                 host="localhost", port=8080,
+                 radio2, host="localhost", port=8080,
                  side_a_min_rate=56, side_a_max_rate=0,
                  side_b_min_rate=56, side_b_max_rate=0,
                  number_template="00000", test_duration="5m", use_ht160=False,
@@ -37,6 +37,7 @@ class IPV4VariableTime(LFCliBase):
         self.security = security
         self.password = password
         self.radio = radio
+        self.radio2 = radio2
         self.number_template = number_template
         self.debug = _debug_on
         self.name_prefix = name_prefix
@@ -107,7 +108,7 @@ class IPV4VariableTime(LFCliBase):
         self.vap_profile.set_command_flag("add_vap", "use-bss-transition", 1)
         self.vap_profile.create(resource=1, radio="wiphy1", channel=161, up_=True, debug=False,
                                 suppress_related_commands_=True)
-        self.monitor.create(resource_=1, channel=161, radio_="wiphy2", name_="moni0")
+        self.monitor.create(resource_=1, channel=161, radio_=self.radio2, name_="moni0")
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self.cx_profile.create(endp_type="lf_udp", side_a=self.station_profile.station_names, side_b=self.upstream,
                                sleep_time=0)
@@ -201,6 +202,7 @@ Generic command layout:
         optional.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
         optional.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
         optional.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
+        optional.add_argument('--radio2', help='radio to create monitor on', default='1.wiphy2')
 
     args = parser.parse_args()
     num_sta = 2
@@ -219,6 +221,7 @@ Generic command layout:
                                    ssid=args.ssid,
                                    password=args.passwd,
                                    radio=args.radio,
+                                   radio2=args.radio2,
                                    security=args.security, test_duration=args.test_duration, use_ht160=False,
                                    side_a_min_rate=args.a_min, side_b_min_rate=args.b_min, _debug_on=args.debug)
 
