@@ -26,7 +26,7 @@ def main():
     print("Installing Script Python3 Dependencies")
     packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'pyarrow', 'websocket-client',
                 'xlsxwriter', 'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search', 'pyserial',
-                'pexpect-serial', 'scp', 'dash', 'kaleido']
+                'pexpect-serial', 'scp', 'dash']
     if args.pyjwt:
         packages.append('pyjwt')
     else:
