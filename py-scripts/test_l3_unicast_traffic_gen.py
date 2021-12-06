@@ -50,8 +50,7 @@ class L3VariableTimeLongevity(LFCliBase):
         self.cx_profile = self.local_realm.new_l3_cx_profile()
         self.station_profiles = []
 
-        index = 0
-        for radio in radios:
+        for index in range(0, len(radios)):
             self.station_profile = self.local_realm.new_station_profile()
             self.station_profile.lfclient_url = self.lfclient_url
             self.station_profile.ssid = ssid_list[index]
@@ -60,7 +59,6 @@ class L3VariableTimeLongevity(LFCliBase):
             self.station_profile.number_template = self.number_template
             self.station_profile.mode = 0
             self.station_profiles.append(self.station_profile)
-            index += 1
 
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
