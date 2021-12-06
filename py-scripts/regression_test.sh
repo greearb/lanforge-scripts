@@ -546,16 +546,12 @@ function test() {
   else
     echo "No errors detected"
   fi
-  results+=("<tr>
-    <td class='testname'>${CURR_TEST_NAME}</td>
-    <td class='${TEXTCLASS}'>$TDTEXT</td>
-    <td>${execution}</td>
-    <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-    <td>${STDERR}</td>
-</tr>
-<tr>
-    <td colspan='5' class='scriptdetails'>${testcommand}</td>
-</tr>")
+  results+=("<tr><td>${CURR_TEST_NAME}</td>
+                       <td class='scriptdetails'>${testcommand}</td>
+                       <td class='${TEXTCLASS}'>$TDTEXT</td>
+                       <td>${execution}</td>
+                       <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
+                       <td>${STDERR}</td></tr>")
 }
 
 function start_tests()  {
@@ -632,6 +628,7 @@ td.testname {
     <thead>
         <tr>
             <th onclick=\"sortTable('myTable2', 0)\">Command Name</th>
+            <th onclick=\"sortTable('myTable2', 1)\">Command</th>
             <th onclick=\"sortTable('myTable2', 2)\">Status</th>
             <th onclick=\"sortTable('myTable2', 3)\">Execution time</th>
             <th onclick=\"sortTable('myTable2', 4)\">STDOUT</th>
