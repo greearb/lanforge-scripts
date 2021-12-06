@@ -21,7 +21,7 @@ Help()
 }
 
 
-while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:" option; do
+while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:M:" option; do
   case "${option}" in
     h) # display Help
       Help
@@ -64,6 +64,9 @@ while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:" option; do
     H)
       ./lf_help_check.bash
       ;;
+    M)
+      RADIO2=${OPTARG}
+      ;;
     *)
 
       ;;
@@ -101,6 +104,9 @@ if [[ ${#RADIO_USED} -eq 0 ]]; then # Allow the user to change the radio they te
   RADIO_USED="wiphy1"
 fi
 
+if [[ ${#RADIO2} -eq 0 ]]; then # Allow the user to change the radio they test against
+  RADIO_USED="wiphy0"
+fi
 if [[ ${#UPSTREAM} -eq 0 ]]; then
   UPSTREAM="eth1"
 fi
@@ -355,9 +361,9 @@ else
       "./test_ip_connection.py --radio $RADIO_USED --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --layer3_cols $COL_NAMES --debug --mgr $MGR  --traffic_type lf_udp"
       "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --layer3_cols $COL_NAMES --debug --mgr $MGR  --traffic_type lf_udp"
-      "./test_ip_connection.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR --ipv6"
+      "./test_ip_connection.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR --ipv6 --test_duration 15s"
       "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --debug --mgr $MGR --ipv6 --traffic_type lf_udp"
-      "./test_ipv4_ps.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
+      "./test_ipv4_ps.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR --radio2 $RADIO2"
       "./test_ipv4_ttls.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./test_l3_longevity.py --mgr $MGR --endp_type 'lf_tcp' --upstream_port 1.1.$UPSTREAM --radio
       'radio==1.1.wiphy0 stations==10 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --radio
