@@ -105,7 +105,7 @@ if [[ ${#RADIO_USED} -eq 0 ]]; then # Allow the user to change the radio they te
 fi
 
 if [[ ${#RADIO2} -eq 0 ]]; then # Allow the user to change the radio they test against
-  RADIO_USED="wiphy0"
+  RADIO2="wiphy0"
 fi
 if [[ ${#UPSTREAM} -eq 0 ]]; then
   UPSTREAM="eth1"
