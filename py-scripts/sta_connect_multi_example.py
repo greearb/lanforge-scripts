@@ -5,12 +5,10 @@ import os
 import importlib
 import argparse
 
-
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 # if you lack __init__.py in this directory you will not find sta_connect module
@@ -32,14 +30,14 @@ def main():
         description='''\
 Example of how to instantiate StaConnect and run the test
         ''')
-    #args = parser.parse_args() - add this line if adding arguments
+    # args = parser.parse_args() - add this line if adding arguments
     parser.parse_args()
 
     # create multiple OPEN stations
     station_names = LFUtils.port_name_series(start_id=0, end_id=1)
 
     test = StaConnect("localhost", 8080, _debugOn=False, _exit_on_error=True,
-                        _cleanup_on_exit=False, _runtime_sec=360, _exit_on_fail=True)
+                      _cleanup_on_exit=False, _runtime_sec=360, _exit_on_fail=True)
     test.sta_mode = sta_connect.MODE_AUTO
     test.upstream_resource = 1
     test.upstream_port = "eth1"
