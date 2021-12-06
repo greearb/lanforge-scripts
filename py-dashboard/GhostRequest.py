@@ -29,8 +29,8 @@ RecordInflux = InfluxRequest.RecordInflux
 
 
 class CSVReader:
-    def read_csv(self,
-                 file,
+    @staticmethod
+    def read_csv(file,
                  sep='\t'):
         df = open(file).read().split('\n')
         rows = list()
@@ -39,8 +39,8 @@ class CSVReader:
                 rows.append(x.split(sep))
         return rows
 
-    def get_column(self,
-                   df,
+    @staticmethod
+    def get_column(df,
                    value):
         index = df[0].index(value)
         values = []
@@ -48,7 +48,8 @@ class CSVReader:
             values.append(row[index])
         return values
 
-    def get_columns(self, df, targets):
+    @staticmethod
+    def get_columns(df, targets):
         target_index = []
         for item in targets:
             target_index.append(df[0].index(item))
@@ -60,7 +61,8 @@ class CSVReader:
             results.append(row_data)
         return results
 
-    def to_html(self, df):
+    @staticmethod
+    def to_html(df):
         html = ''
         html = html + ('<table style="border:1px solid #ddd">'
                        '<colgroup>'
@@ -78,7 +80,8 @@ class CSVReader:
                        '</table>')
         return html
 
-    def filter_df(self, df, column, expression, target):
+    @staticmethod
+    def filter_df(df, column, expression, target):
         target_index = df[0].index(column)
         counter = 0
         targets = [0]
@@ -98,7 +101,8 @@ class CSVReader:
             counter += 1
         return list(map(df.__getitem__, targets))
 
-    def concat(self, dfs):
+    @staticmethod
+    def concat(dfs):
         return list(itertools.chain.from_iterable(dfs))
 
 
