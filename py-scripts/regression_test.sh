@@ -303,7 +303,7 @@ else
                                --duration 20 \
                                --channel 52 \
                                --radio_mode AUTO"
-      "./lf_snp_test.py --mgr $MGR --radio $RADIO_USED"
+      "./lf_snp_test.py --help"
       "./lf_tr398_test.py --mgr $MGR --upstream $UPSTREAM"
       #./lf_webpage
       "./lf_wifi_capacity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
