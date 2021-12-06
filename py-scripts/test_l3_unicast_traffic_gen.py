@@ -79,7 +79,8 @@ class L3VariableTimeLongevity(LFCliBase):
                             cx_rx_map[item] = value_rx
         return cx_rx_map
 
-    def __compare_vals(self, old_list, new_list):
+    @staticmethod
+    def __compare_vals(old_list, new_list):
         passes = 0
         expected_passes = 0
         if len(old_list) == len(new_list):
@@ -117,7 +118,6 @@ class L3VariableTimeLongevity(LFCliBase):
 
         cur_time = datetime.datetime.now()
         old_rx_values = self.__get_rx_values()
-        filtered_old_rx_values = []
         filtered_old_rx_values = old_rx_values
 
         end_time = self.local_realm.parse_time(self.test_duration) + cur_time
@@ -131,7 +131,6 @@ class L3VariableTimeLongevity(LFCliBase):
                 time.sleep(1)
 
             new_rx_values = self.__get_rx_values()
-            filtered_new_rx_values = []
             filtered_new_rx_values = new_rx_values
 
             expected_passes += 1
@@ -140,7 +139,6 @@ class L3VariableTimeLongevity(LFCliBase):
             else:
                 self._fail("FAIL: Not all stations increased traffic", print_fail)
                 break
-            old_rx_values = new_rx_values
             cur_time = datetime.datetime.now()
 
         if passes == expected_passes:
@@ -154,8 +152,7 @@ class L3VariableTimeLongevity(LFCliBase):
                 url = "cli-json/set_port"
                 self.json_post(url, data)
 
-    def cleanup(self, resource):
-        resource = 1
+    def cleanup(self,):
         data = {
             "name": "BLANK",
             "action": "overwrite"
@@ -219,7 +216,6 @@ class L3VariableTimeLongevity(LFCliBase):
             print("or the json_post failed either way {} did not set up dhcp so test may not pass data ".format(
                 self.side_b))
 
-        resource = 1
         index = 0
         for station_profile, station_list in zip(self.station_profiles, self.station_lists):
             station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
@@ -239,8 +235,8 @@ class L3VariableTimeLongevity(LFCliBase):
 
 
 def valid_endp_type(endp_type):
-    valid_endp_type = ['lf_udp', 'lf_udp6', 'lf_tcp', 'lf_tcp6']
-    if str(endp_type) in valid_endp_type:
+    valid_endp_types = ['lf_udp', 'lf_udp6', 'lf_tcp', 'lf_tcp6']
+    if str(endp_type) in valid_endp_types:
         return endp_type
     else:
         print('invalid endp_type. Valid types lf_udp, lf_udp6, lf_tcp, lf_tcp6')
@@ -371,7 +367,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type lf_tcp --upstream
 
     index = 0
     station_lists = []
-    for radio in radios:
+    for _ in radios:
         number_of_stations = int(number_of_stations_per_radio_list[index])
         if number_of_stations > MAX_NUMBER_OF_STATIONS:
             print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
@@ -397,7 +393,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type lf_tcp --upstream
                                           side_a_min_rate=256000, side_b_min_rate=256000,
                                           _debug_on=args.debug)
 
-    ip_var_test.cleanup(station_list)
+    ip_var_test.cleanup()
     ip_var_test.build()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
@@ -408,7 +404,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type lf_tcp --upstream
         print(ip_var_test.get_fail_message())
         exit(1)
     time.sleep(30)
-    ip_var_test.cleanup(station_list)
+    ip_var_test.cleanup()
     if ip_var_test.passes():
         print("Full test passed, all connections increased rx bytes")
 
