@@ -466,6 +466,7 @@ class csv_sql:
         # graph group and test-tag are used for detemining the graphs, can use any columns
         # the following list manipulation removes the duplicates
         graph_group_list = list(df3['Graph-Group'])
+        graph_group_list = [x for x in graph_group_list if x is not None]
         graph_group_list = list(set(graph_group_list))
         print("graph_group_list: {}".format(graph_group_list))
 
@@ -473,10 +474,12 @@ class csv_sql:
         # print("dataframe df3 {df3}".format(df3=df3))
 
         test_tag_list = list(df3['test-tag'])
+        test_tag_list = [x for x in test_tag_list if x is not None]
         test_tag_list = list(sorted(set(test_tag_list)))
         # print("test_tag_list: {}".format(test_tag_list) )
 
         test_rig_list = list(df3['test-rig'])
+        test_rig_list = [x for x in test_rig_list if x is not None]
         test_rig_list = list(sorted(set(test_rig_list)))
         self.test_rig_list = test_rig_list
         print("test_rig_list: {}".format(test_rig_list))

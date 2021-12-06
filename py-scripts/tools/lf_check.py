@@ -243,8 +243,8 @@ class lf_check():
         self.qa_report_html = "NA"
         self.database_qa = ""
         self.table_qa = ""
-
         self.test_run = ""
+        self.hostname = ""
 
     def get_test_rig(self):
         return self.test_rig
@@ -403,7 +403,7 @@ class lf_check():
         report_url = report_file.replace('/home/lanforge/', '')
         if report_url.startswith('/'):
             report_url = report_url[1:]
-        qa_url = self.qa_report_html.replace('home/lanforge', '')
+        qa_url = self.qa_report_html.replace('/home/lanforge', '')
         if qa_url.startswith('/'):
             qa_url = qa_url[1:]
         # following recommendation
@@ -411,14 +411,14 @@ class lf_check():
         # Mail
         # command to check if mail running : systemctl status postfix
         # command = 'echo "$HOSTNAME mail system works!" | mail -s "Test: $HOSTNAME $(date)" chuck.rekiere@candelatech.com'
-        hostname = socket.getfqdn()
-        ip = socket.gethostbyname(hostname)
+        self.hostname = socket.getfqdn()
+        ip = socket.gethostbyname(self.hostname)
 
         # a hostname lacking dots by definition lacks a domain name
         # this is not useful for hyperlinks outside the known domain, so an IP
         # address should be preferred
-        if hostname.find('.') < 1:
-            hostname = ip
+        if self.hostname.find('.') < 1:
+            self.hostname = ip
 
         message_txt = ""
         if (self.email_txt != ""):
@@ -427,12 +427,12 @@ Results from {hostname}:
 Suite: {suite}
 Database: {db}
 http://{hostname}/{report}
-""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, suite=self.test_suite, db=self.database_sqlite, hostname=hostname, report=report_url)
+""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, suite=self.test_suite, db=self.database_sqlite, hostname=self.hostname, report=report_url)
         else:
             message_txt = """Results from {hostname}:
 Suite: {suite}
 Database: {db}
-http://{hostname}/{report}""".format(hostname=hostname, suite=self.test_suite, db=self.database_sqlite, report=report_url)
+http://{hostname}/{report}""".format(hostname=self.hostname, suite=self.test_suite, db=self.database_sqlite, report=report_url)
 
         # Put in report information current two methods supported,
         message_txt += """
@@ -441,10 +441,10 @@ http://{ip_qa}/{qa_url}
 NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
 
         if (self.email_title_txt != ""):
-            mail_subject = "{email} [{hostname}] {suite} {date}".format(email=self.email_title_txt, hostname=hostname,
+            mail_subject = "{email} [{hostname}] {suite} {date}".format(email=self.email_title_txt, hostname=self.hostname,
                                                                         suite=self.test_suite, db=self.database_sqlite, date=datetime.datetime.now())
         else:
-            mail_subject = "Regression Test [{hostname}] {suite} {date}".format(hostname=hostname,
+            mail_subject = "Regression Test [{hostname}] {suite} {date}".format(hostname=self.hostname,
                                                                                 suite=self.test_suite, db=self.database_sqlite, date=datetime.datetime.now())
         try:
             if self.production_run:
@@ -1457,6 +1457,9 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # Successfully gathered LANforge information Run Tests
     check.run_script_test()
 
+    # Add the qa_report_html 
+    qa_report_html = check.qa_report_html
+
     lf_suite_time = pd.DataFrame()
     lf_suite_time['Suite Start'] = [check.suite_start_time]
     lf_suite_time['Suite End'] = [check.suite_end_time]
@@ -1491,6 +1494,14 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     report.build_table_title()
     report.set_table_dataframe(lf_suite_time)
     report.build_table()
+    if "NA" not in qa_report_html:
+        qa_url = qa_report_html.replace('/home/lanforge', '')
+        if qa_url.startswith('/'):
+            qa_url = qa_url[1:]
+        report.set_table_title("LF Check QA ")
+        report.build_table_title()
+        report.build_link("QA Test Results", qa_url)
+
     report.set_table_title("LF Check Suite Summary")
     report.build_table_title()
     report.set_table_dataframe(lf_test_summary)

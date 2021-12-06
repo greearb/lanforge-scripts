@@ -368,8 +368,8 @@ td.scriptdetails span.copybtn {
 }
 td.scriptdetails:hover span.copybtn {
    display: inline-block;
-   padding: 5px;
-   font-size: 12px;
+   padding: 2px;
+   font-size:10px;
    float: left;
    color: #050;
    background: white;
