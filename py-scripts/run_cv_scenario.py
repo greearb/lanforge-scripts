@@ -58,6 +58,7 @@ class RunCvScenario(LFCliBase):
 
         port_counter = 0
         attempts = 6
+        alias_map = None
         while (attempts > 0) and (port_counter > 0):
             sleep(1)
             attempts -= 1
@@ -74,7 +75,7 @@ class RunCvScenario(LFCliBase):
 
         if (port_counter != 0) and (attempts == 0):
             print("There appears to be a vAP in this database, quitting.")
-            pprint(alias_map)
+            pprint.pprint(alias_map)
             exit(1)
 
         data = {
@@ -147,14 +148,12 @@ class RunCvScenario(LFCliBase):
             sleep(1)
             if time.time() > (begin_time + (6 * 1000)):
                 print("waited %d sec for text blobs to update" % self.load_timeout_sec)
-                load_completed = True
                 break
             status_response = self.json_get("/")
             if "text_records_last_updated_ms" in status_response:
                 updated = int(status_response["text_records_last_updated_ms"])
                 print(", , , , , , , , , updated at %d" % updated)
                 if updated > blobs_last_updated:
-                    load_completed = True
                     break
             else:
                 pprint.pprint(status_response)
@@ -162,7 +161,7 @@ class RunCvScenario(LFCliBase):
                 "type": "ALL",
                 "name": "ALL"
             })
-        delta: int = (time.time() * 1000) - begin_time
+        delta: float = (time.time() * 1000) - begin_time
         print("blobs loaded in %d ms" % delta)
 
         # next show duts
@@ -201,7 +200,6 @@ class RunCvScenario(LFCliBase):
             "sleep 1",
             "exit"
         ]
-        response_json = []
         for command in commands:
             data = {
                 "cmd": command
@@ -231,8 +229,8 @@ class RunCvScenario(LFCliBase):
                 else:
                     response_json = []
                     print("running %s..." % command, end='')
-                    response = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=False,
-                                              response_json_list_=response_json)
+                    self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=False,
+                                   response_json_list_=response_json)
                     if debug_:
                         LFUtils.debug_printer.pprint(response_json)
                     print("...proceeding")
