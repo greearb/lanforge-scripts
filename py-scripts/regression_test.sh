@@ -365,8 +365,8 @@ else
       "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --debug --mgr $MGR --ipv6 --traffic_type lf_udp"
       "./test_ipv4_ps.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR --radio2 $RADIO2"
       "./test_ipv4_ttls.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
-      "./test_l3_longevity.py --mgr $MGR --endp_type 'lf_tcp' --upstream_port 1.1.$UPSTREAM --radio
-      'radio==1.1.wiphy0 stations==10 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --radio
+      "./test_l3_longevity.py --mgr $MGR --endp_type 'lf_tcp' --upstream_port 1.1.$UPSTREAM --radio \
+      'radio==1.1.wiphy0 stations==10 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --radio \
       'radio==1.1.wiphy1 stations==1 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --test_duration 5s --influx_host c7-graphana --influx_port 8086 --influx_org Candela --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== --influx_bucket ben --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000  --influx_tag testbed regression_test --influx_tag DUT ROG -o longevity.csv"
       "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       #"./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput -m $MGR"
