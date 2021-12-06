@@ -217,6 +217,7 @@ class L3VariableTimeLongevity(LFCliBase):
                 self.side_b))
 
         index = 0
+        temp_station_list = []
         for station_profile, station_list in zip(self.station_profiles, self.station_lists):
             station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
             station_profile.set_number_template(station_profile.number_template)
@@ -224,7 +225,6 @@ class L3VariableTimeLongevity(LFCliBase):
                 print("radio: {} station_profile: {} Creating stations: {} ".format(self.radio_list[index],
                                                                                     station_profile, station_list))
 
-            temp_station_list = []
             for station in range(len(station_list)):
                 temp_station_list.append(str(self.resource) + "." + station_list[station])
             station_profile.create(radio=self.radio_list[index], sta_names_=station_list, debug=False)
@@ -330,16 +330,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type lf_tcp --upstream
                                required=True)
     args = parser.parse_args()
 
-    if args.test_duration:
-        test_duration = args.test_duration
-
-    if args.endp_type:
-        endp_type = args.endp_type
-
     side_b = args.upstream_port
-
-    if args.radio:
-        radios = args.radio
 
     radio_offset = 0
     number_of_stations_offset = 1
@@ -354,7 +345,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type lf_tcp --upstream
     ssid_password_list = []
 
     index = 0
-    for radio in radios:
+    for radio in args.radio:
         radio_name = radio[radio_offset]
         radio_name_list.append(radio_name)
         number_of_stations_per_radio = radio[number_of_stations_offset]
@@ -367,7 +358,7 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type lf_tcp --upstream
 
     index = 0
     station_lists = []
-    for _ in radios:
+    for _ in args.radio:
         number_of_stations = int(number_of_stations_per_radio_list[index])
         if number_of_stations > MAX_NUMBER_OF_STATIONS:
             print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
@@ -381,15 +372,15 @@ python3 .\\test_l3_longevity.py --test_duration 4m --endp_type lf_tcp --upstream
                                           number_template="00",
                                           station_lists=station_lists,
                                           name_prefix="var_time",
-                                          endp_type=endp_type,
+                                          endp_type=args.endp_type,
                                           side_b=side_b,
-                                          radios=radios,
+                                          radios=args.radio,
                                           radio_name_list=radio_name_list,
                                           number_of_stations_per_radio_list=number_of_stations_per_radio_list,
                                           ssid_list=ssid_list,
                                           ssid_password_list=ssid_password_list,
                                           resource=1,
-                                          security="wpa2", test_duration=test_duration,
+                                          security="wpa2", test_duration=args.test_duration,
                                           side_a_min_rate=256000, side_b_min_rate=256000,
                                           _debug_on=args.debug)
 
