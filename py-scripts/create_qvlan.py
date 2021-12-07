@@ -59,9 +59,7 @@ class CreateQVlan(Realm):
     def build(self):
         print("Creating QVLAN stations")
         self.qvlan_profile.create(
-            admin_down=False,
-            sleep_time=.5,
-            debug=self.debug)
+            sleep_time=.5)
 
 
 def main():
