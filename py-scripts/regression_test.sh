@@ -197,6 +197,14 @@ function create_station_and_dataplane() {
           --influx_bucket ben \
           --influx_tag testbed Ferndale-01
 }
+function create_dut_and_chamberview() {
+        ./create_chamberview.py -m $MGR -cs 'regression_test' --delete_scenario \
+        --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=$RADIO_USED Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http" \
+        --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http"
+        ./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut \
+        --ssid "ssid_idx=0 ssid='$SSID_USED' security='$SECURITY' password='$PASSWD_USED' bssid=04:f0:21:2c:41:84"
+    }
+}
 function create_station_and_sensitivity {
   ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
   ./lf_rx_sensitivity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
@@ -250,11 +258,7 @@ else
   testCommands=(
       "./create_bond.py --network_dev_list eth0,eth1 --debug --mgr $MGR"
       create_bridge_and_station
-      "./create_chamberview.py -m $MGR -cs 'regression_test' --delete_scenario \
-      --line 'Resource=1.1 Profile=STA-AC Amount=1 Uses-1=$RADIO_USED Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http' \
-      --line 'Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http'"
-      "./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut \
-      --ssid 'ssid_idx=0 ssid='$SSID_USED' security='$SECURITY' password='$PASSWD_USED' bssid=04:f0:21:2c:41:84'"
+      create_dut_and_chamberview
       "./create_l3.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR --endp_a wiphy0 --endp_b wiphy1"
       "./create_l3_stations.py --mgr $MGR --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug"
       "./create_l4.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
