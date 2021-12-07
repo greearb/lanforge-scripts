@@ -83,11 +83,6 @@ class PortEID:
     port_id = 0
     port_name = ""
 
-    def __init__(self, p_resource=1, p_port_id=0, p_port_name=""):
-        resource = p_resource
-        port_id = p_port_id
-        port_name = p_port_name
-
     def __init__(self, json_response):
         if json_response is None:
             raise Exception("No json input")
@@ -96,9 +91,6 @@ class PortEID:
             json_s = json_response['interface']
 
         debug_printer(json_s)
-        resource = json_s['resource']
-        port_id = json_s['id']
-        port_name = json_s['name']
 
 
 # end class PortEID
