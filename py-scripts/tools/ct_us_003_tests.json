@@ -428,7 +428,7 @@
                 "iterations":"1",
                 "args": "",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user LF_MGR_USER --lf_password LF_MGR_PASS",
                     " --instance_name ap_auto --config_name test_con --upstream eth2",
                     " use_ssid_idx=0 --dut2_0 'USE_DUT_NAME SSID_USED BSSID_TO_USE (1)'",
                     " use_ssid_idx=1 --dut5_0 'USE_DUT_NAME SSID_USED BSSID_TO_USE (2)'",
@@ -500,7 +500,7 @@
                     " --radio5 1.1.wiphy0 --radio5 1.1.wiphy1 --radio5 1.2.wiphy0 --radio5 1.2.wiphy1 --radio5 1.3.wiphy0 --radio5 1.3.wiphy1",
                     " --set 'Basic Client Connectivity' 1",
                     " --set 'Multi Band Performance' 1",
-                    " --set 'Stability' 1",
+                    " --set 'Stability' 0",
                     " --set 'Multi-Station Throughput vs Pkt Size'  0,",
                     " --set 'Throughput vs Pkt Size' 1",
                     " --set 'Capacity' 1",

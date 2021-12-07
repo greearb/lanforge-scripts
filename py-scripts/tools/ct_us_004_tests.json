@@ -851,7 +851,7 @@
                     " --radio5 1.1.wiphy1 --radio5 1.1.wiphy2 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7",
                     " --set 'Basic Client Connectivity' 1",
                     " --set 'Multi Band Performance' 1",
-                    " --set 'Stability' 1",
+                    " --set 'Stability' 0",
                     " --set 'Multi-Station Throughput vs Pkt Size'  0,",
                     " --set 'Throughput vs Pkt Size' 1",
                     " --set 'Capacity' 1",
