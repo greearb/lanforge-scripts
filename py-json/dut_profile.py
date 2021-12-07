@@ -53,7 +53,7 @@ class DUTProfile(LFCliBase):
         if name in self.__dict__:
             self.__dict__[name] = value
 
-    def create(self, name=None, param_=None, flags=None, flags_mask=None, notes=None):
+    def create(self, name=None, flags=None, flags_mask=None):
         data = {}
         if (name is not None) and (name != ""):
             data["name"] = name
