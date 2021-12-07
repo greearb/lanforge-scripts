@@ -129,14 +129,12 @@ class L3CXProfile(LFCliBase):
                 arguments=None,
                 compared_report=None,
                 debug=False):
-        try:
+        if duration_sec:
             duration_sec = self.parse_time(duration_sec).seconds
-        except BaseException:
-
-            if (duration_sec is None) or (duration_sec <= 1):
-                raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
-            if duration_sec <= monitor_interval_ms:
-                raise ValueError("L3CXProfile::monitor wants duration_sec > monitor_interval")
+        else:
+            raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
+        if duration_sec <= monitor_interval_ms:
+            raise ValueError("L3CXProfile::monitor wants duration_sec > monitor_interval")
         if report_file is None:
             raise ValueError("Monitor requires an output file to be defined")
         if systeminfopath is None:
@@ -270,12 +268,11 @@ class L3CXProfile(LFCliBase):
                         for port in portdata_df['port-alias']:
                             if port in cross_connect:
                                 layer3_alias.append(port)
-                    try:
+                    if len(layer3_alias) == layer3.shape[0]:
                         layer3['alias'] = layer3_alias
-                    except BaseException:
-                        print("The Stations or Connection on LANforge did not match expected, \
+                    else:
+                        raise ValueError("The Stations or Connection on LANforge did not match expected, \
                         Check if LANForge initial state correct or delete/cleanup corrects")
-                        exit(1)
 
                     timestamp_df = pd.merge(layer3, portdata_df, on='alias')
             else:
@@ -348,8 +345,8 @@ class L3CXProfile(LFCliBase):
 
         # comparison to last report / report inputted
         if compared_report is not None:
-            compared_df = pandas_extensions.compare_two_df(dataframe_one=pandas_extensions.file_to_df(report_file),
-                                                           dataframe_two=pandas_extensions.file_to_df(compared_report))
+            pandas_extensions.compare_two_df(dataframe_one=pandas_extensions.file_to_df(report_file),
+                                             dataframe_two=pandas_extensions.file_to_df(compared_report))
             exit(1)
             # append compared df to created one
             if output_format.lower() != 'csv':
@@ -442,8 +439,6 @@ class L3CXProfile(LFCliBase):
                 side_a_info = self.local_realm.name_to_eid(port_name, debug=debug_)
                 side_a_shelf = side_a_info[0]
                 side_a_resource = side_a_info[1]
-                if port_name.find('.') < 0:
-                    port_name = "%d.%s" % (side_a_info[1], port_name)
 
                 cx_name = "%s%s-%i" % (self.name_prefix, side_a_info[2], len(self.created_cx))
 
@@ -545,7 +540,6 @@ class L3CXProfile(LFCliBase):
                 side_b_info = self.local_realm.name_to_eid(port_name, debug=debug_)
                 side_b_shelf = side_b_info[0]
                 side_b_resource = side_b_info[1]
-                side_b_name = side_b_info[2]
 
                 cx_name = "%s%s-%i" % (self.name_prefix, port_name, len(self.created_cx))
                 endp_a_name = cx_name + "-A"
