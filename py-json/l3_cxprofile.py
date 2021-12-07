@@ -135,7 +135,7 @@ class L3CXProfile(LFCliBase):
 
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
-            if (duration_sec <= monitor_interval_ms):
+            if duration_sec <= monitor_interval_ms:
                 raise ValueError("L3CXProfile::monitor wants duration_sec > monitor_interval")
         if report_file is None:
             raise ValueError("Monitor requires an output file to be defined")
@@ -370,7 +370,7 @@ class L3CXProfile(LFCliBase):
         print("Starting CXs...")
         for cx_name in self.created_cx.keys():
             if self.debug:
-                print("cx-name: %s" % (cx_name))
+                print("cx-name: %s" % cx_name)
             self.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
                 "cx_name": cx_name,
@@ -396,13 +396,13 @@ class L3CXProfile(LFCliBase):
         if len(self.created_cx) != 0:
             for cx_name in self.created_cx.keys():
                 if self.debug:
-                    print("Cleaning cx: %s" % (cx_name))
+                    print("Cleaning cx: %s" % cx_name)
                 self.local_realm.rm_cx(cx_name)
 
                 for side in range(len(self.created_cx[cx_name])):
                     ename = self.created_cx[cx_name][side]
                     if self.debug:
-                        print("Cleaning endpoint: %s" % (ename))
+                        print("Cleaning endpoint: %s" % ename)
                     self.local_realm.rm_endp(self.created_cx[cx_name][side])
 
         self.clean_cx_lists()
