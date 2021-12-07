@@ -22,9 +22,10 @@ class LFDataCollection:
         self.debug = debug or local_realm.debug
 
     def json_get(self, _req_url, debug_=False):
-        return self.parent_realm.json_get(_req_url, debug_=False)
+        return self.parent_realm.json_get(_req_url, debug_=debug_)
 
-    def check_json_validity(self, keyword=None, json_response=None):
+    @staticmethod
+    def check_json_validity(keyword=None, json_response=None):
         if json_response is None:
             raise ValueError(
                 "Cannot find columns requested to be searched in port manager. Exiting script, please retry.")
@@ -32,12 +33,12 @@ class LFDataCollection:
             raise ValueError(
                 "Cannot find proper information from json. Please check your json request. Exiting script, please retry.")
 
-    def get_milliseconds(self,
-                         timestamp):
+    @staticmethod
+    def get_milliseconds(timestamp):
         return (timestamp - datetime.datetime(1970, 1, 1)).total_seconds() * 1000
 
-    def get_seconds(self,
-                    timestamp):
+    @staticmethod
+    def get_seconds(timestamp):
         return (timestamp - datetime.datetime(1970, 1, 1)).total_seconds()
 
     # only for ipv4_variable_time at the moment
