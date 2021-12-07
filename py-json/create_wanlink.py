@@ -34,7 +34,7 @@ j_printer = pprint.PrettyPrinter(indent=2)
 resource_id = 1
 
 
-def main(args={}):
+def main(args):
     base_url = 'http://'+args['host']+':8080'
     print(base_url)
     json_post = ""
@@ -62,7 +62,7 @@ def main(args={}):
             if isinstance(value, dict) and "_links" in value:
                 num_wanlinks = 1
     except urllib.error.HTTPError as error:
-        print("Error code "+error.code)
+        print("Error code %s" % error.code)
 
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/rm_endp")
         lf_r.addPostData({
@@ -162,7 +162,7 @@ def main(args={}):
             #     print("value not a dict")
 
         except urllib.error.HTTPError as error:
-            print("Error code "+error.code)
+            print("Error code %s " % error.code)
             continue
 
     # print("starting wanlink:")
@@ -192,7 +192,7 @@ def main(args={}):
                                 running = 1
 
         except urllib.error.HTTPError as error:
-            print("Error code "+error.code)
+            print("Error code %s" % error.code)
             continue
 
     print("Wanlink is running")
