@@ -654,7 +654,7 @@ td.testname {
     <table id=\"SystemInformation\">
     <thead>
       <tr>
-        <th>Python version></th>
+        <th>Python version</th>
         <th>LANforge version</th>
         <th>LANforge build date</th>
       </tr>
