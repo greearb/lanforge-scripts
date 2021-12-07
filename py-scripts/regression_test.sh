@@ -204,7 +204,7 @@ function create_dut_and_chamberview() {
         ./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut \
         --ssid "ssid_idx=0 ssid='$SSID_USED' security='$SECURITY' password='$PASSWD_USED' bssid=04:f0:21:2c:41:84"
     }
-}
+
 function create_station_and_sensitivity {
   ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
   ./lf_rx_sensitivity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
