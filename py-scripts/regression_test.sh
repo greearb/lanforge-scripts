@@ -82,6 +82,7 @@ PYTHON_VERSION=$(python3 -c 'import sys; print(sys.version)')
 BuildVersion=$(wget $MGR:8080 -q -O - jq '.VersionInfo.BuildVersion')
 BuildDate=$(wget $MGR:8080 -q -O - jq '.VersionInfo.BuildDate')
 OS_Version=$(echo /etc/os-release | grep 'VERSION')
+HOSTNAME=$(cat /etc/hostname)
 
 #SCENARIO_CHECK="$(python3 -c "import requests; print(requests.get('http://${MGR}:8080/events/').status_code)")"
 #if [[ ${SCENARIO_CHECK} -eq 200 ]]; then
@@ -665,7 +666,8 @@ td.testname {
         <td id='PythonVersion'>${PYTHON_VERSION}</td>
         <td id='LANforgeVersion'>${BuildVersion}</td>
         <td id='LANforgeBuildDate'>${BuildDate}</td>
-        <td id='OS_Version'>${OS_Version}
+        <td id='OS_Version'>${OS_Version}</td>
+        <td id='Hostname'>${HOSTNAME}</td>
       </tr>
     </table>" >> "$fname"
     echo "$tail" >> "$fname"
