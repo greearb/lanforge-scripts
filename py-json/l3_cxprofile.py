@@ -76,10 +76,10 @@ class L3CXProfile(LFCliBase):
         return self.created_cx.keys()
 
     def get_cx_report(self):
-        self.data = {}
+        data = dict()
         for cx_name in self.get_cx_names():
-            self.data[cx_name] = self.json_get("/cx/" + cx_name).get(cx_name)
-        return self.data
+            data[cx_name] = self.json_get("/cx/" + cx_name).get(cx_name)
+        return data
 
     def __get_rx_values(self):
         cx_list = self.json_get("endp?fields=name,rx+bytes")
