@@ -185,7 +185,18 @@ function create_bridge_and_station() {
   ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
   ./create_bridge.py --radio $RADIO_USED --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR
 }
-
+function create_station_and_dataplane() {
+      ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
+      ./lf_dataplane_test.py --mgr $MGR --lf_user lanforge --lf_password lanforge \
+          --instance_name dataplane-instance --config_name test_con --upstream 1.1.$UPSTREAM \
+          --dut linksys-8450 --duration 15s --station 1.1.sta0001 \
+          --download_speed 85% --upload_speed 0 \
+          --test_rig Testbed-01 --pull_report \
+          --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
+          --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
+          --influx_bucket ben \
+          --influx_tag testbed Ferndale-01
+}
 if [[ ${#SHORT} -gt 0 ]]; then
   testCommands=(
       "./lf_ap_auto_test.py \
@@ -275,15 +286,7 @@ else
       #"./lf_atten_mod_test.py --host $MGR --debug"
       #./lf_csv
       #./lf_dataplane_config
-      "./lf_dataplane_test.py --mgr $MGR --lf_user lanforge --lf_password lanforge \
-          --instance_name dataplane-instance --config_name test_con --upstream 1.1.$UPSTREAM \
-          --dut linksys-8450 --duration 15s --station 1.1.sta01500 \
-          --download_speed 85% --upload_speed 0 \
-          --test_rig Testbed-01 --pull_report \
-          --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
-          --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-          --influx_bucket ben \
-          --influx_tag testbed Ferndale-01"
+      create_station_and_dataplane
       #"./lf_dut_sta_vap_test.py --manager $MGR --radio $RADIO_USED \
       #    --num_sta 1 --sta_id 1 --ssid $SSID_USED --security $SECURITY --upstream $UPSTREAM \
       #    --protocol lf_udp --min_mbps 1000 --max_mbps 10000 --duration 1"
