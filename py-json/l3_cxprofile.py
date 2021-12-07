@@ -145,7 +145,7 @@ class L3CXProfile(LFCliBase):
             raise ValueError("L3CXProfile::monitor wants monitor_interval >= 1 second")
         if layer3_cols is None:
             raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
-        if output_format is not None:
+        if output_format:
             if output_format.lower() != report_file.split('.')[-1]:
                 raise ValueError('Filename %s has an extension that does not match output format %s .' % (
                     report_file, output_format))
@@ -163,15 +163,15 @@ class L3CXProfile(LFCliBase):
         default_cols = ['Timestamp', 'Timestamp milliseconds epoch', 'Timestamp seconds epoch', 'Duration elapsed']
         default_cols.extend(layer3_cols)
         # append alias to port_mgr_cols if not present needed later
-        if port_mgr_cols is not None:
+        if port_mgr_cols:
             if 'alias' not in port_mgr_cols:
                 port_mgr_cols.append('alias')
 
-        if port_mgr_cols is not None:
+        if port_mgr_cols:
             default_cols.extend(port_mgr_cols)
         header_row = default_cols
 
-        if port_mgr_cols is not None:
+        if port_mgr_cols:
             port_mgr_cols = [self.replace_special_char(x) for x in port_mgr_cols]
             port_mgr_cols_labelled = []
             for col_name in port_mgr_cols:
@@ -210,7 +210,7 @@ class L3CXProfile(LFCliBase):
             stations = [station.split('.')[-1] for station in sta_list]
             stations = ','.join(stations)
 
-            if port_mgr_cols is not None:
+            if port_mgr_cols:
                 port_mgr_response = self.json_get("/port/1/1/%s?fields=%s" % (stations, port_mgr_fields))
 
             layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
@@ -238,7 +238,7 @@ class L3CXProfile(LFCliBase):
             layer3 = pd.DataFrame(result.values())
             layer3.columns = ['l3-' + x for x in layer3.columns]
 
-            if port_mgr_cols is not None:  # create dataframe from port mgr results
+            if port_mgr_cols:  # create dataframe from port mgr results
                 result = dict()
                 if type(port_mgr_response) is dict:
                     print("port_mgr_response {pmr}".format(pmr=port_mgr_response))
@@ -294,13 +294,13 @@ class L3CXProfile(LFCliBase):
                 probe_results['TX Bitrate'] = probe_port.tx_bitrate
                 probe_results['TX Mbps'] = probe_port.tx_mbit
                 probe_results['TX MCS ACTUAL'] = probe_port.tx_mcs
-                if probe_port.tx_mcs is not None:
+                if probe_port.tx_mcs:
                     probe_results['TX MCS'] = int(probe_port.tx_mcs) % 8
                 else:
                     probe_results['TX MCS'] = probe_port.tx_mcs
                 probe_results['TX NSS'] = probe_port.tx_nss
                 probe_results['TX MHz'] = probe_port.tx_mhz
-                if probe_port.tx_gi is not None:
+                if probe_port.tx_gi:
                     probe_results['TX GI ns'] = (probe_port.tx_gi * 10**9)
                 else:
                     probe_results['TX GI ns'] = probe_port.tx_gi
@@ -311,13 +311,13 @@ class L3CXProfile(LFCliBase):
                 probe_results['RX Bitrate'] = probe_port.rx_bitrate
                 probe_results['RX Mbps'] = probe_port.rx_mbit
                 probe_results['RX MCS ACTUAL'] = probe_port.rx_mcs
-                if probe_port.rx_mcs is not None:
+                if probe_port.rx_mcs:
                     probe_results['RX MCS'] = int(probe_port.rx_mcs) % 8
                 else:
                     probe_results['RX MCS'] = probe_port.rx_mcs
                 probe_results['RX NSS'] = probe_port.rx_nss
                 probe_results['RX MHz'] = probe_port.rx_mhz
-                if probe_port.rx_gi is not None:
+                if probe_port.rx_gi:
                     probe_results['RX GI ns'] = (probe_port.rx_gi * 10**9)
                 else:
                     probe_results['RX GI ns'] = probe_port.rx_gi
@@ -344,7 +344,7 @@ class L3CXProfile(LFCliBase):
         df.to_csv(str(report_file), index=False)
 
         # comparison to last report / report inputted
-        if compared_report is not None:
+        if compared_report:
             pandas_extensions.compare_two_df(dataframe_one=pandas_extensions.file_to_df(report_file),
                                              dataframe_two=pandas_extensions.file_to_df(compared_report))
             exit(1)
@@ -511,7 +511,7 @@ class L3CXProfile(LFCliBase):
                     self.local_realm.json_post(url, data, debug_=debug_,
                                                suppress_related_commands_=suppress_related_commands)
 
-                if tos is not None:
+                if tos:
                     self.local_realm.set_endp_tos(endp_a_name, tos)
                     self.local_realm.set_endp_tos(endp_b_name, tos)
 
