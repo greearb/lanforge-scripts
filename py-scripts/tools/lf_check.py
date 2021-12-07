@@ -768,9 +768,9 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                             if 'SSID_PW_USED' in args_list_element:
                                 self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace(
                                     'SSID_PW_USED', self.wireless_network_dict[idx]['SSID_PW_USED'])
-                            if 'BSSID' in args_list_element:
+                            if 'BSSID_USED' in args_list_element:
                                 self.test_dict[test]['args_list'][index] = self.test_dict[test]['args_list'][index].replace(
-                                    'BSSID', self.wireless_network_dict[idx]['BSSID'])
+                                    'BSSID_USED', self.wireless_network_dict[idx]['BSSID_USED'])
 
                             # use_ssid_idx is ephemeral and used only for
                             # variable replacement , remove
