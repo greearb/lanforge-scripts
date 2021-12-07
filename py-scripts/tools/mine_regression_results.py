@@ -31,7 +31,7 @@ class MineRegression:
         self.df = self.df[self.df['STDOUT'] == 'STDOUT']
 
     def generate_report(self):
-        system_variations = self.df[['Python version', 'LF version', 'Fedora version', 'environment']].drop_duplicates().reset_index(
+        system_variations = self.df[['Machine', 'Python version', 'LF version', 'Fedora version', 'environment']].drop_duplicates(['Python version', 'LF version', 'Fedora version', 'environment']).reset_index(
             drop=True)
         errors = list()
         for index in system_variations.index:
