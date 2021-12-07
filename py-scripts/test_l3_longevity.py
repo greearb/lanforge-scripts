@@ -3005,7 +3005,6 @@ Setting wifi_settings per radio
 
     influxdb = None
     if args.influx_bucket is not None:
-        from InfluxRequest import RecordInflux
         influxdb = RecordInflux(_influx_host=args.influx_host,
                                 _influx_port=args.influx_port,
                                 _influx_org=args.influx_org,
