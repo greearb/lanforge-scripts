@@ -77,6 +77,8 @@ if [[ ${#MGR} -eq 0 ]]; then # Allow the user to change the radio they test agai
   MGR="localhost"
 fi
 
+PYTHON_VERSION=$(python -c 'import sys; print(sys.version)')
+
 #SCENARIO_CHECK="$(python3 -c "import requests; print(requests.get('http://${MGR}:8080/events/').status_code)")"
 #if [[ ${SCENARIO_CHECK} -eq 200 ]]; then
 #  :
@@ -622,9 +624,10 @@ td.testname {
 </head>
 <body>
     <h1>Regression Results</h1>
-    <h4>$NOW</h4>
-    <h4>$LAST_COMMIT</h4>
-    <table border ='1' id='myTable2'>
+    <h4 id=\"timestamp\">$NOW</h4>
+    <h4 id=\"Git Commit\">$LAST_COMMIT</h4>
+    <h4>Test results</h4>
+    <table border ='1' id='myTable2' id='SuiteResults'>
     <thead>
         <tr>
             <th onclick=\"sortTable('myTable2', 0)\">Command Name</th>
@@ -641,7 +644,26 @@ td.testname {
     fname="${HOMEPATH}/html-reports/regression_file-${NOW}.html"
     echo "$header"  >> "$fname"
     echo "${results[@]}"  >> "$fname"
-    echo "</table>" >> "$fname"
+    LANFORGE_DATA=$(python -c 'import lanforge_scripts
+    lfcli=lanforge_scripts.LFCliBase(\"192.168.92.12\",8080)
+    response=lfcli.json_get(\"/\")')
+    echo "</table>
+    </table>
+    <br />
+    <h3>System information</h3>
+    <table id=\"SystemInformation\">
+    <thead>
+      <tr>
+        <th>Python version></th>
+        <th>LANforge version</th>
+        <th>LANforge build date</th>
+      </tr>
+      <tr>
+        <td id='PythonVersion'>${PYTHON_VERSION}</td>
+        <td id='LANforgeVersion'></td>
+        <td id='LANforgeBuildDate'></td>
+      </tr>
+    </table>" >> "$fname"
     echo "$tail" >> "$fname"
     if [ -f "${HOMEPATH}/html-reports/latest.html" ]; then
         rm -f "${HOMEPATH}/html-reports/latest.html"
