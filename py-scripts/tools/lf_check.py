@@ -1496,10 +1496,9 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     report.build_table()
     if "NA" not in qa_report_html:
         qa_url = qa_report_html.replace('/home/lanforge', '')
-        if qa_url.startswith('/'):
-            qa_url = qa_url[1:]
         report.set_table_title("LF Check QA ")
         report.build_table_title()
+        print("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
         report.build_link("QA Test Results", qa_url)
 
     report.set_table_title("LF Check Suite Summary")
