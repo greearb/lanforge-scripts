@@ -197,6 +197,25 @@ function create_station_and_dataplane() {
           --influx_bucket ben \
           --influx_tag testbed Ferndale-01
 }
+function create_station_and_sensitivity {
+  ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
+  ./lf_rx_sensitivity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
+                      --instance_name rx-sensitivity-instance --config_name test_con --upstream 1.1.eth2 \
+                      --dut linksys-8450 --duration 15s --station 1.1.sta0001 \
+                      --download_speed 85% --upload_speed 0 \
+                      --raw_line 'txo_preamble\: VHT' \
+                      --raw_line 'txo_mcs\: 4 OFDM, HT, VHT;5 OFDM, HT, VHT;6 OFDM, HT, VHT;7 OFDM, HT, VHT' \
+                      --raw_line 'spatial_streams\: 3' \
+                      --raw_line 'bandw_options\: 80' \
+                      --raw_line 'txo_sgi\: ON' \
+                      --raw_line 'txo_retries\: No Retry' \
+                      --raw_line 'txo_txpower\: 17' \
+                      --test_rig Testbed-01 --pull_report \
+                      --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
+                      --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
+                      --influx_bucket ben \
+                      --influx_tag testbed Ferndale-01
+}
 if [[ ${#SHORT} -gt 0 ]]; then
   testCommands=(
       "./lf_ap_auto_test.py \
@@ -296,22 +315,7 @@ else
       "./lf_report.py"
       "./lf_report_test.py"
       # "./lf_rvr_test.py"
-      "./lf_rx_sensitivity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
-                    --instance_name rx-sensitivity-instance --config_name test_con --upstream 1.1.eth2 \
-                    --dut linksys-8450 --duration 15s --station 1.1.sta01500 \
-                    --download_speed 85% --upload_speed 0 \
-                    --raw_line 'txo_preamble\: VHT' \
-                    --raw_line 'txo_mcs\: 4 OFDM, HT, VHT;5 OFDM, HT, VHT;6 OFDM, HT, VHT;7 OFDM, HT, VHT' \
-                    --raw_line 'spatial_streams\: 3' \
-                    --raw_line 'bandw_options\: 80' \
-                    --raw_line 'txo_sgi\: ON' \
-                    --raw_line 'txo_retries\: No Retry' \
-                    --raw_line 'txo_txpower\: 17' \
-                    --test_rig Testbed-01 --pull_report \
-                    --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
-                    --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-                    --influx_bucket ben \
-                    --influx_tag testbed Ferndale-01"
+      create_station_and_sensitivity
       "./lf_sniff_radio.py \
                                --mgr $MGR \
                                --mgr_port 8080 \
