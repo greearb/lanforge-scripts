@@ -220,7 +220,7 @@ else
   testCommands=(
       "./create_bond.py --network_dev_list eth0,eth1 --debug --mgr $MGR"
       create_bridge_and_station
-      "./create_chamberview.py -m $MGR -cs 'regression_test' \
+      "./create_chamberview.py -m $MGR -cs 'regression_test' --delete_scenario \
       --line 'Resource=1.1 Profile=STA-AC Amount=1 Uses-1=$RADIO_USED Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http' \
       --line 'Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http'"
       "./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut \
