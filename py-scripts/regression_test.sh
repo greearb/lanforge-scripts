@@ -77,7 +77,11 @@ if [[ ${#MGR} -eq 0 ]]; then # Allow the user to change the radio they test agai
   MGR="localhost"
 fi
 
-PYTHON_VERSION=$(python -c 'import sys; print(sys.version)')
+PYTHON_VERSION=$(python3 -c 'import sys; print(sys.version)')
+
+BuildVersion=$(wget $MGR:8080 -q -O - jq '.VersionInfo.BuildVersion')
+BuildDate=$(wget $MGR:8080 -q -O - jq '.VersionInfo.BuildDate')
+OS_Version=$(echo /etc/os-release | grep 'VERSION')
 
 #SCENARIO_CHECK="$(python3 -c "import requests; print(requests.get('http://${MGR}:8080/events/').status_code)")"
 #if [[ ${SCENARIO_CHECK} -eq 200 ]]; then
@@ -644,9 +648,7 @@ td.testname {
     fname="${HOMEPATH}/html-reports/regression_file-${NOW}.html"
     echo "$header"  >> "$fname"
     echo "${results[@]}"  >> "$fname"
-    LANFORGE_DATA=$(python -c 'import lanforge_scripts
-    lfcli=lanforge_scripts.LFCliBase(\"192.168.92.12\",8080)
-    response=lfcli.json_get(\"/\")')
+    LANFORGE_DATA=$(python -c 'import lanforge_scripts; lfcli=lanforge_scripts.LFCliBase(\"192.168.92.12\",8080); response=lfcli.json_get(\"/\")')
     echo "</table>
     </table>
     <br />
@@ -657,11 +659,13 @@ td.testname {
         <th>Python version</th>
         <th>LANforge version</th>
         <th>LANforge build date</th>
+        <th>OS Version</th>
       </tr>
       <tr>
         <td id='PythonVersion'>${PYTHON_VERSION}</td>
-        <td id='LANforgeVersion'></td>
-        <td id='LANforgeBuildDate'></td>
+        <td id='LANforgeVersion'>${BuildVersion}</td>
+        <td id='LANforgeBuildDate'>${BuildDate}</td>
+        <td id='OS_Version'>${OS_Version}
       </tr>
     </table>" >> "$fname"
     echo "$tail" >> "$fname"
