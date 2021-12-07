@@ -654,7 +654,7 @@ td.testname {
     </table>
     <br />
     <h3>System information</h3>
-    <table id=\"SystemInformation\">
+    <table id=\"SystemInformation\" border ='1'>
     <thead>
       <tr>
         <th>Python version</th>
@@ -662,6 +662,8 @@ td.testname {
         <th>LANforge build date</th>
         <th>OS Version</th>
       </tr>
+    </thead>
+    <tbody>
       <tr>
         <td id='PythonVersion'>${PYTHON_VERSION}</td>
         <td id='LANforgeVersion'>${BuildVersion}</td>
@@ -669,6 +671,7 @@ td.testname {
         <td id='OS_Version'>${OS_Version}</td>
         <td id='Hostname'>${HOSTNAME}</td>
       </tr>
+    </tbody>
     </table>" >> "$fname"
     echo "$tail" >> "$fname"
     if [ -f "${HOMEPATH}/html-reports/latest.html" ]; then
