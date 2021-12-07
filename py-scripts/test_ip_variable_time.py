@@ -291,8 +291,7 @@ class IPVariableTime(Realm):
             compared_report_format = self.compared_report.split('.')[-1]
             # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
             if compared_report_format != 'csv':
-                print(ValueError("Cannot process this file type. Please select a different file and re-run script."))
-                exit(1)
+                raise ValueError("Cannot process this file type. Please select a different file and re-run script.")
             else:
                 compared_rept = self.compared_report
 
@@ -301,7 +300,7 @@ class IPVariableTime(Realm):
                                 port_mgr_cols=port_mgr_cols,
                                 report_file=report_f,
                                 systeminfopath=systeminfopath,
-                                duration_sec=Realm.parse_time(self.test_duration).total_seconds(),
+                                duration_sec=self.test_duration,
                                 monitor_interval_ms=monitor_interval,
                                 created_cx=layer3connections,
                                 output_format=output,
@@ -601,7 +600,7 @@ python3 ./test_ip_variable_time.py
     args = parser.parse_args()
 
     num_sta = 1
-    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+    if args.num_stations:
         print("one")
         num_sta = int(args.num_stations)
     if not args.use_existing_sta:
