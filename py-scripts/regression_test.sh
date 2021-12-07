@@ -79,9 +79,9 @@ fi
 
 PYTHON_VERSION=$(python3 -c 'import sys; print(sys.version)')
 
-BuildVersion=$(wget $MGR:8080 -q -O - jq '.VersionInfo.BuildVersion')
-BuildDate=$(wget $MGR:8080 -q -O - jq '.VersionInfo.BuildDate')
-OS_Version=$(echo /etc/os-release | grep 'VERSION')
+BuildVersion=$(wget $MGR:8080 -q -O - | jq '.VersionInfo.BuildVersion')
+BuildDate=$(wget $MGR:8080 -q -O - | jq '.VersionInfo.BuildDate')
+OS_Version=$(cat /etc/os-release | grep 'VERSION=')
 HOSTNAME=$(cat /etc/hostname)
 
 #SCENARIO_CHECK="$(python3 -c "import requests; print(requests.get('http://${MGR}:8080/events/').status_code)")"
@@ -672,6 +672,7 @@ td.testname {
         <th>LANforge version</th>
         <th>LANforge build date</th>
         <th>OS Version</th>
+        <th>Hostname</th>
       </tr>
     </thead>
     <tbody>
