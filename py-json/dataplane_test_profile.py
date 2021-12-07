@@ -39,7 +39,7 @@ class DataPlaneTest(ChamberViewBase):
 
 
 def main():
-    obj = DataPlaneTest(lfclient_host="localhost", lfclient_port=8080, debug_=True)
+    DataPlaneTest(lfclient_host="localhost", lfclient_port=8080, debug_=True)
 
 
 if __name__ == '__main__':
