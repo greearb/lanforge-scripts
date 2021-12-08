@@ -295,7 +295,7 @@ python3 ./testgroup2.py
                              port=args.mgr_port,
                              number_template="0000",
                              sta_list=station_list,
-                             name_prefix="",
+                             name_prefix="VT-",
                              upstream=args.upstream_port,
                              ssid=args.ssid,
                              password=args.passwd,
