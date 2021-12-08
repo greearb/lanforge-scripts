@@ -545,7 +545,7 @@ function test() {
   FILESIZE=$(stat -c%s "${FILENAME}_stderr.txt") || 0
   # Check to see if the error is due to LANforge
   ERROR_DATA=$(cat "${FILENAME}_stderr.txt")
-  if [[ "LANforge Error Messages" == *"${ERROR_DATA})" ]]
+  if [[ $ERROR_DATA =~ "LANforge Error Messages" ]]
   then
     LANforgeError="Lanforge Error"
   else
