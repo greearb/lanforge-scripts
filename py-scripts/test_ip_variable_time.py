@@ -147,6 +147,18 @@ class IPVariableTime(Realm):
         self.cx_profile.side_b_min_bps = side_b_min_rate
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
+    def set_wifi_radio(self, country=0, resource=1, mode="NA", radio="wiphy6", channel=5):
+        data = {
+            "shelf": 1,
+            "resource": resource,
+            "radio": radio,
+            "mode": mode,  # "NA", #0 for AUTO or "NA"
+            "channel": channel,
+            "country": 0,
+            "frequency": super().channel_freq(channel_=channel)
+        }
+        super().json_post("/cli-json/set_wifi_radio", _data=data)
+
     def start(self):
         # if self.use_existing_station:
         # to-do- check here if upstream port got IP
@@ -335,8 +347,8 @@ def main():
 test_ip_variable_time.py:
 --------------------
 Report:
-The report will be in /home/lanforge/report-data/<timestamp>_test_ip_variable_time .   
-if the directory it not present it "should" place it in the local directory from where the script was run. 
+The report will be in /home/lanforge/report-data/<timestamp>_test_ip_variable_time .
+if the directory it not present it "should" place it in the local directory from where the script was run.
 
 Generic command layout:
 
@@ -363,7 +375,7 @@ python3 ./test_ip_variable_time.py
     --ssid netgear
     --password admin123
     --test_duration 2m (default)
-    --monitor_interval_ms 
+    --monitor_interval_ms
     --a_min 3000
     --b_min 1000
     --ap "00:0e:8e:78:e1:76"
@@ -377,7 +389,7 @@ python3 ./test_ip_variable_time.py
 
     python3 ./test_ip_variable_time.py
     --upstream_port eth1        (upstream Port)
-    --traffic_type lf_udp       (traffic type, lf_udp | lf_tcp) 
+    --traffic_type lf_udp       (traffic type, lf_udp | lf_tcp)
     --test_duration 5m          (duration to run traffic 5m --> 5 Minutes)
     --create_sta False          (False, means it will not create stations and use the sta_names specified below)
     --sta_names sta000,sta001,sta002 (used if --create_sta False, comma separated names of stations)
@@ -453,7 +465,7 @@ python3 ./test_ip_variable_time.py
     Elapsed             |  'elapsed'
     Destination Addr    |  'destination addr'
     Source Addr         |  'source addr'
-    
+
     Using the port_mgr_cols flag:
          '4way time (us)'
          'activity'
@@ -529,7 +541,7 @@ python3 ./test_ip_variable_time.py
          'tx-failed %'
          'tx-rate'
          'wifi retries'
-         
+
     Can't decide what columns to use? You can just use 'all' to select all available columns from both tables.
 
     This script uses two args parsers one in the script the second is Realm args parser
@@ -582,7 +594,7 @@ python3 ./test_ip_variable_time.py
     parser.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',
                         default=None)
     parser.add_argument('--monitor_interval',
-                        help='how frequently do you want your monitor function to take measurements; \, 35s, 2h',
+                        help='how frequently do you want your monitor function to take measurements, 35s, 2h',
                         default='10s')
     parser.add_argument('--ipv6', help='Sets the test to use IPv6 traffic instead of IPv4', action='store_true')
     parser.add_argument('--influx_host')
@@ -611,7 +623,7 @@ python3 ./test_ip_variable_time.py
     else:
         print("three")
         station_list = args.sta_names.split(",")
-    
+
     print("args.num_stations: {create}".format(create=args.num_stations))
     print("args.sta_names: {create}".format(create=args.sta_names))
     print("args.use_existing_sta: {create} {typeof}".format(create=args.use_existing_sta, typeof=type(args.use_existing_sta)))
@@ -671,7 +683,8 @@ python3 ./test_ip_variable_time.py
                                  ipv6=args.ipv6,
                                  traffic_type=args.traffic_type,
                                  _debug_on=args.debug)
-
+    # work in progress - may delete in the future
+    # ip_var_test.set_wifi_radio(radio=args.radio)
     ip_var_test.run()
 
 
