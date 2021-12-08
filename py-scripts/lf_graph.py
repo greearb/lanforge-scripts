@@ -112,20 +112,20 @@ class lf_bar_graph:
         if self.color is None:
             i = 0
             self.color = []
-            for col in self.data_set:
+            for _ in self.data_set:
                 self.color.append(self.color_name[i])
                 i = i + 1
 
-        fig = plt.subplots(figsize=self.figsize)
+        plt.subplots(figsize=self.figsize)
         i = 0
 
-        def show_value(rects):
-            for rect in rects:
+        def show_value(rectangles):
+            for rect in rectangles:
                 h = rect.get_height()
                 plt.text(rect.get_x() + rect.get_width() / 2., h, h,
                          ha='center', va='bottom', rotation=self.text_rotation, fontsize=self.text_font)
 
-        for data in self.data_set:
+        for _ in self.data_set:
             if i > 0:
                 br = br1
                 br2 = [x + self.bar_width for x in br]
@@ -160,7 +160,7 @@ class lf_bar_graph:
             fontsize=self.legend_fontsize)
         plt.suptitle(self.title, fontsize=self.title_size)
         plt.title(self.grp_title)
-        fig = plt.gcf()
+        plt.gcf()
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
         print("{}.png".format(self.graph_image_name))
@@ -225,7 +225,7 @@ class lf_scatter_graph:
                 "royalblue",
                 "darkgray",
                 "maroon"]
-        fig = plt.subplots(figsize=self.figsize)
+        plt.subplots(figsize=self.figsize)
         if self.values is None:
             plt.scatter(
                 self.x_data_set,
@@ -293,7 +293,7 @@ class lf_stacked_graph:
         self.lf_csv = lf_csv()
 
     def build_stacked_graph(self):
-        fig = plt.subplots(figsize=self.figsize)
+        plt.subplots(figsize=self.figsize)
         if self.color is None:
             self.color = [
                 "darkred",
@@ -315,7 +315,7 @@ class lf_stacked_graph:
         plt.xlabel(self.xaxis_name)
         plt.ylabel(self.yaxis_name)
         plt.legend(self.label)
-        plt.savefig("%s.png" % (self.graph_image_name), dpi=96)
+        plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
         print("{}.png".format(self.graph_image_name))
         if self.enable_csv:
@@ -323,7 +323,7 @@ class lf_stacked_graph:
             self.lf_csv.rows = self.data_set
             self.lf_csv.filename = f"{self.graph_image_name}.csv"
             self.lf_csv.generate_csv()
-        return "%s.png" % (self.graph_image_name)
+        return "%s.png" % self.graph_image_name
 
 
 class lf_horizontal_stacked_graph:
@@ -375,13 +375,13 @@ class lf_horizontal_stacked_graph:
         ind = np.arange(n) + .15
         width = 0.3
 
-        rects1 = plt.barh(
+        plt.barh(
             ind,
             values1,
             width,
             color=self.color[0],
             label=self.label[0])
-        rects2 = plt.barh(
+        plt.barh(
             ind,
             values2,
             width,
@@ -485,7 +485,7 @@ class lf_line_graph:
         self.legend_fontsize = _legend_fontsize
 
     def build_line_graph(self):
-        fig = plt.subplots(figsize=self.figsize)
+        plt.subplots(figsize=self.figsize)
         i = 0
         for data in self.data_set:
             plt.plot(
@@ -505,7 +505,7 @@ class lf_line_graph:
             ncol=self.legend_ncol,
             fontsize=self.legend_fontsize)
         plt.suptitle(self.grp_title, fontsize=self.title_size)
-        fig = plt.gcf()
+        plt.gcf()
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
         print("{}.png".format(self.graph_image_name))
