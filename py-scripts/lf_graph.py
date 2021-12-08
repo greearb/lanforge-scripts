@@ -37,7 +37,7 @@ lf_csv = lf_csv.lf_csv
 # graph reporting classes
 
 
-class lf_bar_graph():
+class lf_bar_graph:
     def __init__(self, _data_set=[[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]],
                  _xaxis_name="x-axis",
                  _yaxis_name="y-axis",
@@ -174,7 +174,7 @@ class lf_bar_graph():
         return "%s.png" % self.graph_image_name
 
 
-class lf_scatter_graph():
+class lf_scatter_graph:
     def __init__(self,
                  _x_data_set=["sta0 ", "sta1", "sta2", "sta3"],
                  _y_data_set=[[30, 55, 69, 37]],
@@ -248,7 +248,7 @@ class lf_scatter_graph():
         return "%s.png" % self.graph_image_name
 
 
-class lf_stacked_graph():
+class lf_stacked_graph:
     def __init__(self,
                  _data_set=[[1, 2, 3, 4], [1, 1, 1, 1], [1, 1, 1, 1]],
                  _xaxis_name="Stations",
@@ -302,7 +302,7 @@ class lf_stacked_graph():
         return "%s.png" % (self.graph_image_name)
 
 
-class lf_horizontal_stacked_graph():
+class lf_horizontal_stacked_graph:
     def __init__(self,
                  _seg=2,
                  _yaxis_set=('A', 'B'),
@@ -394,7 +394,7 @@ class lf_horizontal_stacked_graph():
         return "%s.png" % self.graph_image_name
 
 
-class lf_line_graph():
+class lf_line_graph:
     def __init__(self, _data_set=[[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]],
                  _xaxis_name="x-axis",
                  _yaxis_name="y-axis",
