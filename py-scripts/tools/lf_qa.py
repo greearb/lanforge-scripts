@@ -333,11 +333,11 @@ class csv_sql:
             kpi_fig.write_image(png_path, scale=1, width=1200, height=300)
         except ValueError as err:
             print("{msg}".format(msg=err))
-            print("ValueError on kpi_fig.write_image exiting")
+            print("exiting")
             exit(1)
         except BaseException as err:
             print("{msg}".format(msg=err))
-            print("BaseException on kpi_fig.write_image exiting")
+            print("exiting")
             exit(1)
         # generate html image (interactive)
         kpi_fig.write_html(html_path)
