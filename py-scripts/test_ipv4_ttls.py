@@ -141,7 +141,7 @@ class TTLSTest(Realm):
 
         self.l3_cx_obj_tcp = IPVariableTime(host=self.host, port=self.port, radio=self.radio,
                                             ssid=self.ssid, password=self.password, security=self.security,
-                                            use_existing_sta=False, sta_list=self.sta_list, traffic_type="lf_tcp",
+                                            use_existing_sta=True, sta_list=self.sta_list, traffic_type="lf_tcp",
                                             upstream=self.upstream_port)
         self.l3_cx_obj_tcp.cx_profile.name_prefix = "tcp-"
         self.l3_cx_obj_tcp.cx_profile.side_a_min_bps = 128000
@@ -203,12 +203,6 @@ class TTLSTest(Realm):
                                     suppress_related_commands_=True,
                                     use_radius=True,
                                     hs20_enable=False)
-        self.station_profile.create(radio=self.radio,
-                                    sta_names_=self.sta_list,
-                                    debug=self.debug,
-                                    use_radius=True,
-                                    hs20_enable=False)
-        self._pass("Station build finished")
         self.l3_cx_obj_udp.build()
         self.l3_cx_obj_tcp.build()
         if self.debug:
