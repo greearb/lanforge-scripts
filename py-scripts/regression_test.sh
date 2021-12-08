@@ -193,10 +193,10 @@ function create_station_and_dataplane() {
           --dut linksys-8450 --duration 15s --station 1.1.sta0001 \
           --download_speed 85% --upload_speed 0 \
           --test_rig Testbed-01 --pull_report \
-          --influx_host 192.168.100.153 --influx_port 8086 --influx_org Candela \
-          --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-          --influx_bucket ben \
-          --influx_tag testbed Ferndale-01
+          #--influx_host 192.168.100.153 --influx_port 8086 --influx_org Candela \
+          #--influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
+          #--influx_bucket ben \
+          #--influx_tag testbed Ferndale-01
 }
 function create_dut_and_chamberview() {
         ./create_chamberview.py -m $MGR -cs 'regression_test' --delete_scenario \
@@ -220,10 +220,10 @@ function create_station_and_sensitivity {
                       --raw_line 'txo_retries\: No Retry' \
                       --raw_line 'txo_txpower\: 17' \
                       --test_rig Testbed-01 --pull_report \
-                      --influx_host 192.168.100.153 --influx_port 8086 --influx_org Candela \
-                      --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-                      --influx_bucket ben \
-                      --influx_tag testbed Ferndale-01
+                      #--influx_host 192.168.100.153 --influx_port 8086 --influx_org Candela \
+                      #--influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
+                      #--influx_bucket ben \
+                      #--influx_tag testbed Ferndale-01
 }
 if [[ ${#SHORT} -gt 0 ]]; then
   testCommands=(
@@ -245,12 +245,6 @@ if [[ ${#SHORT} -gt 0 ]]; then
               --set 'Multi-Station Throughput vs Pkt Size' 0 \
               --set 'Long-Term' 0 \
               --pull_report \
-              --influx_host 192.168.100.153 \
-              --influx_port 8086 \
-              --influx_org Candela \
-              --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-              --influx_bucket ben \
-              --influx_tag testbed Ferndale-01 \
               --local_lf_report_dir /home/matthew/html-reports/"
 
 
@@ -300,13 +294,7 @@ else
         --set 'Band-Steering' 0 \
         --set 'Multi-Station Throughput vs Pkt Size' 0 \
         --set 'Long-Term' 0 \
-        --pull_report \
-        --influx_host 192.168.100.153 \
-        --influx_port 8086 \
-        --influx_org Candela \
-        --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-        --influx_bucket ben \
-        --influx_tag testbed Ferndale-01"
+        --pull_report"
       #"./lf_atten_mod_test.py --host $MGR --debug"
       #./lf_csv
       #./lf_dataplane_config
@@ -383,7 +371,7 @@ else
       "./test_ipv4_ttls.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./test_l3_longevity.py --mgr $MGR --endp_type 'lf_tcp' --upstream_port 1.1.$UPSTREAM --radio \
       'radio==1.1.wiphy0 stations==10 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --radio \
-      'radio==1.1.wiphy1 stations==1 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --test_duration 5s --influx_host 192.168.100.153 --influx_port 8086 --influx_org Candela --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== --influx_bucket ben --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000  --influx_tag testbed regression_test --influx_tag DUT ROG -o longevity.csv"
+      'radio==1.1.wiphy1 stations==1 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --test_duration 5s --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000  -o longevity.csv"
       "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       #"./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput -m $MGR"
       #./test_l3_unicast_traffic_gen
