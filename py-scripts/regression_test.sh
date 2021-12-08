@@ -83,6 +83,7 @@ BuildVersion=$(wget $MGR:8080 -q -O - | jq '.VersionInfo.BuildVersion')
 BuildDate=$(wget $MGR:8080 -q -O - | jq '.VersionInfo.BuildDate')
 OS_Version=$(cat /etc/os-release | grep 'VERSION=')
 HOSTNAME=$(cat /etc/hostname)
+IP_ADDRESS=$(ip a sho eth0 | grep 'inet ' | cut -d "/" -f1 | cut -d "t" -f2)
 
 #SCENARIO_CHECK="$(python3 -c "import requests; print(requests.get('http://${MGR}:8080/events/').status_code)")"
 #if [[ ${SCENARIO_CHECK} -eq 200 ]]; then
@@ -599,7 +600,7 @@ function html_generator() {
     header="<!DOCTYPE html>
 <html>
 <head>
-<title>Regression Test Results $NOW</title>
+<title>${HOSTNAME} Regression Test Results $NOW</title>
 <link rel='stylesheet' href='report.css' />
 <style>
 body {
@@ -673,6 +674,7 @@ td.testname {
         <th>LANforge build date</th>
         <th>OS Version</th>
         <th>Hostname</th>
+        <th>IP Address</th>
       </tr>
     </thead>
     <tbody>
@@ -682,6 +684,7 @@ td.testname {
         <td id='LANforgeBuildDate'>${BuildDate}</td>
         <td id='OS_Version'>${OS_Version}</td>
         <td id='Hostname'>${HOSTNAME}</td>
+        <td id='ip_address'>${IP_ADDRESS}</td>
       </tr>
     </tbody>
     </table>" >> "$fname"
