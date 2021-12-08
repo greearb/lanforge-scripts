@@ -275,17 +275,16 @@ class ProbePort(LFCliBase):
         T_dft = 3.2 * 10 ** -6  # Constant for HT
         T_gi_short = .4 * 10 ** -6  # Guard index.
         T_gi_long = .8 * 10 ** -6  # Guard index.
+        bw = 20 
         # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
         # the nubmer of Data Subcarriers is based on modulation and bandwith
         if self.rx_mgt_6Mb_frame:
             self.rx_mgt_6Mg_frame = False
             self.rx_data_rate_gi_short_Mbps = None
             self.rx_data_rate_gi_long_Mbps = None
+            bw = int(self.rx_mhz)
         else:
-            try:
-                bw = int(self.rx_mhz)
-            except BaseException:
-                print("port_probe.py:  {} WARNING unable to parse rx MHz (BW) , check probe output will use ")
+            bw = int(self.rx_mhz)
 
             print("Mhz {Mhz}".format(Mhz=self.rx_mhz))
             if bw == 20:
