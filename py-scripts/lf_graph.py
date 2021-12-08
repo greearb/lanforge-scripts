@@ -38,20 +38,20 @@ lf_csv = lf_csv.lf_csv
 
 
 class lf_bar_graph:
-    def __init__(self, _data_set=[[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]],
+    def __init__(self, _data_set=None,
                  _xaxis_name="x-axis",
                  _yaxis_name="y-axis",
-                 _xaxis_categories=[1, 2, 3, 4],
-                 _xaxis_label=["a", "b", "c", "d"],
+                 _xaxis_categories=None,
+                 _xaxis_label=None,
                  _graph_title="",
                  _title_size=16,
                  _graph_image_name="image_name",
-                 _label=["bi-downlink", "bi-uplink", 'uplink'],
+                 _label=None,
                  _color=None,
                  _bar_width=0.25,
                  _color_edge='grey',
                  _font_weight='bold',
-                 _color_name=['lightcoral', 'darkgrey', 'r', 'g', 'b', 'y'],
+                 _color_name=None,
                  _figsize=(10, 5),
                  _show_bar_value=False,
                  _xaxis_step=1,
@@ -68,6 +68,16 @@ class lf_bar_graph:
                  _dpi=96,
                  _enable_csv=False):
 
+        if _data_set is None:
+            _data_set = [[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]]
+        if _xaxis_categories is None:
+            _xaxis_categories = [1, 2, 3, 4]
+        if _xaxis_label is None:
+            _xaxis_label = ["a", "b", "c", "d"]
+        if _label is None:
+            _label = ["bi-downlink", "bi-uplink", 'uplink']
+        if _color_name is None:
+            _color_name = ['lightcoral', 'darkgrey', 'r', 'g', 'b', 'y']
         self.data_set = _data_set
         self.xaxis_name = _xaxis_name
         self.yaxis_name = _yaxis_name
@@ -176,16 +186,24 @@ class lf_bar_graph:
 
 class lf_scatter_graph:
     def __init__(self,
-                 _x_data_set=["sta0 ", "sta1", "sta2", "sta3"],
-                 _y_data_set=[[30, 55, 69, 37]],
+                 _x_data_set=None,
+                 _y_data_set=None,
                  _values=None,
                  _xaxis_name="x-axis",
                  _yaxis_name="y-axis",
-                 _label=["num1", "num2"],
+                 _label=None,
                  _graph_image_name="image_name1",
-                 _color=["r", "y"],
+                 _color=None,
                  _figsize=(9, 4),
                  _enable_csv=True):
+        if _x_data_set is None:
+            _x_data_set = ["sta0 ", "sta1", "sta2", "sta3"]
+        if _y_data_set is None:
+            _y_data_set = [[30, 55, 69, 37]]
+        if _label is None:
+            _label = ["num1", "num2"]
+        if _color is None:
+            _color = ["r", "y"]
         self.x_data_set = _x_data_set
         self.y_data_set = _y_data_set
         self.xaxis_name = _xaxis_name
@@ -250,14 +268,20 @@ class lf_scatter_graph:
 
 class lf_stacked_graph:
     def __init__(self,
-                 _data_set=[[1, 2, 3, 4], [1, 1, 1, 1], [1, 1, 1, 1]],
+                 _data_set=None,
                  _xaxis_name="Stations",
                  _yaxis_name="Numbers",
-                 _label=['Success', 'Fail'],
+                 _label=None,
                  _graph_image_name="image_name2",
-                 _color=["b", "g"],
+                 _color=None,
                  _figsize=(9, 4),
                  _enable_csv=True):
+        if _data_set is None:
+            _data_set = [[1, 2, 3, 4], [1, 1, 1, 1], [1, 1, 1, 1]]
+        if _label is None:
+            _label = ['Success', 'Fail']
+        if _color is None:
+            _color = ["b", "g"]
         self.data_set = _data_set  # [x_axis,y1_axis,y2_axis]
         self.xaxis_name = _xaxis_name
         self.yaxis_name = _yaxis_name
@@ -306,16 +330,24 @@ class lf_horizontal_stacked_graph:
     def __init__(self,
                  _seg=2,
                  _yaxis_set=('A', 'B'),
-                 _xaxis_set1=[12, 0, 0, 16, 15],
-                 _xaxis_set2=[23, 34, 23, 0],
+                 _xaxis_set1=None,
+                 _xaxis_set2=None,
                  _unit="%",
                  _xaxis_name="Stations",
-                 _label=['Success', 'Fail'],
+                 _label=None,
                  _graph_image_name="image_name3",
-                 _color=["success", "Fail"],
+                 _color=None,
                  _figsize=(9, 4),
                  _disable_xaxis=False,
                  _enable_csv=True):
+        if _xaxis_set1 is None:
+            _xaxis_set1 = [12, 0, 0, 16, 15]
+        if _xaxis_set2 is None:
+            _xaxis_set2 = [23, 34, 23, 0]
+        if _label is None:
+            _label = ['Success', 'Fail']
+        if _color is None:
+            _color = ["success", "Fail"]
         self.unit = _unit
         self.seg = _seg
         self.xaxis_set1 = _xaxis_set1
@@ -395,17 +427,17 @@ class lf_horizontal_stacked_graph:
 
 
 class lf_line_graph:
-    def __init__(self, _data_set=[[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]],
+    def __init__(self, _data_set=None,
                  _xaxis_name="x-axis",
                  _yaxis_name="y-axis",
-                 _xaxis_categories=[1, 2, 3, 4, 5],
-                 _xaxis_label=["a", "b", "c", "d", "e"],
+                 _xaxis_categories=None,
+                 _xaxis_label=None,
                  _graph_title="",
                  _title_size=16,
                  _graph_image_name="image_name",
-                 _label=["bi-downlink", "bi-uplink", 'uplink'],
+                 _label=None,
                  _font_weight='bold',
-                 _color=['forestgreen', 'c', 'r', 'g', 'b', 'p'],
+                 _color=None,
                  _figsize=(10, 5),
                  _xaxis_step=5,
                  _xticks_font=None,
@@ -418,6 +450,16 @@ class lf_line_graph:
                  _marker=None,
                  _dpi=96,
                  _enable_csv=False):
+        if _data_set is None:
+            _data_set = [[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]]
+        if _xaxis_categories is None:
+            _xaxis_categories = [1, 2, 3, 4, 5]
+        if _xaxis_label is None:
+            _xaxis_label = ["a", "b", "c", "d", "e"]
+        if _label is None:
+            _label = ["bi-downlink", "bi-uplink", 'uplink']
+        if _color is None:
+            _color = ['forestgreen', 'c', 'r', 'g', 'b', 'p']
         self.data_set = _data_set
         self.xaxis_name = _xaxis_name
         self.yaxis_name = _yaxis_name
