@@ -331,10 +331,14 @@ class csv_sql:
         # generate png image
         try:
             kpi_fig.write_image(png_path, scale=1, width=1200, height=300)
-        except BaseException:
-            print(
-                "ERROR: {database} Was correct database passed in, moved or duplicates of same name?".format(
-                    database=self.database))
+        except ValueError as err:
+            print("{msg}".format(msg=err))
+            print("ValueError on kpi_fig.write_image exiting")
+            exit(1)
+        except BaseException as err:
+            print("{msg}".format(msg=err))
+            print("BaseException on kpi_fig.write_image exiting")
+            exit(1)
         # generate html image (interactive)
         kpi_fig.write_html(html_path)
         img_kpi_html_path = self.server + html_path
