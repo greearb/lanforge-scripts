@@ -543,6 +543,14 @@ function test() {
   { eval "$testcommand" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } > "${FILENAME}.txt" 3>&1
   chmod 664 "${FILENAME}.txt"
   FILESIZE=$(stat -c%s "${FILENAME}_stderr.txt") || 0
+  # Check to see if the error is due to LANforge
+  ERROR_DATA=$(cat "${FILENAME}_stderr.txt")
+  if [[ "LANforge Error Messages" == *"${ERROR_DATA})" ]]
+  then
+    LANforgeError="Lanforge Error"
+  else
+    LANforgeError=""
+  fi
   end=$(date +%s)
   execution="$((end-start))"
   TEXT=$(cat "${FILENAME}".txt)
@@ -570,7 +578,9 @@ function test() {
                        <td class='${TEXTCLASS}'>$TDTEXT</td>
                        <td>${execution}</td>
                        <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                       <td>${STDERR}</td></tr>")
+                       <td>${STDERR}</td>
+                       <td>${LANforgeError}</td>
+                       </tr>")
 }
 
 function start_tests()  {
@@ -653,6 +663,7 @@ td.testname {
             <th onclick=\"sortTable('myTable2', 3)\">Execution time</th>
             <th onclick=\"sortTable('myTable2', 4)\">STDOUT</th>
             <th onclick=\"sortTable('myTable2', 5)\">STDERR</th>
+            <th onclick=\"sortTable('myTable2', 6)\">LANforge Error</th>
         </tr>
     </thead>
     <tbody>"
