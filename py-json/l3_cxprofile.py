@@ -289,7 +289,10 @@ class L3CXProfile(LFCliBase):
                 probe_results['Signal Avg per Chain'] = probe_port.getSignalAvgPerChain()
                 probe_results['Signal Combined'] = probe_port.getSignalCombined()
                 probe_results['Signal per Chain'] = probe_port.getSignalPerChain()
-                probe_results['Beacon Avg Signal'] = probe_port.getBeaconSignalAvg()
+                if 'Beacon Av Signal' in probe_results.keys():
+                    probe_results['Beacon Avg Signal'] = probe_port.getBeaconSignalAvg()
+                else:
+                    probe_results['Beacon Avg Signal'] = "0"
                 # probe_results['HE status'] = probe_port.he
                 probe_results['TX Bitrate'] = probe_port.tx_bitrate
                 probe_results['TX Mbps'] = probe_port.tx_mbit

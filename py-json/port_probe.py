@@ -66,7 +66,7 @@ class ProbePort(LFCliBase):
         self.response = response
         if self.debug:
             print("probepath (eid): {probepath}".format(probepath=self.probepath))
-        #    pprint("Probe response: {response}".format(response=self.response))
+            pprint("Probe response: {response}".format(response=self.response))
         text = self.response['probe-results'][0][self.eid_str]['probe results'].split('\n')
         signals = [x.strip('\t').split('\t') for x in text if 'signal' in x]
         keys = [x[0].strip(' ').strip(':') for x in signals]
@@ -85,6 +85,10 @@ class ProbePort(LFCliBase):
             self.tx_mhz = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('MHz')[0].rsplit(' ')[-1].strip(
                 ' ')
             print("tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
+        else:
+            self.tx_mhz = 20
+            print("HT: tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
+
 
         try:
             tx_mcs = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split(':')[1].strip('\t')
@@ -115,18 +119,20 @@ class ProbePort(LFCliBase):
         self.rx_bitrate = rx_bitrate.split(':')[-1].strip(' ')
         print("self.rx_bitrate {rx_bitrate}".format(rx_bitrate=self.rx_bitrate))
         # rx will received : 6Mbps encoding is legacy frame
-        try:
-            if 'MHz' in rx_bitrate:
-                self.rx_mhz = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('MHz')[0].rsplit(' ')[
-                    -1].strip(' ')
-                print("rx_mhz {rx_mhz}".format(rx_mhz=self.rx_mhz))
-                self.rx_mgt_6Mb_frame = False
-            else:
-                self.rx_mgt_6Mb_frame = True
-
-        except BaseException:
+        # for 24g - MHz is 20
+        # try:
+        if 'MHz' in rx_bitrate:
+            self.rx_mhz = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('MHz')[0].rsplit(' ')[
+                -1].strip(' ')
+            print("rx_mhz {rx_mhz}".format(rx_mhz=self.rx_mhz))
+            self.rx_mgt_6Mb_frame = False
+        else:
+            self.rx_mhz = 20
             self.rx_mgt_6Mb_frame = True
-            print("received rx_mgt_6Mb_frame")
+
+        # except BaseException:
+        #    self.rx_mgt_6Mb_frame = True
+        #    print("received rx_mgt_6Mb_frame")
 
         try:
             rx_mcs = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split(':')[1].strip('\t')
@@ -184,10 +190,10 @@ class ProbePort(LFCliBase):
         bw = 20
         # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
         # the nubmer of Data Subcarriers is based on modulation and bandwith
-        try:
-            bw = int(self.tx_mhz)
-        except BaseException:
-            print("port_probe.py: WARNING unable to parse tx MHz (BW) , check probe output will use {bw}".format(bw=bw))
+        # try:
+        bw = int(self.tx_mhz)
+        # except BaseException:
+        #    print("port_probe.py: WARNING unable to parse tx MHz (BW) , check probe output will use {bw}".format(bw=bw))
 
         print("Mhz {Mhz}".format(Mhz=self.tx_mhz))
         if bw == 20:
