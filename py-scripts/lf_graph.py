@@ -202,8 +202,6 @@ class lf_scatter_graph:
             _y_data_set = [[30, 55, 69, 37]]
         if _label is None:
             _label = ["num1", "num2"]
-        if _color is None:
-            _color = ["r", "y"]
         self.x_data_set = _x_data_set
         self.y_data_set = _y_data_set
         self.xaxis_name = _xaxis_name
@@ -280,8 +278,6 @@ class lf_stacked_graph:
             _data_set = [[1, 2, 3, 4], [1, 1, 1, 1], [1, 1, 1, 1]]
         if _label is None:
             _label = ['Success', 'Fail']
-        if _color is None:
-            _color = ["b", "g"]
         self.data_set = _data_set  # [x_axis,y1_axis,y2_axis]
         self.xaxis_name = _xaxis_name
         self.yaxis_name = _yaxis_name
