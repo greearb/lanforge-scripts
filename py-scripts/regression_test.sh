@@ -661,7 +661,6 @@ td.testname {
     fname="${HOMEPATH}/html-reports/regression_file-${NOW}.html"
     echo "$header"  >> "$fname"
     echo "${results[@]}"  >> "$fname"
-    LANFORGE_DATA=$(python -c 'import lanforge_scripts; lfcli=lanforge_scripts.LFCliBase(\"192.168.92.12\",8080); response=lfcli.json_get(\"/\")')
     echo "</table>
     </table>
     <br />
