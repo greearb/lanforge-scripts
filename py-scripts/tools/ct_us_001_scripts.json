@@ -222,46 +222,63 @@
                 "load_db":"NONE",
                 "command":"test_l3_longevity.py",
                 "args":"",
-                "args_list":[" --mgr LF_MGR_IP --test_duration 15s --polling_interval 5s --upstream_port eth2",
+                "args_list":[
+                    " --mgr LF_MGR_IP --test_duration 15s --polling_interval 5s --upstream_port UPSTREAM_PORT",
                     "  use_ssid_idx=1 --radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
                     " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"]},
             "example_security_connection0":{
                 "enabled":"TRUE",
                 "command":"example_security_connection.py",
                 "args":"",
-                "args_list":["--mgr LF_MGR_IP --num_stations 4",
-                    "  use_ssid_idx=1  --ssid SSID_USED --passwd SSID_PW_USED --radio wiphy1 --security SECURITY_USED --debug"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --num_stations 4 --upstream_port UPSTREAM_PORT",
+                    "  use_ssid_idx=1 --ssid SSID_USED --passwd SSID_PW_USED --radio wiphy1 --security SECURITY_USED",
+                    " --debug"]},
             "example_security_connection1":{
                 "enabled":"TRUE",
                 "command":"example_security_connection.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --num_stations 4 --ssid SSID_USED --passwd SSID_PW_USED",
-                    " --radio wiphy1 --security SECURITY_USED --debug"]},
+                "args_list":[
+                    "--mgr LF_MGR_IP --num_stations 4 --upstream_port UPSTREAM_PORT",
+                    " use_ssid_idx=1 --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED", 
+                    " --debug"]},
             "example_security_connection2":{
                 "enabled":"TRUE",
                 "command":"example_security_connection.py",
                 "args":"",
-                "args_list":["use_ssid_idx=1  --mgr LF_MGR_IP --num_stations 4 --ssid SSID_USED --passwd SSID_PW_USED --radio wiphy1 --security SECURITY_USED --debug"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --num_stations 4 --upstream_port UPSTREAM_PORT",
+                    " use_ssid_idx=1  --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED  --security SECURITY_USED",
+                    " --debug"]},
             "example_security_connection3":{
                 "enabled":"TRUE",
                 "command":"example_security_connection.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --num_stations 4 --ssid SSID_USED --passwd SSID_PW_USED --radio wiphy1 --security SECURITY_USED --debug"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --num_stations 4 --upstream_port UPSTREAM_PORT",
+                    " use_ssid_idx=1 --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --debug"]},
             "sta_connect2":{
                 "enabled":"FALSE",
                 "command":"sta_connect2.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --dut_ssid SSID_USED --dut_passwd SSID_PW_USED --dut_security SECURITY_USED"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --num_stations 4 --upstream_port UPSTREAM_PORT",
+                    " use_ssid_idx=1 --radio wiphy1 --dut_ssid SSID_USED --dut_passwd SSID_PW_USED --dut_security SECURITY_USED",
+                    " --debug"]},
             "sta_connect_example":{
                 "enabled":"FALSE",
                 "command":"sta_connect_example.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP "]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --num_stations 4 --upstream_port UPSTREAM_PORT",
+                    " use_ssid_idx=1 --radio wiphy1 --dut_ssid SSID_USED --dut_passwd SSID_PW_USED --dut_security SECURITY_USED",
+                    " --debug"]},
             "test_fileio":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"test_fileio.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --test_duration 30s --gateway 192.168.92.1"]},
+                "args_list":[" use_ssid_idx=1 --mgr LF_MGR_IP --macvlan_parent UPSTREAM_PORT --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 --netmask 255.255.255.0 --test_duration 30s --gateway 192.168.92.1"]},
             "test_generic0":{
                 "enabled":"FALSE",
                 "command":"test_generic.py",
@@ -296,72 +313,136 @@
                 "enabled":"TRUE",
                 "command":"test_ip_connection.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --debug"]},
-            "test_ip_variable_time0-ipv4":{
+                "args_list":[
+                    " --mgr LF_MGR_IP --num_stations 4 --upstream_port UPSTREAM_PORT",
+                    " use_ssid_idx=1 --radio wiphy1 --dut_ssid SSID_USED --dut_passwd SSID_PW_USED --dut_security SECURITY_USED",
+                    " --debug"]},
+            "test_ip_variable_time_ipv4_udp":{
                 "enabled":"TRUE",
                 "command":"test_ip_variable_time.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --test_duration 15s --output_format excel --layer3_cols name,tx_bytes,rx_bytes,dropped --traffic_type lf_udp --debug"]},
-            "test_ip_variable_time1-ipv4":{
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT",
+                    " use_ssid_indx=1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --test_duration 15s --output_format csv --layer3_cols name,tx_bytes,rx_bytes,dropped",
+                    " --traffic_type lf_udp",
+                    " --debug"]},
+            "test_ip_variable_time_ipv4_tcp":{
                 "enabled":"TRUE",
                 "command":"test_ip_variable_time.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --test_duration 15s --output_format csv --layer3_cols name,tx_bytes,rx_bytes,dropped --traffic_type lf_udp --debug"]},
-            "test_ip_connection-ipv6":{
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT",
+                    " use_ssid_indx=1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --test_duration 15s --output_format csv --layer3_cols name,tx_bytes,rx_bytes,dropped",
+                    " --traffic_type lf_tcp",
+                    " --debug"]},
+            "test_ip_connection_ipv6_udp":{
                 "enabled":"FALSE",
                 "command":"test_ip_connection.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --ipv6 --debug"]},
-            "test_ip_variable_time0-ipv6":{
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT",
+                    " use_ssid_indx=1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --test_duration 15s --output_format csv --layer3_cols name,tx_bytes,rx_bytes,dropped",
+                    " --traffic_type lf_udp",
+                    " --ipv6",
+                    " --debug"]},
+            "test_ip_variable_time_ipv6_tcp":{
                 "enabled":"TRUE",
                 "command":"test_ip_variable_time.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --test_duration 15s --output_format excel --layer3_cols name,tx_bytes,rx_bytes,dropped --ipv6 --traffic_type lf_udp --debug"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT",
+                    " use_ssid_indx=1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --test_duration 15s --output_format csv --layer3_cols name,tx_bytes,rx_bytes,dropped",
+                    " --traffic_type lf_tcp",
+                    " --ipv6",
+                    " --debug"]},
             "test_ip_variable_time1-ipv6":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"test_ip_variable_time.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --test_duration 15s --output_format csv --layer3_cols name,tx_bytes,rx_bytes,dropped --ipv6 --traffic_type lf_udp --debug"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT",
+                    " use_ssid_indx=1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --test_duration 15s --output_format csv --layer3_cols name,tx_bytes,rx_bytes,dropped",
+                    " --traffic_type lf_tcp",
+                    " --ipv6",
+                    " --debug"]},
             "test_l4_bytes-rd":{
                 "enabled":"TRUE",
                 "command":"test_l4.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --security SECURITY_USED --ssid SSID_USED --passwd SSID_PW_USED --test_type bytes-rd --test_duration 15s --url 'dl http://10.40.0.1 /dev/null' --debug"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --upstream_port UPSTREAM_PORT",
+                    " use_ssid_idx=1 --radio wiphy1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED ",
+                    " --test_type bytes-rd --test_duration 15s --url 'dl http://10.40.0.1 /dev/null'",
+                    " --debug"]},
             "test_l4_bytes-wr":{
                 "enabled":"FALSE",
                 "command":"test_l4.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --security SECURITY_USED --ssid SSID_USED --passwd SSID_PW_USED --test_type bytes-wr --test_duration 15s  --url 'ul http://10.40.0.1' --debug"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --upstream_port UPSTREAM_PORT",
+                    " use_ssid_idx=1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --test_type bytes-wr --test_duration 15s  --url 'ul http://10.40.0.1' --debug"]},
             "test_l4_urls_s":{
                 "enabled":"TRUE",
                 "command":"test_l4.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --security SECURITY_USED --ssid SSID_USED --passwd SSID_PW_USED --test_type urls --test_duration 15s  --requests_per_ten 600 --target_per_ten 600  --url 'dl http://10.40.0.1 /dev/null' --debug"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --upstream_port UPSTREAM_PORT",
+                    " use_ssid_idx=1  --ssid SSID_USED --passwd SSID_PW_USED  --security SECURITY_USED",
+                    " --test_type urls --test_duration 15s  --requests_per_ten 600 --target_per_ten 600  --url 'dl http://10.40.0.1 /dev/null'",
+                    " --debug"]},
             "test_l4_ftp_bytes-rd":{
                 "enabled":"TRUE",
                 "command":"test_l4.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --security SECURITY_USED --ssid SSID_USED --passwd SSID_PW_USED --ftp --test_type bytes-rd --test_duration 15s  --url 'dl ftp://10.40.0.1 /dev/null' --debug"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --upstream_port UPSTREAM_PORT",
+                    "  use_ssid_idx=1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --ftp --test_type bytes-rd --test_duration 15s  --url 'dl ftp://10.40.0.1 /dev/null'",
+                    " --debug"]},
             "test_l4_ftp_bytes-wr":{
                 "enabled":"FALSE",
                 "command":"test_l4.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --security SECURITY_USED --ssid SSID_USED --passwd SSID_PW_USED --ftp --test_type bytes-wr --test_duration 15s  --url 'ul ftp://10.40.0.1' --debug"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --upstream_port UPSTREAM_PORT",
+                    "  use_ssid_idx=1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --ftp --test_type bytes-wr --test_duration 15s  --url 'ul ftp://10.40.0.1'",
+                    " --debug"]},
             "test_l4_ftp_urls_s":{
                 "enabled":"TRUE",
                 "command":"test_l4.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --security SECURITY_USED --ssid SSID_USED --passwd SSID_PW_USED --ftp --test_type urls --requests_per_ten 600 --target_per_ten 600 --test_duration 15s  --url 'dl ftp://10.40.0.1 /dev/null' --debug"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --upstream_port UPSTREAM_PORT",                    
+                    "  use_ssid_idx=1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --ftp --test_type urls --requests_per_ten 600 --target_per_ten 600 --test_duration 15s  --url 'dl ftp://10.40.0.1 /dev/null'",
+                    " --debug"]},
             "test_l3_longevity_1":{
                 "enabled":"TRUE",
                 "command":"test_l3_longevity.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --test_duration 15s --polling_interval 5s --upstream_port eth2 --radio 'radio==wiphy0,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"]},
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 15s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000",
+                    " --test_rig TEST_RIG --test_tag 'l3_longevity'",
+                    " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
+                ]
+            },
             "test_l3_powersave_traffic":{
                 "enabled":"FALSE",
                 "command":"test_l3_powersave_traffic.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --debug"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --upstream_port UPSTREAM_PORT",                    
+                    "  use_ssid_idx=1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --debug"]},
             "test_status_msg":{
                 "enabled":"TRUE",
                 "command":"test_status_msg.py",
@@ -375,43 +456,50 @@
                 "enabled":"TRUE",
                 "command":"create_bridge.py",
                 "args":"",
-                "args_list":["--mgr LF_MGR_IP --radio wiphy1 --upstream_port eth2 --target_device sta0000 --debug"]},
+                "args_list":["--mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT --target_device sta0000 --debug"]},
             "create_l3":{
                 "enabled":"FALSE",
                 "command":"create_l3.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --debug"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --upstream_port UPSTREAM_PORT",                    
+                    "  use_ssid_idx=1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --debug"]},
             "create_l4":{
                 "enabled":"TRUE",
                 "command":"create_l4.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --debug"]},
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --upstream_port UPSTREAM_PORT",                    
+                    "  use_ssid_idx=1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --debug"]},
             "create_l3_stations":{
                     "enabled":"TRUE",
                     "load_db":"NONE",
                     "command":"create_l3_stations.py",
                     "args":"",
-                    "args_list":[" --mgr LF_MGR_IP ",
-                        " use_ssid_idx=1 --radio wiphy1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
+                    "args_list":[
+                        " --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --upstream_port UPSTREAM_PORT",                    
+                        " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
                     ]
             },    
             "create_macvlan":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"create_macvlan.py",
                 "args":"",
-                "args_list":["--mgr LF_MGR_IP --radio wiphy1 --macvlan_parent eth2 --debug"]},
+                "args_list":["--mgr LF_MGR_IP --radio wiphy1 --macvlan_parent UPSTREAM_PORT --debug"]},
             "create_station":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"create_station.py",
                 "args":"",
                 "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --debug"]},
             "create_vap":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"create_vap.py",
                 "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --debug"]},
+                "args_list":[" --mgr LF_MGR_IP --radio wiphy1  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --debug"]},
             "create_qvlan":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"create_qvlan.py",
                 "args":"",
                 "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --qvlan_parent eth2"]},
