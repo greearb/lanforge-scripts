@@ -534,6 +534,7 @@ function test() {
   if [[ $ERROR_DATA =~ "LANforge Error Messages" ]]
   then
     LANforgeError="Lanforge Error"
+    echo "LANforge Error"
   else
     LANforgeError=""
   fi
