@@ -498,8 +498,8 @@
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge",
                     " --instance_name ap_auto_1 --config_name test_con --upstream eth2",
-                    " use_ssid_idx=0 --dut2_0 'USE_DUT_NAME SSID_USED BSSID (1)'",
-                    " use_ssid_idx=1 --dut5_0 'USE_DUT_NAME SSID_USED BSSID (2)'",
+                    " use_ssid_idx=0 --dut2_0 'USE_DUT_NAME SSID_USED BSSID_TO_USE (1)'",
+                    " use_ssid_idx=1 --dut5_0 'USE_DUT_NAME SSID_USED BSSID_TO_USE (2)'",
                     " --max_stations_2 8 --max_stations_5 8 --max_stations_dual 1",
                     " --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 --radio2 1.1.wiphy4 --radio2 1.1.wiphy5 --radio2 1.1.wiphy6 --radio2 1.1.wiphy7",
                     " --radio5 1.1.wiphy1 --radio5 1.1.wiphy2 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7",
@@ -886,8 +886,8 @@
                 "args_list":[
                     " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge",
                     " --instance_name ap_auto --config_name test_con --upstream eth2",
-                    " use_ssid_idx=0 --dut2_0 'USE_DUT_NAME lanforge BSSID (1)'",
-                    " use_ssid_idx=1 --dut5_0 'USE_DUT_NAME lanforge BSSID (2)'",
+                    " use_ssid_idx=0 --dut2_0 'USE_DUT_NAME lanforge BSSID_TO_USE (1)'",
+                    " use_ssid_idx=1 --dut5_0 'USE_DUT_NAME lanforge BSSID_TO_USE (2)'",
                     " --max_stations_2 8 --max_stations_5 8 --max_stations_dual 1",
                     " --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 --radio2 1.1.wiphy4 --radio2 1.1.wiphy5 --radio2 1.1.wiphy6 --radio2 1.1.wiphy7",
                     " --radio5 1.1.wiphy1 --radio5 1.1.wiphy2 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7",
