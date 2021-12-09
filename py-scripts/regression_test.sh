@@ -21,7 +21,7 @@ Help()
 }
 
 
-while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:M:" option; do
+while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:M:C:" option; do
   case "${option}" in
     h) # display Help
       Help
@@ -66,6 +66,9 @@ while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:M:" option; do
       ;;
     M)
       RADIO2=${OPTARG}
+      ;;
+    C)
+      RESOURCE=${OPTARG}
       ;;
     *)
 
@@ -122,6 +125,10 @@ fi
 
 if [[ ${#BSSID} -eq 0 ]]; then
   BSSID="04:f0:21:2c:41:84"
+fi
+
+if [[ $RESOURCE -eq 0 ]]; then
+  RESOURCE="1.1"
 fi
 
 FILE="/tmp/gui-update.lock"
@@ -191,7 +198,7 @@ function create_station_and_dataplane() {
       ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
       ./lf_dataplane_test.py --mgr $MGR --lf_user lanforge --lf_password lanforge \
           --instance_name dataplane-instance --config_name test_con --upstream $UPSTREAM \
-          --dut linksys-8450 --duration 15s --station 1.1.sta0001 \
+          --dut linksys-8450 --duration 15s --station $RESOURCE.sta0001 \
           --download_speed 85% --upload_speed 0 \
           --test_rig Testbed-01 --pull_report \
           #--influx_host 192.168.100.153 --influx_port 8086 --influx_org Candela \
@@ -201,8 +208,8 @@ function create_station_and_dataplane() {
 }
 function create_dut_and_chamberview() {
         ./create_chamberview.py -m $MGR -cs 'regression_test' --delete_scenario \
-        --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=$RADIO_USED Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http" \
-        --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http"
+        --line "Resource=$RESOURCE Profile=STA-AC Amount=1 Uses-1=$RADIO_USED Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http" \
+        --line "Resource=$RESOURCE Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http"
         ./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut \
         --ssid "ssid_idx=0 ssid='$SSID_USED' security='$SECURITY' password='$PASSWD_USED' bssid=04:f0:21:2c:41:84"
     }
@@ -210,8 +217,8 @@ function create_dut_and_chamberview() {
 function create_station_and_sensitivity {
   ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
   ./lf_rx_sensitivity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
-                      --instance_name rx-sensitivity-instance --config_name test_con --upstream 1.1.eth2 \
-                      --dut linksys-8450 --duration 15s --station 1.1.sta0001 \
+                      --instance_name rx-sensitivity-instance --config_name test_con --upstream $UPSTREAM \
+                      --dut linksys-8450 --duration 15s --station $RESOURCE.sta0001 \
                       --download_speed 85% --upload_speed 0 \
                       --raw_line 'txo_preamble\: VHT' \
                       --raw_line 'txo_mcs\: 4 OFDM, HT, VHT;5 OFDM, HT, VHT;6 OFDM, HT, VHT;7 OFDM, HT, VHT' \
@@ -230,11 +237,12 @@ if [[ ${#SHORT} -gt 0 ]]; then
   testCommands=(
       "./lf_ap_auto_test.py \
               --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
-              --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth1 \
+              --instance_name ap-auto-instance --config_name test_con --upstream $UPSTREAM \
               --dut5_0 '$DUT5' \
               --dut2_0 '$DUT2' \
-              --radio2 1.1.wiphy0 \
-              --radio2 1.1.wiphy1 \
+              --radio2 $RADIO_USED \
+              --radio2 $RADIO2 \
+              --radio2 $RADIO2 \
               --set 'Basic Client Connectivity' 1 \
               --set 'Multi Band Performance' 1 \
               --set 'Skip 2.4Ghz Tests' 1 \
@@ -252,7 +260,7 @@ if [[ ${#SHORT} -gt 0 ]]; then
   )
 else
   testCommands=(
-      "./create_bond.py --network_dev_list eth0,eth1 --debug --mgr $MGR"
+      "./create_bond.py --network_dev_list eth0,$UPSTREAM --debug --mgr $MGR"
       create_bridge_and_station
       create_dut_and_chamberview
       "./create_l3.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR --endp_a wiphy0 --endp_b wiphy1"
@@ -272,19 +280,19 @@ else
       #"./docstrings.py --mgr $MGR"
       #"./scripts_deprecated/event_break_flood.py --mgr $MGR"
       "./example_security_connection.py --num_stations $NUM_STA --ssid $SSID_USED \
-      --passwd $PASSWD_USED --radio 1.1.$RADIO_USED --security wpa2 --debug --mgr $MGR"
+      --passwd $PASSWD_USED --radio $RADIO_USED --security wpa2 --debug --mgr $MGR"
       #./ftp_html.py
       #./grafana_profile
       "./lf_ap_auto_test.py \
         --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
-        --instance_name ap-auto-instance --config_name test_con --upstream 1.1.eth1 \
+        --instance_name ap-auto-instance --config_name test_con --upstream $UPSTREAM \
         --dut5_0 '$DUT5' \
         --dut2_0 '$DUT2' \
         --max_stations_2 64 \
         --max_stations_5 64 \
         --max_stations_dual 64 \
-        --radio2 1.1.wiphy0 \
-        --radio2 1.1.wiphy1 \
+        --radio2 $RADIO_USED \
+        --radio2 $RADIO2 \
         --set 'Basic Client Connectivity' 1 \
         --set 'Multi Band Performance' 1 \
         --set 'Skip 2.4Ghz Tests' 1 \
@@ -321,15 +329,15 @@ else
       "./lf_tr398_test.py --mgr $MGR --upstream $UPSTREAM"
       #./lf_webpage
       "./lf_wifi_capacity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
-             --instance_name this_inst --config_name test_con --upstream 1.1.eth2 --batch_size 1,5,25,50,100 --loop_iter 1 \
+             --instance_name this_inst --config_name test_con --upstream $UPSTREAM --batch_size 1,5,25,50,100 --loop_iter 1 \
              --protocol UDP-IPv4 --duration 6000 --pull_report --ssid $SSID_USED --paswd $PASSWD_USED --security $SECURITY\
-             --test_rig Testbed-01 --create_stations --stations 1.1.sta0000,1.1.sta0001"
+             --test_rig Testbed-01 --create_stations --stations $RESOURCE.sta0000,$RESOURCE.sta0001"
       "./measure_station_time_up.py --radio $RADIO_USED --num_stations 3 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED \
       --debug --report_file measure_station_time_up.pkl --radio2 wiphy1"
       "./create_station.py --mgr $MGR --radio $RADIO_USED --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED && ./modify_station.py \
                    --mgr $MGR \
                    --radio $RADIO_USED \
-                   --station 1.1.sta0000 \
+                   --station $RESOURCE.sta0000 \
                    --security $SECURITY \
                    --ssid $SSID_USED \
                    --passwd $PASSWD_USED \
@@ -371,8 +379,8 @@ else
       "./test_ipv4_ps.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR --radio2 $RADIO2"
       "./test_ipv4_ttls.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./test_l3_longevity.py --mgr $MGR --endp_type 'lf_tcp' --upstream_port $UPSTREAM --radio \
-      'radio==1.1.wiphy0 stations==10 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --radio \
-      'radio==1.1.wiphy1 stations==1 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --test_duration 5s --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000  -o longevity.csv"
+      'radio==$RADIO_USED stations==10 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --radio \
+      'radio==$RADIO2 stations==1 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --test_duration 5s --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000  -o longevity.csv"
       "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       #"./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput -m $MGR"
       #./test_l3_unicast_traffic_gen
