@@ -110,14 +110,14 @@ if [[ ${#SSID_USED} -eq 0 ]]; then #Network credentials
 fi
 
 if [[ ${#RADIO_USED} -eq 0 ]]; then # Allow the user to change the radio they test against
-  RADIO_USED="wiphy1"
+  RADIO_USED="1.1.wiphy1"
 fi
 
 if [[ ${#RADIO2} -eq 0 ]]; then # Allow the user to change the radio they test against
-  RADIO2="wiphy0"
+  RADIO2="1.1.wiphy0"
 fi
 if [[ ${#UPSTREAM} -eq 0 ]]; then
-  UPSTREAM="eth1"
+  UPSTREAM="1.1.eth1"
 fi
 
 if [[ ${#BSSID} -eq 0 ]]; then
@@ -190,7 +190,7 @@ function create_bridge_and_station() {
 function create_station_and_dataplane() {
       ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
       ./lf_dataplane_test.py --mgr $MGR --lf_user lanforge --lf_password lanforge \
-          --instance_name dataplane-instance --config_name test_con --upstream 1.1.$UPSTREAM \
+          --instance_name dataplane-instance --config_name test_con --upstream $UPSTREAM \
           --dut linksys-8450 --duration 15s --station 1.1.sta0001 \
           --download_speed 85% --upload_speed 0 \
           --test_rig Testbed-01 --pull_report \
@@ -370,7 +370,7 @@ else
       "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --debug --mgr $MGR --ipv6 --traffic_type lf_udp"
       "./test_ipv4_ps.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR --radio2 $RADIO2"
       "./test_ipv4_ttls.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
-      "./test_l3_longevity.py --mgr $MGR --endp_type 'lf_tcp' --upstream_port 1.1.$UPSTREAM --radio \
+      "./test_l3_longevity.py --mgr $MGR --endp_type 'lf_tcp' --upstream_port $UPSTREAM --radio \
       'radio==1.1.wiphy0 stations==10 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --radio \
       'radio==1.1.wiphy1 stations==1 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --test_duration 5s --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000  -o longevity.csv"
       "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
