@@ -175,7 +175,7 @@ fi
 TEST_DIR="${REPORT_DATA}/${NOW}"
 
 function run_l3_longevity() {
-  ./test_l3_longevity.py --test_duration 15s --upstream_port eth1 --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --lfmgr "$MGR"
+  ./test_l3_longevity.py --test_duration 15s --upstream_port $UPSTREAM --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --lfmgr "$MGR"
 }
 function testgroup_list_groups() {
   ./scenario.py --load test_l3_scenario_throughput
@@ -192,7 +192,7 @@ function testgroup_delete_group() {
 }
 function create_bridge_and_station() {
   ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
-  ./create_bridge.py --radio $RADIO_USED --upstream_port eth1 --target_device sta0000 --debug --mgr $MGR
+  ./create_bridge.py --radio $RADIO_USED --upstream_port $UPSTREAM --target_device $RESOURCE.sta0000 --debug --mgr $MGR
 }
 function create_station_and_dataplane() {
       ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
@@ -209,7 +209,7 @@ function create_station_and_dataplane() {
 function create_dut_and_chamberview() {
         ./create_chamberview.py -m $MGR -cs 'regression_test' --delete_scenario \
         --line "Resource=$RESOURCE Profile=STA-AC Amount=1 Uses-1=$RADIO_USED Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http" \
-        --line "Resource=$RESOURCE Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http"
+        --line "Resource=$RESOURCE Profile=upstream Amount=1 Uses-1=$UPSTREAM Uses-2=AUTO Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http"
         ./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut \
         --ssid "ssid_idx=0 ssid='$SSID_USED' security='$SECURITY' password='$PASSWD_USED' bssid=04:f0:21:2c:41:84"
     }
@@ -260,14 +260,14 @@ if [[ ${#SHORT} -gt 0 ]]; then
   )
 else
   testCommands=(
-      "./create_bond.py --network_dev_list eth0,$UPSTREAM --debug --mgr $MGR"
+      "./create_bond.py --network_dev_list $RESOURCE.eth0,$UPSTREAM --debug --mgr $MGR"
       create_bridge_and_station
       create_dut_and_chamberview
       "./create_l3.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR --endp_a wiphy0 --endp_b wiphy1"
       "./create_l3_stations.py --mgr $MGR --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug"
       "./create_l4.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
-      "./create_macvlan.py --radio 1.$RADIO_USED --macvlan_parent eth1 --debug --mgr $MGR"
-      "./create_qvlan.py --first_qvlan_ip 192.168.1.50 --mgr $MGR --qvlan_parent eth1"
+      "./create_macvlan.py --radio 1.$RADIO_USED --macvlan_parent $UPSTREAM --debug --mgr $MGR"
+      "./create_qvlan.py --first_qvlan_ip 192.168.1.50 --mgr $MGR --qvlan_parent $UPSTREAM"
       "./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./create_vap.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       #"./create_vr.py --mgr $MGR --vr_name 2.vr0 --ports 2.br0,2.vap2 --services 1.br0=dhcp,nat --services 1.vr0=radvd --debug"
