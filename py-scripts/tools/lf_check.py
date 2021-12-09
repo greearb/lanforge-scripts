@@ -949,8 +949,11 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                             time=self.test_end_time))
 
                     time_delta = end_time - start_time
-                    self.duration = "{day}d {seconds}s {msec} ms".format(
-                        day=time_delta.days, seconds=time_delta.seconds, msec=time_delta.microseconds)
+                    minutes, seconds = divmod(time_delta.seconds, 60)
+                    hours, minutes = divmod(minutes, 60)
+
+                    self.duration = "{day}d {hours}h {minutes}m {seconds}s {msec} ms".format(
+                        day=time_delta.days, hours=hours, minutes=minutes, seconds=seconds, msec=time_delta.microseconds)
 
                     # If collect meta data is set
                     meta_data_path = ""
@@ -1171,10 +1174,10 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
         self.logger.info("Suite End Time: {suite_time}".format(
             suite_time=self.suite_end_time))
         suite_time_delta = suite_end_time - suite_start_time
-        minutes, sec = divmod(suite_time_delta.seconds, 60)
-        hour, minutes = divmod(minutes, 60)
-        self.suite_duration  = "{day}d {hour}h {minutes}m {sec}s {msec} ms".format(
-            day=suite_time_delta.days, hour=hour, minutes=minutes, sec=sec, msec=suite_time_delta.microseconds)
+        minutes, seconds = divmod(suite_time_delta.seconds, 60)
+        hours, minutes = divmod(minutes, 60)
+        self.suite_duration  = "{day}d {hours}h {minutes}m {seconds}s {msec} ms".format(
+            day=suite_time_delta.days, hours=hours, minutes=minutes, seconds=seconds, msec=suite_time_delta.microseconds)
         self.logger.info("Suite Duration:  {suite_duration}".format(
             suite_duration=self.suite_duration))        
         self.finish_html_results()
