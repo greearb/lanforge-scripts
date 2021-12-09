@@ -1171,8 +1171,10 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
         self.logger.info("Suite End Time: {suite_time}".format(
             suite_time=self.suite_end_time))
         suite_time_delta = suite_end_time - suite_start_time
-        self.suite_duration  = "{day}d {seconds}s {msec} ms".format(
-            day=suite_time_delta.days, seconds=suite_time_delta.seconds, msec=suite_time_delta.microseconds)
+        minutes, sec = divmod(suite_time_delta.seconds, 60)
+        hour, minutes = divmod(minutes, 60)
+        self.suite_duration  = "{day}d {hour}h {minutes}m {sec}s {msec} ms".format(
+            day=suite_time_delta.days, hour=hour, minutes=minutes, sec=sec, msec=suite_time_delta.microseconds)
         self.logger.info("Suite Duration:  {suite_duration}".format(
             suite_duration=self.suite_duration))        
         self.finish_html_results()
