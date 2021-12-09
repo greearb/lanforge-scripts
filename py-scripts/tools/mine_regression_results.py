@@ -23,28 +23,21 @@ class MineRegression:
         dfs = [pd.merge(results[n], systems[n], on='IP') for n in range(len(self.ips))]
         self.df = pd.concat(dfs)
         self.df = self.df[self.df['STDOUT'] == 'STDOUT']
-        print(self.df.columns)
 
     def generate_report(self):
         system_variations = self.df[
             ['IP', 'Python version', 'LANforge version', 'OS Version', 'Hostname', 'Python Environment']].drop_duplicates(
             ['IP', 'Python version', 'LANforge version', 'OS Version', 'Hostname', 'Python Environment']).reset_index(drop=True)
-        print(self.df.drop_duplicates('IP'))
-        print(self.df['IP'].value_counts())
-        print(system_variations['IP'].value_counts())
         errors = list()
         lanforge_errors = list()
         for index in system_variations.index:
-            print(system_variations['IP'][index])
             variation = system_variations.iloc[index]
             result = self.df.loc[self.df[['Python version', 'LANforge version', 'OS Version', 'Python Environment', 'IP']].isin(dict(
                 variation).values()).all(axis=1), :].dropna(subset=['STDERR']).shape[0]
-            print(result)
             errors.append(result)
 
             lanforge_result = self.df.loc[self.df[['Python version', 'LANforge version', 'OS Version', 'Python Environment', 'IP']].isin(dict(
                 variation).values()).all(axis=1), :].dropna(subset=['LANforge Error']).shape[0]
-            print(result)
             lanforge_errors.append(lanforge_result)
         system_variations['errors'] = errors
         system_variations['LANforge errors'] = lanforge_errors
