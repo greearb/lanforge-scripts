@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
-"""
-This script will create 40 clients on 5Ghz , 2.4Ghz and Both and generate layer4 traffic on LANforge ,The Webpage Download Test is designed to test the performance of the  Access Point.The goal is to  check whether the
-webpage loading time meets the expectation when clients connected on single radio as well as dual radio.
+"""This script will create 40 clients on 5Ghz , 2.4Ghz and Both and generate layer4 traffic on LANforge ,The Webpage
+Download Test is designed to test the performance of the  Access Point.The goal is to  check whether the webpage
+loading time meets the expectation when clients connected on single radio as well as dual radio.
 
-how to run -
-python3 lf_webpage.py --mgr 192.168.200.29 --mgr_port 8080   --upstream_port eth1 --num_stations 10    --security open --ssid testap210 --passwd [BLANK] --target_per_ten 1 --bands 5G  --file_size 10MB  --fiveg_radio wiphy0 --twog_radio wiphy1 --duration 1
-Copyright 2021 Candela Technologies Inc
-04 - April - 2021
-"""
+how to run - python3 lf_webpage.py --mgr 192.168.200.29 --mgr_port 8080   --upstream_port eth1 --num_stations 10
+--security open --ssid testap210 --passwd [BLANK] --target_per_ten 1 --bands 5G  --file_size 10MB  --fiveg_radio
+wiphy0 --twog_radio wiphy1 --duration 1 Copyright 2021 Candela Technologies Inc 04 - April - 2021 """
 import sys
 import os
 import importlib
@@ -53,7 +51,7 @@ class HttpDownload(Realm):
         self.station_profile = self.local_realm.new_station_profile()
         self.http_profile = self.local_realm.new_http_profile()
         self.http_profile.requests_per_ten = self.target_per_ten
-        #self.http_profile.url = self.url
+        # self.http_profile.url = self.url
         self.port_util = PortUtils(self.local_realm)
         self.http_profile.debug = _debug_on
         self.created_cx = {}
@@ -490,47 +488,33 @@ class HttpDownload(Realm):
         #
         # report.test_setup_table(value="Device under test", test_setup_data=test_setup_info)
         #
-        # report.set_obj_html("Objective",
-        #                     "The Webpage Download Test is designed to test the performance of the Access Point.The goal is to check whether the webpage loading time of all the " + str(
-        #                         num_stations) + " clients which are downloading at the same time meets the expectation when clients connected on single radio as well as dual radio")
-        # report.build_objective()
-        # report.set_obj_html("Download Time Graph",
-        #                     "The below graph provides information about the  download time taken by each client to download webpage for test duration of  " + str(
-        #                         duration) + " min")
-        # report.build_objective()
-        # graph = self.generate_graph(dataset=dataset, lis=lis, bands=bands)
-        # report.set_graph_image(graph)
-        # report.set_csv_filename(graph)
-        # report.move_csv_file()
-        # report.move_graph_image()
-        # report.build_graph()
-        # report.set_obj_html("Download Rate Graph",
-        #                     "The below graph provides information about the download rate in Mbps of each client to download the webpage for test duration of  " + str(
-        #                         duration) + " min")
-        # report.build_objective()
-        # graph2 = self.graph_2(dataset2, lis=lis, bands=bands)
-        # print("graph name {}".format(graph2))
-        # report.set_graph_image(graph2)
-        # report.set_csv_filename(graph2)
-        # report.move_csv_file()
-        # report.move_graph_image()
-        # report.build_graph()
-        # report.set_obj_html("Summary Table Description",
-        #                     "This Table shows you the summary result of Webpage Download Test as PASS or FAIL criteria. If the average time taken by " + str(
-        #                         num_stations) + " clients to access the webpage is less than " + str(
-        #                         threshold_2g) + "s it's a PASS criteria for 2.4 ghz clients, If the average time taken by " + "" + str(
-        #                         num_stations) + " clients to access the webpage is less than " + str(
-        #                         threshold_5g) + "s it's a PASS criteria for 5 ghz clients and If the average time taken by " + str(
-        #                         num_stations) + " clients to access the webpage is less than " + str(
-        #                         threshold_both) + "s it's a PASS criteria for 2.4 ghz and 5ghz clients")
+        # report.set_obj_html("Objective", "The Webpage Download Test is designed to test the performance of the
+        # Access Point.The goal is to check whether the webpage loading time of all the " + str( num_stations) + "
+        # clients which are downloading at the same time meets the expectation when clients connected on single radio
+        # as well as dual radio") report.build_objective() report.set_obj_html("Download Time Graph", "The below
+        # graph provides information about the  download time taken by each client to download webpage for test
+        # duration of  " + str( duration) + " min") report.build_objective() graph = self.generate_graph(
+        # dataset=dataset, lis=lis, bands=bands) report.set_graph_image(graph) report.set_csv_filename(graph)
+        # report.move_csv_file() report.move_graph_image() report.build_graph() report.set_obj_html("Download Rate
+        # Graph", "The below graph provides information about the download rate in Mbps of each client to download
+        # the webpage for test duration of  " + str( duration) + " min") report.build_objective() graph2 =
+        # self.graph_2(dataset2, lis=lis, bands=bands) print("graph name {}".format(graph2)) report.set_graph_image(
+        # graph2) report.set_csv_filename(graph2) report.move_csv_file() report.move_graph_image()
+        # report.build_graph() report.set_obj_html("Summary Table Description", "This Table shows you the summary
+        # result of Webpage Download Test as PASS or FAIL criteria. If the average time taken by " + str(
+        # num_stations) + " clients to access the webpage is less than " + str( threshold_2g) + "s it's a PASS
+        # criteria for 2.4 ghz clients, If the average time taken by " + "" + str( num_stations) + " clients to
+        # access the webpage is less than " + str( threshold_5g) + "s it's a PASS criteria for 5 ghz clients and If
+        # the average time taken by " + str( num_stations) + " clients to access the webpage is less than " + str(
+        # threshold_both) + "s it's a PASS criteria for 2.4 ghz and 5ghz clients")
         #
         # report.build_objective()
         # test_setup1 = pd.DataFrame(summary_table_value)
         # report.set_table_dataframe(test_setup1)
         # report.build_table()
         #
-        # report.set_obj_html("Download Time Table Description",
-        #                     "This Table will provide you information of the minimum, maximum and the average time taken by clients to download a webpage in seconds")
+        # report.set_obj_html("Download Time Table Description", "This Table will provide you information of the
+        # minimum, maximum and the average time taken by clients to download a webpage in seconds")
         #
         # report.build_objective()
         x = []
@@ -681,7 +665,6 @@ def main():
     parser.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
     parser.add_argument("--test_id", default="lf_webpage", help="test-id for kpi.csv,  script or test name")
     parser.add_argument('--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
-
 
     args = parser.parse_args()
     test_time = datetime.now()
@@ -851,7 +834,6 @@ def main():
                           dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
                           dut_serial_num=args.dut_serial_num, test_id=args.test_id,
                           test_input_infor=test_input_infor, csv_outfile=args.csv_outfile)
-
 
 
 if __name__ == '__main__':
