@@ -541,7 +541,7 @@ function test() {
   execution="$((end-start))"
   TEXT=$(cat "${FILENAME}".txt)
   STDERR=""
-  if [[ "tests failed" == *"${TEXT}" ]]
+  if [[ $TEXT =~ "tests failed" ]]
   then 
     TEXTCLASS="partial_failure"
     TDTEXT="Partial Failure"
