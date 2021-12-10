@@ -662,12 +662,12 @@ td.testname {
         </tr>
     </thead>
     <tbody>"
-    tail="</body></html>"
+    f="</body></html>"
 
     fname="${HOMEPATH}/html-reports/regression_file-${NOW}.html"
     echo "$header"  >> "$fname"
     echo "${results[@]}"  >> "$fname"
-    echo "</table>
+    echo "</tbody>
     </table>
     <br />
     <h3>System information</h3>
@@ -694,7 +694,9 @@ td.testname {
         <td id='python_environment'>${PYTHON_ENVIRONMENT}</td>
       </tr>
     </tbody>
-    </table>" >> "$fname"
+    </table>
+    <script> sortTable('myTable2', 2); </script>
+" >> "$fname"
     echo "$tail" >> "$fname"
     if [ -f "${HOMEPATH}/html-reports/latest.html" ]; then
         rm -f "${HOMEPATH}/html-reports/latest.html"
