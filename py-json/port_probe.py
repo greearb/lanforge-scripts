@@ -138,17 +138,15 @@ class ProbePort(LFCliBase):
             elif 24 <= self.rx_mcs <= 31:
                 self.rx_nss = 4
 
-            self.rx_mbit = self.rx_bitrate.split(' ')[0]
-            print("rx_nss {rx_nss}".format(rx_nss=self.rx_nss))
-            self.rx_mbit = float(self.rx_bitrate.split(' ')[0])
-            print("rx_mbit {rx_mbit}".format(rx_mbit=self.rx_mbit))
-            self.calculated_data_rate_rx_HT()
-            if 'HE not supported' in [x.strip('\t') for x in text if 'HE' in x]:
-                self.he = False
-            else:
-                self.he = True
-        except IndexError as error:
-            print(error)
+        self.rx_mbit = self.rx_bitrate.split(' ')[0]
+        print("rx_nss {rx_nss}".format(rx_nss=self.rx_nss))
+        self.rx_mbit = float(self.rx_bitrate.split(' ')[0])
+        print("rx_mbit {rx_mbit}".format(rx_mbit=self.rx_mbit))
+        self.calculated_data_rate_rx_HT()
+        if 'HE not supported' in [x.strip('\t') for x in text if 'HE' in x]:
+            self.he = False
+        else:
+            self.he = True
 
     def getSignalAvgCombined(self):
         return self.signals['signal avg'].split(' ')[0]
