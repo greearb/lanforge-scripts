@@ -435,10 +435,15 @@ Database: {db}
 http://{hostname}/{report}""".format(hostname=self.hostname, suite=self.test_suite, db=self.database_sqlite, report=report_url)
 
         # Put in report information current two methods supported,
-        message_txt += """
+        if "NA" not in self.qa_report_html:
+            message_txt += """
 QA Report Dashboard:
 http://{ip_qa}/{qa_url}
 NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
+
+        else:
+            message_txt += """
+QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
         if (self.email_title_txt != ""):
             mail_subject = "{email} [{hostname}] {suite} {date}".format(email=self.email_title_txt, hostname=self.hostname,

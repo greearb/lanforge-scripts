@@ -747,8 +747,8 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
 
         report.set_table_title("QA Test Results")
         report.build_table_title()
-        # report.set_text("lanforge-scripts git sha: {}".format(git_sha))
-        # report.build_text()
+        # report.set_text("QA broken links, check if server correct: {server} example --server 'http:/192.168.0.101/".format(server=__server))
+        report.build_text()
         html_results = csv_dash.get_html_results()
         report.set_custom_html(html_results)
         report.build_custom()
