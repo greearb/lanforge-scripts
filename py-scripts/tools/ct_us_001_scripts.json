@@ -407,7 +407,7 @@
                     " use_ssid_idx=1 --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
                     " --debug"]},
             "test_ip_variable_time_ipv4_udp":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"test_ip_variable_time.py",
                 "args":"",
                 "args_list":[
@@ -417,7 +417,7 @@
                     " --traffic_type lf_udp",
                     " --debug"]},
             "test_ip_variable_time_ipv4_tcp":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"test_ip_variable_time.py",
                 "args":"",
                 "args_list":[
@@ -427,7 +427,7 @@
                     " --traffic_type lf_tcp",
                     " --debug"]},
             "test_ip_connection_ipv6_udp":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"test_ip_connection.py",
                 "args":"",
                 "args_list":[
@@ -484,23 +484,11 @@
                 "command":"test_status_msg.py",
                 "args":"",
                 "args_list":["--mgr LF_MGR_IP --action run_test"]},
-            "test_wanlink":{
-                "enabled":"TRUE",
-                "command":"test_wanlink.py",
-                "args":"","args_list":["--mgr LF_MGR_IP --debug"]},
             "create_bridge":{
                 "enabled":"TRUE",
                 "command":"create_bridge.py",
                 "args":"",
                 "args_list":["--mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT --target_device sta0000 --debug"]},
-            "create_l3":{
-                "enabled":"TRUE",
-                "command":"create_l3.py",
-                "args":"",
-                "args_list":[
-                    " --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --upstream_port UPSTREAM_PORT",                    
-                    "  use_ssid_idx=1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
-                    " --debug"]},
             "create_l4":{
                 "enabled":"TRUE",
                 "command":"create_l4.py",
