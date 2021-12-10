@@ -88,29 +88,25 @@ class ProbePort(LFCliBase):
             self.tx_mhz = 20
             print("HT: tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
 
-        try:
-            tx_mcs = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split(':')[1].strip('\t')
-            self.tx_mcs = int(tx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
-            print("self.tx_mcs {tx_mcs}".format(tx_mcs=self.tx_mcs))
-            try:
-                self.tx_nss = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('NSS')[1].strip(' ')
-            except BaseException:
-                # nss is not present need to derive from MCS for HT
-                if 0 <= self.tx_mcs <= 7:
-                    self.tx_nss = 1
-                elif 8 <= self.tx_mcs <= 15:
-                    self.tx_nss = 2
-                elif 16 <= self.tx_mcs <= 23:
-                    self.tx_nss = 3
-                elif 24 <= self.tx_mcs <= 31:
-                    self.tx_nss = 4
-            print("tx_nss {tx_nss}".format(tx_nss=self.tx_nss))
-            self.tx_mbit = float(self.tx_bitrate.split(' ')[0])
-            print("tx_mbit {tx_mbit}".format(tx_mbit=self.tx_mbit))
-            self.calculated_data_rate_tx_HT()
-
-        except IndexError as error:
-            print(error)
+        tx_mcs = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split(':')[1].strip('\t')
+        self.tx_mcs = int(tx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
+        print("self.tx_mcs {tx_mcs}".format(tx_mcs=self.tx_mcs))
+        if 'NSS' in text:
+            self.tx_nss = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('NSS')[1].strip(' ')
+        else:
+            # nss is not present need to derive from MCS for HT
+            if 0 <= self.tx_mcs <= 7:
+                self.tx_nss = 1
+            elif 8 <= self.tx_mcs <= 15:
+                self.tx_nss = 2
+            elif 16 <= self.tx_mcs <= 23:
+                self.tx_nss = 3
+            elif 24 <= self.tx_mcs <= 31:
+                self.tx_nss = 4
+        print("tx_nss {tx_nss}".format(tx_nss=self.tx_nss))
+        self.tx_mbit = float(self.tx_bitrate.split(' ')[0])
+        print("tx_mbit {tx_mbit}".format(tx_mbit=self.tx_mbit))
+        self.calculated_data_rate_tx_HT()
 
         rx_bitrate = [x for x in text if 'rx bitrate' in x][0].replace('\t', ' ')
         print("rx_bitrate {rx_bitrate}".format(rx_bitrate=rx_bitrate))
@@ -126,22 +122,21 @@ class ProbePort(LFCliBase):
         else:
             self.rx_mhz = 20
 
-        try:
-            rx_mcs = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split(':')[1].strip('\t')
-            self.rx_mcs = int(rx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
-            print("self.rx_mcs {rx_mcs}".format(rx_mcs=self.rx_mcs))
-            try:
-                self.rx_nss = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('NSS')[1].strip(' ')
-            except BaseException:
-                # nss is not present need to derive from MCS for HT
-                if 0 <= self.rx_mcs <= 7:
-                    self.rx_nss = 1
-                elif 8 <= self.rx_mcs <= 15:
-                    self.rx_nss = 2
-                elif 16 <= self.rx_mcs <= 23:
-                    self.rx_nss = 3
-                elif 24 <= self.rx_mcs <= 31:
-                    self.rx_nss = 4
+        rx_mcs = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split(':')[1].strip('\t')
+        self.rx_mcs = int(rx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
+        print("self.rx_mcs {rx_mcs}".format(rx_mcs=self.rx_mcs))
+        if 'NSS' in text:
+            self.rx_nss = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('NSS')[1].strip(' ')
+        else:
+            # nss is not present need to derive from MCS for HT
+            if 0 <= self.rx_mcs <= 7:
+                self.rx_nss = 1
+            elif 8 <= self.rx_mcs <= 15:
+                self.rx_nss = 2
+            elif 16 <= self.rx_mcs <= 23:
+                self.rx_nss = 3
+            elif 24 <= self.rx_mcs <= 31:
+                self.rx_nss = 4
 
             self.rx_mbit = self.rx_bitrate.split(' ')[0]
             print("rx_nss {rx_nss}".format(rx_nss=self.rx_nss))
