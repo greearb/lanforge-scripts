@@ -1052,6 +1052,11 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
                         if 'ERROR:  Could not find component: TestTag' in text:
                             self.test_result = "Success"
                             background = self.background_green
+                        # probe command for test_ip_variable_time.py has
+                        # the word alloc error and erros in it
+                        elif 'alloc error' in text:
+                            self.test_result = "Success"
+                            background = self.background_green
                         # leave the space in after error to not pick up tx
                         # errors or rx errors
                         elif 'error ' in text.lower():
