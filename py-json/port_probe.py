@@ -28,9 +28,6 @@ class ProbePort(LFCliBase):
         self.probepath = "/probe/1/%s/%s" % (hunks[-2], hunks[-1])
         self.response = None
         self.signals = None
-        self.he = None
-
-        self.he = False
         self.ofdma = False
 
         self.tx_bitrate = None
@@ -76,8 +73,8 @@ class ProbePort(LFCliBase):
         self.signals = dict(zip(keys, values))
 
         tx_bitrate = [x for x in text if 'tx bitrate' in x][0].replace('\t', ' ')
-        if 'HE' in tx_bitrate:
-            print("HE not supported ")
+        # if 'HE' in tx_bitrate:
+        #    print("HE not supported ")
         print("tx_bitrate {tx_bitrate}".format(tx_bitrate=tx_bitrate))
         self.tx_bitrate = tx_bitrate.split(':')[-1].strip(' ')
         if 'MHz' in tx_bitrate:
@@ -106,7 +103,12 @@ class ProbePort(LFCliBase):
         print("tx_nss {tx_nss}".format(tx_nss=self.tx_nss))
         self.tx_mbit = float(self.tx_bitrate.split(' ')[0])
         print("tx_mbit {tx_mbit}".format(tx_mbit=self.tx_mbit))
-        self.calculated_data_rate_tx_HT()
+        if 'HE' in tx_bitrate:
+            self.calculated_data_rate_tx_HE()
+        elif 'VHT' in tx_bitrate:
+            self.calculated_data_rate_tx_VHT()
+        else:
+            self.calculated_data_rate_tx_HT()
 
         rx_bitrate = [x for x in text if 'rx bitrate' in x][0].replace('\t', ' ')
         print("rx_bitrate {rx_bitrate}".format(rx_bitrate=rx_bitrate))
@@ -123,30 +125,33 @@ class ProbePort(LFCliBase):
             self.rx_mhz = 20
 
         rx_mcs = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split(':')[1].strip('\t')
-        self.rx_mcs = int(rx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
-        print("self.rx_mcs {rx_mcs}".format(rx_mcs=self.rx_mcs))
-        if 'NSS' in text:
-            self.rx_nss = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('NSS')[1].strip(' ')
-        else:
-            # nss is not present need to derive from MCS for HT
-            if 0 <= self.rx_mcs <= 7:
-                self.rx_nss = 1
-            elif 8 <= self.rx_mcs <= 15:
-                self.rx_nss = 2
-            elif 16 <= self.rx_mcs <= 23:
-                self.rx_nss = 3
-            elif 24 <= self.rx_mcs <= 31:
-                self.rx_nss = 4
+        # MCS is not in the 6.0MBit/s frame
+        if 'MCS' in rx_mcs:
+            self.rx_mcs = int(rx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
+            print("self.rx_mcs {rx_mcs}".format(rx_mcs=self.rx_mcs))
+            if 'NSS' in text:
+                self.rx_nss = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('NSS')[1].strip(' ')
+            else:
+                # nss is not present need to derive from MCS for HT
+                if 0 <= self.rx_mcs <= 7:
+                    self.rx_nss = 1
+                elif 8 <= self.rx_mcs <= 15:
+                    self.rx_nss = 2
+                elif 16 <= self.rx_mcs <= 23:
+                    self.rx_nss = 3
+                elif 24 <= self.rx_mcs <= 31:
+                    self.rx_nss = 4
 
-        self.rx_mbit = self.rx_bitrate.split(' ')[0]
-        print("rx_nss {rx_nss}".format(rx_nss=self.rx_nss))
-        self.rx_mbit = float(self.rx_bitrate.split(' ')[0])
-        print("rx_mbit {rx_mbit}".format(rx_mbit=self.rx_mbit))
-        self.calculated_data_rate_rx_HT()
-        if 'HE not supported' in [x.strip('\t') for x in text if 'HE' in x]:
-            self.he = False
-        else:
-            self.he = True
+            self.rx_mbit = self.rx_bitrate.split(' ')[0]
+            print("rx_nss {rx_nss}".format(rx_nss=self.rx_nss))
+            self.rx_mbit = float(self.rx_bitrate.split(' ')[0])
+            print("rx_mbit {rx_mbit}".format(rx_mbit=self.rx_mbit))
+            if 'HE' in rx_bitrate:
+                self.calculated_data_rate_rx_HE()
+            elif 'VHT' in rx_bitrate:
+                self.calculated_data_rate_rx_VHT()
+            else:
+                self.calculated_data_rate_rx_HT()
 
     def getSignalAvgCombined(self):
         return self.signals['signal avg'].split(' ')[0]
@@ -164,6 +169,7 @@ class ProbePort(LFCliBase):
         return ' '.join(self.signals['beacon signal avg']).replace(' ', '')
 
     def calculated_data_rate_tx_HT(self):
+        print("calculated_data_rate_tx_HT")
         # TODO compare with standard for 40 MHz if values change
         N_sd = 0  # Number of Data Subcarriers based on modulation and bandwith
         N_bpscs = 0  # Number of coded bits per Subcarrier(Determined by the modulation, MCS)
@@ -175,11 +181,7 @@ class ProbePort(LFCliBase):
         bw = 20
         # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
         # the nubmer of Data Subcarriers is based on modulation and bandwith
-        # try:
         bw = int(self.tx_mhz)
-        # except BaseException:
-        #    print("port_probe.py: WARNING unable to parse tx MHz (BW) , check probe output will use {bw}".format(bw=bw))
-
         print("Mhz {Mhz}".format(Mhz=self.tx_mhz))
         if bw == 20:
             N_sd = 52
@@ -253,6 +255,7 @@ class ProbePort(LFCliBase):
             self.tx_gi = T_gi_long
 
     def calculated_data_rate_rx_HT(self):
+        print("calculated_data_rate_rx_HT")
         N_sd = 0  # Number of Data Subcarriers based on modulation and bandwith
         N_bpscs = 0  # Number of coded bits per Subcarrier(Determined by the modulation, MCS)
         R = 0  # coding ,  (Determined by the modulation, MCS )
@@ -333,6 +336,7 @@ class ProbePort(LFCliBase):
             self.rx_gi = T_gi_long
 
     def calculated_data_rate_tx_VHT(self):
+        print("calculated_data_rate_tx_VHT")
         # TODO compare with standard for 40 MHz if values change
         N_sd = 0  # Number of Data Subcarriers based on modulation and bandwith
         N_bpscs = 0  # Number of coded bits per Subcarrier(Determined by the modulation, MCS)
@@ -344,10 +348,7 @@ class ProbePort(LFCliBase):
         bw = 20
         # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
         # the nubmer of Data Subcarriers is based on modulation and bandwith
-        try:
-            bw = int(self.tx_mhz)
-        except BaseException:
-            print("port_probe.py: WARNING unable to parse tx MHz (BW) , check probe output will use {bw}".format(bw=bw))
+        bw = int(self.tx_mhz)
 
         print("Mhz {Mhz}".format(Mhz=self.tx_mhz))
         if bw == 20:
@@ -430,6 +431,7 @@ class ProbePort(LFCliBase):
             self.tx_gi = T_gi_long
 
     def calculated_data_rate_rx_VHT(self):
+        print("calculated_data_rate_rx_VHT")
         N_sd = 0  # Number of Data Subcarriers based on modulation and bandwith
         N_bpscs = 0  # Number of coded bits per Subcarrier(Determined by the modulation, MCS)
         R = 0  # coding ,  (Determined by the modulation, MCS )
@@ -439,10 +441,7 @@ class ProbePort(LFCliBase):
         T_gi_long = .8 * 10 ** -6  # Guard index.
         # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
         # the nubmer of Data Subcarriers is based on modulation and bandwith
-        try:
-            bw = int(self.rx_mhz)
-        except BaseException:
-            print("port_probe.py:  {} WARNING unable to parse rx MHz (BW) , check probe output will use ")
+        bw = int(self.rx_mhz)
         print("Mhz {Mhz}".format(Mhz=self.rx_mhz))
         if bw == 20:
             N_sd = 52
@@ -524,6 +523,7 @@ class ProbePort(LFCliBase):
         ###########################################
 
     def calculated_data_rate_tx_HE(self):
+        print("calculated_data_rate_tx_HE")
         # TODO compare with standard for 40 MHz if values change
         N_sd = 0  # Number of Data Subcarriers based on modulation and bandwith
         N_bpscs = 0  # Number of coded bits per Subcarrier(Determined by the modulation, MCS)
@@ -535,11 +535,7 @@ class ProbePort(LFCliBase):
         bw = 20
         # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
         # the nubmer of Data Subcarriers is based on modulation and bandwith
-        try:
-            bw = int(self.tx_mhz)
-        except BaseException:
-            print("port_probe.py: WARNING unable to parse tx MHz (BW) , check probe output will use {bw}".format(bw=bw))
-
+        bw = int(self.tx_mhz)
         print("Mhz {Mhz}".format(Mhz=self.tx_mhz))
         if bw == 20:
             N_sd = 52
@@ -621,6 +617,7 @@ class ProbePort(LFCliBase):
             self.tx_gi = T_gi_long
 
     def calculated_data_rate_rx_HE(self):
+        print("calculated_data_rate_rx_HE")
         N_sd = 0  # Number of Data Subcarriers based on modulation and bandwith
         N_bpscs = 0  # Number of coded bits per Subcarrier(Determined by the modulation, MCS)
         R = 0  # coding ,  (Determined by the modulation, MCS )
@@ -630,10 +627,7 @@ class ProbePort(LFCliBase):
         T_gi_long = .8 * 10 ** -6  # Guard index.
         # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
         # the nubmer of Data Subcarriers is based on modulation and bandwith
-        try:
-            bw = int(self.rx_mhz)
-        except BaseException:
-            print("port_probe.py:  {} WARNING unable to parse rx MHz (BW) , check probe output will use ")
+        bw = int(self.rx_mhz)
         print("Mhz {Mhz}".format(Mhz=self.rx_mhz))
         if bw == 20:
             N_sd = 52
