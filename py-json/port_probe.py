@@ -84,31 +84,33 @@ class ProbePort(LFCliBase):
         else:
             self.tx_mhz = 20
             print("HT: tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
-
         tx_mcs = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split(':')[1].strip('\t')
-        self.tx_mcs = int(tx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
-        print("self.tx_mcs {tx_mcs}".format(tx_mcs=self.tx_mcs))
-        if 'NSS' in text:
-            self.tx_nss = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('NSS')[1].strip(' ')
+        if 'MCS' in tx_mcs:
+            self.tx_mcs = int(tx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
+            print("self.tx_mcs {tx_mcs}".format(tx_mcs=self.tx_mcs))
+            if 'NSS' in text:
+                self.tx_nss = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('NSS')[1].strip(' ')
+            else:
+                # nss is not present need to derive from MCS for HT
+                if 0 <= self.tx_mcs <= 7:
+                    self.tx_nss = 1
+                elif 8 <= self.tx_mcs <= 15:
+                    self.tx_nss = 2
+                elif 16 <= self.tx_mcs <= 23:
+                    self.tx_nss = 3
+                elif 24 <= self.tx_mcs <= 31:
+                    self.tx_nss = 4
+            print("tx_nss {tx_nss}".format(tx_nss=self.tx_nss))
+            self.tx_mbit = float(self.tx_bitrate.split(' ')[0])
+            print("tx_mbit {tx_mbit}".format(tx_mbit=self.tx_mbit))
+            if 'HE' in tx_bitrate:
+                self.calculated_data_rate_tx_HE()
+            elif 'VHT' in tx_bitrate:
+                self.calculated_data_rate_tx_VHT()
+            else:
+                self.calculated_data_rate_tx_HT()
         else:
-            # nss is not present need to derive from MCS for HT
-            if 0 <= self.tx_mcs <= 7:
-                self.tx_nss = 1
-            elif 8 <= self.tx_mcs <= 15:
-                self.tx_nss = 2
-            elif 16 <= self.tx_mcs <= 23:
-                self.tx_nss = 3
-            elif 24 <= self.tx_mcs <= 31:
-                self.tx_nss = 4
-        print("tx_nss {tx_nss}".format(tx_nss=self.tx_nss))
-        self.tx_mbit = float(self.tx_bitrate.split(' ')[0])
-        print("tx_mbit {tx_mbit}".format(tx_mbit=self.tx_mbit))
-        if 'HE' in tx_bitrate:
-            self.calculated_data_rate_tx_HE()
-        elif 'VHT' in tx_bitrate:
-            self.calculated_data_rate_tx_VHT()
-        else:
-            self.calculated_data_rate_tx_HT()
+            print("No tx MCS value:{tx_bitrate}".format(tx_bitrate=tx_bitrate))
 
         rx_bitrate = [x for x in text if 'rx bitrate' in x][0].replace('\t', ' ')
         print("rx_bitrate {rx_bitrate}".format(rx_bitrate=rx_bitrate))
@@ -152,6 +154,8 @@ class ProbePort(LFCliBase):
                 self.calculated_data_rate_rx_VHT()
             else:
                 self.calculated_data_rate_rx_HT()
+        else:
+            print("No rx MCS value:{rx_bitrate}".format(rx_bitrate=rx_bitrate))
 
     def getSignalAvgCombined(self):
         return self.signals['signal avg'].split(' ')[0]
