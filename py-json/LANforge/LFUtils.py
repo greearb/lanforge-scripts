@@ -12,15 +12,16 @@ from time import sleep
 from random import seed, randint
 import re
 import ipaddress
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
 LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
+Logg = importlib.import_module("lanforge_client.logg")  # .Logg
 
 debug_printer = pprint.PrettyPrinter(indent=2)
 
@@ -30,7 +31,8 @@ ADD_STA_FLAGS_DOWN_WPA2 = 68719477760
 REPORT_TIMER_MS_FAST = 1500
 REPORT_TIMER_MS_SLOW = 3000
 
-#Used for Speed
+
+# Used for Speed
 def parse_size_bps(size_val):
     if isinstance(size_val, str):
         size_val.upper()
@@ -52,7 +54,8 @@ def parse_size_bps(size_val):
     else:
         return size_val
 
-#Used for Size of file
+
+# Used for Size of file
 def parse_size(size_val):
     if isinstance(size_val, str):
         size_val.upper()
@@ -80,28 +83,21 @@ class PortEID:
     port_id = 0
     port_name = ""
 
-    def __init__(self, p_resource=1, p_port_id=0, p_port_name=""):
-        resource = p_resource
-        port_id = p_port_id
-        port_name = p_port_name
-
     def __init__(self, json_response):
-        if json_response == None:
+        if json_response is None:
             raise Exception("No json input")
         json_s = json_response
-        if json_response['interface'] != None:
+        if json_response['interface'] is not None:
             json_s = json_response['interface']
 
         debug_printer(json_s)
-        resource = json_s['resource']
-        port_id = json_s['id']
-        port_name = json_s['name']
 
 
 # end class PortEID
 
 def staNewDownStaRequest(sta_name, resource_id=1, radio="wiphy0", ssid="", passphrase="", debug_on=False):
     return sta_new_down_sta_request(sta_name, resource_id, radio, ssid, passphrase, debug_on)
+
 
 def sta_new_down_sta_request(sta_name, resource_id=1, radio="wiphy0", ssid="", passphrase="", debug_on=False):
     """
@@ -132,6 +128,7 @@ def sta_new_down_sta_request(sta_name, resource_id=1, radio="wiphy0", ssid="", p
 def portSetDhcpDownRequest(resource_id, port_name, debug_on=False):
     return port_set_dhcp_down_request(resource_id, port_name, debug_on)
 
+
 def port_set_dhcp_down_request(resource_id, port_name, debug_on=False):
     """
     See http://localhost:8080/help/set_port
@@ -155,6 +152,7 @@ def port_set_dhcp_down_request(resource_id, port_name, debug_on=False):
 
 def portDhcpUpRequest(resource_id, port_name, debug_on=False):
     return port_dhcp_up_request(resource_id, port_name, debug_on)
+
 
 def port_dhcp_up_request(resource_id, port_name, debug_on=False):
     """
@@ -181,6 +179,7 @@ def port_dhcp_up_request(resource_id, port_name, debug_on=False):
 def portUpRequest(resource_id, port_name, debug_on=False):
     return port_up_request(resource_id, port_name, debug_on)
 
+
 def port_up_request(resource_id, port_name, debug_on=False):
     """
     See http://localhost:8080/help/set_port
@@ -201,8 +200,10 @@ def port_up_request(resource_id, port_name, debug_on=False):
         debug_printer.pprint(data)
     return data
 
+
 def portDownRequest(resource_id, port_name, debug_on=False):
     return port_down_request(resource_id, port_name, debug_on)
+
 
 def port_down_request(resource_id, port_name, debug_on=False):
     """
@@ -212,7 +213,7 @@ def port_down_request(resource_id, port_name, debug_on=False):
     :param port_name:
     :return:
     """
-    
+
     data = {
         "shelf": 1,
         "resource": resource_id,
@@ -226,6 +227,7 @@ def port_down_request(resource_id, port_name, debug_on=False):
         debug_printer.pprint(data)
     return data
 
+
 def port_reset_request(resource_id, port_name, debug_on=False):
     """
     Does not change the use_dhcp flag
@@ -234,7 +236,7 @@ def port_reset_request(resource_id, port_name, debug_on=False):
     :param port_name:
     :return:
     """
-    
+
     data = {
         "shelf": 1,
         "resource": resource_id,
@@ -248,6 +250,7 @@ def port_reset_request(resource_id, port_name, debug_on=False):
 
 def generateMac(parent_mac, random_octet, debug=False):
     return generate_mac(parent_mac=parent_mac, random_octet=random_octet, debug=debug)
+
 
 def generate_mac(parent_mac, random_octet, debug=False):
     if debug:
@@ -272,7 +275,8 @@ def portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
     :param padding_number_:
     :return:
     """
-    return port_name_series(prefix=prefix_, start_id=start_id_, end_id=end_id_, padding_number=padding_number_, radio=radio)
+    return port_name_series(prefix=prefix_, start_id=start_id_, end_id=end_id_, padding_number=padding_number_,
+                            radio=radio)
 
 
 def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000, radio=None):
@@ -291,7 +295,7 @@ def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000, r
     eid = None
     if radio is not None:
         eid = name_to_eid(radio)
-    
+
     name_list = []
     for i in range((padding_number + start_id), (padding_number + end_id + 1)):
         sta_name = "%s%s" % (prefix, str(i)[1:])
@@ -312,8 +316,10 @@ def gen_ip_series(ip_addr, netmask, num_ips=None):
             chosen_ips.append(ip_list[i])
         return chosen_ips
 
+
 def generateRandomHex():
     return generate_random_hex()
+
 
 # generate random hex if you need it for mac addresses
 def generate_random_hex():
@@ -370,6 +376,7 @@ def port_list_to_alias_map(json_list, debug_=False):
 
     return reverse_map
 
+
 def list_to_alias_map(json_list=None, from_element=None, debug_=False):
     reverse_map = {}
     if (json_list is None) or (len(json_list) < 1):
@@ -419,9 +426,9 @@ def find_port_eids(resource_id=1, base_url="http://localhost:8080", port_names=(
     port_url = "/port/1"
     for port_name in port_names:
         uri = "%s/%s/%s" % (port_url, resource_id, port_name)
-        lf_r = LFRequest.LFRequest(base_url, uri)
+        lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug)
         try:
-            response = lf_r.getAsJson(debug)
+            response = lf_r.getAsJson()
             if response is None:
                 continue
             port_eids.append(PortEID(response))
@@ -443,9 +450,9 @@ def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080",
         up_stations = []
         for port_name in port_list:
             uri = "%s/%s/%s?fields=device,down" % (port_url, resource_id, port_name)
-            lf_r = LFRequest.LFRequest(base_url, uri)
-            json_response = lf_r.getAsJson(debug_=False)
-            if json_response == None:
+            lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug_)
+            json_response = lf_r.getAsJson()
+            if json_response is None:
                 if debug_:
                     print("port %s disappeared" % port_name)
                 continue
@@ -460,6 +467,7 @@ def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080",
 def waitUntilPortsAdminUp(resource_id=1, base_url="http://localhost:8080", port_list=()):
     return wait_until_ports_admin_up(resource_id=resource_id, base_url=base_url, port_list=port_list)
 
+
 def wait_until_ports_admin_up(resource_id=1, base_url="http://localhost:8080", port_list=(), debug_=False):
     print("Waiting until  ports appear admin-up...")
     down_stations = port_list.copy()
@@ -470,9 +478,9 @@ def wait_until_ports_admin_up(resource_id=1, base_url="http://localhost:8080", p
         down_stations = []
         for port_name in port_list:
             uri = "%s/%s/%s?fields=device,down" % (port_url, resource_id, port_name)
-            lf_r = LFRequest.LFRequest(base_url, uri)
-            json_response = lf_r.getAsJson(debug_=False)
-            if json_response == None:
+            lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug_)
+            json_response = lf_r.getAsJson()
+            if json_response is None:
                 if debug_:
                     print("port %s appeared" % port_name)
                 continue
@@ -483,8 +491,10 @@ def wait_until_ports_admin_up(resource_id=1, base_url="http://localhost:8080", p
         sleep(1)
     return None
 
+
 def waitUntilPortsDisappear(base_url="http://localhost:8080", port_list=(), debug=False):
     wait_until_ports_disappear(base_url, port_list, debug)
+
 
 def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), debug=False):
     if (port_list is None) or (len(port_list) < 1):
@@ -499,8 +509,8 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
     else:
         found_stations = [port_list]
 
-    temp_names_by_resource = {1:[]}
-    temp_query_by_resource = {1:""}
+    temp_names_by_resource = {1: []}
+    temp_query_by_resource = {1: ""}
     for port_eid in port_list:
         eid = name_to_eid(port_eid)
         # shelf = eid[0]
@@ -511,7 +521,8 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
             temp_names_by_resource[resource_id] = []
         port_name = eid[2]
         temp_names_by_resource[resource_id].append(port_name)
-        temp_query_by_resource[resource_id] = "%s/%s/%s?fields=alias" % (url, resource_id, ",".join(temp_names_by_resource[resource_id]))
+        temp_query_by_resource[resource_id] = "%s/%s/%s?fields=alias" % (
+        url, resource_id, ",".join(temp_names_by_resource[resource_id]))
     if debug:
         pprint.pprint(("temp_query_by_resource", temp_query_by_resource))
     while len(found_stations) > 0:
@@ -523,8 +534,8 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
                     ("check_url", check_url),
                 ])
             lf_r = LFRequest.LFRequest(base_url, check_url, debug_=debug)
-            json_response = lf_r.get_as_json(debug_=debug, die_on_error_=False)
-            if (json_response == None):
+            json_response = lf_r.get_as_json()
+            if json_response is None:
                 print("LFUtils::wait_until_ports_disappear:: Request returned None: [{}]".format(base_url + check_url))
             else:
                 if debug:
@@ -540,7 +551,7 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
         if len(found_stations) > 0:
             if debug:
                 pprint.pprint(("wait_until_ports_disappear found_stations:", found_stations))
-    sleep(1) # safety
+    sleep(1)  # safety
     return
 
 
@@ -554,37 +565,39 @@ def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=F
     """
     return wait_until_ports_appear(base_url, port_list, debug=debug)
 
-def name_to_eid(input, non_port=False):
+
+def name_to_eid(eid_input, non_port=False):
     rv = [1, 1, "", ""]
     info = []
-    if (input is None) or (input == ""):
-        raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % input)
-    if type(input) is not str:
-        raise ValueError("name_to_eid wants string formatted like '1.2.name', not a tuple or list or [%s]" % type(input))
+    if (eid_input is None) or (eid_input == ""):
+        raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % eid_input)
+    if type(eid_input) is not str:
+        raise ValueError(
+            "name_to_eid wants string formatted like '1.2.name', not a tuple or list or [%s]" % type(eid_input))
 
-    info = input.split('.')
+    info = eid_input.split('.')
     if len(info) == 1:
-        rv[2] = info[0] # just port name
+        rv[2] = info[0]  # just port name
         return rv
 
-    if (len(info) == 2) and info[0].isnumeric() and not info[1].isnumeric(): # resource.port-name
+    if (len(info) == 2) and info[0].isnumeric() and not info[1].isnumeric():  # resource.port-name
         rv[1] = int(info[0])
         rv[2] = info[1]
         return rv
 
-    elif (len(info) == 2) and not info[0].isnumeric(): # port-name.qvlan
-        rv[2] = info[0]+"."+info[1]
+    elif (len(info) == 2) and not info[0].isnumeric():  # port-name.qvlan
+        rv[2] = info[0] + "." + info[1]
         return rv
 
-    if (len(info) == 3) and info[0].isnumeric() and info[1].isnumeric(): # shelf.resource.port-name
+    if (len(info) == 3) and info[0].isnumeric() and info[1].isnumeric():  # shelf.resource.port-name
         rv[0] = int(info[0])
         rv[1] = int(info[1])
         rv[2] = info[2]
         return rv
 
-    elif (len(info) == 3) and info[0].isnumeric() and not info[1].isnumeric(): # resource.port-name.qvlan
+    elif (len(info) == 3) and info[0].isnumeric() and not info[1].isnumeric():  # resource.port-name.qvlan
         rv[1] = int(info[0])
-        rv[2] = info[1]+"."+info[2]
+        rv[2] = info[1] + "." + info[2]
         return rv
 
     if non_port:
@@ -595,13 +608,14 @@ def name_to_eid(input, non_port=False):
         if (len(info) >= 4):
             rv[3] = int(info[3])
         return rv
-        
-    if len(info) == 4: # shelf.resource.port-name.qvlan
+
+    if len(info) == 4:  # shelf.resource.port-name.qvlan
         rv[0] = int(info[0])
         rv[1] = int(info[1])
-        rv[2] = info[2]+"."+info[3]
+        rv[2] = info[2] + "." + info[3]
 
     return rv
+
 
 def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debug=False):
     """
@@ -633,20 +647,21 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
             port_name = eid[2]
             # print("waiting for sta sta "+port_eid)
             uri = "%s/%s/%s" % (port_url, resource_id, port_name)
-            lf_r = LFRequest.LFRequest(base_url, uri)
-            json_response = lf_r.getAsJson(debug_=False)
-            if (json_response != None):
+            lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug)
+            json_response = lf_r.getAsJson()
+            if json_response is not None:
                 found_stations.append(port_name)
             else:
-                lf_r = LFRequest.LFRequest(base_url, ncshow_url)
+                lf_r = LFRequest.LFRequest(base_url, ncshow_url, debug_=debug)
                 lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "probe_flags": 5})
                 lf_r.jsonPost()
-        if (len(found_stations) < len(port_list)):
+        if len(found_stations) < len(port_list):
             sleep(2)
 
     if debug:
         print("These stations appeared: " + ", ".join(found_stations))
     return
+
 
 def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False):
     """
@@ -672,14 +687,14 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
             shelf = eid[0]
             resource_id = eid[1]
             port_name = eid[2]
-            
+
             uri = "%s/%s/%s" % (port_url, resource_id, port_name)
-            lf_r = LFRequest.LFRequest(base_url, uri)
-            json_response = lf_r.getAsJson(debug_=False)
-            if (json_response != None):
+            lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug)
+            json_response = lf_r.getAsJson()
+            if json_response is not None:
                 found_stations.append(port_name)
             else:
-                lf_r = LFRequest.LFRequest(base_url, ncshow_url)
+                lf_r = LFRequest.LFRequest(base_url, ncshow_url, debug_=debug)
                 lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "flags": 1})
                 lf_r.formPost()
         if (len(found_stations) < len(endp_list)):
@@ -698,7 +713,7 @@ def remove_port(resource, port_name, baseurl="http://localhost:8080/", debug=Fal
     if debug:
         print("Removing port %d.%s" % (resource, port_name))
     url = "/cli-json/rm_vlan"
-    lf_r = LFRequest.LFRequest(baseurl, url)
+    lf_r = LFRequest.LFRequest(baseurl, url, debug_=debug)
     lf_r.addPostData({
         "shelf": 1,
         "resource": resource,
@@ -720,7 +735,7 @@ def remove_cx(baseurl, cx_names, debug=False):
             "test_mgr": "all",
             "cx_name": name
         }
-        lf_r = LFRequest.LFRequest(baseurl, url)
+        lf_r = LFRequest.LFRequest(baseurl, url, debug_=debug)
         lf_r.addPostData(data)
         lf_r.jsonPost(debug)
 
@@ -733,7 +748,7 @@ def remove_endps(baseurl, endp_names, debug=False):
     if debug:
         print("Removing endp %s" % ", ".join(endp_names))
     url = "/cli-json/rm_endp"
-    lf_r = LFRequest.LFRequest(baseurl, url)
+    lf_r = LFRequest.LFRequest(baseurl, url, debug_=debug)
     for name in endp_names:
         data = {
             "endp_name": name
@@ -791,11 +806,11 @@ def expand_endp_histogram(distribution_payload=None):
         raise ValueError("Unexpected histogram format.")
     multiplier = int(distribution_payload["histo_category_width"])
     formatted_dict = {
-        #"00000 <= x <= 00001" : "0"
+        # "00000 <= x <= 00001" : "0"
     }
     for bucket_index in range(len(distribution_payload["histogram"]) - 1):
-        pow1 = (2**bucket_index) * multiplier
-        pow2 = (2**(bucket_index+1)) * multiplier
+        pow1 = (2 ** bucket_index) * multiplier
+        pow2 = (2 ** (bucket_index + 1)) * multiplier
         if bucket_index == 0:
             category_name = "00000 <= x <= {:-05.0f}".format(pow2)
         else:

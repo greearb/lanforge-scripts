@@ -50,10 +50,10 @@ class DUTProfile(LFCliBase):
         self.append = []
 
     def set_param(self, name, value):
-        if (name in self.__dict__):
+        if name in self.__dict__:
             self.__dict__[name] = value
 
-    def create(self, name=None, param_=None, flags=None, flags_mask=None, notes=None):
+    def create(self, name=None, flags=None, flags_mask=None):
         data = {}
         if (name is not None) and (name != ""):
             data["name"] = name
@@ -63,7 +63,7 @@ class DUTProfile(LFCliBase):
             raise ValueError("cannot create/update DUT record lacking a name")
 
         for param in add_dut.dut_params:
-            if (param.name in self.__dict__):
+            if param.name in self.__dict__:
                 if (self.__dict__[param.name] is not None) \
                         and (self.__dict__[param.name] != "NA"):
                     data[param.name] = self.__dict__[param.name]
@@ -97,7 +97,6 @@ class DUTProfile(LFCliBase):
                 "dut": self.name,
                 "text": "[BLANK]"
             }, self.debug)
-            notebytes = None
             for line in self.notes:
                 notebytes = base64.b64encode(line.encode('ascii'))
                 if self.debug:
@@ -110,7 +109,6 @@ class DUTProfile(LFCliBase):
                     "text-64": notebytes.decode('ascii')
                 }, self.debug)
         if (self.append is not None) and (len(self.append) > 0):
-            notebytes = None
             for line in self.append:
                 notebytes = base64.b64encode(line.encode('ascii'))
                 if self.debug:

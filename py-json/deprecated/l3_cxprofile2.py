@@ -611,9 +611,9 @@ class L3CXProfile2(BaseProfile):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
             if (duration_sec <= monitor_interval_ms):
                 raise ValueError("L3CXProfile::monitor wants duration_sec > monitor_interval")
-        if report_file == None:
+        if report_file is None:
             raise ValueError("Monitor requires an output file to be defined")
-        if created_cx == None:
+        if created_cx is None:
             raise ValueError("Monitor needs a list of Layer 3 connections")
         if (monitor_interval_ms is None) or (monitor_interval_ms < 1):
             raise ValueError("L3CXProfile::monitor wants monitor_interval >= 1 second")

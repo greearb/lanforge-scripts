@@ -153,7 +153,7 @@ class APIClient:
         # Update the result in TestRail using send_post function.
         # Parameters for add_result_for_case is the combination of runid and case id.
         # status_id is 1 for Passed, 2 For Blocked, 4 for Retest and 5 for Failed
-        #status_id = 1 if result_flag is True else 5
+        #status_id = 1 if result_flag else 5
 
         print("result status Pass/Fail = ", status_id)
         print("case id=", case_id)

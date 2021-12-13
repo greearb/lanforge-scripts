@@ -5,7 +5,6 @@ import importlib
 from pprint import pprint
 import time
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -97,7 +96,7 @@ class VAPProfile(LFCliBase):
         req_json = LFUtils.portUpRequest(resource, None, debug_on=self.debug)
         req_json["port"] = self.vap_name
         set_port_r.addPostData(req_json)
-        json_response = set_port_r.jsonPost(self.debug)
+        set_port_r.jsonPost(self.debug)
         time.sleep(0.03)
 
     def admin_down(self, resource):
@@ -105,7 +104,7 @@ class VAPProfile(LFCliBase):
         req_json = LFUtils.port_down_request(resource, None, debug_on=self.debug)
         req_json["port"] = self.vap_name
         set_port_r.addPostData(req_json)
-        json_response = set_port_r.jsonPost(self.debug)
+        set_port_r.jsonPost(self.debug)
         time.sleep(0.03)
 
     def use_security(self, security_type, ssid=None, passwd=None):
@@ -141,7 +140,7 @@ class VAPProfile(LFCliBase):
             print("Command name name [%s] not defined in %s" % (command_name, self.COMMANDS))
             return
         if command_name == "add_vap":
-            if (param_name not in add_vap.add_vap_flags):
+            if param_name not in add_vap.add_vap_flags:
                 print("Parameter name [%s] not defined in add_vap.py" % param_name)
                 if self.debug:
                     pprint(add_vap.add_vap_flags)
@@ -255,7 +254,6 @@ class VAPProfile(LFCliBase):
             raise ValueError("No radio %s.%s found" % (resource, radio))
 
         eid = "1.%s.%s" % (resource, radio)
-        frequency = 0
         country = 0
         if eid in jr:
             country = jr[eid]["country"]
@@ -312,18 +310,18 @@ class VAPProfile(LFCliBase):
             pprint(add_vap_r)
             print("- ~1502 - - - - - - - - - - - - - - - - - - - ")
 
-        json_response = add_vap_r.jsonPost(debug)
+        add_vap_r.jsonPost(debug)
         # time.sleep(0.03)
         time.sleep(2)
         set_port_r.addPostData(self.set_port_data)
-        json_response = set_port_r.jsonPost(debug)
+        set_port_r.jsonPost(debug)
         time.sleep(0.03)
 
         self.wifi_extra_data["resource"] = resource
         self.wifi_extra_data["port"] = self.vap_name
         if self.wifi_extra_data_modified:
             wifi_extra_r.addPostData(self.wifi_extra_data)
-            json_response = wifi_extra_r.jsonPost(debug)
+            wifi_extra_r.jsonPost(debug)
 
         port_list = self.local_realm.json_get("port/1/1/list")
         if port_list is not None:
@@ -335,7 +333,7 @@ class VAPProfile(LFCliBase):
                         time.sleep(5)
 
         # create bridge
-        if bridge :
+        if bridge:
             print("creating bridge")
             data = {
                 "shelf": 1,
@@ -354,14 +352,12 @@ class VAPProfile(LFCliBase):
             }
             self.local_realm.json_post("cli-json/set_port", bridge_set_port)
 
-        if (self.up):
+        if self.up:
             self.admin_up(resource)
 
     def cleanup(self, resource, delay=0.03):
         print("Cleaning up VAPs")
         desired_ports = ["1.%s.%s" % (resource, self.vap_name), "1.%s.br0" % resource]
-
-        del_count = len(desired_ports)
 
         # First, request remove on the list.
         for port_eid in desired_ports:
@@ -369,4 +365,3 @@ class VAPProfile(LFCliBase):
 
         # And now see if they are gone
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_ports)
-

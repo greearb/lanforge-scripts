@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 
-'''
+"""
 NAME: lf_report.py
 
-PURPOSE: 
+PURPOSE:
 
 This program is a helper  class for reporting results for a lanforge python script.
-The class will generate an output directory based on date and time in the /home/lanforge/html-reports/ .   
+The class will generate an output directory based on date and time in the /home/lanforge/html-reports/ .
 If the reports-data is not present then the date and time directory will be created in the current directory.
-The banner and Candela Technology logo will be copied in the results directory. 
-The results directory may be over written and many of the other paramaters during construction. 
+The banner and Candela Technology logo will be copied in the results directory.
+The results directory may be over written and many of the other paramaters during construction.
 Creating the date time directory on construction was a design choice.
 
-EXAMPLE: 
+EXAMPLE:
 
-This is a helper class, a unit test is included at the bottom of the file.  
+This is a helper class, a unit test is included at the bottom of the file.
 To test lf_report.py and lf_graph.py together use the lf_report_test.py file
 
 LICENSE:
@@ -23,7 +23,7 @@ LICENSE:
 
 
 INCLUDE_IN_README
-'''
+"""
 # CAUTION: adding imports to this file which are not in update_dependencies.py is not advised
 import os
 import shutil
@@ -31,25 +31,27 @@ import datetime
 
 import pandas as pd
 import pdfkit
+import argparse
 
 
 # internal candela references included during intial phases, to be deleted at future date
 # https://candelatech.atlassian.net/wiki/spaces/LANFORGE/pages/372703360/Scripting+Data+Collection+March+2021
 # base report class
-class lf_report():
+
+class lf_report:
     def __init__(self,
                  # _path the report directory under which the report directories will be created.
                  _path="/home/lanforge/html-reports",
                  _alt_path="",
                  _date="",
-                 _title="LANForge Test Run Heading",
+                 _title="LANForge Unit Test Run Heading",
                  _table_title="LANForge Table Heading",
                  _graph_title="LANForge Graph Title",
                  _obj="",
                  _obj_title="",
                  _output_html="outfile.html",
                  _output_pdf="outfile.pdf",
-                 _results_dir_name="LANforge_Test_Results",
+                 _results_dir_name="LANforge_Test_Results_Unit_Test",
                  _output_format='html',  # pass in on the write functionality, current not used
                  _dataframe="",
                  _path_date_time="",
@@ -76,6 +78,7 @@ class lf_report():
         self.output_html = _output_html
         self.path_date_time = _path_date_time
         self.write_output_html = ""
+        self.write_output_index_html = ""
         self.output_pdf = _output_pdf
         self.write_output_pdf = ""
         self.banner_html = ""
@@ -271,6 +274,17 @@ class lf_report():
             print("write_html failed")
         return self.write_output_html
 
+    def write_index_html(self):
+        self.write_output_index_html = str(self.path_date_time) + '/' + str("index.html")
+        print("write_output_index_html: {}".format(self.write_output_index_html))
+        try:
+            test_file = open(self.write_output_index_html, "w")
+            test_file.write(self.html)
+            test_file.close()
+        except:
+            print("write_index_html failed")
+        return self.write_output_index_html
+
     def write_html_with_timestamp(self):
         self.write_output_html = "{}/{}-{}".format(self.path_date_time, self.date, self.output_html)
         print("write_output_html: {}".format(self.write_output_html))
@@ -456,7 +470,7 @@ class lf_report():
         setup_information = """
                             <!-- Test Setup Information -->
                             <table width='700px' border='1' cellpadding='2' cellspacing='0' style='border-top-color: gray; border-top-style: solid; border-top-width: 1px; border-right-color: gray; border-right-style: solid; border-right-width: 1px; border-bottom-color: gray; border-bottom-style: solid; border-bottom-width: 1px; border-left-color: gray; border-left-style: solid; border-left-width: 1px'>
-
+                                
                                 <tr>
                                   <td>""" + str(value) + """</td>
                                   <td>
@@ -496,7 +510,7 @@ class lf_report():
 function fallbackCopyTextToClipboard(text) {
   var textArea = document.createElement("textarea");
   textArea.value = text;
-
+  
   // Avoid scrolling to bottom
   textArea.style.top = "0";
   textArea.style.left = "0";
@@ -561,6 +575,16 @@ function copyTextToClipboard(ele) {
 
 # Unit Test
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog="lf_report.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="Reporting library Unit Test")
+    parser.add_argument('--lfmgr', help='sample argument: where LANforge GUI is running', default='localhost')
+    # the args parser is not really used , this is so the report is not generated when testing 
+    # the imports with --help
+    args = parser.parse_args()
+    print("LANforge manager {lfmgr}".format(lfmgr=args.lfmgr))
+
     # Testing: generate data frame
     dataframe = pd.DataFrame({
         'product': ['CT521a-264-1ac-1n', 'CT521a-1ac-1ax', 'CT522-264-1ac2-1n', 'CT523c-2ac2-db-10g-cu',
@@ -573,7 +597,7 @@ if __name__ == "__main__":
 
     print(dataframe)
 
-    # Testing: generate data frame
+    # Testing: generate data frame 
     dataframe2 = pd.DataFrame({
         'station': [1, 2, 3, 4, 5, 6, 7],
         'time_seconds': [23, 78, 22, 19, 45, 22, 25]
@@ -605,4 +629,3 @@ if __name__ == "__main__":
     report.write_pdf()
 
     print("report path {}".format(report.get_path()))
-

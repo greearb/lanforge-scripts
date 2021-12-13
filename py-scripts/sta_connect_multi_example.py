@@ -3,12 +3,12 @@
 import sys
 import os
 import importlib
+import argparse
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 # if you lack __init__.py in this directory you will not find sta_connect module
@@ -20,11 +20,24 @@ StaConnect = sta_connect.StaConnect
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        prog='sta_connected_multip_example.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+        sta_connected_multip_example.py
+
+            ''',
+        description='''\
+Example of how to instantiate StaConnect and run the test
+        ''')
+    # args = parser.parse_args() - add this line if adding arguments
+    parser.parse_args()
+
     # create multiple OPEN stations
     station_names = LFUtils.port_name_series(start_id=0, end_id=1)
 
     test = StaConnect("localhost", 8080, _debugOn=False, _exit_on_error=True,
-                        _cleanup_on_exit=False, _runtime_sec=360, _exit_on_fail=True)
+                      _cleanup_on_exit=False, _runtime_sec=360, _exit_on_fail=True)
     test.sta_mode = sta_connect.MODE_AUTO
     test.upstream_resource = 1
     test.upstream_port = "eth1"
@@ -49,7 +62,7 @@ def main():
         print("** endp: "+endp_name)
         pprint.pprint(test.resulting_endpoints[endp_name])
     '''
-    if is_passing == False:
+    if not is_passing:
         # run_results = staConnect.get_failed_result_list()
         fail_message = test.get_fail_message()
         print("Some tests failed:\n" + fail_message)
@@ -63,7 +76,7 @@ def main():
     test.dut_passwd = "jedway-wpa2-x2048-5-1"
     test.run()
     is_passing = test.passes()
-    if is_passing == False:
+    if not is_passing:
         # run_results = staConnect.get_failed_result_list()
         fail_message = test.get_fail_message()
         print("Some tests failed:\n" + fail_message)
@@ -71,7 +84,7 @@ def main():
     else:
         print("Tests pass")
 
-    if test.cleanup_on_exit == True:
+    if test.cleanup_on_exit:
         test.remove_stations()
 
 

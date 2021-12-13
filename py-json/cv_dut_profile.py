@@ -40,9 +40,12 @@ class cv_dut(LFCliBase):
         self.lan_port = "[BLANK]"
         self.api_id = "0"
         self.flags_mask = "NA"
-        if desired_dut_flags is not None:
+        if desired_dut_flags:
             self.dut_flags = desired_dut_flags
             self.dut_flags_mask = desired_dut_flags_mask
+            if self.dut_flags:
+                self.flags = self.add_named_flags(self.dut_flags, add_dut_flags)
+                self.flags_mask = self.add_named_flags(self.dut_flags_mask, add_dut_flags)
 
     def add_named_flags(self, desired_list, command_ref):
         if desired_list is None:
@@ -80,11 +83,6 @@ class cv_dut(LFCliBase):
                    top_left_x="NA",
                    top_left_y="NA",
                    ):
-        try:
-            self.flags = self.add_named_flags(self.dut_flags, add_dut_flags)
-            self.flags_mask = self.add_named_flags(self.dut_flags_mask, add_dut_flags)
-        except:
-            pass
         response_json = []
         req_url = "/cli-json/add_dut"
         data = {
@@ -129,13 +127,13 @@ class cv_dut(LFCliBase):
                  ssid_flags=0,
                  ssid_flags_mask=0xFFFFFFFF):
         req_url = "/cli-json/add_dut_ssid"
-        print("name:" + dut_name,
-              "ssid_idx:" + ssid_idx,
-              "ssid:" + ssid,
-              "passwd:" + passwd,
-              "bssid:" + bssid,
-              "ssid_flags:" + str(ssid_flags),
-              "ssid_flags_mask:" + str(ssid_flags_mask))
+        print("name: %s" % dut_name,
+              "ssid_idx: %s" % ssid_idx,
+              "ssid: %s" % ssid,
+              "passwd: %s" % passwd,
+              "bssid: %s" % bssid,
+              "ssid_flags: %s" % ssid_flags,
+              "ssid_flags_mask: %s" % ssid_flags_mask)
 
         self.json_post(req_url, {
             "name": dut_name,

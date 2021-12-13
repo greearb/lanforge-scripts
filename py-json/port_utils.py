@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-class PortUtils():
+class PortUtils:
     def __init__(self, local_realm):
         self.local_realm = local_realm
 

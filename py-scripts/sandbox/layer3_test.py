@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+# script moved to sandbox 11/11/2021 - needs updates
+
 import sys
 import os
 import importlib
@@ -14,18 +17,20 @@ if sys.version_info[0] != 3:
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 
-class Layer3Test(LFCliBase):
+class Layer3Test(Realm):
 
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, radio="wiphy1", sta_prefix="sta", start_id=0, num_sta=2,
-                 dut_ssid="lexusdut", dut_security="open", dut_passwd="[BLANK]", upstream="eth1", name_prefix="L3Test",
-                 traffic_type="lf_udp",side_a_speed="0M", side_b_speed="10M", session_id="Layer3Test", duration="1m",_debug_on=False, _exit_on_error=False,  _exit_on_fail=False):
-        super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+                 dut_ssid="lexusdut", dut_security="open", dut_passwd="[BLANK]", upstream="1.1.eth1", name_prefix="L3Test",
+                 traffic_type="lf_udp",
+                 side_a_min_rate=256000, side_a_max_rate=0,
+                 side_b_min_rate=256000, side_b_max_rate=0,
+                 session_id="Layer3Test", duration="1m",
+                 _debug_on=False, _exit_on_error=False,  _exit_on_fail=False):
+        super().__init__(lfclient_host=lfclient_host, lfclient_port=lfclient_port, debug_=_debug_on, _exit_on_fail=_exit_on_fail)
         print("Test is about to start")
         self.host = lfclient_host
         self.port = lfclient_port
@@ -42,29 +47,27 @@ class Layer3Test(LFCliBase):
         self.password = dut_passwd
         self.session_id = session_id
         self.traffic_type = traffic_type
-        self.side_a_speed = side_a_speed
-        self.side_b_speed = side_b_speed
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.station_profile = self.local_realm.new_station_profile()
-        self.cx_profile = self.local_realm.new_l3_cx_profile()
+        self.station_profile = self.new_station_profile()
+        self.cx_profile = self.new_l3_cx_profile()
 
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
         self.cx_profile.name_prefix = self.name_prefix
-        self.cx_profile.side_a_min_bps = self.local_realm.parse_speed(self.side_a_speed)
-        self.cx_profile.side_a_max_bps = self.local_realm.parse_speed(self.side_a_speed)
-        self.cx_profile.side_b_min_bps = self.local_realm.parse_speed(self.side_b_speed)
-        self.cx_profile.side_b_max_bps = self.local_realm.parse_speed(self.side_b_speed)
+        self.cx_profile.side_a_min_bps = side_a_min_rate
+        self.cx_profile.side_a_max_bps = side_a_max_rate
+        self.cx_profile.side_b_min_bps = side_b_min_rate
+        self.cx_profile.side_b_max_bps = side_b_max_rate
 
         print("Test is Initialized")
 
 
     def precleanup(self):
         print("precleanup started")
-        self.station_list = LFUtils.portNameSeries(prefix_=self.sta_prefix, start_id_=self.sta_start_id, end_id_=self.num_sta - 1, padding_number_=10000, radio=self.radio)
+        self.station_list = LFUtils.portNameSeries(prefix_=self.sta_prefix, start_id_=self.sta_start_id,
+                                                   end_id_=self.num_sta - 1, padding_number_=10000, radio=self.radio)
         self.cx_profile.cleanup_prefix()
         for sta in self.station_list:
-            self.local_realm.rm_port(sta, check_exists=True)
+            self.rm_port(sta, check_exists=True)
             time.sleep(1)
         self.cx_profile.cleanup()
 
@@ -81,8 +84,9 @@ class Layer3Test(LFCliBase):
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.create(radio=self.radio, sta_names_=self.station_list, debug=self.debug)
-        self.local_realm.wait_until_ports_appear(sta_list=self.station_list)
-        self.cx_profile.create(endp_type=self.traffic_type, side_a=self.station_profile.station_names, side_b=self.upstream, sleep_time=0)
+        self.wait_until_ports_appear(sta_list=self.station_list)
+        self.cx_profile.create(endp_type=self.traffic_type, side_a=self.station_profile.station_names,
+                               side_b=self.upstream, sleep_time=0)
         print("Test Build done")
         pass
 
@@ -92,7 +96,7 @@ class Layer3Test(LFCliBase):
         self.station_profile.admin_up()
         temp_stas = self.station_profile.station_names.copy()
         temp_stas.append(self.upstream)
-        if (self.local_realm.wait_for_ip(temp_stas)):
+        if self.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:
             self._fail("Stations failed to get IPs", print_fail)
@@ -101,13 +105,13 @@ class Layer3Test(LFCliBase):
         try:
             for i in self.cx_profile.get_cx_names():
                 self.cx_names.append(i)
-                while self.local_realm.json_get("/cx/" + i).get(i).get('state') != 'Run':
+                while self.json_get("/cx/" + i).get(i).get('state') != 'Run':
                     continue
         except Exception as e:
             pass
         print("Test Started")
         self.cur_time = datetime.datetime.now()
-        self.end_time = self.local_realm.parse_time(self.test_duration) + self.cur_time
+        self.end_time = self.parse_time(self.test_duration) + self.cur_time
         print(self.end_time-self.cur_time)
         self.start_monitor()
         pass
@@ -136,8 +140,12 @@ class Layer3Test(LFCliBase):
         pass
 
 def main():
-    # This has --mgr, --mgr_port and --debug
-    parser = LFCliBase.create_basic_argparse(
+    # Realm.create_basic_argparse defined in 
+    # /py-json/LANforge/lfcli_base.py  
+    # args --mgr --mgr_port --upstream_port --num_stations --test_id 
+    # --debug --proxy --debugging --debug_log
+    # --radio --security --ssid --passwd
+    parser = Realm.create_basic_argparse(
         prog="layer3_test.py",
         formatter_class=argparse.RawTextHelpFormatter,
         epilog="About This Script")
@@ -156,7 +164,9 @@ def main():
     obj = Layer3Test(lfclient_host=args.mgr, lfclient_port=args.mgr_port,
                      duration=args.test_duration, session_id=args.session_id,
                      traffic_type=args.traffic_type,
-                     dut_ssid=args.ssid, dut_passwd=args.passwd, dut_security=args.security, num_sta=args.num_client, side_a_speed=args.side_a_min_speed, side_b_speed=args.side_b_min_speed, radio=args.radio)
+                     upstream=args.upstream_port,
+                     dut_ssid=args.ssid, dut_passwd=args.passwd, dut_security=args.security, num_sta=args.num_client,
+                     side_a_min_rate=args.side_a_min_speed, side_b_min_rate=args.side_b_min_speed, radio=args.radio,_debug_on=args.debug)
     obj.precleanup()
     obj.build()
     obj.start()

@@ -31,17 +31,14 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 
-class ConnectTest(LFCliBase):
+class ConnectTest(Realm):
     def __init__(self,
                  _ssid=None,
                  _security=None,
@@ -49,6 +46,7 @@ class ConnectTest(LFCliBase):
                  _host=None,
                  _port=None,
                  _sta_list=None,
+                 _use_existing_sta=False,
                  _number_template="00000",
                  _radio="wiphy0",
                  _proxy_str=None,
@@ -60,23 +58,19 @@ class ConnectTest(LFCliBase):
                  _mode=0,
                  _num_stations=0,
                  _timeout=120):
-        super().__init__(_host,
-                         _port,
+        super().__init__(lfclient_host=_host,
+                         lfclient_port=_port,
+                         _exit_on_error=_exit_on_error,
+                         _exit_on_fail=_exit_on_fail,
                          _proxy_str=_proxy_str,
-                         _local_realm=realm.Realm(lfclient_host=_host,
-                                                  lfclient_port=_port,
-                                                  _exit_on_error=_exit_on_error,
-                                                  _exit_on_fail=_exit_on_fail,
-                                                  _proxy_str=_proxy_str,
-                                                  debug_=_debug_on),
-                         _debug=_debug_on,
-                         _exit_on_fail=_exit_on_fail)
+                         debug_=_debug_on)
         self.host = _host
         self.port = _port
         self.ssid = _ssid
         self.security = _security
         self.password = _password
         self.sta_list = _sta_list
+        self.use_existing_sta = _use_existing_sta
         self.radio = _radio
         self.timeout = 120
         self.number_template = _number_template
@@ -86,7 +80,7 @@ class ConnectTest(LFCliBase):
         self.ipv6 = _ipv6
         self.num_stations = _num_stations
 
-        self.station_profile = self.local_realm.new_station_profile()
+        self.station_profile = self.new_station_profile()
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.password
@@ -97,7 +91,6 @@ class ConnectTest(LFCliBase):
             print("----- Station List ----- ----- ----- ----- ----- ----- \n")
             pprint.pprint(self.sta_list)
             print("---- ~Station List ----- ----- ----- ----- ----- ----- \n")
-
 
     def build(self):
         # Build stations
@@ -118,9 +111,9 @@ class ConnectTest(LFCliBase):
         print("Starting test...")
         for sec in range(self.timeout):
             for sta_name in sta_list:
-                shelf = self.local_realm.name_to_eid(sta_name)[0]
-                resource = self.local_realm.name_to_eid(sta_name)[1]
-                name = self.local_realm.name_to_eid(sta_name)[2]
+                shelf = self.name_to_eid(sta_name)[0]
+                resource = self.name_to_eid(sta_name)[1]
+                name = self.name_to_eid(sta_name)[2]
                 if self.ipv6:
                     url = "port/%s/%s/%s?fields=port,alias,ipv6+address,ap" % (shelf, resource, name)
                 else:
@@ -135,7 +128,8 @@ class ConnectTest(LFCliBase):
                     associated_map[sta_name] = 1
                     if self.debug:
                         if self.ipv6:
-                            print("Associated", sta_name, sta_status['interface']['ap'], sta_status['interface']['ipv6 address'])
+                            print("Associated", sta_name, sta_status['interface']['ap'],
+                                  sta_status['interface']['ipv6 address'])
                         else:
                             print("Associated", sta_name, sta_status['interface']['ap'], sta_status['interface']['ip'])
 
@@ -183,9 +177,15 @@ class ConnectTest(LFCliBase):
                                            debug=self.debug)
         time.sleep(1)
 
+    def pre_cleanup(self):
+        # do not clean up station if existed prior to test
+        if not self.use_existing_sta:
+            for sta in self.sta_list:
+                self.rm_port(sta, check_exists=True, debug_=False)
+
 
 def main():
-    parser = LFCliBase.create_basic_argparse(
+    parser = Realm.create_basic_argparse(
         prog='test_ip_connection.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -222,12 +222,6 @@ Generic ipv4 command example:
     --passwd BLANK
     --debug''')
 
-    required = None
-    for agroup in parser._action_groups:
-        if agroup.title == "required arguments":
-            required = agroup
-    # if required is not None:
-
     optional = None
     for agroup in parser._action_groups:
         if agroup.title == "optional arguments":
@@ -236,14 +230,15 @@ Generic ipv4 command example:
     if optional is not None:
         optional.add_argument("--ipv6", help="Use ipv6 connections instead of ipv4", action="store_true", default=False)
         optional.add_argument("--ap", help="Add BSSID of access point to connect to")
-        optional.add_argument('--mode', help=LFCliBase.Help_Mode)
+        optional.add_argument('--mode', help=Realm.Help_Mode)
         optional.add_argument('--timeout',
                               help='--timeout sets the length of time to wait until a connection is successful',
                               default=30)
+    parser.add_argument('--use_existing_sta', help='Used an existing stationsto a particular AP', action='store_true')
 
     args = parser.parse_args()
 
-    if (args.radio is None):
+    if args.radio is None:
         raise ValueError("--radio required")
 
     num_sta = 2
@@ -264,6 +259,7 @@ Generic ipv4 command example:
                           _password=args.passwd,
                           _security=args.security,
                           _sta_list=station_list,
+                          _use_existing_sta=args.use_existing_sta,
                           _radio=args.radio,
                           _proxy_str=args.proxy,
                           _debug_on=args.debug,
@@ -272,7 +268,7 @@ Generic ipv4 command example:
                           _mode=args.mode,
                           _timeout=args.timeout)
 
-    ip_test.cleanup(station_list)
+    ip_test.pre_cleanup()
     ip_test.build()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
@@ -289,6 +285,7 @@ Generic ipv4 command example:
     if ip_test.passes():
         ip_test.add_event(name="test_ip_connection.py", message="Full test passed, all stations associated and got IP")
         ip_test.exit_success()
+
 
 if __name__ == "__main__":
     main()

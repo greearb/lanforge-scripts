@@ -43,7 +43,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -55,14 +54,14 @@ Realm = realm.Realm
 
 class GenTest(LFCliBase):
     def __init__(self, ssid, security, passwd, sta_list, client, name_prefix, upstream, host="localhost", port=8080,
-                 number_template="000", test_duration="5m", type="lfping", dest=None, cmd =None,
+                 number_template="000", test_duration="5m", test_type="lfping", dest=None, cmd=None,
                  interval=1, radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
                  file_output=None,
                  loop_count=None,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _local_realm=Realm(host,port), _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, _local_realm=Realm(host, port), _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         self.ssid = ssid
         self.radio = radio
         self.upstream = upstream
@@ -73,7 +72,7 @@ class GenTest(LFCliBase):
         self.name_prefix = name_prefix
         self.test_duration = test_duration
         self.debug = _debug_on
-        if (client is not None):
+        if client:
             self.client_name = client
         self.station_profile = self.local_realm.new_station_profile()
         self.generic_endps_profile = self.local_realm.new_generic_endp_profile()
@@ -86,17 +85,17 @@ class GenTest(LFCliBase):
         self.station_profile.mode = 0
 
         self.generic_endps_profile.name = name_prefix
-        self.generic_endps_profile.type = type
+        self.generic_endps_profile.type = test_type
         self.generic_endps_profile.dest = dest
         self.generic_endps_profile.cmd = cmd
         self.generic_endps_profile.interval = interval
-        self.generic_endps_profile.file_output= file_output
+        self.generic_endps_profile.file_output = file_output
         self.generic_endps_profile.loop_count = loop_count
-        if (speedtest_min_up is not None):
+        if speedtest_min_up is not None:
             self.generic_endps_profile.speedtest_min_up = float(speedtest_min_up)
-        if (speedtest_min_dl is not None):
+        if speedtest_min_dl is not None:
             self.generic_endps_profile.speedtest_min_dl = float(speedtest_min_dl)
-        if (speedtest_max_ping is not None):
+        if speedtest_max_ping is not None:
             self.generic_endps_profile.speedtest_max_ping = float(speedtest_max_ping)
 
     def check_tab_exists(self):
@@ -106,7 +105,7 @@ class GenTest(LFCliBase):
         else:
             return True
 
-    def start(self, print_pass=False, print_fail=False):
+    def start(self):
         self.station_profile.admin_up()
         temp_stas = []
         for station in self.sta_list.copy():
@@ -202,18 +201,23 @@ python3 ./test_generic.py
     IPERF3 (under construction):
    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3 
 ''',
-    more_optional=optional)
+        more_optional=optional)
 
-    parser.add_argument('--type', help='type of command to run: generic, lfping, iperf3-client, iperf3-server, lfcurl', default="lfping")
+    parser.add_argument('--type', help='type of command to run: generic, lfping, iperf3-client, iperf3-server, lfcurl',
+                        default="lfping")
     parser.add_argument('--cmd', help='specifies command to be run by generic type endp', default='')
     parser.add_argument('--dest', help='destination IP for command', default="10.40.0.1")
     parser.add_argument('--test_duration', help='duration of the test eg: 30s, 2m, 4h', default="2m")
     parser.add_argument('--interval', help='interval to use when running lfping (1s, 1m)', default=1)
-    parser.add_argument('--speedtest_min_up', help='sets the minimum upload threshold for the speedtest type', default=None)
-    parser.add_argument('--speedtest_min_dl', help='sets the minimum download threshold for the speedtest type', default=None)
-    parser.add_argument('--speedtest_max_ping', help='sets the minimum ping threshold for the speedtest type', default=None)
+    parser.add_argument('--speedtest_min_up', help='sets the minimum upload threshold for the speedtest type',
+                        default=None)
+    parser.add_argument('--speedtest_min_dl', help='sets the minimum download threshold for the speedtest type',
+                        default=None)
+    parser.add_argument('--speedtest_max_ping', help='sets the minimum ping threshold for the speedtest type',
+                        default=None)
     parser.add_argument('--client', help='client to the iperf3 server', default=None)
-    parser.add_argument('--file_output', help='location to output results of lf_curl, absolute path preferred', default=None)
+    parser.add_argument('--file_output', help='location to output results of lf_curl, absolute path preferred',
+                        default=None)
     parser.add_argument('--loop_count', help='determines the number of loops to use in lf_curl', default=None)
 
     args = parser.parse_args()
@@ -231,10 +235,10 @@ python3 ./test_generic.py
     if args.report_file is None:
         new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
                                                                                                  '-') + '-test_generic'  # create path name
-        try:
+        if os.path.exists('/home/lanforge/report-data/'):
             path = os.path.join('/home/lanforge/report-data/', new_file_path)
             os.mkdir(path)
-        except:
+        else:
             curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             path = os.path.join(curr_dir_path, new_file_path)
             os.mkdir(path)
@@ -273,7 +277,7 @@ python3 ./test_generic.py
     station_list = LFUtils.portNameSeries(radio=args.radio,
                                           prefix_="sta",
                                           start_id_=0,
-                                          end_id_=num_sta-1,
+                                          end_id_=num_sta - 1,
                                           padding_number_=100)
 
     generic_test = GenTest(host=args.mgr, port=args.mgr_port,
@@ -281,7 +285,7 @@ python3 ./test_generic.py
                            radio=args.radio,
                            sta_list=station_list,
                            name_prefix="GT",
-                           type=args.type,
+                           test_type=args.type,
                            dest=args.dest,
                            cmd=args.cmd,
                            interval=1,
@@ -312,8 +316,10 @@ python3 ./test_generic.py
 
     try:
         genconnections = ','.join([[*x.keys()][0] for x in generic_test.json_get('generic')['endpoints']])
-    except:
-        raise ValueError('1. Enable the generic tab in LANforge GUI , if still fails 2. Try setting the upstream port flag if your device does not have an eth1 port')
+    except ValueError as error:
+        raise ValueError(
+            '1. Enable the generic tab in LANforge GUI , if still fails 2. Try setting the upstream port flag if your device does not have an eth1 port \n'
+            '%s' % error)
 
     if type(args.gen_cols) is not list:
         generic_cols = list(args.gen_cols.split(","))
@@ -335,29 +341,30 @@ python3 ./test_generic.py
     try:
         monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
     except ValueError as error:
-        print(ValueError("The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. "))
+        print(ValueError(
+            "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. \n"
+            "%s" % error))
         exit(1)
-    generic_test.start(False, False)
+    generic_test.start()
     generic_test.generic_endps_profile.monitor(generic_cols=generic_cols,
-                                    sta_list=station_list,
-                                    #port_mgr_cols=port_mgr_cols,
-                                    report_file=report_f,
-                                systeminfopath=systeminfopath,
-                                    duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
-                                    monitor_interval_ms=monitor_interval,
-                                    created_cx=genconnections,
-                                    output_format=output,
-                                    compared_report=compared_rept,
-                                    script_name='test_generic',
-                                    arguments=args,
-                                    debug=args.debug)
+                                               sta_list=station_list,
+                                               # port_mgr_cols=port_mgr_cols,
+                                               report_file=report_f,
+                                               systeminfopath=systeminfopath,
+                                               duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
+                                               monitor_interval_ms=monitor_interval,
+                                               created_cx=genconnections,
+                                               output_format=output,
+                                               compared_report=compared_rept,
+                                               script_name='test_generic',
+                                               arguments=args,
+                                               debug=args.debug)
 
     generic_test.stop()
     time.sleep(30)
     generic_test.cleanup(station_list)
     if generic_test.passes():
         generic_test.exit_success()
-
 
 
 if __name__ == "__main__":

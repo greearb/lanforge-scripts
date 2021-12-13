@@ -13,8 +13,6 @@ if sys.version_info[0] != 3:
  
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
@@ -22,7 +20,7 @@ test_ip_variable_time = importlib.import_module("py-scripts.test_ip_variable_tim
 IPVariableTime = test_ip_variable_time.IPVariableTime
 
 
-class TTLSTest(LFCliBase):
+class TTLSTest(Realm):
     def __init__(self, host="localhost", port=8080,
                  ssid="[BLANK]",
                  security="wpa2",
@@ -65,7 +63,8 @@ class TTLSTest(LFCliBase):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on, _exit_on_fail=_exit_on_fail)
+        self.resulting_endpoints = {}
         self.host = host
         self.port = port
         self.ssid = ssid
@@ -111,13 +110,12 @@ class TTLSTest(LFCliBase):
         self.timeout = 120
         self.number_template = number_template
         self.debug = _debug_on
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.station_profile = self.local_realm.new_station_profile()
+        self.station_profile = self.new_station_profile()
         self.vap = vap
         self.upstream_port = "eth1"
         self.upstream_resource = 1
         if self.vap:
-            self.vap_profile = self.local_realm.new_vap_profile()
+            self.vap_profile = self.new_vap_profile()
             self.vap_profile.vap_name = "TestNet"
 
         self.station_profile.lfclient_url = self.lfclient_url
@@ -127,8 +125,9 @@ class TTLSTest(LFCliBase):
         self.station_profile.mode = 0
 
         # Layer3 Traffic
-        self.l3_cx_obj_udp = IPVariableTime(host=self.host, port=self.port,
-                                            create_sta=False, sta_list=self.sta_list, traffic_type="lf_udp",
+        self.l3_cx_obj_udp = IPVariableTime(host=self.host, port=self.port, radio=self.radio,
+                                            ssid=self.ssid, password=self.password, security=self.security,
+                                            use_existing_sta=False, sta_list=self.sta_list, traffic_type="lf_udp",
                                             upstream=self.upstream_port)
         self.l3_cx_obj_udp.cx_profile.name_prefix = "udp-"
 
@@ -140,8 +139,9 @@ class TTLSTest(LFCliBase):
         self.l3_cx_obj_udp.cx_profile.side_b_min_pdu = 1500
         self.l3_cx_obj_udp.cx_profile.report_timer = 1000
 
-        self.l3_cx_obj_tcp = IPVariableTime(host=self.host, port=self.port,
-                                            create_sta=False, sta_list=self.sta_list, traffic_type="lf_tcp",
+        self.l3_cx_obj_tcp = IPVariableTime(host=self.host, port=self.port, radio=self.radio,
+                                            ssid=self.ssid, password=self.password, security=self.security,
+                                            use_existing_sta=True, sta_list=self.sta_list, traffic_type="lf_tcp",
                                             upstream=self.upstream_port)
         self.l3_cx_obj_tcp.cx_profile.name_prefix = "tcp-"
         self.l3_cx_obj_tcp.cx_profile.side_a_min_bps = 128000
@@ -152,13 +152,14 @@ class TTLSTest(LFCliBase):
         self.l3_cx_obj_tcp.cx_profile.side_b_min_pdu = 1500
         self.l3_cx_obj_tcp.cx_profile.report_timer = 1000
 
-    def build(self, extra_securities=[]):
+    def build(self,
+              extra_securities=None):
         # Build stations
-        keyphrase = "[BLANK]"
 
         self.station_profile.use_security(self.security, self.ssid, passwd=self.password)
-        for security in extra_securities:
-            self.station_profile.add_security_extra(security=security)
+        if extra_securities is not None:
+            for security in extra_securities:
+                self.station_profile.add_security_extra(security=security)
         if self.vap:
             self.vap_profile.use_security(self.security, self.ssid, passwd=self.password)
         self.station_profile.set_number_template(self.number_template)
@@ -202,12 +203,6 @@ class TTLSTest(LFCliBase):
                                     suppress_related_commands_=True,
                                     use_radius=True,
                                     hs20_enable=False)
-        self.station_profile.create(radio=self.radio,
-                                    sta_names_=self.sta_list,
-                                    debug=self.debug,
-                                    use_radius=True,
-                                    hs20_enable=False)
-        self._pass("Station build finished")
         self.l3_cx_obj_udp.build()
         self.l3_cx_obj_tcp.build()
         if self.debug:
@@ -269,8 +264,6 @@ class TTLSTest(LFCliBase):
         self.collect_endp_stats(self.l3_cx_obj_udp.cx_profile.created_cx, traffic_type="UDP")
 
     def cleanup(self, sta_list):
-        self.l3_cx_obj_udp.cleanup()
-        self.l3_cx_obj_tcp.cleanup()
         self.station_profile.cleanup(sta_list)
         if self.vap:
             self.vap_profile.cleanup(1)
@@ -278,7 +271,6 @@ class TTLSTest(LFCliBase):
                                            debug=self.debug)
 
     def collect_endp_stats(self, endp_map, traffic_type="TCP"):
-        self.resulting_endpoints = {}
         print("Collecting Data")
         fields = "?fields=name,tx+bytes,rx+bytes"
         for (cx_name, endps) in endp_map.items():
@@ -303,7 +295,6 @@ class TTLSTest(LFCliBase):
                 self.compare_vals("test" + traffic_type + "-B TX", ptest_b_tx)
                 self.compare_vals("test" + traffic_type + "-B RX", ptest_b_rx)
 
-
             except Exception as e:
                 print("Is this the function having the error?")
                 self.error(e)
@@ -317,7 +308,7 @@ class TTLSTest(LFCliBase):
 
 
 def main():
-    parser = LFCliBase.create_basic_argparse(
+    parser = Realm.create_basic_argparse(
         prog='test_ipv4_ttls.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
@@ -338,43 +329,32 @@ test_ipv4_ttls.py:
     --debug
 
 ''')
-    required = None
-    for agroup in parser._action_groups:
-        if agroup.title == "required arguments":
-            required = agroup
-    # if required is not None:
 
-    optional = None
-    for agroup in parser._action_groups:
-        if agroup.title == "optional arguments":
-            optional = agroup
-
-    if optional is not None:
-        optional.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
-        optional.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
-        optional.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
-        optional.add_argument('--key-mgmt', help="--key-mgt: { %s }" % ", ".join(realm.wpa_ent_list()),
-                              default="WPA-EAP")
-        optional.add_argument('--wpa_psk', help='wpa-ent pre shared key', default="[BLANK]")
-        optional.add_argument('--eap', help='--eap eap method to use', default="TTLS")
-        optional.add_argument('--identity', help='--identity eap identity string', default="testuser")
-        optional.add_argument('--ttls_passwd', help='--ttls_passwd eap password string', default="testpasswd")
-        optional.add_argument('--ttls_realm', help='--ttls_realm 802.11u home realm to use',
-                              default="localhost.localdomain")
-        optional.add_argument('--domain', help='--domain 802.11 domain to use', default="localhost.localdomain")
-        optional.add_argument('--hessid', help='--hessid 802.11u HESSID (MAC addr format/peer for WDS)',
-                              default="00:00:00:00:00:01")
-        optional.add_argument('--ieee80211w', help='--ieee80211w <disabled(0),optional(1),required(2)', default='1')
-        optional.add_argument('--use_hs20', help='use HotSpot 2.0', default=False)
-        optional.add_argument('--enable_pkc', help='enable opportunistic PMKSA WPA2 key caching', default=False)
+    parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
+    parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
+    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
+    parser.add_argument('--key-mgmt', help="--key-mgt: { %s }" % ", ".join(realm.wpa_ent_list()), default="WPA-EAP")
+    parser.add_argument('--wpa_psk', help='wpa-ent pre shared key', default="[BLANK]")
+    parser.add_argument('--eap', help='--eap eap method to use', default="TTLS")
+    parser.add_argument('--identity', help='--identity eap identity string', default="testuser")
+    parser.add_argument('--ttls_passwd', help='--ttls_passwd eap password string', default="testpasswd")
+    parser.add_argument('--ttls_realm', help='--ttls_realm 802.11u home realm to use', default="localhost.localdomain")
+    parser.add_argument('--domain', help='--domain 802.11 domain to use', default="localhost.localdomain")
+    parser.add_argument('--hessid', help='--hessid 802.11u HESSID (MAC addr format/peer for WDS)',
+                        default="00:00:00:00:00:01")
+    parser.add_argument('--ieee80211w', help='--ieee80211w <disabled(0),optional(1),required(2)', default='1')
+    parser.add_argument('--use_hs20', help='use HotSpot 2.0', default=False)
+    parser.add_argument('--enable_pkc', help='enable opportunistic PMKSA WPA2 key caching', default=False)
+    parser.add_argument('--vap', help='Create VAP on host device', default=True)
     args = parser.parse_args()
     num_sta = 2
-    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+    if args.num_stations:
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
 
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000)
-    ttls_test = TTLSTest(host=args.mgr, port=args.mgr_port,
+    ttls_test = TTLSTest(host=args.mgr,
+                         port=args.mgr_port,
                          ssid=args.ssid,
                          password=args.passwd,
                          security=args.security,
@@ -383,7 +363,7 @@ test_ipv4_ttls.py:
                          key_mgmt=args.key_mgmt,
                          wpa_psk=args.wpa_psk,
                          eap=args.eap,
-                         vap=True,
+                         vap=args.vap,
                          identity=args.identity,
                          ttls_passwd=args.ttls_passwd,
                          ttls_realm=args.ttls_realm,

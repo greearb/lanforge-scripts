@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 This script will create 40 clients on 5Ghz , 2.4Ghz and Both and generate layer4 traffic on LANforge ,The Webpage Download Test is designed to test the performance of the  Access Point.The goal is to  check whether the
 webpage loading time meets the expectation when clients connected on single radio as well as dual radio.
@@ -13,8 +14,10 @@ import importlib
 import time
 import argparse
 import paramiko
+from datetime import datetime
+import pandas as pd
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -23,6 +26,7 @@ Realm = realm.Realm
 PortUtils = realm.PortUtils
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
+lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 
 
 class HttpDownload(Realm):
@@ -62,7 +66,7 @@ class HttpDownload(Realm):
             self.radio = [self.twog_radio]
         elif self.bands == "Both":
             self.radio = [self.fiveg_radio, self.twog_radio]
-            print( self.radio)
+            print(self.radio)
             self.num_sta = self.num_sta // 2
 
     def precleanup(self):
@@ -116,7 +120,7 @@ class HttpDownload(Realm):
             self.station_profile.create(radio=rad, sta_names_=self.station_list, debug=self.local_realm.debug)
             self.local_realm.wait_until_ports_appear(sta_list=self.station_list)
             self.station_profile.admin_up()
-            if self.local_realm.wait_for_ip(self.station_list,timeout_sec=60):
+            if self.local_realm.wait_for_ip(self.station_list, timeout_sec=60):
                 self.local_realm._pass("All stations got IPs")
             else:
                 self.local_realm._fail("Stations failed to get IPs")
@@ -153,44 +157,22 @@ class HttpDownload(Realm):
     def stop(self):
         self.http_profile.stop_cx()
 
-    def my_monitor(self):
+    def my_monitor(self, data_mon):
         # data in json format
-        data = self.local_realm.json_get("layer4/list?fields=uc-avg")
+        data = self.local_realm.json_get("layer4/%s/list?fields=%s" %
+                                         (','.join(self.http_profile.created_cx.keys()), data_mon.replace(' ', '+')))
+        # print(data)
         data1 = []
-        for i in range(len(data['endpoint'])):
-            data1.append(str(list(data['endpoint'][i]))[2:-2])
-        data2 = []
-        for i in range(self.num_sta):
-            data = self.local_realm.json_get("layer4/list?fields=uc-avg")
-            # print(type(data['endpoint'][i][data1[i]]['uc-avg']))
-            data2.append((data['endpoint'][i][data1[i]]['uc-avg']))
-        return data2
-
-    def monitor_bytes(self):
-        # data in json format
-        data = self.local_realm.json_get("layer4/list?fields=bytes-rd")
-        data1 = []
-        for i in range(len(data['endpoint'])):
-            data1.append(str(list(data['endpoint'][i]))[2:-2])
-        data2 = []
-        for i in range(self.num_sta):
-            data = self.local_realm.json_get("layer4/list?fields=bytes-rd")
-            # print(type(data['endpoint'][i][data1[i]]['uc-avg']))
-            data2.append((data['endpoint'][i][data1[i]]['bytes-rd']))
-        return data2
-
-    def monitor_rx(self):
-        # data in json format
-        data = self.local_realm.json_get("layer4/list?fields=rx rate")
-        data1 = []
-        for i in range(len(data['endpoint'])):
-            data1.append(str(list(data['endpoint'][i]))[2:-2])
-        data2 = []
-        for i in range(self.num_sta):
-            data = self.local_realm.json_get("layer4/list?fields=rx rate")
-            # print(type(data['endpoint'][i][data1[i]]['uc-avg']))
-            data2.append((data['endpoint'][i][data1[i]]['rx rate']))
-        return data2
+        data = data['endpoint']
+        if self.num_sta == 1:
+            data1.append(data[data_mon])
+        else:
+            for cx in self.http_profile.created_cx.keys():
+                for info in data:
+                    if cx in info:
+                        data1.append(info[cx][data_mon])
+        # print(data_mon, data1)
+        return data1
 
     def postcleanup(self):
         self.http_profile.cleanup()
@@ -198,7 +180,7 @@ class HttpDownload(Realm):
         LFUtils.wait_until_ports_disappear(base_url=self.local_realm.lfclient_url, port_list=self.station_profile.station_names,
                                            debug=self.debug)
 
-    def file_create(self,ssh_port):
+    def file_create(self, ssh_port):
         ip = self.host
         user = "root"
         pswd = "lanforge"
@@ -228,13 +210,13 @@ class HttpDownload(Realm):
         time.sleep(1)
         return output
 
-    def download_time_in_sec(self,result_data):
+    def download_time_in_sec(self, result_data):
         self.resullt_data = result_data
         download_time = dict.fromkeys(result_data.keys())
         for i in download_time:
             try:
                 download_time[i] = result_data[i]['dl_time']
-            except:
+            except BaseException:
                 download_time[i] = []
         print(download_time)
         lst = []
@@ -270,13 +252,13 @@ class HttpDownload(Realm):
                 dataset.append(dwnld_time["Both"])
         return dataset
 
-    def speed_in_Mbps(self,result_data):
+    def speed_in_Mbps(self, result_data):
         self.resullt_data = result_data
         speed = dict.fromkeys(result_data.keys())
         for i in speed:
             try:
                 speed[i] = result_data[i]['speed']
-            except:
+            except BaseException:
                 speed[i] = []
         print(speed)
         lst = []
@@ -358,7 +340,7 @@ class HttpDownload(Realm):
                 pass_fail_list.append("PASS")
                 sumry2.append("PASS")
             # BOTH
-            if float(z11[2]) == 0.0 or float(z11[2]) > float(threshold_both) :
+            if float(z11[2]) == 0.0 or float(z11[2]) > float(threshold_both):
                 var = "FAIL"
                 pass_fail_list.append(var)
                 sumryB.append("FAIL")
@@ -462,88 +444,95 @@ class HttpDownload(Realm):
         pass
 
     def generate_graph(self, dataset, lis, bands):
-        graph = lf_bar_graph(_data_set=dataset, _xaxis_name="Stations", _yaxis_name="Time in Seconds",
-                             _xaxis_categories=lis, _label=bands, _xticks_font=8,
-                             _graph_image_name="webpage download time graph",
-                             _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black', _figsize=(14, 5),
-                             _grp_title="Download time taken by each client", _xaxis_step=1, _show_bar_value=True,
-                             _text_font=6, _text_rotation=60,
-                             _legend_loc="upper right",
-                             _legend_box=(1, 1.15),
-                             _enable_csv=True
-                             )
+        graph = lf_graph.lf_bar_graph(_data_set=dataset, _xaxis_name="Stations", _yaxis_name="Time in Seconds",
+                                      _xaxis_categories=lis, _label=bands, _xticks_font=8,
+                                      _graph_image_name="webpage download time graph",
+                                      _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black', _figsize=(14, 5),
+                                      _grp_title="Download time taken by each client", _xaxis_step=1, _show_bar_value=True,
+                                      _text_font=6, _text_rotation=60,
+                                      _legend_loc="upper right",
+                                      _legend_box=(1, 1.15),
+                                      _enable_csv=True
+                                      )
         graph_png = graph.build_bar_graph()
         print("graph name {}".format(graph_png))
         return graph_png
 
-    def graph_2(self,dataset2, lis, bands):
-        graph_2 = lf_bar_graph(_data_set=dataset2, _xaxis_name="Stations", _yaxis_name="Download Rate in Mbps",
-                               _xaxis_categories=lis, _label=bands, _xticks_font=8,
-                               _graph_image_name="webpage_speed_graph",
-                               _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black',
-                               _figsize=(14, 5),
-                               _grp_title="Download rate for each client (Mbps)", _xaxis_step=1, _show_bar_value=True,
-                               _text_font=6, _text_rotation=60,
-                               _legend_loc="upper right",
-                               _legend_box=(1, 1.15),
-                               _enable_csv=True
-        )
+    def graph_2(self, dataset2, lis, bands):
+        graph_2 = lf_graph.lf_bar_graph(_data_set=dataset2, _xaxis_name="Stations", _yaxis_name="Download Rate in Mbps",
+                                        _xaxis_categories=lis, _label=bands, _xticks_font=8,
+                                        _graph_image_name="webpage_speed_graph",
+                                        _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black',
+                                        _figsize=(14, 5),
+                                        _grp_title="Download rate for each client (Mbps)", _xaxis_step=1, _show_bar_value=True,
+                                        _text_font=6, _text_rotation=60,
+                                        _legend_loc="upper right",
+                                        _legend_box=(1, 1.15),
+                                        _enable_csv=True
+                                        )
         graph_png = graph_2.build_bar_graph()
         return graph_png
 
-    def generate_report(self,date, num_stations,duration, test_setup_info,dataset,lis,bands,threshold_2g,threshold_5g,threshold_both,dataset2,summary_table_value,result_data,test_input_infor):
-        report = lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html", _output_pdf="Webpage.pdf")
-        report.set_title("WEBPAGE DOWNLOAD TEST")
-        report.set_date(date)
-        report.build_banner()
-        report.set_table_title("Test Setup Information")
-        report.build_table_title()
+    def generate_report(self, date, num_stations, duration, test_setup_info, dataset, lis, bands, threshold_2g,
+                        threshold_5g, threshold_both, dataset2, summary_table_value, result_data, test_rig,
+                        test_tag, dut_hw_version, dut_sw_version, dut_model_num, dut_serial_num, test_id,
+                        test_input_infor, csv_outfile):
+        report = lf_report.lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html", _output_pdf="Webpage.pdf")
 
-        report.test_setup_table(value="Device under test", test_setup_data=test_setup_info)
-
-        report.set_obj_html("Objective",
-                            "The Webpage Download Test is designed to test the performance of the Access Point.The goal is to check whether the webpage loading time of all the " + str(
-                                num_stations) + " clients which are downloading at the same time meets the expectation when clients connected on single radio as well as dual radio")
-        report.build_objective()
-        report.set_obj_html("Download Time Graph",
-                            "The below graph provides information about the  download time taken by each client to download webpage for test duration of  " + str(
-                                duration) + " min")
-        report.build_objective()
-        graph = self.generate_graph(dataset=dataset, lis=lis, bands=bands)
-        report.set_graph_image(graph)
-        report.set_csv_filename(graph)
-        report.move_csv_file()
-        report.move_graph_image()
-        report.build_graph()
-        report.set_obj_html("Download Rate Graph",
-                            "The below graph provides information about the download rate in Mbps of each client to download the webpage for test duration of  " + str(
-                                duration) + " min")
-        report.build_objective()
-        graph2 = self.graph_2(dataset2, lis=lis, bands=bands)
-        print("graph name {}".format(graph2))
-        report.set_graph_image(graph2)
-        report.set_csv_filename(graph2)
-        report.move_csv_file()
-        report.move_graph_image()
-        report.build_graph()
-        report.set_obj_html("Summary Table Description",
-                            "This Table shows you the summary result of Webpage Download Test as PASS or FAIL criteria. If the average time taken by " + str(
-                                num_stations) + " clients to access the webpage is less than " + str(
-                                threshold_2g) + "s it's a PASS criteria for 2.4 ghz clients, If the average time taken by " + "" + str(
-                                num_stations) + " clients to access the webpage is less than " + str(
-                                threshold_5g) + "s it's a PASS criteria for 5 ghz clients and If the average time taken by " + str(
-                                num_stations) + " clients to access the webpage is less than " + str(
-                                threshold_both) + "s it's a PASS criteria for 2.4 ghz and 5ghz clients")
-
-        report.build_objective()
-        test_setup1 = pd.DataFrame(summary_table_value)
-        report.set_table_dataframe(test_setup1)
-        report.build_table()
-
-        report.set_obj_html("Download Time Table Description",
-                            "This Table will provide you information of the minimum, maximum and the average time taken by clients to download a webpage in seconds")
-
-        report.build_objective()
+        # Section commented because graphing breaks two band report generation
+        # TODO: Fix graphing bug with multiple bands being recorded
+        #
+        # report.set_title("WEBPAGE DOWNLOAD TEST")
+        # report.set_date(date)
+        # report.build_banner()
+        # report.set_table_title("Test Setup Information")
+        # report.build_table_title()
+        #
+        # report.test_setup_table(value="Device under test", test_setup_data=test_setup_info)
+        #
+        # report.set_obj_html("Objective",
+        #                     "The Webpage Download Test is designed to test the performance of the Access Point.The goal is to check whether the webpage loading time of all the " + str(
+        #                         num_stations) + " clients which are downloading at the same time meets the expectation when clients connected on single radio as well as dual radio")
+        # report.build_objective()
+        # report.set_obj_html("Download Time Graph",
+        #                     "The below graph provides information about the  download time taken by each client to download webpage for test duration of  " + str(
+        #                         duration) + " min")
+        # report.build_objective()
+        # graph = self.generate_graph(dataset=dataset, lis=lis, bands=bands)
+        # report.set_graph_image(graph)
+        # report.set_csv_filename(graph)
+        # report.move_csv_file()
+        # report.move_graph_image()
+        # report.build_graph()
+        # report.set_obj_html("Download Rate Graph",
+        #                     "The below graph provides information about the download rate in Mbps of each client to download the webpage for test duration of  " + str(
+        #                         duration) + " min")
+        # report.build_objective()
+        # graph2 = self.graph_2(dataset2, lis=lis, bands=bands)
+        # print("graph name {}".format(graph2))
+        # report.set_graph_image(graph2)
+        # report.set_csv_filename(graph2)
+        # report.move_csv_file()
+        # report.move_graph_image()
+        # report.build_graph()
+        # report.set_obj_html("Summary Table Description",
+        #                     "This Table shows you the summary result of Webpage Download Test as PASS or FAIL criteria. If the average time taken by " + str(
+        #                         num_stations) + " clients to access the webpage is less than " + str(
+        #                         threshold_2g) + "s it's a PASS criteria for 2.4 ghz clients, If the average time taken by " + "" + str(
+        #                         num_stations) + " clients to access the webpage is less than " + str(
+        #                         threshold_5g) + "s it's a PASS criteria for 5 ghz clients and If the average time taken by " + str(
+        #                         num_stations) + " clients to access the webpage is less than " + str(
+        #                         threshold_both) + "s it's a PASS criteria for 2.4 ghz and 5ghz clients")
+        #
+        # report.build_objective()
+        # test_setup1 = pd.DataFrame(summary_table_value)
+        # report.set_table_dataframe(test_setup1)
+        # report.build_table()
+        #
+        # report.set_obj_html("Download Time Table Description",
+        #                     "This Table will provide you information of the minimum, maximum and the average time taken by clients to download a webpage in seconds")
+        #
+        # report.build_objective()
         x = []
         for fcc in list(result_data.keys()):
             fcc_type = result_data[fcc]["min"]
@@ -595,12 +584,52 @@ class HttpDownload(Realm):
             z2.append(i)
 
         download_table_value = {
-            "": bands,
+            "Band": bands,
             "Minimum": z,
             "Maximum": z1,
             "Average": z2
-
         }
+
+        # Get the report path to create the kpi.csv path
+        kpi_path = report.get_report_path()
+        print("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
+
+        kpi_csv = lf_kpi_csv.lf_kpi_csv(
+            _kpi_path=kpi_path,
+            _kpi_test_rig=test_rig,
+            _kpi_test_tag=test_tag,
+            _kpi_dut_hw_version=dut_hw_version,
+            _kpi_dut_sw_version=dut_sw_version,
+            _kpi_dut_model_num=dut_model_num,
+            _kpi_dut_serial_num=dut_serial_num,
+            _kpi_test_id=test_id)
+        kpi_csv.kpi_dict['Units'] = "Mbps"
+        for band in range(len(download_table_value["Band"])):
+            kpi_csv.kpi_csv_get_dict_update_time()
+            kpi_csv.kpi_dict['Graph-Group'] = "Webpage Download {band}".format(
+                band=download_table_value['Band'][band])
+            kpi_csv.kpi_dict['short-description'] = "Webpage download {band} Minimum".format(
+                band=download_table_value['Band'][band])
+            kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=download_table_value['Minimum'][band])
+            kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)
+            kpi_csv.kpi_dict['short-description'] = "Webpage download {band} Maximum".format(
+                band=download_table_value['Band'][band])
+            kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=download_table_value['Maximum'][band])
+            kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)
+            kpi_csv.kpi_dict['short-description'] = "Webpage download {band} Average".format(
+                band=download_table_value['Band'][band])
+            kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=download_table_value['Average'][band])
+            kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)
+
+        if csv_outfile is not None:
+            current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+            csv_outfile = "{}_{}-test_l3_longevity.csv".format(
+                csv_outfile, current_time)
+            csv_outfile = report.file_add_path(csv_outfile)
+            print("csv output file : {}".format(csv_outfile))
+
+        exit()
+
         test_setup = pd.DataFrame(download_table_value)
         report.set_table_dataframe(test_setup)
         report.build_table()
@@ -611,7 +640,8 @@ class HttpDownload(Realm):
         html_file = report.write_html()
         print("returned file {}".format(html_file))
         print(html_file)
-        report.write_pdf()
+        report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -629,16 +659,32 @@ def main():
     parser.add_argument('--passwd', help='WiFi passphrase/password/key')
     parser.add_argument('--target_per_ten', help='number of request per 10 minutes', default=100)
     parser.add_argument('--file_size', type=str, help='specify the size of file you want to download', default='5MB')
-    parser.add_argument('--bands', nargs="+", help='specify which band testing you want to run eg 5G OR 2.4G OR 5G 2.4G', default=["5G", "2.4G", "Both"])
+    parser.add_argument('--bands', nargs="+", help='specify which band testing you want to run eg 5G OR 2.4G OR Both',
+                        default=["5G", "2.4G", "Both"])
     parser.add_argument('--duration', type=int, help='time to run traffic')
-    parser.add_argument('--threshold_5g',help="Enter the threshold value for 5G Pass/Fail criteria", default="60")
-    parser.add_argument('--threshold_2g',help="Enter the threshold value for 2.4G Pass/Fail criteria",default="90")
-    parser.add_argument('--threshold_both',help="Enter the threshold value for Both Pass/Fail criteria" , default="50")
+    parser.add_argument('--threshold_5g', help="Enter the threshold value for 5G Pass/Fail criteria", default="60")
+    parser.add_argument('--threshold_2g', help="Enter the threshold value for 2.4G Pass/Fail criteria", default="90")
+    parser.add_argument('--threshold_both', help="Enter the threshold value for Both Pass/Fail criteria", default="50")
     parser.add_argument('--ap_name', help="specify the ap model ", default="TestAP")
-    parser.add_argument('--ssh_port', type=int, help="specify the shh port eg 22",default=22)
+    parser.add_argument('--ssh_port', type=int, help="specify the ssh port eg 22", default=22)
+    parser.add_argument("--test_rig", default="", help="test rig for kpi.csv, testbed that the tests are run on")
+    parser.add_argument("--test_tag", default="",
+                        help="test tag for kpi.csv,  test specific information to differentiate the test")
+    parser.add_argument("--dut_hw_version", default="",
+                        help="dut hw version for kpi.csv, hardware version of the device under test")
+    parser.add_argument("--dut_sw_version", default="",
+                        help="dut sw version for kpi.csv, software version of the device under test")
+    parser.add_argument("--dut_model_num", default="",
+                        help="dut model for kpi.csv,  model number / name of the device under test")
+    parser.add_argument("--dut_serial_num", default="",
+                        help="dut serial for kpi.csv, serial number / serial number of the device under test")
+    parser.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
+    parser.add_argument("--test_id", default="lf_webpage", help="test-id for kpi.csv,  script or test name")
+    parser.add_argument('--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
+
 
     args = parser.parse_args()
-    test_time = datetime.datetime.now()
+    test_time = datetime.now()
     test_time = test_time.strftime("%b %d %H:%M:%S")
     print("Test started at ", test_time)
     list5G = []
@@ -648,14 +694,14 @@ def main():
     list2G_bytes = []
     list2G_speed = []
     Both = []
-    Both_bytes =[]
-    Both_speed =[]
+    Both_bytes = []
+    Both_speed = []
     dict_keys = []
     dict_keys.extend(args.bands)
     # print(dict_keys)
     final_dict = dict.fromkeys(dict_keys)
     # print(final_dict)
-    dict1_keys = ['dl_time', 'min', 'max', 'avg','bytes_rd', 'speed']
+    dict1_keys = ['dl_time', 'min', 'max', 'avg', 'bytes_rd', 'speed']
     for i in final_dict:
         final_dict[i] = dict.fromkeys(dict1_keys)
     print(final_dict)
@@ -689,21 +735,20 @@ def main():
         print("time in seconds ", duration)
         time.sleep(duration)
         http.stop()
-        value = http.my_monitor()
-        value2 = http.monitor_bytes()
-        value3 = http.monitor_rx()
+        uc_avg_val = http.my_monitor('uc-avg')
+        rx_bytes_val = http.my_monitor('bytes-rd')
+        rx_rate_val = http.my_monitor('rx rate')
         http.postcleanup()
 
         if bands == "5G":
             print("yes")
-            list5G.extend(value)
-            list5G_bytes.extend(value2)
-            list5G_speed.extend(value3)
+            list5G.extend(uc_avg_val)
+            list5G_bytes.extend(rx_bytes_val)
+            list5G_speed.extend(rx_rate_val)
             print(list5G)
             print(list5G_bytes)
             print(list5G_speed)
             final_dict['5G']['dl_time'] = list5G
-
             min5.append(min(list5G))
             final_dict['5G']['min'] = min5
             max5.append(max(list5G))
@@ -714,9 +759,9 @@ def main():
             final_dict['5G']['speed'] = list5G_speed
         elif bands == "2.4G":
             print("no")
-            list2G.extend(value)
-            list2G_bytes.extend(value2)
-            list2G_speed.extend(value3)
+            list2G.extend(uc_avg_val)
+            list2G_bytes.extend(rx_bytes_val)
+            list2G_speed.extend(rx_rate_val)
             print(list2G)
             print(list2G_bytes)
             print(list2G_speed)
@@ -730,15 +775,15 @@ def main():
             final_dict['2.4G']['bytes_rd'] = list2G_bytes
             final_dict['2.4G']['speed'] = list2G_speed
         elif bands == "Both":
-            Both.extend(value)
-            Both_bytes.extend(value2)
-            Both_speed.extend(value3)
+            Both.extend(uc_avg_val)
+            Both_bytes.extend(rx_bytes_val)
+            Both_speed.extend(rx_rate_val)
             final_dict['Both']['dl_time'] = Both
             min_both.append(min(Both))
             final_dict['Both']['min'] = min_both
             max_both.append(max(Both))
             final_dict['Both']['max'] = max_both
-            avg_both.append((sum(Both) /args.num_stations))
+            avg_both.append((sum(Both) / args.num_stations))
             final_dict['Both']['avg'] = avg_both
             final_dict['Both']['bytes_rd'] = Both_bytes
             final_dict['Both']['speed'] = Both_speed
@@ -746,47 +791,52 @@ def main():
     result_data = final_dict
     print("result", result_data)
     print("Test Finished")
-    test_end = datetime.datetime.now()
+    test_end = datetime.now()
     test_end = test_end.strftime("%b %d %H:%M:%S")
     print("Test ended at ", test_end)
     s1 = test_time
     s2 = test_end  # for example
     FMT = '%b %d %H:%M:%S'
-    test_duration = datetime.datetime.strptime(s2, FMT) - datetime.datetime.strptime(s1, FMT)
+    test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
 
     print("total test duration ", test_duration)
-    date = str(datetime.datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
+    date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
     test_setup_info = {
-            "DUT Name": args.ap_name,
-            "SSID": args.ssid,
-            "Test Duration": test_duration,
+        "DUT Name": args.ap_name,
+        "SSID": args.ssid,
+        "Test Duration": test_duration,
     }
-    test_input_infor={
-        "LANforge ip":args.mgr,
-        "File Size" : args.file_size,
-        "Bands" : args.bands,
+    test_input_infor = {
+        "LANforge ip": args.mgr,
+        "File Size": args.file_size,
+        "Bands": args.bands,
         "Upstream": args.upstream_port,
         "Stations": args.num_stations,
-        "SSID" :args.ssid,
+        "SSID": args.ssid,
         "Security": args.security,
-        "Duration" : args.duration,
+        "Duration": args.duration,
         "Contact": "support@candelatech.com"
     }
     http1 = HttpDownload(lfclient_host=args.mgr, lfclient_port=args.mgr_port,
-                            upstream=args.upstream_port, num_sta=args.num_stations,
-                            security=args.security,
-                            ssid=args.ssid, password=args.passwd,
-                            target_per_ten=args.target_per_ten,
-                            file_size=args.file_size, bands=args.bands,
-                            twog_radio=args.twog_radio,
-                            fiveg_radio=args.fiveg_radio)
+                         upstream=args.upstream_port, num_sta=args.num_stations,
+                         security=args.security,
+                         ssid=args.ssid, password=args.passwd,
+                         target_per_ten=args.target_per_ten,
+                         file_size=args.file_size, bands=args.bands,
+                         twog_radio=args.twog_radio,
+                         fiveg_radio=args.fiveg_radio)
     dataset = http1.download_time_in_sec(result_data=result_data)
     lis = []
     for i in range(1, args.num_stations + 1):
         lis.append(i)
 
-    dataset2= http1.speed_in_Mbps(result_data=result_data)
-    data = http1.summary_calculation(result_data=result_data, bands=args.bands, threshold_5g=args.threshold_5g , threshold_2g= args.threshold_2g, threshold_both=args.threshold_both)
+    dataset2 = http1.speed_in_Mbps(result_data=result_data)
+    data = http1.summary_calculation(
+        result_data=result_data,
+        bands=args.bands,
+        threshold_5g=args.threshold_5g,
+        threshold_2g=args.threshold_2g,
+        threshold_both=args.threshold_both)
 
     summary_table_value = {
         "": args.bands,
@@ -796,7 +846,13 @@ def main():
                           duration=args.duration, test_setup_info=test_setup_info, dataset=dataset, lis=lis,
                           bands=args.bands, threshold_2g=args.threshold_2g, threshold_5g=args.threshold_5g,
                           threshold_both=args.threshold_both, dataset2=dataset2,
-                          summary_table_value=summary_table_value, result_data=result_data, test_input_infor=test_input_infor)
+                          summary_table_value=summary_table_value, result_data=result_data,
+                          test_rig=args.test_rig, test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
+                          dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
+                          dut_serial_num=args.dut_serial_num, test_id=args.test_id,
+                          test_input_infor=test_input_infor, csv_outfile=args.csv_outfile)
+
+
 
 if __name__ == '__main__':
     main()

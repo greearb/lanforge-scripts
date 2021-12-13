@@ -19,7 +19,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -58,7 +58,8 @@ class CreateBond(LFCliBase):
             "resource": self.resource,
             "port": "bond0000",
             "current_flags": 0x80000000,
-            "interest": 0x4000  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
+            # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
+            "interest": 0x4000
         }
         self.json_post("cli-json/set_port", bond_set_port)
 

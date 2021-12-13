@@ -8,7 +8,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
@@ -29,6 +28,7 @@ class CVManager(cv_test):
         self.apply_cv_scenario(self.scenario)
         self.build_cv_scenario()
 
+
 def main():
     parser = argparse.ArgumentParser(
         prog='cv_manager.py',
@@ -45,5 +45,6 @@ def main():
                         lfclient_host=args.mgr)
     manager.apply_and_build_scenario()
 
-if __name__ =="__main__":
+
+if __name__ == "__main__":
     main()

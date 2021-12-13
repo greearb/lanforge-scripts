@@ -37,7 +37,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -54,14 +53,14 @@ class FileIOTest(LFCliBase):
                  number_template="00000",
                  radio="wiphy0",
                  fs_type=fe_fstype.EP_FE_NFS4.name,
-                 min_rw_size=64*1024,
-                 max_rw_size=64*1024,
-                 min_file_size=25*1024*1024,
-                 max_file_size=25*1024*1024,
-                 min_read_rate_bps=1000*1000,
-                 max_read_rate_bps=1000*1000,
+                 min_rw_size=64 * 1024,
+                 max_rw_size=64 * 1024,
+                 min_file_size=25 * 1024 * 1024,
+                 max_file_size=25 * 1024 * 1024,
+                 min_read_rate_bps=1000 * 1000,
+                 max_read_rate_bps=1000 * 1000,
                  min_write_rate_bps="1G",
-                 max_write_rate_bps=1000*1000,
+                 max_write_rate_bps=1000 * 1000,
                  directory="AUTO",
                  test_duration="5m",
                  upstream_port="eth1",
@@ -76,15 +75,19 @@ class FileIOTest(LFCliBase):
                  use_test_groups=False,
                  write_only_test_group=None,
                  read_only_test_group=None,
-                 port_list=[],
+                 port_list=None,
                  ip_list=None,
                  connections_per_port=1,
                  mode="both",
-                 update_group_args={"name": None, "action": None, "cxs": None},
+                 update_group_args=None,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        if port_list is None:
+            port_list = []
+        if update_group_args is None:
+            update_group_args = {"name": None, "action": None, "cxs": None}
         self.host = host
         self.port = port
         self.radio = radio
@@ -128,14 +131,14 @@ class FileIOTest(LFCliBase):
                     raise ValueError("--write_only_test_group and --read_only_test_group "
                                      "must be used to set test group names")
 
-        #self.min_rw_size = self.parse_size(min_rw_size)
-        #self.max_rw_size = self.parse_size(max_rw_size)
-        #self.min_file_size = self.parse_size(min_file_size)
-        #self.min_file_size = self.parse_size(min_file_size)
-        #self.min_read_rate_bps = self.parse_size_bps(min_read_rate_bps)
+        # self.min_rw_size = self.parse_size(min_rw_size)
+        # self.max_rw_size = self.parse_size(max_rw_size)
+        # self.min_file_size = self.parse_size(min_file_size)
+        # self.min_file_size = self.parse_size(min_file_size)
+        # self.min_read_rate_bps = self.parse_size_bps(min_read_rate_bps)
         # self.max_read_rate_bps = self.sisize_bps(max_read_rate_bps)
         # self.min_write_rate_bps = self.parse_size_bps(min_write_rate_bps)
-        #self.max_write_rate_bps = self.parse_size_bps(max_write_rate_bps)
+        # self.max_write_rate_bps = self.parse_size_bps(max_write_rate_bps)
 
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
         self.wo_profile = self.local_realm.new_fio_endp_profile()
@@ -271,14 +274,14 @@ class FileIOTest(LFCliBase):
         time.sleep(3)
         if self.mode == "write":
             cx_list = self.json_get("fileio/%s?fields=write-bps,read-bps" % (
-                                        ','.join(self.wo_profile.created_cx.keys())), debug_=self.debug)
+                ','.join(self.wo_profile.created_cx.keys())), debug_=self.debug)
         elif self.mode == "read":
             cx_list = self.json_get("fileio/%s?fields=write-bps,read-bps" % (
-                                        ','.join(self.ro_profile.created_cx.keys())), debug_=self.debug)
+                ','.join(self.ro_profile.created_cx.keys())), debug_=self.debug)
         else:
             cx_list = self.json_get("fileio/%s,%s?fields=write-bps,read-bps" % (
-                                        ','.join(self.wo_profile.created_cx.keys()),
-                                        ','.join(self.ro_profile.created_cx.keys())), debug_=self.debug)
+                ','.join(self.wo_profile.created_cx.keys()),
+                ','.join(self.ro_profile.created_cx.keys())), debug_=self.debug)
         # print(cx_list)
         # print("==============\n", cx_list, "\n==============")
         cx_map = {}
@@ -288,7 +291,8 @@ class FileIOTest(LFCliBase):
             for i in cx_list:
                 for item, value in i.items():
                     # print(item, value)
-                    cx_map[self.local_realm.name_to_eid(item)[2]] = {"read-bps": value['read-bps'], "write-bps": value['write-bps']}
+                    cx_map[self.local_realm.name_to_eid(item)[2]] = {"read-bps": value['read-bps'],
+                                                                     "write-bps": value['write-bps']}
         # print(cx_map)
         return cx_map
 
@@ -342,7 +346,8 @@ class FileIOTest(LFCliBase):
                     if self.wo_tg_exists:
                         if not self.wo_tg_cx_exists:
                             print("Creating Write Only CXs")
-                            self.wo_profile.create(ports=self.created_ports, connections_per_port=self.connections_per_port,
+                            self.wo_profile.create(ports=self.created_ports,
+                                                   connections_per_port=self.connections_per_port,
                                                    sleep_time=.5, debug_=self.debug,
                                                    suppress_related_commands_=None)
                             time.sleep(1)
@@ -364,7 +369,8 @@ class FileIOTest(LFCliBase):
                     if self.ro_tg_exists:
                         if not self.ro_tg_cx_exists:
                             print("Creating Read Only CXs")
-                            self.ro_profile.create(ports=self.created_ports, connections_per_port=self.connections_per_port,
+                            self.ro_profile.create(ports=self.created_ports,
+                                                   connections_per_port=self.connections_per_port,
                                                    sleep_time=.5, debug_=self.debug,
                                                    suppress_related_commands_=None)
                             time.sleep(1)
@@ -386,7 +392,8 @@ class FileIOTest(LFCliBase):
                     if self.wo_tg_exists:
                         if not self.wo_tg_cx_exists:
                             print("Creating Write Only CXs")
-                            self.wo_profile.create(ports=self.created_ports, connections_per_port=self.connections_per_port,
+                            self.wo_profile.create(ports=self.created_ports,
+                                                   connections_per_port=self.connections_per_port,
                                                    sleep_time=.5, debug_=self.debug,
                                                    suppress_related_commands_=None)
                             time.sleep(1)
@@ -407,7 +414,8 @@ class FileIOTest(LFCliBase):
                     if self.ro_tg_exists:
                         if not self.ro_tg_cx_exists:
                             print("Creating Read Only CXs")
-                            self.ro_profile.create(ports=self.created_ports, connections_per_port=self.connections_per_port,
+                            self.ro_profile.create(ports=self.created_ports,
+                                                   connections_per_port=self.connections_per_port,
                                                    sleep_time=.5, debug_=self.debug,
                                                    suppress_related_commands_=None)
                             time.sleep(1)
@@ -454,7 +462,7 @@ class FileIOTest(LFCliBase):
 
     def start(self, print_pass=False, print_fail=False):
         temp_ports = self.created_ports.copy()
-        #temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
+        # temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
         if not self.use_macvlans:
             self.station_profile.admin_up()
         else:
@@ -617,14 +625,14 @@ Generic command layout:
     parser.add_argument('--passwd', '--password', '--key', help='WiFi passphrase/password/key')
     parser.add_argument('--security', help='security type to use for ssid { wep | wpa | wpa2 | wpa3 | open }')
     parser.add_argument('-u', '--upstream_port',
-                  help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
-                  default='1.eth1')
+                        help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
+                        default='1.eth1')
     parser.add_argument('--test_duration', help='sets the duration of the test', default="5m")
     parser.add_argument('--fs_type', help='endpoint type', default="fe_nfs4")
-    parser.add_argument('--min_rw_size', help='minimum read/write size', default=64*1024)
-    parser.add_argument('--max_rw_size', help='maximum read/write size', default=64*1024)
-    parser.add_argument('--min_file_size', help='minimum file size', default=50*1024*1024)
-    parser.add_argument('--max_file_size', help='maximum file size', default=50*1024*1024)
+    parser.add_argument('--min_rw_size', help='minimum read/write size', default=64 * 1024)
+    parser.add_argument('--max_rw_size', help='maximum read/write size', default=64 * 1024)
+    parser.add_argument('--min_file_size', help='minimum file size', default=50 * 1024 * 1024)
+    parser.add_argument('--max_file_size', help='maximum file size', default=50 * 1024 * 1024)
     parser.add_argument('--min_read_rate_bps', help='minimum bps read rate', default=10e9)
     parser.add_argument('--max_read_rate_bps', help='maximum bps read rate', default=10e9)
     parser.add_argument('--min_write_rate_bps', help='minimum bps write rate', default=10e9)
@@ -654,15 +662,14 @@ Generic command layout:
     tg_group = parser.add_mutually_exclusive_group()
     tg_group.add_argument('--add_to_group', help='name of test group to add cxs to', default=None)
     tg_group.add_argument('--del_from_group', help='name of test group to delete cxs from', default=None)
-    parser.add_argument('--cxs', help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group'
-                        , default=None)
+    parser.add_argument('--cxs', help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group', default=None)
     args = parser.parse_args()
 
     update_group_args = {
         "name": None,
         "action": None,
         "cxs": None
-        }
+    }
     if args.add_to_group is not None and args.cxs is not None:
         update_group_args['name'] = args.add_to_group
         update_group_args['action'] = "add"
@@ -679,17 +686,17 @@ Generic command layout:
             if (args.num_ports is not None) and (int(args.num_ports) > 0):
                 start_num = int(args.first_port[3:])
                 num_ports = int(args.num_ports)
-                port_list = LFUtils.port_name_series(prefix="sta", start_id=start_num, end_id=start_num+num_ports-1,
-                                                   padding_number=10000,
-                                                   radio=args.radio)
+                port_list = LFUtils.port_name_series(prefix="sta", start_id=start_num, end_id=start_num + num_ports - 1,
+                                                     padding_number=10000,
+                                                     radio=args.radio)
         else:
             if (args.num_ports is not None) and args.macvlan_parent is not None and (int(args.num_ports) > 0) \
-                                            and args.macvlan_parent in args.first_port:
-                start_num = int(args.first_port[args.first_port.index('#')+1:])
+                    and args.macvlan_parent in args.first_port:
+                start_num = int(args.first_port[args.first_port.index('#') + 1:])
                 num_ports = int(args.num_ports)
-                port_list = LFUtils.port_name_series(prefix=args.macvlan_parent+"#", start_id=start_num,
-                                                   end_id=start_num+num_ports-1, padding_number=100000,
-                                                   radio=args.radio)
+                port_list = LFUtils.port_name_series(prefix=args.macvlan_parent + "#", start_id=start_num,
+                                                     end_id=start_num + num_ports - 1, padding_number=100000,
+                                                     radio=args.radio)
             else:
                 raise ValueError("Invalid values for num_ports [%s], macvlan_parent [%s], and/or first_port [%s].\n"
                                  "first_port must contain parent port and num_ports must be greater than 0"
@@ -699,12 +706,12 @@ Generic command layout:
             num_ports = int(args.num_ports)
             if not args.use_macvlans:
                 port_list = LFUtils.port_name_series(prefix="sta", start_id=0, end_id=num_ports - 1,
-                                                   padding_number=10000,
-                                                   radio=args.radio)
+                                                     padding_number=10000,
+                                                     radio=args.radio)
             else:
                 port_list = LFUtils.port_name_series(prefix=args.macvlan_parent + "#", start_id=0,
-                                               end_id=num_ports - 1, padding_number=100000,
-                                               radio=args.radio)
+                                                     end_id=num_ports - 1, padding_number=100000,
+                                                     radio=args.radio)
         else:
             temp_list = args.use_ports.split(',')
             for port in temp_list:
@@ -763,7 +770,7 @@ Generic command layout:
                          use_test_groups=args.use_test_groups,
                          write_only_test_group=args.write_only_test_group,
                          read_only_test_group=args.read_only_test_group,
-                         update_group_args = update_group_args,
+                         update_group_args=update_group_args,
                          connections_per_port=args.connections_per_port,
                          mode=args.mode
                          # want a mount options param

@@ -16,7 +16,7 @@ from pprint import pprint
 
 # ---- ---- ---- ---- LANforge Base Imports ---- ---- ---- ----
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LANforge = importlib.import_module("py-json.LANforge")
@@ -28,8 +28,6 @@ LFCliBase = lfcli_base.LFCliBase
 
 l3_cxprofile = importlib.import_module("py-json.l3_cxprofile")
 L3CXProfile = l3_cxprofile.L3CXProfile
-l3_cxprofile2 = importlib.import_module("py-json.l3_cxprofile2")
-L3CXProfile2 = l3_cxprofile2.L3CXProfile2
 l4_cxprofile = importlib.import_module("py-json.l4_cxprofile")
 L4CXProfile = l4_cxprofile.L4CXProfile
 lf_attenmod = importlib.import_module("py-json.lf_attenmod")
@@ -96,7 +94,7 @@ class Realm(LFCliBase):
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  _proxy_str=None,
-                 _capture_signal_list=[]):
+                 _capture_signal_list=None):
         super().__init__(_lfjson_host=lfclient_host,
                          _lfjson_port=lfclient_port,
                          _debug=debug_,
@@ -105,6 +103,8 @@ class Realm(LFCliBase):
                          _proxy_str=_proxy_str,
                          _capture_signal_list=_capture_signal_list)
 
+        if _capture_signal_list is None:
+            _capture_signal_list = []
         self.debug = debug_
         # if debug_:
         #     print("Realm _proxy_str: %s" % _proxy_str)
@@ -112,7 +112,6 @@ class Realm(LFCliBase):
         self.check_connect()
         self.chan_to_freq = {}
         self.freq_to_chan = {}
-        freq = 0
         chan = 1
         for freq in range(2412, 2472, 5):
             self.freq_to_chan[freq] = chan
@@ -223,35 +222,38 @@ class Realm(LFCliBase):
                                            port_list=sta_list,
                                            debug=debug_)
 
-    def rm_port(self, port_eid, check_exists=True, debug_=False):
+    def rm_port(self, port_eid, check_exists=True, debug_=None):
         if port_eid is None:
             raise ValueError("realm.rm_port: want a port eid like 1.1.eth1")
-        debug_ |= self.debug
+        if debug_ is None:
+            debug_ = self.debug
         req_url = "/cli-json/rm_vlan"
         eid = self.name_to_eid(port_eid)
         if check_exists:
-            if not self.port_exists(port_eid):
+            if not self.port_exists(port_eid, debug=debug_):
                 return False
 
         data = {
             "shelf": eid[0],
             "resource": eid[1],
             "port": eid[2]
-            }
-        rsp = self.json_post(req_url, data, debug_=debug_)
+        }
+        self.json_post(req_url, data, debug_=debug_)
         return True
 
-    def port_exists(self, port_eid):
+    def port_exists(self, port_eid, debug=None):
+        if debug is None:
+            debug = self.debug
         eid = self.name_to_eid(port_eid)
-        current_stations = self.json_get("/port/%s/%s/%s?fields=alias" % (eid[0], eid[1], eid[2]))
-        if not current_stations is None:
+        current_stations = self.json_get("/port/%s/%s/%s?fields=alias" % (eid[0], eid[1], eid[2]),
+                                         debug_=debug)
+        if current_stations:
             return True
         return False
 
     def admin_up(self, port_eid):
         # print("186 admin_up port_eid: "+port_eid)
         eid = self.name_to_eid(port_eid)
-        shelf = eid[0]
         resource = eid[1]
         port = eid[2]
         request = LFUtils.port_up_request(resource_id=resource, port_name=port)
@@ -261,7 +263,6 @@ class Realm(LFCliBase):
 
     def admin_down(self, port_eid):
         eid = self.name_to_eid(port_eid)
-        shelf = eid[0]
         resource = eid[1]
         port = eid[2]
         request = LFUtils.port_down_request(resource_id=resource, port_name=port)
@@ -269,7 +270,6 @@ class Realm(LFCliBase):
 
     def reset_port(self, port_eid):
         eid = self.name_to_eid(port_eid)
-        shelf = eid[0]
         resource = eid[1]
         port = eid[2]
         request = LFUtils.port_reset_request(resource_id=resource, port_name=port)
@@ -317,13 +317,13 @@ class Realm(LFCliBase):
 
     def cleanup_cxe_prefix(self, prefix):
         cx_list = self.cx_list()
-        if cx_list is not None:
+        if cx_list:
             for cx_name in cx_list:
                 if cx_name.startswith(prefix):
                     self.rm_cx(cx_name)
 
         endp_list = self.json_get("/endp/list")
-        if endp_list is not None:
+        if endp_list:
             if 'endpoint' in endp_list:
                 endp_list = list(endp_list['endpoint'])
                 for idx in range(len(endp_list)):
@@ -351,12 +351,11 @@ class Realm(LFCliBase):
         if debug_:
             dbg_param = "?__debug=1"
 
-        while (last_response != "YES"):
-            response = self.json_post("/gui-json/cmd%s" % dbg_param, data, debug_=debug_,
-                                      response_json_list_=response_json)
+        while last_response != "YES":
+            self.json_post("/gui-json/cmd%s" % dbg_param, data, debug_=debug_, response_json_list_=response_json)
             # LFUtils.debug_printer.pprint(response_json)
             last_response = response_json[0]["LAST"]["response"]
-            if (last_response != "YES"):
+            if last_response != "YES":
                 last_response = None
                 response_json = []
                 time.sleep(1)
@@ -397,22 +396,23 @@ class Realm(LFCliBase):
             found_endps = {}
             if debug:
                 print("Waiting on endpoint endp_list {}".format(endp_list))
-            if (endp_list is not None) and ("items" not in endp_list):
+            if endp_list and ("items" not in endp_list):
                 try:
                     endp_list = list(endp_list['endpoint'])
                     for idx in range(len(endp_list)):
                         name = list(endp_list[idx])[0]
                         found_endps[name] = name
                 except:
-                    print("non-fatal exception endp_list = list(endp_list['endpoint'] did not exist, will wait some more")
+                    print(
+                        "non-fatal exception endp_list = list(endp_list['endpoint'] did not exist, will wait some more")
 
             for req in these_endp:
-                if not req in found_endps:
+                if req not in found_endps:
                     if debug:
-                        print("Waiting on endpoint: %s" % (req))
+                        print("Waiting on endpoint: %s" % req)
                     wait_more = True
             count += 1
-            if (count > 100):
+            if count > 100:
                 break
 
         return not wait_more
@@ -429,22 +429,24 @@ class Realm(LFCliBase):
             found_cxs = {}
             cx_list = self.cx_list()
             not_cx = ['warnings', 'errors', 'handler', 'uri', 'items']
-            if cx_list is not None:
+            if cx_list:
                 for cx_name in cx_list:
                     if cx_name in not_cx:
                         continue
                     found_cxs[cx_name] = cx_name
 
             for req in these_cx:
-                if not req in found_cxs:
+                if req not in found_cxs:
                     if debug:
-                        print("Waiting on CX: %s" % (req))
+                        print("Waiting on CX: %s" % req)
                     wait_more = True
             count += 1
-            if (count > 100):
+            if count > 100:
                 break
 
         return not wait_more
+
+    # def wait_until_database_loaded(self):
 
     # Returns map of all stations with port+type == WIFI-STATION
     # Key is the EID, value is the map of key/values for the port values.
@@ -457,7 +459,7 @@ class Realm(LFCliBase):
         sta_map = {}
         temp_map = LFUtils.portListToAliasMap(response)
         for k, v in temp_map.items():
-            if (v['port type'] == "WIFI-STA"):
+            if v['port type'] == "WIFI-STA":
                 sta_map[k] = v
         temp_map.clear()
         del temp_map
@@ -482,7 +484,6 @@ class Realm(LFCliBase):
 
     # Returns list of all ports
     def port_list(self):
-        sta_list = []
         response = super().json_get("/port/list?fields=all")
         if (response is None) or ("interfaces" not in response):
             print("port_list: incomplete response:")
@@ -515,14 +516,14 @@ class Realm(LFCliBase):
             "shelf": eid_toks[0],
             "resource": eid_toks[1],
             "serno": eid_toks[2],
-            "atten_idx":eid_toks[3],
-            "val":atten_ddb,
-            }
+            "atten_idx": eid_toks[3],
+            "val": atten_ddb,
+        }
         self.json_post(req_url, data)
 
     # removes port by eid/eidpn
     def remove_vlan_by_eid(self, eid):
-        if (eid is None) or ("" == eid):
+        if (eid is None) or (eid == ""):
             raise ValueError("removeVlanByEid wants eid like 1.1.sta0 but given[%s]" % eid)
         hunks = self.name_to_eid(eid)
         # print("- - - - - - - - - - - - - - - - -")
@@ -556,7 +557,7 @@ class Realm(LFCliBase):
                 if debug_:
                     print("- prelim - - - - - - - - - - - - - - - - - - -")
                     pprint(record)
-                if (record["port type"] == "WIFI-STA"):
+                if record["port type"] == "WIFI-STA":
                     prelim_map[name] = record
 
             except Exception as x:
@@ -606,7 +607,7 @@ class Realm(LFCliBase):
 
     def name_to_eid(self, eid, debug=False, non_port=False):
         if debug:
-            self.logg(level="debug", mesg="name_to_eid: "+str(eid))
+            self.logg(level="debug", mesg="name_to_eid: " + str(eid))
         if (type(eid) is list) or (type(eid) is tuple):
             return eid
         return LFUtils.name_to_eid(eid, non_port=non_port)
@@ -645,7 +646,7 @@ class Realm(LFCliBase):
 
             for sta_eid in station_list:
                 if debug:
-                    print("checking sta-eid: %s" % (sta_eid))
+                    print("checking sta-eid: %s" % sta_eid)
                 eid = self.name_to_eid(sta_eid)
 
                 response = super().json_get("/port/%s/%s/%s?fields=alias,ip,port+type,ipv6+address" %
@@ -663,7 +664,7 @@ class Realm(LFCliBase):
                     if v['ip'] in waiting_states:
                         wait_more = True
                         if debug:
-                            print("Waiting for port %s to get IPv4 Address." % (sta_eid))
+                            print("Waiting for port %s to get IPv4 Address." % sta_eid)
                     else:
                         if sta_eid not in stas_with_ips:
                             stas_with_ips[sta_eid] = {'ipv4': v['ip']}
@@ -682,7 +683,7 @@ class Realm(LFCliBase):
                     else:
                         wait_more = True
                         if debug:
-                            print("Waiting for port %s to get IPv6 Address." % (sta_eid))
+                            print("Waiting for port %s to get IPv6 Address." % sta_eid)
 
             if wait_more:
                 time.sleep(1)
@@ -698,7 +699,7 @@ class Realm(LFCliBase):
             raise ValueError("check for num curr ips expects non-empty list of ports")
         for sta_eid in station_list:
             if debug:
-                print("checking sta-eid: %s" % (sta_eid))
+                print("checking sta-eid: %s" % sta_eid)
             eid = self.name_to_eid(sta_eid)
             response = super().json_get("/port/%s/%s/%s?fields=alias,ip,port+type,ipv6+address" %
                                         (eid[0], eid[1], eid[2]))
@@ -711,9 +712,9 @@ class Realm(LFCliBase):
                 break
             if ipv4:
                 v = response['interface']
-                if (v['ip'] in waiting_states):
+                if v['ip'] in waiting_states:
                     if debug:
-                        print("Waiting for port %s to get IPv4 Address." % (sta_eid))
+                        print("Waiting for port %s to get IPv4 Address." % sta_eid)
                 else:
                     if debug:
                         print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
@@ -723,9 +724,9 @@ class Realm(LFCliBase):
                         num_sta_with_ips += 1
             if ipv6:
                 v = response['interface']
-                if (v['ip'] in waiting_states):
+                if v['ip'] in waiting_states:
                     if debug:
-                        print("Waiting for port %s to get IPv6 Address." % (sta_eid))
+                        print("Waiting for port %s to get IPv6 Address." % sta_eid)
 
                 else:
                     if debug:
@@ -736,11 +737,12 @@ class Realm(LFCliBase):
                         num_sta_with_ips += 1
         return num_sta_with_ips
 
-    def duration_time_to_seconds(self, time_string):
+    @staticmethod
+    def duration_time_to_seconds(time_string):
         if isinstance(time_string, str):
             pattern = re.compile("^(\d+)([dhms]$)")
             td = pattern.match(time_string)
-            if td is not None:
+            if td:
                 dur_time = int(td.group(1))
                 dur_measure = str(td.group(2))
                 if dur_measure == "d":
@@ -757,11 +759,10 @@ class Realm(LFCliBase):
             raise ValueError("time_string must be of type str. Type %s provided" % type(time_string))
         return duration_sec
 
-
     def remove_all_stations(self, resource):
         port_list = self.station_list()
         sta_list = []
-        if sta_list is not None:
+        if port_list:
             print("Removing all stations")
             for item in list(port_list):
                 if "sta" in list(item)[0]:
@@ -780,7 +781,7 @@ class Realm(LFCliBase):
         endp_list = self.json_get("/endp/list")
         if "items" in endp_list or "empty" in endp_list:
             return
-        if endp_list is not None or endp_list:
+        if endp_list:
             print("Removing all endps")
             endp_list = list(endp_list['endpoint'])
             for endp_name in range(len(endp_list)):
@@ -796,10 +797,10 @@ class Realm(LFCliBase):
         # remove endpoints
         # nc show endpoints
         # nc show cross connects
-        try:
+        if self.cx_list():
             cx_list = list(self.cx_list())
             not_cx = ['warnings', 'errors', 'handler', 'uri', 'items', 'empty']
-            if cx_list is not None:
+            if cx_list:
                 print("Removing all cxs")
                 for cx_name in cx_list:
                     if cx_name in not_cx:
@@ -810,7 +811,7 @@ class Realm(LFCliBase):
                         "cx_name": cx_name
                     }
                     self.json_post(req_url, data)
-        except:
+        else:
             print("no cxs to remove")
 
         if remove_all_endpoints:
@@ -820,186 +821,93 @@ class Realm(LFCliBase):
                 "endpoint": "all"
             }
             self.json_post(req_url, data)
-            req_url = "cli-json/show_cx"
-            data = {
-                "test_mgr": "all",
-                "cross_connect": "all"
-            }
 
     def parse_link(self, link):
         link = self.lfclient_url + link
         info = ()
 
-    def new_station_profile(self, ver = 1):
-        if ver == 1:
-            station_prof = StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
-        #elif ver == 2:
-            # import station_profile2
-            # station_prof = station_profile2.StationProfile2(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
-        return station_prof
+    def new_station_profile(self):
+        return StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
 
-    def new_multicast_profile(self, ver = 1):
-        if ver == 1:
-            multi_prof = MULTICASTProfile(self.lfclient_host, self.lfclient_port,
-                                      local_realm=self, debug_=self.debug, report_timer_=3000)
-        #elif ver == 2:
-            # import multicast_profile2
-            # multi_prof = multicast_profile2.MULTICASTProfile2(self.lfclient_host, self.lfclient_port,
-            #                           local_realm=self, debug_=self.debug, report_timer_=3000)
-        return multi_prof
+    def new_multicast_profile(self):
+        return MULTICASTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug, report_timer_=3000)
 
-    def new_wifi_monitor_profile(self, resource_=1, debug_=False, up_=False, ver = 1):
-        if ver == 1:
-            wifi_mon_prof = WifiMonitor(self.lfclient_url,
-                                    local_realm=self,
-                                    resource_=resource_,
-                                    up=up_,
-                                    debug_=(self.debug or debug_))
-        #elif ver == 2:
-            # import wifi_monitor_profile2
-            # wifi_mon_prof = wifi_monitor_profile2.WifiMonitor2(self.lfclient_url,
-            #                         local_realm=self,
-            #                         resource_=resource_,
-            #                         up=up_,
-            #                         debug_=(self.debug or debug_))
-        return wifi_mon_prof
+    def new_wifi_monitor_profile(self, resource_=1, debug_=False, up_=False):
+        return WifiMonitor(self.lfclient_url,
+                           local_realm=self,
+                           resource_=resource_,
+                           up=up_,
+                           debug_=(self.debug or debug_))
 
-    def new_l3_cx_profile(self, ver=1):
-        if ver == 1:
-            cx_prof = L3CXProfile(self.lfclient_host,
-                              self.lfclient_port,
-                              local_realm=self,
-                              debug_=self.debug,
-                              report_timer_=3000)
-        elif ver == 2:
-            cx_prof = L3CXProfile2(self.lfclient_host,
-                              self.lfclient_port,
-                              local_realm=self,
-                              debug_=self.debug,
-                              report_timer_=3000)
-        return cx_prof
+    def new_l3_cx_profile(self):
+        return L3CXProfile(self.lfclient_host,
+                           self.lfclient_port,
+                           local_realm=self,
+                           debug_=self.debug,
+                           report_timer_=3000)
 
-    def new_l4_cx_profile(self, ver=1):
-        if ver == 1:
-            cx_prof = L4CXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        #elif ver == 2:
-            # import l4_cxprofile2
-            # cx_prof = l4_cxprofile2.L4CXProfile2(self.lfclient_host,
-            #                   self.lfclient_port,
-            #                   local_realm=self,
-            #                   debug_=self.debug,
-            #                   report_timer_=3000)
-        return cx_prof
-    def new_attenuator_profile(self, ver=1):
-        if ver == 1:
-            atten_prof = ATTENUATORProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        return  atten_prof
-    def new_generic_endp_profile(self, ver=1):
-        if ver == 1 :
-            endp_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        #elif ver == 2:
-            # import gen_cxprofile2
-            # endp_prof = gen_cxprofile2.GenCXProfile(self.lfclient_host,
-            #                   self.lfclient_port,
-            #                   local_realm=self,
-            #                   debug_=self.debug,
-            #                   report_timer_=3000)
-        return endp_prof
+    def new_l4_cx_profile(self):
+        return L4CXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
-    def new_generic_cx_profile(self, ver=1):
+    def new_attenuator_profile(self):
+        return ATTENUATORProfile(self.lfclient_host, self.lfclient_port, debug_=self.debug)
+
+    def new_generic_endp_profile(self):
+        return GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
+
+    def new_generic_cx_profile(self):
         """
         @deprecated
         :return: new GenCXProfile
         """
-        if ver == 1:
-            cx_prof = GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        #elif ver == 2:
-            # import gen_cxprofile2
-            # cx_prof = gen_cxprofile2.GenCXProfile(self.lfclient_host,
-            #                   self.lfclient_port,
-            #                   local_realm=self,
-            #                   debug_=self.debug,
-            #                   report_timer_=3000)
-        return cx_prof
+        return GenCXProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
-    def new_vap_profile(self, ver=1):
-        if ver == 1:
-            vap_prof = VAPProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
-                              debug_=self.debug)
-        # elif ver == 2:
-        #     import vap_profile2
-        #     vap_prof = vap_profile2.VAPProfile2(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
-        #                       debug_=self.debug)
-        return vap_prof
+    def new_vap_profile(self):
+        return VAPProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
+                          debug_=self.debug)
 
-    def new_vr_profile(self, ver=2):
-        if ver == 2:
-            from vr_profile2 import VRProfile
-            vap_prof = VRProfile(local_realm=self,
-                                 debug=self.debug)
-        return vap_prof
+    # def new_vr_profile(self):
+    # return VRProfile(local_realm=self,
+    # debug=self.debug)
 
-    def new_http_profile(self, ver = 1):
-        if ver == 1:
-            http_prof = HTTPProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        # elif ver == 2:
-        #     import http_profile2
-        #     http_prof = http_profile2.HTTPProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        return http_prof
+    def new_http_profile(self):
+        return HTTPProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
-    def new_fio_endp_profile(self, ver = 1):
-        if ver == 1:
-            cx_prof = FIOEndpProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        # elif ver == 2:
-        #     import fio_endp_profile2
-        #     cx_prof = fio_endp_profile2.FIOEndpProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        return cx_prof
+    def new_fio_endp_profile(self):
+        return FIOEndpProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
-    def new_dut_profile(self, ver = 1):
-        if ver == 1:
-            dut_profile = DUTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        # elif ver == 2:
-        #     import dut_profile2
-        #     dut_profile = dut_profile2.DUTProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        return dut_profile
+    def new_dut_profile(self):
+        return DUTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
-    def new_mvlan_profile(self, ver = 1):
-        if ver == 1:
-            mac_vlan_profile = MACVLANProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        # elif ver == 2:
-        #     import mac_vlan_profile2
-        #     mac_vlan_profile = mac_vlan_profile2.MACVLANProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        return mac_vlan_profile
+    def new_mvlan_profile(self):
+        return MACVLANProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
     def new_qvlan_profile(self):
         return QVLANProfile(self.host, self.port, local_realm=self, debug_=self.debug)
 
-    def new_test_group_profile(self, ver = 1):
-        if ver == 1:
-            test_group_profile = TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        # elif ver == 2:
-        #     import test_group_profile2
-        #     test_group_profile = test_group_profile2.TestGroupProfile2(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
-        return test_group_profile
+    def new_test_group_profile(self):
+        return TestGroupProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
 
     def new_lf_data_collection(self):
         return LFDataCollection(local_realm=self)
 
-class PacketFilter():
 
-    def get_filter_wlan_assoc_packets(self, ap_mac, sta_mac):
-        filter = "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
-                 "-Y \"(wlan.addr==%s or wlan.addr==%s) and wlan.fc.type_subtype<=3\" " % (ap_mac, sta_mac)
-        return filter
+class PacketFilter:
 
-    def get_filter_wlan_null_packets(self, ap_mac, sta_mac):
-        filter = "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
-                 "-Y \"(wlan.addr==%s or wlan.addr==%s) and wlan.fc.type_subtype==44\" " % (ap_mac, sta_mac)
-        return filter
+    @staticmethod
+    def get_filter_wlan_assoc_packets(ap_mac, sta_mac):
+        return "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
+               "-Y \"(wlan.addr==%s or wlan.addr==%s) and wlan.fc.type_subtype<=3\" " % (ap_mac, sta_mac)
 
-    def run_filter(self, pcap_file, filter):
+    @staticmethod
+    def get_filter_wlan_null_packets(ap_mac, sta_mac):
+        return "-T fields -e wlan.fc.type_subtype -e wlan.addr -e wlan.fc.pwrmgt " \
+               "-Y \"(wlan.addr==%s or wlan.addr==%s) and wlan.fc.type_subtype==44\" " % (ap_mac, sta_mac)
+
+    @staticmethod
+    def run_filter(pcap_file, file_filter):
         filename = "/tmp/tshark_dump.txt"
-        cmd = "tshark -r %s %s > %s" % (pcap_file, filter, filename)
+        cmd = "tshark -r %s %s > %s" % (pcap_file, file_filter, filename)
         # print("CMD: ", cmd)
         os.system(cmd)
         lines = []

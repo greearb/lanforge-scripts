@@ -29,8 +29,8 @@ RecordInflux = InfluxRequest.RecordInflux
 
 
 class CSVReader:
-    def read_csv(self,
-                 file,
+    @staticmethod
+    def read_csv(file,
                  sep='\t'):
         df = open(file).read().split('\n')
         rows = list()
@@ -39,8 +39,8 @@ class CSVReader:
                 rows.append(x.split(sep))
         return rows
 
-    def get_column(self,
-                   df,
+    @staticmethod
+    def get_column(df,
                    value):
         index = df[0].index(value)
         values = []
@@ -48,7 +48,8 @@ class CSVReader:
             values.append(row[index])
         return values
 
-    def get_columns(self, df, targets):
+    @staticmethod
+    def get_columns(df, targets):
         target_index = []
         for item in targets:
             target_index.append(df[0].index(item))
@@ -60,7 +61,8 @@ class CSVReader:
             results.append(row_data)
         return results
 
-    def to_html(self, df):
+    @staticmethod
+    def to_html(df):
         html = ''
         html = html + ('<table style="border:1px solid #ddd">'
                        '<colgroup>'
@@ -78,7 +80,8 @@ class CSVReader:
                        '</table>')
         return html
 
-    def filter_df(self, df, column, expression, target):
+    @staticmethod
+    def filter_df(df, column, expression, target):
         target_index = df[0].index(column)
         counter = 0
         targets = [0]
@@ -98,7 +101,8 @@ class CSVReader:
             counter += 1
         return list(map(df.__getitem__, targets))
 
-    def concat(self, dfs):
+    @staticmethod
+    def concat(dfs):
         return list(itertools.chain.from_iterable(dfs))
 
 
@@ -204,7 +208,6 @@ class GhostRequest:
 
     def custom_post(self,
                     folder,
-                    authors,
                     title='custom'):
         self.upload_images(folder)
         head = '''This is a custom post created via a script'''
@@ -215,11 +218,9 @@ class GhostRequest:
                          text=head)
 
     def kpi_to_ghost(self,
-                     authors,
                      folders,
                      parent_folder=None,
                      title=None,
-                     server_pull=None,
                      ghost_host=None,
                      port=22,
                      user_push=None,
@@ -227,13 +228,12 @@ class GhostRequest:
                      customer=None,
                      testbed=None,
                      test_run=None,
-                     target_folders=list(),
+                     target_folders=None,
                      grafana_token=None,
                      grafana_host=None,
                      grafana_port=3000,
                      grafana_datasource='InfluxDB',
                      grafana_bucket=None):
-        global dut_hw, dut_sw, dut_model, dut_serial
 
         now = datetime.now()
 
@@ -440,7 +440,7 @@ class GhostRequest:
         # create Grafana Dashboard
         target_files = []
         for folder in target_folders:
-            target_file=folder.split('/')[-1] + '/kpi.csv'
+            target_file = folder.split('/')[-1] + '/kpi.csv'
             try:
                 open(target_file)
                 target_files.append(target_file)
@@ -502,7 +502,8 @@ class GhostRequest:
                 Influx Host: %s<br />
                 Influx Port: %s<br />
                 Influx Organization: %s<br />
-                Influx Bucket: %s<br />''' % (influx_error, self.influx_host, self.influx_port, self.influx_org, self.influx_bucket)
+                Influx Bucket: %s<br />''' % (
+                    influx_error, self.influx_host, self.influx_port, self.influx_org, self.influx_bucket)
 
         raw_test_tags = list()
         test_tag_table = ''
@@ -524,8 +525,8 @@ class GhostRequest:
             else:
                 column_name = column
             dut_table_columns += (
-                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td><td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' % (
-                    column_name, duts[column])
+                    '<tr><td style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td><td colspan="3" style="border-color: gray; border-style: solid; border-width: 1px; ">%s</td></tr>' %
+                    (column_name, duts[column])
             )
 
         dut_table = '<table width="700px" border="1" cellpadding="2" cellspacing="0" ' \

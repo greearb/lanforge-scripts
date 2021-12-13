@@ -54,7 +54,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 # from cv_dut_profile import cv_dut as dut
@@ -70,7 +69,7 @@ class DUT(dut):
                  lfmgr="localhost",
                  port="8080",
                  dut_name="DUT",
-                 ssid=[],
+                 ssid=None,
                  sw_version="NA",
                  hw_version="NA",
                  serial_num="NA",
@@ -87,11 +86,12 @@ class DUT(dut):
             desired_dut_flags=dut_flags,
             desired_dut_flags_mask=dut_flags
         )
+        if ssid is None:
+            ssid = []
         self.cv_dut_name = dut_name
         self.cv_test = cvtest(lfmgr, port)
         self.dut_name = dut_name
         self.ssid = ssid
-
 
     def setup(self):
         self.create_dut()
@@ -115,16 +115,14 @@ class DUT(dut):
                     d[item[0].lower()] = item[1]
                 self.ssid[j] = d
                 self.ssid[j]['flag'] = []
-                self.ssid[j].keys
 
-                flag=0x0
+                flag = 0x0
                 if 'security' in self.ssid[j].keys():
-                    self.ssid[j]['security'] = self.ssid[j]['security'].split('|')
+                    self.ssid[j]['security'] = self.ssid[j]['security'].split(
+                        '|')
                     for security in self.ssid[j]['security']:
-                        try:
+                        if security.lower() in flags:
                             flag |= flags[security.lower()]
-                        except:
-                            pass
                 self.ssid[j]['flag'] = flag
 
                 if 'bssid' not in self.ssid[j].keys():
@@ -148,34 +146,55 @@ def main():
         prog='create_chamberview_dut.py',
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
-        ./create_chamberview_dut -m "localhost" -o "8080" -d "dut_name" 
-                --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41" 
+        ./create_chamberview_dut -m "localhost" -o "8080" -d "dut_name"
+                --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41"
                 --ssid "ssid_idx=1 ssid=NET1 security=WPA password=test bssid=78:d2:94:bf:16:40"
                """)
-    parser.add_argument("-m", "--lfmgr", type=str, default="localhost",
-                        help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port", type=str, default="8080",
-                        help="IP Port the LANforge GUI is listening on (8080 is default)")
+    parser.add_argument(
+        "-m",
+        "--lfmgr",
+        type=str,
+        default="localhost",
+        help="address of the LANforge GUI machine (localhost is default)")
+    parser.add_argument(
+        "-o",
+        "--port",
+        type=str,
+        default="8080",
+        help="IP Port the LANforge GUI is listening on (8080 is default)")
     parser.add_argument("-d", "--dut_name", type=str, default="DUT",
                         help="set dut name")
     parser.add_argument("-s", "--ssid", action='append', nargs=1,
                         help="SSID", default=[])
 
-    parser.add_argument("--sw_version", default="NA", help="DUT Software version.")
-    parser.add_argument("--hw_version", default="NA", help="DUT Hardware version.")
-    parser.add_argument("--serial_num", default="NA", help="DUT Serial number.")
+    parser.add_argument(
+        "--sw_version",
+        default="NA",
+        help="DUT Software version.")
+    parser.add_argument(
+        "--hw_version",
+        default="NA",
+        help="DUT Hardware version.")
+    parser.add_argument(
+        "--serial_num",
+        default="NA",
+        help="DUT Serial number.")
     parser.add_argument("--model_num", default="NA", help="DUT Model Number.")
-    parser.add_argument('--dut_flag', help='station flags to add', default=None, action='append')
+    parser.add_argument(
+        '--dut_flag',
+        help='station flags to add',
+        default=None,
+        action='append')
 
     args = parser.parse_args()
     new_dut = DUT(lfmgr=args.lfmgr,
                   port=args.port,
                   dut_name=args.dut_name,
                   ssid=args.ssid,
-                  sw_version = args.sw_version,
-                  hw_version = args.hw_version,
-                  serial_num = args.serial_num,
-                  model_num = args.model_num,
+                  sw_version=args.sw_version,
+                  hw_version=args.hw_version,
+                  serial_num=args.serial_num,
+                  model_num=args.model_num,
                   dut_flags=args.dut_flag
                   )
 

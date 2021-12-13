@@ -13,7 +13,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -62,7 +61,6 @@ class CreateStation(Realm):
             pprint.pprint(self.sta_list)
             print("---- ~Station List ----- ----- ----- ----- ----- ----- \n")
 
-
     def build(self):
         # Build stations
         self.station_profile.use_security(self.security, self.ssid, self.password)
@@ -80,8 +78,6 @@ class CreateStation(Realm):
 
 
 def main():
-    required=[]
-    required.append({'name':'--df','help':'Which file you want to build stations off of?'})
     parser = LFCliBase.create_basic_argparse(
         prog='create_station_from_df.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -99,29 +95,29 @@ def main():
             --ssid netgear
             --passwd BLANK
             --debug
-            ''',
-        more_required=required)
-
+            ''')
+    required = parser.add_argument_group('required arguments')
+    required.add_argument('df', help='Which file do you want to build stations off of?', required=True)
     args = parser.parse_args()
 
-    df=pd.read_csv(args.df)
-    unique=df[['radio','ssid','passwd','security']].drop_duplicates().reset_index(drop=True)
+    df = pd.read_csv(args.df)
+    unique = df[['radio', 'ssid', 'passwd', 'security']].drop_duplicates().reset_index(drop=True)
     for item in unique.index:
-        uniquedf=unique.iloc[item]
-        df1=df.merge(pd.DataFrame(uniquedf).transpose(),on=['radio','ssid','passwd','security'])
-        try:
-            radio=uniquedf['radio']
-        except:
-            radio=args.radio
-        station_list=df1['station']
-        try:
-            ssid=uniquedf['ssid']
-            passwd=uniquedf['passwd']
-            security=uniquedf['security']
-        except:
-            ssid=args.ssid
-            passwd=args.passwd
-            security=args.security
+        uniquedf = unique.iloc[item]
+        df1 = df.merge(pd.DataFrame(uniquedf).transpose(), on=['radio', 'ssid', 'passwd', 'security'])
+        if uniquedf['radio']:
+            radio = uniquedf['radio']
+        else:
+            radio = args.radio
+        station_list = df1['station']
+        if uniquedf['ssid']:
+            ssid = uniquedf['ssid']
+            passwd = uniquedf['passwd']
+            security = uniquedf['security']
+        else:
+            ssid = args.ssid
+            passwd = args.passwd
+            security = args.security
         create_station = CreateStation(_host=args.mgr,
                                        _port=args.mgr_port,
                                        _ssid=ssid,
@@ -134,6 +130,7 @@ def main():
 
         create_station.build()
     print('Created %s stations' % len(unique.index))
+
 
 if __name__ == "__main__":
     main()

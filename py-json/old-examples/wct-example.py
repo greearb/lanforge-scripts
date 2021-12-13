@@ -136,7 +136,7 @@ def main():
 
     # Now lets do some cli-socket scripting
     gui_telnet = pexpect.spawn('telnet %s %s'%(host, clisock))
-    if (gui_telnet == None):
+    if gui_telnet is None:
         print ("Unable to telnet to %s:%s"%(host,clisock));
         exit(1)
 

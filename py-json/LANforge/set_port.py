@@ -6,17 +6,16 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
- 
-sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-lf_json_autogen = importlib.import_module("py-json.LANforge.lf_json_autogen")
-LFJsonPost = lf_json_autogen.LFJsonPost
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../")))
 
 
 if os.environ.get("LF_USE_AUTOGEN") == 1:
-    set_port_current_flags = LFJsonPost.SetPortCurrentFlags.__members__
-    set_port_cmd_flags = LFJsonPost.SetPortCmdFlags.__members__
-    set_port_interest_flags = LFJsonPost.SetPortInterest.__members__
+    lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
+    LFJsonCommand = lanforge_api.LFJsonCommand
+    set_port_current_flags = LFJsonCommand.SetPortCurrentFlags.__members__
+    set_port_cmd_flags = LFJsonCommand.SetPortCmdFlags.__members__
+    set_port_interest_flags = LFJsonCommand.SetPortInterest.__members__
 
 else:
     set_port_current_flags = {

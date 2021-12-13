@@ -5,6 +5,8 @@
 
     Example script:
     './create_l3_stations.py --radio wiphy0 --ssid lanforge --password password --security wpa2'
+    './create_l3_stations.py --station_list sta00,sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2'
+    './create_l3_stations.py --station_list sta00 sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2'
 """
 
 import sys
@@ -24,15 +26,28 @@ from realm import Realm
 
 
 class CreateL3(Realm):
-    def __init__(self,
-                 ssid, security, password, sta_list, name_prefix, upstream, radio,
-                 host="localhost", port=8080, mode=0, ap=None,
-                 side_a_min_rate=56, side_a_max_rate=0,
-                 side_b_min_rate=56, side_b_max_rate=0,
-                 number_template="00000", use_ht160=False,
-                 _debug_on=False,
-                 _exit_on_error=False,
-                 _exit_on_fail=False):
+    def __init__(
+            self,
+            ssid,
+            security,
+            password,
+            sta_list,
+            name_prefix,
+            upstream,
+            radio,
+            host="localhost",
+            port=8080,
+            mode=0,
+            ap=None,
+            side_a_min_rate=56,
+            side_a_max_rate=0,
+            side_b_min_rate=56,
+            side_b_max_rate=0,
+            number_template="00000",
+            use_ht160=False,
+            _debug_on=False,
+            _exit_on_error=False,
+            _exit_on_fail=False):
         super().__init__(host, port)
         self.upstream = upstream
         self.host = host
@@ -61,7 +76,9 @@ class CreateL3(Realm):
         self.station_profile.mode = mode
         if self.ap is not None:
             self.station_profile.set_command_param("add_sta", "ap", self.ap)
-        # self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user defined variable from terminal.
+        # self.station_list= LFUtils.portNameSeries(prefix_="sta", start_id_=0,
+        # end_id_=2, padding_number_=10000, radio='wiphy0') #Make radio a user
+        # defined variable from terminal.
 
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
@@ -74,7 +91,7 @@ class CreateL3(Realm):
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
         for sta in self.sta_list:
-            self.rm_port(sta, check_exists=True)
+            self.rm_port(sta, check_exists=True, debug_=False)
 
     def build(self):
 
@@ -83,8 +100,10 @@ class CreateL3(Realm):
                                           self.password)
         self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
-        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.station_profile.set_command_param("set_port", "report_timer", 1500)
+        self.station_profile.set_command_flag(
+            "add_sta", "create_admin_down", 1)
+        self.station_profile.set_command_param(
+            "set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.create(radio=self.radio,
                                     sta_names_=self.sta_list,
@@ -108,11 +127,39 @@ def main():
         create_l3_stations.py:
         --------------------
         Generic command layout:
-        
+
         python3 ./create_l3_stations.py
             --upstream_port eth1
             --radio wiphy0
             --num_stations 32
+            --security {open|wep|wpa|wpa2|wpa3} \\
+            --mode   1
+                {"auto"   : "0",
+                "a"      : "1",
+                "b"      : "2",
+                "g"      : "3",
+                "abg"    : "4",
+                "abgn"   : "5",
+                "bgn"    : "6",
+                "bg"     : "7",
+                "abgnAC" : "8",
+                "anAC"   : "9",
+                "an"     : "10",
+                "bgnAC"  : "11",
+                "abgnAX" : "12",
+                "bgnAX"  : "13",
+            --ssid netgear
+            --password admin123
+            --a_min 1000
+            --b_min 1000
+            --ap "00:0e:8e:78:e1:76"
+            --number_template 0000
+            --debug
+
+            python3 ./create_l3_stations.py
+            --upstream_port eth1
+            --radio wiphy0
+            --station_list sta00,sta01
             --security {open|wep|wpa|wpa2|wpa3} \\
             --mode   1
                 {"auto"   : "0",
@@ -142,33 +189,58 @@ def main():
     for group in parser._action_groups:
         if group.title == "required arguments":
             required_args = group
-            break;
+            break
     if required_args is not None:
-        required_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
-        required_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
+        required_args.add_argument(
+            '--a_min',
+            help='--a_min bps rate minimum for side_a',
+            default=256000)
+        required_args.add_argument(
+            '--b_min',
+            help='--b_min bps rate minimum for side_b',
+            default=256000)
 
     optional_args = None
     for group in parser._action_groups:
         if group.title == "optional arguments":
             optional_args = group
-            break;
-    if optional_args is not None:
-        optional_args.add_argument('--mode', help='Used to force mode of stations')
-        optional_args.add_argument('--ap', help='Used to force a connection to a particular AP')
-        optional_args.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000', default=0000)
-        optional_args.add_argument('--station_list', help='Optional: User defined station names', action='append',default=None)
+            break
+    if optional_args:
+        optional_args.add_argument(
+            '--mode', help='Used to force mode of stations')
+        optional_args.add_argument(
+            '--ap', help='Used to force a connection to a particular AP')
+        optional_args.add_argument(
+            '--number_template',
+            help='Start the station numbering with a particular number. Default is 0000',
+            default=0000)
+        optional_args.add_argument(
+            '--station_list',
+            help='Optional: User defined station names, can be a comma or space separated list',
+            nargs='+',
+            default=None)
+        optional_args.add_argument(
+            '--no_cleanup',
+            help="Optional: Don't cleanup existing stations",
+            action='store_true')
     args = parser.parse_args()
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_sta = int(args.num_stations)
 
-    if args.station_list is None:
-        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=int(args.number_template), end_id_=num_sta+int(args.number_template) - 1, padding_number_=10000,
-                                              radio=args.radio)
+    if not args.station_list:
+        station_list = LFUtils.portNameSeries(
+            prefix_="sta", start_id_=int(
+                args.number_template), end_id_=num_sta + int(
+                args.number_template) - 1, padding_number_=10000, radio=args.radio)
     else:
-        station_list = args.station_list
-
+        if ',' in args.station_list[0]:
+            station_list = args.station_list[0].split(',')
+        elif ' ' in args.station_list[0]:
+            station_list = args.station_list[0].split()
+        else:
+            station_list = args.station_list
     ip_var_test = CreateL3(host=args.mgr,
                            port=args.mgr_port,
                            number_template=str(args.number_template),
@@ -186,7 +258,8 @@ def main():
                            ap=args.ap,
                            _debug_on=args.debug)
 
-    ip_var_test.pre_cleanup()
+    if not args.no_cleanup:
+        ip_var_test.pre_cleanup()
     ip_var_test.build()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())

@@ -10,7 +10,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -89,7 +88,8 @@ class VRTest(LFCliBase):
                             cx_rx_map[item] = value_rx
         return cx_rx_map
 
-    def __compare_vals(self, old_list, new_list):
+    @staticmethod
+    def __compare_vals(old_list, new_list):
         passes = 0
         expected_passes = 0
         if len(old_list) == len(new_list):
@@ -168,16 +168,17 @@ class VRTest(LFCliBase):
         upstream_temp = self.local_realm.name_to_eid(self.upstream)
         print("Creating Virtual Router and connections")
         self.vr_profile.create(resource=upstream_temp[1], upstream_port=upstream_temp[2], debug=self.debug,
-               upstream_subnets=self.upstream_subnets, upstream_nexthop=self.upstream_nexthop,
-               local_subnets=self.local_subnets, local_nexthop=self.local_nexthop,
-               rdd_ip=self.rdd_ip, rdd_gateway=self.rdd_gateway, rdd_netmask=self.rdd_netmask,
-               suppress_related_commands_=True)
+                               upstream_subnets=self.upstream_subnets, upstream_nexthop=self.upstream_nexthop,
+                               local_subnets=self.local_subnets, local_nexthop=self.local_nexthop,
+                               rdd_ip=self.rdd_ip, rdd_gateway=self.rdd_gateway, rdd_netmask=self.rdd_netmask,
+                               suppress_related_commands_=True)
         print("Creating stations")
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self.cx_profile.create(endp_type="lf_udp", side_a=self.station_profile.station_names, side_b=self.upstream,
                                sleep_time=0)
         self._pass("PASS: Station build finished")
         exit(1)
+
 
 def main():
     lfjson_port = 8080
@@ -200,36 +201,44 @@ TBD
     parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
     parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="5m")
-    parser.add_argument('--upstream_subnets', help='--upstream_subnets sets the subnets used by the upstream vrcx', default="20.20.20.0/24")
-    parser.add_argument('--upstream_nexthop', help='--upstream_nexthop sets the nexthop used by the upstream vrcx, should be rdd gateway', default="20.20.20.1")
-    parser.add_argument('--local_subnets', help='--local_subnets sets the subnets used by the rdd vrcx', default="10.40.0.0/24")
-    parser.add_argument('--local_nexthop', help='--local_nexthop sets the nexthop used by the upstream vrcx, should be upstream ip', default="10.40.3.198")
+    parser.add_argument('--upstream_subnets', help='--upstream_subnets sets the subnets used by the upstream vrcx',
+                        default="20.20.20.0/24")
+    parser.add_argument('--upstream_nexthop',
+                        help='--upstream_nexthop sets the nexthop used by the upstream vrcx, should be rdd gateway',
+                        default="20.20.20.1")
+    parser.add_argument('--local_subnets', help='--local_subnets sets the subnets used by the rdd vrcx',
+                        default="10.40.0.0/24")
+    parser.add_argument('--local_nexthop',
+                        help='--local_nexthop sets the nexthop used by the upstream vrcx, should be upstream ip',
+                        default="10.40.3.198")
     parser.add_argument('--rdd_ip', help='--rdd_ip sets the ip to be used by the rdd', default="20.20.20.20")
-    parser.add_argument('--rdd_gateway', help='--rdd_gateway sets the gateway to be used by the rdd', default="20.20.20.1")
-    parser.add_argument('--rdd_netmask', help='--rdd_netmask sets the netmask to be used by the rdd', default="255.255.255.0")
+    parser.add_argument('--rdd_gateway', help='--rdd_gateway sets the gateway to be used by the rdd',
+                        default="20.20.20.1")
+    parser.add_argument('--rdd_netmask', help='--rdd_netmask sets the netmask to be used by the rdd',
+                        default="255.255.255.0")
     parser.add_argument('--vr_name', help='--vr_name sets the name to be used by the virtual router', default="vr_test")
 
     args = parser.parse_args()
-    num_sta=2
+    num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
 
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta-1, padding_number_=10000,
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
                                           radio=args.radio)
 
     ip_var_test = VRTest(args.mgr, lfjson_port, number_template="00", sta_list=station_list,
-                                   name_prefix="VRT",
-                                   upstream=args.upstream_port,
-                                   ssid=args.ssid,
-                                   password=args.passwd,
-                                   radio=args.radio,
-                                   security=args.security, test_duration=args.test_duration, use_ht160=False,
-                                   side_a_min_rate=args.a_min, side_b_min_rate=args.b_min, _debug_on=args.debug,
-                                    upstream_subnets=args.upstream_subnets, upstream_nexthop=args.upstream_nexthop,
-                                    local_subnets=args.local_subnets, local_nexthop=args.local_nexthop,
-                                    rdd_ip=args.rdd_ip, rdd_gateway=args.rdd_gateway,
-                                    rdd_netmask = args.rdd_netmask ,vr_name=args.vr_name)
+                         name_prefix="VRT",
+                         upstream=args.upstream_port,
+                         ssid=args.ssid,
+                         password=args.passwd,
+                         radio=args.radio,
+                         security=args.security, test_duration=args.test_duration, use_ht160=False,
+                         side_a_min_rate=args.a_min, side_b_min_rate=args.b_min, _debug_on=args.debug,
+                         upstream_subnets=args.upstream_subnets, upstream_nexthop=args.upstream_nexthop,
+                         local_subnets=args.local_subnets, local_nexthop=args.local_nexthop,
+                         rdd_ip=args.rdd_ip, rdd_gateway=args.rdd_gateway,
+                         rdd_netmask=args.rdd_netmask, vr_name=args.vr_name)
 
     ip_var_test.pre_cleanup()
     ip_var_test.build()

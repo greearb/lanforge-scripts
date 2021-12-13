@@ -2,13 +2,13 @@
 '''
 NAME: lf_report_test.py
 
-PURPOSE: 
+PURPOSE:
 Common file for testing lf_report and lf_graph Library generates html and pdf output
 
-SETUP:  
+SETUP:
 /lanforge/html-reports directory needs to be present or output generated in local file
 
-EXAMPLE:  
+EXAMPLE:
 ./lf_report_test.py : currently script does not accept input
 
 COPYWRITE
@@ -26,8 +26,9 @@ import numpy as np
 import pandas as pd
 import pdfkit
 import random
+import argparse
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lf_report = importlib.import_module("py-scripts.lf_report")
@@ -38,10 +39,45 @@ lf_scatter_graph = lf_graph.lf_scatter_graph
 lf_stacked_graph = lf_graph.lf_stacked_graph
 lf_horizontal_stacked_graph = lf_graph.lf_horizontal_stacked_graph
 
-
 # Unit Test
-if __name__ == "__main__":
+
+
+def main():
     # Testing: generate data frame
+    parser = argparse.ArgumentParser(
+        prog="lf_report_test.py",
+        formatter_class=argparse.RawTextHelpFormatter,
+        description='''\
+-----------------
+NAME: lf_report_test.py
+
+PURPOSE:
+Common file for testing lf_report and lf_graph Library generates html and pdf output
+
+SETUP:
+/lanforge/html-reports directory needs to be present or output generated in local file
+
+EXAMPLE:
+./lf_report_test.py : currently script does not accept input
+
+COPYWRITE
+    Copyright 2021 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
+
+INCLUDE_IN_README
+''')
+
+    parser.add_argument(
+        '--mgr',
+        '--lfmgr',
+        dest='lfmgr',
+        help='sample argument: where LANforge GUI is running',
+        default='localhost')
+    # the args parser is not really used , this is so the report is not generated when testing
+    # the imports with --help
+    args = parser.parse_args()
+    print("LANforge manager {lfmgr}".format(lfmgr=args.lfmgr))
+
     dataframe = pd.DataFrame({
         'product': ['CT521a-264-1ac-1n', 'CT521a-1ac-1ax', 'CT522-264-1ac2-1n', 'CT523c-2ac2-db-10g-cu',
                     'CT523c-3ac2-db-10g-cu', 'CT523c-8ax-ac10g-cu', 'CT523c-192-2ac2-1ac-10g'],
@@ -53,7 +89,7 @@ if __name__ == "__main__":
 
     print(dataframe)
 
-    # Testing: generate data frame 
+    # Testing: generate data frame
     dataframe2 = pd.DataFrame({
         'station': [1, 2, 3, 4, 5, 6, 7],
         'time_seconds': [23, 78, 22, 19, 45, 22, 25]
@@ -108,7 +144,7 @@ if __name__ == "__main__":
                          _xaxis_categories=x_axis_values,
                          _graph_image_name="Bi-single_radio_2.4GHz",
                          _label=["bi-downlink", "bi-uplink", 'uplink'],
-                         _color=['darkorange', 'forestgreen','blueviolet'],
+                         _color=['darkorange', 'forestgreen', 'blueviolet'],
                          _color_edge='red',
                          _grp_title="Throughput for each clients",
                          _xaxis_step=5,
@@ -117,7 +153,7 @@ if __name__ == "__main__":
                          _text_rotation=45,
                          _xticks_font=7,
                          _legend_loc="best",
-                         _legend_box=(1,1),
+                         _legend_box=(1, 1),
                          _legend_ncol=1,
                          _legend_fontsize=None,
                          _enable_csv=True)
@@ -127,7 +163,7 @@ if __name__ == "__main__":
     print("graph name {}".format(graph_png))
 
     report.set_graph_image(graph_png)
-    # need to move the graph image to the results 
+    # need to move the graph image to the results
     report.move_graph_image()
     if graph.enable_csv:
         report.set_csv_filename(graph_png)
@@ -140,7 +176,7 @@ if __name__ == "__main__":
                               _graph_image_name="image_name1",
                               _color=None,
                               _label=["s1", "s2", "s3"],
-                              _enable_csv = False)
+                              _enable_csv=False)
     graph_png = graph2.build_scatter_graph()
 
     print("graph name {}".format(graph_png))
@@ -149,14 +185,15 @@ if __name__ == "__main__":
     report.move_graph_image()
 
     report.build_graph()
-    # this will generate graph which is independent,we can customize the value with different colors
+    # this will generate graph which is independent,we can customize the value
+    # with different colors
     graph2 = lf_scatter_graph(_x_data_set=set1, _y_data_set=[45, 67, 45, 34], _values=[0, 0, 0, 1],
                               _xaxis_name="x-axis",
                               _yaxis_name="y-axis",
                               _graph_image_name="image_name_map",
                               _color=None,
                               _label=["s1", "s2"],
-                              _enable_csv = False)
+                              _enable_csv=False)
     graph_png = graph2.build_scatter_graph()
 
     print("graph name {}".format(graph_png))
@@ -165,14 +202,15 @@ if __name__ == "__main__":
     report.move_graph_image()
 
     report.build_graph()
-    dataset = [["1", "2", "3", "4"], [12, 45, 67, 34], [23, 67, 23, 12], [25, 45, 34, 23]]
+    dataset = [["1", "2", "3", "4"], [12, 45, 67, 34],
+               [23, 67, 23, 12], [25, 45, 34, 23]]
     graph = lf_stacked_graph(_data_set=dataset,
                              _xaxis_name="Stations",
                              _yaxis_name="Login PASS/FAIL",
                              _label=['Success', 'Fail', 'both'],
                              _graph_image_name="login_pass_fail1",
                              _color=None,
-                             _enable_csv = False)
+                             _enable_csv=False)
 
     graph_png = graph.build_stacked_graph()
 
@@ -192,7 +230,7 @@ if __name__ == "__main__":
                                         _graph_image_name="image_name_pass_fail",
                                         _color=["r", "g"],
                                         _figsize=(9, 4),
-                                        _enable_csv = False)
+                                        _enable_csv=False)
 
     graph_png = graph.build_horizontal_stacked_graph()
 
@@ -215,3 +253,5 @@ if __name__ == "__main__":
     # report.write_pdf(_page_size = 'Legal', _orientation='Portrait')
 
     # report.generate_report()
+if __name__ == "__main__":
+    main()

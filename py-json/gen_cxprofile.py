@@ -9,7 +9,6 @@ import time
 import datetime
 import json
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -49,7 +48,7 @@ class GenCXProfile(LFCliBase):
             if self.cmd == "":
                 raise ValueError("Please ensure cmd has been set correctly")
         elif self.type == "speedtest":
-            self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % (sta_name)
+            self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % sta_name
         elif self.type == "iperf3" and self.dest is not None:
             self.cmd = "iperf3 --forceflush --format k --precision 4 -c %s -t 60 --tos 0 -b 1K --bind_dev %s -i 1 " \
                        "--pidfile /tmp/lf_helper_iperf3_%s.pid" % (self.dest, sta_name, gen_name)
@@ -132,7 +131,7 @@ class GenCXProfile(LFCliBase):
             if self.cmd == "":
                 raise ValueError("Please ensure cmd has been set correctly")
         elif self.type == "speedtest":
-            self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % (sta_name)
+            self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % sta_name
         elif self.type == "iperf3" and self.dest is not None:
             self.cmd = "iperf3 --forceflush --format k --precision 4 -c %s -t 60 --tos 0 -b 1K --bind_dev %s -i 1 " \
                        "--pidfile /tmp/lf_helper_iperf3_test.pid" % (self.dest, sta_name)
@@ -176,7 +175,7 @@ class GenCXProfile(LFCliBase):
                         resource = port_info[1]
                         shelf = port_info[0]
                         name = port_info[2]
-                    except:
+                    except ValueError:
                         raise ValueError("Unexpected name for port_name %s" % port_name)
 
                     # this naming convention follows what you see when you use
@@ -278,7 +277,9 @@ class GenCXProfile(LFCliBase):
             })
         time.sleep(sleep_time)
 
-    def create(self, ports=[], sleep_time=.5, debug_=False, suppress_related_commands_=None):
+    def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None):
+        if ports is None:
+            ports = []
         if self.debug:
             debug_ = True
         post_data = []
@@ -396,11 +397,10 @@ class GenCXProfile(LFCliBase):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
         if gen_results['endpoints'] is not None:
             pprint(gen_results['endpoints'])
-            #for name in gen_results['endpoints']:
-               # pprint(name.items)
-                #for k,v in name.items():
+            # for name in gen_results['endpoints']:
+            # pprint(name.items)
+            # for k,v in name.items():
         exit(1)
-
 
     def choose_speedtest_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
@@ -412,13 +412,13 @@ class GenCXProfile(LFCliBase):
                         if last_results['download'] is None and last_results['upload'] is None and last_results['ping'] is None:
                             return False, v['name']
                         elif last_results['download'] >= self.speedtest_min_dl and \
-                             last_results['upload'] >= self.speedtest_min_up and \
-                             last_results['ping'] <= self.speedtest_max_ping:
+                                last_results['upload'] >= self.speedtest_min_up and \
+                                last_results['ping'] <= self.speedtest_max_ping:
                             return True, v['name']
 
     def choose_generic_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if (gen_results['endpoints'] is not None):
+        if gen_results['endpoints'] is not None:
             for name in gen_results['endpoints']:
                 for k, v in name.items():
                     if v['name'] in self.created_endp and not v['name'].endswith('1'):
@@ -444,10 +444,10 @@ class GenCXProfile(LFCliBase):
                 debug=False):
         try:
             duration_sec = self.parse_time(duration_sec).seconds
-        except:
+        except ValueError:
             if (duration_sec is None) or (duration_sec <= 1):
                 raise ValueError("GenCXProfile::monitor wants duration_sec > 1 second")
-            if (duration_sec <= monitor_interval_ms):
+            if duration_sec <= monitor_interval_ms:
                 raise ValueError("GenCXProfile::monitor wants duration_sec > monitor_interval")
         if report_file is None:
             raise ValueError("Monitor requires an output file to be defined")
@@ -602,7 +602,9 @@ class GenCXProfile(LFCliBase):
             exit(1)
             # append compared df to created one
             if output_format.lower() != 'csv':
-                pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
+                pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format,
+                                             save_path=report_file)
         else:
             if output_format.lower() != 'csv':
-                pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format, save_path=report_file)
+                pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format,
+                                             save_path=report_file)

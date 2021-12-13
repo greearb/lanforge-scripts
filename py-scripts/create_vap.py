@@ -12,7 +12,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -55,7 +55,10 @@ class CreateVAP(Realm):
         self.vap_list = _vap_list
         self.resource = _resource
         if _vap_flags is None:
-            self.vap_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
+            self.vap_flags = [
+                "wpa2_enable",
+                "80211u_enable",
+                "create_admin_down"]
         else:
             self.vap_flags = _vap_flags
         self.mode = _mode
@@ -74,8 +77,10 @@ class CreateVAP(Realm):
         self.vap_profile.ssid_pass = self.password
         self.vap_profile.dhcp = self.dhcp
         self.vap_profile.mode = self.mode
-        self.vap_profile.desired_add_vap_flags = self.vap_flags + ["wpa2_enable", "80211u_enable", "create_admin_down"]
-        self.vap_profile.desired_add_vap_flags_mask = self.vap_flags + ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        self.vap_profile.desired_add_vap_flags = self.vap_flags + \
+            ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        self.vap_profile.desired_add_vap_flags_mask = self.vap_flags + \
+            ["wpa2_enable", "80211u_enable", "create_admin_down"]
         if self.debug:
             print("----- VAP List ----- ----- ----- ----- ----- ----- \n")
             pprint.pprint(self.vap_list)
@@ -83,19 +88,19 @@ class CreateVAP(Realm):
 
     def build(self):
         # Build VAPs
-        self.vap_profile.use_security(self.security, self.ssid, passwd=self.password)
+        self.vap_profile.use_security(
+            self.security, self.ssid, passwd=self.password)
 
         print("Creating VAPs")
-        self.vap_profile.create(resource = self.resource,
-                                radio = self.radio,
-                                channel = self.channel,
-                                country=self.country_code,
-                                up_ = True,
-                                debug = False,
+        self.vap_profile.create(resource=self.resource,
+                                radio=self.radio,
+                                channel=self.channel,
+                                up_=True,
+                                debug=False,
                                 use_ht40=True,
                                 use_ht80=True,
                                 use_ht160=False,
-                                suppress_related_commands_ = True,
+                                suppress_related_commands_=True,
                                 use_radius=False,
                                 hs20_enable=False,
                                 bridge=self.bridge)
@@ -125,57 +130,73 @@ Command example:
             ''')
 
     optional = parser.add_argument_group('optional arguments')
-    optional.add_argument('--num_vaps', help='Number of VAPs to Create', required=False, default=1)
-    optional.add_argument('--vap_flag', help='VAP flags to add', required=False, default=None, action='append')
-    optional.add_argument('--bridge', help='Create a bridge connecting the VAP to a port', required=False, default=False)
-    optional.add_argument('--mac', help='Custom mac address', default="xx:xx:xx:xx:*:xx")
+    optional.add_argument(
+        '--num_vaps',
+        help='Number of VAPs to Create',
+        required=False,
+        default=1)
+    optional.add_argument(
+        '--vap_flag',
+        help='VAP flags to add',
+        required=False,
+        default=None,
+        action='append')
+    optional.add_argument(
+        '--bridge',
+        help='Create a bridge connecting the VAP to a port',
+        required=False,
+        default=False)
+    optional.add_argument(
+        '--mac',
+        help='Custom mac address',
+        default="xx:xx:xx:xx:*:xx")
     optional.add_argument('--mode', default='AUTO')
     optional.add_argument('--channel', default=36)
     optional.add_argument('--country_code', default=0)
     optional.add_argument('--nss', default=False)
     optional.add_argument('--resource', default=1)
     optional.add_argument('--start_id', default=0)
-    optional.add_argument('--vap_name',default=None)
+    optional.add_argument('--vap_name', default=None)
     args = parser.parse_args()
-    #if args.debug:
+    # if args.debug:
     #    pprint.pprint(args)
     #    time.sleep(5)
-    if (args.radio is None):
-       raise ValueError("--radio required")
+    if args.radio is None:
+        raise ValueError("--radio required")
 
     num_vap = int(args.num_vaps)
 
     vap_list = LFUtils.port_name_series(prefix="vap",
-                           start_id=int(args.start_id),
-                           end_id=num_vap-1,
-                           padding_number=10000,
-                           radio=args.radio)
-    #print(args.passwd)
-    #print(args.ssid)
+                                        start_id=int(args.start_id),
+                                        end_id=num_vap - 1,
+                                        padding_number=10000,
+                                        radio=args.radio)
+    # print(args.passwd)
+    # print(args.ssid)
 
     if args.vap_name is None:
         for vap in vap_list:
             create_vap = CreateVAP(_host=args.mgr,
-                           _port=args.mgr_port,
-                           _ssid=args.ssid,
-                           _password=args.passwd,
-                           _security=args.security,
+                                   _port=args.mgr_port,
+                                   _ssid=args.ssid,
+                                   _password=args.passwd,
+                                   _security=args.security,
                                    _mode=args.mode,
-                           _vap_list=vap,
+                                   _vap_list=vap,
                                    _resource=args.resource,
                                    _vap_flags=args.vap_flag,
-                           _radio=args.radio,
+                                   _radio=args.radio,
                                    _channel=args.channel,
                                    _country_code=args.country_code,
                                    _nss=args.nss,
-                           _proxy_str=args.proxy,
+                                   _proxy_str=args.proxy,
                                    _bridge=args.bridge,
-                           _debug_on=args.debug)
+                                   _debug_on=args.debug)
             print('Creating VAP')
 
             create_vap.build()
     else:
-        vap_name = "vap"+args.vap_name
+        vap_name = "vap" + args.vap_name
         create_vap = CreateVAP(_host=args.mgr,
                                _port=args.mgr_port,
                                _ssid=args.ssid,
@@ -195,6 +216,7 @@ Command example:
         print('Creating VAP')
 
         create_vap.build()
+
 
 if __name__ == "__main__":
     main()

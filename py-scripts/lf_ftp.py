@@ -1,5 +1,6 @@
+#!/usr/bin/env python3
 """ lf_ftp.py will verify that N clients connected on specified band and can simultaneously download/upload some amount of file from FTP server and measuring the time taken by client to download/upload the file.
-    cli- python3 lf_ftp.py --mgr localhost --mgr_port 8080 --upstream_port eth1 --ssid FTP --security open --passwd BLANK --ap_name WAC505 --ap_ip 192.168.213.90 --bands Both --directions Download --twog_radio wiphy1 --fiveg_radio wiphy0 --file_size 2MB --num_stations 40 --Both_duration 1 --traffic_duration 2 --ssh_port 22_
+    cli- ./lf_ftp.py --ssid <SSID> --passwd <PASSWORD>  --file_sizes 2MB --fiveg_duration 4 --mgr 192.168.1.101 --traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 """
@@ -11,12 +12,13 @@ from datetime import datetime
 import time
 import os
 import matplotlib.patches as mpatches
+import pandas as pd
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -26,13 +28,14 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
+lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 
 
 class FtpTest(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, sta_prefix="sta", start_id=0, num_sta=None,
                  dut_ssid=None, dut_security=None, dut_passwd=None, file_size=None, band=None, twog_radio=None,
                  fiveg_radio=None, upstream="eth1", _debug_on=False, _exit_on_error=False, _exit_on_fail=False,
-                 direction=None, duration=None, traffic_duration=None, ssh_port=None):
+                 direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
         print("Test is about to start")
         self.host = lfclient_host
@@ -47,6 +50,7 @@ class FtpTest(LFCliBase):
         self.password = dut_passwd
         self.requests_per_ten = 1
         self.band = band
+        self.kpi_csv = kpi_csv
         self.file_size = file_size
         self.direction = direction
         self.twog_radio = twog_radio
@@ -301,7 +305,7 @@ class FtpTest(LFCliBase):
         for i in range(self.num_sta):
             list_of_time.append(0)
         #running layer 4 traffic upto user given time
-        while str(datetime.datetime.now() - time1) <= self.traffic_duration:
+        while str(datetime.now() - time1) <= self.traffic_duration:
             if list_of_time.count(0) == 0:
                 break
 
@@ -309,11 +313,11 @@ class FtpTest(LFCliBase):
 
                 # run script upto given time
                 if counter == 0:
-                    if str(datetime.datetime.now() - time1) >= self.duration:
+                    if str(datetime.now() - time1) >= self.duration:
                         counter = counter + 1
                         break
                 else:
-                    if str(datetime.datetime.now() - time1) >= self.traffic_duration:
+                    if str(datetime.now() - time1) >= self.traffic_duration:
                         break
 
                 for i in range(self.num_sta):
@@ -321,9 +325,9 @@ class FtpTest(LFCliBase):
 
                     # reading uc-avg data in json format
                     uc_avg = self.json_get("layer4/list?fields=uc-avg")
-                    if data['endpoint'][i][data2[i]]['bytes-rd'] <= self.file_size_bytes:
+                    if int(data['endpoint'][i][data2[i]]['bytes-rd']) <= self.file_size_bytes:
                         data = self.json_get("layer4/list?fields=bytes-rd")
-                    if data['endpoint'][i][data2[i]]['bytes-rd'] >= self.file_size_bytes:
+                    if int(data['endpoint'][i][data2[i]]['bytes-rd']) >= self.file_size_bytes:
                         list1.append(i)
                         if list1.count(i) == 1:
                             list2.append(i)
@@ -614,7 +618,7 @@ class FtpTest(LFCliBase):
     def bar_graph(self, x_axis, image_name, dataset, color, labels, x_axis_name, y_axis_name,handles, ncol, box, fontsize):
         '''This Method will plot bar graph'''
 
-        graph = lf_bar_graph(_data_set=dataset,
+        graph = lf_graph.lf_bar_graph(_data_set=dataset,
                              _xaxis_name=x_axis_name,
                              _yaxis_name=y_axis_name,
                              _xaxis_categories=x_axis,
@@ -660,7 +664,7 @@ class FtpTest(LFCliBase):
     def generate_report(self, ftp_data, date,test_setup_info, input_setup_info):
         '''Method for generate the report'''
 
-        self.report = lf_report(_results_dir_name="ftp_test", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf")
+        self.report = lf_report.lf_report(_results_dir_name="ftp_test", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf")
         self.report.set_title("FTP Test")
         self.report.set_date(date)
         self.report.build_banner()
@@ -703,7 +707,14 @@ def main():
     parser = argparse.ArgumentParser(
         prog='lf_ftp.py',
         formatter_class=argparse.RawTextHelpFormatter,
-        description="FTP Test Script")
+        description='''\
+---------------------------
+FTP Test Script - lf_ftp.py
+---------------------------
+CLI Example: 
+./lf_ftp.py --ssid <SSID> --passwd <PASSWORD> --file_sizes 2MB --fiveg_duration 4 --mgr 192.168.1.101 --traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
+---------------------------
+                    ''')
     parser.add_argument('--mgr', help='hostname for where LANforge GUI is running', default='localhost')
     parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on', default=8080)
     parser.add_argument('--upstream_port', help='non-station port that generates traffic: eg: eth1', default='eth1')
@@ -716,7 +727,7 @@ def main():
     parser.add_argument('--fiveg_radio', type=str, help='specify radio for 5G client', default='wiphy0')
     parser.add_argument('--twog_duration', nargs="+", help='Pass and Fail duration for 2.4G band in minutes')
     parser.add_argument('--fiveg_duration', nargs="+", help='Pass and Fail duration for 5G band in minutes')
-    parser.add_argument('--Both_duration', nargs="+", help='Pass and Fail duration for Both band in minutes')
+    parser.add_argument('--both_duration', nargs="+", help='Pass and Fail duration for Both band in minutes')
     parser.add_argument('--traffic_duration', type=int, help='duration for layer 4 traffic running')
     parser.add_argument('--ssh_port', type=int, help="specify the shh port eg 22", default=22)
 
@@ -732,10 +743,10 @@ def main():
     args = parser.parse_args()
 
     # 1st time stamp for test duration
-    time_stamp1 = datetime.datetime.now()
+    time_stamp1 = datetime.now()
 
     # use for creating ftp_test dictionary
-    iteraration_num = 0
+    interation_num = 0
 
     # empty dictionary for whole test data
     ftp_data = {}
@@ -759,12 +770,12 @@ def main():
                     index = list(args.file_sizes).index(size)
                     duration = args.fiveg_duration[index]
         else:
-            if len(args.file_sizes) is not len(args.Both_duration):
+            if len(args.file_sizes) is not len(args.both_duration):
                 raise Exception("Give proper Pass or Fail duration for 5G band")
             for size in args.file_sizes:
                 if size == file_size:
                     index = list(args.file_sizes).index(size)
-                    duration = args.Both_duration[index]
+                    duration = args.both_duration[index]
         if duration.isdigit():
             duration = int(duration)
         else:
@@ -794,7 +805,7 @@ def main():
                               ssh_port=args.ssh_port
                               )
 
-                iteraration_num = iteraration_num + 1
+                interation_num = interation_num + 1
                 obj.file_create()
                 obj.set_values()
                 obj.precleanup()
@@ -804,7 +815,7 @@ def main():
                     exit(1)
 
                 # First time stamp
-                time1 = datetime.datetime.now()
+                time1 = datetime.now()
 
                 obj.start(False, False)
 
@@ -815,19 +826,19 @@ def main():
                 pass_fail = obj.pass_fail_check(time_list)
 
                 # dictionary of whole data
-                ftp_data[iteraration_num] = obj.ftp_test_data(time_list, pass_fail, args.bands, args.file_sizes,
+                ftp_data[interation_num] = obj.ftp_test_data(time_list, pass_fail, args.bands, args.file_sizes,
                                                               args.directions, args.num_stations)
 
                 obj.stop()
                 obj.postcleanup()
 
     # 2nd time stamp for test duration
-    time_stamp2 = datetime.datetime.now()
+    time_stamp2 = datetime.now()
 
     # total time for test duration
     test_duration = str(time_stamp2 - time_stamp1)[:-7]
 
-    date = str(datetime.datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
+    date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
 
     #print(ftp_data)
 

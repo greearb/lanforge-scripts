@@ -45,7 +45,7 @@ Realm = realm.Realm
 class MultiPsk(Realm):
     def __init__(self,
                  host=None,
-                 port=None,
+                 port=8080,
                  ssid=None,
                  input=None,
                  security=None,
@@ -57,8 +57,10 @@ class MultiPsk(Realm):
                  sta_prefix="sta",
                  debug_=False,
                  ):
-        self.host = host
-        self.port = port
+        super().__init__(lfclient_host=host,
+                         lfclient_port=port),
+        self.lfclient_host = host
+        self.lfclient_port = port
         self.ssid = ssid
         self.input = input
         self.security = security
@@ -69,8 +71,7 @@ class MultiPsk(Realm):
         self.resource = resource
         self.sta_prefix = sta_prefix
         self.debug = debug_
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.station_profile = self.local_realm.new_station_profile()
+        self.station_profile = self.new_station_profile()
 
     def build(self):
         station_list = []
@@ -84,30 +85,30 @@ class MultiPsk(Realm):
             else:
                 station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=self.start_id,
                                                       end_id_=input['num_station'] - 1, padding_number_=100,
-                                                      radio=input['radio'])
+                                                      radio=self.radio)
                 # implementation for non vlan pending ****
             print("creating stations")
-            self.station_profile.use_security(self.security, self.ssid, str(input['password']))
+            self.station_profile.use_security(self.security, self.ssid, self.passwd)
             self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
             self.station_profile.set_command_param("set_port", "report_timer", 1500)
             self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-            self.station_profile.create(radio=input['radio'], sta_names_=station_list, debug=self.local_realm.debug)
-            self.local_realm.wait_until_ports_appear(sta_list=station_list)
+            self.station_profile.create(radio=self.radio, sta_names_=station_list, debug=self.debug)
+            self.wait_until_ports_appear(sta_list=station_list)
             self.station_profile.admin_up()
-            if self.local_realm.wait_for_ip(station_list, timeout_sec=120):
+            if self.wait_for_ip(station_list, timeout_sec=120):
                 print("All stations got IPs")
             else:
                 print("Stations failed to get IPs")
 
             print("create udp endp")
-            self.cx_profile_udp = self.local_realm.new_l3_cx_profile()
+            self.cx_profile_udp = self.new_l3_cx_profile()
             self.cx_profile_udp.side_a_min_bps = 128000
             self.cx_profile_udp.side_b_min_bps = 128000
             self.cx_profile_udp.side_a_min_pdu = 1200
             self.cx_profile_udp.side_b_min_pdu = 1500
             self.cx_profile_udp.report_timer = 1000
             self.cx_profile_udp.name_prefix = "udp"
-            port_list = list(self.local_realm.find_ports_like("%s+" % self.sta_prefix))
+            port_list = list(self.find_ports_like("%s+" % self.sta_prefix))
             # print("port list", port_list)
             if (port_list is None) or (len(port_list) < 1):
                 raise ValueError("Unable to find ports named '%s'+" % self.sta_prefix)
@@ -118,13 +119,13 @@ class MultiPsk(Realm):
 
             # Create TCP endpoints
             print("create tcp endp")
-            self.l3_tcp_profile = self.local_realm.new_l3_cx_profile()
+            self.l3_tcp_profile = self.new_l3_cx_profile()
             self.l3_tcp_profile.side_a_min_bps = 128000
             self.l3_tcp_profile.side_b_min_bps = 56000
             self.l3_tcp_profile.name_prefix = "tcp"
             self.l3_tcp_profile.report_timer = 1000
             self.l3_tcp_profile.create(endp_type="lf_tcp",
-                                       side_a=list(self.local_realm.find_ports_like("%s+" % self.sta_prefix)),
+                                       side_a=list(self.find_ports_like("%s+" % self.sta_prefix)),
                                        side_b="%d.%s" % (self.resource, input['upstream']),
                                        suppress_related_commands=True)
 
@@ -140,7 +141,7 @@ class MultiPsk(Realm):
             if "." in i['upstream']:
                 # print(str(i['upstream']) + " is a vlan upstream port")
                 print("checking its ip ..")
-                data = self.local_realm.json_get("ports/list?fields=IP")
+                data = self.json_get("ports/list?fields=IP")
                 for val in data["interfaces"]:
                     for j in val:
                         if "1." + str(self.resource) + "." + str(i['upstream']) == j:
@@ -157,7 +158,7 @@ class MultiPsk(Realm):
             if "." not in i['upstream']:
                 # print(str(i['upstream']) + " is not an vlan upstream port")
                 print("checking its ip ..")
-                data = self.local_realm.json_get("ports/list?fields=IP")
+                data = self.json_get("ports/list?fields=IP")
                 for val in data["interfaces"]:
                     for j in val:
                         if "1." + str(self.resource) + "." + str(i['upstream']) == j:
@@ -168,11 +169,8 @@ class MultiPsk(Realm):
         return non_vlan_ips
 
     def get_sta_ip(self):
-        # this function gives station ip dict eg{'eth2.100': '172.17.0.100'}
-        # self.input = [{'password': 'lanforge1', 'upstream': 'eth2.100', 'mac': '', 'num_station': 1, 'radio': 'wiphy4'}, {'password': 'lanforge2', 'upstream': 'eth2.200', 'mac': '', 'num_station': 1, 'radio': 'wiphy4'}, {'password': 'lanforge3', 'upstream': 'eth2', 'mac': '', 'num_station': 1, 'radio': 'wiphy0'}]
-        # port_list =  ['1.1.sta200', '1.1.sta00', '1.1.sta100']
         station_ip = {}
-        port_list = list(self.local_realm.find_ports_like("%s+" % self.sta_prefix))
+        port_list = list(self.find_ports_like("%s+" % self.sta_prefix))
         # print("port list", port_list)
         # port list ['1.1.sta200', '1.1.sta00', '1.1.sta100']
         for name, id in zip(port_list, self.input):
@@ -182,7 +180,7 @@ class MultiPsk(Realm):
             # print(x)
 
             if name == "1." + str(self.resource) + ".sta" + str(x):
-                data = self.local_realm.json_get("ports/list?fields=IP")
+                data = self.json_get("ports/list?fields=IP")
                 for i in data["interfaces"]:
                     # print(i)
                     for j in i:
@@ -227,7 +225,7 @@ class MultiPsk(Realm):
             # print(x)
 
             if name == "1." + str(self.resource) + ".sta" + str(x):
-                data = self.local_realm.json_get("ports/list?fields=IP")
+                data = self.json_get("ports/list?fields=IP")
                 for i in data["interfaces"]:
                     # print(i)
                     for j in i:
@@ -241,7 +239,7 @@ class MultiPsk(Realm):
     def get_non_vlan_sta_ip(self):
         station_nonvlan_ip = {}
         x = ""
-        port_list = list(self.local_realm.find_ports_like("%s+" % self.sta_prefix))
+        port_list = list(self.find_ports_like("%s+" % self.sta_prefix))
         # print("port list", port_list)
         for id in self.input:
             if "." not in id['upstream']:
@@ -249,7 +247,7 @@ class MultiPsk(Realm):
         # print(x)
         for name in port_list:
             if name == "1.1.sta00":
-                data = self.local_realm.json_get("ports/list?fields=IP")
+                data = self.json_get("ports/list?fields=IP")
                 for i in data["interfaces"]:
                     # print(i)
                     for j in i:
@@ -270,11 +268,10 @@ class MultiPsk(Realm):
                 y = station_ip[j].split('.')
                 if x[0] == y[0] and x[1] == y[1]:
                     print("station got ip from vlan")
-                    x = "Pass"
+                    return "Pass"
                 else:
                     print("station did not got ip from vlan")
-                    x = "Fail"
-        return x
+                    return "Fail"
 
     def compare_nonvlan_ip_nat(self):
         non_vlan_sta_ip = self.get_non_vlan_sta_ip()
@@ -312,27 +309,22 @@ class MultiPsk(Realm):
         self.cx_profile_udp.cleanup()
         self.l3_tcp_profile.cleanup()
         self.station_profile.cleanup()
-        LFUtils.wait_until_ports_disappear(base_url=self.local_realm.lfclient_url, port_list=self.station_profile.station_names,
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_host, port_list=self.station_profile.station_names,
                                            debug=self.debug)
         print("Test Completed")
 
 
 def main():
-    parser = argparse.ArgumentParser(
+    parser = Realm.create_basic_argparse(
         prog="lf_multipsk.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description="lanforge webpage download Test Script")
-    parser.add_argument('--mgr', help='hostname for where LANforge GUI is running', default='localhost')
-    parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on', default=8080)
-    parser.add_argument('--ssid', help='WiFi SSID for client to associate to')
-    parser.add_argument('--security', help='WiFi Security protocol: {open|wep|wpa2|wpa3', default="wpa2")
-    parser.add_argument('--mode', help="specify mode of ap eg BRIDGE or NAT", default="BRIDGE")
     parser.add_argument('--n_vlan', help="type number of vlan using in test eg 1 or 2", default=1)
-    # parser.add_argument('--input', nargs="+", help="specify list of parameters like passwords,upstream,mac address, number of clients and radio as input, eg password@123,eth2.100,"",1,wiphy0  lanforge@123,eth2.100,"",1,wiphy1")
+    parser.add_argument('--mode', help="Mode for lf_multipsk", default=None)
     args = parser.parse_args()
 
     input_data = [{
-        "password": "lanforge1",
+        "password": args.passwd,
         "upstream": "eth2.100",
         "mac": "",
         "num_station": 1,
@@ -364,8 +356,11 @@ def main():
     multi_obj = MultiPsk(host=args.mgr,
                          port=args.mgr_port,
                          ssid=args.ssid,
+                         passwd=args.passwd,
                          input=input_data,
-                         security=args.security)
+                         security=args.security,
+                         debug_=args.debug,
+                         radio=args.radio)
 
     multi_obj.build()
     multi_obj.start()

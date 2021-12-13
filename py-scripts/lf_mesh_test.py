@@ -146,14 +146,22 @@ class MeshTest(cvtest):
                  upload_speed="56Kbps",
                  download_speed="85%",
                  duration="60s",
-                 enables=[],
-                 disables=[],
-                 raw_lines=[],
+                 enables=None,
+                 disables=None,
+                 raw_lines=None,
                  raw_lines_file="",
-                 sets=[],
+                 sets=None,
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
+        if enables is None:
+            enables = []
+        if disables is None:
+            disables = []
+        if raw_lines is None:
+            raw_lines = []
+        if sets is None:
+            sets = []
         self.lf_host = lf_host
         self.lf_port = lf_port
         self.lf_user = lf_user
@@ -225,14 +233,14 @@ def main():
     Open this file in an editor and read the top notes for more details.
 
     Example:
-    ./lf_mesh_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
-      --instance_name mesh-instance --config_name test_con --upstream 1.1.eth1 \
-      --raw_line 'selected_dut2: RootAP wactest 08:36:c9:19:47:40 (1)' \
-      --raw_line 'selected_dut5: RootAP wactest 08:36:c9:19:47:50 (2)' \
-      --duration 15s \
-      --download_speed 85% --upload_speed 56Kbps \
-      --raw_line 'velocity: 100' \
-      --raw_lines_file example-configs/mesh-ferndale-cfg.txt \
+    ./lf_mesh_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \\
+      --instance_name mesh-instance --config_name test_con --upstream 1.1.eth1 \\
+      --raw_line 'selected_dut2: RootAP wactest 08:36:c9:19:47:40 (1)' \\
+      --raw_line 'selected_dut5: RootAP wactest 08:36:c9:19:47:50 (2)' \\
+      --duration 15s \\
+      --download_speed 85% --upload_speed 56Kbps \\
+      --raw_line 'velocity: 100' \\
+      --raw_lines_file example-configs/mesh-ferndale-cfg.txt \\
       --test_rig Ferndale-Mesh-01 --pull_report
 
       NOTE:  There is quite a lot of config needed, see example-configs/mesh-ferndale-cfg.txt
@@ -246,9 +254,9 @@ def main():
 
     parser.add_argument("-u", "--upstream", type=str, default="",
                         help="Upstream port for wifi capacity test ex. 1.1.eth2")
-
+    # argparse uses the % formatting so use %%
     parser.add_argument("--download_speed", default="",
-                        help="Specify requested download speed.  Percentage of theoretical is also supported.  Default: 85%")
+                        help="Specify requested download speed.  Percentage of theoretical is also supported.  Default: 85%%")
     parser.add_argument("--upload_speed", default="",
                         help="Specify requested upload speed.  Percentage of theoretical is also supported.  Default: 0")
     parser.add_argument("--duration", default="",

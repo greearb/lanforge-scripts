@@ -49,7 +49,7 @@ class LoadLayer3(Realm):
         self.cx_profile.side_b_min_bps = 0
         self.cx_profile.side_b_max_bps = 0
 
-    def precleanup(self, num_sta):
+    def precleanup(self):
         num_sta = self.num_sta
         station_list = LFUtils.port_name_series(prefix="sta",
                                                 start_id=0,
@@ -80,7 +80,7 @@ class LoadLayer3(Realm):
             self.local_realm._fail("Stations failed to get IPs", print_=True)
             return 0
 
-    def start(self, num_sta):
+    def start(self):
         num_sta = self.num_sta
         station_list = LFUtils.port_name_series(prefix="sta",
                                                 start_id=0,
@@ -118,9 +118,9 @@ def main():
 
     obj = LoadLayer3(lfclient_host=args.host, lfclient_port=8080, ssid=args.ssid, paswd=args.passwd,
                      security=args.security, radio=args.radio, num_sta=args.num_sta)
-    obj.precleanup(num_sta=args.num_sta)
+    obj.precleanup()
 
-    obj.start(num_sta=args.num_sta)
+    obj.start()
 
 
 if __name__ == '__main__':

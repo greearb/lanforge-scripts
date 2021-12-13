@@ -34,9 +34,9 @@ class LANtoWAN(Realm):
         self._exit_on_error = False
         self._exit_on_fail = False
 
-    def create_wanlinks(self, shelf=1, resource=1, max_rate=1544000):
+    def create_wanlinks(self):
         print("Creating wanlinks")
-        create_wanlink.main('http://'+self.args['host']+':8080', self.args)
+        create_wanlink.main(self.args)
 
     def cleanup(self): pass
 
@@ -45,10 +45,6 @@ def main():
     parser = LFCliBase.create_basic_argparse(
         prog='test_wanlink.py',
         formatter_class=argparse.RawTextHelpFormatter)
-    for group in parser._action_groups:
-        if group.title == "required arguments":
-            required_args = group
-            break
 
     optional_args = None
     for group in parser._action_groups:
@@ -76,10 +72,6 @@ def main():
         optional_args.add_argument('--drop_B', help='The drop frequency of port B (%%)', default=None)
         # todo: packet loss A and B
         # todo: jitter A and B
-        for group in parser._action_groups:
-            if group.title == "optional arguments":
-                optional_args = group
-                break
     parseargs = parser.parse_args()
     args = {
         "host": parseargs.mgr,
@@ -90,16 +82,16 @@ def main():
         "latency": parseargs.latency,
         "latency_A": (parseargs.latency_A if parseargs.latency_A is not None else parseargs.latency),
         "latency_B": (parseargs.latency_B if parseargs.latency_B is not None else parseargs.latency),
-        "rate": (parseargs.rate),
+        "rate": parseargs.rate,
         "rate_A": (parseargs.rate_A if parseargs.rate_A is not None else parseargs.rate),
         "rate_B": (parseargs.rate_B if parseargs.rate_B is not None else parseargs.rate),
-        "jitter": (parseargs.jitter),
+        "jitter": parseargs.jitter,
         "jitter_A": (parseargs.jitter_A if parseargs.jitter_A is not None else parseargs.jitter),
         "jitter_B": (parseargs.jitter_B if parseargs.jitter_B is not None else parseargs.jitter),
-        "jitter_freq": (parseargs.jitter),
+        "jitter_freq": parseargs.jitter,
         "jitter_freq_A": (parseargs.jitter_freq_A if parseargs.jitter_freq_A is not None else parseargs.jitter_freq),
         "jitter_freq_B": (parseargs.jitter_freq_B if parseargs.jitter_freq_B is not None else parseargs.jitter_freq),
-        "drop": (parseargs.drop),
+        "drop": parseargs.drop,
         "drop_A": (parseargs.drop_A if parseargs.drop_A is not None else parseargs.drop),
         "drop_B": (parseargs.drop_B if parseargs.drop_B is not None else parseargs.drop),
     }

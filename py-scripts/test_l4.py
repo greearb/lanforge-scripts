@@ -61,7 +61,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -257,43 +256,31 @@ python3 ./test_l4.py
     --test_duration 2m \\
     --debug
             ''')
-    required = None
-    for agroup in parser._action_groups:
-        if agroup.title == "required arguments":
-            required = agroup
-    # if required is not None:
-
-    optional = None
-    for agroup in parser._action_groups:
-        if agroup.title == "optional arguments":
-            optional = agroup
-
-    if optional is not None:
-        optional.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes',
-                              default=600)
-        optional.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes',
-                              default=1)
-        optional.add_argument('--url', help='--url specifies upload/download, address, and dest',
-                              default="dl http://10.40.0.1 /dev/null")
-        optional.add_argument('--test_duration', help='duration of test', default="2m")
-        optional.add_argument('--target_per_ten',
-                              help='--target_per_ten target number of request per ten minutes. test will check for 90 percent this value',
-                              default=600)
-        optional.add_argument('--mode', help='Used to force mode of stations')
-        optional.add_argument('--ap', help='Used to force a connection to a particular AP')
-        optional.add_argument('--report_file', help='where you want to store results')
-        optional.add_argument('--output_format', help='choose csv or xlsx')  # update once other forms are completed
-        optional.add_argument('--ftp', help='Use ftp for the test', action='store_true')
-        optional.add_argument('--test_type', help='Choose type of test to run {urls, bytes-rd, bytes-wr}',
-                              default='bytes-rd')
-        optional.add_argument('--ftp_user', help='--ftp_user sets the username to be used for ftp', default=None)
-        optional.add_argument('--ftp_passwd', help='--ftp_user sets the password to be used for ftp', default=None)
-        optional.add_argument('--dest',
-                              help='--dest specifies the destination for the file, should be used when downloading',
-                              default="/dev/null")
-        optional.add_argument('--source',
-                              help='--source specifies the source of the file, should be used when uploading',
-                              default="/var/www/html/data_slug_4K.bin")
+    parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes',
+                        default=600)
+    parser.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes',
+                        default=1)
+    parser.add_argument('--url', help='--url specifies upload/download, address, and dest',
+                        default="dl http://10.40.0.1 /dev/null")
+    parser.add_argument('--test_duration', help='duration of test', default="2m")
+    parser.add_argument('--target_per_ten',
+                        help='--target_per_ten target number of request per ten minutes. test will check for 90 percent this value',
+                        default=600)
+    parser.add_argument('--mode', help='Used to force mode of stations')
+    parser.add_argument('--ap', help='Used to force a connection to a particular AP')
+    parser.add_argument('--report_file', help='where you want to store results')
+    parser.add_argument('--output_format', help='choose csv or xlsx')  # update once other forms are completed
+    parser.add_argument('--ftp', help='Use ftp for the test', action='store_true')
+    parser.add_argument('--test_type', help='Choose type of test to run {urls, bytes-rd, bytes-wr}',
+                        default='bytes-rd')
+    parser.add_argument('--ftp_user', help='--ftp_user sets the username to be used for ftp', default=None)
+    parser.add_argument('--ftp_passwd', help='--ftp_user sets the password to be used for ftp', default=None)
+    parser.add_argument('--dest',
+                        help='--dest specifies the destination for the file, should be used when downloading',
+                        default="/dev/null")
+    parser.add_argument('--source',
+                        help='--source specifies the source of the file, should be used when uploading',
+                        default="/var/www/html/data_slug_4K.bin")
 
     args = parser.parse_args()
 
@@ -305,15 +292,11 @@ python3 ./test_l4.py
         if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'parquet', 'png', 'df',
                                   'xlsx']:
             output_form = args.output_format.lower()
-            print("Defaulting file output placement to /home/lanforge.")
-            rpt_file = '/home/data.' + output_form
         else:
             print("Defaulting data file output type to Excel")
-            rpt_file = '/home/lanforge/data.xlsx'
             output_form = 'xlsx'
 
     else:
-        rpt_file = args.report_file
         if args.output_format is None:
             output_form = str(args.report_file).split('.')[-1]
         else:
@@ -321,32 +304,21 @@ python3 ./test_l4.py
 
             # Create directory
     if args.report_file is None:
-        try:
-            homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':',
-                                                                                      '-') + 'test_l4'
+        if os.path.isdir('/home/lanforge/report-data'):
+            homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':', '-') + 'test_l4'
             path = os.path.join('/home/lanforge/report-data/', homedir)
             os.mkdir(path)
-        except:
+        else:
             path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             print('Saving file to local directory')
-    else:
-        pass
-
-    if args.report_file is None:
         if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
                                   'xlsx']:
             rpt_file = path + '/data.' + args.output_format
-            output = args.output_format
         else:
             print('Defaulting data file output type to Excel')
             rpt_file = path + '/data.xlsx'
-            output = 'xlsx'
     else:
         rpt_file = args.report_file
-        if args.output_format is None:
-            output = str(args.report_file).split('.')[-1]
-        else:
-            output = args.output_format
 
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
                                           radio=args.radio)
@@ -376,13 +348,10 @@ python3 ./test_l4.py
     ip_test.build()
     ip_test.start()
 
-    try:
-        layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.local_realm.json_get('layer4')['endpoint']])
-    except:
-        pass
+    layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.local_realm.json_get('layer4')['endpoint']])
     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
                                report_file=rpt_file,
-                               duration_sec=ip_test.local_realm.parse_time(args.test_duration).total_seconds(),
+                               duration_sec=args.test_duration,
                                created_cx=layer4traffic,
                                output_format=output_form,
                                script_name='test_l4',

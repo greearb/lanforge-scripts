@@ -14,7 +14,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -42,13 +41,17 @@ class TestGroup2(Realm):
                  list_groups=None,
                  tg_action=None,
                  cx_action=None,
-                 add_cx_list=[],
-                 rm_cx_list=[],
+                 add_cx_list=None,
+                 rm_cx_list=None,
                  show_group=None,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port)
+        if rm_cx_list is None:
+            rm_cx_list = []
+        if add_cx_list is None:
+            add_cx_list = []
         self.upstream = upstream
         self.host = host
         self.port = port
@@ -86,13 +89,12 @@ class TestGroup2(Realm):
         self.cx_profile.side_b_min_bps = side_b_min_rate
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
-        self.tg_action   = tg_action
-        self.cx_action   = cx_action
+        self.tg_action = tg_action
+        self.cx_action = cx_action
         self.list_groups = list_groups
-        self.show_group  = show_group
+        self.show_group = show_group
         self.tg_profile = self.new_test_group_profile()
-        if group_name is None and list_groups is None and (tg_action is not None or cx_action is not None or
-                                                           add_cx_list is not None or rm_cx_list is not None or show_group is not None):
+        if not group_name and not list_groups and (tg_action or cx_action or add_cx_list or rm_cx_list or show_group):
             raise ValueError("Group name must be set if manipulating test groups")
         else:
             self.tg_profile.group_name = group_name
@@ -102,11 +104,10 @@ class TestGroup2(Realm):
         else:
             self.add_cx_list = add_cx_list
 
-        if rm_cx_list is not None and len(rm_cx_list) == 1 and ',' in rm_cx_list[0]:
+        if rm_cx_list and len(rm_cx_list) == 1 and ',' in rm_cx_list[0]:
             self.rm_cx_list = rm_cx_list[0].split(',')
         else:
             self.rm_cx_list = rm_cx_list
-
 
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
@@ -130,7 +131,7 @@ class TestGroup2(Realm):
                                side_a=self.station_profile.station_names,
                                side_b=self.upstream,
                                sleep_time=0)
-        self.add_cx_list=self.cx_profile.get_cx_names()
+        self.add_cx_list = self.cx_profile.get_cx_names()
         self._pass("PASS: Station build finished")
 
     def do_cx_action(self):
@@ -173,6 +174,7 @@ class TestGroup2(Realm):
                     print(cx)
             else:
                 print("No cxs found in %s" % self.tg_profile.group_name)
+
     def update_cxs(self):
         if len(self.add_cx_list) > 0:
             print("Adding cxs %s to %s" % (', '.join(self.add_cx_list), self.tg_profile.group_name))
@@ -185,6 +187,7 @@ class TestGroup2(Realm):
                 self.tg_profile.rm_cx(cx)
                 if cx in self.tg_profile.cx_list:
                     self.tg_profile.cx_list.remove(cx)
+
 
 def main():
     parser = LFCliBase.create_basic_argparse(
@@ -236,7 +239,7 @@ python3 ./testgroup2.py
     for group in parser._action_groups:
         if group.title == "required arguments":
             required_args = group
-            break;
+            break
     if required_args is not None:
         required_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
         required_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
@@ -246,7 +249,7 @@ python3 ./testgroup2.py
     for group in parser._action_groups:
         if group.title == "optional arguments":
             optional_args = group
-            break;
+            break
     if optional_args is not None:
         optional_args.add_argument('--mode', help='Used to force mode of stations')
         optional_args.add_argument('--ap', help='Used to force a connection to a particular AP')
@@ -254,14 +257,15 @@ python3 ./testgroup2.py
     tg_group = parser.add_mutually_exclusive_group()
     tg_group.add_argument('--add_group', help='add new test group', action='store_true', default=False)
     tg_group.add_argument('--del_group', help='delete test group', action='store_true', default=False)
-    parser.add_argument('--show_group', help='show connections in current test group', action='store_true', default=False)
+    parser.add_argument('--show_group', help='show connections in current test group', action='store_true',
+                        default=False)
 
     cx_group = parser.add_mutually_exclusive_group()
     cx_group.add_argument('--start_group', help='start all cxs in chosen test group', default=None)
     cx_group.add_argument('--stop_group', help='stop all cxs in chosen test group', default=None)
     cx_group.add_argument('--quiesce_group', help='quiesce all cxs in chosen test groups', default=None)
 
-    parser.add_argument('--add_cx', help='add cx to chosen test group', nargs='*',  default=[])
+    parser.add_argument('--add_cx', help='add cx to chosen test group', nargs='*', default=[])
     parser.add_argument('--remove_cx', help='remove cx from chosen test group', nargs='*', default=[])
     args = parser.parse_args()
 
@@ -271,7 +275,6 @@ python3 ./testgroup2.py
 
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
                                           radio=args.radio)
-
 
     tg_action = None
     cx_action = None
@@ -292,7 +295,7 @@ python3 ./testgroup2.py
                              port=args.mgr_port,
                              number_template="0000",
                              sta_list=station_list,
-                             name_prefix="",
+                             name_prefix="VT-",
                              upstream=args.upstream_port,
                              ssid=args.ssid,
                              password=args.passwd,

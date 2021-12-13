@@ -23,7 +23,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -60,23 +59,19 @@ class client_connect(Realm):
             self.station_profile.desired_add_sta_flags_mask = ["use-bss-transition"]
 
         for station_name in range(len(station_)):
-            stat_list = []
+            stat_list = [station_[station_name]]
 
-            stat_list.append(station_[station_name])
             print(station_name)
             self.station_profile.cleanup(stat_list)
 
-            try:
-                if self.bssid[station_name] is not None or self.bssid[station_name] !=  "":
-                    self.station_profile.set_command_param("add_sta", "ap", bssid_list[station_name])
-            except:
+            if self.bssid[station_name]:
+                self.station_profile.set_command_param("add_sta", "ap", bssid_list[station_name])
+            else:
                 self.station_profile.set_command_param("add_sta", "ap", "DEFAULT")
 
-            try:
-                if self.mac[station_name] is not None or self.mac[station_name] != "":
-                    self.station_profile.add_sta_data["mac"] = mac_list[station_name]
-                    print(self.mac[station_name])
-            except:
+            if self.mac[station_name]:
+                self.station_profile.add_sta_data["mac"] = mac_list[station_name]
+            else:
                 self.station_profile.add_sta_data["mac"] = "xx:xx:xx:xx:*:*"
 
             print(stat_list)
@@ -91,8 +86,7 @@ class client_connect(Realm):
 def main():
     # This has --mgr, --mgr_port and --debug
     parser = LFCliBase.create_bare_argparse(prog="sta_connect_bssid_mac.py",
-                                            description=
-                                            """
+                                            description="""
                                             --mgr localhost --mgr_port 8080 
                                             --ssid "TestAP-Jitendra" 
                                             --radio wiphy0

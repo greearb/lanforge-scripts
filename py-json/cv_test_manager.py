@@ -9,7 +9,6 @@ import importlib
 import time
 import json
 from pprint import pprint
-import argparse
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -56,9 +55,9 @@ def cv_add_base_parser(parser):
     parser.add_argument("-c", "--config_name", type=str, default="cv_dflt_cfg",
                         help="Config file name")
 
-    parser.add_argument("-r", "--pull_report", default=False, action='store_true',
+    parser.add_argument("-r", "--pull_report", action='store_true',
                         help="pull reports from lanforge (by default: False)")
-    parser.add_argument("--load_old_cfg", default=False, action='store_true',
+    parser.add_argument("--load_old_cfg", action='store_true',
                         help="Should we first load defaults from previous run of the capacity test?  Default is False")
 
     parser.add_argument("--enable", action='append', nargs=1, default=[],
@@ -86,7 +85,7 @@ class cv_test(Realm):
     def __init__(self,
                  lfclient_host="localhost",
                  lfclient_port=8080,
-                 lf_report_dir=""
+                 lf_report_dir=None
                  ):
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port)
@@ -105,7 +104,7 @@ class cv_test(Realm):
 
         print("adding- " + text + " " + "to test config")
 
-        rsp = self.json_post(req_url, data)
+        self.json_post(req_url, data)
         # time.sleep(1)
 
     # Tell LANforge GUI Chamber View to launch a test
@@ -138,24 +137,6 @@ class cv_test(Realm):
         cmd = "cv click '%s' Cancel" % instance
         self.run_cv_cmd(cmd)
 
-    # Send chamber view commands to the LANforge GUI
-    def run_cv_cmd(self, command):
-        response_json = []
-        req_url = "/gui-json/cmd"
-        data = {
-            "cmd": command
-        }
-        debug_par = ""
-        rsp = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=False, response_json_list_=response_json)
-        try:
-            if response_json[0]["LAST"]["warnings"].startswith("Unknown"):
-                print("Unknown command?\n");
-                pprint(response_json)
-        except:
-            # Ignore un-handled structs at this point, let calling code deal with it.
-            pass
-        return response_json
-
     # For auto save report
     def auto_save_report(self, instance):
         cmd = "cv click %s 'Auto Save Report'" % instance
@@ -165,16 +146,6 @@ class cv_test(Realm):
     def get_report_location(self, instance):
         cmd = "cv get %s 'Report Location:'" % instance
         location = self.run_cv_cmd(cmd)
-        var = 1
-        while var != 0:
-            try:
-                data = json.dumps(location[0]["LAST"]["response"])
-                var = 0
-            except Exception as e:
-                var += 1
-            time.sleep(2)
-            if var > 5:
-                break
         return location
 
     # To get if test is running or not
@@ -216,7 +187,7 @@ class cv_test(Realm):
             if self.get_exists(instance):
                 print("Waiting %i/60 for test instance: %s to be deleted." % (tries, instance))
                 tries += 1
-                if (tries > 60):
+                if tries > 60:
                     break
                 time.sleep(1)
             else:
@@ -226,9 +197,9 @@ class cv_test(Realm):
         tries = 0
         while True:
             if not self.get_cv_is_built():
-                print("Waiting %i/60 for Chamber-View to be built." % (tries))
+                print("Waiting %i/60 for Chamber-View to be built." % tries)
                 tries += 1
-                if (tries > 60):
+                if tries > 60:
                     break
                 time.sleep(1)
             else:
@@ -258,17 +229,18 @@ class cv_test(Realm):
             "type": "Plugin-Settings",
             "name": str(blob_test_name + config_name),  # config name
         }
-        rsp = self.json_post(req_url, data)
+        self.json_post(req_url, data)
 
-    def rm_cv_text_blob(self, type="Network-Connectivity", name=None):
+    def rm_cv_text_blob(self, cv_type="Network-Connectivity", name=None):
         req_url = "/cli-json/rm_text_blob"
         data = {
-            "type": type,
+            "type": cv_type,
             "name": name,  # config name
         }
-        rsp = self.json_post(req_url, data)
+        self.json_post(req_url, data)
 
-    def apply_cfg_options(self, cfg_options, enables, disables, raw_lines, raw_lines_file):
+    @staticmethod
+    def apply_cfg_options(cfg_options, enables, disables, raw_lines, raw_lines_file):
 
         # Read in calibration data and whatever else.
         if raw_lines_file != "":
@@ -315,7 +287,7 @@ class cv_test(Realm):
     # cv_cmds:  Array of raw chamber-view commands, such as "cv click 'button-name'"
     #    These (and the sets) are applied after the test is created and before it is started.
     def create_and_run_test(self, load_old_cfg, test_name, instance_name, config_name, sets,
-                            pull_report, lf_host, lf_user, lf_password, cv_cmds, local_lf_report_dir="", ssh_port=22,
+                            pull_report, lf_host, lf_user, lf_password, cv_cmds, local_lf_report_dir=None, ssh_port=22,
                             graph_groups_file=None):
         load_old = "false"
         if load_old_cfg:
@@ -327,7 +299,7 @@ class cv_test(Realm):
             if response[0]["LAST"]["response"] == "OK":
                 break
             else:
-                print("Could not create test, try: %i/60:\n" % (start_try))
+                print("Could not create test, try: %i/60:\n" % start_try)
                 pprint(response)
                 start_try += 1
                 if start_try > 60:
@@ -349,7 +321,7 @@ class cv_test(Realm):
 
         response = self.start_test(instance_name)
         if response[0]["LAST"]["response"].__contains__("Could not find instance:"):
-            print("ERROR:  start_test failed: ", response[0]["LAST"]["response"], "\n");
+            print("ERROR:  start_test failed: ", response[0]["LAST"]["response"], "\n")
             # pprint(response)
             exit(1)
 
@@ -357,16 +329,12 @@ class cv_test(Realm):
         while True:
             cmd = "cv get_and_close_dialog"
             dialog = self.run_cv_cmd(cmd)
-            try:
-                if dialog[0]["LAST"]["response"] != "NO-DIALOG":
-                    print("Popup Dialog:\n")
-                    print(dialog[0]["LAST"]["response"])
-            except Exception as e:
-                print(e)
+            if dialog[0]["LAST"]["response"] != "NO-DIALOG":
+                print("Popup Dialog:\n")
+                print(dialog[0]["LAST"]["response"])
 
             check = self.get_report_location(instance_name)
             location = json.dumps(check[0]["LAST"]["response"])
-
             if location != '\"Report Location:::\"':
                 print(location)
                 location = location.replace('\"Report Location:::', '')
@@ -385,25 +353,25 @@ class cv_test(Realm):
                 self.lf_report_dir = location
                 if pull_report:
                     try:
-                        print(lf_host)
+                        print("Pulling report to directory: %s from %s@%s/%s" %
+                              (local_lf_report_dir, lf_user, lf_host, location))
                         report.pull_reports(hostname=lf_host, username=lf_user, password=lf_password,
                                             port=ssh_port, report_dir=local_lf_report_dir,
                                             report_location=location)
                     except Exception as e:
-                        print("SCP failed, user %s, password %s, dest %s", (lf_user, lf_password, lf_host))
+                        print("SCP failed, user %s, password %s, dest %s" % (lf_user, lf_password, lf_host))
                         raise e  # Exception("Could not find Reports")
                     break
+            else:
+                print('Not reporting to kpi file')
 
             # Of if test stopped for some reason and could not generate report.
-            try:
-                if not self.get_is_running(instance_name):
-                    print("Detected test is not running.")
-                    not_running += 1
-                    if not_running > 5:
-                        break
-            except Exception as e:
-                print(e)
-                
+            if not self.get_is_running(instance_name):
+                print("Detected test is not running.")
+                not_running += 1
+                if not_running > 5:
+                    break
+
             time.sleep(1)
         self.report_name = self.get_report_location(instance_name)
         # Ensure test is closed and cleaned up
@@ -411,20 +379,17 @@ class cv_test(Realm):
 
         # Clean up any remaining popups.
         while True:
-            dialog = self.run_cv_cmd(cmd);
+            dialog = self.run_cv_cmd(cmd)
             if dialog[0]["LAST"]["response"] != "NO-DIALOG":
                 print("Popup Dialog:\n")
                 print(dialog[0]["LAST"]["response"])
             else:
                 break
 
-    def a(self):
-        pass
-
     # Takes cmd-line args struct or something that looks like it.
     # See csv_to_influx.py::influx_add_parser_args for options, or --help.
     def check_influx_kpi(self, args):
-        if self.lf_report_dir == "":
+        if self.lf_report_dir is None:
             # Nothing to report on.
             print("Not submitting to influx, no report-dir.\n")
             return
@@ -446,12 +411,12 @@ class cv_test(Realm):
 
         # lf_wifi_capacity_test.py may be run / initiated by a remote system against a lanforge
         # the local_lf_report_dir is where data is stored,  if there is no local_lf_report_dir then the test is run directly on lanforge
-        if self.local_lf_report_dir == "":
-            csv_path = "%s/kpi.csv" % (self.lf_report_dir)
+        if self.lf_report_dir:
+            csv_path = "%s/kpi.csv" % self.lf_report_dir
         else:
-            kpi_location = self.local_lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
-            # the local_lf_report_dir is the parent directory,  need to get the directory name
-            csv_path = "%s/kpi.csv" % (kpi_location)
+            kpi_location = self.lf_report_dir + "/" + os.path.basename(self.lf_report_dir)
+            # the lf_report_dir is the parent directory,  need to get the directory name
+            csv_path = "%s/kpi.csv" % kpi_location
 
         print("Attempt to submit kpi: ", csv_path)
         print("Posting to influx...\n")
@@ -483,7 +448,7 @@ class cv_test(Realm):
             "text": text_blob
         }
 
-        rsp = self.json_post(req_url, data)
+        self.json_post(req_url, data)
 
     def pass_raw_lines_to_cv(self,
                              scenario_name="Automation",
@@ -494,7 +459,7 @@ class cv_test(Realm):
             "name": scenario_name,
             "text": Rawline
         }
-        rsp = self.json_post(req_url, data)
+        self.json_post(req_url, data)
 
         # This is for chamber view buttons
 
@@ -520,18 +485,17 @@ class cv_test(Realm):
     def run_cv_cmd(self, command):  # Send chamber view commands
         response_json = []
         req_url = "/gui-json/cmd"
-        data = {
-            "cmd": command
-        }
-        rsp = self.json_post(req_url, data, debug_=False, response_json_list_=response_json)
+        data = {"cmd": command}
+        self.json_post(req_url, data, debug_=False, response_json_list_=response_json)
         return response_json
 
-    def get_response_string(self, response):
+    @staticmethod
+    def get_response_string(response):
         return response[0]["LAST"]["response"]
 
     def get_popup_info_and_close(self):
         cmd = "cv get_and_close_dialog"
-        dialog = self.run_cv_cmd(cmd);
+        dialog = self.run_cv_cmd(cmd)
         if dialog[0]["LAST"]["response"] != "NO-DIALOG":
             print("Popup Dialog:\n")
             print(dialog[0]["LAST"]["response"])

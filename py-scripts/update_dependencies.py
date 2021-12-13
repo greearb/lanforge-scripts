@@ -2,6 +2,7 @@
 
 import subprocess
 import argparse
+import os
 
 
 def main():
@@ -23,20 +24,23 @@ def main():
     args = parser.parse_args()
 
     print("Installing Script Python3 Dependencies")
-    packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'bokeh', 'pyarrow', 'websocket-client',
-                'xlsxwriter', \
-                'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search', 'pyserial',
-                'pexpect-serial', 'scp', \
-                'dash', 'kaleido']
-    if args.pyjwt is True:
+    packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'pyarrow', 'websocket-client',
+                'xlsxwriter', 'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search',
+                'pyserial',
+                'pexpect-serial', 'scp', 'dash']
+    if args.pyjwt:
         packages.append('pyjwt')
     else:
         print('Not installing PyJWT')
     packages_installed = []
     packages_failed = []
     subprocess.call("pip3 uninstall jwt", shell=True)
+    subprocess.call('pip3 install --upgrade pip', shell=True)
     for package in packages:
-        command = "pip3 install {} >/tmp/pip3-stdout 2>/tmp/pip3-stderr".format(package)
+        if os.name == 'nt':
+            command = "pip3 install {} ".format(package)
+        else:
+            command = "pip3 install {} >/tmp/pip3-stdout 2>/tmp/pip3-stderr".format(package)
         res = subprocess.call(command, shell=True)
         if res == 0:
             print("Package {} install SUCCESS Returned Value: {} ".format(package, res))

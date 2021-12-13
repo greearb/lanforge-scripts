@@ -203,7 +203,7 @@ def main():
     url = base_url+"/port/1/%s/list?fields=alias" % (resource_id)
     lf_r = LFRequest.LFRequest(url)
     json_response = lf_r.getAsJson()
-    if json_response == None:
+    if json_response is None:
         raise Exception("no reponse to: "+url)
     port_map = LFUtils.portListToAliasMap(json_response)
     #LFUtils.debug_printer.pprint(port_map)

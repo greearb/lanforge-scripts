@@ -12,7 +12,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -29,9 +28,12 @@ Realm = realm.Realm
         cvScenario.test_scenario = args.test_scenario
 """
 
+
 class RunCvScenario(LFCliBase):
-    def __init__(self, lfhost="localhost", lfport=8080, debug_=False, lanforge_db_=None, cv_scenario_=None, cv_test_=None, test_scenario_=None):
-        super().__init__( _lfjson_host=lfhost, _lfjson_port=lfport, _debug=debug_, _exit_on_error=True, _exit_on_fail=True)
+    def __init__(self, lfhost="localhost", lfport=8080, debug_=False, lanforge_db_=None, cv_scenario_=None,
+                 cv_test_=None, test_scenario_=None):
+        super().__init__(_lfjson_host=lfhost, _lfjson_port=lfport, _debug=debug_, _exit_on_error=True,
+                         _exit_on_fail=True)
         self.lanforge_db = lanforge_db_
         self.cv_scenario = cv_scenario_
         self.cv_test = cv_test_
@@ -45,13 +47,13 @@ class RunCvScenario(LFCliBase):
     def build(self):
         data = {
             "name": "BLANK",
-            "action":"overwrite",
-            "clean_dut":"yes",
+            "action": "overwrite",
+            "clean_dut": "yes",
             "clean_chambers": "yes"
         }
         self.json_post("/cli-json/load", data)
         sleep(1)
-        port_counter = 0;
+        port_counter = 0
         attempts = 6
         while (attempts > 0) and (port_counter > 0):
             sleep(1)
@@ -74,8 +76,8 @@ class RunCvScenario(LFCliBase):
 
         data = {
             "name": self.lanforge_db,
-            "action":"overwrite",
-            "clean_dut":"yes",
+            "action": "overwrite",
+            "clean_dut": "yes",
             "clean_chambers": "yes"
         }
         self.json_post("/cli-json/load", data)
@@ -86,7 +88,7 @@ class RunCvScenario(LFCliBase):
     def start(self, debug_=False):
         # /gui_cli takes commands keyed on 'cmd', so we create an array of commands
         commands = [
-            #"cv apply '%s'" % self.cv_scenario,
+            # "cv apply '%s'" % self.cv_scenario,
             "sleep 5",
             "cv build",
             "sleep 5",
@@ -103,9 +105,10 @@ class RunCvScenario(LFCliBase):
             "cv click test_ref Start",
             "sleep 2",
             "cv click test_ref 'Another Iteration'",
-            "sleep 240", #sleep for (test duration for 1 time test takes  x num iterations requested) - this example is 2 iterations
-            "cv click test_ref 'Another Iteration'", #unselect Another Iteration before test ends
-            "sleep 50" #finish test
+            "sleep 240",
+            # sleep for (test duration for 1 time test takes  x num iterations requested) - this example is 2 iterations
+            "cv click test_ref 'Another Iteration'",  # unselect Another Iteration before test ends
+            "sleep 50"  # finish test
             "cv get test_ref 'Report Location:'",
             "sleep 5",
             "cv click test_ref 'Save HTML'",
@@ -115,7 +118,6 @@ class RunCvScenario(LFCliBase):
             "sleep 1",
             "exit"
         ]
-        response_json = []
         for command in commands:
             data = {
                 "cmd": command
@@ -123,7 +125,7 @@ class RunCvScenario(LFCliBase):
             try:
                 debug_par = ""
                 if debug_:
-                    debug_par="?_debug=1"
+                    debug_par = "?_debug=1"
                 if command.endswith("is_built"):
                     print("Waiting for scenario to build...", end='')
                     self.localrealm.wait_while_building(debug_=False)
@@ -136,17 +138,15 @@ class RunCvScenario(LFCliBase):
                 else:
                     response_json = []
                     print("running %s..." % command, end='')
-                    response = self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=False, response_json_list_=response_json)
+                    self.json_post("/gui-json/cmd%s" % debug_par, data, debug_=False, response_json_list_=response_json)
                     if debug_:
                         LFUtils.debug_printer.pprint(response_json)
                     print("...proceeding")
-
 
             except Exception as x:
                 print(x)
 
         self._pass("report finished", print_=True)
-
 
     def stop(self):
         pass
@@ -163,17 +163,17 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description="""LANforge Reporting Script:  Load a scenario and run a RvR report
 Example:
-./load_ap_scenario.py --lfmgr 127.0.0.1 --lanforge_db 'handsets' --cv_test  --test_scenario 'test-20'
+./rvr_scenario.py --lfmgr 127.0.0.1 --lanforge_db 'handsets' --cv_test  --test_scenario 'test-20'
 """)
-    parser.add_argument("-m", "--lfmgr",        type=str,
+    parser.add_argument("-m", "--lfmgr", type=str,
                         help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port",         type=int,
+    parser.add_argument("-o", "--port", type=int,
                         help="IP Port the LANforge GUI is listening on (8080 is default)")
     parser.add_argument("--lanforge_db", "--db", "--lanforge_scenario", type=str,
                         help="Name of test scenario database (see Status Tab)")
-    parser.add_argument("-c", "--cv_scenario",  type=str, required=True,
+    parser.add_argument("-c", "--cv_scenario", type=str, required=True,
                         help="Name of Chamber View test scenario (see CV Manage Scenarios)")
-    parser.add_argument("-n", "--cv_test", type=str, required = True,
+    parser.add_argument("-n", "--cv_test", type=str, required=True,
                         help="Chamber View test")
     parser.add_argument("-s", "--test_profile", "--test_settings", type=str, required=True,
                         help="Name of the saved CV test settings")
@@ -220,7 +220,9 @@ Example:
         exit(1)
 
     report_file = run_cv_scenario.get_report_file_name()
-    print("Report file saved to "+report_file)
+    print("Report file saved to " + report_file)
+
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 

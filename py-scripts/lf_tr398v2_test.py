@@ -266,7 +266,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
@@ -291,17 +290,25 @@ class TR398v2Test(cvtest):
                  raw_lines_file="",
                  dut5="",
                  dut2="",
-                 enables=[],
-                 disables=[],
-                 raw_lines=[],
-                 sets=[],
+                 enables=None,
+                 disables=None,
+                 raw_lines=None,
+                 sets=None,
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
+        if enables is None:
+            enables = []
+        if disables is None:
+            disables = []
+        if raw_lines is None:
+            raw_lines = []
+        if sets is None:
+            sets = []
         self.lf_host = lf_host
         self.lf_port = lf_port
         self.lf_user = lf_user
-        self.lf_password =lf_password
+        self.lf_password = lf_password
         self.instance_name = instance_name
         self.config_name = config_name
         self.dut5 = dut5
@@ -322,13 +329,12 @@ class TR398v2Test(cvtest):
         # Nothing to do at this time.
         return
 
-
     def run(self):
         self.sync_cv()
         time.sleep(2)
         self.sync_cv()
 
-        blob_test = "TR398v2-";
+        blob_test = "TR398v2-"
 
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
         self.show_text_blob(None, None, False)
@@ -362,7 +368,6 @@ class TR398v2Test(cvtest):
 
 
 def main():
-
     parser = argparse.ArgumentParser("""
     Open this file in an editor and read the top notes for more details.
 
@@ -419,25 +424,25 @@ def main():
 
     cv_base_adjust_parser(args)
 
-    CV_Test = TR398v2Test(lf_host = args.mgr,
-                          lf_port = args.port,
-                          lf_user = args.lf_user,
-                          lf_password = args.lf_password,
-                          instance_name = args.instance_name,
-                          config_name = args.config_name,
-                          upstream = args.upstream,
-                          pull_report = args.pull_report,
-                          local_lf_report_dir = args.local_lf_report_dir,
-                          load_old_cfg = args.load_old_cfg,
-                          dut2 = args.dut2,
-                          dut5 = args.dut5,
-                          raw_lines_file = args.raw_lines_file,
-                          enables = args.enable,
-                          disables = args.disable,
-                          raw_lines = args.raw_line,
-                          sets = args.set,
+    CV_Test = TR398v2Test(lf_host=args.mgr,
+                          lf_port=args.port,
+                          lf_user=args.lf_user,
+                          lf_password=args.lf_password,
+                          instance_name=args.instance_name,
+                          config_name=args.config_name,
+                          upstream=args.upstream,
+                          pull_report=args.pull_report,
+                          local_lf_report_dir=args.local_lf_report_dir,
+                          load_old_cfg=args.load_old_cfg,
+                          dut2=args.dut2,
+                          dut5=args.dut5,
+                          raw_lines_file=args.raw_lines_file,
+                          enables=args.enable,
+                          disables=args.disable,
+                          raw_lines=args.raw_line,
+                          sets=args.set,
                           test_rig=args.test_rig
-                        )
+                          )
     CV_Test.setup()
     CV_Test.run()
 

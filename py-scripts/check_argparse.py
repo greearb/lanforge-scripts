@@ -5,13 +5,6 @@ import pandas as pd
 import argparse
 
 
-def get_tag(x, tag):
-    try:
-        return x[tag]
-    except:
-        return False
-
-
 def main():
     parser = argparse.ArgumentParser(
         prog="check_argparse.py",
@@ -29,7 +22,7 @@ def main():
         text = open(os.path.join(args.path, file)).read()
         results_file = dict()
         results_file['argparse'] = 'argparse.' in text
-        if results_file['argparse'] is True:
+        if results_file['argparse']:
             results_file['create_basic'] = 'create_basic_argparse' in text
             results_file['create_bare'] = 'create_bare_argparse' in text
             results_file['prog'] = 'prog=' in text
@@ -48,7 +41,9 @@ def main():
                 'description',
                 'epilog',
                 'usage']:
-        df[tag] = [get_tag(x, tag) for x in df['results']]
+        for result in df['results']:
+            if tag in result:
+                df[tag] = df['results'][tag]
     df['details'] = df['description'] + df['epilog'] + df['usage']
     df.to_csv(args.output + '.csv', index=False)
 

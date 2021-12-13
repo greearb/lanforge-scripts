@@ -15,7 +15,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -34,7 +33,7 @@ class MeasureTimeUp(Realm):
                  _port=None,
                  _num_sta=None,
                  _number_template="00000",
-                 _radio=["wiphy0", "wiphy1"],
+                 _radio=None,
                  _proxy_str=None,
                  _debug_on=False,
                  _up=True,
@@ -49,6 +48,8 @@ class MeasureTimeUp(Realm):
                  _clean_dut="no"):
         super().__init__(_host,
                          _port)
+        if _radio is None:
+            _radio = ["wiphy0", "wiphy1"]
         self.host = _host
         self.port = _port
         self.ssid = _ssid
@@ -103,7 +104,7 @@ class MeasureTimeUp(Realm):
         self._pass("PASS: Station build finished")
 
     def scenario(self):
-        if self.load is not None:
+        if self.load:
             data = {
                 "name": self.load,
                 "action": self.action,
@@ -117,13 +118,13 @@ class MeasureTimeUp(Realm):
             print("Loading database %s" % self.load)
             self.json_post("/cli-json/load", data)
 
-        elif self.start is not None:
+        elif self.start:
             print("Starting test group %s..." % self.start)
             self.json_post("/cli-json/start_group", {"name": self.start})
-        elif self.stop is not None:
+        elif self.stop:
             print("Stopping test group %s..." % self.stop)
             self.json_post("/cli-json/stop_group", {"name": self.stop})
-        elif self.quiesce is not None:
+        elif self.quiesce:
             print("Quiescing test group %s..." % self.quiesce)
             self.json_post("/cli-json/quiesce_group", {"name": self.quiesce})
 
@@ -151,35 +152,37 @@ Command example:
             ''')
     required = parser.add_argument_group('required arguments')
     required.add_argument('--report_file', help='where you want to store results', required=True)
+    parser.add_argument('--database', help='Which database to load', default='FACTORY_DFLT')
+    parser.add_argument('--radio2', help='second radio to create stations on', default='wiphy7')
 
     args = parser.parse_args()
 
+    if args.report_file.split('.')[-1] not in ['pkl', 'csv', 'xlsx']:
+        raise NameError('Please make sure your file name ends with either pkl, csv, or xlsx')
+
     dictionary = dict()
-    for num_sta in list(filter(lambda x: (x % 2 == 0), [*range(0, 200)])):
+    for num_sta in list(filter(lambda x: (x % 2 == 0), [*range(0, args.num_stations)])):
         print(num_sta)
-        try:
-            create_station = MeasureTimeUp(_host=args.mgr,
-                                           _port=args.mgr_port,
-                                           _ssid=args.ssid,
-                                           _password=args.passwd,
-                                           _security=args.security,
-                                           _num_sta=num_sta,
-                                           _radio=["wiphy0", "wiphy1"],
-                                           _proxy_str=args.proxy,
-                                           _debug_on=args.debug,
-                                           _load='FACTORY_DFLT')
-            create_station.scenario()
-            time.sleep(5.0 + num_sta / 10)
-            start = datetime.datetime.now()
-            create_station.build()
-            built = datetime.datetime.now()
-            create_station.station_up()
-            stationsup = datetime.datetime.now()
-            dictionary[num_sta] = [start, built, stationsup]
-            create_station.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=station_list)
-            time.sleep(5.0 + num_sta / 20)
-        except:
-            pass
+        create_station = MeasureTimeUp(_host=args.mgr,
+                                       _port=args.mgr_port,
+                                       _ssid=args.ssid,
+                                       _password=args.passwd,
+                                       _security=args.security,
+                                       _num_sta=num_sta,
+                                       _radio=[args.radio, args.radio2],
+                                       _proxy_str=args.proxy,
+                                       _debug_on=args.debug,
+                                       _load=args.database)
+        create_station.scenario()
+        time.sleep(5.0 + num_sta / 10)
+        start = datetime.datetime.now()
+        create_station.build()
+        built = datetime.datetime.now()
+        create_station.station_up()
+        stationsup = datetime.datetime.now()
+        dictionary[num_sta] = [start, built, stationsup]
+        create_station.wait_until_ports_disappear()
+        time.sleep(5.0 + num_sta / 20)
     df = pd.DataFrame.from_dict(dictionary).transpose()
     df.columns = ['Start', 'Built', 'Stations Up']
     df['built duration'] = df['Built'] - df['Start']
@@ -187,7 +190,12 @@ Command example:
     df['duration'] = df['Stations Up'] - df['Start']
     for variable in ['built duration', 'duration']:
         df[variable] = [x.total_seconds() for x in df[variable]]
-    df.to_pickle(args.report_file)
+    if 'pkl' in args.report_file:
+        df.to_pickle(args.report_file)
+    if 'csv' in args.report_file:
+        df.to_csv(args.report_file)
+    if 'xlsx' in args.report_file:
+        df.to_excel(args.report_file)
 
 
 if __name__ == "__main__":
