@@ -24,7 +24,7 @@ lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-influx = importlib.import_module("py-scripts.influx")
+influx = importlib.import_module("py-scripts.influx_utils")
 RecordInflux = influx.RecordInflux
 
 OPEN = "open"
