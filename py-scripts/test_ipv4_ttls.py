@@ -127,7 +127,7 @@ class TTLSTest(Realm):
         # Layer3 Traffic
         self.l3_cx_obj_udp = IPVariableTime(host=self.host, port=self.port, radio=self.radio,
                                             ssid=self.ssid, password=self.password, security=self.security,
-                                            use_existing_sta=False, sta_list=self.sta_list, traffic_type="lf_udp",
+                                            use_existing_sta=True, sta_list=self.sta_list, traffic_type="lf_udp",
                                             upstream=self.upstream_port)
         self.l3_cx_obj_udp.cx_profile.name_prefix = "udp-"
 
@@ -203,6 +203,12 @@ class TTLSTest(Realm):
                                     suppress_related_commands_=True,
                                     use_radius=True,
                                     hs20_enable=False)
+        self.station_profile.create(radio=self.radio,
+                                    sta_names_=self.sta_list,
+                                    debug=self.debug,
+                                    use_radius=True,
+                                    hs20_enable=False)
+        self._pass("Station build finished")
         self.l3_cx_obj_udp.build()
         self.l3_cx_obj_tcp.build()
         if self.debug:
