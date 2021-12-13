@@ -177,6 +177,8 @@ class StaConnect(Realm):
             self.json_post("/cli-json/add_sta", add_sta_data, suppress_related_commands_=True)
             time.sleep(0.01)
 
+        LFUtils.wait_until_ports_appear(port_list=self.station_names)
+
         set_port_data = {
             "shelf": 1,
             "resource": self.resource,
