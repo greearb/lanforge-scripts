@@ -13,6 +13,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
+ 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -61,7 +62,7 @@ class StaConnect(Realm):
         self.station_names = []
         self.cx_names = {}
         if _sta_name is not None:
-            self.station_names = [_sta_name]
+            self.station_names = [ _sta_name ]
         self.resulting_stations = {}
         self.resulting_endpoints = {}
 
@@ -98,22 +99,23 @@ class StaConnect(Realm):
     def num_associated(self, bssid):
         counter = 0
         # print("there are %d results" % len(self.station_results))
+        fields = "_links,port,alias,ip,ap,port+type"
         if (self.station_results is None) or (len(self.station_results) < 1):
             self.get_failed_result_list()
-        for eid, record in self.station_results.items():
-            # print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
-            # pprint(eid)
-            # pprint(record)
+        for eid,record in self.station_results.items():
+            #print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
+            #pprint(eid)
+            #pprint(record)
             if record["ap"] == bssid:
                 counter += 1
-            # print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
+            #print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
         return counter
 
     def clear_test_results(self):
         self.resulting_stations = {}
         self.resulting_endpoints = {}
         super().clear_test_results()
-        # super(StaConnect, self).clear_test_results().test_results.clear()
+        #super(StaConnect, self).clear_test_results().test_results.clear()
 
     def run(self):
         if not self.setup():
@@ -231,7 +233,7 @@ class StaConnect(Realm):
                     else:
                         connected_stations[sta_name] = sta_url
             data = {
-                "shelf": 1,
+                "shelf":1,
                 "resource": self.resource,
                 "port": "ALL",
                 "probe_flags": 1
@@ -242,7 +244,7 @@ class StaConnect(Realm):
 
         for sta_name in self.station_names:
             sta_url = self.get_station_url(sta_name)
-            station_info = self.json_get(sta_url)  # + "?fields=port,ip,ap")
+            station_info = self.json_get(sta_url) # + "?fields=port,ip,ap")
             self.resulting_stations[sta_url] = station_info
             ap = station_info["interface"]["ap"]
             ip = station_info["interface"]["ip"]
@@ -250,14 +252,13 @@ class StaConnect(Realm):
                 print(" %s +AP %s, " % (sta_name, ap), end="")
                 if self.dut_bssid != "":
                     if self.dut_bssid.lower() == ap.lower():
-                        self._pass(sta_name + " connected to BSSID: " + ap)
+                        self._pass(sta_name+" connected to BSSID: " + ap)
                         # self.test_results.append("PASSED: )
                         # print("PASSED: Connected to BSSID: "+ap)
                     else:
-                        self._fail(
-                            "%s connected to wrong BSSID, requested: %s  Actual: %s" % (sta_name, self.dut_bssid, ap))
+                        self._fail("%s connected to wrong BSSID, requested: %s  Actual: %s" % (sta_name, self.dut_bssid, ap))
             else:
-                self._fail(sta_name + " did not connect to AP")
+                self._fail(sta_name+" did not connect to AP")
                 return False
 
             if ip == "0.0.0.0":
@@ -275,8 +276,8 @@ class StaConnect(Realm):
         # Create UDP endpoints
 
         for sta_name in self.station_names:
-            self.cx_names["testUDP-" + sta_name] = {"a": "testUDP-%s-A" % sta_name,
-                                                    "b": "testUDP-%s-B" % sta_name}
+            self.cx_names["testUDP-"+sta_name] = { "a": "testUDP-%s-A" % sta_name,
+                                                   "b": "testUDP-%s-B" % sta_name}
             data = {
                 "alias": "testUDP-%s-A" % sta_name,
                 "shelf": 1,
@@ -289,9 +290,9 @@ class StaConnect(Realm):
             self.json_post("/cli-json/add_endp", data, suppress_related_commands_=True)
 
             data = {
-                "name": "testUDP-%s-A" % sta_name,
-                "flag": "UseAutoNAT",
-                "val": 1
+                "name" : "testUDP-%s-A" % sta_name,
+                "flag" : "UseAutoNAT",
+                "val" : 1
             }
             self.json_post("/cli-json/set_endp_flag", data, suppress_related_commands_=True)
 
@@ -307,9 +308,9 @@ class StaConnect(Realm):
             self.json_post("/cli-json/add_endp", data, suppress_related_commands_=True)
 
             data = {
-                "name": "testUDP-%s-B" % sta_name,
-                "flag": "UseAutoNAT",
-                "val": 1
+                "name" : "testUDP-%s-B" % sta_name,
+                "flag" : "UseAutoNAT",
+                "val" : 1
             }
             self.json_post("/cli-json/set_endp_flag", data, suppress_related_commands_=True)
 
@@ -330,8 +331,8 @@ class StaConnect(Realm):
             self.json_post("/cli-json/set_cx_report_timer", data, suppress_related_commands_=True)
 
             # Create TCP endpoints
-            self.cx_names["testTCP-" + sta_name] = {"a": "testTCP-%s-A" % sta_name,
-                                                    "b": "testTCP-%s-B" % sta_name}
+            self.cx_names["testTCP-"+sta_name] = {"a": "testTCP-%s-A" % sta_name,
+                                                  "b": "testTCP-%s-B" % sta_name}
             data = {
                 "alias": "testTCP-%s-A" % sta_name,
                 "shelf": 1,
@@ -507,7 +508,7 @@ Example:
 
     staConnect.run()
 
-    staConnect.get_result_list()
+    run_results = staConnect.get_result_list()
 
     if not staConnect.passes():
         print("FAIL:  Some tests failed")
@@ -522,7 +523,6 @@ Example:
         print("PASS:  All tests pass")
 
     print(staConnect.get_all_message())
-
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
