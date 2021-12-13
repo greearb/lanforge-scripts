@@ -712,24 +712,24 @@ def main():
 FTP Test Script - lf_ftp.py
 ---------------------------
 CLI Example: 
-./lf_ftp.py --ssid <SSID> --passwd <PASSWORD> --file_sizes 2MB --fiveg_duration 4 --mgr 192.168.1.101 --traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
+./lf_ftp.py --ssid <SSID> --passwd <PASSWORD> --file_sizes 2MB --fiveg_duration <MIN> --mgr 192.168.1.101 --traffic_duration <MIN> --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
 ---------------------------
                     ''')
-    parser.add_argument('--mgr', help='hostname for where LANforge GUI is running', default='localhost')
-    parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on', default=8080)
-    parser.add_argument('--upstream_port', help='non-station port that generates traffic: eg: eth1', default='eth1')
+    parser.add_argument('--mgr', help='hostname for where LANforge GUI is running [default = localhost]', default='localhost')
+    parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on [default = 8080]', default=8080)
+    parser.add_argument('--upstream_port', help='non-station port that generates traffic: eg: eth1 [default = eth1]', default='eth1')
     parser.add_argument('--ssid', type=str, help='--ssid')
     parser.add_argument('--passwd', type=str, help='--passwd')
     parser.add_argument('--security', type=str, help='--security')
     parser.add_argument('--ap_name', type=str, help='--ap_name')
     parser.add_argument('--ap_ip', type=str, help='--ap_ip')
-    parser.add_argument('--twog_radio', type=str, help='specify radio for 2.4G clients', default='wiphy1')
-    parser.add_argument('--fiveg_radio', type=str, help='specify radio for 5G client', default='wiphy0')
+    parser.add_argument('--twog_radio', type=str, help='specify radio for 2.4G clients [default = wiphy1]', default='wiphy1')
+    parser.add_argument('--fiveg_radio', type=str, help='specify radio for 5G client [default = wiphy0]', default='wiphy0')
     parser.add_argument('--twog_duration', nargs="+", help='Pass and Fail duration for 2.4G band in minutes')
     parser.add_argument('--fiveg_duration', nargs="+", help='Pass and Fail duration for 5G band in minutes')
     parser.add_argument('--both_duration', nargs="+", help='Pass and Fail duration for Both band in minutes')
-    parser.add_argument('--traffic_duration', type=int, help='duration for layer 4 traffic running')
-    parser.add_argument('--ssh_port', type=int, help="specify the shh port eg 22", default=22)
+    parser.add_argument('--traffic_duration', type=int, help='duration for layer 4 traffic running in minutes')
+    parser.add_argument('--ssh_port', type=int, help="specify the shh port: eg 22 [default = 22]", default=22)
 
     # Test variables
     parser.add_argument('--bands', nargs="+", help='--bands defaults ["5G","2.4G","Both"]',
@@ -738,7 +738,7 @@ CLI Example:
                         default=["Download", "Upload"])
     parser.add_argument('--file_sizes', nargs="+", help='--File Size defaults ["2MB","500MB","1000MB"]',
                         default=["2MB", "500MB", "1000MB"])
-    parser.add_argument('--num_stations', type=int, help='--num_stations is number of stations', default=40)
+    parser.add_argument('--num_stations', type=int, help='--num_stations is number of stations [default = 40 stations]', default=40)
 
     args = parser.parse_args()
 
