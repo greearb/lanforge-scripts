@@ -500,6 +500,7 @@ Example:
     parser.add_argument("--dut_ssid", type=str, help="DUT SSID")
     parser.add_argument("--dut_passwd", type=str, help="DUT PSK password.  Do not set for OPEN auth")
     parser.add_argument("--dut_bssid", type=str, help="DUT BSSID to which we expect to connect.")
+    parser.add_argument("--dut_security", type=str, help="DUT Security mode")
 
     args = parser.parse_args()
     if args.dest is not None:
@@ -529,6 +530,8 @@ Example:
         staConnect.dut_bssid = args.dut_bssid
     if args.dut_ssid is not None:
         staConnect.dut_ssid = args.dut_ssid
+    if args.dut_ssid is not None:
+        staConnect.dut_security = args.dut_security
 
     staConnect.run()
 
