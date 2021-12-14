@@ -531,6 +531,15 @@
                 "args_list":[" --mgr LF_MGR_IP "
                 ]
             },
+            "test_l3_powersave_traffic":{
+                "enabled":"TRUE",
+                "command":"test_l3_powersave_traffic.py",
+                "args":"",
+                "args_list":[
+                    "--mgr LF_MGR_IP --radio 1.1.wiphy0 ",
+                    " use_ssid_idx=0 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
+                ]
+            },
             "test_l4":{
                 "enabled":"TRUE",
                 "command":"test_l4.py",
@@ -551,16 +560,6 @@
                     " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000",
                     " --test_rig TEST_RIG --test_tag 'l3_longevity'",
                     " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
-                ]
-            },
-            "test_l3_powersave_traffic":{
-                "enabled":"FALSE",
-                "command":"test_l3_powersave_traffic.py",
-                "args":"",
-                "args_list":[
-                    " --mgr LF_MGR_IP --radio wiphy1 --num_stations 4 --upstream_port UPSTREAM_PORT",                    
-                    "  use_ssid_idx=1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
-                    " --debug"
                 ]
             },
             "create_l4":{
