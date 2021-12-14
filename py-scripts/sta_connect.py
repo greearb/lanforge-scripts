@@ -56,8 +56,8 @@ class StaConnect(Realm):
         if _upstream_resource:
             self.upstream_resource = _upstream_resource
         else:
-            self.upstream_resource = _upstream_port[2]
-        self.upstream_port = _upstream_port[3]
+            self.upstream_resource = _upstream_port[1]
+        self.upstream_port = _upstream_port[2]
         self.runtime_secs = _runtime_sec
         self.cleanup_on_exit = _cleanup_on_exit
         self.sta_url_map = None  # defer construction
@@ -72,6 +72,7 @@ class StaConnect(Realm):
         self.cx_profile = self.new_l3_cx_profile()
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
+        print(self.upstream_port)
 
     def get_station_url(self, sta_name_=None):
         if sta_name_ is None:
@@ -490,14 +491,12 @@ Example:
     if args.port is not None:
         lfjson_port = args.port
 
-    staConnect = StaConnect(lfjson_host, lfjson_port, _runtime_sec=monitor_interval)
+    staConnect = StaConnect(lfjson_host, lfjson_port, _upstream_port=args.upstream_port, _runtime_sec=monitor_interval)
     staConnect.station_names = ["sta0000"]
     if args.sta_mode is not None:
         staConnect.sta_mode = args.sta_mode
     if args.upstream_resource is not None:
         staConnect.upstream_resource = args.upstream_resource
-    if args.upstream_port is not None:
-        staConnect.upstream_port = args.upstream_port
     if args.radio is not None:
         staConnect.radio = args.radio
     if args.resource is not None:
