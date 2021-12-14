@@ -26,6 +26,7 @@ class TTLSTest(Realm):
                  security="wpa2",
                  password="[BLANK]",
                  radio="wiphy0",
+                 upstream_port="eth2",
                  key_mgmt="WPA-EAP",
                  pairwise="NA",
                  group="NA",
@@ -112,7 +113,7 @@ class TTLSTest(Realm):
         self.debug = _debug_on
         self.station_profile = self.new_station_profile()
         self.vap = vap
-        self.upstream_port = "eth1"
+        self.upstream_port = upstream_port
         self.upstream_resource = 1
         if self.vap:
             self.vap_profile = self.new_vap_profile()
@@ -364,6 +365,7 @@ test_ipv4_ttls.py:
                          ssid=args.ssid,
                          password=args.passwd,
                          security=args.security,
+                         upstream_port=args.upstream_port,
                          sta_list=station_list,
                          radio=args.radio,
                          key_mgmt=args.key_mgmt,

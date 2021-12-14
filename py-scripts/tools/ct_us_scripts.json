@@ -531,6 +531,13 @@
                 "args_list":[" --mgr LF_MGR_IP "
                 ]
             },
+            "clean_up_cxs_endp_sta_l3_powersave":{
+                "enabled":"TRUE",
+                "command":"lf_cleanup.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --cxs --sta"
+            ]},
             "test_l3_powersave_traffic":{
                 "enabled":"TRUE",
                 "command":"test_l3_powersave_traffic.py",
@@ -540,6 +547,13 @@
                     " use_ssid_idx=0 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
                 ]
             },
+            "clean_up_cxs_endp_sta_l4":{
+                "enabled":"TRUE",
+                "command":"lf_cleanup.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --cxs --sta"
+            ]},
             "test_l4":{
                 "enabled":"TRUE",
                 "command":"test_l4.py",
