@@ -53,7 +53,7 @@ def main():
     staConnect.station_names = ["sta000"]
     staConnect.setup()
     staConnect.start()
-    time.sleep(20)
+    staConnect.run()
     staConnect.stop()
     # staConnect.finish()
     staConnect.cleanup()

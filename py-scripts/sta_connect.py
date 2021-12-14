@@ -182,8 +182,8 @@ class StaConnect(Realm):
             if response is not None:
                 if response["interface"] is not None:
                     print("removing old station")
-                    LFUtils.removePort(self.resource, sta_name, self.lfclient_url, debug=False)
-                    LFUtils.waitUntilPortsDisappear(self.resource, self.lfclient_url, self.station_names)
+                    self.rm_port(sta_name)
+        self.wait_until_ports_disappear(self.station_names)
 
         # Create stations and turn dhcp on
 
@@ -477,9 +477,10 @@ class StaConnect(Realm):
 
     def cleanup(self):
         for sta_name in self.station_names:
-            LFUtils.removePort(self.resource, sta_name, self.lfclient_url, debug=False)
+            self.rm_port(sta_name)
         endp_names = []
-        removeCX(self.lfclient_url, self.cx_names.keys())
+        for cx in self.cx_names.keys():
+            self.rm_cx(cx)
         for cx_name in self.cx_names:
             endp_names.append(self.cx_names[cx_name]["a"])
             endp_names.append(self.cx_names[cx_name]["b"])
