@@ -555,6 +555,10 @@ function test() {
   then 
     TEXTCLASS="partial_failure"
     TDTEXT="Partial Failure"
+  elif [[ $TEXT =~ "FAILED" ]]
+  then
+    TEXTCLASS="partial_failure"
+    TDTEXT="ERROR"
   else 
     TEXTCLASS="success"
     TDTEXT="Success"
