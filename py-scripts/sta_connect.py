@@ -160,10 +160,12 @@ class StaConnect(Realm):
         elif self.dut_security == OPEN:
             pass
 
+        radio = LFUtils.name_to_eid(self.radio)
+
         add_sta_data = {
-            "shelf": 1,
-            "resource": self.resource,
-            "radio": self.radio,
+            "shelf": radio[0],
+            "resource": radio[1],
+            "radio": radio[2],
             "ssid": self.dut_ssid,
             "key": self.dut_passwd,
             "mode": self.sta_mode,
