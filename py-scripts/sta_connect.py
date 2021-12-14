@@ -31,7 +31,7 @@ MODE_AUTO = 0
 class StaConnect(Realm):
     def __init__(self, host, port, _dut_ssid="MyAP", _dut_passwd="NA", _dut_bssid="",
                  _user="lanforge", _passwd="lanforge", _sta_mode="0", _radio="wiphy0",
-                 _resource=1, _upstream_resource=1, _upstream_port="eth2",
+                 _resource=1, _upstream_resource=None, _upstream_port="eth2",
                  _sta_name=None, _debugOn=False, _dut_security=OPEN, _exit_on_error=False,
                  _cleanup_on_exit=True, _runtime_sec=60, _exit_on_fail=False):
         # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
@@ -52,8 +52,12 @@ class StaConnect(Realm):
         self.sta_mode = _sta_mode  # See add_sta LANforge CLI users guide entry
         self.radio = _radio
         self.resource = _resource
-        self.upstream_resource = _upstream_resource
-        self.upstream_port = _upstream_port
+        _upstream_port = LFUtils.to_eid(_upstream_port)
+        if _upstream_resource:
+            self.upstream_resource = _upstream_resource
+        else:
+            self.upstream_resource = _upstream_port[2]
+        self.upstream_port = _upstream_port[3]
         self.runtime_secs = _runtime_sec
         self.cleanup_on_exit = _cleanup_on_exit
         self.sta_url_map = None  # defer construction
