@@ -52,7 +52,7 @@ class StaConnect(Realm):
         self.sta_mode = _sta_mode  # See add_sta LANforge CLI users guide entry
         self.radio = _radio
         self.resource = _resource
-        _upstream_port = LFUtils.to_eid(_upstream_port)
+        _upstream_port = LFUtils.name_to_eid(_upstream_port)
         if _upstream_resource:
             self.upstream_resource = _upstream_resource
         else:
