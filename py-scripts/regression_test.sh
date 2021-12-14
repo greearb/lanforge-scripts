@@ -555,23 +555,23 @@ function test() {
   then 
     TEXTCLASS="partial_failure"
     TDTEXT="Partial Failure"
+    echo "Partial Failure"
   elif [[ $TEXT =~ "FAILED" ]]
   then
     TEXTCLASS="partial_failure"
     TDTEXT="ERROR"
+    echo "ERROR"
   else 
     TEXTCLASS="success"
     TDTEXT="Success"
+    echo "No errors detected"
   fi
 
   if (( FILESIZE > 0))
   then
-    echo "Errors detected"
     TEXTCLASS="failure"
     TDTEXT="Failure"
     STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
-  else
-    echo "No errors detected"
   fi
   results+=("<tr><td>${CURR_TEST_NAME}</td>
                        <td class='scriptdetails'>${testcommand}</td>
