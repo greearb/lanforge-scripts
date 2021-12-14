@@ -143,6 +143,17 @@ class lf_clean(Realm):
                             # print(data)
                             super().json_post(req_url, data)
                             time.sleep(.5)
+                        if 'moni' in alias:
+                            info = self.name_to_eid(alias)
+                            req_url = "cli-json/rm_vlan"
+                            data = {
+                                "shelf": info[0],
+                                "resource": info[1],
+                                "port": info[2]
+                            }
+                            # print(data)
+                            super().json_post(req_url, data)
+                            time.sleep(.5)
                         if 'Unknown' in alias:
                             info = self.name_to_eid(alias)
                             req_url = "cli-json/rm_vlan"
