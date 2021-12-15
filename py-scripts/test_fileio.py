@@ -68,6 +68,8 @@ class FileIOTest(Realm):
                  first_mvlan_ip=None,
                  netmask=None,
                  gateway=None,
+                 shelf=1,
+                 resource=1,
                  dhcp=True,
                  use_macvlans=False,
                  use_test_groups=False,
@@ -164,6 +166,8 @@ class FileIOTest(Realm):
             self.mvlan_profile.netmask = netmask
             self.mvlan_profile.first_ip_addr = first_mvlan_ip
             self.mvlan_profile.gateway = gateway
+            self.mvlan_profile.shelf = shelf
+            self.mvlan_profile.resource = resource
 
         self.created_ports = []
         if self.use_test_groups:
@@ -231,10 +235,8 @@ class FileIOTest(Realm):
     def __compare_vals(self, val_list):
         passes = 0
         expected_passes = 0
-        # print(val_list)
         for item in val_list:
             expected_passes += 1
-            # print(item)
             if item[0] == 'r':
 
                 if val_list[item]['read-bps'] > self.wo_profile.min_read_rate_bps:
@@ -274,7 +276,6 @@ class FileIOTest(Realm):
     def build(self):
         # Build stations
         if self.use_macvlans:
-            print("Creating MACVLANs")
             self.mvlan_profile.create(admin_down=False, sleep_time=.5, debug=self.debug)
             self._pass("PASS: MACVLAN build finished")
             self.created_ports += self.mvlan_profile.created_macvlans
@@ -290,7 +291,6 @@ class FileIOTest(Realm):
             self.created_ports += self.station_profile.station_names
 
         if len(self.ip_list) > 0:
-            # print("++++++++++++++++\n", self.ip_list, "++++++++++++++++\n")
             for num_port in range(len(self.port_list)):
                 if self.ip_list[num_port] != 0:
                     if self.gateway and self.netmask:
@@ -642,6 +642,8 @@ Generic command layout:
     args = parser.parse_args()
 
     parent = LFUtils.name_to_eid(args.macvlan_parent)
+    shelf = parent[0]
+    resource = parent[1]
     macvlan_parent = parent[2]
     update_group_args = {
         "name": None,
@@ -732,6 +734,8 @@ Generic command layout:
                          first_mvlan_ip=args.first_mvlan_ip,
                          netmask=args.netmask,
                          gateway=args.gateway,
+                         shelf=shelf,
+                         resource=resource,
                          dhcp=dhcp,
                          fs_type=args.fs_type,
                          min_rw_size=args.min_rw_size,

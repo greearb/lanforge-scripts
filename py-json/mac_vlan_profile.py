@@ -19,14 +19,16 @@ class MACVLANProfile(LFCliBase):
                  local_realm,
                  macvlan_parent="eth1",
                  num_macvlans=1,
+                 shelf=1,
+                 resource=1,
                  dhcp=False,
                  debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_)
         self.local_realm = local_realm
         self.num_macvlans = num_macvlans
         self.macvlan_parent = macvlan_parent
-        self.resource = 1
-        self.shelf = 1
+        self.resource = resource
+        self.shelf = shelf
         self.desired_macvlans = []
         self.created_macvlans = []
         self.dhcp = dhcp
