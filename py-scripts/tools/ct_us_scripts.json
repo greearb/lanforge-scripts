@@ -413,7 +413,7 @@
                 "command":"testgroup2.py",
                 "args":"",
                 "args_list":[" --mgr LF_MGR_IP --group_name group0 --add_group --num_stations 1 --radio 1.1.wiphy1",
-                    " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED ",
+                    " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
                 ]
             },
             "clean_up_cxs_endp_sta_from_test_group":{
