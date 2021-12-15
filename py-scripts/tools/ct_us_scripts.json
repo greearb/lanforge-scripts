@@ -549,7 +549,9 @@
                     " --test_duration 15s --output_format csv --layer3_cols name,tx_bytes,rx_bytes,dropped",
                     " --traffic_type lf_tcp",
                     " --ipv6",
-                    " --debug"]},
+                    " --debug"
+                ]
+            },
             "create_bridge":{
                 "enabled":"TRUE",
                 "command":"create_bridge.py",
@@ -606,7 +608,7 @@
                 "command":"test_l3_powersave_traffic.py",
                 "args":"",
                 "args_list":[
-                    "--mgr LF_MGR_IP --radio 1.1.wiphy0 ",
+                    "--mgr LF_MGR_IP --radio 1.1.wiphy4 --monitor_radio 1.1.wiphy6 --upstream_port UPSTREAM_PORT",
                     " use_ssid_idx=0 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
                 ]
             },

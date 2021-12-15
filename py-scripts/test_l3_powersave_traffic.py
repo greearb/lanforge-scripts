@@ -130,11 +130,19 @@ class L3PowersaveTraffic(LFCliBase):
             temp.append(self.local_realm.name_to_eid(station)[2])
         port_info = self.json_get("port/1/1/%s?fields=alias,ap,mac" % ','.join(temp))
         if port_info is not None:
-            for item in port_info['interfaces']:
-                for k, v in item.items():
-                    print("sta_name %s" % v['alias'])
-                    print("mac      %s" % v['mac'])
-                    print("ap       %s\n" % v['ap'])
+            if 'interfaces' in port_info:
+                for item in port_info['interfaces']:
+                    for k, v in item.items():
+                        print("sta_name %s" % v['alias'])
+                        print("mac      %s" % v['mac'])
+                        print("ap       %s\n" % v['ap'])
+            elif 'interface' in port_info:
+                print("sta_name %s" % port_info['interface']['alias'])
+                print("mac      %s" % port_info['interface']['mac'])
+                print("ap       %s\n" % port_info['interface']['ap'])
+            else:
+                print('interfaces and interface not in port_mgr_response')
+                exit(1)                
 
         while cur_time < end_time:
             # DOUBLE CHECK
@@ -158,6 +166,7 @@ class L3PowersaveTraffic(LFCliBase):
 
 
 def main():
+    # Realm.create_basic_argparse defined in lanforge-scripts/py-json/LANforge/lfcli_base.py
     parser = Realm.create_basic_argparse(
         prog='test_l3_powersave_traffic.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -174,7 +183,7 @@ Example of creating traffic on an l3 connection
 
     lfjson_host = args.mgr
     lfjson_port = 8080
-    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=4, padding_number_=10000)
+    station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=0, padding_number_=10000)
     ip_powersave_test = L3PowersaveTraffic(lfjson_host, lfjson_port, ssid=args.ssid, security=args.security,
                                            password=args.passwd, station_list=station_list, side_a_min_rate=2000,
                                            side_b_min_rate=2000, side_a_max_rate=0, station_radio=args.radio,
