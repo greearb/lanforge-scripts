@@ -39,8 +39,6 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 add_file_endp = importlib.import_module("py-json.LANforge.add_file_endp")
 fe_fstype = add_file_endp.fe_fstype
@@ -48,7 +46,7 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 
-class FileIOTest(LFCliBase):
+class FileIOTest(Realm):
     def __init__(self, host, port, ssid, security, password,
                  number_template="00000",
                  radio="wiphy0",
@@ -83,7 +81,7 @@ class FileIOTest(LFCliBase):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, debug_=_debug_on, _exit_on_fail=_exit_on_fail)
         if port_list is None:
             port_list = []
         if update_group_args is None:
@@ -140,12 +138,11 @@ class FileIOTest(LFCliBase):
         # self.min_write_rate_bps = self.parse_size_bps(min_write_rate_bps)
         # self.max_write_rate_bps = self.parse_size_bps(max_write_rate_bps)
 
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.wo_profile = self.local_realm.new_fio_endp_profile()
-        self.mvlan_profile = self.local_realm.new_mvlan_profile()
+        self.wo_profile = self.new_fio_endp_profile()
+        self.mvlan_profile = self.new_mvlan_profile()
 
         if not self.use_macvlans and len(self.port_list) > 0:
-            self.station_profile = self.local_realm.new_station_profile()
+            self.station_profile = self.new_station_profile()
             self.station_profile.lfclient_url = self.lfclient_url
             self.station_profile.ssid = self.ssid
             self.station_profile.ssid_pass = self.password
@@ -181,14 +178,14 @@ class FileIOTest(LFCliBase):
         if self.use_test_groups:
             if self.mode is not None:
                 if self.mode == "write":
-                    self.wo_tg_profile = self.local_realm.new_test_group_profile()
+                    self.wo_tg_profile = self.new_test_group_profile()
                     self.wo_tg_profile.group_name = self.write_only_test_group
                 elif self.mode == "read":
-                    self.ro_tg_profile = self.local_realm.new_test_group_profile()
+                    self.ro_tg_profile = self.new_test_group_profile()
                     self.ro_tg_profile.group_name = self.read_only_test_group
                 elif self.mode == "both":
-                    self.wo_tg_profile = self.local_realm.new_test_group_profile()
-                    self.ro_tg_profile = self.local_realm.new_test_group_profile()
+                    self.wo_tg_profile = self.new_test_group_profile()
+                    self.ro_tg_profile = self.new_test_group_profile()
                     self.wo_tg_profile.group_name = self.write_only_test_group
                     self.ro_tg_profile.group_name = self.read_only_test_group
                 else:
@@ -197,7 +194,7 @@ class FileIOTest(LFCliBase):
                 raise ValueError("Mode ( read, write, or both ) must be specified")
 
         if update_group_args is not None and update_group_args['name'] is not None:
-            temp_tg = self.local_realm.new_test_group_profile()
+            temp_tg = self.new_test_group_profile()
             temp_cxs = update_group_args['cxs'].split(',')
             if update_group_args['action'] == "add":
                 temp_tg.group_name = update_group_args['name']
@@ -291,7 +288,7 @@ class FileIOTest(LFCliBase):
             for i in cx_list:
                 for item, value in i.items():
                     # print(item, value)
-                    cx_map[self.local_realm.name_to_eid(item)[2]] = {"read-bps": value['read-bps'],
+                    cx_map[self.name_to_eid(item)[2]] = {"read-bps": value['read-bps'],
                                                                      "write-bps": value['write-bps']}
         # print(cx_map)
         return cx_map
@@ -319,9 +316,9 @@ class FileIOTest(LFCliBase):
             for num_port in range(len(self.port_list)):
                 if self.ip_list[num_port] != 0:
                     if self.gateway is not None and self.netmask is not None:
-                        shelf = self.local_realm.name_to_eid(self.port_list[num_port])[0]
-                        resource = self.local_realm.name_to_eid(self.port_list[num_port])[1]
-                        port = self.local_realm.name_to_eid(self.port_list[num_port])[2]
+                        shelf = self.name_to_eid(self.port_list[num_port])[0]
+                        resource = self.name_to_eid(self.port_list[num_port])[1]
+                        port = self.name_to_eid(self.port_list[num_port])[2]
                         req_url = "/cli-json/set_port"
                         data = {
                             "shelf": shelf,
@@ -331,7 +328,7 @@ class FileIOTest(LFCliBase):
                             "netmask": self.netmask,
                             "gateway": self.gateway
                         }
-                        self.local_realm.json_post(req_url, data)
+                        self.json_post(req_url, data)
                         self.created_ports.append("%s.%s.%s" % (shelf, resource, port))
                     else:
                         raise ValueError("Netmask and gateway must be specified")
@@ -462,18 +459,17 @@ class FileIOTest(LFCliBase):
 
     def start(self, print_pass=False, print_fail=False):
         temp_ports = self.created_ports.copy()
-        # temp_stas.append(self.local_realm.name_to_eid(self.upstream_port)[2])
         if not self.use_macvlans:
             self.station_profile.admin_up()
         else:
             self.mvlan_profile.admin_up()
-        if self.local_realm.wait_for_ip(temp_ports, debug=self.debug):
+        if self.wait_for_ip(temp_ports, debug=self.debug):
             self._pass("All ports got IPs", print_pass)
         else:
             self._fail("Ports failed to get IPs", print_fail)
         cur_time = datetime.datetime.now()
         # print("Got Values")
-        end_time = self.local_realm.parse_time(self.test_duration) + cur_time
+        end_time = self.parse_time(self.test_duration) + cur_time
         if self.use_test_groups:
             if self.mode == "write":
                 self.wo_tg_profile.start_group()
@@ -590,7 +586,7 @@ class FileIOTest(LFCliBase):
 
 
 def main():
-    parser = LFCliBase.create_bare_argparse(
+    parser = Realm.create_bare_argparse(
         prog='test_fileio.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
