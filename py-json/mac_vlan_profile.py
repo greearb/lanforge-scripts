@@ -5,7 +5,6 @@ import importlib
 from pprint import pprint
 import time
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -20,7 +19,6 @@ class MACVLANProfile(LFCliBase):
                  local_realm,
                  macvlan_parent="eth1",
                  num_macvlans=1,
-                 admin_down=False,
                  dhcp=False,
                  debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_)
@@ -123,7 +121,7 @@ class MACVLANProfile(LFCliBase):
         print("Creating MACVLANs...")
         req_url = "/cli-json/add_mvlan"
 
-        if not self.dhcp and self.first_ip_addr is not None and self.netmask is not None and self.gateway is not None:
+        if not self.dhcp and self.first_ip_addr and self.netmask and self.gateway:
             self.desired_set_port_interest_flags.append("ip_address")
             self.desired_set_port_interest_flags.append("ip_Mask")
             self.desired_set_port_interest_flags.append("ip_gateway")
@@ -148,7 +146,7 @@ class MACVLANProfile(LFCliBase):
                 "mac": "xx:xx:xx:*:*:xx",
                 "port": self.local_realm.name_to_eid(self.macvlan_parent)[2],
                 "index": int(self.desired_macvlans[i][self.desired_macvlans[i].index('#') + 1:]),
-                #"dhcp": self.dhcp,
+                # "dhcp": self.dhcp,
                 "flags": None
             }
             if admin_down:
@@ -156,8 +154,9 @@ class MACVLANProfile(LFCliBase):
             else:
                 data["flags"] = 0
             self.created_macvlans.append("%s.%s.%s#%d" % (self.shelf, self.resource,
-                                                          self.macvlan_parent, int(
-                self.desired_macvlans[i][self.desired_macvlans[i].index('#') + 1:])))
+                                                          self.macvlan_parent,
+                                                          int(self.desired_macvlans[i][
+                                                              self.desired_macvlans[i].index('#') + 1:])))
             self.local_realm.json_post(req_url, data)
             time.sleep(sleep_time)
 
@@ -170,13 +169,12 @@ class MACVLANProfile(LFCliBase):
             eid = self.local_realm.name_to_eid(self.created_macvlans[i])
             name = eid[2]
             self.set_port_data["port"] = name  # for set_port calls.
-            if not self.dhcp and self.first_ip_addr is not None and self.netmask is not None \
-                    and self.gateway is not None:
+            if not self.dhcp and self.first_ip_addr and self.netmask and self.gateway:
                 self.set_port_data["ip_addr"] = self.ip_list[i]
                 self.set_port_data["netmask"] = self.netmask
                 self.set_port_data["gateway"] = self.gateway
             set_port_r.addPostData(self.set_port_data)
-            json_response = set_port_r.jsonPost(debug)
+            set_port_r.jsonPost(debug)
             time.sleep(sleep_time)
 
     def cleanup(self):
