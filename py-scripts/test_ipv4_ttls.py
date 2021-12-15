@@ -277,6 +277,13 @@ class TTLSTest(Realm):
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
 
+    def pre_cleanup(self):
+        self.cx_profile.cleanup_prefix()
+        # do not clean up station if existed prior to test
+        if not self.use_existing_sta:
+            for sta in self.sta_list:
+                self.rm_port(sta, check_exists=True, debug_=False)
+
     def collect_endp_stats(self, endp_map, traffic_type="TCP"):
         print("Collecting Data")
         fields = "?fields=name,tx+bytes,rx+bytes"
@@ -382,6 +389,7 @@ test_ipv4_ttls.py:
                          enable_pkc=args.enable_pkc,
                          )
     ttls_test.cleanup(station_list)
+    ttls_test.pre_cleanup()
     ttls_test.build()
     if not ttls_test.passes():
         print(ttls_test.get_fail_message())
@@ -393,6 +401,7 @@ test_ipv4_ttls.py:
         exit(1)
     time.sleep(30)
     ttls_test.cleanup(station_list)
+    ttls_test.pre_cleanup()
     if ttls_test.passes():
         print("Full test passed, all stations associated and got IP")
 
