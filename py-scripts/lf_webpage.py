@@ -55,27 +55,43 @@ class HttpDownload(Realm):
         self.port_util = PortUtils(self.local_realm)
         self.http_profile.debug = _debug_on
         self.created_cx = {}
+        self.station_list = []
+        self.radio = []
 
     def set_values(self):
         # This method will set values according user input
         if self.bands == "5G":
             self.radio = [self.fiveg_radio]
+            self.station_list = [LFUtils.portNameSeries(prefix_="fiveg_sta", start_id_=self.sta_start_id,
+                                                            end_id_=self.num_sta - 1, padding_number_=10000,
+                                                            radio=self.fiveg_radio)]
         elif self.bands == "2.4G":
             self.radio = [self.twog_radio]
+            self.station_list = [LFUtils.portNameSeries(prefix_="twog_sta", start_id_=self.sta_start_id,
+                                                       end_id_=self.num_sta - 1, padding_number_=10000,
+                                                       radio=self.twog_radio)]
         elif self.bands == "Both":
             self.radio = [self.fiveg_radio, self.twog_radio]
             print(self.radio)
-            self.num_sta = self.num_sta // 2
+            # self.num_sta = self.num_sta // 2
+            self.station_list = [
+                                 LFUtils.portNameSeries(prefix_="fiveg_sta", start_id_=self.sta_start_id,
+                                                        end_id_=self.num_sta - 1, padding_number_=10000,
+                                                        radio=self.fiveg_radio),
+                                 LFUtils.portNameSeries(prefix_="twog_sta", start_id_=self.sta_start_id,
+                                                       end_id_=self.num_sta - 1, padding_number_=10000,
+                                                       radio=self.twog_radio)
+                                 ]
 
     def precleanup(self):
         self.count = 0
-        for rad in self.radio:
-            print("radio", rad)
-            if rad == self.fiveg_radio:
+        for rad in range(len(self.radio)):
+            print("radio", self.radio[rad])
+            if self.radio[rad] == self.fiveg_radio:
                 # select an mode
                 self.station_profile.mode = 10
                 self.count = self.count + 1
-            elif rad == self.twog_radio:
+            elif self.radio[rad] == self.twog_radio:
                 # select an mode
                 self.station_profile.mode = 6
                 self.count = self.count + 1
@@ -85,24 +101,19 @@ class HttpDownload(Realm):
                 self.num_sta = 2 * (self.num_sta)
                 self.station_profile.mode = 10
                 self.http_profile.cleanup()
-                self.station_list1 = LFUtils.portNameSeries(prefix_="sta", start_id_=self.sta_start_id,
-                                                            end_id_=self.num_sta - 1, padding_number_=10000,
-                                                            radio=rad)
                 # cleanup station list which started sta_id 20
-                self.station_profile.cleanup(self.station_list1, debug_=self.local_realm.debug)
+                self.station_profile.cleanup(self.station_list[rad], debug_=self.local_realm.debug)
                 LFUtils.wait_until_ports_disappear(base_url=self.local_realm.lfclient_url,
-                                                   port_list=self.station_list,
+                                                   port_list=self.station_list[rad],
                                                    debug=self.local_realm.debug)
                 return
             # clean dlayer4 ftp traffic
             self.http_profile.cleanup()
-            self.station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=self.sta_start_id,
-                                                       end_id_=self.num_sta - 1, padding_number_=10000,
-                                                       radio=rad)
+
             # cleans stations
-            self.station_profile.cleanup(self.station_list, delay=1, debug_=self.local_realm.debug)
+            self.station_profile.cleanup(self.station_list[rad], delay=1, debug_=self.local_realm.debug)
             LFUtils.wait_until_ports_disappear(base_url=self.local_realm.lfclient_url,
-                                               port_list=self.station_list,
+                                               port_list=self.station_list[rad],
                                                debug=self.local_realm.debug)
             time.sleep(1)
         print("precleanup done")
@@ -110,15 +121,16 @@ class HttpDownload(Realm):
     def build(self):
         # enable http on ethernet
         self.port_util.set_http(port_name=self.local_realm.name_to_eid(self.upstream)[2], resource=1, on=True)
-        for rad in self.radio:
-            self.station_profile.use_security(self.security, self.ssid, self.password)
+        for rad in range(len(self.radio)):
+            print(self.station_list[rad])
+            self.station_profile.use_security(self.security[rad], self.ssid[rad], self.password[rad])
             self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
             self.station_profile.set_command_param("set_port", "report_timer", 1500)
             self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-            self.station_profile.create(radio=rad, sta_names_=self.station_list, debug=self.local_realm.debug)
-            self.local_realm.wait_until_ports_appear(sta_list=self.station_list)
+            self.station_profile.create(radio=self.radio[rad], sta_names_=self.station_list[rad], debug=self.local_realm.debug)
+            self.local_realm.wait_until_ports_appear(sta_list=self.station_list[rad])
             self.station_profile.admin_up()
-            if self.local_realm.wait_for_ip(self.station_list, timeout_sec=60):
+            if self.local_realm.wait_for_ip(self.station_list[rad], timeout_sec=60):
                 self.local_realm._pass("All stations got IPs")
             else:
                 self.local_realm._fail("Stations failed to get IPs")
@@ -138,7 +150,6 @@ class HttpDownload(Realm):
                                      suppress_related_commands_=None, http=True,
                                      http_ip=ip_upstream + "/webpage.html")
             if self.count == 2:
-                self.station_list = self.station_list1
                 self.station_profile.mode = 6
         print("Test Build done")
 
@@ -479,44 +490,60 @@ class HttpDownload(Realm):
 
         # Section commented because graphing breaks two band report generation
         # TODO: Fix graphing bug with multiple bands being recorded
-        #
-        # report.set_title("WEBPAGE DOWNLOAD TEST")
-        # report.set_date(date)
-        # report.build_banner()
-        # report.set_table_title("Test Setup Information")
-        # report.build_table_title()
-        #
-        # report.test_setup_table(value="Device under test", test_setup_data=test_setup_info)
-        #
-        # report.set_obj_html("Objective", "The Webpage Download Test is designed to test the performance of the
-        # Access Point.The goal is to check whether the webpage loading time of all the " + str( num_stations) + "
-        # clients which are downloading at the same time meets the expectation when clients connected on single radio
-        # as well as dual radio") report.build_objective() report.set_obj_html("Download Time Graph", "The below
-        # graph provides information about the  download time taken by each client to download webpage for test
-        # duration of  " + str( duration) + " min") report.build_objective() graph = self.generate_graph(
-        # dataset=dataset, lis=lis, bands=bands) report.set_graph_image(graph) report.set_csv_filename(graph)
-        # report.move_csv_file() report.move_graph_image() report.build_graph() report.set_obj_html("Download Rate
-        # Graph", "The below graph provides information about the download rate in Mbps of each client to download
-        # the webpage for test duration of  " + str( duration) + " min") report.build_objective() graph2 =
-        # self.graph_2(dataset2, lis=lis, bands=bands) print("graph name {}".format(graph2)) report.set_graph_image(
-        # graph2) report.set_csv_filename(graph2) report.move_csv_file() report.move_graph_image()
-        # report.build_graph() report.set_obj_html("Summary Table Description", "This Table shows you the summary
-        # result of Webpage Download Test as PASS or FAIL criteria. If the average time taken by " + str(
-        # num_stations) + " clients to access the webpage is less than " + str( threshold_2g) + "s it's a PASS
-        # criteria for 2.4 ghz clients, If the average time taken by " + "" + str( num_stations) + " clients to
-        # access the webpage is less than " + str( threshold_5g) + "s it's a PASS criteria for 5 ghz clients and If
-        # the average time taken by " + str( num_stations) + " clients to access the webpage is less than " + str(
-        # threshold_both) + "s it's a PASS criteria for 2.4 ghz and 5ghz clients")
-        #
-        # report.build_objective()
-        # test_setup1 = pd.DataFrame(summary_table_value)
-        # report.set_table_dataframe(test_setup1)
-        # report.build_table()
-        #
-        # report.set_obj_html("Download Time Table Description", "This Table will provide you information of the
-        # minimum, maximum and the average time taken by clients to download a webpage in seconds")
-        #
-        # report.build_objective()
+        if bands == "Both":
+            num_stations = num_stations * 2
+        report.set_title("WEBPAGE DOWNLOAD TEST")
+        report.set_date(date)
+        report.build_banner()
+        report.set_table_title("Test Setup Information")
+        report.build_table_title()
+
+        report.test_setup_table(value="Device under test", test_setup_data=test_setup_info)
+
+        report.set_obj_html("Objective", "The Webpage Download Test is designed to test the performance of the "
+                            "Access Point.The goal is to check whether the webpage loading time of all the "
+                            + str(num_stations) +
+                            "clients which are downloading at the same time meets the expectation when clients"
+                            "connected on single radio as well as dual radio")
+        report.build_objective()
+        report.set_obj_html("Download Time Graph", "The below graph provides information about the download time taken "
+                            "by each client to download webpage for test duration of  " + str(duration) + " min")
+        report.build_objective()
+
+        graph = self.generate_graph(dataset=dataset, lis=lis, bands=bands)
+        report.set_graph_image(graph)
+        report.set_csv_filename(graph)
+        report.move_csv_file()
+        report.move_graph_image()
+        report.build_graph()
+        report.set_obj_html("Download Rate Graph", "The below graph provides information about the download rate in "
+                            "Mbps of each client to download the webpage for test duration of " + str(duration) + " min")
+        report.build_objective()
+        graph2 = self.graph_2(dataset2, lis=lis, bands=bands)
+        print("graph name {}".format(graph2))
+        report.set_graph_image(graph2)
+        report.set_csv_filename(graph2)
+        report.move_csv_file()
+        report.move_graph_image()
+        report.build_graph()
+        report.set_obj_html("Summary Table Description", "This Table shows you the summary "
+                            "result of Webpage Download Test as PASS or FAIL criteria. If the average time taken by " +
+                            str(num_stations) + " clients to access the webpage is less than " + str( threshold_2g) +
+                            "s it's a PASS criteria for 2.4 ghz clients, If the average time taken by " + "" +
+                            str( num_stations) + " clients to access the webpage is less than " + str( threshold_5g) +
+                            "s it's a PASS criteria for 5 ghz clients and If the average time taken by " + str( num_stations) +
+                            " clients to access the webpage is less than " + str(threshold_both) +
+                            "s it's a PASS criteria for 2.4 ghz and 5ghz clients")
+
+        report.build_objective()
+        test_setup1 = pd.DataFrame(summary_table_value)
+        report.set_table_dataframe(test_setup1)
+        report.build_table()
+
+        report.set_obj_html("Download Time Table Description", "This Table will provide you information of the "
+                            "minimum, maximum and the average time taken by clients to download a webpage in seconds")
+
+        report.build_objective()
         x = []
         for fcc in list(result_data.keys()):
             fcc_type = result_data[fcc]["min"]
@@ -612,8 +639,6 @@ class HttpDownload(Realm):
             csv_outfile = report.file_add_path(csv_outfile)
             print("csv output file : {}".format(csv_outfile))
 
-        exit()
-
         test_setup = pd.DataFrame(download_table_value)
         report.set_table_dataframe(test_setup)
         report.build_table()
@@ -638,9 +663,12 @@ def main():
     parser.add_argument('--num_stations', type=int, help='number of stations to create', default=1)
     parser.add_argument('--twog_radio', help='specify radio for 2.4G clients', default='wiphy3')
     parser.add_argument('--fiveg_radio', help='specify radio for 5 GHz client', default='wiphy0')
-    parser.add_argument('--security', help='WiFi Security protocol: {open|wep|wpa2|wpa3')
-    parser.add_argument('--ssid', help='WiFi SSID for script object to associate to')
-    parser.add_argument('--passwd', help='WiFi passphrase/password/key')
+    parser.add_argument('--twog_security', help='WiFi Security protocol: {open|wep|wpa2|wpa3} for 2.4G clients')
+    parser.add_argument('--twog_ssid', help='WiFi SSID for script object to associate for 2.4G clients')
+    parser.add_argument('--twog_passwd', help='WiFi passphrase/password/key for 2.4G clients')
+    parser.add_argument('--fiveg_security', help='WiFi Security protocol: {open|wep|wpa2|wpa3} for 5G clients')
+    parser.add_argument('--fiveg_ssid', help='WiFi SSID for script object to associate for 5G clients')
+    parser.add_argument('--fiveg_passwd', help='WiFi passphrase/password/key for 5G clients')
     parser.add_argument('--target_per_ten', help='number of request per 10 minutes', default=100)
     parser.add_argument('--file_size', type=str, help='specify the size of file you want to download', default='5MB')
     parser.add_argument('--bands', nargs="+", help='specify which band testing you want to run eg 5G OR 2.4G OR Both',
@@ -699,10 +727,22 @@ def main():
     avg_both = []
 
     for bands in args.bands:
+        if bands == "2.4G":
+            security = [args.twog_security]
+            ssid = [args.twog_ssid]
+            passwd = [args.twog_passwd]
+        elif bands == "5G":
+            security = [args.fiveg_security]
+            ssid = [args.fiveg_ssid]
+            passwd = [args.fiveg_passwd]
+        elif bands == "Both":
+            security = [args.fiveg_security, args.twog_security]
+            ssid = [args.fiveg_ssid, args.twog_ssid]
+            passwd = [args.fiveg_passwd, args.twog_passwd]
         http = HttpDownload(lfclient_host=args.mgr, lfclient_port=args.mgr_port,
                             upstream=args.upstream_port, num_sta=args.num_stations,
-                            security=args.security,
-                            ssid=args.ssid, password=args.passwd,
+                            security=security,
+                            ssid=ssid, password=passwd,
                             target_per_ten=args.target_per_ten,
                             file_size=args.file_size, bands=bands,
                             twog_radio=args.twog_radio,
@@ -786,7 +826,7 @@ def main():
     date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
     test_setup_info = {
         "DUT Name": args.ap_name,
-        "SSID": args.ssid,
+        "SSID": ','.join(ssid),
         "Test Duration": test_duration,
     }
     test_input_infor = {
@@ -795,23 +835,27 @@ def main():
         "Bands": args.bands,
         "Upstream": args.upstream_port,
         "Stations": args.num_stations,
-        "SSID": args.ssid,
-        "Security": args.security,
+        "SSID": ','.join(ssid),
+        "Security": ','.join(security),
         "Duration": args.duration,
         "Contact": "support@candelatech.com"
     }
     http1 = HttpDownload(lfclient_host=args.mgr, lfclient_port=args.mgr_port,
                          upstream=args.upstream_port, num_sta=args.num_stations,
-                         security=args.security,
-                         ssid=args.ssid, password=args.passwd,
+                         security=security,
+                         ssid=ssid, password=passwd,
                          target_per_ten=args.target_per_ten,
                          file_size=args.file_size, bands=args.bands,
                          twog_radio=args.twog_radio,
                          fiveg_radio=args.fiveg_radio)
     dataset = http1.download_time_in_sec(result_data=result_data)
     lis = []
-    for i in range(1, args.num_stations + 1):
-        lis.append(i)
+    if bands == "Both":
+        for i in range(1, args.num_stations*2 + 1):
+            lis.append(i)
+    else:
+        for i in range(1, args.num_stations + 1):
+            lis.append(i)
 
     dataset2 = http1.speed_in_Mbps(result_data=result_data)
     data = http1.summary_calculation(
