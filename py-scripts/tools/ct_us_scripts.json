@@ -213,7 +213,7 @@
                 ]
             }
         },
-        "suite_scripts_r":{
+        "suite_scripts":{
             "lf_help_check":{
                 "enabled":"TRUE",
                 "load_db":"skip",
