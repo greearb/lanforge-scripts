@@ -390,6 +390,12 @@ class StaConnect2(LFCliBase):
                 curr_endp_names.append(endp_names[1])
             removeEndps(self.lfclient_url, curr_endp_names, debug=self.debug)
 
+    def pre_cleanup(self):
+        self.cx_profile.cleanup_prefix()
+        # do not clean up station if existed prior to test
+        if not self.use_existing_sta:
+            for sta in self.sta_list:
+                self.rm_port(sta, check_exists=True, debug_=False)
 
 # ~class
 
@@ -475,7 +481,7 @@ Example:
     staConnect.station_names = ["%s0000" % args.prefix]
     staConnect.bringup_time_sec = args.bringup_time
 
-    # staConnect.cleanup()
+    staConnect.pre_cleanup()
     staConnect.setup()
     staConnect.start()
     print("napping %f sec" % staConnect.runtime_secs)
@@ -490,7 +496,7 @@ Example:
         print("PASS:  All tests pass")
     print(staConnect.get_all_message())
 
-    staConnect.cleanup()
+    staConnect.pre_cleanup()
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
