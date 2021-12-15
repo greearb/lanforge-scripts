@@ -56,7 +56,7 @@ def main():
     args = parser.parse_args()
 
     if args.ip is None:
-        args.ip = ['192.168.92.18', '192.168.92.12', '192.168.93.51', '192.168.92.15']
+        args.ip = ['192.168.92.18', '192.168.92.12', '192.168.93.51', '192.168.92.15', '192.168.100.184']
     #args.ip = ['192.168.93.51']
     Miner = MineRegression(system_information=args.system_info,
                            save_csv=args.save_csv,
