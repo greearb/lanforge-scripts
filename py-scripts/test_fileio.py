@@ -103,7 +103,7 @@ class FileIOTest(Realm):
         self.netmask = netmask
         self.gateway = gateway
         if self.use_macvlans:
-            if macvlan_parent is not None:
+            if macvlan_parent:
                 self.macvlan_parent = macvlan_parent
                 self.port_list = port_list
         else:
@@ -112,17 +112,17 @@ class FileIOTest(Realm):
         self.use_test_groups = use_test_groups
         if self.use_test_groups:
             if self.mode == "write":
-                if write_only_test_group is not None:
+                if write_only_test_group:
                     self.write_only_test_group = write_only_test_group
                 else:
                     raise ValueError("--write_only_test_group must be used to set test group name")
             if self.mode == "read":
-                if read_only_test_group is not None:
+                if read_only_test_group:
                     self.read_only_test_group = read_only_test_group
                 else:
                     raise ValueError("--read_only_test_group must be used to set test group name")
             if self.mode == "both":
-                if write_only_test_group is not None and read_only_test_group is not None:
+                if write_only_test_group and read_only_test_group:
                     self.write_only_test_group = write_only_test_group
                     self.read_only_test_group = read_only_test_group
                 else:
@@ -167,7 +167,7 @@ class FileIOTest(Realm):
 
         self.created_ports = []
         if self.use_test_groups:
-            if self.mode is not None:
+            if self.mode:
                 if self.mode == "write":
                     self.wo_tg_profile = self.new_test_group_profile()
                     self.wo_tg_profile.group_name = self.write_only_test_group
@@ -184,7 +184,7 @@ class FileIOTest(Realm):
             else:
                 raise ValueError("Mode ( read, write, or both ) must be specified")
 
-        if update_group_args is not None and update_group_args['name'] is not None:
+        if update_group_args and update_group_args['name']:
             temp_tg = self.new_test_group_profile()
             temp_cxs = update_group_args['cxs'].split(',')
             if update_group_args['action'] == "add":
@@ -263,7 +263,7 @@ class FileIOTest(Realm):
                 ','.join(self.wo_profile.created_cx.keys()),
                 ','.join(self.ro_profile.created_cx.keys())), debug_=self.debug)
         cx_map = {}
-        if cx_list is not None:
+        if cx_list:
             cx_list = cx_list['endpoint']
             for i in cx_list:
                 for item, value in i.items():
@@ -293,7 +293,7 @@ class FileIOTest(Realm):
             # print("++++++++++++++++\n", self.ip_list, "++++++++++++++++\n")
             for num_port in range(len(self.port_list)):
                 if self.ip_list[num_port] != 0:
-                    if self.gateway is not None and self.netmask is not None:
+                    if self.gateway and self.netmask:
                         shelf = self.name_to_eid(self.port_list[num_port])[0]
                         resource = self.name_to_eid(self.port_list[num_port])[1]
                         port = self.name_to_eid(self.port_list[num_port])[2]
@@ -315,7 +315,7 @@ class FileIOTest(Realm):
         # if use test groups and test group exists and no cxs, create cxs, assign to test group
         # if use test groups and test group exist and cxs exist, do nothing
         # if not use test groups, create cxs
-        if self.mode is not None:
+        if self.mode:
             if self.use_test_groups:
                 if self.mode == "write":
                     if self.wo_tg_exists:
@@ -646,27 +646,27 @@ Generic command layout:
         "action": None,
         "cxs": None
     }
-    if args.add_to_group is not None and args.cxs is not None:
+    if args.add_to_group and args.cxs:
         update_group_args['name'] = args.add_to_group
         update_group_args['action'] = "add"
         update_group_args['cxs'] = args.cxs
-    elif args.del_from_group is not None and args.cxs is not None:
+    elif args.del_from_group and args.cxs:
         update_group_args['name'] = args.del_from_group
         update_group_args['action'] = "del"
         update_group_args['cxs'] = args.cxs
 
     port_list = []
     ip_list = []
-    if args.first_port is not None and args.use_ports is not None:
+    if args.first_port and args.use_ports:
         if args.first_port.startswith("sta"):
-            if (args.num_ports is not None) and (int(args.num_ports) > 0):
+            if args.num_ports and (int(args.num_ports) > 0):
                 start_num = int(args.first_port[3:])
                 num_ports = int(args.num_ports)
                 port_list = LFUtils.port_name_series(prefix="sta", start_id=start_num, end_id=start_num + num_ports - 1,
                                                      padding_number=10000,
                                                      radio=args.radio)
         else:
-            if (args.num_ports is not None) and args.macvlan_parent is not None and (int(args.num_ports) > 0) \
+            if args.num_ports and args.macvlan_parent and (int(args.num_ports) > 0) \
                     and args.macvlan_parent in args.first_port:
                 start_num = int(args.first_port[args.first_port.index('#') + 1:])
                 num_ports = int(args.num_ports)
@@ -700,7 +700,7 @@ Generic command layout:
             if len(port_list) != len(ip_list):
                 raise ValueError(temp_list, " ports must have matching ip addresses!")
 
-    if args.first_mvlan_ip is not None:
+    if args.first_mvlan_ip:
         if args.first_mvlan_ip.lower() == "dhcp":
             dhcp = True
         else:
