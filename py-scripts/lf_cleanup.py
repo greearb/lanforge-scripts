@@ -63,12 +63,12 @@ class lf_clean(Realm):
                         }
                         super().json_post(req_url, data)
                         time.sleep(.5)
-                time.sleep(1) 
+                time.sleep(1)
             else:
                 print("No cross connects found to cleanup")
                 still_looking_cxs = False
         print("clean_cxs still_looking_cxs {cxs_looking}".format(cxs_looking=still_looking_cxs))
-        if not still_looking_cxs: 
+        if not still_looking_cxs:
             self.cxs_done = True
         return still_looking_cxs
 
@@ -98,7 +98,7 @@ class lf_clean(Realm):
                 print("No endpoints found to cleanup")
                 still_looking_endp = False
         print("clean_endp still_looking_endp {ednp_looking}".format(ednp_looking=still_looking_endp))
-        if not still_looking_endp: 
+        if not still_looking_endp:
             self.endp_done = True
         return still_looking_endp
 
@@ -143,6 +143,17 @@ class lf_clean(Realm):
                             # print(data)
                             super().json_post(req_url, data)
                             time.sleep(.5)
+                        if 'moni' in alias:
+                            info = self.name_to_eid(alias)
+                            req_url = "cli-json/rm_vlan"
+                            data = {
+                                "shelf": info[0],
+                                "resource": info[1],
+                                "port": info[2]
+                            }
+                            # print(data)
+                            super().json_post(req_url, data)
+                            time.sleep(.5)
                         if 'Unknown' in alias:
                             info = self.name_to_eid(alias)
                             req_url = "cli-json/rm_vlan"
@@ -156,16 +167,15 @@ class lf_clean(Realm):
                             time.sleep(.5)
                         if ('Unknown' not in alias) and ('wlan' not in alias) and ('sta' not in alias):
                             still_looking_sta = False
-                time.sleep(1)            
+                time.sleep(1)
 
             else:
                 print("No stations found to cleanup")
-                still_looking_sta = False  
+                still_looking_sta = False
         print("clean_sta still_looking_sta {sta_looking}".format(sta_looking=still_looking_sta))
-        if not still_looking_sta: 
+        if not still_looking_sta:
             self.sta_done = True
         return still_looking_sta
-
 
     '''
         1: delete cx
@@ -173,12 +183,14 @@ class lf_clean(Realm):
         3: delete sta
         when deleting sta first, you will end up with phantom CX
     '''
+
     def cleanup(self):
         if self.clean_cxs:
             # also clean the endp when cleaning cxs
             still_looking_cxs = self.cxs_clean()
             still_looking_endp = self.endp_clean()
-            print("clean_cxs: still_looking_cxs {looking_cxs} still_looking_endp {looking_endp}".format(looking_cxs=still_looking_cxs,looking_endp=still_looking_endp))
+            print("clean_cxs: still_looking_cxs {looking_cxs} still_looking_endp {looking_endp}".format(
+                looking_cxs=still_looking_cxs, looking_endp=still_looking_endp))
         if self.clean_endp and not self.clean_cxs:
             still_looking_endp = self.endp_clean()
             print("clean_endp: still_looking_endp {looking_endp}".format(looking_endp=still_looking_endp))
@@ -186,6 +198,7 @@ class lf_clean(Realm):
         if self.clean_sta:
             still_looking_sta = self.sta_clean()
             print("clean_sta: still_looking_sta {looking_sta}".format(looking_sta=still_looking_sta))
+
 
 def main():
 
@@ -228,8 +241,8 @@ python3 ./lf_clean.py --mgr MGR
 
     args = parser.parse_args()
     if args.cxs or args.endp or args.sta:
-        clean = lf_clean(host=args.mgr,clean_cxs=args.cxs,clean_endp=args.endp,clean_sta=args.sta )
-        print("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs,endp=args.endp,sta=args.sta))
+        clean = lf_clean(host=args.mgr, clean_cxs=args.cxs, clean_endp=args.endp, clean_sta=args.sta)
+        print("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.endp, sta=args.sta))
         if args.cxs:
             print("cleaning cxs will also clean endp")
             clean.cxs_clean()
@@ -242,7 +255,8 @@ python3 ./lf_clean.py --mgr MGR
         # print("Clean  cxs_done {cxs_done} endp_done {endp_done} sta_done {sta_done}"
         #    .format(cxs_done=clean.cxs_done,endp_done=clean.endp_done,sta_done=clean.sta_done))
     else:
-        print("please add option of --cxs ,--endp, or --sta to clean")             
+        print("please add option of --cxs ,--endp, or --sta to clean")
+
 
 if __name__ == "__main__":
     main()

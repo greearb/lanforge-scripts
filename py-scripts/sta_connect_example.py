@@ -18,7 +18,7 @@ lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 sta_connect = importlib.import_module("py-scripts.sta_connect")
 StaConnect = sta_connect.StaConnect
-
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 def main():
     parser = LFCliBase.create_basic_argparse(
@@ -40,10 +40,11 @@ def main():
         args.security = sta_connect.WPA2
     if args.radio is None:
         args.radio = "wiphy0"
+    upstream_port = LFUtils.name_to_eid(args.upstream_port)
     staConnect = StaConnect(args.mgr, args.mgr_port, _debugOn=args.debug, _runtime_sec=monitor_interval)
     staConnect.sta_mode = 0
-    staConnect.upstream_resource = 1
-    staConnect.upstream_port = args.upstream_port
+    staConnect.upstream_resource = upstream_port[1]
+    staConnect.upstream_port = upstream_port[2]
     staConnect.radio = args.radio
     staConnect.resource = 1
     staConnect.dut_security = args.security
@@ -52,7 +53,7 @@ def main():
     staConnect.station_names = ["sta000"]
     staConnect.setup()
     staConnect.start()
-    time.sleep(20)
+    staConnect.run()
     staConnect.stop()
     # staConnect.finish()
     staConnect.cleanup()

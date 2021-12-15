@@ -52,7 +52,9 @@ class CreateMacVlan(Realm):
 
         self.mvlan_profile.num_macvlans = int(num_ports)
         self.mvlan_profile.desired_macvlans = self.port_list
-        self.mvlan_profile.macvlan_parent = self.macvlan_parent
+        self.mvlan_profile.macvlan_parent = self.macvlan_parent[2]
+        self.mvlan_profile.shelf = self.macvlan_parent[0]
+        self.mvlan_profile.resource = self.macvlan_parent[1]
         self.mvlan_profile.dhcp = dhcp
         self.mvlan_profile.netmask = netmask
         self.mvlan_profile.first_ip_addr = first_mvlan_ip
@@ -153,6 +155,7 @@ Generic command layout:
         default=None)
     args = parser.parse_args()
 
+    args.macvlan_parent = LFUtils.name_to_eid(args.macvlan_parent)
     port_list = []
     ip_list = []
     if args.first_port is not None and args.use_ports is not None:
@@ -168,12 +171,12 @@ Generic command layout:
                     radio=args.radio)
         else:
             if (args.num_ports is not None) and args.macvlan_parent is not None and (
-                    int(args.num_ports) > 0) and args.macvlan_parent in args.first_port:
+                    int(args.num_ports) > 0) and args.macvlan_parent[2] in args.first_port:
                 start_num = int(
                     args.first_port[args.first_port.index('#') + 1:])
                 num_ports = int(args.num_ports)
                 port_list = LFUtils.port_name_series(
-                    prefix=args.macvlan_parent + "#",
+                    prefix=args.macvlan_parent[2] + "#",
                     start_id=start_num,
                     end_id=start_num + num_ports - 1,
                     padding_number=100000,
@@ -187,7 +190,7 @@ Generic command layout:
         if args.use_ports is None:
             num_ports = int(args.num_ports)
             port_list = LFUtils.port_name_series(
-                prefix=args.macvlan_parent + "#",
+                prefix=args.macvlan_parent[2] + "#",
                 start_id=0,
                 end_id=num_ports - 1,
                 padding_number=100000,

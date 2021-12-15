@@ -20,8 +20,6 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 removeCX = LFUtils.removeCX
 removeEndps = LFUtils.removeEndps
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 influx = importlib.import_module("py-scripts.influx_utils")
@@ -35,7 +33,7 @@ WPA3 = "wpa3"
 MODE_AUTO = 0
 
 
-class StaConnect2(LFCliBase):
+class StaConnect2(Realm):
     def __init__(self, host, port, _dut_ssid="jedway-open-1", _dut_passwd="NA", _dut_bssid="",
                  _user="", _passwd="", _sta_mode="0", _radio="wiphy0",
                  _influx_host=None, _influx_db=None, _influx_user=None,
@@ -47,7 +45,9 @@ class StaConnect2(LFCliBase):
         # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
         # that is py2 era syntax and will force self into the host variable, making you
         # very confused.
-        super().__init__(host, port, _debug=debug_, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, debug_=debug_, _exit_on_fail=_exit_on_fail)
+        self.host = host
+        self.port = port
         self.debug = debug_
         self.dut_security = _dut_security
         self.dut_ssid = _dut_ssid
@@ -70,8 +70,6 @@ class StaConnect2(LFCliBase):
             self.station_names = [_sta_name]
         self.sta_prefix = _sta_prefix
         self.bringup_time_sec = _bringup_time_sec
-        # self.localrealm :Realm = Realm(lfclient_host=host, lfclient_port=port) # py > 3.6
-        self.localrealm = Realm(lfclient_host=host, lfclient_port=port)  # py > 3.6
         self.resulting_stations = {}
         self.resulting_endpoints = {}
         self.station_profile = None
@@ -81,10 +79,14 @@ class StaConnect2(LFCliBase):
         self.influx_db = _influx_db
         self.influx_user = _influx_user
         self.influx_passwd = _influx_passwd
+        self.name_prefix = "tcp"
+        self.use_existing_sta = False
 
-    # def get_realm(self) -> Realm: # py > 3.6
-    def get_realm(self):
-        return self.localrealm
+        self.cx_profile = self.new_l3_cx_profile()
+        self.cx_profile.host = self.host
+        self.cx_profile.port = self.port
+        self.cx_profile.name_prefix = self.name_prefix
+
 
     def get_station_url(self, sta_name_=None):
         if sta_name_ is None:
@@ -116,7 +118,7 @@ class StaConnect2(LFCliBase):
         counter = 0
         # print("there are %d results" % len(self.station_results))
         fields = "_links,port,alias,ip,ap,port+type"
-        self.station_results = self.localrealm.find_ports_like("%s*" % self.sta_prefix, fields, debug_=False)
+        self.station_results = self.find_ports_like("%s*" % self.sta_prefix, fields, debug_=False)
         if (self.station_results is None) or (len(self.station_results) < 1):
             self.get_failed_result_list()
         for eid, record in self.station_results.items():
@@ -154,7 +156,7 @@ class StaConnect2(LFCliBase):
         # remove old stations
         if self.clean_all_sta:
             print("Removing all stations on resource.")
-            self.localrealm.remove_all_stations(self.resource)
+            self.remove_all_stations(self.resource)
         else:
             print("Removing old stations to be created by this test.")
             for sta_name in self.station_names:
@@ -166,7 +168,7 @@ class StaConnect2(LFCliBase):
             LFUtils.wait_until_ports_disappear(self.lfclient_url, self.station_names)
 
         # Create stations and turn dhcp on
-        self.station_profile = self.localrealm.new_station_profile()
+        self.station_profile = self.new_station_profile()
 
         if self.dut_security == WPA2:
             self.station_profile.use_security(security_type="wpa2", ssid=self.dut_ssid, passwd=self.dut_passwd)
@@ -187,14 +189,14 @@ class StaConnect2(LFCliBase):
         LFUtils.wait_until_ports_appear(self.lfclient_url, self.station_names, debug=self.debug)
 
         # Create UDP endpoints
-        self.l3_udp_profile = self.localrealm.new_l3_cx_profile()
+        self.l3_udp_profile = self.new_l3_cx_profile()
         self.l3_udp_profile.side_a_min_bps = 128000
         self.l3_udp_profile.side_b_min_bps = 128000
         self.l3_udp_profile.side_a_min_pdu = 1200
         self.l3_udp_profile.side_b_min_pdu = 1500
         self.l3_udp_profile.report_timer = 1000
         self.l3_udp_profile.name_prefix = "udp"
-        port_list = list(self.localrealm.find_ports_like("%s+" % self.sta_prefix))
+        port_list = list(self.find_ports_like("%s+" % self.sta_prefix))
         if (port_list is None) or (len(port_list) < 1):
             raise ValueError("Unable to find ports named '%s'+" % self.sta_prefix)
         self.l3_udp_profile.create(endp_type="lf_udp",
@@ -203,13 +205,13 @@ class StaConnect2(LFCliBase):
                                    suppress_related_commands=True)
 
         # Create TCP endpoints
-        self.l3_tcp_profile = self.localrealm.new_l3_cx_profile()
+        self.l3_tcp_profile = self.new_l3_cx_profile()
         self.l3_tcp_profile.side_a_min_bps = 128000
         self.l3_tcp_profile.side_b_min_bps = 56000
-        self.l3_tcp_profile.name_prefix = "tcp"
+        self.l3_tcp_profile.name_prefix = self.name_prefix
         self.l3_tcp_profile.report_timer = 1000
         self.l3_tcp_profile.create(endp_type="lf_tcp",
-                                   side_a=list(self.localrealm.find_ports_like("%s+" % self.sta_prefix)),
+                                   side_a=list(self.find_ports_like("%s+" % self.sta_prefix)),
                                    side_b="%d.%s" % (self.resource, self.upstream_port),
                                    suppress_related_commands=True)
 
@@ -390,6 +392,12 @@ class StaConnect2(LFCliBase):
                 curr_endp_names.append(endp_names[1])
             removeEndps(self.lfclient_url, curr_endp_names, debug=self.debug)
 
+    def pre_cleanup(self):
+        self.cx_profile.cleanup_prefix()
+        # do not clean up station if existed prior to test
+        if not self.use_existing_sta:
+            for sta in self.station_names:
+                self.rm_port(sta, check_exists=True, debug_=False)
 
 # ~class
 
@@ -475,7 +483,7 @@ Example:
     staConnect.station_names = ["%s0000" % args.prefix]
     staConnect.bringup_time_sec = args.bringup_time
 
-    # staConnect.cleanup()
+    staConnect.pre_cleanup()
     staConnect.setup()
     staConnect.start()
     print("napping %f sec" % staConnect.runtime_secs)
@@ -490,7 +498,7 @@ Example:
         print("PASS:  All tests pass")
     print(staConnect.get_all_message())
 
-    staConnect.cleanup()
+    staConnect.pre_cleanup()
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

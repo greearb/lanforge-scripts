@@ -33,10 +33,12 @@ class VAPProfile(LFCliBase):
         self.COMMANDS = ["add_vap", "set_port"]
         self.desired_add_vap_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.desired_add_vap_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        self.shelf = 1
+        self.resource = 1
 
         self.add_vap_data = {
-            "shelf": 1,
-            "resource": 1,
+            "shelf": self.shelf,
+            "resource": self.resource,
             "radio": None,
             "ap_name": None,
             "flags": 0,
@@ -51,16 +53,16 @@ class VAPProfile(LFCliBase):
         self.desired_set_port_current_flags = ["if_down"]
         self.desired_set_port_interest_flags = ["current_flags", "ifdown"]
         self.set_port_data = {
-            "shelf": 1,
-            "resource": 1,
+            "shelf": self.shelf,
+            "resource": self.resource,
             "port": None,
             "current_flags": 0,
             "interest": 0,  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
         }
         self.wifi_extra_data_modified = False
         self.wifi_extra_data = {
-            "shelf": 1,
-            "resource": 1,
+            "shelf": self.shelf,
+            "resource": self.resource,
             "port": None,
             "key_mgmt": None,
             "eap": None,
@@ -70,6 +72,7 @@ class VAPProfile(LFCliBase):
             "realm": None,
             "domain": None
         }
+        self.up = None
 
     def set_wifi_extra(self,
                        key_mgmt="WPA-EAP",
@@ -219,6 +222,14 @@ class VAPProfile(LFCliBase):
     def create(self, resource, radio, channel=None, up_=None, debug=False, use_ht40=True, use_ht80=True,
                use_ht160=False,
                suppress_related_commands_=True, use_radius=False, hs20_enable=False, bridge=True):
+        eid = LFUtils.name_to_eid(radio)
+        self.shelf = eid[0]
+        self.resource = eid[1]
+        radio = eid[2]
+
+        if resource:
+            self.resource = resource
+
         port_list = self.local_realm.json_get("port/1/1/list")
         if port_list is not None:
             port_list = port_list['interfaces']
@@ -248,19 +259,19 @@ class VAPProfile(LFCliBase):
 
         # print("MODE ========= ", self.mode)
 
-        jr = self.local_realm.json_get("/radiostatus/1/%s/%s?fields=channel,frequency,country" % (resource, radio),
+        jr = self.local_realm.json_get("/radiostatus/1/%s/%s?fields=channel,frequency,country" % (self.resource, radio),
                                        debug_=self.debug)
         if jr is None:
-            raise ValueError("No radio %s.%s found" % (resource, radio))
+            raise ValueError("No radio %s.%s found" % (self.resource, radio))
 
-        eid = "1.%s.%s" % (resource, radio)
+        eid_2 = "1.%s.%s" % (self.resource, radio)
         country = 0
-        if eid in jr:
-            country = jr[eid]["country"]
+        if eid_2 in jr:
+            country = jr[eid_2]["country"]
 
         data = {
-            "shelf": 1,
-            "resource": resource,
+            "shelf": self.shelf,
+            "resource": self.resource,
             "radio": radio,
             "mode": self.mode,  # "NA", #0 for AUTO or "NA"
             "channel": channel,
@@ -355,7 +366,7 @@ class VAPProfile(LFCliBase):
         if self.up:
             self.admin_up(resource)
 
-    def cleanup(self, resource, delay=0.03):
+    def cleanup(self, resource):
         print("Cleaning up VAPs")
         desired_ports = ["1.%s.%s" % (resource, self.vap_name), "1.%s.br0" % resource]
 

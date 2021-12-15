@@ -348,9 +348,10 @@ else
       "./rvr_scenario.py --lfmgr $MGR --lanforge_db 'handsets' --cv_test Dataplane --test_profile http --cv_scenario ct-us-001"
       #scenario.py
       #./sta_connect_bssid_mac.py
-      "./sta_connect_example.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM --test_duration 15s"
-      "./sta_connect.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM --test_duration 15s"
-      "./sta_scan_test.py --ssid $SSID_USED --security $SECURITY --passwd $PASSWD_USED --radio $RADIO_USED"
+      "./sta_connect_example.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM --test_duration 15s --debug"
+      "./sta_connect.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM --test_duration 15s --debug"
+      "./sta_connect2.py --dest $MGR --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM"
+      "./sta_scan_test.py --ssid $SSID_USED --security $SECURITY --passwd $PASSWD_USED --radio $RADIO_USED --debug"
       #station_layer3.py
       #stations_connected.py
       #"./test_1k_clients_jedtest.py
@@ -554,19 +555,23 @@ function test() {
   then 
     TEXTCLASS="partial_failure"
     TDTEXT="Partial Failure"
+    echo "Partial Failure"
+  elif [[ $TEXT =~ "FAILED" ]]
+  then
+    TEXTCLASS="partial_failure"
+    TDTEXT="ERROR"
+    echo "ERROR"
   else 
     TEXTCLASS="success"
     TDTEXT="Success"
+    echo "No errors detected"
   fi
 
   if (( FILESIZE > 0))
   then
-    echo "Errors detected"
     TEXTCLASS="failure"
     TDTEXT="Failure"
     STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
-  else
-    echo "No errors detected"
   fi
   results+=("<tr><td>${CURR_TEST_NAME}</td>
                        <td class='scriptdetails'>${testcommand}</td>
@@ -662,12 +667,12 @@ td.testname {
         </tr>
     </thead>
     <tbody>"
-    tail="</body></html>"
+    f="</body></html>"
 
     fname="${HOMEPATH}/html-reports/regression_file-${NOW}.html"
     echo "$header"  >> "$fname"
     echo "${results[@]}"  >> "$fname"
-    echo "</table>
+    echo "</tbody>
     </table>
     <br />
     <h3>System information</h3>
@@ -694,7 +699,9 @@ td.testname {
         <td id='python_environment'>${PYTHON_ENVIRONMENT}</td>
       </tr>
     </tbody>
-    </table>" >> "$fname"
+    </table>
+    <script> sortTable('myTable2', 2); </script>
+" >> "$fname"
     echo "$tail" >> "$fname"
     if [ -f "${HOMEPATH}/html-reports/latest.html" ]; then
         rm -f "${HOMEPATH}/html-reports/latest.html"

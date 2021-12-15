@@ -20,7 +20,9 @@ removeCX = LFUtils.removeCX
 removeEndps = LFUtils.removeEndps
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-
+set_port = importlib.import_module("py-json.LANforge.set_port")
+add_sta = importlib.import_module("py-json.LANforge.add_sta")
+LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
 OPEN = "open"
 WEP = "wep"
 WPA = "wpa"
@@ -31,7 +33,7 @@ MODE_AUTO = 0
 class StaConnect(Realm):
     def __init__(self, host, port, _dut_ssid="MyAP", _dut_passwd="NA", _dut_bssid="",
                  _user="lanforge", _passwd="lanforge", _sta_mode="0", _radio="wiphy0",
-                 _resource=1, _upstream_resource=1, _upstream_port="eth2",
+                 _resource=1, _upstream_resource=None, _upstream_port="eth2",
                  _sta_name=None, _debugOn=False, _dut_security=OPEN, _exit_on_error=False,
                  _cleanup_on_exit=True, _runtime_sec=60, _exit_on_fail=False):
         # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
@@ -52,8 +54,12 @@ class StaConnect(Realm):
         self.sta_mode = _sta_mode  # See add_sta LANforge CLI users guide entry
         self.radio = _radio
         self.resource = _resource
-        self.upstream_resource = _upstream_resource
-        self.upstream_port = _upstream_port
+        _upstream_port = LFUtils.name_to_eid(_upstream_port)
+        if _upstream_resource:
+            self.upstream_resource = _upstream_resource
+        else:
+            self.upstream_resource = _upstream_port[1]
+        self.upstream_port = _upstream_port[2]
         self.runtime_secs = _runtime_sec
         self.cleanup_on_exit = _cleanup_on_exit
         self.sta_url_map = None  # defer construction
@@ -68,6 +74,13 @@ class StaConnect(Realm):
         self.cx_profile = self.new_l3_cx_profile()
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
+        print(self.upstream_port)
+
+        self.desired_set_port_current_flags = ["if_down", "use_dhcp"]
+        self.desired_set_port_interest_flags = ["current_flags", "ifdown", "dhcp"]
+
+        self.desired_add_sta_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
+        self.desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
 
     def get_station_url(self, sta_name_=None):
         if sta_name_ is None:
@@ -132,6 +145,26 @@ class StaConnect(Realm):
                 return False
         return True
 
+    @staticmethod
+    def add_named_flags(desired_list, command_ref):
+        if desired_list is None:
+            raise ValueError("addNamedFlags wants a list of desired flag names")
+        if len(desired_list) < 1:
+            print("addNamedFlags: empty desired list")
+            return 0
+        if (command_ref is None) or (len(command_ref) < 1):
+            raise ValueError("addNamedFlags wants a maps of flag values")
+
+        result = 0
+        for name in desired_list:
+            if (name is None) or (name == ""):
+                continue
+            if name not in command_ref:
+                raise ValueError("flag %s not in map" % name)
+            result += command_ref[name]
+
+        return result
+
     def setup(self):
         self.clear_test_results()
         self.check_connect()
@@ -149,26 +182,24 @@ class StaConnect(Realm):
             if response is not None:
                 if response["interface"] is not None:
                     print("removing old station")
-                    LFUtils.removePort(self.resource, sta_name, self.lfclient_url, debug=False)
-                    LFUtils.waitUntilPortsDisappear(self.resource, self.lfclient_url, self.station_names)
+                    if self.port_exists(sta_name):
+                        self.rm_port(sta_name)
+        self.wait_until_ports_disappear(self.station_names)
 
         # Create stations and turn dhcp on
 
-        flags = 0x10000
-        if self.dut_security == WPA2:
-            flags += 0x400
-        elif self.dut_security == OPEN:
-            pass
+        radio = LFUtils.name_to_eid(self.radio)
 
         add_sta_data = {
-            "shelf": 1,
-            "resource": self.resource,
-            "radio": self.radio,
+            "shelf": radio[0],
+            "resource": radio[1],
+            "radio": radio[2],
             "ssid": self.dut_ssid,
             "key": self.dut_passwd,
             "mode": self.sta_mode,
             "mac": "xx:xx:xx:xx:*:xx",
-            "flags": flags  # verbose, wpa2
+            "flags": self.add_named_flags(self.desired_add_sta_flags, add_sta.add_sta_flags),  # verbose, wpa2
+            "flags_mask": self.add_named_flags(self.desired_add_sta_flags_mask, add_sta.add_sta_flags)
         }
         print("Adding new stations ", end="")
         for sta_name in self.station_names:
@@ -177,24 +208,26 @@ class StaConnect(Realm):
             self.json_post("/cli-json/add_sta", add_sta_data, suppress_related_commands_=True)
             time.sleep(0.01)
 
-        set_port_data = {
-            "shelf": 1,
-            "resource": self.resource,
-            "current_flags": 0x80000000,  # use DHCP, not down
-            "interest": 0x4002  # set dhcp, current flags
-        }
+        set_port_data = {"shelf": 1, "resource": self.resource,
+                         "current_flags": self.add_named_flags(self.desired_set_port_current_flags,
+                                                               set_port.set_port_current_flags),
+                         "interest": self.add_named_flags(self.desired_set_port_interest_flags,
+                                                          set_port.set_port_interest_flags),
+                         'report_timer': 1500, 'suppress_preexec_cli': 'yes',
+                         'suppress_preexec_method': 1}
+
         print("\nConfiguring ")
         for sta_name in self.station_names:
             set_port_data["port"] = sta_name
             print(" %s," % sta_name, end="")
-            self.json_post("/cli-json/set_port", set_port_data, suppress_related_commands_=True)
+            set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
+            set_port_r.addPostData(set_port_data)
+            set_port_r.jsonPost()
+
             time.sleep(0.01)
         print("\nBringing ports up...")
-        data = {"shelf": 1,
-                "resource": self.resource,
-                "port": "ALL",
-                "probe_flags": 1}
-        self.json_post("/cli-json/nc_show_ports", data, suppress_related_commands_=True)
+        for port in self.station_names:
+            self.admin_up(port)
         LFUtils.waitUntilPortsAdminUp(self.resource, self.lfclient_url, self.station_names)
 
         # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
@@ -237,7 +270,6 @@ class StaConnect(Realm):
             self.json_post("/cli-json/nc_show_ports", data, suppress_related_commands_=True)
 
         # make a copy of the connected stations for test records
-
         for sta_name in self.station_names:
             sta_url = self.get_station_url(sta_name)
             station_info = self.json_get(sta_url)  # + "?fields=port,ip,ap")
@@ -368,7 +400,7 @@ class StaConnect(Realm):
             }
             self.json_post("/cli-json/set_cx_report_timer", data, suppress_related_commands_=True)
 
-        self.wait_until_endps_appear(self.cx_names)
+        self.wait_until_cxs_appear(self.cx_names)
         return True
 
     def start(self):
@@ -446,9 +478,10 @@ class StaConnect(Realm):
 
     def cleanup(self):
         for sta_name in self.station_names:
-            LFUtils.removePort(self.resource, sta_name, self.lfclient_url, debug=False)
+            self.rm_port(sta_name)
         endp_names = []
-        removeCX(self.lfclient_url, self.cx_names.keys())
+        for cx in self.cx_names.keys():
+            self.rm_cx(cx)
         for cx_name in self.cx_names:
             endp_names.append(self.cx_names[cx_name]["a"])
             endp_names.append(self.cx_names[cx_name]["b"])
@@ -482,14 +515,12 @@ Example:
     if args.port is not None:
         lfjson_port = args.port
 
-    staConnect = StaConnect(lfjson_host, lfjson_port, _runtime_sec=monitor_interval)
+    staConnect = StaConnect(lfjson_host, lfjson_port, _upstream_port=args.upstream_port, _runtime_sec=monitor_interval)
     staConnect.station_names = ["sta0000"]
     if args.sta_mode is not None:
         staConnect.sta_mode = args.sta_mode
     if args.upstream_resource is not None:
         staConnect.upstream_resource = args.upstream_resource
-    if args.upstream_port is not None:
-        staConnect.upstream_port = args.upstream_port
     if args.radio is not None:
         staConnect.radio = args.radio
     if args.resource is not None:

@@ -28,9 +28,13 @@ class WifiMonitor:
         self.flag_mask_names = []
         self.flags_mask = add_monitor.default_flags_mask
         self.aid = "NA"  # used when sniffing /ax radios
-        self.bsssid = "00:00:00:00:00:00"  # used when sniffing on /ax radios
+        self.bssid = "00:00:00:00:00:00"  # used when sniffing on /ax radios
 
     def create(self, resource_=1, channel=None, mode="AUTO", radio_="wiphy0", name_="moni0"):
+        radio_eid = self.local_realm.name_to_eid(radio_)
+        radio_shelf = radio_eid[0]
+        self.resource = radio_eid[1]
+        radio_ = radio_eid[2]
         print("Creating monitor " + name_)
         self.monitor_name = name_
         computed_flags = 0
@@ -40,20 +44,19 @@ class WifiMonitor:
         # we want to query the existing country code of the radio
         # there's no reason to change it but we get hollering from server
         # if we don't provide a value for the parameter
-        jr = self.local_realm.json_get("/radiostatus/1/%s/%s?fields=channel,frequency,country" % (resource_, radio_),
+        jr = self.local_realm.json_get("/radiostatus/1/%s/%s?fields=channel,frequency,country" % (self.resource, radio_),
                                        debug_=self.debug)
         if jr is None:
-            raise ValueError("No radio %s.%s found" % (resource_, radio_))
+            raise ValueError("No radio %s.%s found" % (self.resource, radio_))
 
-        eid = "1.%s.%s" % (resource_, radio_)
         # frequency = 0
         country = 0
-        if eid in jr:
-            country = jr[eid]["country"]
+        if radio_ in jr:
+            country = jr[radio_]["country"]
 
         data = {
-            "shelf": 1,
-            "resource": resource_,
+            "shelf": radio_shelf,
+            "resource": self.resource,
             "radio": radio_,
             "mode": set_radio_mode[mode],  # "NA", #0 for AUTO or "NA"
             "channel": channel,
@@ -64,8 +67,8 @@ class WifiMonitor:
         self.local_realm.json_post("/cli-json/set_wifi_radio", _data=data)
         time.sleep(1)
         self.local_realm.json_post("/cli-json/add_monitor", {
-            "shelf": 1,
-            "resource": resource_,
+            "shelf": radio_shelf,
+            "resource": self.resource,
             "radio": radio_,
             "ap_name": self.monitor_name,
             "flags": computed_flags,
@@ -81,31 +84,31 @@ class WifiMonitor:
             del self.flag_names[param_name]
             self.flags_mask |= add_monitor.flags[param_name]
 
-    def cleanup(self, resource_=1, desired_ports=None):
+    def cleanup(self, desired_ports=None):
         print("Cleaning up monitors")
         if (desired_ports is None) or (len(desired_ports) < 1):
             if (self.monitor_name is None) or (self.monitor_name == ""):
                 print("No monitor name set to delete")
                 return
-            LFUtils.removePort(resource=resource_,
+            LFUtils.removePort(resource=self.resource,
                                port_name=self.monitor_name,
                                baseurl=self.lfclient_url,
                                debug=self.debug)
         else:
             names = ",".join(desired_ports)
-            existing_ports = self.local_realm.json_get("/port/1/%d/%s?fields=alias" % (resource_, names), debug_=False)
+            existing_ports = self.local_realm.json_get("/port/1/%d/%s?fields=alias" % (self.resource, names), debug_=False)
             if (existing_ports is None) or ("interfaces" not in existing_ports) or ("interface" not in existing_ports):
                 print("No monitor names found to delete")
                 return
             if "interfaces" in existing_ports:
                 for eid, info in existing_ports["interfaces"].items():
-                    LFUtils.removePort(resource=resource_,
+                    LFUtils.removePort(resource=self.resource,
                                        port_name=info["alias"],
                                        baseurl=self.lfclient_url,
                                        debug=self.debug)
             if "interface" in existing_ports:
                 for eid, info in existing_ports["interface"].items():
-                    LFUtils.removePort(resource=resource_,
+                    LFUtils.removePort(resource=self.resource,
                                        port_name=info["alias"],
                                        baseurl=self.lfclient_url,
                                        debug=self.debug)
@@ -124,7 +127,7 @@ class WifiMonitor:
             raise ValueError("Need a capture file name")
         data = {
             "shelf": 1,
-            "resource": 1,
+            "resource": self.resource,
             "port": self.monitor_name,
             "display": "NA",
             "flags": 0x2,
