@@ -641,6 +641,8 @@ Generic command layout:
                         default=None)
     args = parser.parse_args()
 
+    parent = LFUtils.name_to_eid(args.macvlan_parent)
+    macvlan_parent = parent[2]
     update_group_args = {
         "name": None,
         "action": None,
@@ -666,17 +668,17 @@ Generic command layout:
                                                      padding_number=10000,
                                                      radio=args.radio)
         else:
-            if args.num_ports and args.macvlan_parent and (int(args.num_ports) > 0) \
-                    and args.macvlan_parent in args.first_port:
+            if args.num_ports and macvlan_parent and (int(args.num_ports) > 0) \
+                    and macvlan_parent in args.first_port:
                 start_num = int(args.first_port[args.first_port.index('#') + 1:])
                 num_ports = int(args.num_ports)
-                port_list = LFUtils.port_name_series(prefix=args.macvlan_parent + "#", start_id=start_num,
+                port_list = LFUtils.port_name_series(prefix=macvlan_parent + "#", start_id=start_num,
                                                      end_id=start_num + num_ports - 1, padding_number=100000,
                                                      radio=args.radio)
             else:
                 raise ValueError("Invalid values for num_ports [%s], macvlan_parent [%s], and/or first_port [%s].\n"
                                  "first_port must contain parent port and num_ports must be greater than 0"
-                                 % (args.num_ports, args.macvlan_parent, args.first_port))
+                                 % (args.num_ports, macvlan_parent, args.first_port))
     else:
         if args.use_ports is None:
             num_ports = int(args.num_ports)
@@ -685,7 +687,7 @@ Generic command layout:
                                                      padding_number=10000,
                                                      radio=args.radio)
             else:
-                port_list = LFUtils.port_name_series(prefix=args.macvlan_parent + "#", start_id=0,
+                port_list = LFUtils.port_name_series(prefix=macvlan_parent + "#", start_id=0,
                                                      end_id=num_ports - 1, padding_number=100000,
                                                      radio=args.radio)
         else:
@@ -725,7 +727,7 @@ Generic command layout:
                          test_duration=args.test_duration,
                          upstream_port=args.upstream_port,
                          _debug_on=args.debug,
-                         macvlan_parent=args.macvlan_parent,
+                         macvlan_parent=macvlan_parent,
                          use_macvlans=args.use_macvlans,
                          first_mvlan_ip=args.first_mvlan_ip,
                          netmask=args.netmask,
