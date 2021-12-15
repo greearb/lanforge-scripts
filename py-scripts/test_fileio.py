@@ -129,15 +129,6 @@ class FileIOTest(Realm):
                     raise ValueError("--write_only_test_group and --read_only_test_group "
                                      "must be used to set test group names")
 
-        # self.min_rw_size = self.parse_size(min_rw_size)
-        # self.max_rw_size = self.parse_size(max_rw_size)
-        # self.min_file_size = self.parse_size(min_file_size)
-        # self.min_file_size = self.parse_size(min_file_size)
-        # self.min_read_rate_bps = self.parse_size_bps(min_read_rate_bps)
-        # self.max_read_rate_bps = self.sisize_bps(max_read_rate_bps)
-        # self.min_write_rate_bps = self.parse_size_bps(min_write_rate_bps)
-        # self.max_write_rate_bps = self.parse_size_bps(max_write_rate_bps)
-
         self.wo_profile = self.new_fio_endp_profile()
         self.mvlan_profile = self.new_mvlan_profile()
 
@@ -245,18 +236,10 @@ class FileIOTest(Realm):
             expected_passes += 1
             # print(item)
             if item[0] == 'r':
-                # print("TEST", item,
-                #       val_list[item]['read-bps'],
-                #       self.ro_profile.min_read_rate_bps,
-                #       val_list[item]['read-bps'] > self.ro_profile.min_read_rate_bps)
 
                 if val_list[item]['read-bps'] > self.wo_profile.min_read_rate_bps:
                     passes += 1
             else:
-                # print("TEST", item,
-                #       val_list[item]['write-bps'],
-                #       self.wo_profile.min_write_rate_bps,
-                #       val_list[item]['write-bps'] > self.wo_profile.min_write_rate_bps)
 
                 if val_list[item]['write-bps'] > self.wo_profile.min_write_rate_bps:
                     passes += 1
@@ -279,18 +262,13 @@ class FileIOTest(Realm):
             cx_list = self.json_get("fileio/%s,%s?fields=write-bps,read-bps" % (
                 ','.join(self.wo_profile.created_cx.keys()),
                 ','.join(self.ro_profile.created_cx.keys())), debug_=self.debug)
-        # print(cx_list)
-        # print("==============\n", cx_list, "\n==============")
         cx_map = {}
-        # pprint.pprint(cx_list)
         if cx_list is not None:
             cx_list = cx_list['endpoint']
             for i in cx_list:
                 for item, value in i.items():
-                    # print(item, value)
                     cx_map[self.name_to_eid(item)[2]] = {"read-bps": value['read-bps'],
-                                                                     "write-bps": value['write-bps']}
-        # print(cx_map)
+                                                         "write-bps": value['write-bps']}
         return cx_map
 
     def build(self):
@@ -658,7 +636,9 @@ Generic command layout:
     tg_group = parser.add_mutually_exclusive_group()
     tg_group.add_argument('--add_to_group', help='name of test group to add cxs to', default=None)
     tg_group.add_argument('--del_from_group', help='name of test group to delete cxs from', default=None)
-    parser.add_argument('--cxs', help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group', default=None)
+    parser.add_argument('--cxs',
+                        help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group',
+                        default=None)
     args = parser.parse_args()
 
     update_group_args = {
