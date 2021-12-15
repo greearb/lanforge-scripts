@@ -9,210 +9,11 @@
             "to identify replaced strings in the lf_check.py code.",
             "When doing a create_chamberview.py --create_scenario <name> ",
             "has no correlation to the --instance_name , instance name is used ",
-            "as a unique identifier for tha chamber-view test run"
+            "as a unique identifier for tha chamber-view test run",
+            "Simpler runs after the suite_scripts"
         ]  
     },
     "test_suites":{
-        "suite_smoke":{
-            "clean_up_cxs_endp_sta":{
-                "enabled":"TRUE",
-                "command":"lf_cleanup.py",
-                "args":"",
-                "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
-                ]},
-            "test_ip_variable_time0-ipv4":{
-                "enabled":"TRUE",
-                "command":"test_ip_variable_time.py",
-                "timeout":"360",
-                "args":"",
-                "args_list":[
-                    " --mgr LF_MGR_IP ",
-                    " use_ssid_idx=1  --radio wiphy4 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
-                    " --test_duration 60s --output_format csv ",
-                    " --traffic_type lf_tcp --a_min 600000000 --b_min 600000000  --upstream_port eth2",
-                    " --mode '5' --layer3_cols 'name','tx rate','rx rate' ",
-                    " --port_mgr_cols 'alias','channel','activity','mode'",
-                    " --num_stations 1"]
-                },
-            "test_ip_variable_time1-ipv4":{
-                "enabled":"FALSE",
-                "timeout":"360",
-                "command":"test_ip_variable_time.py",
-                "args":"",
-                "args_list":[
-                    " --mgr LF_MGR_IP",
-                    " use_ssid_idx=1  --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
-                    " --test_duration 60s --output_format csv ",
-                    " --traffic_type lf_tcp --a_min 600000000 --b_min 600000000  --upstream_port eth2",
-                    " --mode '5' --layer3_cols 'name','tx rate','rx rate' ",
-                    " --port_mgr_cols 'alias','channel','activity','mode'"
-                ]},
-            "lf_qa":{
-                "enabled":"TRUE",
-                "timeout":"600",
-                "load_db":"skip",
-                "command":"./tools/lf_qa.py",
-                "args":"",
-                "args_list":[
-                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
-                ]
-            }
-        },
-        "suite_verify":{
-            "clean_up_cxs_endp_sta":{
-                "enabled":"TRUE",
-                "command":"lf_cleanup.py",
-                "args":"",
-                "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
-                ]},
-            "test_ip_variable_time0-ipv4":{
-                "enabled":"TRUE",
-                "command":"test_ip_variable_time.py",
-                "timeout":"360",
-                "args":"",
-                "args_list":[
-                    " --mgr LF_MGR_IP ",
-                    " use_ssid_idx=1  --radio wiphy4 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
-                    " --test_duration 60s --output_format csv ",
-                    " --traffic_type lf_tcp --a_min 600000000 --b_min 600000000  --upstream_port eth2",
-                    " --mode '5' --layer3_cols 'name','tx rate','rx rate' ",
-                    " --port_mgr_cols 'alias','channel','activity','mode'",
-                    " --num_stations 1"]
-                },
-            "test_ip_variable_time1-ipv4":{
-                "enabled":"FALSE",
-                "timeout":"360",
-                "command":"test_ip_variable_time.py",
-                "args":"",
-                "args_list":[
-                    " --mgr LF_MGR_IP",
-                    " use_ssid_idx=1  --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
-                    " --test_duration 60s --output_format csv ",
-                    " --traffic_type lf_tcp --a_min 600000000 --b_min 600000000  --upstream_port eth2",
-                    " --mode '5' --layer3_cols 'name','tx rate','rx rate' ",
-                    " --port_mgr_cols 'alias','channel','activity','mode'"
-                ]},
-            "lf_qa":{
-                "enabled":"TRUE",
-                "timeout":"600",
-                "load_db":"skip",
-                "command":"./tools/lf_qa.py",
-                "args":"",
-                "args_list":[
-                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
-                ]
-            }
-        },
-        "suite_l3":{
-            "clean_up_cxs_endp_sta_flags_5q_all":{
-                "enabled":"TRUE",
-                "command":"lf_cleanup.py",
-                "args":"",
-                "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
-            ]},
-            "test_l3_longevity_flags_5g_all":{
-                "enabled":"TRUE",
-                "load_db":"NONE",
-                "command":"test_l3_longevity.py",
-                "args":"",
-                "args_list":[
-                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy1,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy2,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy3,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy4,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy5,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy6,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy7,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
-                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000",
-                    " --test_rig TEST_RIG --test_tag 'l3_longevity'",
-                    " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
-                ]
-            },
-            "clean_up_cxs_endp_sta_flags_2q_all":{
-                "enabled":"TRUE",
-                "command":"lf_cleanup.py",
-                "args":"",
-                "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
-            ]},
-            "test_l3_longevity_flags_2g_all":{
-                "enabled":"TRUE",
-                "load_db":"NONE",
-                "command":"test_l3_longevity.py",
-                "args":"",
-                "args_list":[
-                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy1,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy2,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy3,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy4,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy5,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy6,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
-                    " use_ssid_idx=1 --radio 'radio==wiphy7,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
-                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000",
-                    " --test_rig TEST_RIG --test_tag 'l3_longevity'",
-                    " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
-                ]
-            },
-            "lf_qa":{
-                "enabled":"TRUE",
-                "timeout":"600",
-                "load_db":"skip",
-                "command":"./tools/lf_qa.py",
-                "args":"",
-                "args_list":[
-                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
-                ]
-            }
-        },            
-        "suite_test":{
-            "lf_cleanup":{
-                "enabled":"FALSE",
-                "load_db":"NONE",
-                "command":"lf_cleanup.py",
-                "args":"",
-                "args_list":["--mgr LF_MGR_IP --cxs --sta"
-                ]
-            },
-            "lf_report_test":{
-                "enabled":"TRUE",
-                "load_db":"NONE",
-                "timeout":"60",
-                "command":"lf_report_test.py",
-                "args":"",
-                "args_list":[" --mgr LF_MGR_IP "
-                ]
-            },
-            "lf_graph":{
-                "enabled":"TRUE",
-                "load_db":"NONE",
-                "timeout":"60",
-                "command":"lf_graph.py",
-                "args":"",
-                "args_list":[" --mgr LF_MGR_IP "
-                ]
-            },
-            "test_ip_variable_time0-ipv4":{
-                "enabled":"TRUE",
-                "command":"test_ip_variable_time.py",
-                "args":"",
-                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --test_duration 15s --output_format excel --layer3_cols name,tx_bytes,rx_bytes,dropped --traffic_type lf_udp --debug"]
-            },
-            "lf_qa":{
-                "enabled":"TRUE",
-                "timeout":"600",
-                "load_db":"skip",
-                "command":"./tools/lf_qa.py",
-                "args":"",
-                "args_list":[
-                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
-                ]
-            }
-        },
         "suite_scripts":{
             "lf_help_check":{
                 "enabled":"TRUE",
@@ -498,7 +299,7 @@
                 ]
             },
             "test_ip_variable_time_ipv4_5g_udp":{
-                "enabled":"FALSE",
+                "enabled":"TRUE",
                 "command":"test_ip_variable_time.py",
                 "args":"",
                 "args_list":[
@@ -508,7 +309,7 @@
                     " --traffic_type lf_udp",
                     " --debug"]},
             "test_ip_variable_time_ipv4_5g_tcp":{
-                "enabled":"FALSE",
+                "enabled":"TRUE",
                 "command":"test_ip_variable_time.py",
                 "args":"",
                 "args_list":[
@@ -578,12 +379,66 @@
                 "args_list":[" --mgr LF_MGR_IP "
                 ]
             },
+            "lf_report":{
+                "enabled":"TRUE",
+                "load_db":"NONE",
+                "timeout":"60",
+                "command":"lf_report.py",
+                "args":"",
+                "args_list":[" "
+                ]
+            },
+            "lf_snp_test":{
+                "enabled":"TRUE",
+                "load_db":"NONE",
+                "timeout":"60",
+                "command":"lf_snp_test.py",
+                "args":"",
+                "args_list":[" --help"
+                ]
+            },
+            "testgroup":{
+                "enabled":"TRUE",
+                "load_db":"NONE",
+                "timeout":"60",
+                "command":"testgroup.py",
+                "args":"",
+                "args_list":[" --mgr LF_MGR_IP --group_name group1 --add_group --list_groups --debug"
+                ]
+            },
+            "testgroup2":{
+                "enabled":"TRUE",
+                "load_db":"NONE",
+                "timeout":"60",
+                "command":"testgroup2.py",
+                "args":"",
+                "args_list":[" --mgr LF_MGR_IP --group_name group0 --add_group --num_stations 1 --radio 1.1.wiphy1",
+                    " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED ",
+                ]
+            },
+            "clean_up_cxs_endp_sta_from_test_group":{
+                "enabled":"TRUE",
+                "command":"lf_cleanup.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --cxs --sta"
+                ]
+            },
+            "test_generic":{
+                "enabled":"TRUE",
+                "command":"test_generic.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --radio 1.1.wiphy1 --upstream_port UPSTREAM_PORT --num_stations 1 --type lfping --dest LF_MGR_IP --debug",
+                    " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
+                ]
+            },
             "test_ipv4_ps":{
                 "enabled":"FALSE",
                 "command":"test_ipv4_ps.py",
                 "args":"",
                 "args_list":[
-                    "--mgr LF_MGR_IP --radio 1.1.wiphy1 --upstream_port 1.1.eth2 --radio2 1.1.wiphy2",
+                    " --mgr LF_MGR_IP --radio 1.1.wiphy1 --upstream_port UPSTREAM_PORT --radio2 1.1.wiphy2",
                     " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
                 ]
             },
@@ -697,6 +552,206 @@
                     "args_list":[
                         " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                     ]
+            }
+        },
+        "suite_smoke":{
+            "clean_up_cxs_endp_sta":{
+                "enabled":"TRUE",
+                "command":"lf_cleanup.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --cxs --sta"
+                ]},
+            "test_ip_variable_time0-ipv4":{
+                "enabled":"TRUE",
+                "command":"test_ip_variable_time.py",
+                "timeout":"360",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP ",
+                    " use_ssid_idx=1  --radio wiphy4 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --test_duration 60s --output_format csv ",
+                    " --traffic_type lf_tcp --a_min 600000000 --b_min 600000000  --upstream_port eth2",
+                    " --mode '5' --layer3_cols 'name','tx rate','rx rate' ",
+                    " --port_mgr_cols 'alias','channel','activity','mode'",
+                    " --num_stations 1"]
+                },
+            "test_ip_variable_time1-ipv4":{
+                "enabled":"FALSE",
+                "timeout":"360",
+                "command":"test_ip_variable_time.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP",
+                    " use_ssid_idx=1  --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --test_duration 60s --output_format csv ",
+                    " --traffic_type lf_tcp --a_min 600000000 --b_min 600000000  --upstream_port eth2",
+                    " --mode '5' --layer3_cols 'name','tx rate','rx rate' ",
+                    " --port_mgr_cols 'alias','channel','activity','mode'"
+                ]},
+            "lf_qa":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+                ]
+            }
+        },
+        "suite_verify":{
+            "clean_up_cxs_endp_sta":{
+                "enabled":"TRUE",
+                "command":"lf_cleanup.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --cxs --sta"
+                ]},
+            "test_ip_variable_time0-ipv4":{
+                "enabled":"TRUE",
+                "command":"test_ip_variable_time.py",
+                "timeout":"360",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP ",
+                    " use_ssid_idx=1  --radio wiphy4 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --test_duration 60s --output_format csv ",
+                    " --traffic_type lf_tcp --a_min 600000000 --b_min 600000000  --upstream_port eth2",
+                    " --mode '5' --layer3_cols 'name','tx rate','rx rate' ",
+                    " --port_mgr_cols 'alias','channel','activity','mode'",
+                    " --num_stations 1"]
+                },
+            "test_ip_variable_time1-ipv4":{
+                "enabled":"FALSE",
+                "timeout":"360",
+                "command":"test_ip_variable_time.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP",
+                    " use_ssid_idx=1  --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " --test_duration 60s --output_format csv ",
+                    " --traffic_type lf_tcp --a_min 600000000 --b_min 600000000  --upstream_port eth2",
+                    " --mode '5' --layer3_cols 'name','tx rate','rx rate' ",
+                    " --port_mgr_cols 'alias','channel','activity','mode'"
+                ]},
+            "lf_qa":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+                ]
+            }
+        },
+        "suite_l3":{
+            "clean_up_cxs_endp_sta_flags_5q_all":{
+                "enabled":"TRUE",
+                "command":"lf_cleanup.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --cxs --sta"
+            ]},
+            "test_l3_longevity_flags_5g_all":{
+                "enabled":"TRUE",
+                "load_db":"NONE",
+                "command":"test_l3_longevity.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy1,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy2,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy3,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy4,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy5,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy6,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy7,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000",
+                    " --test_rig TEST_RIG --test_tag 'l3_longevity'",
+                    " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
+                ]
+            },
+            "clean_up_cxs_endp_sta_flags_2q_all":{
+                "enabled":"TRUE",
+                "command":"lf_cleanup.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --cxs --sta"
+            ]},
+            "test_l3_longevity_flags_2g_all":{
+                "enabled":"TRUE",
+                "load_db":"NONE",
+                "command":"test_l3_longevity.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 30s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy1,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy2,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy3,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy4,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy5,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy6,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
+                    " use_ssid_idx=1 --radio 'radio==wiphy7,stations==1,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED',wifi_mode==0,wifi_settings==wifi_settings,enable_flags==(ht160_enable|wpa2_enable|80211u_enable|create_admin_down) ",
+                    " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000",
+                    " --test_rig TEST_RIG --test_tag 'l3_longevity'",
+                    " --dut_model_num  USE_DUT_NAME --dut_sw_version DUT_SW --dut_hw_version DUT_HW --dut_serial_num DUT_SN"
+                ]
+            },
+            "lf_qa":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+                ]
+            }
+        },            
+        "suite_test":{
+            "lf_cleanup":{
+                "enabled":"FALSE",
+                "load_db":"NONE",
+                "command":"lf_cleanup.py",
+                "args":"",
+                "args_list":["--mgr LF_MGR_IP --cxs --sta"
+                ]
+            },
+            "lf_report_test":{
+                "enabled":"TRUE",
+                "load_db":"NONE",
+                "timeout":"60",
+                "command":"lf_report_test.py",
+                "args":"",
+                "args_list":[" --mgr LF_MGR_IP "
+                ]
+            },
+            "lf_graph":{
+                "enabled":"TRUE",
+                "load_db":"NONE",
+                "timeout":"60",
+                "command":"lf_graph.py",
+                "args":"",
+                "args_list":[" --mgr LF_MGR_IP "
+                ]
+            },
+            "test_ip_variable_time0-ipv4":{
+                "enabled":"TRUE",
+                "command":"test_ip_variable_time.py",
+                "args":"",
+                "args_list":["  use_ssid_idx=1 --mgr LF_MGR_IP --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED --test_duration 15s --output_format excel --layer3_cols name,tx_bytes,rx_bytes,dropped --traffic_type lf_udp --debug"]
+            },
+            "lf_qa":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+                ]
             }
         }
     }
