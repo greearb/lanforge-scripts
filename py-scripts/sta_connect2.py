@@ -20,8 +20,6 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 removeCX = LFUtils.removeCX
 removeEndps = LFUtils.removeEndps
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 influx = importlib.import_module("py-scripts.influx_utils")
