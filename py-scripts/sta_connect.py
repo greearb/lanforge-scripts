@@ -182,7 +182,8 @@ class StaConnect(Realm):
             if response is not None:
                 if response["interface"] is not None:
                     print("removing old station")
-                    self.rm_port(sta_name)
+                    if self.port_exists(sta_name):
+                        self.rm_port(sta_name)
         self.wait_until_ports_disappear(self.station_names)
 
         # Create stations and turn dhcp on
