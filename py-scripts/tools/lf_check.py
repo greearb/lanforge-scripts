@@ -1475,6 +1475,16 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # Add the qa_report_html 
     qa_report_html = check.qa_report_html
 
+    # add the python3 version information
+    lf_server = pd.DataFrame()
+    hostname = socket.getfqdn()
+    ip = socket.gethostbyname(hostname)
+
+    lf_server['Server Host Name'] = [hostname]
+    lf_server['Server ip'] = [ip]
+    lf_server['Python3 Version'] = [sys.version]
+    lf_server['Python3 Executable'] = [sys.executable]
+
     lf_suite_time = pd.DataFrame()
     lf_suite_time['Suite Start'] = [check.suite_start_time]
     lf_suite_time['Suite End'] = [check.suite_end_time]
@@ -1500,6 +1510,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     report.set_table_title("LANForge")
     report.build_table_title()
     report.set_table_dataframe(lf_test_setup)
+    report.build_table()
+    report.set_table_title("LANForge CICD Server")
+    report.build_table_title()
+    report.set_table_dataframe(lf_server)
     report.build_table()
     report.set_table_title("LANForge Radios")
     report.build_table_title()
