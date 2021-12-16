@@ -496,11 +496,11 @@ Example:
 ./sta_connect.py --mgr 192.168.100.209 --dut_ssid OpenWrt-2 --dut_bssid 24:F5:A2:08:21:6C
 """)
     parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)", default=8080)
-    parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1")
-    parser.add_argument("--upstream_resource", type=str, help="LANforge Ethernet port resource ID to use, default is 1")
+    parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1", default=1)
+    parser.add_argument("--upstream_resource", type=str, help="LANforge Ethernet port resource ID to use, default is 1", default=1)
     parser.add_argument("--sta_mode", type=str,
-                        help="LANforge station-mode setting (see add_sta LANforge CLI documentation, default is 0 (auto))")
-    parser.add_argument("--dut_bssid", type=str, help="DUT BSSID to which we expect to connect.")
+                        help="LANforge station-mode setting (see add_sta LANforge CLI documentation, default is 0 (auto))", default=0)
+    parser.add_argument("--dut_bssid", type=str, help="DUT BSSID to which we expect to connect.", default="MyAP")
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
 
     args = parser.parse_args()
