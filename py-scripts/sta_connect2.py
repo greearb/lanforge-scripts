@@ -415,16 +415,16 @@ def main():
 Example:
 ./sta_connect2.py --dest 192.168.100.209 --dut_ssid OpenWrt-2 --dut_bssid 24:F5:A2:08:21:6C
 """)
-    parser.add_argument("-d", "--dest", type=str, help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)")
+    parser.add_argument("-d", "--dest", type=str, help="address of the LANforge GUI machine (localhost is default)", default='localhost')
+    parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)", default=8080)
     parser.add_argument("-u", "--user", type=str, help="TBD: credential login/username")
     parser.add_argument("-p", "--passwd", type=str, help="TBD: credential password")
-    parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1")
-    parser.add_argument("--upstream_resource", type=str, help="LANforge Ethernet port resource ID to use, default is 1")
-    parser.add_argument("--upstream_port", type=str, help="LANforge Ethernet port name, default is eth2")
-    parser.add_argument("--radio", type=str, help="LANforge radio to use, default is wiphy0")
+    parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1", default=1)
+    parser.add_argument("--upstream_resource", type=str, help="LANforge Ethernet port resource ID to use, default is 1", default=1)
+    parser.add_argument("--upstream_port", type=str, help="LANforge Ethernet port name, default is eth2", default='eth2')
+    parser.add_argument("--radio", type=str, help="LANforge radio to use, default is wiphy0", default='wiphy0')
     parser.add_argument("--sta_mode", type=str,
-                        help="LANforge station-mode setting (see add_sta LANforge CLI documentation, default is 0 (auto))")
+                        help="LANforge station-mode setting (see add_sta LANforge CLI documentation, default is 0 (auto))", default=0)
     parser.add_argument("--dut_ssid", type=str, help="DUT SSID")
     parser.add_argument("--dut_security", type=str, help="DUT security: openLF, wpa, wpa2, wpa3")
     parser.add_argument("--dut_passwd", type=str, help="DUT PSK password.  Do not set for OPEN auth")
@@ -442,12 +442,13 @@ Example:
     parser.add_argument('--monitor_interval', help='How frequently you want to append to your database', default='5s')
 
     args = parser.parse_args()
-    if args.dest:
-        lfjson_host = args.dest
-    if args.port:
-        lfjson_port = args.port
 
-    staConnect = StaConnect2(lfjson_host, lfjson_port,
+    staConnect = StaConnect2(args.dest, args.port,
+                             _resource=args.resource,
+                             _upstream_resource=args.upstream_resource,
+                             _upstream_port=args.upstream_port,
+                             _radio=args.radio,
+                             _sta_mode=args.sta_mode,
                              debug_=True,
                              _influx_db=args.influx_db,
                              _influx_passwd=args.influx_passwd,
@@ -460,16 +461,6 @@ Example:
         staConnect.user = args.user
     if args.passwd:
         staConnect.passwd = args.passwd
-    if args.sta_mode:
-        staConnect.sta_mode = args.sta_mode
-    if args.upstream_resource:
-        staConnect.upstream_resource = args.upstream_resource
-    if args.upstream_port:
-        staConnect.upstream_port = args.upstream_port
-    if args.radio:
-        staConnect.radio = args.radio
-    if args.resource:
-        staConnect.resource = args.resource
     if args.dut_ssid:
         staConnect.dut_ssid = args.dut_ssid
     if args.dut_passwd:
