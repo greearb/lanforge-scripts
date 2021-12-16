@@ -66,7 +66,7 @@ class StaConnect2(Realm):
         self.sta_url_map = None  # defer construction
         self.upstream_url = None  # defer construction
         self.station_names = []
-        if _sta_name is not None:
+        if _sta_name:
             self.station_names = [_sta_name]
         self.sta_prefix = _sta_prefix
         self.bringup_time_sec = _bringup_time_sec
@@ -162,7 +162,7 @@ class StaConnect2(Realm):
             for sta_name in self.station_names:
                 sta_url = self.get_station_url(sta_name)
                 response = self.json_get(sta_url)
-                if (response is not None) and (response["interface"] is not None):
+                if (response) and (response["interface"]):
                     for station in self.station_names:
                         LFUtils.removePort(self.resource, station, self.lfclient_url)
             LFUtils.wait_until_ports_disappear(self.lfclient_url, self.station_names)
@@ -257,7 +257,7 @@ class StaConnect2(Realm):
                 station_info = self.json_get(sta_url + "?fields=port,ip,ap")
 
                 # LFUtils.debug_printer.pprint(station_info)
-                if (station_info is not None) and ("interface" in station_info):
+                if (station_info) and ("interface" in station_info):
                     if "ip" in station_info["interface"]:
                         ip = station_info["interface"]["ip"]
                     if "ap" in station_info["interface"]:
@@ -442,9 +442,9 @@ Example:
     parser.add_argument('--monitor_interval', help='How frequently you want to append to your database', default='5s')
 
     args = parser.parse_args()
-    if args.dest is not None:
+    if args.dest:
         lfjson_host = args.dest
-    if args.port is not None:
+    if args.port:
         lfjson_port = args.port
 
     staConnect = StaConnect2(lfjson_host, lfjson_port,
@@ -456,29 +456,29 @@ Example:
                              _exit_on_fail=True,
                              _exit_on_error=False)
 
-    if args.user is not None:
+    if args.user:
         staConnect.user = args.user
-    if args.passwd is not None:
+    if args.passwd:
         staConnect.passwd = args.passwd
-    if args.sta_mode is not None:
+    if args.sta_mode:
         staConnect.sta_mode = args.sta_mode
-    if args.upstream_resource is not None:
+    if args.upstream_resource:
         staConnect.upstream_resource = args.upstream_resource
-    if args.upstream_port is not None:
+    if args.upstream_port:
         staConnect.upstream_port = args.upstream_port
-    if args.radio is not None:
+    if args.radio:
         staConnect.radio = args.radio
-    if args.resource is not None:
+    if args.resource:
         staConnect.resource = args.resource
-    if args.dut_ssid is not None:
+    if args.dut_ssid:
         staConnect.dut_ssid = args.dut_ssid
-    if args.dut_passwd is not None:
+    if args.dut_passwd:
         staConnect.dut_passwd = args.dut_passwd
-    if args.dut_bssid is not None:
+    if args.dut_bssid:
         staConnect.dut_bssid = args.dut_bssid
-    if args.dut_security is not None:
+    if args.dut_security:
         staConnect.dut_security = args.dut_security
-    if (args.prefix is not None) or (args.prefix != "sta"):
+    if args.prefix or (args.prefix != "sta"):
         staConnect.sta_prefix = args.prefix
     staConnect.station_names = ["%s0000" % args.prefix]
     staConnect.bringup_time_sec = args.bringup_time
