@@ -278,7 +278,7 @@ class TTLSTest(Realm):
                                            debug=self.debug)
 
     def pre_cleanup(self):
-        self.cx_profile.cleanup_prefix()
+        self.l3_cx_obj_udp.cx_profile.cleanup_prefix()
         # do not clean up station if existed prior to test
         if not self.use_existing_sta:
             for sta in self.sta_list:
