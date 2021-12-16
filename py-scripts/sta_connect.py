@@ -64,10 +64,8 @@ class StaConnect(Realm):
         self.cleanup_on_exit = _cleanup_on_exit
         self.sta_url_map = None  # defer construction
         self.upstream_url = None  # defer construction
-        self.station_names = []
+        self.station_names = _sta_name
         self.cx_names = {}
-        if _sta_name is not None:
-            self.station_names = [_sta_name]
         self.resulting_stations = {}
         self.resulting_endpoints = {}
 
@@ -169,7 +167,7 @@ class StaConnect(Realm):
         self.clear_test_results()
         self.check_connect()
         eth1IP = self.json_get(self.get_upstream_url())
-        if eth1IP is None:
+        if not eth1IP:
             self._fail("Unable to query %s, bye" % self.upstream_port, True)
             return False
         if eth1IP['interface']['ip'] == "0.0.0.0":
@@ -179,8 +177,8 @@ class StaConnect(Realm):
         for sta_name in self.station_names:
             sta_url = self.get_station_url(sta_name)
             response = self.json_get(sta_url)
-            if response is not None:
-                if response["interface"] is not None:
+            if response:
+                if response["interface"]:
                     print("removing old station")
                     if self.port_exists(sta_name):
                         self.rm_port(sta_name)
@@ -246,7 +244,7 @@ class StaConnect(Realm):
                 station_info = self.json_get(sta_url + "?fields=port,ip,ap")
 
                 # LFUtils.debug_printer.pprint(station_info)
-                if (station_info is not None) and ("interface" in station_info):
+                if station_info and "interface" in station_info:
                     if "ip" in station_info["interface"]:
                         ip = station_info["interface"]["ip"]
                     if "ap" in station_info["interface"]:
@@ -491,8 +489,6 @@ class StaConnect(Realm):
 
 
 def main():
-    lfjson_host = "localhost"
-    lfjson_port = 8080
     parser = Realm.create_basic_argparse(
         prog="sta_connect.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -500,7 +496,7 @@ def main():
 Example:
 ./sta_connect.py --mgr 192.168.100.209 --dut_ssid OpenWrt-2 --dut_bssid 24:F5:A2:08:21:6C
 """)
-    parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)")
+    parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)", default=8080)
     parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1")
     parser.add_argument("--upstream_resource", type=str, help="LANforge Ethernet port resource ID to use, default is 1")
     parser.add_argument("--sta_mode", type=str,
@@ -510,29 +506,12 @@ Example:
 
     args = parser.parse_args()
     monitor_interval = Realm.parse_time(args.test_duration).total_seconds()
-    if args.mgr is not None:
-        lfjson_host = args.mgr
-    if args.port is not None:
-        lfjson_port = args.port
 
-    staConnect = StaConnect(lfjson_host, lfjson_port, _upstream_port=args.upstream_port, _runtime_sec=monitor_interval)
-    staConnect.station_names = ["sta0000"]
-    if args.sta_mode is not None:
-        staConnect.sta_mode = args.sta_mode
-    if args.upstream_resource is not None:
-        staConnect.upstream_resource = args.upstream_resource
-    if args.radio is not None:
-        staConnect.radio = args.radio
-    if args.resource is not None:
-        staConnect.resource = args.resource
-    if args.passwd is not None:
-        staConnect.dut_passwd = args.passwd
-    if args.dut_bssid is not None:
-        staConnect.dut_bssid = args.dut_bssid
-    if args.ssid is not None:
-        staConnect.dut_ssid = args.ssid
-    if args.security is not None:
-        staConnect.dut_security = args.security
+    staConnect = StaConnect(args.mgr, args.port, _upstream_port=args.upstream_port, _runtime_sec=monitor_interval,
+                            _sta_mode=args.sta_mode, _upstream_resource=args.upstream_resource,
+                            _radio=args.radio, _resource=args.resource, _passwd=args.passwd, _dut_passwd=args.passwd,
+                            _dut_bssid=args.dut_bssid, _dut_ssid=args.ssid, _dut_security=args.security,
+                            _sta_name=["sta0000"])
 
     staConnect.run()
 
