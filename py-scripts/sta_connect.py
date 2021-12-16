@@ -174,13 +174,8 @@ class StaConnect(Realm):
             return False
 
         for sta_name in self.station_names:
-            sta_url = self.get_station_url(sta_name)
-            response = self.json_get(sta_url)
-            if response:
-                if response["interface"]:
-                    print("removing old station")
-                    if self.port_exists(sta_name):
-                        self.rm_port(sta_name)
+            if self.port_exists(sta_name, debug=False):
+                self.rm_port(sta_name, debug_=False)
         self.wait_until_ports_disappear(self.station_names)
 
         # Create stations and turn dhcp on
