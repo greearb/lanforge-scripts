@@ -81,16 +81,16 @@ class StaConnect(Realm):
         self.desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
 
     def get_station_url(self, sta_name_=None):
-        if sta_name_ is None:
+        if not sta_name_:
             raise ValueError("get_station_url wants a station name")
-        if self.sta_url_map is None:
+        if not self.sta_url_map:
             self.sta_url_map = {}
             for sta_name in self.station_names:
                 self.sta_url_map[sta_name] = "port/1/%s/%s" % (self.resource, sta_name)
         return self.sta_url_map[sta_name_]
 
     def get_upstream_url(self):
-        if self.upstream_url is None:
+        if not self.upstream_url:
             self.upstream_url = "port/1/%s/%s" % (self.upstream_resource, self.upstream_port)
         return self.upstream_url
 
@@ -109,7 +109,7 @@ class StaConnect(Realm):
     def num_associated(self, bssid):
         counter = 0
         # print("there are %d results" % len(self.station_results))
-        if (self.station_results is None) or (len(self.station_results) < 1):
+        if not self.station_results or (len(self.station_results) < 1):
             self.get_failed_result_list()
         for eid, record in self.station_results.items():
             # print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
@@ -145,17 +145,16 @@ class StaConnect(Realm):
 
     @staticmethod
     def add_named_flags(desired_list, command_ref):
-        if desired_list is None:
+        if not desired_list:
             raise ValueError("addNamedFlags wants a list of desired flag names")
         if len(desired_list) < 1:
-            print("addNamedFlags: empty desired list")
-            return 0
-        if (command_ref is None) or (len(command_ref) < 1):
+            raise ValueError("addNamedFlags: empty desired list")
+        if not command_ref or (len(command_ref) < 1):
             raise ValueError("addNamedFlags wants a maps of flag values")
 
         result = 0
         for name in desired_list:
-            if (name is None) or (name == ""):
+            if not name:
                 continue
             if name not in command_ref:
                 raise ValueError("flag %s not in map" % name)
