@@ -446,7 +446,7 @@ Example:
     if args.upstream_resource:
         upstream_resource = args.upstream_resource
     else:
-        upstream_resource = args.upstream_port[1]
+        upstream_resource = upstream_port[1]
 
     staConnect = StaConnect2(args.dest, args.port,
                              _resource=args.resource,
