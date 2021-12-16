@@ -420,8 +420,8 @@ Example:
     parser.add_argument("-u", "--user", type=str, help="TBD: credential login/username")
     parser.add_argument("-p", "--passwd", type=str, help="TBD: credential password")
     parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1", default=1)
-    parser.add_argument("--upstream_resource", type=str, help="LANforge Ethernet port resource ID to use, default is 1", default=1)
-    parser.add_argument("--upstream_port", type=str, help="LANforge Ethernet port name, default is eth2", default='eth2')
+    parser.add_argument("--upstream_resource", type=str, help="LANforge Ethernet port resource ID to use, default is 1", default=None)
+    parser.add_argument("--upstream_port", type=str, help="LANforge Ethernet port name, default is eth2", default='1.1.eth2')
     parser.add_argument("--radio", type=str, help="LANforge radio to use, default is wiphy0", default='wiphy0')
     parser.add_argument("--sta_mode", type=str,
                         help="LANforge station-mode setting (see add_sta LANforge CLI documentation, default is 0 (auto))", default=0)
@@ -442,11 +442,16 @@ Example:
     parser.add_argument('--monitor_interval', help='How frequently you want to append to your database', default='5s')
 
     args = parser.parse_args()
+    upstream_port = LFUtils.name_to_eid(args.upstream_port)
+    if args.upstream_resource:
+        upstream_resource = args.upstream_resource
+    else:
+        upstream_resource = args.upstream_port[1]
 
     staConnect = StaConnect2(args.dest, args.port,
                              _resource=args.resource,
-                             _upstream_resource=args.upstream_resource,
-                             _upstream_port=args.upstream_port,
+                             _upstream_resource=upstream_resource,
+                             _upstream_port=upstream_port[2],
                              _radio=args.radio,
                              _sta_mode=args.sta_mode,
                              debug_=True,
