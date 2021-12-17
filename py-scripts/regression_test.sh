@@ -345,6 +345,7 @@ else
                    --disable_flag ht160_enable \
                    --debug"
       #recordinflux.py
+      "./run_cv_scenario.py --lfmgr $MGR --lanforge_db 'handsets' --cv_test 'WiFi Capacity' --test_profile 'test-20' --cv_scenario ct-us-001"
       "./rvr_scenario.py --lfmgr $MGR --lanforge_db 'handsets' --cv_test Dataplane --test_profile http --cv_scenario ct-us-001"
       #scenario.py
       #./sta_connect_bssid_mac.py
