@@ -826,8 +826,8 @@ class Realm(LFCliBase):
         link = self.lfclient_url + link
         info = ()
 
-    def new_station_profile(self):
-        return StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug, up=False)
+    def new_station_profile(self, ipv6=False):
+        return StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug, ipv6=ipv6, up=False)
 
     def new_multicast_profile(self):
         return MULTICASTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug, report_timer_=3000)
