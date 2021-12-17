@@ -80,13 +80,12 @@ class ConnectTest(Realm):
         self.ipv6 = _ipv6
         self.num_stations = _num_stations
 
-        self.station_profile = self.new_station_profile()
+        self.station_profile = self.new_station_profile(ipv6=self.ipv6)
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.password
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
-        self.station_profile.ipv6 = self.ipv6
         self.station_profile.mode = 0
         if self.debug:
             print("----- Station List ----- ----- ----- ----- ----- ----- \n")
