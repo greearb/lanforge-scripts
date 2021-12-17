@@ -719,6 +719,15 @@
                 "args_list":["--mgr LF_MGR_IP --cxs --sta"
                 ]
             },
+            "lf_help_check":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"lf_help_check.bash",
+                "args":"",
+                "args_list":[
+                    " "
+                ]
+            },            
             "lf_report_test":{
                 "enabled":"TRUE",
                 "load_db":"NONE",
