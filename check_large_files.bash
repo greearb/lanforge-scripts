@@ -339,6 +339,21 @@ clean_old_kernels() {
             echo "/lib/modules/$f"
         done | xargs rm -rf
     fi
+    # check to see if there are 50_candela-x files that
+    # lack a /lib/modules directory
+    local fifty_files=(`ls /etc/grub.d/50_candela_*`)
+    local k_v
+    for file in "${fifty_files[@]}"; do
+        k_v=${file#/etc/grub.d/50_candela_}
+        #echo "K_V[$k_v]"
+        if [ ! -d /lib/modules/$k_v ]; then
+            echo "/lib/modules/$k_v not found, removing /etc/grub.d/50_candela_$k_v"
+            rm -f "/etc/grub.d/50_candela_${k_v}"
+        fi
+    done
+
+    grub2-mkconfig -o /boot/grub2/grub.cfg
+
     if [ -d "/boot2" ]; then
         rm -rf /boot2/*
         rsync -a /boot/. /boot2/

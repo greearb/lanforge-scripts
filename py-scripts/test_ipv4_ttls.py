@@ -271,6 +271,8 @@ class TTLSTest(Realm):
         self.collect_endp_stats(self.l3_cx_obj_udp.cx_profile.created_cx, traffic_type="UDP")
 
     def cleanup(self, sta_list):
+        self.l3_cx_obj_udp.cx_profile.cleanup_prefix()
+        self.l3_cx_obj_tcp.cx_profile.cleanup_prefix()
         self.station_profile.cleanup(sta_list)
         if self.vap:
             self.vap_profile.cleanup(1)
@@ -278,9 +280,9 @@ class TTLSTest(Realm):
                                            debug=self.debug)
 
     def pre_cleanup(self):
-        self.cx_profile.cleanup_prefix()
+        self.l3_cx_obj_udp.cx_profile.cleanup_prefix()
         # do not clean up station if existed prior to test
-        if not self.use_existing_sta:
+        if not self.l3_cx_obj_udp.use_existing_sta:
             for sta in self.sta_list:
                 self.rm_port(sta, check_exists=True, debug_=False)
 

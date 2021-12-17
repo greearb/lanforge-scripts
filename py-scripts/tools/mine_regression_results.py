@@ -30,22 +30,32 @@ class MineRegression:
             ['IP', 'Python version', 'LANforge version', 'OS Version', 'Hostname', 'Python Environment']).reset_index(drop=True)
         errors = list()
         lanforge_errors = list()
+        partial_failures = list()
+        major_errors = list()
+        successes = list()
         for index in system_variations.index:
             variation = system_variations.iloc[index]
-            result = self.df.loc[self.df[['Python version', 'LANforge version', 'OS Version', 'Python Environment', 'IP']].isin(dict(
-                variation).values()).all(axis=1), :].dropna(subset=['STDERR']).shape[0]
+            system = self.df.loc[self.df[['Python version', 'LANforge version', 'OS Version', 'Python Environment', 'IP']].isin(dict(
+                variation).values()).all(axis=1), :]
+            result = system.dropna(subset=['STDERR']).shape[0]
             errors.append(result)
 
-            lanforge_result = self.df.loc[self.df[['Python version', 'LANforge version', 'OS Version', 'Python Environment', 'IP']].isin(dict(
-                variation).values()).all(axis=1), :].dropna(subset=['LANforge Error']).shape[0]
+            lanforge_result = system.dropna(subset=['LANforge Error']).shape[0]
+            partial_failures.append(system[system['Status'] == 'Partial Failure'].shape[0])
+            major_errors.append(system[system['Status'] == 'ERROR'].shape[0])
             lanforge_errors.append(lanforge_result)
-        system_variations['errors'] = errors
+            successes.append(system[system['Status'] == 'Success'].shape[0])
+        system_variations['Successes'] = successes
+        system_variations['Errors'] = errors
         system_variations['LANforge errors'] = lanforge_errors
-        system_variations['Python errors'] = system_variations['errors'] - system_variations['LANforge errors']
+        system_variations['Python errors'] = system_variations['Errors'] - system_variations['LANforge errors']
+        system_variations['Partial Failures'] = partial_failures
+        system_variations['Major Errors'] = major_errors
+        system_variations
         if self.save_csv:
             system_variations.to_csv('regression_suite_results.csv')
         else:
-            print(system_variations.sort_values('errors'))
+            print(system_variations.sort_values('Successes'))
 
 
 def main():
@@ -56,8 +66,7 @@ def main():
     args = parser.parse_args()
 
     if args.ip is None:
-        args.ip = ['192.168.92.18', '192.168.92.12', '192.168.93.51', '192.168.92.15']
-    #args.ip = ['192.168.93.51']
+        args.ip = ['192.168.92.18', '192.168.92.12', '192.168.93.51', '192.168.92.15', '192.168.100.184', '192.168.100.30']
     Miner = MineRegression(system_information=args.system_info,
                            save_csv=args.save_csv,
                            ips=args.ip)

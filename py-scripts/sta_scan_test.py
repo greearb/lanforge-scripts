@@ -126,8 +126,7 @@ class StaScan(Realm):
                         print("%s\t%s\t%s" % (info['bss'], info['signal'], info['ssid']))
 
     def pre_cleanup(self):
-        for sta in self.sta_list:
-            self.rm_port(sta, check_exists=True)
+        self.station_profile.cleanup(self.sta_list)
 
     def cleanup(self):
         self.station_profile.cleanup()

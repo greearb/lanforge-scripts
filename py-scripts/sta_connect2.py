@@ -66,7 +66,7 @@ class StaConnect2(Realm):
         self.sta_url_map = None  # defer construction
         self.upstream_url = None  # defer construction
         self.station_names = []
-        if _sta_name is not None:
+        if _sta_name:
             self.station_names = [_sta_name]
         self.sta_prefix = _sta_prefix
         self.bringup_time_sec = _bringup_time_sec
@@ -162,7 +162,7 @@ class StaConnect2(Realm):
             for sta_name in self.station_names:
                 sta_url = self.get_station_url(sta_name)
                 response = self.json_get(sta_url)
-                if (response is not None) and (response["interface"] is not None):
+                if (response) and (response["interface"]):
                     for station in self.station_names:
                         LFUtils.removePort(self.resource, station, self.lfclient_url)
             LFUtils.wait_until_ports_disappear(self.lfclient_url, self.station_names)
@@ -257,7 +257,7 @@ class StaConnect2(Realm):
                 station_info = self.json_get(sta_url + "?fields=port,ip,ap")
 
                 # LFUtils.debug_printer.pprint(station_info)
-                if (station_info is not None) and ("interface" in station_info):
+                if (station_info) and ("interface" in station_info):
                     if "ip" in station_info["interface"]:
                         ip = station_info["interface"]["ip"]
                     if "ap" in station_info["interface"]:
@@ -415,16 +415,16 @@ def main():
 Example:
 ./sta_connect2.py --dest 192.168.100.209 --dut_ssid OpenWrt-2 --dut_bssid 24:F5:A2:08:21:6C
 """)
-    parser.add_argument("-d", "--dest", type=str, help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)")
+    parser.add_argument("-d", "--dest", type=str, help="address of the LANforge GUI machine (localhost is default)", default='localhost')
+    parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)", default=8080)
     parser.add_argument("-u", "--user", type=str, help="TBD: credential login/username")
     parser.add_argument("-p", "--passwd", type=str, help="TBD: credential password")
-    parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1")
-    parser.add_argument("--upstream_resource", type=str, help="LANforge Ethernet port resource ID to use, default is 1")
-    parser.add_argument("--upstream_port", type=str, help="LANforge Ethernet port name, default is eth2")
-    parser.add_argument("--radio", type=str, help="LANforge radio to use, default is wiphy0")
+    parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1", default=1)
+    parser.add_argument("--upstream_resource", type=str, help="LANforge Ethernet port resource ID to use, default is 1", default=None)
+    parser.add_argument("--upstream_port", type=str, help="LANforge Ethernet port name, default is eth2", default='1.1.eth2')
+    parser.add_argument("--radio", type=str, help="LANforge radio to use, default is wiphy0", default='wiphy0')
     parser.add_argument("--sta_mode", type=str,
-                        help="LANforge station-mode setting (see add_sta LANforge CLI documentation, default is 0 (auto))")
+                        help="LANforge station-mode setting (see add_sta LANforge CLI documentation, default is 0 (auto))", default=0)
     parser.add_argument("--dut_ssid", type=str, help="DUT SSID")
     parser.add_argument("--dut_security", type=str, help="DUT security: openLF, wpa, wpa2, wpa3")
     parser.add_argument("--dut_passwd", type=str, help="DUT PSK password.  Do not set for OPEN auth")
@@ -442,12 +442,18 @@ Example:
     parser.add_argument('--monitor_interval', help='How frequently you want to append to your database', default='5s')
 
     args = parser.parse_args()
-    if args.dest is not None:
-        lfjson_host = args.dest
-    if args.port is not None:
-        lfjson_port = args.port
+    upstream_port = LFUtils.name_to_eid(args.upstream_port)
+    if args.upstream_resource:
+        upstream_resource = args.upstream_resource
+    else:
+        upstream_resource = upstream_port[1]
 
-    staConnect = StaConnect2(lfjson_host, lfjson_port,
+    staConnect = StaConnect2(args.dest, args.port,
+                             _resource=args.resource,
+                             _upstream_resource=upstream_resource,
+                             _upstream_port=upstream_port[2],
+                             _radio=args.radio,
+                             _sta_mode=args.sta_mode,
                              debug_=True,
                              _influx_db=args.influx_db,
                              _influx_passwd=args.influx_passwd,
@@ -456,29 +462,19 @@ Example:
                              _exit_on_fail=True,
                              _exit_on_error=False)
 
-    if args.user is not None:
+    if args.user:
         staConnect.user = args.user
-    if args.passwd is not None:
+    if args.passwd:
         staConnect.passwd = args.passwd
-    if args.sta_mode is not None:
-        staConnect.sta_mode = args.sta_mode
-    if args.upstream_resource is not None:
-        staConnect.upstream_resource = args.upstream_resource
-    if args.upstream_port is not None:
-        staConnect.upstream_port = args.upstream_port
-    if args.radio is not None:
-        staConnect.radio = args.radio
-    if args.resource is not None:
-        staConnect.resource = args.resource
-    if args.dut_ssid is not None:
+    if args.dut_ssid:
         staConnect.dut_ssid = args.dut_ssid
-    if args.dut_passwd is not None:
+    if args.dut_passwd:
         staConnect.dut_passwd = args.dut_passwd
-    if args.dut_bssid is not None:
+    if args.dut_bssid:
         staConnect.dut_bssid = args.dut_bssid
-    if args.dut_security is not None:
+    if args.dut_security:
         staConnect.dut_security = args.dut_security
-    if (args.prefix is not None) or (args.prefix != "sta"):
+    if args.prefix or (args.prefix != "sta"):
         staConnect.sta_prefix = args.prefix
     staConnect.station_names = ["%s0000" % args.prefix]
     staConnect.bringup_time_sec = args.bringup_time

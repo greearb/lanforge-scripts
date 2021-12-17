@@ -557,7 +557,8 @@ class StationProfile:
             station_shelf = station_eid[0]
             station_resource = station_eid[1]
             station_port = station_eid[2]
-            self.add_sta_data["radio"] = radio
+            radio_eid = self.local_realm.name_to_eid(radio)
+            self.add_sta_data["radio"] = radio_eid[2]
             self.add_sta_data["shelf"] = station_shelf
             self.add_sta_data["resource"] = station_resource
             self.add_sta_data["sta_name"] = station_port
