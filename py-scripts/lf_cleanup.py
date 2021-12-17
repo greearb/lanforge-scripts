@@ -43,6 +43,7 @@ class lf_clean(Realm):
         self.cxs_done = False
         self.endp_done = False
         self.sta_done = False
+        self.br_done = False
 
     def cxs_clean(self):
         still_looking_cxs = True
@@ -177,6 +178,48 @@ class lf_clean(Realm):
             self.sta_done = True
         return still_looking_sta
 
+    def bridge_clean(self):
+        still_looking_br = True
+        iterations_br = 0
+        while still_looking_br and iterations_br <= 10:
+            iterations_br += 1
+            print("bridge_clean: iterations_br: {iterations_br}".format(iterations_br=iterations_br))
+            try:
+                br_json = super().json_get(
+                    "port/1/1/list?field=alias")['interfaces']
+            except TypeError:
+                br_json = None
+
+            # get and remove current stations
+            if br_json is not None:
+                # print(br_json)
+                print("Removing old bridges ")
+                for name in list(br_json):
+                    for alias in list(name):
+                        if 'br' in alias:
+                            print(alias)
+                            info = self.name_to_eid(alias)
+                            req_url = "cli-json/rm_vlan"
+                            data = {
+                                "shelf": info[0],
+                                "resource": info[1],
+                                "port": info[2]
+                            }
+                            # print(data)
+                            super().json_post(req_url, data)
+                            time.sleep(.5)
+                        if ('br' not in alias):
+                            still_looking_br = False
+                time.sleep(1)
+
+            else:
+                print("No bridges found to cleanup")
+                still_looking_br = False
+        print("clean_sta still_looking_br {br_looking}".format(br_looking=still_looking_br))
+        if not still_looking_br:
+            self.br_done = True
+        return still_looking_br
+
     '''
         1: delete cx
         2: delete endp
@@ -191,6 +234,7 @@ class lf_clean(Realm):
             still_looking_endp = self.endp_clean()
             print("clean_cxs: still_looking_cxs {looking_cxs} still_looking_endp {looking_endp}".format(
                 looking_cxs=still_looking_cxs, looking_endp=still_looking_endp))
+
         if self.clean_endp and not self.clean_cxs:
             still_looking_endp = self.endp_clean()
             print("clean_endp: still_looking_endp {looking_endp}".format(looking_endp=still_looking_endp))
@@ -198,6 +242,10 @@ class lf_clean(Realm):
         if self.clean_sta:
             still_looking_sta = self.sta_clean()
             print("clean_sta: still_looking_sta {looking_sta}".format(looking_sta=still_looking_sta))
+
+        if self.clean_br:
+            still_looking_br = self.bridge_clean()
+            print("clean_br: still_looking_br {looking_br}".format(looking_br=still_looking_br))
 
 
 def main():
@@ -238,6 +286,10 @@ python3 ./lf_clean.py --mgr MGR
         '--sta',
         help="--sta, this will clear all the stations",
         action='store_true')
+    parser.add_argument(
+        '--br',
+        help="--br, this will clear all the bridges",
+        action='store_true')
 
     args = parser.parse_args()
     if args.cxs or args.endp or args.sta:
@@ -251,11 +303,14 @@ python3 ./lf_clean.py --mgr MGR
             clean.endp_clean()
         if args.sta:
             clean.sta_clean()
+        if args.br:
+            clean.bridge_clean()
+
         print("Clean done")
         # print("Clean  cxs_done {cxs_done} endp_done {endp_done} sta_done {sta_done}"
         #    .format(cxs_done=clean.cxs_done,endp_done=clean.endp_done,sta_done=clean.sta_done))
     else:
-        print("please add option of --cxs ,--endp, or --sta to clean")
+        print("please add option of --cxs ,--endp, --sta , --br to clean")
 
 
 if __name__ == "__main__":
