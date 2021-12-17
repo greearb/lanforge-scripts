@@ -96,8 +96,23 @@ class IPVariableTime(Realm):
         self.radio = radio
         self.mode = mode
         self.ap = ap
+        self.ipv6 = ipv6
+        self.report_file = report_file
+        self.output_format = output_format
+        self.layer3_cols = layer3_cols
+        self.port_mgr_cols = port_mgr_cols
+        self.monitor_interval = monitor_interval
+        self.influx_host = influx_host
+        self.influx_port = influx_port
+        self.influx_org = influx_org
+        self.influx_token = influx_token
+        self.influx_bucket = influx_bucket
+        self.influx_tag = influx_tag
+        self.compared_report = compared_report
         self.traffic_type = traffic_type
         self.number_template = number_template
+        self.name_prefix = name_prefix
+        self.test_duration = test_duration
         self.debug = _debug_on
         # self.json_post("/cli-json/set_resource", {
         #     "shelf":1,
@@ -113,6 +128,7 @@ class IPVariableTime(Realm):
         self.station_profile.ssid_pass = self.password
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
+        self.station_profile.ipv6 = self.ipv6
         self.station_profile.debug = self.debug
         self.station_profile.use_ht160 = use_ht160
         if self.station_profile.use_ht160:
@@ -123,24 +139,9 @@ class IPVariableTime(Realm):
         if self.use_existing_sta:
             self.station_profile.station_names = self.sta_list
 
-        self.name_prefix = name_prefix
-        self.test_duration = test_duration
         self.cx_profile = self.new_l3_cx_profile()
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
-        self.ipv6 = ipv6
-        self.report_file = report_file
-        self.output_format = output_format
-        self.layer3_cols = layer3_cols
-        self.port_mgr_cols = port_mgr_cols
-        self.monitor_interval = monitor_interval
-        self.influx_host = influx_host
-        self.influx_port = influx_port
-        self.influx_org = influx_org
-        self.influx_token = influx_token
-        self.influx_bucket = influx_bucket
-        self.influx_tag = influx_tag
-        self.compared_report = compared_report
         self.cx_profile.name_prefix = self.name_prefix
         self.cx_profile.side_a_min_bps = side_a_min_rate
         self.cx_profile.side_a_max_bps = side_a_max_rate
