@@ -6,6 +6,7 @@ import sys
 import os
 import importlib
 import time
+import argparse
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -54,6 +55,22 @@ class AttenuatorSerial(LFCliBase):
 
         return ser_no_list
 def main():
+    parser = argparse.ArgumentParser(
+        prog='attenuator_serial.py',
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+ Useful Information:
+ this file is used in tip for getting serial number of attenuators,
+            ''',
+
+        description='''
+attenuator_serial.py.py:
+    this file is used in tip for getting serial number of attenuators,
+        ''')
+
+    # used for showing help 
+    parser.parse_args()
+
     obj = AttenuatorSerial(lfclient_host="localhost", lfclient_port=8802)
     x = obj.show()
     print("out",x)
