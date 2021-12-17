@@ -122,13 +122,12 @@ class IPVariableTime(Realm):
         #     "max_station_bringup": 6
         # })
 
-        self.station_profile = self.new_station_profile()
+        self.station_profile = self.new_station_profile(ipv6=self.ipv6)
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
         self.station_profile.ssid_pass = self.password
         self.station_profile.security = self.security
         self.station_profile.number_template_ = self.number_template
-        self.station_profile.ipv6 = self.ipv6
         self.station_profile.debug = self.debug
         self.station_profile.use_ht160 = use_ht160
         if self.station_profile.use_ht160:
