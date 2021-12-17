@@ -71,16 +71,16 @@ class HttpDownload(Realm):
                                                        end_id_=self.num_sta - 1, padding_number_=10000,
                                                        radio=self.twog_radio)]
         elif self.bands == "Both":
-            self.radio = [self.fiveg_radio, self.twog_radio]
+            self.radio = [self.twog_radio, self.fiveg_radio]
             print(self.radio)
             # self.num_sta = self.num_sta // 2
             self.station_list = [
+                                 LFUtils.portNameSeries(prefix_="twog_sta", start_id_=self.sta_start_id,
+                                                        end_id_=self.num_sta - 1, padding_number_=10000,
+                                                        radio=self.twog_radio),
                                  LFUtils.portNameSeries(prefix_="fiveg_sta", start_id_=self.sta_start_id,
                                                         end_id_=self.num_sta - 1, padding_number_=10000,
-                                                        radio=self.fiveg_radio),
-                                 LFUtils.portNameSeries(prefix_="twog_sta", start_id_=self.sta_start_id,
-                                                       end_id_=self.num_sta - 1, padding_number_=10000,
-                                                       radio=self.twog_radio)
+                                                        radio=self.fiveg_radio)
                                  ]
 
     def precleanup(self):
@@ -220,7 +220,7 @@ class HttpDownload(Realm):
         return output
 
     def download_time_in_sec(self, result_data):
-        self.resullt_data = result_data
+        self.result_data = result_data
         download_time = dict.fromkeys(result_data.keys())
         for i in download_time:
             try:
@@ -262,7 +262,7 @@ class HttpDownload(Realm):
         return dataset
 
     def speed_in_Mbps(self, result_data):
-        self.resullt_data = result_data
+        self.result_data = result_data
         speed = dict.fromkeys(result_data.keys())
         for i in speed:
             try:
@@ -304,149 +304,66 @@ class HttpDownload(Realm):
         return dataset
 
     def summary_calculation(self, result_data, bands, threshold_5g, threshold_2g, threshold_both):
-        self.resullt_data = result_data
-        x1 = []
+        self.result_data = result_data
+
+        avg_dl_time = []
         html_struct = dict.fromkeys(list(result_data.keys()))
         for fcc in list(result_data.keys()):
             fcc_type = result_data[fcc]["avg"]
-            print(fcc_type)
             for i in fcc_type:
-                x1.append(i)
-            # print(x)
-        y11 = []
-        for i in x1:
+                avg_dl_time.append(i)
+
+        avg_dl_time_per_thou = []
+        for i in avg_dl_time:
             i = i / 1000
-            y11.append(i)
-        # print(y)
-        z11 = []
-        for i in y11:
+            avg_dl_time_per_thou.append(i)
+
+        avg_time_rounded = []
+        for i in avg_dl_time_per_thou:
             i = str(round(i, 1))
-            z11.append(i)
-        print(z11)
+            avg_time_rounded.append(i)
+
         pass_fail_list = []
-        # print(list(result_data.keys()))
         sumry2 = []
         sumry5 = []
         sumryB = []
         data = []
-        if bands == ["5G", "2.4G", "Both"]:
-            print("yes")
-            # 5G
-            if float(z11[0]) == 0.0 or float(z11[0]) > float(threshold_5g):
-                print("FAIL")
-                pass_fail_list.append("FAIL")
-                sumry5.append("FAIL")
-            elif float(z11[0]) < float(threshold_5g):
-                print("PASS")
-                pass_fail_list.append("PASS")
-                sumry5.append("PASS")
-            # 2.4g
-            if float(z11[1]) == 0.0 or float(z11[1]) > float(threshold_2g):
-                var = "FAIL"
-                pass_fail_list.append(var)
-                sumry2.append("FAIL")
-            elif float(z11[1]) < float(threshold_2g):
-                pass_fail_list.append("PASS")
-                sumry2.append("PASS")
-            # BOTH
-            if float(z11[2]) == 0.0 or float(z11[2]) > float(threshold_both):
-                var = "FAIL"
-                pass_fail_list.append(var)
-                sumryB.append("FAIL")
-            elif float(z11[2]) < float(threshold_both):
-                pass_fail_list.append("PASS")
-                sumryB.append("PASS")
 
-            data.append(','.join(sumry5))
-            data.append(','.join(sumry2))
-            data.append(','.join(sumryB))
+        for band in range(len(bands)):
+            if bands[band] == "2.4G":
+                # 2.4G
+                if float(avg_time_rounded[band]) == 0.0 or float(avg_time_rounded[band]) > float(threshold_2g):
+                    var = "FAIL"
+                    pass_fail_list.append(var)
+                    sumry2.append("FAIL")
+                elif float(avg_time_rounded[band]) < float(threshold_2g):
+                    pass_fail_list.append("PASS")
+                    sumry2.append("PASS")
+                data.append(','.join(sumry2))
 
-        elif bands == ['5G']:
-            if float(z11[0]) == 0.0 or float(z11[0]) > float(threshold_5g):
-                print("FAIL")
-                pass_fail_list.append("FAIL")
-                sumry5.append("FAIL")
-            elif float(z11[0]) < float(threshold_5g):
-                print("PASS")
-                pass_fail_list.append("PASS")
-                sumry5.append("PASS")
-            data.append(','.join(sumry5))
+            elif bands[band] == "5G":
+                # 5G
+                if float(avg_time_rounded[band]) == 0.0 or float(avg_time_rounded[band]) > float(threshold_5g):
+                    print("FAIL")
+                    pass_fail_list.append("FAIL")
+                    sumry5.append("FAIL")
+                elif float(avg_time_rounded[band]) < float(threshold_5g):
+                    print("PASS")
+                    pass_fail_list.append("PASS")
+                    sumry5.append("PASS")
+                data.append(','.join(sumry5))
 
-        elif bands == ['2.4G']:
-            if float(z11[0]) == 0.0 or float(z11[0]) > float(threshold_2g):
-                var = "FAIL"
-                pass_fail_list.append(var)
-                sumry2.append("FAIL")
-            elif float(z11[0]) < float(threshold_2g):
-                pass_fail_list.append("PASS")
-                sumry2.append("PASS")
-            data.append(','.join(sumry2))
-        elif bands == ["Both"]:
-            if float(z11[0]) == 0.0 or float(z11[0]) > float(threshold_both):
-                var = "FAIL"
-                pass_fail_list.append(var)
-                sumryB.append("FAIL")
-            elif float(z11[0]) < float(threshold_both):
-                pass_fail_list.append("PASS")
-                sumryB.append("PASS")
-            data.append(','.join(sumryB))
-        elif bands == ['5G', '2.4G']:
-            if float(z11[0]) == 0.0 or float(z11[0]) > float(threshold_5g):
-                print("FAIL")
-                pass_fail_list.append("FAIL")
-                sumry5.append("FAIL")
-            elif float(z11[0]) < float(threshold_5g):
-                print("PASS")
-                pass_fail_list.append("PASS")
-                sumry5.append("PASS")
-            # 2.4g
-            if float(z11[1]) == 0.0 or float(z11[1]) > float(threshold_2g):
-                var = "FAIL"
-                pass_fail_list.append(var)
-                sumry2.append("FAIL")
-            elif float(z11[1]) < float(threshold_2g):
-                pass_fail_list.append("PASS")
-                sumry2.append("PASS")
-            data.append(','.join(sumry5))
-            data.append(','.join(sumry2))
+            elif bands[band] == "Both":
+                # BOTH
+                if float(avg_time_rounded[band]) == 0.0 or float(avg_time_rounded[band]) > float(threshold_both):
+                    var = "FAIL"
+                    pass_fail_list.append(var)
+                    sumryB.append("FAIL")
+                elif float(avg_time_rounded[band]) < float(threshold_both):
+                    pass_fail_list.append("PASS")
+                    sumryB.append("PASS")
+                data.append(','.join(sumryB))
 
-        elif bands == ['5G', 'Both']:
-            if float(z11[0]) == 0.0 or float(z11[0]) > float(threshold_5g):
-                print("FAIL")
-                pass_fail_list.append("FAIL")
-                sumry5.append("FAIL")
-            elif float(z11[0]) < float(threshold_5g):
-                print("PASS")
-                pass_fail_list.append("PASS")
-                sumry5.append("PASS")
-            if float(z11[1]) == 0.0 or float(z11[1]) > float(threshold_both):
-                var = "FAIL"
-                pass_fail_list.append(var)
-                sumryB.append("FAIL")
-            elif float(z11[1]) < float(threshold_both):
-                pass_fail_list.append("PASS")
-                sumryB.append("PASS")
-
-            data.append(','.join(sumry5))
-            data.append(','.join(sumryB))
-
-        elif bands == ['2.4G', 'Both']:
-            if float(z11[0]) == 0.0 or float(z11[0]) > float(threshold_2g):
-                var = "FAIL"
-                pass_fail_list.append(var)
-                sumry2.append("FAIL")
-            elif float(z11[0]) < float(threshold_2g):
-                pass_fail_list.append("PASS")
-                sumry2.append("PASS")
-            if float(z11[1]) == 0.0 or float(z11[1]) > float(threshold_both):
-                var = "FAIL"
-                pass_fail_list.append(var)
-                sumryB.append("FAIL")
-            elif float(z11[1]) < float(threshold_both):
-                pass_fail_list.append("PASS")
-                sumryB.append("PASS")
-            data.append(','.join(sumry2))
-            data.append(','.join(sumryB))
         return data
 
     def check_station_ip(self):
@@ -488,8 +405,6 @@ class HttpDownload(Realm):
                         test_input_infor, csv_outfile):
         report = lf_report.lf_report(_results_dir_name="webpage_test", _output_html="Webpage.html", _output_pdf="Webpage.pdf")
 
-        # Section commented because graphing breaks two band report generation
-        # TODO: Fix graphing bug with multiple bands being recorded
         if bands == "Both":
             num_stations = num_stations * 2
         report.set_title("WEBPAGE DOWNLOAD TEST")
@@ -501,7 +416,7 @@ class HttpDownload(Realm):
         report.test_setup_table(value="Device under test", test_setup_data=test_setup_info)
 
         report.set_obj_html("Objective", "The Webpage Download Test is designed to test the performance of the "
-                            "Access Point.The goal is to check whether the webpage loading time of all the "
+                            "Access Point. The goal is to check whether the webpage loading time of all the "
                             + str(num_stations) +
                             "clients which are downloading at the same time meets the expectation when clients"
                             "connected on single radio as well as dual radio")
@@ -672,7 +587,7 @@ def main():
     parser.add_argument('--target_per_ten', help='number of request per 10 minutes', default=100)
     parser.add_argument('--file_size', type=str, help='specify the size of file you want to download', default='5MB')
     parser.add_argument('--bands', nargs="+", help='specify which band testing you want to run eg 5G OR 2.4G OR Both',
-                        default=["5G", "2.4G", "Both"])
+                        default=["5G", "2.4G"])
     parser.add_argument('--duration', type=int, help='time to run traffic')
     parser.add_argument('--threshold_5g', help="Enter the threshold value for 5G Pass/Fail criteria", default="60")
     parser.add_argument('--threshold_2g', help="Enter the threshold value for 2.4G Pass/Fail criteria", default="90")
@@ -695,6 +610,24 @@ def main():
     parser.add_argument('--csv_outfile', help="--csv_outfile <Output file for csv data>", default="")
 
     args = parser.parse_args()
+    args.bands.sort()
+
+    # Error checking to prevent case issues
+    for band in range(len(args.bands)):
+        args.bands[band] = args.bands[band].upper()
+        if args.bands[band] == "BOTH":
+            args.bands[band] = "Both"
+
+    # Error checking for non-existent bands
+    valid_bands = ['2.4G', '5G', 'Both']
+    for band in args.bands:
+        if band not in valid_bands:
+            raise ValueError("Invalid band '%s' used in bands argument!" % band)
+
+    # Check for Both being used independently
+    if len(args.bands) > 1 and "Both" in args.bands:
+        raise ValueError("'Both' test type must be used independently!")
+
     test_time = datetime.now()
     test_time = test_time.strftime("%b %d %H:%M:%S")
     print("Test started at ", test_time)
@@ -736,9 +669,9 @@ def main():
             ssid = [args.fiveg_ssid]
             passwd = [args.fiveg_passwd]
         elif bands == "Both":
-            security = [args.fiveg_security, args.twog_security]
-            ssid = [args.fiveg_ssid, args.twog_ssid]
-            passwd = [args.fiveg_passwd, args.twog_passwd]
+            security = [args.twog_security, args.fiveg_security]
+            ssid = [args.twog_ssid, args.fiveg_ssid]
+            passwd = [args.twog_passwd, args.fiveg_passwd]
         http = HttpDownload(lfclient_host=args.mgr, lfclient_port=args.mgr_port,
                             upstream=args.upstream_port, num_sta=args.num_stations,
                             security=security,
@@ -822,11 +755,26 @@ def main():
     FMT = '%b %d %H:%M:%S'
     test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
 
+    info_ssid = []
+    info_security = []
+    for band in args.bands:
+        if band == "2.4G":
+            info_ssid.append(args.twog_ssid)
+            info_security.append(args.twog_security)
+        elif band == "5G":
+            info_ssid.append(args.fiveg_ssid)
+            info_security.append(args.fiveg_security)
+        elif band == "Both":
+            info_ssid.append(args.fiveg_ssid)
+            info_security.append(args.fiveg_security)
+            info_ssid.append(args.twog_ssid)
+            info_security.append(args.twog_security)
+
     print("total test duration ", test_duration)
     date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
     test_setup_info = {
         "DUT Name": args.ap_name,
-        "SSID": ','.join(ssid),
+        "SSID": ', '.join(info_ssid),
         "Test Duration": test_duration,
     }
     test_input_infor = {
@@ -835,20 +783,13 @@ def main():
         "Bands": args.bands,
         "Upstream": args.upstream_port,
         "Stations": args.num_stations,
-        "SSID": ','.join(ssid),
-        "Security": ','.join(security),
+        "SSID": ','.join(info_ssid),
+        "Security": ', '.join(info_security),
         "Duration": args.duration,
         "Contact": "support@candelatech.com"
     }
-    http1 = HttpDownload(lfclient_host=args.mgr, lfclient_port=args.mgr_port,
-                         upstream=args.upstream_port, num_sta=args.num_stations,
-                         security=security,
-                         ssid=ssid, password=passwd,
-                         target_per_ten=args.target_per_ten,
-                         file_size=args.file_size, bands=args.bands,
-                         twog_radio=args.twog_radio,
-                         fiveg_radio=args.fiveg_radio)
-    dataset = http1.download_time_in_sec(result_data=result_data)
+
+    dataset = http.download_time_in_sec(result_data=result_data)
     lis = []
     if bands == "Both":
         for i in range(1, args.num_stations*2 + 1):
@@ -857,19 +798,20 @@ def main():
         for i in range(1, args.num_stations + 1):
             lis.append(i)
 
-    dataset2 = http1.speed_in_Mbps(result_data=result_data)
-    data = http1.summary_calculation(
+    dataset2 = http.speed_in_Mbps(result_data=result_data)
+
+    data = http.summary_calculation(
         result_data=result_data,
         bands=args.bands,
         threshold_5g=args.threshold_5g,
         threshold_2g=args.threshold_2g,
         threshold_both=args.threshold_both)
-
     summary_table_value = {
         "": args.bands,
         "PASS/FAIL": data
     }
-    http1.generate_report(date, num_stations=args.num_stations,
+
+    http.generate_report(date, num_stations=args.num_stations,
                           duration=args.duration, test_setup_info=test_setup_info, dataset=dataset, lis=lis,
                           bands=args.bands, threshold_2g=args.threshold_2g, threshold_5g=args.threshold_5g,
                           threshold_both=args.threshold_both, dataset2=dataset2,
