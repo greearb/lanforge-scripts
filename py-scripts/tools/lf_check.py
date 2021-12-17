@@ -97,6 +97,7 @@ if sys.version_info[0] != 3:
     exit()
 
 import os
+import platform
 import importlib
 import socket
 import logging
@@ -1482,6 +1483,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
     lf_server['Server Host Name'] = [hostname]
     lf_server['Server ip'] = [ip]
+    lf_server['Server Fedora Version'] = [platform.platform()]
     lf_server['Python3 Version'] = [sys.version]
     lf_server['Python3 Executable'] = [sys.executable]
 
