@@ -97,7 +97,7 @@ def main():
             --debug
             ''')
     required = parser.add_argument_group('required arguments')
-    required.add_argument('df', help='Which file do you want to build stations off of?', required=True)
+    required.add_argument('--df', help='Which file do you want to build stations off of?', required=True)
     args = parser.parse_args()
 
     df = pd.read_csv(args.df)
