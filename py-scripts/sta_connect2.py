@@ -153,19 +153,7 @@ class StaConnect2(Realm):
             self._fail("Warning: %s lacks ip address" % self.get_upstream_url(), print_=True)
             return False
 
-        # remove old stations
-        if self.clean_all_sta:
-            print("Removing all stations on resource.")
-            self.remove_all_stations(self.resource)
-        else:
-            print("Removing old stations to be created by this test.")
-            for sta_name in self.station_names:
-                sta_url = self.get_station_url(sta_name)
-                response = self.json_get(sta_url)
-                if (response) and (response["interface"]):
-                    for station in self.station_names:
-                        LFUtils.removePort(self.resource, station, self.lfclient_url)
-            LFUtils.wait_until_ports_disappear(self.lfclient_url, self.station_names)
+        self.pre_cleanup()
 
         # Create stations and turn dhcp on
         self.station_profile = self.new_station_profile()
@@ -479,7 +467,6 @@ Example:
     staConnect.station_names = ["%s0000" % args.prefix]
     staConnect.bringup_time_sec = args.bringup_time
 
-    staConnect.pre_cleanup()
     staConnect.setup()
     staConnect.start()
     print("napping %f sec" % staConnect.runtime_secs)
