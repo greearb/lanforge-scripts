@@ -276,7 +276,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP ",
-                    " use_ssid_idx=0  --radio wiphy0 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
+                    " use_ssid_idx=0  --radio wiphy4 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
                     " --test_duration 60s --output_format csv ",
                     " --traffic_type lf_tcp --a_min 600000000 --b_min 600000000  --upstream_port eth2",
                     " --mode '5' --layer3_cols 'name','tx rate','rx rate' ",
