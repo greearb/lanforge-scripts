@@ -30,6 +30,7 @@ class lf_clean(Realm):
     def __init__(self,
                  host="localhost",
                  port=8080,
+                 resource=1,
                  clean_cxs=None,
                  clean_endp=None,
                  clean_sta=None):
@@ -37,6 +38,7 @@ class lf_clean(Realm):
                          lfclient_port=port),
         self.host = host
         self.port = port
+        self.resource = resource
         self.clean_cxs = clean_cxs
         self.clean_endp = clean_endp
         self.clean_sta = clean_sta
@@ -111,9 +113,10 @@ class lf_clean(Realm):
             print("sta_clean: iterations_sta: {iterations_sta}".format(iterations_sta=iterations_sta))
             try:
                 sta_json = super().json_get(
-                    "port/1/1/list?field=alias")['interfaces']
+                    "port/1/{resource}/list?field=alias".format(resource=self.resource))['interfaces']
             except TypeError:
                 sta_json = None
+                print("sta_json set to None")
 
             # get and remove current stations
             if sta_json is not None:
@@ -121,8 +124,8 @@ class lf_clean(Realm):
                 print("Removing old stations ")
                 for name in list(sta_json):
                     for alias in list(name):
+                        # print("alias {alias}".format(alias=alias))
                         if 'sta' in alias:
-                            print(alias)
                             info = self.name_to_eid(alias)
                             req_url = "cli-json/rm_vlan"
                             data = {
@@ -167,12 +170,11 @@ class lf_clean(Realm):
                             super().json_post(req_url, data)
                             time.sleep(.5)
                         if ('Unknown' not in alias) and ('wlan' not in alias) and ('sta' not in alias):
-                            still_looking_sta = False
+                            pass
                 time.sleep(1)
-
             else:
                 print("No stations found to cleanup")
-                still_looking_sta = False
+        still_looking_sta = False
         print("clean_sta still_looking_sta {sta_looking}".format(sta_looking=still_looking_sta))
         if not still_looking_sta:
             self.sta_done = True
@@ -215,7 +217,7 @@ class lf_clean(Realm):
             else:
                 print("No bridges found to cleanup")
                 still_looking_br = False
-        print("clean_sta still_looking_br {br_looking}".format(br_looking=still_looking_br))
+        print("clean_bridge still_looking_br {br_looking}".format(br_looking=still_looking_br))
         if not still_looking_br:
             self.br_done = True
         return still_looking_br
@@ -275,6 +277,11 @@ python3 ./lf_clean.py --mgr MGR
         help='--mgr <hostname for where LANforge GUI is running>',
         default='localhost')
     parser.add_argument(
+        '--resource',
+        '--res',
+        help='--resource <realm resource>',
+        default='1')
+    parser.add_argument(
         '--cxs',
         help="--cxs, this will clear all the endps and cxs",
         action='store_true')
@@ -293,7 +300,7 @@ python3 ./lf_clean.py --mgr MGR
 
     args = parser.parse_args()
     if args.cxs or args.endp or args.sta:
-        clean = lf_clean(host=args.mgr, clean_cxs=args.cxs, clean_endp=args.endp, clean_sta=args.sta)
+        clean = lf_clean(host=args.mgr, resource=int(args.resource), clean_cxs=args.cxs, clean_endp=args.endp, clean_sta=args.sta)
         print("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.endp, sta=args.sta))
         if args.cxs:
             print("cleaning cxs will also clean endp")
