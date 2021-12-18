@@ -394,7 +394,7 @@
             "ap_auto": {
                 "enabled": "TRUE",
                 "command": "lf_ap_auto_test.py",
-                "timeout":"25200",
+                "timeout":"600",
                 "iterations":"1",
                 "args": "",
                 "args_list":[
@@ -457,7 +457,7 @@
             "ap_auto": {
                 "enabled": "TRUE",
                 "command": "lf_ap_auto_test.py",
-                "timeout":"25200",
+                "timeout":"2700",
                 "iterations":"1",
                 "args": "",
                 "args_list":[
@@ -520,7 +520,7 @@
             "ap_auto_stability": {
                 "enabled": "TRUE",
                 "command": "lf_ap_auto_test.py",
-                "timeout":"25200",
+                "timeout":"12600",
                 "iterations":"1",
                 "args": "",
                 "args_list":[
@@ -531,7 +531,7 @@
                     " --max_stations_2 8 --max_stations_5 8 --max_stations_dual 1",
                     " --radio2 1.1.wiphy0 --radio2 1.1.wiphy2 --radio2 1.1.wiphy4 --radio2 1.1.wiphy5 --radio2 1.1.wiphy6 --radio2 1.1.wiphy7",
                     " --radio5 1.1.wiphy1 --radio5 1.1.wiphy2 --radio5 1.1.wiphy3 --radio5 1.1.wiphy4 --radio5 1.1.wiphy5 --radio5 1.1.wiphy6 --radio5 1.1.wiphy7",
-                    " --set 'Basic Client Connectivity' 1",
+                    " --set 'Basic Client Connectivity' 0",
                     " --set 'Multi Band Performance' 0",
                     " --set 'Stability' 1",
                     " --set 'Multi-Station Throughput vs Pkt Size'  0,",
