@@ -33,7 +33,7 @@
                     "--mgr LF_MGR_IP --cxs --sta "
                 ]
             },
-            "create_chamberview_dut_ATH10K_9984__wc":{
+            "create_chamberview_dut_ATH10K_9984_wc":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
@@ -45,19 +45,19 @@
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
-            "create_chamberview_ATH10K_9984__wc":{
+            "create_chamberview_ATH10K_9984_wc":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario ATH10K_9984__wc ",
+                    " --create_scenario ATH10K_9984_wc ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 32 'DUT: USE_DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
-            "wifi_capacity_ATH10K_9984_":{
+            "wifi_capacity_ATH10K_9984":{
                 "enabled":"TRUE",
                 "timeout":"600",
                 "iterations":"1",
@@ -65,14 +65,14 @@
                 "command":"lf_wifi_capacity_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name ATH10K_9984__wc",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name ATH10K_9984_wc",
                     " --upstream 1.1.eth2 --batch_size 1,5,25,32 --loop_iter 1 --protocol UDP-IPv4 --duration 6000",
-                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K_9984_'",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K_9984'",
                     " --test_rig TEST_RIG ",
                     " --set DUT_SET_NAME"
                 ]
             },
-            "create_chamberview_dut_ATH10K_9984__dp":{
+            "create_chamberview_dut_ATH10K_9984_dp":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
@@ -84,19 +84,19 @@
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]
             },
-            "create_chamberview_ATH10K_9984__dp":{
+            "create_chamberview_ATH10K_9984_dp":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
                 "args":"",
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
-                    " --create_scenario ATH10K_9984__dp",
+                    " --create_scenario ATH10K_9984_dp",
                     " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
                 ]
             },
-            "dataplane_ATH10K_9984_":{
+            "dataplane_ATH10K_9984":{
                 "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"600",
@@ -104,12 +104,12 @@
                 "command":"lf_dataplane_test.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name ATH10K_9984__dp",
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge --instance_name ATH10K_9984_dp",
                     " --config_name test_con --upstream 1.1.eth2 --dut asus_5g --duration 30s --station 1.1.wlan1",
                     " --download_speed 85% --upload_speed 0 --raw_line 'pkts: 60;Custom' ",
                     " --raw_line 'cust_pkt_sz: 88;256;512;768;1024;MTU' ",
                     " --raw_line 'directions: DUT Transmit' --raw_line 'traffic_types: UDP' --raw_line 'bandw_options: AUTO'",
-                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K_9984_' ",
+                    " --raw_line 'spatial_streams: AUTO' --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'ATH10K_9984' ",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
                 ]
