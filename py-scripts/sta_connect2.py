@@ -336,11 +336,11 @@ class StaConnect2(Realm):
                 ptest_b_tx = endp_json['endpoint']['tx bytes']
                 ptest_b_rx = endp_json['endpoint']['rx bytes']
 
-                self.compare_vals("testTCP-A TX", ptest_a_tx)
-                self.compare_vals("testTCP-A RX", ptest_a_rx)
+                self.compare_vals(endps[0], ptest_a_tx)
+                self.compare_vals(endps[0], ptest_a_rx)
 
-                self.compare_vals("testTCP-B TX", ptest_b_tx)
-                self.compare_vals("testTCP-B RX", ptest_b_rx)
+                self.compare_vals(endps[1], ptest_b_tx)
+                self.compare_vals(endps[1], ptest_b_rx)
 
             except Exception as e:
                 self.error(e)
