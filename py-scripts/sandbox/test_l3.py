@@ -29,7 +29,7 @@ Example command using attenuator
     --radio 'radio==wiphy2,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --radio 'radio==wiphy3,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --radio 'radio==wiphy4,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
-    --endp_type lf_udp --ap_read --ap_scheduler_stats --ap_ofdma_stats --side_a_min_bps=20000 --side_b_min_bps=400000000 \
+    --endp_type lf_udp --side_a_min_bps=20000 --side_b_min_bps=400000000 \
     --attenuators 1.1.<serial number>.1 \
     --atten_vals 20,21,40,41
 
@@ -874,52 +874,6 @@ class L3VariableTime(Realm):
         writer.writerow(row)
         self.port_csv_files[eid_name].flush()
 
-    def write_ul_port_csv(
-            self,
-            sta_count,
-            ul,
-            dl,
-            ul_pdu,
-            dl_pdu,
-            atten,
-            eid_name,
-            port_data,
-            latency,
-            jitter,
-            total_ul_rate,
-            total_ul_rate_ll,
-            total_ul_pkts_ll,
-            total_dl_rate,
-            total_dl_rate_ll,
-            total_dl_pkts_ll,
-            ap_ul_row):
-        row = [self.epoch_time, self.time_stamp(), sta_count,
-               ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
-               atten, eid_name
-               ]
-
-        row = row + [port_data['bps rx'],
-                     port_data['bps tx'],
-                     port_data['rx-rate'],
-                     port_data['tx-rate'],
-                     port_data['signal'],
-                     port_data['ap'],
-                     port_data['mode'],
-                     latency,
-                     jitter,
-                     total_ul_rate,
-                     total_ul_rate_ll,
-                     total_ul_pkts_ll,
-                     total_dl_rate,
-                     total_dl_rate_ll,
-                     total_dl_pkts_ll]
-
-        # TODO Add in info queried from AP.
-
-        writer = self.ul_port_csv_writers[eid_name]
-        writer.writerow(row)
-        self.ul_port_csv_files[eid_name].flush()
-
     '''
      _kpi_headers = ['Date','test-rig','test-tag','dut-hw-version','dut-sw-version','dut-model-num',
                                 'test-priority','test-id','short-description','pass/fail','numeric-score',
@@ -1088,8 +1042,8 @@ class L3VariableTime(Realm):
             'Dl-Rx-Rate-ll',
             'Dl-Rx-Pkts-ll']
         # Add in columns we are going to query from the AP
-        for col in self.ap_stats_col_titles:
-            csv_rx_headers.append(col)
+        # for col in self.ap_stats_col_titles:
+        #    csv_rx_headers.append(col)
 
         return csv_rx_headers
 
@@ -1124,8 +1078,8 @@ class L3VariableTime(Realm):
             'Dl-Rx-Rate-ll',
             'Dl-Rx-Pkts-ll']
         # Add in columns we are going to query from the AP
-        for col in self.ap_stats_ul_col_titles:
-            csv_ul_rx_headers.append(col)
+        # for col in self.ap_stats_ul_col_titles:
+        #    csv_ul_rx_headers.append(col)
 
         return csv_ul_rx_headers
 
