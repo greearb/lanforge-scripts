@@ -366,7 +366,7 @@ class csv_sql:
     # TODO determin the subtest pass and fail graph
     # df is sorted by date oldest to newest
     # get the test_run for last run
-    # query the db for  all pass and fail or last run 
+    # query the db for  all pass and fail or last run
     # put in table
     def sub_test_information(self):
         print("generate table and graph from subtest data per run: {}".format(
@@ -381,8 +381,8 @@ class csv_sql:
             df3 = df3.sort_values(by='Date')
         except BaseException:
             print(("Database empty reading subtest: "
-                "KeyError(key) when sorting by Date for db: {db},"
-                " check Database name, path to kpi, typo in path, exiting".format(db=self.database)))
+                   "KeyError(key) when sorting by Date for db: {db},"
+                   " check Database name, path to kpi, typo in path, exiting".format(db=self.database)))
             exit(1)
         self.conn.close()
 
@@ -394,10 +394,9 @@ class csv_sql:
         print("test_run_list first [0] {}".format(test_run_list[0]))
         print("test_run_list last [-1] {}".format(test_run_list[-1]))
 
-
         self.test_run = test_run_list[-1]
         # collect this runs subtest totals
-        df_tmp = df3.loc[df3['test_run'] == self.test_run ]
+        df_tmp = df3.loc[df3['test_run'] == self.test_run]
         subtest_passed_list = list(df_tmp['Subtest-Pass'])
         subtest_failed_list = list(df_tmp['Subtest-Fail'])
 
@@ -407,15 +406,15 @@ class csv_sql:
             self.subtest_total = self.subtest_passed + self.subtest_failed
         except BaseException:
             warning_msg = ("WARNING subtest values need to be filtered or"
-            " Test is not behaving in filling out subtest values")
-            print ("{warn}".format(warn=warning_msg),file=sys.stderr)
-            print ("{warn}".format(warn=warning_msg),file=sys.stdout)
+                           " Test is not behaving in filling out subtest values")
+            print("{warn}".format(warn=warning_msg), file=sys.stderr)
+            print("{warn}".format(warn=warning_msg), file=sys.stdout)
             self.subtest_passed = 0
             self.subtest_failed = 0
             self.subtest_total = 0
-            
+
         print("{run} subtest Total:{total} Pass:{passed} Fail:{failed}".format(
-            run=self.test_run, total=self.subtest_total,passed=self.subtest_passed,failed=self.subtest_failed 
+            run=self.test_run, total=self.subtest_total, passed=self.subtest_passed, failed=self.subtest_failed
         ))
 
         # extract the DUT information from last run
@@ -438,16 +437,13 @@ class csv_sql:
         self.dut_serial_num_list = [x for x in self.dut_serial_num_list if x is not None]
         if self.dut_serial_num_list:
             self.dut_serial_num = self.dut_serial_num_list[-1]
-        
+
         print(
             "In png DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}" .format(
                 DUT=self.dut_model_num,
                 SW=self.dut_sw_version,
                 HW=self.dut_hw_version,
                 SN=self.dut_serial_num))
-                
-
-
 
     def generate_graph_png(self):
         print(
@@ -488,7 +484,6 @@ class csv_sql:
         self.test_rig_list = test_rig_list
         print("test_rig_list: {}".format(test_rig_list))
 
-
         # create the rest of the graphs
         for test_rig in test_rig_list:
             for test_tag in test_tag_list:
@@ -506,7 +501,7 @@ class csv_sql:
                         # get Device Under Test Information ,
                         # the set command uses a hash , sorted puts it back in order
                         # the set reduces the redundency the filster removes None
-                        # list puts it back into a list 
+                        # list puts it back into a list
                         # This code is since the dut is not passed in to lf_qa.py when
                         # regernation of graphs from db
 
@@ -574,7 +569,6 @@ class csv_sql:
                                 xaxis={'type': 'date'}
                             )
                             kpi_fig.update_layout(autotypenumbers='convert types')
-
 
                             self.generate_png(df_tmp=df_tmp,
                                               group=group,
@@ -664,7 +658,6 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         elif not args.png:
             print("Need to enter an action of --store --png ")
             exit(1)
-
 
     # create report class for reporting
     report = lf_report(_path=__path,
