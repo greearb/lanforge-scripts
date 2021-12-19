@@ -362,7 +362,7 @@
             "ap_auto": {
                 "enabled": "TRUE",
                 "command": "lf_ap_auto_test.py",
-                "timeout":"2700",
+                "timeout":"10800",
                 "iterations":"1",
                 "args": "",
                 "args_list":[
@@ -425,7 +425,7 @@
             "ap_auto_stability": {
                 "enabled": "TRUE",
                 "command": "lf_ap_auto_test.py",
-                "timeout":"12600",
+                "timeout":"14400",
                 "iterations":"1",
                 "args": "",
                 "args_list":[
