@@ -447,11 +447,11 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
 QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
         if (self.email_title_txt != ""):
-            mail_subject = "{email} [{hostname}] {suite} {date}".format(email=self.email_title_txt, hostname=self.hostname,
-                                                                        suite=self.test_suite, db=self.database_sqlite, date=datetime.datetime.now())
+            mail_subject = "{email} [{hostname}] {suite} {db} {date}".format(email=self.email_title_txt, hostname=self.hostname,
+                suite=self.test_suite, db=self.database_sqlite, date=datetime.datetime.now())
         else:
-            mail_subject = "Regression Test [{hostname}] {suite} {date}".format(hostname=self.hostname,
-                                                                                suite=self.test_suite, db=self.database_sqlite, date=datetime.datetime.now())
+            mail_subject = "Regression Test [{hostname}] {suite} {db} {date}".format(hostname=self.hostname,
+                suite=self.test_suite, db=self.database_sqlite, date=datetime.datetime.now())
         try:
             if self.production_run:
                 msg = message_txt.format(ip=ip)
@@ -721,7 +721,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
     def run_script_test(self):
         self.start_html_results()
         self.start_csv_results()
-        # Suite start time 
+        # Suite start time
         suite_start_time = datetime.datetime.now()
         self.suite_start_time = str(datetime.datetime.now().strftime(
                         "%Y-%m-%d-%H-%M-%S")).replace(':', '-')
@@ -1065,6 +1065,9 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                             background = self.background_green
                         # leave the space in after error to not pick up tx
                         # errors or rx errors
+                        elif 'ERROR FAILED ' in text:
+                            self.test_result = "Some Tests Failed"
+                            background = self.background_orange
                         elif 'error ' in text.lower():
                             self.test_result = "Test Errors"
                             background = self.background_red
@@ -1095,6 +1098,8 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                         self.tests_failure += 1
                     elif self.test_result == "Some Tests Failed":
                         self.tests_some_failure += 1
+                    elif self.test_result == "Test Errors":
+                        self.tests_failure += 1
                     elif self.test_result == "TIMEOUT":
                         self.tests_timeout += 1
 
@@ -1271,7 +1276,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         with open(args.json_rig, 'r') as json_rig_config:
             json_rig = json.load(json_rig_config)
     except json.JSONDecodeError as err:
-        print("ERROR reading {json}, ERROR: {error} ".format(json=args.json_rig,error=err))
+        print("ERROR reading {json}, ERROR: {error} ".format(json=args.json_rig, error=err))
         exit(1)
 
     json_dut = ""
@@ -1280,7 +1285,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         with open(args.json_dut, 'r') as json_dut_config:
             json_dut = json.load(json_dut_config)
     except json.JSONDecodeError as err:
-        print("ERROR reading {json}, ERROR: {error} ".format(json=args.json_dut,error=err))
+        print("ERROR reading {json}, ERROR: {error} ".format(json=args.json_dut, error=err))
         exit(1)
 
     json_test = ""
