@@ -1031,63 +1031,62 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                             "lanforge_server_version_full {lanforge_server_version_full}\n".format(
                                 lanforge_server_version_full=self.lanforge_server_version_full[0]))
                         meta_data_fd.close()
-
-                    stderr_log_size = os.path.getsize(stderr_log_txt)
-                    if stderr_log_size > 0:
-                        self.logger.info(
-                            "File: {} is not empty: {}".format(
-                                stderr_log_txt, str(stderr_log_size)))
-                        text = open(stderr_log_txt).read()
-                        if 'Error' in text:
-                            self.text_result = "Failure"
-                            background = self.background_red
-                        else:
-                            self.text_result = "Success"
-                            background = self.background_green
-                    else:
-                        self.logger.info(
-                            "File: {} is empty: {}".format(
-                                stderr_log_txt, str(stderr_log_size)))
-                        self.test_result = "Success"
-                        background = self.background_green
-
-                    # Check to see if there is an error in stdout_log
-                    if stdout_log_size > 0:
-                        text = open(stdout_log_txt).read()
-                        # for 5.4.3 only TestTag was not present
-                        if 'ERROR:  Could not find component: TestTag' in text:
-                            self.test_result = "Success"
-                            background = self.background_green
-                        # probe command for test_ip_variable_time.py has
-                        # the word alloc error and erros in it
-                        elif 'alloc error' in text:
-                            self.test_result = "Success"
-                            background = self.background_green
-                        # leave the space in after error to not pick up tx
-                        # errors or rx errors
-                        elif 'ERROR FAILED ' in text:
-                            self.test_result = "Some Tests Failed"
-                            background = self.background_orange
-                        elif 'error ' in text.lower():
-                            self.test_result = "Test Errors"
-                            background = self.background_red
-                        elif 'tests failed' in text.lower():
-                            self.test_result = "Some Tests Failed"
-                            background = self.background_orange
-                        else:
-                            self.test_result = "Success"
-                            background = self.background_green
-                    else:
-                        # if stdout empty that is a failure also
-                        self.test_result = "Failure"
-                        background = self.background_red
-
-                    # if there was a
+                    # Timeout needs to be reported and not overwriten
                     if self.test_result == "TIMEOUT":
                         self.logger.info(
                             "TIMEOUT FAILURE,  Check LANforge Radios")
                         self.test_result = "Time Out"
                         background = self.background_purple
+                    else:
+                        stderr_log_size = os.path.getsize(stderr_log_txt)
+                        if stderr_log_size > 0:
+                            self.logger.info(
+                                "File: {} is not empty: {}".format(
+                                    stderr_log_txt, str(stderr_log_size)))
+                            text = open(stderr_log_txt).read()
+                            if 'Error' in text:
+                                self.text_result = "Failure"
+                                background = self.background_red
+                            else:
+                                self.text_result = "Success"
+                                background = self.background_green
+                        else:
+                            self.logger.info(
+                                "File: {} is empty: {}".format(
+                                    stderr_log_txt, str(stderr_log_size)))
+                            self.test_result = "Success"
+                            background = self.background_green
+
+                        # Check to see if there is an error in stdout_log
+                        if stdout_log_size > 0:
+                            text = open(stdout_log_txt).read()
+                            # for 5.4.3 only TestTag was not present
+                            if 'ERROR:  Could not find component: TestTag' in text:
+                                self.test_result = "Success"
+                                background = self.background_green
+                            # probe command for test_ip_variable_time.py has
+                            # the word alloc error and erros in it
+                            elif 'alloc error' in text:
+                                self.test_result = "Success"
+                                background = self.background_green
+                            # leave the space in after error to not pick up tx
+                            # errors or rx errors
+                            elif 'ERROR FAILED ' in text:
+                                self.test_result = "Some Tests Failed"
+                                background = self.background_orange
+                            elif 'error ' in text.lower():
+                                self.test_result = "Test Errors"
+                                background = self.background_red
+                            elif 'tests failed' in text.lower():
+                                self.test_result = "Some Tests Failed"
+                                background = self.background_orange
+                            else:
+                                self.test_result = "Success"
+                                background = self.background_green
+                        else:
+                            # if stdout empty that is a failure also
+                            self.test_result = "Failure"
+                            background = self.background_red
 
                     # Total up test, tests success, tests failure, tests
                     # timeouts
