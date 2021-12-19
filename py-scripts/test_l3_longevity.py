@@ -1207,7 +1207,7 @@ class L3VariableTime(Realm):
                                                     print(
                                                         "6g xtop {xtop}".format(xtop=xtop))
                                                     channel_utilization = float(
-                                                            100) - float(xtop)
+                                                        100) - float(xtop)
                                                     print("6g channel_utilization {utilization}".format(utilization=channel_utilization))
                                                 except BaseException:
                                                     print(
@@ -2557,7 +2557,7 @@ Setting wifi_settings per radio
     Elapsed             |  'elapsed'
     Destination Addr    |  'destination addr'
     Source Addr         |  'source addr'
-    
+
     Using the port_mgr_cols flag:
          '4way time (us)'
          'activity'
@@ -2633,7 +2633,7 @@ Setting wifi_settings per radio
          'tx-failed %'
          'tx-rate'
          'wifi retries'
-         
+
     Can't decide what columns to use? You can just use 'all' to select all available columns from both tables.
 
 
