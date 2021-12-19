@@ -88,6 +88,22 @@ Starting LANforge:
 
 '''
 
+import requests
+import pandas as pd
+import paramiko
+import shlex
+import shutil
+import csv
+import subprocess
+import json
+import argparse
+from time import sleep
+import time
+import logging
+import socket
+import importlib
+import platform
+import os
 import datetime
 import sys
 import traceback
@@ -96,22 +112,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python3")
     exit()
 
-import os
-import platform
-import importlib
-import socket
-import logging
-import time
-from time import sleep
-import argparse
-import json
-import subprocess
-import csv
-import shutil
-import shlex
-import paramiko
-import pandas as pd
-import requests
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lf_report = importlib.import_module("lf_report")
@@ -448,10 +448,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
         if (self.email_title_txt != ""):
             mail_subject = "{email} [{hostname}] {suite} {db} {date}".format(email=self.email_title_txt, hostname=self.hostname,
-                suite=self.test_suite, db=self.database_sqlite, date=datetime.datetime.now())
+                                                                             suite=self.test_suite, db=self.database_sqlite, date=datetime.datetime.now())
         else:
             mail_subject = "Regression Test [{hostname}] {suite} {db} {date}".format(hostname=self.hostname,
-                suite=self.test_suite, db=self.database_sqlite, date=datetime.datetime.now())
+                                                                                     suite=self.test_suite, db=self.database_sqlite, date=datetime.datetime.now())
         try:
             if self.production_run:
                 msg = message_txt.format(ip=ip)
@@ -724,7 +724,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # Suite start time
         suite_start_time = datetime.datetime.now()
         self.suite_start_time = str(datetime.datetime.now().strftime(
-                        "%Y-%m-%d-%H-%M-%S")).replace(':', '-')
+            "%Y-%m-%d-%H-%M-%S")).replace(':', '-')
         self.logger.info("Suite Start Time {suite_time}".format(
             suite_time=self.suite_start_time))
 
@@ -1185,16 +1185,16 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
         suite_end_time = datetime.datetime.now()
         self.suite_end_time = str(datetime.datetime.now().strftime(
-                        "%Y-%m-%d-%H-%M-%S")).replace(':', '-')
+            "%Y-%m-%d-%H-%M-%S")).replace(':', '-')
         self.logger.info("Suite End Time: {suite_time}".format(
             suite_time=self.suite_end_time))
         suite_time_delta = suite_end_time - suite_start_time
         minutes, seconds = divmod(suite_time_delta.seconds, 60)
         hours, minutes = divmod(minutes, 60)
-        self.suite_duration  = "{day}d {hours}h {minutes}m {seconds}s {msec} ms".format(
+        self.suite_duration = "{day}d {hours}h {minutes}m {seconds}s {msec} ms".format(
             day=suite_time_delta.days, hours=hours, minutes=minutes, seconds=seconds, msec=suite_time_delta.microseconds)
         self.logger.info("Suite Duration:  {suite_duration}".format(
-            suite_duration=self.suite_duration))        
+            suite_duration=self.suite_duration))
         self.finish_html_results()
 
 
@@ -1293,7 +1293,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         with open(args.json_test, 'r') as json_test_config:
             json_test = json.load(json_test_config)
     except json.JSONDecodeError as err:
-        print("ERROR reading {json}, ERROR: {error} ".format(json=args.json_test,error=err))
+        print("ERROR reading {json}, ERROR: {error} ".format(json=args.json_test, error=err))
         exit(1)
 
     # Test-rig information information
@@ -1328,9 +1328,9 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                                  _output_pdf="{dir}.pdf".format(dir=__dir))
 
     current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-    csv_results = "{dir}-{outfile}-{current_time}.csv".format(dir=__dir,outfile=args.outfile,current_time=current_time)
+    csv_results = "{dir}-{outfile}-{current_time}.csv".format(dir=__dir, outfile=args.outfile, current_time=current_time)
     csv_results = report.file_add_path(csv_results)
-    outfile_name = "{dir}-{outfile}-{current_time}".format(dir=__dir,outfile=args.outfile,current_time=current_time)
+    outfile_name = "{dir}-{outfile}-{current_time}".format(dir=__dir, outfile=args.outfile, current_time=current_time)
     outfile = report.file_add_path(outfile_name)
     report_path = report.get_report_path()
     log_path = report.get_log_path()
@@ -1477,7 +1477,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # Successfully gathered LANforge information Run Tests
     check.run_script_test()
 
-    # Add the qa_report_html 
+    # Add the qa_report_html
     qa_report_html = check.qa_report_html
 
     # add the python3 version information
@@ -1495,7 +1495,6 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     lf_suite_time['Suite Start'] = [check.suite_start_time]
     lf_suite_time['Suite End'] = [check.suite_end_time]
     lf_suite_time['Suite Duration'] = [check.suite_duration]
-
 
     lf_test_summary = pd.DataFrame()
     lf_test_summary['Tests Run'] = [check.tests_run]
@@ -1556,7 +1555,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
     print("lf_check_html_report: " + html_report)
     check.send_results_email(report_file=html_report)
-    # 
+    #
     if args.update_latest:
         report_path = os.path.dirname(html_report)
         parent_report_dir = os.path.dirname(report_path)
@@ -1604,6 +1603,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
         # print out locations of results
         print("html_report_latest: {latest}".format(latest=html_report_latest))
+
 
 if __name__ == '__main__':
     main()
