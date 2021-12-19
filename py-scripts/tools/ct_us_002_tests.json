@@ -273,7 +273,7 @@
                 ]
             },
             "create_chamberview_dut_ap":{
-                "enabled":"",
+                "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview_dut.py",
                 "args":"",
@@ -284,7 +284,7 @@
                     " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
                 ]},
             "create_chamberview_ap":{
-                "enabled":"FALSE",
+                "enabled":"TRUE",
                 "load_db":"skip",
                 "command":"create_chamberview.py",
                 "args":"",
