@@ -977,6 +977,7 @@ class L3VariableTime(Realm):
             self.csv_add_port_column_headers(
                 eid_name, self.csv_generate_port_column_headers())
 
+        # ul -ports when AP present
         port_eids = self.gather_port_eids()
         for eid_name in port_eids:
             self.csv_add_ul_port_column_headers(
@@ -2271,7 +2272,7 @@ class L3VariableTime(Realm):
                 self.csv_generate_kpi_column_headers())
             self.csv_kpi_file.flush()
 
-    # Write initial headers to port csv file.
+    # Write initial dl headers to port csv file.
     def csv_add_port_column_headers(self, eid_name, headers):
         # if self.csv_file is not None:
         fname = self.outfile[:-4]  # Strip '.csv' from file name
@@ -2284,6 +2285,7 @@ class L3VariableTime(Realm):
         port_csv_writer.writerow(headers)
         pfile.flush()
 
+    # Write initial ul headers to port csv file.
     def csv_add_ul_port_column_headers(self, eid_name, headers):
         # if self.csv_file is not None:
         fname = self.outfile[:-4]  # Strip '.csv' from file name

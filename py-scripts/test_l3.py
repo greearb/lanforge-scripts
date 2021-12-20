@@ -572,6 +572,7 @@ class L3VariableTime(Realm):
 
                 # Build/update connection types
                 for etype in self.endp_types:
+                    # TODO multi cast does not work
                     if etype == "mc_udp" or etype == "mc_udp6":
                         print(
                             "Creating Multicast connections for endpoint type: %s" %
@@ -643,10 +644,11 @@ class L3VariableTime(Realm):
             self.csv_add_port_column_headers(
                 eid_name, self.csv_generate_port_column_headers())
 
-        port_eids = self.gather_port_eids()
-        for eid_name in port_eids:
-            self.csv_add_ul_port_column_headers(
-                eid_name, self.csv_generate_ul_port_column_headers())
+        # ul -ports (this if AP is present)
+        # port_eids = self.gather_port_eids()
+        # for eid_name in port_eids:
+        #    self.csv_add_ul_port_column_headers(
+        #        eid_name, self.csv_generate_ul_port_column_headers())
 
         # For each rate
         rate_idx = 0
