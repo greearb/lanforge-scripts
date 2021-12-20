@@ -55,10 +55,10 @@ class FileIOTest(Realm):
                  max_rw_size=64 * 1024,
                  min_file_size=25 * 1024 * 1024,
                  max_file_size=25 * 1024 * 1024,
-                 min_read_rate_bps=1000 * 1000,
-                 max_read_rate_bps=1000 * 1000,
+                 min_read_rate_bps=None,
+                 max_read_rate_bps=None,
                  min_write_rate_bps="1G",
-                 max_write_rate_bps=1000 * 1000,
+                 max_write_rate_bps=None,
                  directory="AUTO",
                  test_duration="5m",
                  upstream_port="eth1",
@@ -237,28 +237,41 @@ class FileIOTest(Realm):
         expected_passes = 0
         for item in val_list:
             expected_passes += 1
-            if item[0] == 'r':
-
-                if val_list[item]['read-bps'] > self.wo_profile.min_read_rate_bps:
-                    passes += 1
+            if val_list[item]['read-bps'] + val_list[item]['write-bps'] > 0:
+                if item[0] == 'r':
+                    if int(val_list[item]['read-bps']) > int(self.wo_profile.min_read_rate_bps):
+                        print('%s Pass: %s' % (item, val_list[item]))
+                        passes += 1
+                    else:
+                        print('%s Fail: %s' % (item, val_list[item]))
+                        print(int(val_list[item]['read-bps']) / int(self.wo_profile.min_read_rate_bps))
+                if item[0] == 'w':
+                    if int(val_list[item]['write-bps']) > int(self.wo_profile.min_write_rate_bps):
+                        print('%s Pass: %s' % (item, val_list[item]))
+                        passes += 1
+                    else:
+                        print('%s Fail: %s' % (item, val_list[item]))
+                        print(int(val_list[item]['write-bps']) / int(self.wo_profile.min_write_rate_bps))
             else:
-
-                if val_list[item]['write-bps'] > self.wo_profile.min_write_rate_bps:
-                    passes += 1
-            if passes == expected_passes:
                 return True
-            else:
-                return False
+        if passes == expected_passes:
+            return True
         else:
+            if self.debug:
+                print('passes: %s, expected passes: %s' % (passes, expected_passes))
+                print('FAIL')
+                print(val_list)
+                print(self.wo_profile.min_read_rate_bps)
+                print(self.wo_profile.min_write_rate_bps)
             return False
 
     def __get_values(self):
         time.sleep(3)
         if self.mode == "write":
-            cx_list = self.json_get("fileio/%s?fields=write-bps,read-bps" % (
+            cx_list = self.json_get("fileio/%s?fields=write-bps" % (
                 ','.join(self.wo_profile.created_cx.keys())), debug_=self.debug)
         elif self.mode == "read":
-            cx_list = self.json_get("fileio/%s?fields=write-bps,read-bps" % (
+            cx_list = self.json_get("fileio/%s?fields=read-bps" % (
                 ','.join(self.ro_profile.created_cx.keys())), debug_=self.debug)
         else:
             cx_list = self.json_get("fileio/%s,%s?fields=write-bps,read-bps" % (
@@ -318,17 +331,16 @@ class FileIOTest(Realm):
         if self.mode:
             if self.use_test_groups:
                 if self.mode == "write":
-                    if self.wo_tg_exists:
-                        if not self.wo_tg_cx_exists:
-                            print("Creating Write Only CXs")
-                            self.wo_profile.create(ports=self.created_ports,
-                                                   connections_per_port=self.connections_per_port,
-                                                   sleep_time=.5, debug_=self.debug,
-                                                   suppress_related_commands_=None)
-                            time.sleep(1)
-                            print("Adding cxs to %s" % self.wo_tg_profile.group_name)
-                            for cx in self.wo_profile.created_cx.values():
-                                self.wo_tg_profile.add_cx(cx)
+                    if self.wo_tg_exists and not self.wo_tg_cx_exists:
+                        print("Creating Write Only CXs")
+                        self.wo_profile.create(ports=self.created_ports,
+                                               connections_per_port=self.connections_per_port,
+                                               sleep_time=.5, debug_=self.debug,
+                                               suppress_related_commands_=None)
+                        time.sleep(1)
+                        print("Adding cxs to %s" % self.wo_tg_profile.group_name)
+                        for cx in self.wo_profile.created_cx.values():
+                            self.wo_tg_profile.add_cx(cx)
                     else:
                         print("Creating Write Only CXs")
                         self.wo_profile.create(ports=self.created_ports, connections_per_port=self.connections_per_port,
@@ -607,9 +619,9 @@ Generic command layout:
     parser.add_argument('--max_rw_size', help='maximum read/write size', default=64 * 1024)
     parser.add_argument('--min_file_size', help='minimum file size', default=50 * 1024 * 1024)
     parser.add_argument('--max_file_size', help='maximum file size', default=50 * 1024 * 1024)
-    parser.add_argument('--min_read_rate_bps', help='minimum bps read rate', default=10e9)
-    parser.add_argument('--max_read_rate_bps', help='maximum bps read rate', default=10e9)
-    parser.add_argument('--min_write_rate_bps', help='minimum bps write rate', default=10e9)
+    parser.add_argument('--min_read_rate_bps', help='minimum bps read rate', default=10e6)
+    parser.add_argument('--max_read_rate_bps', help='maximum bps read rate', default=10e6)
+    parser.add_argument('--min_write_rate_bps', help='minimum bps write rate', default=10e6)
     parser.add_argument('--max_write_rate_bps', help='maximum bps write rate', default="1G")
     parser.add_argument('--directory', help='--directory directory to read/write in. Absolute path suggested',
                         default="AUTO")
