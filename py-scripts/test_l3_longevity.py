@@ -964,7 +964,7 @@ class L3VariableTime(Realm):
             print("ip's acquired")
         else:
             # No reason to continue
-            print("ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
+            print("ERROR: FAILED to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
             exit(1)
 
         csv_header = self.csv_generate_column_headers()

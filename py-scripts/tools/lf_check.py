@@ -1071,7 +1071,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                                 background = self.background_green
                             # leave the space in after error to not pick up tx
                             # errors or rx errors
-                            elif 'ERROR FAILED ' in text:
+                            elif 'ERROR: ' in text:
+                                self.test_result = "Some Tests Failed"
+                                background = self.background_orange
+                            elif 'ERROR: FAILED ' in text:
                                 self.test_result = "Some Tests Failed"
                                 background = self.background_orange
                             elif 'error ' in text.lower():
