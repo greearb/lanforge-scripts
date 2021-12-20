@@ -333,7 +333,7 @@ else
              --protocol UDP-IPv4 --duration 6000 --pull_report --ssid $SSID_USED --paswd $PASSWD_USED --security $SECURITY\
              --test_rig Testbed-01 --create_stations --stations $RESOURCE.sta0000,$RESOURCE.sta0001"
       "./measure_station_time_up.py --radio $RADIO_USED --num_stations 3 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED \
-      --debug --report_file measure_station_time_up.pkl --radio2 wiphy1"
+      --debug --report_file measure_station_time_up.pkl --radio2 wiphy1 --mgr $MGR"
       "./create_station.py --mgr $MGR --radio $RADIO_USED --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED && ./modify_station.py \
                    --mgr $MGR \
                    --radio $RADIO_USED \
@@ -352,7 +352,7 @@ else
       "./sta_connect_example.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM --test_duration 15s --debug"
       "./sta_connect.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM --test_duration 15s --dut_bssid 04:F0:21:CB:01:8B --debug"
       "./sta_connect2.py --dest $MGR --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM"
-      "./sta_scan_test.py --ssid $SSID_USED --security $SECURITY --passwd $PASSWD_USED --radio $RADIO_USED --debug"
+      "./sta_scan_test.py --mgr $MGR --ssid $SSID_USED --security $SECURITY --passwd $PASSWD_USED --radio $RADIO_USED --debug"
       #station_layer3.py
       #stations_connected.py
       #"./test_1k_clients_jedtest.py
