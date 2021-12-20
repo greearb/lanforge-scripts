@@ -918,12 +918,12 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     # in command output
                     command_to_run = command
                     command_to_run = shlex.split(command_to_run)
-                    print(
+                    self.logger.info(
                         "running {command_to_run}".format(
                             command_to_run=command_to_run))
                     self.test_start_time = str(datetime.datetime.now().strftime(
                         "%Y-%m-%d-%H-%M-%S")).replace(':', '-')
-                    print(
+                    self.logger.info(
                         "Test start: {time} Timeout: {timeout}".format(
                             time=self.test_start_time, timeout=self.test_timeout))
                     start_time = datetime.datetime.now()
@@ -950,7 +950,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     end_time = datetime.datetime.now()
                     self.test_end_time = str(datetime.datetime.now().strftime(
                         "%Y-%m-%d-%H-%M-%S")).replace(':', '-')
-                    print(
+                    self.logger.info(
                         "Test end time {time}".format(
                             time=self.test_end_time))
 
