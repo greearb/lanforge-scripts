@@ -1,7 +1,10 @@
 {
     "ct_tests_003":{
         "Notes":[
-            "This json file describes tests to be run by LANforge system"
+            "This json file describes tests to be run by LANforge system",
+            "When doing a create_chamberview.py --create_scenario <name> ",
+            "has no correlation to the --instance_name , instance name is used ",
+            "as a unique identifier for tha chamber-view test run"
         ]  
     },
     "test_suites": {
@@ -412,8 +415,8 @@
                 "args_list":[
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ap_auto",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: DUT_NAME Radio-1' NA AUTO,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: DUT_NAME Radio-2' NA AUTO,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: USE_DUT_NAME Radio-1' NA AUTO,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: USE_DUT_NAME Radio-2' NA AUTO,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA eth2,AUTO -1 NA \" "
                 ]
             },

@@ -3,7 +3,9 @@
         "Notes":[
             "This json file describes the device undertest as input to  ./lf_check.py",
             "The variables that are capitalize are used for configuration",
-            "The dut related configuration is contained in this file"
+            "The dut related configuration is contained in this file",
+            "DUT_SET_NAME is an input to wifi capacity, dataplane and ap_auto tests, for --set parameter",
+            "The DUT_NAME must be part of DUT_SET_NAME"
         ]  
     },
     "test_dut":{

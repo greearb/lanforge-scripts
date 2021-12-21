@@ -1,16 +1,10 @@
 {
     "ct_tests_001_scripts":{
         "Notes":[
-            "The json is used to orchastrate the tests to be run on testbed ct_us_001",
-            "This json file is used as an input to the ./lf_check.py file",
-            "The variables that are all capitalized below are replaced with configuration",
-            "from the json file. so LF_MGR_IP in the test below is replaced by the json lf_mgr_ip",
-            "The replacement is loosely coupled so the upper and lower case convention is used",
-            "to identify replaced strings in the lf_check.py code.",
+            "This json file describes tests to be run by LANforge system",
             "When doing a create_chamberview.py --create_scenario <name> ",
             "has no correlation to the --instance_name , instance name is used ",
-            "as a unique identifier for tha chamber-view test run",
-            "Simpler runs after the suite_scripts"
+            "as a unique identifier for tha chamber-view test run"
         ]  
     },
     "test_suites":{
