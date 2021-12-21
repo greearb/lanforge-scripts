@@ -46,6 +46,7 @@ class lf_clean(Realm):
         self.endp_done = False
         self.sta_done = False
         self.br_done = False
+        self.misc_done = False
 
     def cxs_clean(self):
         still_looking_cxs = True
@@ -169,8 +170,6 @@ class lf_clean(Realm):
                             # print(data)
                             super().json_post(req_url, data)
                             time.sleep(.5)
-                        if ('Unknown' not in alias) and ('wlan' not in alias) and ('sta' not in alias):
-                            pass
                 time.sleep(1)
             else:
                 print("No stations found to cleanup")
@@ -210,8 +209,6 @@ class lf_clean(Realm):
                             # print(data)
                             super().json_post(req_url, data)
                             time.sleep(.5)
-                        if ('br' not in alias):
-                            still_looking_br = False
                 time.sleep(1)
 
             else:
@@ -221,6 +218,61 @@ class lf_clean(Realm):
         if not still_looking_br:
             self.br_done = True
         return still_looking_br
+
+    # Some test have various station names or a station named 1.1.eth2
+    def misc_clean(self):
+        still_looking_misc = True
+        iterations_misc = 0
+        while still_looking_misc and iterations_misc <= 10:
+            iterations_misc += 1
+            print("misc_clean: iterations_misc: {iterations_misc}".format(iterations_misc=iterations_misc))
+            try:
+                misc_json = super().json_get(
+                    "port/1/1/list?field=alias")['interfaces']
+            except TypeError:
+                misc_json = None
+
+            # get and remove current stations
+            if misc_json is not None:
+                print(misc_json)
+                print("Removing misc station names phy, 1.1.eth (malformed station name) ")
+                for name in list(misc_json):
+                    for alias in list(name):
+                        if 'phy' in alias and 'wiphy' not in alias:
+                            print(alias)
+                            info = self.name_to_eid(alias)
+                            req_url = "cli-json/rm_vlan"
+                            data = {
+                                "shelf": info[0],
+                                "resource": info[1],
+                                "port": info[2]
+                            }
+                            # print(data)
+                            super().json_post(req_url, data)
+                            time.sleep(.5)
+                        if '1.1.1.1.eth' in alias:
+                            print('alias 1.1.1.1.eth {alias}'.format(alias=alias))
+                            # need to hand construct for delete.
+                            info = alias.split('.')
+                            print('info {info}'.format(info=info))
+                            req_url = "cli-json/rm_vlan"
+                            info_2 = "{info2}.{info3}.{info4}".format(info2=info[2], info3=info[3], info4=info[4])
+                            data = {
+                                "shelf": info[0],
+                                "resource": info[1],
+                                "port": info_2
+                            }
+                            print(data)
+                            super().json_post(req_url, data)
+                            time.sleep(.5)
+                time.sleep(1)
+            else:
+                print("No misc found to cleanup")
+                still_looking_misc = False
+        print("clean_misc still_looking_misc {misc_looking}".format(misc_looking=still_looking_misc))
+        if not still_looking_misc:
+            self.misc_done = True
+        return still_looking_misc
 
     '''
         1: delete cx
@@ -248,6 +300,10 @@ class lf_clean(Realm):
         if self.clean_br:
             still_looking_br = self.bridge_clean()
             print("clean_br: still_looking_br {looking_br}".format(looking_br=still_looking_br))
+
+        if self.clean_misc:
+            still_looking_misc = self.misc_clean()
+            print("clean_misc: still_looking_misc {looking_misc}".format(looking_misc=still_looking_misc))
 
 
 def main():
@@ -297,9 +353,13 @@ python3 ./lf_clean.py --mgr MGR
         '--br',
         help="--br, this will clear all the bridges",
         action='store_true')
+    parser.add_argument(
+        '--misc',
+        help="--misc, this will clear sta with names phy (not wiphy) and 1.1.eth stations",
+        action='store_true')
 
     args = parser.parse_args()
-    if args.cxs or args.endp or args.sta:
+    if args.cxs or args.endp or args.sta or args.br or args.misc:
         clean = lf_clean(host=args.mgr, resource=int(args.resource), clean_cxs=args.cxs, clean_endp=args.endp, clean_sta=args.sta)
         print("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.endp, sta=args.sta))
         if args.cxs:
@@ -312,12 +372,14 @@ python3 ./lf_clean.py --mgr MGR
             clean.sta_clean()
         if args.br:
             clean.bridge_clean()
+        if args.misc:
+            clean.misc_clean()
 
         print("Clean done")
         # print("Clean  cxs_done {cxs_done} endp_done {endp_done} sta_done {sta_done}"
         #    .format(cxs_done=clean.cxs_done,endp_done=clean.endp_done,sta_done=clean.sta_done))
     else:
-        print("please add option of --cxs ,--endp, --sta , --br to clean")
+        print("please add option of --cxs ,--endp, --sta , --br, --misc to clean")
 
 
 if __name__ == "__main__":
