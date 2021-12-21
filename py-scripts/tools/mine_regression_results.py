@@ -84,14 +84,16 @@ class MineRegression:
             heatmap = self.df
             heatmap['Status'] = heatmap['Status'].replace('Success', 2).replace('Failure', -1).replace(
                 'Partial Failure', 0).replace('ERROR', -2)
-            fig = go.Figure(go.Heatmap(x=heatmap['Command Name'], z=heatmap['Status'], y=heatmap['Hostname']))
+            heatmap['System'] = heatmap['Hostname'] + '\n' + heatmap['Python Environment']
+            pivot_df = heatmap.sort_values('Status').drop_duplicates(['Command Name', 'System'])
+            fig = go.Figure(go.Heatmap(x=pivot_df['Command Name'], z=pivot_df['Status'], y=pivot_df['Hostname']))
             fig.update_layout(title="%s regression results" % now)
             fig.write_image("script_device_heatmap.png", width=1280, height=540)
             print('Created first heatmap')
 
             fig, ax = plt.subplots(1, 1, figsize=(18, 8))
             my_colors = [(0.7, 0.3, 0.3), (0.7, 0.5, 0.8), (.9, .9, 0.4), (0.1, 0.6, 0)]
-            sns.heatmap(pd.pivot_table(heatmap, values='Status',
+            sns.heatmap(pd.pivot_table(pivot_df, values='Status',
                                        index='Command Name', columns='Hostname'),
                         ax=ax,
                         cmap=my_colors,
