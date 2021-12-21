@@ -1535,7 +1535,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         print("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
         report.build_link("QA Test Results", qa_url)
 
-    report.set_table_title("LF Check Suite Summary: {suite}".format(test_suite))
+    report.set_table_title("LF Check Suite Summary: {suite}".format(suite=test_suite))
     report.build_table_title()
     report.set_table_dataframe(lf_test_summary)
     report.build_table()
