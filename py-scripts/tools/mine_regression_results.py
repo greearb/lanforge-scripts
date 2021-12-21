@@ -53,7 +53,6 @@ class MineRegression:
         system_variations['Python errors'] = system_variations['Errors'] - system_variations['LANforge errors']
         system_variations['Partial Failures'] = partial_failures
         system_variations['Major Errors'] = major_errors
-        system_variations
         if self.save_csv:
             system_variations.to_csv('regression_suite_results.csv')
         else:
