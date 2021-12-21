@@ -148,7 +148,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ATH10K_9984_wc",
                     " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA \" "                    
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA \" "
                 ]
             },
             "wifi_capacity_ATH10K_9984":{
@@ -184,7 +184,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario ATH10K_9984_dp",
                     " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy1,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA \" "                    
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA \" "
                 ]
             },
             "dataplane_ATH10K_9984":{
@@ -222,7 +222,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario AX200_wc",
                     " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-1' NA wiphy4,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA \" "                    
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA \" "
                 ]
             },
             "wifi_capacity_AX200":{
@@ -257,7 +257,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario AX200_dp",
                     " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy4,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA \" "                    
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA \" "
                 ]
             },
             "dataplane_AX200":{
@@ -296,7 +296,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario mt7915e_wc ",
                     " --raw_line \"profile_link 1.1 STA-AC 19 'DUT: USE_DUT_NAME Radio-2' NA wiphy7,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
             "wifi_capacity_mt7915e":{
@@ -336,7 +336,7 @@
                     " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
                     " --create_scenario mt7915e_dp",
                     " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy7,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA\""                    
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA\""
                 ]
             },
             "dataplane_mt7915e":{
@@ -377,7 +377,7 @@
                     " --create_scenario ap_auto",
                     " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-1' NA AUTO,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 STA-AUTO 1 'DUT: USE_DUT_NAME Radio-2' NA AUTO,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA \" "
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA \" "
                 ]
             },
             "ap_auto": {
@@ -753,7 +753,7 @@
                     " --create_scenario ap_auto ",
                     " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: USE_DUT_NAME Radio-1' NA wiphy1,AUTO -1 NA\" ",
                     " --raw_line \"profile_link 1.1 STA-AC 1 'DUT: USE_DUT_NAME Radio-2' NA wiphy4,AUTO -1 NA\" ",
-                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_PORT,AUTO -1 NA \" "
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA UPSTREAM_ALIAS,AUTO -1 NA \" "
                 ]
             },
             "ap_auto": {

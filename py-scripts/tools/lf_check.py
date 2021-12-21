@@ -192,6 +192,7 @@ class lf_check():
         self.lf_mgr_user = "lanforge"
         self.lf_mgr_pass = "lanforge"
         self.upstream_port = ""
+        self.upstream_alias = ""
 
         # results
         self.test_server = ""
@@ -618,6 +619,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             self.upstream_port = self.json_rig["test_rig_parameters"]["UPSTREAM_PORT"]
         else:
             self.logger.info("UPSTREAM_PORT not in test_rig_parameters json")
+        if "UPSTREAM_ALIAS" in self.json_rig["test_rig_parameters"]:
+            self.upstream_alias = self.json_rig["test_rig_parameters"]["UPSTREAM_ALIAS"]
+        else:
+            self.logger.info("UPSTREAM_ALIAS not in test_rig_parameters json")
         if "TEST_TIMEOUT" in self.json_rig["test_rig_parameters"]:
             self.test_timeout = self.json_rig["test_rig_parameters"]["TEST_TIMEOUT"]
             self.test_timeout_default = self.test_timeout
@@ -843,6 +848,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     if 'UPSTREAM_PORT' in self.test_dict[test]['args']:
                         self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('UPSTREAM_PORT',
                                                                                             self.upstream_port)
+                    if 'UPSTREAM_ALIAS' in self.test_dict[test]['args']:
+                        self.test_dict[test]['args'] = self.test_dict[test]['args'].replace('UPSTREAM_ALIAS',
+                                                                                            self.upstream_alias)
+
                     # lf_dataplane_test.py and lf_wifi_capacity_test.py use a parameter --local_path for the location
                     # of the reports when the reports are pulled.
                     if 'REPORT_PATH' in self.test_dict[test]['args']:
