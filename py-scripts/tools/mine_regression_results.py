@@ -1,20 +1,24 @@
 #!/usr/bin/env python3
 import pandas as pd
 import argparse
+import plotly.express as px
 
 
 class MineRegression:
     def __init__(self,
                  system_information=None,
                  save_csv=False,
+                 save_png=False,
                  ips=None):
         self.df = None
         self.ips = ips
         self.system_info = system_information
         self.save_csv = save_csv
+        self.save_png = save_png
 
     def generate_csv(self):
-        results = [pd.read_html('http://%s/html-reports/latest.html' % url, attrs={'id': 'myTable2'})[0] for url in self.ips]
+        results = [pd.read_html('http://%s/html-reports/latest.html' % url, attrs={'id': 'myTable2'})[0] for url in
+                   self.ips]
         systems = [pd.read_html('http://%s/html-reports/latest.html' % url, attrs={'id': 'SystemInformation'})[0] for
                    url in self.ips]
         for df in range(0, len(self.ips)):
@@ -28,8 +32,10 @@ class MineRegression:
 
     def generate_report(self):
         system_variations = self.df[
-            ['IP', 'Python version', 'LANforge version', 'OS Version', 'Hostname', 'Python Environment']].drop_duplicates(
-            ['IP', 'Python version', 'LANforge version', 'OS Version', 'Hostname', 'Python Environment']).reset_index(drop=True)
+            ['IP', 'Python version', 'LANforge version', 'OS Version', 'Hostname',
+             'Python Environment']].drop_duplicates(
+            ['IP', 'Python version', 'LANforge version', 'OS Version', 'Hostname', 'Python Environment']).reset_index(
+            drop=True)
         errors = list()
         lanforge_errors = list()
         partial_failures = list()
@@ -37,8 +43,10 @@ class MineRegression:
         successes = list()
         for index in system_variations.index:
             variation = system_variations.iloc[index]
-            system = self.df.loc[self.df[['Python version', 'LANforge version', 'OS Version', 'Python Environment', 'IP']].isin(dict(
-                variation).values()).all(axis=1), :]
+            system = self.df.loc[
+                     self.df[['Python version', 'LANforge version', 'OS Version', 'Python Environment', 'IP']].isin(
+                         dict(
+                             variation).values()).all(axis=1), :]
             result = system.dropna(subset=['STDERR']).shape[0]
             errors.append(result)
 
@@ -58,18 +66,31 @@ class MineRegression:
         else:
             print(system_variations.sort_values('Successes'))
 
+        if self.save_png:
+            fail = pd.DataFrame(dict(self.df[self.df['Status'] != 'Success']['Command Name'].value_counts()).items())
+            success = pd.DataFrame(dict(self.df[self.df['Status'] == 'Success']['Command Name'].value_counts()).items())
+            success['status'] = True
+            fail['status'] = False
+            df = pd.concat([success, fail])
+            fig = px.bar(df, x=0, y=1, color='status')
+            fig.write_image("script_statuses.png")
+            print('Saved png')
+
 
 def main():
     parser = argparse.ArgumentParser(description='Compare regression results from different systems')
     parser.add_argument('--system_info', help='location of system information csv', default=None)
     parser.add_argument('--save_csv', help='save CSV of results', action='store_true')
+    parser.add_argument('--save_png', help='save PNG of results', action='store_true')
     parser.add_argument('--ip', help='IP addresses of LANforge devices you want to probe', action='append')
     args = parser.parse_args()
 
     if args.ip is None:
-        args.ip = ['192.168.92.18', '192.168.92.12', '192.168.93.51', '192.168.92.15', '192.168.100.184', '192.168.100.30']
+        args.ip = ['192.168.92.18', '192.168.92.12', '192.168.93.51', '192.168.92.15', '192.168.100.184',
+                   '192.168.100.30']
     Miner = MineRegression(system_information=args.system_info,
                            save_csv=args.save_csv,
+                           save_png=args.save_png,
                            ips=args.ip)
 
     Miner.generate_csv()
