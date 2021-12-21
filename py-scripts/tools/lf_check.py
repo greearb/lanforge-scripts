@@ -1234,22 +1234,19 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     parser.add_argument(
         '--json_rig',
         help="--json_rig <rig json config> ",
-        default="",
         required=True)
     parser.add_argument(
         '--json_dut',
         help="--json_dut <dut json config> ",
-        default="",
         required=True)
     parser.add_argument(
         '--json_test',
         help="--json_test <test json config> ",
-        default="",
         required=True)
     parser.add_argument(
         '--suite',
-        help="--suite <suite name>  default TEST_DICTIONARY",
-        default="TEST_DICTIONARY")
+        help="--suite <suite name> ",
+        required=True)
     parser.add_argument(
         '--server_override',
         help="--server_override http://<server ip>/  example: http://192.168.95.6/",
@@ -1538,7 +1535,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         print("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
         report.build_link("QA Test Results", qa_url)
 
-    report.set_table_title("LF Check Suite Summary")
+    report.set_table_title("LF Check Suite Summary: {suite}".format(test_suite))
     report.build_table_title()
     report.set_table_dataframe(lf_test_summary)
     report.build_table()
