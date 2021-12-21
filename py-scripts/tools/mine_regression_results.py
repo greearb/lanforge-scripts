@@ -2,6 +2,7 @@
 import pandas as pd
 import argparse
 import plotly.express as px
+import plotly.graph_objects as go
 
 
 class MineRegression:
@@ -73,8 +74,14 @@ class MineRegression:
             fail['status'] = False
             df = pd.concat([success, fail])
             fig = px.bar(df, x=0, y=1, color='status')
-            fig.write_image("script_statuses.png")
+            fig.write_image("script_statuses.png", width=1280, height=540)
             print('Saved png')
+
+            heatmap = self.df
+            heatmap['Status'] = heatmap['Status'].replace('Success', 2).replace('Failure', -1).replace(
+                'Partial Failure', 0).replace('ERROR', -2)
+            fig = go.Figure(go.Heatmap(x=heatmap['Command Name'], z=heatmap['Status'], y=heatmap['IP']))
+            fig.write_image("script_device_heatmap.png", width=1280, height=540)
 
 
 def main():
