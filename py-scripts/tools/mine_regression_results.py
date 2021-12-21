@@ -23,6 +23,8 @@ class MineRegression:
         dfs = [pd.merge(results[n], systems[n], on='IP') for n in range(len(self.ips))]
         self.df = pd.concat(dfs)
         self.df = self.df[self.df['STDOUT'] == 'STDOUT']
+        if self.save_csv:
+            self.df.to_csv('test_specific_results.csv')
 
     def generate_report(self):
         system_variations = self.df[
@@ -61,7 +63,7 @@ class MineRegression:
 def main():
     parser = argparse.ArgumentParser(description='Compare regression results from different systems')
     parser.add_argument('--system_info', help='location of system information csv', default=None)
-    parser.add_argument('--save_csv', help='save CSV of results', default=False)
+    parser.add_argument('--save_csv', help='save CSV of results', action='store_true')
     parser.add_argument('--ip', help='IP addresses of LANforge devices you want to probe', action='append')
     args = parser.parse_args()
 
