@@ -3,6 +3,9 @@ import pandas as pd
 import argparse
 import plotly.express as px
 import plotly.graph_objects as go
+import matplotlib.pyplot as plt
+import seaborn as sns
+import datetime
 
 
 class MineRegression:
@@ -68,20 +71,38 @@ class MineRegression:
             print(system_variations.sort_values('Successes'))
 
         if self.save_png:
+            now = datetime.datetime.now()
             fail = pd.DataFrame(dict(self.df[self.df['Status'] != 'Success']['Command Name'].value_counts()).items())
             success = pd.DataFrame(dict(self.df[self.df['Status'] == 'Success']['Command Name'].value_counts()).items())
             success['status'] = True
             fail['status'] = False
             df = pd.concat([success, fail])
-            fig = px.bar(df, x=0, y=1, color='status')
+            fig = px.bar(df, x=0, y=1, color='status', title="%s regression results" % now)
             fig.write_image("script_statuses.png", width=1280, height=540)
             print('Saved png')
 
             heatmap = self.df
             heatmap['Status'] = heatmap['Status'].replace('Success', 2).replace('Failure', -1).replace(
                 'Partial Failure', 0).replace('ERROR', -2)
-            fig = go.Figure(go.Heatmap(x=heatmap['Command Name'], z=heatmap['Status'], y=heatmap['IP']))
+            fig = go.Figure(go.Heatmap(x=heatmap['Command Name'], z=heatmap['Status'], y=heatmap['Hostname']))
+            fig.update_layout(title="%s regression results" % now)
             fig.write_image("script_device_heatmap.png", width=1280, height=540)
+            print('Created first heatmap')
+
+            fig, ax = plt.subplots(1, 1, figsize=(18, 8))
+            my_colors = [(0.7, 0.3, 0.3), (0.7, 0.5, 0.8), (.9, .9, 0.4), (0.1, 0.6, 0)]
+            sns.heatmap(pd.pivot_table(heatmap, values='Status',
+                                       index='Command Name', columns='Hostname'),
+                        ax=ax,
+                        cmap=my_colors,
+                        linewidth=0.1,
+                        linecolor=(0.1, 0.2, 0.2))
+            ax.title.set_text('%s regression results' % now)
+            colorbar = ax.collections[0].colorbar
+            colorbar.set_ticks([-1.5, -.5, 0.5, 1.5])
+            colorbar.set_ticklabels(['ERROR', 'Failure', 'Partial Failure', 'Success'])
+            plt.savefig('script_device_heatmap_2.png')
+            print('Created second heatmap')
 
 
 def main():
