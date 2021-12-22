@@ -12,14 +12,12 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 
-class TestGroup(LFCliBase):
+class TestGroup(Realm):
     def __init__(self, host, port,
                  group_name=None,
                  add_cx_list=None,
@@ -28,13 +26,13 @@ class TestGroup(LFCliBase):
                  cx_action=None,
                  list_groups=None,
                  show_group=None):
+        super().__init__(lfclient_host=host, lfclient_port=port)
 
         if add_cx_list is None:
             add_cx_list = []
         if rm_cx_list is None:
             rm_cx_list = []
-        self.local_realm = realm.Realm(lfclient_host=host, lfclient_port=port)
-        self.tg_profile = self.local_realm.new_test_group_profile()
+        self.tg_profile = self.new_test_group_profile()
         if group_name is None and list_groups is None and (tg_action is not None or cx_action is not None or
                                                            add_cx_list is not None or rm_cx_list is not None or show_group is not None):
             raise ValueError(
@@ -117,7 +115,7 @@ class TestGroup(LFCliBase):
 
 
 def main():
-    parser = LFCliBase.create_bare_argparse(
+    parser = Realm.create_bare_argparse(
         prog='testgroup.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''Control and query test groups\n''',
