@@ -51,7 +51,7 @@ class IPv4Test(LFCliBase):
 
     def build(self):
         # Build stations
-        #print("We've gotten into the build stations function")
+        # print("We've gotten into the build stations function")
         self.station_profile.use_security(
             self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
@@ -103,10 +103,6 @@ def main():
         --passwd admin123-wpa3 
         --debug 
             ''')
-    required = None
-    for agroup in parser._action_groups:
-        if agroup.title == "required arguments":
-            required = agroup
     # if required is not None:
     optional = None
     for agroup in parser._action_groups:
