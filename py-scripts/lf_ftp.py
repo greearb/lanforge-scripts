@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
-""" lf_ftp.py will verify that N clients connected on specified band and can simultaneously download/upload some amount of file from FTP server and measuring the time taken by client to download/upload the file.
-    cli- ./lf_ftp.py --ssid <SSID> --passwd <PASSWORD>  --file_sizes 2MB --fiveg_duration 4 --mgr 192.168.1.101 --traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
-    Copyright 2021 Candela Technologies Inc
-    License: Free to distribute and modify. LANforge systems must be licensed.
+"""
+lf_ftp.py will verify that N clients are connected on a specified band and can simultaneously download/upload
+ some amount of file data from the FTP server while measuring the time taken by clients to download/upload the file.
+
+cli- ./lf_ftp.py --ssid <SSID> --passwd <PASSWORD>  --file_sizes 2MB --fiveg_duration 4 --mgr 192.168.1.101
+--traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
+
+Copyright 2021 Candela Technologies Inc
+License: Free to distribute and modify. LANforge systems must be licensed.
 """
 import sys
 import importlib
@@ -711,8 +716,13 @@ def main():
 ---------------------------
 FTP Test Script - lf_ftp.py
 ---------------------------
+Summary:
+lf_ftp.py will verify that N clients are connected on a specified band and can simultaneously download/upload 
+ some amount of file data from the FTP server while measuring the time taken by clients to download/upload the file. 
+---------------------------
 CLI Example: 
-./lf_ftp.py --ssid <SSID> --passwd <PASSWORD> --file_sizes 2MB --fiveg_duration <MIN> --mgr 192.168.1.101 --traffic_duration <MIN> --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
+./lf_ftp.py --ssid <SSID> --passwd <PASSWORD> --file_sizes 2MB --fiveg_duration <MIN> --mgr 192.168.1.101 
+--traffic_duration <MIN> --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
 ---------------------------
                     ''')
     parser.add_argument('--mgr', help='hostname for where LANforge GUI is running [default = localhost]', default='localhost')
