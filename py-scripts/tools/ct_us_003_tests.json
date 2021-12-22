@@ -316,6 +316,7 @@
                     " --set 'Capacity' 0",
                     " --set 'Band-Steering' 0",
                     " --set 'Skip 2.4Ghz Tests' 0",
+                    " --raw_line 'cx_psk_thresh: 300'",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AP_AUTO'",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -379,6 +380,7 @@
                     " --set 'Capacity' 1",
                     " --set 'Band-Steering' 1",
                     " --set 'Skip 2.4Ghz Tests' 0",
+                    " --raw_line 'cx_psk_thresh: 300'",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AP_AUTO'",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -442,6 +444,71 @@
                     " --set 'Capacity' 0",
                     " --set 'Band-Steering' 0",
                     " --set 'Skip 2.4Ghz Tests' 0",
+                    " --raw_line 'cx_psk_thresh: 300'",
+                    " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AP_AUTO'",
+                    " --test_rig TEST_RIG",
+                    " --set DUT_SET_NAME"
+                ]
+            },
+            "lf_qa":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+                ]
+            }
+        },
+        "suite_ap_bc":{
+            "create_chamberview_dut_ap_bc":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview_dut.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --dut_name USE_DUT_NAME",
+                    " --ssid 'ssid_idx=0 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --ssid 'ssid_idx=1 ssid=SSID_USED security=SECURITY_USED password=SSID_PW_USED bssid=BSSID_TO_USE'",
+                    " --sw_version DUT_SW --hw_version DUT_HW --serial_num DUT_SERIAL --model_num USE_DUT_NAME"
+                ]},
+            "create_chamberview_ap_bc":{
+                "enabled":"TRUE",
+                "load_db":"skip",
+                "command":"create_chamberview.py",
+                "args":"",
+                "args_list":[
+                    " --lfmgr LF_MGR_IP --port LF_MGR_PORT --delete_scenario",
+                    " --create_scenario ap_auto",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: USE_DUT_NAME Radio-1' NA AUTO,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 STA-AUTO 4 'DUT: USE_DUT_NAME Radio-2' NA AUTO,AUTO -1 NA\" ",
+                    " --raw_line \"profile_link 1.1 upstream-dhcp 1 NA NA eth2,AUTO -1 NA \" "
+                ]
+            },
+            "ap_auto_bc": {
+                "enabled": "TRUE",
+                "command": "lf_ap_auto_test.py",
+                "timeout":"14400",
+                "iterations":"1",
+                "args": "",
+                "args_list":[
+                    " --mgr LF_MGR_IP --port LF_MGR_PORT --lf_user lanforge --lf_password lanforge",
+                    " --instance_name ap_auto --config_name test_con --upstream eth2",
+                    " use_ssid_idx=0 --dut2_0 'USE_DUT_NAME lanforge BSSID_TO_USE (1)'",
+                    " use_ssid_idx=1 --dut5_0 'USE_DUT_NAME lanforge BSSID_TO_USE (2)'",
+                    " --max_stations_2 8 --max_stations_5 8 --max_stations_dual 1",
+                    " --radio2 1.1.wiphy0 --radio2 1.1.wiphy1 --radio2 1.2.wiphy0 --radio2 1.2.wiphy1 --radio2 1.3.wiphy0 --radio2 1.3.wiphy1",
+                    " --radio5 1.1.wiphy0 --radio5 1.1.wiphy1 --radio5 1.2.wiphy0 --radio5 1.2.wiphy1 --radio5 1.3.wiphy0 --radio5 1.3.wiphy1",
+                    " --set 'Basic Client Connectivity' 1",
+                    " --set 'Multi Band Performance' 0",
+                    " --set 'Stability' 0",
+                    " --set 'Multi-Station Throughput vs Pkt Size'  0,",
+                    " --set 'Throughput vs Pkt Size' 0",
+                    " --set 'Capacity' 0",
+                    " --set 'Band-Steering' 0",
+                    " --set 'Skip 2.4Ghz Tests' 0",
+                    " --raw_line 'cx_psk_thresh: 300'",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AP_AUTO'",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
