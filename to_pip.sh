@@ -169,10 +169,10 @@ sed -i -- 's/sys.path.append(os.path.join(os.path.abspath(__file__ + "..\/..\/..
 
 #Change importlib to pip compliant method
 sed -i -- 's/import importlib/ /g' *.py
-sed -i -- 's/influx = importlib.import_module("py-scripts.influx_utils")/import influx_utils/g' *.py
+sed -i -- 's/influx = importlib.import_module("py-scripts.influx_utils")/from lanforge_scripts.py_scripts.influx_utils import RecordInflux/g' *.py
+sed -i -- 's/RecordInflux = influx.RecordInflux/ /g' *.py
 sed -i -- 's/create_chamberview_dut = importlib.import_module("py-scripts.create_chamberview_dut")/import create_chamberview_dut/g' *.py
-sed -i -- 's/lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")/import lf_kpi_csv/g' *.py
-sed -i -- 's/influx = importlib.import_module("py-scripts.influx_utils")/import influx_utils/g' *.py
+sed -i -- 's/lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")/from lanforge_scripts.py_scripts import lf_kpi_csv/g' *.py
 sed -i -- "s/InfluxRequest = importlib.import_module('py-dashboard.InfluxRequest')/from lanforge_scripts.py_dashboard import InfluxRequest/g" *.py
 sed -i -- 's/l3_cxprofile2 = importlib.import_module("py-json.l3_cxprofile2")/from lanforge_scripts.py_json import l3_cxprofile2/g' *.py
 sed -i -- 's/add_dut = importlib.import_module("py-json.LANforge.add_dut")/from lanforge_scripts.py_json.LANforge import add_dut/g' *.py
@@ -252,6 +252,13 @@ sed -i -- 's/from LANforge/from lanforge_scripts.py_json.LANforge/g' *.py
 sed -i -- 's/from cv_test_manager/from lanforge_scripts.py_json.cv_test_manager/g' *.py
 
 #fix py_scripts files
+sed -i -- 's/lf_report = importlib.import_module("py-scripts.lf_report")/from .lf_report import lf_report/g' *.py
+sed -i -- 's/lf_graph = importlib.import_module("py-scripts.lf_graph")/from .lf_graph import lf_bar_graph, lf_scatter_graph, lf_stacked_graph, lf_horizontal_stacked_graph/g' *.py
+sed -i -- 's/lf_report = lf_report.lf_report/ /g' *.py
+sed -i -- 's/lf_bar_graph = lf_graph.lf_bar_graph/ /g' *.py
+sed -i -- 's/lf_scatter_graph = lf_graph.lf_scatter_graph/ /g' *.py
+sed -i -- 's/lf_stacked_graph = lf_graph.lf_stacked_graph/ /g' *.py
+sed -i -- 's/lf_horizontal_stacked_graph = lf_graph.lf_horizontal_stacked_graph/ /g' *.py
 sed -i -- 's/from lf_graph/from .lf_graph/g' *.py
 sed -i -- 's/from csv_to_influx/from .csv_to_influx/g' *.py
 sed -i -- 's/from csv_to_grafana/from .csv_to_grafana/g' *.py
@@ -282,7 +289,8 @@ sed -i -- 's/dut_profile = importlib.import_module("py-json.dut_profile")/from l
 sed -i -- 's/l4_cxprofile = importlib.import_module("py-json.l4_cxprofile")/from lanforge_scripts.py_json import l4_cxprofile/g' *.py
 sed -i -- 's/http_profile = importlib.import_module("py-json.http_profile")/from lanforge_scripts.py_json import http_profile/g' *.py
 sed -i -- 's/port_utils = importlib.import_module("py-json.port_utils")/from lanforge_scripts.py_json.port_utils import PortUtils/g' *.py
-sed -i -- 's/wifi_monitor_profile = importlib.import_module("py-json.wifi_monitor_profile")/from lanforge_scripts.py_json import wifi_monitor_profile/g' *.py
+sed -i -- 's/wifi_monitor_profile = importlib.import_module("py_json.wifi_monitor_profile")/from lanforge_scripts.py_json import wifi_monitor_profile/g' *.py
+sed -i -- 's/wifi_monitor = importlib.import_module("py_json.wifi_monitor_profile")/from lanforge_scripts.py_json import wifi_monitor_profile/g' *.py
 sed -i -- 's/fio_endp_profile = importlib.import_module("py-json.fio_endp_profile")/from lanforge_scripts.py_json import fio_endp_profile/g' *.py
 sed -i -- 's/lfdata = importlib.import_module("py-json.lfdata")/from lanforge_scripts.py_json import lfdata/g' *.py
 sed -i -- 's/multicast_profile = importlib.import_module("py-json.multicast_profile")/from lanforge_scripts.py_json import multicast_profile/g' *.py
