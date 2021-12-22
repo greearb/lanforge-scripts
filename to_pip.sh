@@ -375,7 +375,7 @@ sed -i -- 's/from lanforge_scripts.LANforge/from .LANforge/g' realm.py
 sed -i -- 's/from port_utils/from .port_utils/g' *.py
 
 #fix py_scripts files
-sed -i -- 's/from lf_report/from lanforge_scripts.py_scripts.lf_report/g' *.py
+sed -i -- 's/from lf_report/from lanforge_scripts.py_scripts import lf_report/g' *.py
 sed -i -- 's/from lf_graph/from lanforge_scripts.py_scripts.lf_graph/g' *.py
 sed -i -- 's/from create_station/from lanforge_scripts.py_scripts.create_station/g' *.py
 sed -i -- 's/from cv_test_reports/from .cv_test_reports/g' *.py
