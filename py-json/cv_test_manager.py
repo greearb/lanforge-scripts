@@ -362,8 +362,6 @@ class cv_test(Realm):
                         print("SCP failed, user %s, password %s, dest %s" % (lf_user, lf_password, lf_host))
                         raise e  # Exception("Could not find Reports")
                     break
-            else:
-                print('Not reporting to kpi file')
 
             # Of if test stopped for some reason and could not generate report.
             if not self.get_is_running(instance_name):
