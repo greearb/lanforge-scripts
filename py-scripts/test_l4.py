@@ -63,8 +63,6 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
@@ -73,7 +71,7 @@ port_utils = importlib.import_module("py-json.port_utils")
 PortUtils = port_utils.PortUtils
 
 
-class IPV4L4(LFCliBase):
+class IPV4L4(Realm):
     def __init__(self,
                  host="localhost",
                  port=8080,
@@ -100,7 +98,7 @@ class IPV4L4(LFCliBase):
                  test_type=None,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        super().__init__(lfclient_host=host, lfclient_port=port)
 
         self.host = host
         self.port = port
@@ -120,11 +118,10 @@ class IPV4L4(LFCliBase):
         self.num_tests = int(num_tests)
         self.target_requests_per_ten = int(target_requests_per_ten)
 
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.station_profile = self.local_realm.new_station_profile()
-        self.cx_profile = self.local_realm.new_l4_cx_profile()
+        self.station_profile = self.new_station_profile()
+        self.cx_profile = self.new_l4_cx_profile()
 
-        self.port_util = PortUtils(self.local_realm)
+        self.port_util = PortUtils(self)
 
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
@@ -187,11 +184,11 @@ class IPV4L4(LFCliBase):
 
     def start(self, print_pass=False, print_fail=False):
         if self.ftp:
-            self.port_util.set_ftp(port_name=self.local_realm.name_to_eid(self.upstream_port)[2], resource=1, on=True)
+            self.port_util.set_ftp(port_name=self.name_to_eid(self.upstream_port)[2], resource=1, on=True)
         temp_stas = self.sta_list.copy()
 
         self.station_profile.admin_up()
-        if self.local_realm.wait_for_ip(temp_stas):
+        if self.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:
             self._fail("Stations failed to get IPs", print_fail)
@@ -203,7 +200,7 @@ class IPV4L4(LFCliBase):
     def stop(self):
         self.cx_profile.stop_cx()
         if self.ftp:
-            self.port_util.set_ftp(port_name=self.local_realm.name_to_eid(self.upstream_port)[2], resource=1, on=False)
+            self.port_util.set_ftp(port_name=self.name_to_eid(self.upstream_port)[2], resource=1, on=False)
         self.station_profile.admin_down()
 
     def cleanup(self, sta_list):
@@ -214,7 +211,7 @@ class IPV4L4(LFCliBase):
 
 
 def main():
-    parser = LFCliBase.create_basic_argparse(
+    parser = Realm.create_basic_argparse(
         prog='test_l4',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -348,7 +345,7 @@ python3 ./test_l4.py
     ip_test.build()
     ip_test.start()
 
-    layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.local_realm.json_get('layer4')['endpoint']])
+    layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.json_get('layer4')['endpoint']])
     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
                                report_file=rpt_file,
                                duration_sec=args.test_duration,
