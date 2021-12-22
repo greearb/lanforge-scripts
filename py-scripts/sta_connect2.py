@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
+'''
+This will create a station, create TCP and UDP traffic, run it a short amount of time, and verify whether traffic
+ was sent and received.  It also verifies the station connected to the requested BSSID if bssid is specified
+ as an argument. The script will clean up the station and connections at the end of the test.
 
-#  This will create a station, create TCP and UDP traffic, run it a short amount of time,
-#  and verify whether traffic was sent and received.  It also verifies the station connected
-#  to the requested BSSID if bssid is specified as an argument.
-#  The script will clean up the station and connections at the end of the test.
+cli example:
+./sta_connect2.py --dest localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2
+--upstream_port eth1 --radio wiphy1
+
+Copyright 2021 Candela Technologies Inc
+License: Free to distribute and modify. LANforge systems must be licensed.
+'''
+
 import sys
 import os
 import importlib
@@ -399,9 +407,19 @@ def main():
     parser = argparse.ArgumentParser(
         prog="sta_connect2.py",
         formatter_class=argparse.RawTextHelpFormatter,
-        description="""LANforge Unit Test:  Connect Station to AP
-Example:
-./sta_connect2.py --dest 192.168.100.209 --dut_ssid OpenWrt-2 --dut_bssid 24:F5:A2:08:21:6C
+        description="""
+---------------------------
+LANforge Unit Test:  Connect Station to AP - sta_connect2.py
+---------------------------
+Summary:
+This will create a station, create TCP and UDP traffic, run it a short amount of time, and verify whether traffic 
+ was sent and received.  It also verifies the station connected to the requested BSSID if bssid is specified
+ as an argument. The script will clean up the station and connections at the end of the test.
+---------------------------
+CLI Example: 
+./sta_connect2.py --dest localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2 
+--upstream_port eth1 --radio wiphy1
+--------------------------- 
 """)
     parser.add_argument("-d", "--dest", type=str, help="address of the LANforge GUI machine (localhost is default)", default='localhost')
     parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)", default=8080)
