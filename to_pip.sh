@@ -252,7 +252,6 @@ sed -i -- 's/from LANforge/from lanforge_scripts.py_json.LANforge/g' *.py
 sed -i -- 's/from cv_test_manager/from lanforge_scripts.py_json.cv_test_manager/g' *.py
 
 #fix py_scripts files
-sed -i -- 's/from lf_report/from .lf_report/g' *.py
 sed -i -- 's/from lf_graph/from .lf_graph/g' *.py
 sed -i -- 's/from csv_to_influx/from .csv_to_influx/g' *.py
 sed -i -- 's/from csv_to_grafana/from .csv_to_grafana/g' *.py
