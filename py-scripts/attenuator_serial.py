@@ -15,8 +15,9 @@ LFCliBase = lfcli_base.LFCliBase
 LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
+
 class AttenuatorSerial(LFCliBase):
-    def __init__(self, lfclient_host, lfclient_port,  debug_=False):
+    def __init__(self, lfclient_host, lfclient_port, debug_=False):
         super().__init__(lfclient_host, lfclient_port, debug_)
         self.lfclient_host = lfclient_host
         self.COMMANDS = ["show_attenuators", "set_attenuator"]
@@ -54,6 +55,8 @@ class AttenuatorSerial(LFCliBase):
                     ser_no_list.append(key)
 
         return ser_no_list
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog='attenuator_serial.py',
@@ -73,7 +76,7 @@ attenuator_serial.py.py:
 
     obj = AttenuatorSerial(lfclient_host="localhost", lfclient_port=8802)
     x = obj.show()
-    print("out",x)
+    print("out", x)
 
 
 if __name__ == '__main__':
