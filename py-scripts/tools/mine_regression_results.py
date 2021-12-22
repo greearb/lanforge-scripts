@@ -82,8 +82,8 @@ class MineRegression:
             print('Saved png')
 
             heatmap = self.df
-            heatmap['Status'] = heatmap['Status'].replace('Success', 2).replace('Failure', -1).replace(
-                'Partial Failure', 0).replace('ERROR', -2)
+            heatmap['Status'] = heatmap['Status'].replace('Success', 2).replace('Failure', -2).replace(
+                'Partial Failure', 0).replace('ERROR', -1)
             heatmap['System'] = heatmap['Hostname'] + '\n' + heatmap['Python Environment']
             pivot_df = heatmap.sort_values('Status').drop_duplicates(['Command Name', 'System'])
             fig = go.Figure(go.Heatmap(x=pivot_df['Command Name'], z=pivot_df['Status'], y=pivot_df['Hostname']))
