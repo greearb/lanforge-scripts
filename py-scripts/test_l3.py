@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NAME: test_l3_longevity.py
+NAME: test_l3.py
 
 PURPOSE:
 
@@ -18,13 +18,13 @@ EXAMPLE:
 
  10 stations on wiphy0, 1 station on wiphy2.  open-auth to ASUS_70 SSID
  Configured to submit KPI
-./test_l3_longevity.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 \
+./test_l3.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 \
   --radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
   --radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
   --test_duration 5s 
 
 Example command using attenuator
-./test_l3_longevity.py --test_duration 5m --polling_interval 1s --upstream_port eth2 \
+./test_l3.py --test_duration 5m --polling_interval 1s --upstream_port eth2 \
     --radio 'radio==wiphy1,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --radio 'radio==wiphy2,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --radio 'radio==wiphy3,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
@@ -34,11 +34,11 @@ Example command using attenuator
     --atten_vals 20,21,40,41
 
 Example using upsteam eth1 downstream eth2
-    ./test_l3_longevity.py --test_duration 20s --polling_interval 1s --upstream_port eth1 --downstream_port eth2
+    ./test_l3.py --test_duration 20s --polling_interval 1s --upstream_port eth1 --downstream_port eth2
     --endp_type lf --rates_are_totals --side_a_min_bps=10000000,0 --side_a_min_pdu=1000 --side_b_min_bps=0,300000000 --side_b_min_pdu=1000
 
 Example using wifi_settings
-    ./test_l3_longevity.py  --lfmgr 192.168.100.116 --local_lf_report_dir
+    ./test_l3.py  --lfmgr 192.168.100.116 --local_lf_report_dir
      /home/lanforge/html-reports/ --test_duration 15s --polling_interval 5s
      --upstream_port eth2
      --radio "radio==wiphy1 stations==4 ssid==asus11ax-5 ssid_pw==hello123 security==wpa2
@@ -1198,7 +1198,7 @@ def main():
             ''',
 
         description='''\
-test_l3_longevity.py:
+test_l3.py:
 --------------------
 
 Summary :
@@ -1209,19 +1209,20 @@ and received.
 
 Generic command layout:
 -----------------------
-python .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port>
-        --radio "radio==<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password>
-        security==<security type: wpa2, open, wpa3>" --debug
+./test_l3.py --mgr <ip_address> --test_duration <duration> --endp_type <traffic types> --upstream_port <port> 
+--radio "radio==<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> 
+security==<security type: wpa2, open, wpa3>" --debug
+
 Multiple radios may be entered with individual --radio switches
 
 # UDP bi-directional test, no use of controller.
-/test_l3_longevity.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 \
+/test_l3.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 \
   --radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
   --radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
   --test_duration 30s
 
 # Port resets, chooses random value between min and max
-test_l3_longevity.py --lfmgr LF_MGR_IP --test_duration 90s --polling_interval 10s --upstream_port eth2 \
+test_l3.py --lfmgr LF_MGR_IP --test_duration 90s --polling_interval 10s --upstream_port eth2 \
                      --radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED, \
                         reset_port_enable==TRUE,reset_port_time_min==10s,reset_port_time_max==20s'
                      --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"
@@ -1269,12 +1270,12 @@ Example #1  running traffic with two radios
 6. Create connections with TOS of BK and VI
 
 Command: (remove carriage returns)
-python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1
+python3 ./test_l3.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1
 --radio "radio==wiphy0 stations==32 ssid==candelaTech-wpa2-x2048-4-1 ssid_pw==candelaTech-wpa2-x2048-4-1 security==wpa2"
 --radio "radio==wiphy1 stations==64 ssid==candelaTech-wpa2-x2048-5-3 ssid_pw==candelaTech-wpa2-x2048-5-3 security==wpa2"
 
 Setting wifi_settings per radio
-./test_l3_longevity.py  --lfmgr 192.168.100.116 --local_lf_report_dir /home/lanforge/html-reports/ --test_duration 15s
+./test_l3.py --lfmgr 192.168.100.116 --local_lf_report_dir /home/lanforge/html-reports/ --test_duration 15s
 --polling_interval 5s --upstream_port eth2
 --radio "radio==wiphy1 stations==4 ssid==asus11ax-5 ssid_pw==hello123 security==wpa2  mode==0 wifi_settings==wifi_settings
     enable_flags==('ht160_enable'|'wpa2_enable'|'80211u_enable'|'create_admin_down'|'ht160_enable') "
