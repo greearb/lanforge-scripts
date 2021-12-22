@@ -49,32 +49,32 @@ def main():
     try:
         args = parse.parse_args()
         # Station
-        if args.station is not None:
+        if args.station:
             Calculator_name = args.station
         else:
             Calculator_name = "11abg"
 
         # Traffic Type
-        if args.traffic is not None:
+        if args.traffic:
             traffic_name = args.traffic
         else:
             traffic_name = "Data"
 
         # PHY Bit Rate
-        if args.phy is not None:
+        if args.phy:
             phy_name = args.phy
         else:
             phy_name = "54"
 
         # Encryption
-        if args.encryption is not None:
+        if args.encryption:
             encryption_name = args.encryption
         else:
             encryption_name = "None"
 
         # QoS
 
-        if args.qos is not None:
+        if args.qos:
             qos_name = args.qos
         else:
             if "11abg" in Calculator_name:
@@ -84,35 +84,35 @@ def main():
 
         # 802.11 MAC Frame
 
-        if args.mac is not None:
+        if args.mac:
             mac_name = args.mac
         else:
             mac_name = "1518"
 
         # Basic Rate Set
 
-        if args.basic is not None:
+        if args.basic:
             basic_name = args.basic
         else:
             basic_name = ['1', '2', '5.5', '11', '6', '12', '24']
 
         # Preamble value
 
-        if args.preamble is not None:
+        if args.preamble:
             preamble_name = args.preamble
         else:
             preamble_name = "Short"
 
         # Slot Time
 
-        if args.slot is not None:
+        if args.slot:
             slot_name = args.slot
         else:
             slot_name = "Short"
 
         # Codec Type (Voice Traffic)
 
-        if args.codec is not None:
+        if args.codec:
             codec_name = args.codec
         else:
             if "11abg" in Calculator_name:
@@ -124,14 +124,14 @@ def main():
 
         # RTS/CTS Handshake
 
-        if args.rts is not None:
+        if args.rts:
             rts_name = args.rts
         else:
             rts_name = "No"
 
         # CTS - to - self(protection)
 
-        if args.cts is not None:
+        if args.cts:
             cts_name = args.cts
         else:
             cts_name = "No"
@@ -140,7 +140,7 @@ def main():
 
         # Data/Voice MCS Index
 
-        if args.data is not None:
+        if args.data:
             data_name = args.data
         else:
             if "11n" in Calculator_name:
@@ -150,7 +150,7 @@ def main():
 
         # Channel Bandwidth
 
-        if args.channel is not None:
+        if args.channel:
             channel_name = args.channel
         else:
             if "11n" in Calculator_name:
@@ -160,35 +160,35 @@ def main():
 
         # Guard Interval
 
-        if args.guard is not None:
+        if args.guard:
             guard_name = args.guard
         else:
             guard_name = "400"
 
         # Highest Basic MCS
 
-        if args.highest is not None:
+        if args.highest:
             highest_name = args.highest
         else:
             highest_name = '1'
 
         # PLCP Configuration
 
-        if args.plcp is not None:
+        if args.plcp:
             plcp_name = args.plcp
         else:
             plcp_name = "Mixed"
 
         # IP Packets per A-MSDU
 
-        if args.ip is not None:
+        if args.ip:
             ip_name = args.ip
         else:
             ip_name = "0"
 
         # MAC Frames per A-MPDU
 
-        if args.mc is not None:
+        if args.mc:
             mc_name = args.mc
         else:
             if "11n" in Calculator_name:
@@ -198,21 +198,21 @@ def main():
 
         # CWmin (leave alone for default)
 
-        if args.cwin is not None:
+        if args.cwin:
             cwin_name = args.cwin
         else:
             cwin_name = '15'
 
         # Spatial Streams
 
-        if args.spatial is not None:
+        if args.spatial:
             spatial_name = args.spatial
         else:
             spatial_name = '4'
 
         # RTS/CTS Handshake and CTS-to-self
 
-        if args.rtscts is not None:
+        if args.rtscts:
             rtscts_name = args.rtscts
         else:
             rtscts_name = 'No'
