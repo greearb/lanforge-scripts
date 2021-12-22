@@ -154,6 +154,7 @@ from .wlan_capacity_calculator import main as WlanCapacityCalculator
 from .ws_generic_monitor_test import WS_Listener" > __init__.py
 
 # Fix files in py_scripts
+sed -i -- 's/wifi_monitor = importlib.import_module("py_json.wifi_monitor_profile")/from lanforge_scripts.py_json import wifi_monitor_profile/g' *.py
 sed -i -- 's/import importlib/ /g' *.py
 sed -i -- 's/import realm/ /g' create_vap.py lf_dut_sta_vap_test.py lf_sniff_radio.py run_cv_scenario.py sta_connect.py station_layer3.py test_client_admission.py
 sed -i -- 's/import realm/from realm import Realm/g' lf_atten_mod_test.py lf_multipsk.py test_fileio.py test_ip_connection.py test_ipv4_ttls.py test_l3_WAN_LAN.py test_l3_unicast_traffic_gen.py test_l4.py testgroup.py
