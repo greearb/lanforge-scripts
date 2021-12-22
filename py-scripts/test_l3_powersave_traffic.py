@@ -12,23 +12,22 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 l3_cxprofile = importlib.import_module("py-json.l3_cxprofile")
+station_profile = importlib.import_module("py-json.station_profile")
 
 
 # Currently, this test can only be applied to UDP connections
-class L3PowersaveTraffic(LFCliBase):
+class L3PowersaveTraffic(Realm):
 
     def __init__(self, host, port, ssid, security, password, station_list, side_a_min_rate=56, side_b_min_rate=56,
                  side_a_max_rate=0,
                  side_b_max_rate=0, pdu_size=1000, prefix="00000", test_duration="5m",
                  station_radio="wiphy0", monitor_radio="wiphy1",
                  _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on)
         self.host = host
         self.port = port
         self.ssid = ssid
@@ -39,28 +38,28 @@ class L3PowersaveTraffic(LFCliBase):
         self.station_radio = station_radio
         self.monitor_radio = monitor_radio
         self.debug = _debug_on
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=False)
         # upload
-        self.cx_prof_upload = l3_cxprofile.L3CXProfile(self.host, self.port, self.local_realm,
+        self.cx_prof_upload = l3_cxprofile.L3CXProfile(self.host, self.port, self,
                                                        side_a_min_bps=side_a_min_rate, side_b_min_bps=0,
                                                        side_a_max_bps=side_a_max_rate, side_b_max_bps=0,
                                                        side_a_min_pdu=pdu_size, side_a_max_pdu=pdu_size,
                                                        side_b_min_pdu=0, side_b_max_pdu=0, debug_=False)
 
         # download
-        self.cx_prof_download = l3_cxprofile.L3CXProfile(self.host, self.port, self.local_realm,
+        self.cx_prof_download = l3_cxprofile.L3CXProfile(self.host, self.port, self,
                                                          side_a_min_bps=0, side_b_min_bps=side_b_min_rate,
                                                          side_a_max_bps=0, side_b_max_bps=side_b_max_rate,
                                                          side_a_min_pdu=0, side_a_max_pdu=0,
                                                          side_b_min_pdu=pdu_size, side_b_max_pdu=pdu_size, debug_=False)
         self.test_duration = test_duration
-        self.station_profile = realm.StationProfile(self.lfclient_url, self.local_realm, ssid=self.ssid,
-                                                    ssid_pass=self.password,
-                                                    security=self.security, number_template_=self.prefix, mode=0,
-                                                    up=True,
-                                                    dhcp=True,
-                                                    debug_=False)
-        self.new_monitor = realm.WifiMonitor(self.lfclient_url, self.local_realm, debug_=_debug_on)
+        self.station_profile = station_profile.StationProfile(self.lfclient_url, self, ssid=self.ssid,
+                                                              ssid_pass=self.password,
+                                                              security=self.security, number_template_=self.prefix,
+                                                              mode=0,
+                                                              up=True,
+                                                              dhcp=True,
+                                                              debug_=False)
+        self.new_monitor = station_profile.WifiMonitor(self.lfclient_url, self, debug_=_debug_on)
 
     def build(self):
         self.station_profile.use_security(self.security, ssid=self.ssid, passwd=self.password)
@@ -142,7 +141,7 @@ class L3PowersaveTraffic(LFCliBase):
                 print("ap       %s\n" % port_info['interface']['ap'])
             else:
                 print('interfaces and interface not in port_mgr_response')
-                exit(1)                
+                exit(1)
 
         while cur_time < end_time:
             # DOUBLE CHECK
@@ -178,7 +177,8 @@ def main():
 Example of creating traffic on an l3 connection
         ''')
 
-    parser.add_argument('--monitor_radio', help="--monitor_radio radio to be used in monitor creation", default="wiphy1")
+    parser.add_argument('--monitor_radio', help="--monitor_radio radio to be used in monitor creation",
+                        default="wiphy1")
     args = parser.parse_args()
 
     lfjson_host = args.mgr
@@ -188,7 +188,8 @@ Example of creating traffic on an l3 connection
                                            password=args.passwd, station_list=station_list, side_a_min_rate=2000,
                                            side_b_min_rate=2000, side_a_max_rate=0, station_radio=args.radio,
                                            monitor_radio=args.monitor_radio, side_b_max_rate=0, prefix="00000",
-                                           test_duration="30s", _debug_on=False, _exit_on_error=True, _exit_on_fail=True)
+                                           test_duration="30s", _debug_on=False, _exit_on_error=True,
+                                           _exit_on_fail=True)
     ip_powersave_test.cleanup()
     ip_powersave_test.build()
     ip_powersave_test.start()
