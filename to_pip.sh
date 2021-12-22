@@ -154,6 +154,7 @@ from .wlan_capacity_calculator import main as WlanCapacityCalculator
 from .ws_generic_monitor_test import WS_Listener" > __init__.py
 
 # Fix files in py_scripts
+sed -i -- 's/import importlib/ /g' *.py
 sed -i -- 's/import realm/ /g' create_vap.py lf_dut_sta_vap_test.py lf_sniff_radio.py run_cv_scenario.py sta_connect.py station_layer3.py test_client_admission.py
 sed -i -- 's/import realm/from realm import Realm/g' lf_atten_mod_test.py lf_multipsk.py test_fileio.py test_ip_connection.py test_ipv4_ttls.py test_l3_WAN_LAN.py test_l3_unicast_traffic_gen.py test_l4.py testgroup.py
 sed -i -- 's/realm.Realm/Realm/g' lf_atten_mod_test.py lf_multipsk.py lf_sniff_radio.py station_layer3.py test_client_admission.py test_fileio.py test_ip_connection.py
@@ -167,7 +168,12 @@ sed -i -- 's/import wlan_theoretical_sta/from wlan_theoretical_sta import abg11_
 sed -i -- 's/sys.path.append(os.path.join(os.path.abspath(__file__ + "..\/..\/..\/")))/ /g' *.py
 
 #Change importlib to pip compliant method
-#sed -i -- 's/import importlib/ /g' *.py
+sed -i -- 's/import importlib/ /g' *.py
+sed -i -- 's/influx = importlib.import_module("py-scripts.influx_utils")/import influx_utils/g' *.py
+sed -i -- 's/create_chamberview_dut = importlib.import_module("py-scripts.create_chamberview_dut")/import create_chamberview_dut/g' *.py
+sed -i -- 's/lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")/import lf_kpi_csv/g' *.py
+sed -i -- 's/influx = importlib.import_module("py-scripts.influx_utils")/import influx_utils/g' *.py
+sed -i -- "s/InfluxRequest = importlib.import_module('py-dashboard.InfluxRequest')/from lanforge_scripts.py_dashboard import InfluxRequest/g" *.py
 sed -i -- 's/l3_cxprofile2 = importlib.import_module("py-json.l3_cxprofile2")/from lanforge_scripts.py_json import l3_cxprofile2/g' *.py
 sed -i -- 's/add_dut = importlib.import_module("py-json.LANforge.add_dut")/from lanforge_scripts.py_json.LANforge import add_dut/g' *.py
 sed -i -- 's/ftp_html = importlib.import_module("py-scripts.ftp_html")/from lanforge_scripts.py_scripts import ftp_html/g' *.py
@@ -264,8 +270,11 @@ sed -i -- 's/from wlan_theoretical_sta/from lanforge_scripts.py_json.wlan_theore
 sed -i -- 's/from ws_generic_monitor/from lanforge_scripts.py_json.ws_generic_monitor/g' *.py
 sed -i -- 's/from port_utils/from lanforge_scripts.py_json.port_utils/g' *.py
 
+rm -r scripts_deprecated
+
 cd ../py_json || exit 1
 #Fix files in py_json
+sed -i -- 's/import importlib/ /g' *.py
 sed -i -- 's/import realm/from realm import PortUtils/g' test_utility.py
 
 #Change importlib to pip compliant method
@@ -371,6 +380,8 @@ sed -i -- 's/from lf_graph/from lanforge_scripts.py_scripts.lf_graph/g' *.py
 sed -i -- 's/from create_station/from lanforge_scripts.py_scripts.create_station/g' *.py
 sed -i -- 's/from cv_test_reports/from .cv_test_reports/g' *.py
 
+rm -r deprecated
+
 cd LANforge || exit 1
 echo "
 from .add_dut import dut_params, dut_flags
@@ -380,6 +391,9 @@ from .lfcli_base import LFCliBase
 from .LFRequest import LFRequest
 from .LFUtils import *
 from .pandas_extensions import pandas_extensions" > __init__.py
+sed -i -- 's/import importlib/ /g' *.py
+sed -i -- 's/Logg = importlib.import_module("lanforge_client.logg")/from lanforge_client import logg/g' *.py
+sed -i -- 's/lanforge_api = importlib.import_module("lanforge_client.lanforge_api")/from lanforge_client import lanforge_api/g' *.py
 sed -i -- 's/from LFRequest import LFRequest/from .LFRequest import LFRequest/g' *.py
 sed -i -- 's/from LFRequest/from .LFRequest/g' *.py
 sed -i -- 's/from LANforge import LFRequest/import .LFRequest/g' LFUtils.py
@@ -411,6 +425,7 @@ echo "
 from .GrafanaRequest import GrafanaRequest
 from .InfluxRequest import RecordInflux
 from .GhostRequest import GhostRequest" > __init__.py
+sed -i -- 's/import importlib/ /g' *.py
 sed -i -- 's/GrafanaRequest = importlib.import_module("py-dashboard.GrafanaRequest")/from .GrafanaRequest import GrafanaRequest/g' *.py
 sed -i -- 's/InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")/from .InfluxRequest import RecordInflux/g' *.py
 sed -i -- 's/RecordInflux = InfluxRequest.RecordInflux/ /g' *.py
