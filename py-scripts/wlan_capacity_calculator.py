@@ -9,7 +9,7 @@ import sys
 import os
 import importlib
 import argparse
-from pip._internal.utils import logging
+import logging
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
