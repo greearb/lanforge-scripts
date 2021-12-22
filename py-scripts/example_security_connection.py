@@ -11,18 +11,16 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 
-class IPv4Test(LFCliBase):
+class IPv4Test(Realm):
     def __init__(self, ssid, security, password, sta_list=None, ap=None, mode=0, number_template="00000",  host="localhost", port=8080, radio="wiphy0", _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, debug_=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.ssid = ssid
@@ -35,9 +33,7 @@ class IPv4Test(LFCliBase):
         self.timeout = 120
         self.number_template = number_template
         self.debug = _debug_on
-        self.local_realm = realm.Realm(
-            lfclient_host=self.host, lfclient_port=self.port)
-        self.station_profile = self.local_realm.new_station_profile()
+        self.station_profile = self.new_station_profile()
 
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
@@ -64,7 +60,7 @@ class IPv4Test(LFCliBase):
         self.station_profile.create(
             radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
         self.station_profile.admin_up()
-        if self.local_realm.wait_for_ip(station_list=self.sta_list, debug=self.debug, timeout_sec=30):
+        if self.wait_for_ip(station_list=self.sta_list, debug=self.debug, timeout_sec=30):
             self._pass("Station build finished")
             self.exit_success()
         else:
@@ -80,7 +76,7 @@ class IPv4Test(LFCliBase):
 
 def main():
 
-    parser = LFCliBase.create_basic_argparse(
+    parser = Realm.create_basic_argparse(
         prog='example_security_connection.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -109,7 +105,7 @@ def main():
         if agroup.title == "optional arguments":
             optional = agroup
     if optional is not None:
-        optional.add_argument('--mode', help=LFCliBase.Help_Mode)
+        optional.add_argument('--mode', help=Realm.Help_Mode)
         optional.add_argument(
             '--ap', help='Add BSSID of access point to connect to')
 
