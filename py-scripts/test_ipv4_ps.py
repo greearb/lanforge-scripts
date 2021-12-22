@@ -12,14 +12,12 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 
-class IPV4VariableTime(LFCliBase):
+class IPV4VariableTime(Realm):
     def __init__(self, ssid, security, password, sta_list, name_prefix, upstream, radio,
                  radio2, host="localhost", port=8080,
                  side_a_min_rate=56, side_a_max_rate=0,
@@ -28,7 +26,7 @@ class IPV4VariableTime(LFCliBase):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        super().__init__(lfclient_host=host, lfclient_port=port)
         self.upstream = upstream
         self.host = host
         self.port = port
@@ -42,12 +40,11 @@ class IPV4VariableTime(LFCliBase):
         self.debug = _debug_on
         self.name_prefix = name_prefix
         self.test_duration = test_duration
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.station_profile = self.local_realm.new_station_profile()
-        self.cx_profile = self.local_realm.new_l3_cx_profile()
-        self.vap_profile = self.local_realm.new_vap_profile()
+        self.station_profile = self.new_station_profile()
+        self.cx_profile = self.new_l3_cx_profile()
+        self.vap_profile = self.new_vap_profile()
         self.vap_profile.vap_name = "vap0000"
-        self.monitor = realm.WifiMonitor(self.lfclient_url, self.local_realm, debug_=_debug_on)
+        self.monitor = self.new_wifi_monitor_profile(debug_=_debug_on)
 
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
@@ -119,14 +116,14 @@ class IPV4VariableTime(LFCliBase):
         self.vap_profile.admin_up(1)
         temp_stas = self.station_profile.station_names.copy()
         temp_stas.append(self.upstream)
-        if self.local_realm.wait_for_ip(temp_stas):
+        if self.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:
             self._fail("Stations failed to get IPs", print_fail)
             exit(1)
         cur_time = datetime.datetime.now()
         old_cx_rx_values = self.__get_rx_values()
-        end_time = self.local_realm.parse_time(self.test_duration) + cur_time
+        end_time = self.parse_time(self.test_duration) + cur_time
         self.cx_profile.start_cx()
         passes = 0
         expected_passes = 0
@@ -162,7 +159,7 @@ class IPV4VariableTime(LFCliBase):
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
         for sta in self.sta_list:
-            self.local_realm.rm_port(sta, check_exists=True)
+            self.rm_port(sta, check_exists=True)
 
     def cleanup(self):
         self.cx_profile.cleanup()
@@ -173,7 +170,7 @@ class IPV4VariableTime(LFCliBase):
 
 
 def main():
-    parser = LFCliBase.create_basic_argparse(
+    parser = Realm.create_basic_argparse(
         prog='test_ipv4_variable_time.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
