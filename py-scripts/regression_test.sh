@@ -99,6 +99,7 @@ PYTHON_ENVIRONMENT=$(which python3)
 #  exit 1
 #fi
 
+python3 -m pip install --upgrade pip
 if [ -d "/home/lanforge/lanforge_env" ]
 then
   pip3 install --upgrade lanforge-scripts
