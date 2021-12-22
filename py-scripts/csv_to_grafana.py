@@ -11,7 +11,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -36,11 +35,11 @@ class data_to_grafana(LFCliBase):
         self.script = _script
         self.panel_name = _panel_name
         pass
-    
+
     @property
     def json_parser(self):
-        options = string.ascii_lowercase+string.ascii_uppercase+string.digits
-        uid = ''.join(random.choice(options) for i in range(9))
+        options = string.ascii_lowercase + string.ascii_uppercase + string.digits
+        uid = ''.join(random.choice(options) for _ in range(9))
         print(uid)
         json_dict = {
             "annotations": {
@@ -127,7 +126,9 @@ class data_to_grafana(LFCliBase):
                             "ignoreUnknown": False,
                             "orderByTime": "ASC",
                             "policy": "default",
-                            "query": ("from(bucket: \" %s \")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"script\"] == \" %s\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: False)\n  |> yield(name: \"mean\")\n  " % self.bucket, self.script ),
+                            "query": (
+                                "from(bucket: \" %s \")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r[\"script\"] == \" %s\")\n  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: False)\n  |> yield(name: \"mean\")\n  " % self.bucket,
+                                self.script),
                             "refId": "A",
                             "resultFormat": "time_series",
                             "schema": [],
@@ -264,6 +265,7 @@ def main():
     GrafanaDB.create_custom_dashboard(scripts=[scriptname],
                                       title=args.panel_name,
                                       bucket=args.influx_bucket)
+
 
 if __name__ == "__main__":
     main()
