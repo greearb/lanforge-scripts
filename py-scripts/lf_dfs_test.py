@@ -1009,7 +1009,6 @@ class L3VariableTime(Realm):
         self.test_duration = test_duration
         self.radio_name_list = radio_name_list
         self.number_of_stations_per_radio_list = number_of_stations_per_radio_list
-        # self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
         self.polling_interval_seconds = self.duration_time_to_seconds(polling_interval)
         self.cx_profile = self.new_l3_cx_profile()
         self.multicast_profile = self.new_multicast_profile()
