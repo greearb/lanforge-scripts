@@ -964,7 +964,7 @@ class L3VariableTime(Realm):
             print("ip's acquired")
         else:
             # No reason to continue
-            print("ERROR: FAILED to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
+            print("ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
             exit(1)
 
         csv_header = self.csv_generate_column_headers()
@@ -977,7 +977,6 @@ class L3VariableTime(Realm):
             self.csv_add_port_column_headers(
                 eid_name, self.csv_generate_port_column_headers())
 
-        # ul -ports when AP present
         port_eids = self.gather_port_eids()
         for eid_name in port_eids:
             self.csv_add_ul_port_column_headers(
@@ -2272,7 +2271,7 @@ class L3VariableTime(Realm):
                 self.csv_generate_kpi_column_headers())
             self.csv_kpi_file.flush()
 
-    # Write initial dl headers to port csv file.
+    # Write initial headers to port csv file.
     def csv_add_port_column_headers(self, eid_name, headers):
         # if self.csv_file is not None:
         fname = self.outfile[:-4]  # Strip '.csv' from file name
@@ -2285,7 +2284,6 @@ class L3VariableTime(Realm):
         port_csv_writer.writerow(headers)
         pfile.flush()
 
-    # Write initial ul headers to port csv file.
     def csv_add_ul_port_column_headers(self, eid_name, headers):
         # if self.csv_file is not None:
         fname = self.outfile[:-4]  # Strip '.csv' from file name
@@ -2365,22 +2363,22 @@ and received.
 
 Generic command layout:
 -----------------------
-python .\\test_l3_longevity.py --test_duration <duration> --endp_type <traffic types> --upstream_port <port>
-        --radio "radio==<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password>
-        security==<security type: wpa2, open, wpa3>" --debug
+./test_l3_longevity.py --mgr <ip_address> --test_duration <duration> --endp_type <traffic types> --upstream_port <port>
+--radio "radio==<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password>
+security==<security type: wpa2, open, wpa3>" --debug
+
 Multiple radios may be entered with individual --radio switches
 
 # UDP bi-directional test, no use of controller.
-/test_l3_longevity.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 \
-  --radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
-  --radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
-  --test_duration 30s
+./test_l3_longevity.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 
+--radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" 
+--radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" --test_duration 30s
 
 # Port resets, chooses random value between min and max
-test_l3_longevity.py --lfmgr LF_MGR_IP --test_duration 90s --polling_interval 10s --upstream_port eth2 \
-                     --radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED, \
-                        reset_port_enable==TRUE,reset_port_time_min==10s,reset_port_time_max==20s'
-                     --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"
+./test_l3_longevity.py --lfmgr LF_MGR_IP --test_duration 90s --polling_interval 10s --upstream_port eth2 
+--radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED, 
+reset_port_enable==TRUE,reset_port_time_min==10s,reset_port_time_max==20s' 
+--endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"
 
 
 <duration>: number followed by one of the following
@@ -2424,8 +2422,8 @@ Example #1  running traffic with two radios
 5. Radio #1 wiphy1 has 64 stations, ssid = candelaTech-wpa2-x2048-5-3, ssid password = candelaTech-wpa2-x2048-5-3
 6. Create connections with TOS of BK and VI
 
-Command: (remove carriage returns)
-python3 .\\test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1
+Command:
+./test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port eth1
 --radio "radio==wiphy0 stations==32 ssid==candelaTech-wpa2-x2048-4-1 ssid_pw==candelaTech-wpa2-x2048-4-1 security==wpa2"
 --radio "radio==wiphy1 stations==64 ssid==candelaTech-wpa2-x2048-5-3 ssid_pw==candelaTech-wpa2-x2048-5-3 security==wpa2"
 
