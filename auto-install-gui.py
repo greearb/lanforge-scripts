@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--versionNumber", type=str, help="Specify version number to search for")
 
 args = parser.parse_args()
-if args.versionNumber != None:
+if args.versionNumber:
     ver = args.versionNumber
 else:
     parser.print_help()
