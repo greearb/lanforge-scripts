@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
-"""This script will create 40 clients on 5Ghz , 2.4Ghz and Both and generate layer4 traffic on LANforge ,The Webpage
-Download Test is designed to test the performance of the  Access Point.The goal is to  check whether the webpage
-loading time meets the expectation when clients connected on single radio as well as dual radio.
+"""
+This script will create 40 clients on 5Ghz , 2.4Ghz and Both and generate layer4 traffic on LANforge ,The Webpage
+ Download Test is designed to test the performance of the  Access Point.The goal is to  check whether the webpage
+ loading time meets the expectation when clients connected on single radio as well as dual radio.
 
-how to run - python3 lf_webpage.py --mgr 192.168.200.29 --mgr_port 8080   --upstream_port eth1 --num_stations 10
---security open --ssid testap210 --passwd [BLANK] --target_per_ten 1 --bands 5G  --file_size 10MB  --fiveg_radio
-wiphy0 --twog_radio wiphy1 --duration 1 Copyright 2021 Candela Technologies Inc 04 - April - 2021 """
+how to run -
+./lf_webpage.py --mgr <ip_address> --fiveg_ssid <5G_ssid> --fiveg_security wpa2 --fiveg_passwd <passwd>
+--twog_ssid <2G_ssid> --twog_security wpa2 --twog_passwd <passwd> --fiveg_radio wiphy0 --twog_radio wiphy1
+--num_stations 5 --upstream_port eth1 --duration 1
+
+Copyright 2021 Candela Technologies Inc 04 - April - 2021
+"""
+
 import sys
 import os
 import importlib
@@ -571,7 +577,21 @@ def main():
     parser = argparse.ArgumentParser(
         prog="lf_webpage.py",
         formatter_class=argparse.RawTextHelpFormatter,
-        description="lanforge webpage download Test Script")
+        description='''
+---------------------------
+LANforge Webpage Download Test Script - lf_webpage.py
+---------------------------
+Summary:
+This script will create 40 clients on 5Ghz , 2.4Ghz and Both and generate layer4 traffic on LANforge ,The Webpage
+ Download Test is designed to test the performance of the  Access Point. The goal is to  check whether the webpage
+ loading time meets the expectation when clients connected on single radio as well as dual radio.
+---------------------------
+CLI Example: 
+./lf_webpage.py --mgr <ip_address> --fiveg_ssid <5G_ssid> --fiveg_security wpa2 --fiveg_passwd <passwd> 
+--twog_ssid <2G_ssid> --twog_security wpa2 --twog_passwd <passwd> --fiveg_radio wiphy0 --twog_radio wiphy1 
+--num_stations 5 --upstream_port eth1 --duration 1  
+---------------------------         
+        ''')
     parser.add_argument('--mgr', help='hostname for where LANforge GUI is running', default='localhost')
     parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on', default=8080)
     parser.add_argument('--upstream_port', help='non-station port that generates traffic: eg: eth1', default='eth2')
