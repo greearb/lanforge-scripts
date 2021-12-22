@@ -21,7 +21,7 @@ Help()
 }
 
 
-while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:M:C:" option; do
+while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:M:C:e:" option; do
   case "${option}" in
     h) # display Help
       Help
@@ -49,7 +49,7 @@ while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:M:C:" option; do
       RADIO_USED=${OPTARG}
       ;;
     F)
-      RC_FILE=${OPTARG}
+      REGRESSION_COMMANDS=${OPTARG}
       ;;
     B)
       BSSID=${OPTARG}
@@ -69,6 +69,9 @@ while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:M:C:" option; do
       ;;
     C)
       RESOURCE=${OPTARG}
+      ;;
+    e)
+      END_TEXT=${OPTARG}
       ;;
     *)
 
@@ -139,10 +142,6 @@ if test -f "$FILE"; then
 fi
 
 HOMEPATH=$(realpath ~)
-
-if [[ ${#RC_FILE} -gt 0 ]]; then
-  source "$RC_FILE"
-fi
 
 if [[ ${#SSID_USED} -gt 0 ]]; then
   if [ -f ./regression_test.rc ]; then
@@ -259,6 +258,8 @@ if [[ ${#SHORT} -gt 0 ]]; then
 
 
   )
+elif [[ ${#REGRESSION_COMMANDS} -gt 0 ]]; then
+  testCommands=(cat "$REGRESSION_COMMANDS")
 else
   testCommands=(
       "./create_bond.py --network_dev_list $RESOURCE.eth0,$UPSTREAM --debug --mgr $MGR"
@@ -669,7 +670,7 @@ td.testname {
         </tr>
     </thead>
     <tbody>"
-    f="</body></html>"
+    tail="</body></html>"
 
     fname="${HOMEPATH}/html-reports/regression_file-${NOW}.html"
     echo "$header"  >> "$fname"
@@ -704,6 +705,10 @@ td.testname {
     </table>
     <script> sortTable('myTable2', 2); </script>
 " >> "$fname"
+    if [[ ${#END_TEXT} -gt 0 ]]; then
+      end_text=$(cat "$END_TEXT")
+      "<p>${end_text}</p>" >> "$fname"
+    fi
     echo "$tail" >> "$fname"
     if [ -f "${HOMEPATH}/html-reports/latest.html" ]; then
         rm -f "${HOMEPATH}/html-reports/latest.html"
