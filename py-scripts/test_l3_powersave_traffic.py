@@ -17,6 +17,7 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 l3_cxprofile = importlib.import_module("py-json.l3_cxprofile")
 station_profile = importlib.import_module("py-json.station_profile")
+wifi_monitor = importlib.import_module("py-json.wifi_monitor_profile")
 
 
 # Currently, this test can only be applied to UDP connections
@@ -59,7 +60,7 @@ class L3PowersaveTraffic(Realm):
                                                               up=True,
                                                               dhcp=True,
                                                               debug_=False)
-        self.new_monitor = station_profile.WifiMonitor(self.lfclient_url, self, debug_=_debug_on)
+        self.new_monitor = wifi_monitor.WifiMonitor(self.lfclient_url, self, debug_=_debug_on)
 
     def build(self):
         self.station_profile.use_security(self.security, ssid=self.ssid, passwd=self.password)
@@ -102,7 +103,7 @@ class L3PowersaveTraffic(Realm):
         # start one test, measure
         # start second test, measure
         cur_time = datetime.datetime.now()
-        end_time = self.local_realm.parse_time(self.test_duration) + cur_time
+        end_time = self.parse_time(self.test_duration) + cur_time
         # admin up on new monitor
         self.new_monitor.admin_up()
         now = datetime.datetime.now()
@@ -115,7 +116,7 @@ class L3PowersaveTraffic(Realm):
         self.station_profile.admin_up()
         # self.new_monitor.set_flag()
         # print(self.station_profile.station_names)
-        if self.local_realm.wait_for_ip(self.station_profile.station_names):
+        if self.wait_for_ip(self.station_profile.station_names):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
@@ -126,7 +127,7 @@ class L3PowersaveTraffic(Realm):
         # print station + MAC, AP
         temp = []
         for station in self.station_profile.station_names:
-            temp.append(self.local_realm.name_to_eid(station)[2])
+            temp.append(self.name_to_eid(station)[2])
         port_info = self.json_get("port/1/1/%s?fields=alias,ap,mac" % ','.join(temp))
         if port_info is not None:
             if 'interfaces' in port_info:
