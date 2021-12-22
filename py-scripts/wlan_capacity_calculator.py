@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-'''
+"""
 Candela Technologies Inc.
 Info : Standard Script for WLAN Capacity Calculator
 Date :
 Author : Anjali Rahamatkar
-'''
+"""
 import sys
 import os
 import importlib
