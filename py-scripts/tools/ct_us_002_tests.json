@@ -575,7 +575,7 @@
             "ap_auto_bc": {
                 "enabled": "TRUE",
                 "command": "lf_ap_auto_test.py",
-                "timeout":"14400",
+                "timeout":"900",
                 "iterations":"1",
                 "args": "",
                 "args_list":[
