@@ -87,7 +87,7 @@ lf_ap_auto_test = importlib.import_module("py-scripts.lf_ap_auto_test")
 ApAutoTest = lf_ap_auto_test.ApAutoTest
 
 cv_add_base_parser = cv_test_manager.cv_add_base_parser
-cv_base_adjust_parser = cv_add_base_parser.cv_base_adjust_parser
+cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
 
 
 def main():
