@@ -1515,8 +1515,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # generate output reports
     test_rig = check.get_test_rig()
     report.set_title(
-        "LF Check: {test_rig} lf_check.py".format(
-            test_rig=test_rig))
+        "LF Check: {test_rig}: {suite}".format(
+            test_rig=test_rig, suite=test_suite))
     report.build_banner_left()
     report.start_content_div2()
     report.set_obj_html("Objective", "Run QA Tests")
