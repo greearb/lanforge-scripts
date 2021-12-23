@@ -369,7 +369,7 @@ class StationProfile:
             desired_stations = self.station_names
 
         if len(desired_stations) < 1:
-            print("ERROR:  StationProfile cleanup, list is empty")
+            print("INFO: StationProfile cleanup, list is empty")
             return
 
         # First, request remove on the list.
