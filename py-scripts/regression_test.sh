@@ -211,7 +211,7 @@ function create_dut_and_chamberview() {
         --line "Resource=$RESOURCE Profile=STA-AC Amount=1 Uses-1=$RADIO_USED Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http" \
         --line "Resource=$RESOURCE Profile=upstream Amount=1 Uses-1=$UPSTREAM Uses-2=AUTO Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http"
         ./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut \
-        --ssid "ssid_idx=0 ssid='$SSID_USED' security='$SECURITY' password='$PASSWD_USED' bssid=04:f0:21:2c:41:84"
+        --ssid "ssid_idx=0 ssid='$SSID_USED' security='$SECURITY' password='$PASSWD_USED' bssid=$BSSID"
     }
 
 function create_station_and_sensitivity {
@@ -351,7 +351,7 @@ else
       #"./rvr_scenario.py --lfmgr $MGR --lanforge_db 'handsets' --cv_test Dataplane --test_profile http --cv_scenario ct-us-001"
       #./sta_connect_bssid_mac.py
       "./sta_connect_example.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM --test_duration 15s --debug"
-      "./sta_connect.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM --test_duration 15s --dut_bssid 04:F0:21:CB:01:8B --debug"
+      "./sta_connect.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM --test_duration 15s --dut_bssid $BSSID --debug"
       "./sta_connect2.py --dest $MGR --dut_ssid $SSID_USED --dut_passwd $PASSWD_USED --dut_security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM"
       "./sta_scan_test.py --mgr $MGR --ssid $SSID_USED --security $SECURITY --passwd $PASSWD_USED --radio $RADIO_USED --debug"
       #station_layer3.py
