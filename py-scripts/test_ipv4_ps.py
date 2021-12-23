@@ -159,7 +159,7 @@ class IPV4VariableTime(Realm):
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
         for sta in self.sta_list:
-            self.rm_port(sta, check_exists=True)
+            self.rm_port(sta, check_exists=True, debug_=False)
 
     def cleanup(self):
         self.cx_profile.cleanup()
