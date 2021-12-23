@@ -387,10 +387,8 @@ class csv_sql:
         self.conn.close()
 
         # test_run are used for detemining the subtest-pass, subtest-fail
+        # the tests are sorted by date above.
         test_run_list = list(df3['test_run'])
-        print("test_run_list first [0] {}".format(test_run_list[0]))
-        print("test_run_list last [-1] {}".format(test_run_list[-1]))
-        test_run_list = list(sorted(set(test_run_list)))
         print("test_run_list first [0] {}".format(test_run_list[0]))
         print("test_run_list last [-1] {}".format(test_run_list[-1]))
 
