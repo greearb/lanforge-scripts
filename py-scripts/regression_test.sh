@@ -178,15 +178,15 @@ function run_l3_longevity() {
   ./test_l3_longevity.py --test_duration 15s --upstream_port $UPSTREAM --radio "radio==wiphy0 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --radio "radio==wiphy1 stations==4 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY" --lfmgr "$MGR"
 }
 function testgroup_list_groups() {
-  ./scenario.py --load test_l3_scenario_throughput
+  ./scenario.py --load test_l3_scenario_throughput --mgr "${MGR}"
   ./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --list_groups --debug --mgr "$MGR"
 }
 function testgroup_list_connections() {
-  ./scenario.py --load test_l3_scenario_throughput
+  ./scenario.py --load test_l3_scenario_throughput --mgr "${MGR}"
   ./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003 --show_group --debug --mgr "$MGR"
 }
 function testgroup_delete_group() {
-  ./scenario.py --load test_l3_scenario_throughput
+  ./scenario.py --load test_l3_scenario_throughput --mgr "${MGR}"
   ./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003
   ./testgroup.py --group_name group1--del_group --debug --mgr "$MGR"
 }
@@ -349,7 +349,6 @@ else
       #recordinflux.py
       #"./run_cv_scenario.py --lfmgr $MGR --lanforge_db 'handsets' --cv_test 'WiFi Capacity' --test_profile 'test-20' --cv_scenario ct-us-001"
       #"./rvr_scenario.py --lfmgr $MGR --lanforge_db 'handsets' --cv_test Dataplane --test_profile http --cv_scenario ct-us-001"
-      #scenario.py
       #./sta_connect_bssid_mac.py
       "./sta_connect_example.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM --test_duration 15s --debug"
       "./sta_connect.py --mgr $MGR --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --upstream_port $UPSTREAM --test_duration 15s --dut_bssid 04:F0:21:CB:01:8B --debug"
@@ -514,7 +513,7 @@ name_to_num=(
 
 function blank_db() {
     echo "Loading blank scenario..." >>"${HOMEPATH}/regression_file.txt"
-    ./scenario.py --load BLANK >>"${HOMEPATH}/regression_file.txt"
+    ./scenario.py --mgr "${MGR}" --load BLANK >>"${HOMEPATH}/regression_file.txt"
     #check_blank.py
 }
 
