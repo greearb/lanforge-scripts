@@ -416,7 +416,7 @@
                     " --set 'Capacity' 0",
                     " --set 'Band-Steering' 0",
                     " --set 'Skip 2.4Ghz Tests' 0",
-                    " --raw_line 'cx_psk_thresh: 300'",
+                    " --raw_line 'cx_psk_thresh: 500'",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AP_AUTO'",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -480,7 +480,7 @@
                     " --set 'Capacity' 1",
                     " --set 'Band-Steering' 0",
                     " --set 'Skip 2.4Ghz Tests' 0",
-                    " --raw_line 'cx_psk_thresh: 300'",
+                    " --raw_line 'cx_psk_thresh: 500'",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AP_AUTO'",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -544,7 +544,7 @@
                     " --set 'Capacity' 0",
                     " --set 'Band-Steering' 0",
                     " --set 'Skip 2.4Ghz Tests' 0",
-                    " --raw_line 'cx_psk_thresh: 300'",
+                    " --raw_line 'cx_psk_thresh: 500'",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AP_AUTO'",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
@@ -985,7 +985,7 @@
                     " --set 'Capacity' 0",
                     " --set 'Band-Steering' 0",
                     " --set 'Skip 2.4Ghz Tests' 0",
-                    " --raw_line 'cx_psk_thresh: 300'",
+                    " --raw_line 'cx_psk_thresh: 500'",
                     " --pull_report --local_lf_report_dir REPORT_PATH --test_tag 'AP_AUTO'",
                     " --test_rig TEST_RIG",
                     " --set DUT_SET_NAME"
