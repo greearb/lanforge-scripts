@@ -15,7 +15,7 @@
 
     Installation
     pip install paramiko
-    pip install bokeh
+    pip install bokeh  - bokeh code commented out , need to add support for plotly
     pip install XlsxWriter
 
     Example
@@ -32,9 +32,10 @@ import time
 import logging
 import paramiko as pmgo
 import xlsxwriter
-from bokeh.io import show
-from bokeh.plotting import figure
-from bokeh.models import LinearAxis, Range1d
+# need to change to supported packages
+# from bokeh.io import show
+# from bokeh.plotting import figure
+# from bokeh.models import LinearAxis, Range1d
 from datetime import datetime
 import socket
 
@@ -146,11 +147,13 @@ def GenerateReport(scenario, detail, throughput_sta, throughput_vap, absolute_ti
     Time = []
     for i in range(0, int(duration) * 5):
         Time.append(i)
-    plot(sta_throu, vap_throu, core1, core2, Time)
+    # bokeh not supported plot(sta_throu, vap_throu, core1, core2, Time)
     workbook.close()
 
 
 # Plotting Function for Parameters
+# Need to change to support of plotly
+'''
 def plot(throughput_sta, throughput_vap, core1_temp, core2_temp, Time):
     print(throughput_vap)
     s1 = figure(plot_width=1000, plot_height=600)
@@ -174,7 +177,7 @@ def plot(throughput_sta, throughput_vap, core1_temp, core2_temp, Time):
     # s1.circle(Time, core2_temp, y_range_name='Temperature', color='blue')
 
     show(s1)
-
+'''
 
 # Creates the Instance for LFCliBase
 class VAP_Measure(LFCliBase):
