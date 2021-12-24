@@ -412,7 +412,7 @@
                     " --set 'Multi Band Performance' 0",
                     " --set 'Stability' 0",
                     " --set 'Multi-Station Throughput vs Pkt Size'  0,",
-                    " --set 'Throughput vs Pkt Size' 1",
+                    " --set 'Throughput vs Pkt Size' 0",
                     " --set 'Capacity' 0",
                     " --set 'Band-Steering' 0",
                     " --set 'Skip 2.4Ghz Tests' 0",
