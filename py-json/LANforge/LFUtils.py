@@ -180,6 +180,7 @@ def portUpRequest(resource_id, port_name, debug_on=False):
     return port_up_request(resource_id, port_name, debug_on)
 
 
+# port_name cannot be in eid syntax in this method at this time.
 def port_up_request(resource_id, port_name, debug_on=False):
     """
     See http://localhost:8080/help/set_port
@@ -464,22 +465,36 @@ def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080",
     return None
 
 
-def waitUntilPortsAdminUp(resource_id=1, base_url="http://localhost:8080", port_list=()):
+def waitUntilPortsAdminUp(resource_id=0, base_url="http://localhost:8080", port_list=()):
     return wait_until_ports_admin_up(resource_id=resource_id, base_url=base_url, port_list=port_list)
 
 
-def wait_until_ports_admin_up(resource_id=1, base_url="http://localhost:8080", port_list=(), debug_=False):
-    print("Waiting until  ports appear admin-up...")
+def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", port_list=(), debug_=False, timeout=300):
+    if debug_:
+        print("Waiting until %s ports appear admin-up..." %(len(port_list)))
     down_stations = port_list.copy()
-    sleep(1)
-    port_url = "/port/1"
+    port_url = "/port"
+    loops = 0
+
     # url = /%s/%s?fields=device,down" % (resource_id, port_name)
     while len(down_stations) > 0:
+        if (loops > timeout):
+            print("WARNING:  Not all ports went admin up within %s+ seconds" %(timeout))
+            return None
+
         down_stations = []
         for port_name in port_list:
-            uri = "%s/%s/%s?fields=device,down" % (port_url, resource_id, port_name)
+            eid = name_to_eid(port_name)
+            rid = resource_id
+            if (rid == 0): # TODO: this allows user to pass in resource_id, but probably should remove resource_id entirely.
+                rid = eid[1] # use resource-id from the eid instead.
+            uri = "%s/%s/%s/%s?fields=device,down" % (port_url, eid[0], rid, eid[2])
             lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug_)
             json_response = lf_r.getAsJson()
+
+            if debug_:
+                print("uri: %s response:\n%s" %(uri, json_response))
+
             if json_response is None:
                 if debug_:
                     print("port %s appeared" % port_name)
@@ -487,8 +502,18 @@ def wait_until_ports_admin_up(resource_id=1, base_url="http://localhost:8080", p
             if "interface" in json_response:
                 json_response = json_response['interface']
             if json_response['down'] == "true":
+                if debug_:
+                    print("waiting for port: %s to go admin up." %(port_name))
                 down_stations.append(port_name)
-        sleep(1)
+            else:
+                if debug_:
+                    print("port %s is admin up" %(port_name))
+
+        if len(down_stations) > 0:
+            sleep(1)
+
+        loops += 1
+
     return None
 
 
