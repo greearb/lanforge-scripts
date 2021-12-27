@@ -7,7 +7,7 @@ test_l4.py will create stations and endpoints to generate and verify layer-4 tra
 
 This script will monitor the urls/s, bytes-rd, or bytes-wr attribute of the endpoints.
 These attributes can be tested over FTP using a --ftp flag.
-If the the monitored value does not continually increase, this test will not pass.
+If the monitored value does not continually increase, this test will not pass.
 
 This script replaces the functionality of test_ipv4_l4.py, test_ipv4_l4_ftp_upload.py, test_ipv4_l4_ftp_urls_per_ten.py,
 test_ipv4_l4_ftp_wifi.py, test_ipv4_l4_urls_per_ten.py, test_ipv4_l4_urls_per_ten.py, test_ipv4_l4_wifi.py
@@ -218,40 +218,19 @@ def main():
                This script will monitor the urls/s, bytes-rd, or bytes-wr attribute of the endpoints.
                ''',
         description='''\
-    test_l4.py:
---------------------
+---------------------------
+Layer-4 Test Script - test_l4.py
+---------------------------
+Summary:
+This script will create stations and endpoints to generate and verify layer-4 traffic by monitoring the urls/s, 
+ bytes-rd, or bytes-wr attribute of the endpoints.
+---------------------------
 Generic command example:
-python3 ./test_l4.py 
-    --upstream_port eth1 \\
-    --radio wiphy0 \\
-    --num_stations 3 \\
-    --security {open|wep|wpa|wpa2|wpa3} \\
-    --ssid netgear \\
-    --passwd admin123 \\
-    --requests_per_ten 600 \\
-    --mode   1      
-                {"auto"   : "0",
-                "a"      : "1",
-                "b"      : "2",
-                "g"      : "3",
-                "abg"    : "4",
-                "abgn"   : "5",
-                "bgn"    : "6",
-                "bg"     : "7",
-                "abgnAC" : "8",
-                "anAC"   : "9",
-                "an"     : "10",
-                "bgnAC"  : "11",
-                "abgnAX" : "12",
-                "bgnAX"  : "13"} \\
-    --num_tests 1 \\
-    --url "dl http://10.40.0.1 /dev/null" \\
-    --ap "00:0e:8e:78:e1:76"
-    --target_per_ten 600 \\
-    --output_format csv \\
-    --report_file ~/Documents/results.csv \\
-    --test_duration 2m \\
-    --debug
+./test_l4.py --mgr <ip_address> --upstream_port eth1 --radio wiphy0 --num_stations 3 --security wpa2 
+--ssid <ssid> --passwd <password> --test_duration 2m --url "ul http://<ap_ip_address> /dev/null" 
+--requests_per_ten 600 --test_type bytes-wr --debug
+---------------------------
+
             ''')
     parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes',
                         default=600)
