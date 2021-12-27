@@ -235,7 +235,7 @@ class StaConnect(Realm):
             print(".", end="")
             for sta_name in self.station_names:
                 sta_url = self.get_station_url(sta_name)
-                station_info = self.json_get(sta_url + "?fields=port,ip,ap")
+                station_info = self.json_get(sta_url + "?fields=port,ip,ap", debug_=False)
 
                 # LFUtils.debug_printer.pprint(station_info)
                 if station_info and "interface" in station_info:
