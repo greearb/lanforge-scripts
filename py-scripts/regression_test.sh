@@ -101,6 +101,7 @@ PYTHON_ENVIRONMENT=$(which python3)
 #  echo "Please upgrade your LANforge using instructions found at https://www.candelatech.com/downloads.php#releases"
 #  exit 1
 #fi
+git pull --rebase
 
 python3 -m pip install --upgrade pip
 if [ -d "/home/lanforge/lanforge_env" ]
