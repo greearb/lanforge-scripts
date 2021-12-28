@@ -382,7 +382,6 @@ def port_list_to_alias_map(json_list, debug_=False):
         # skip uninitialized port records
         if k2.find("Unknown") >= 0:
             continue
-        port_json = record[k2]
         reverse_map[k2] = json_entry
 
     return reverse_map
@@ -419,7 +418,6 @@ def list_to_alias_map(json_list=None, from_element=None, debug_=False):
         # skip uninitialized port records
         if k2.find("Unknown") >= 0:
             continue
-        port_json = record[k2]
         reverse_map[k2] = json_entry
     if debug_:
         pprint.pprint(("list_to_alias_map: reverse_map", reverse_map))
@@ -602,7 +600,6 @@ def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=F
 
 def name_to_eid(eid_input, non_port=False):
     rv = [1, 1, "", ""]
-    info = []
     if (eid_input is None) or (eid_input == ""):
         raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % eid_input)
     if type(eid_input) is not str:
@@ -706,7 +703,6 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
     :return:
     """
     print("Waiting until endpoints appear...")
-    found_endps = []
     port_url = "/port/1"
     ncshow_url = "/cli-form/show_endp"
     if base_url.endswith('/'):
