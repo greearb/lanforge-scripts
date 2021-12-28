@@ -576,8 +576,7 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
         if len(found_stations) > 0:
             if debug:
                 pprint.pprint(("wait_until_ports_disappear found_stations:", found_stations))
-    sleep(1)  # safety
-    return
+        sleep(1)  # check for ports once per second
 
 
 def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=False):
