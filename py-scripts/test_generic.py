@@ -113,7 +113,7 @@ class GenTest(LFCliBase):
         if self.debug:
             pprint.pprint(self.station_profile.station_names)
         LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url, port_list=self.station_profile.station_names)
-        if self.local_realm.wait_for_ip(station_list=temp_stas, ipv4=True):
+        if self.local_realm.wait_for_ip(station_list=temp_stas, ipv4=True, debug=self.debug):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
