@@ -165,7 +165,7 @@ class IPVariableTime(Realm):
         self.station_profile.admin_up()
         temp_stas = self.station_profile.station_names.copy()
         print("temp_stas {temp_stas}".format(temp_stas=temp_stas))
-        if self.wait_for_ip(temp_stas, ipv4=not self.ipv6, ipv6=self.ipv6):
+        if self.wait_for_ip(temp_stas, ipv4=not self.ipv6, ipv6=self.ipv6, debug=self.debug):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
