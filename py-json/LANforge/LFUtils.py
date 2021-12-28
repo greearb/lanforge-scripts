@@ -120,7 +120,7 @@ def sta_new_down_sta_request(sta_name, resource_id=1, radio="wiphy0", ssid="", p
         "mode": 0,
         "rate": "DEFAULT"
     }
-    if (debug_on):
+    if debug_on:
         debug_printer.pprint(data)
     return data
 
@@ -145,7 +145,7 @@ def port_set_dhcp_down_request(resource_id, port_name, debug_on=False):
         "interest": 75513858,  # includes use_current_flags + dhcp + dhcp_rls + ifdown
         "report_timer": REPORT_TIMER_MS_FAST
     }
-    if (debug_on):
+    if debug_on:
         debug_printer.pprint(data)
     return data
 
@@ -161,7 +161,7 @@ def port_dhcp_up_request(resource_id, port_name, debug_on=False):
     :param port_name:
     :return:
     """
-    if (debug_on):
+    if debug_on:
         print("portDhcpUpRequest")
     data = {
         "shelf": 1,
@@ -171,7 +171,7 @@ def port_dhcp_up_request(resource_id, port_name, debug_on=False):
         "interest": 75513858,  # includes use_current_flags + dhcp + dhcp_rls + ifdown
         "report_timer": REPORT_TIMER_MS_FAST,
     }
-    if (debug_on):
+    if debug_on:
         debug_printer.pprint(data)
     return data
 
@@ -196,7 +196,7 @@ def port_up_request(resource_id, port_name, debug_on=False):
         "interest": 8388610,  # includes use_current_flags + dhcp + dhcp_rls + ifdown
         "report_timer": REPORT_TIMER_MS_FAST,
     }
-    if (debug_on):
+    if debug_on:
         print("Port up request")
         debug_printer.pprint(data)
     return data
@@ -223,7 +223,7 @@ def port_down_request(resource_id, port_name, debug_on=False):
         "interest": 8388610,  # = current_flags + ifdown
         "report_timer": REPORT_TIMER_MS_FAST,
     }
-    if (debug_on):
+    if debug_on:
         print("Port down request")
         debug_printer.pprint(data)
     return data
@@ -243,7 +243,7 @@ def port_reset_request(resource_id, port_name, debug_on=False):
         "resource": resource_id,
         "port": port_name
     }
-    if (debug_on):
+    if debug_on:
         print("Port reset request")
         debug_printer.pprint(data)
     return data
@@ -255,9 +255,9 @@ def generateMac(parent_mac, random_octet, debug=False):
 
 def generate_mac(parent_mac, random_octet, debug=False):
     if debug:
-        print("************ random_octet: %s **************" % (random_octet))
+        print("************ random_octet: %s **************" % random_octet)
     my_oct = random_octet
-    if (len(random_octet) == 4):
+    if len(random_octet) == 4:
         my_oct = random_octet[2:]
     octets = parent_mac.split(":")
     octets[4] = my_oct
@@ -471,29 +471,29 @@ def waitUntilPortsAdminUp(resource_id=0, base_url="http://localhost:8080", port_
 
 def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", port_list=(), debug_=False, timeout=300):
     if debug_:
-        print("Waiting until %s ports appear admin-up..." %(len(port_list)))
+        print("Waiting until %s ports appear admin-up..." % (len(port_list)))
     down_stations = port_list.copy()
     port_url = "/port"
     loops = 0
 
     # url = /%s/%s?fields=device,down" % (resource_id, port_name)
     while len(down_stations) > 0:
-        if (loops > timeout):
-            print("WARNING:  Not all ports went admin up within %s+ seconds" %(timeout))
+        if loops > timeout:
+            print("WARNING:  Not all ports went admin up within %s+ seconds" % timeout)
             return None
 
         down_stations = []
         for port_name in port_list:
             eid = name_to_eid(port_name)
             rid = resource_id
-            if (rid == 0): # TODO: this allows user to pass in resource_id, but probably should remove resource_id entirely.
-                rid = eid[1] # use resource-id from the eid instead.
+            if rid == 0:  # TODO: this allows user to pass in resource_id, but probably should remove resource_id entirely.
+                rid = eid[1]  # use resource-id from the eid instead.
             uri = "%s/%s/%s/%s?fields=device,down" % (port_url, eid[0], rid, eid[2])
             lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug_)
             json_response = lf_r.getAsJson()
 
             if debug_:
-                print("uri: %s response:\n%s" %(uri, json_response))
+                print("uri: %s response:\n%s" % (uri, json_response))
 
             if json_response is None:
                 if debug_:
@@ -503,11 +503,11 @@ def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", p
                 json_response = json_response['interface']
             if json_response['down'] == "true":
                 if debug_:
-                    print("waiting for port: %s to go admin up." %(port_name))
+                    print("waiting for port: %s to go admin up." % port_name)
                 down_stations.append(port_name)
             else:
                 if debug_:
-                    print("port %s is admin up" %(port_name))
+                    print("port %s is admin up" % port_name)
 
         if len(down_stations) > 0:
             sleep(1)
@@ -547,7 +547,7 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
         port_name = eid[2]
         temp_names_by_resource[resource_id].append(port_name)
         temp_query_by_resource[resource_id] = "%s/%s/%s?fields=alias" % (
-        url, resource_id, ",".join(temp_names_by_resource[resource_id]))
+            url, resource_id, ",".join(temp_names_by_resource[resource_id]))
     if debug:
         pprint.pprint(("temp_query_by_resource", temp_query_by_resource))
     while len(found_stations) > 0:
@@ -630,7 +630,7 @@ def name_to_eid(eid_input, non_port=False):
         rv[0] = int(info[0])
         rv[1] = int(info[1])
         rv[2] = int(info[2])
-        if (len(info) >= 4):
+        if len(info) >= 4:
             rv[3] = int(info[3])
         return rv
 
@@ -722,7 +722,7 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
                 lf_r = LFRequest.LFRequest(base_url, ncshow_url, debug_=debug)
                 lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "flags": 1})
                 lf_r.formPost()
-        if (len(found_stations) < len(endp_list)):
+        if len(found_stations) < len(endp_list):
             sleep(2)
 
     if debug:
