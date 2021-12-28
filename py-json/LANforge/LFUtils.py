@@ -104,6 +104,9 @@ def sta_new_down_sta_request(sta_name, resource_id=1, radio="wiphy0", ssid="", p
     For use with add_sta. If you don't want to generate mac addresses via patterns (xx:xx:xx:xx:81:*)
     you can generate octets using random_hex.pop(0)[2:] and gen_mac(parent_radio_mac, octet)
     See http://localhost:8080/help/add_sta
+    :param resource_id:
+    :param radio:
+    :param debug_on:
     :param passphrase:
     :param ssid:
     :type sta_name: str
@@ -132,6 +135,7 @@ def portSetDhcpDownRequest(resource_id, port_name, debug_on=False):
 def port_set_dhcp_down_request(resource_id, port_name, debug_on=False):
     """
     See http://localhost:8080/help/set_port
+    :param debug_on:
     :param resource_id:
     :param port_name:
     :return:
@@ -157,6 +161,7 @@ def portDhcpUpRequest(resource_id, port_name, debug_on=False):
 def port_dhcp_up_request(resource_id, port_name, debug_on=False):
     """
     See http://localhost:8080/help/set_port
+    :param debug_on:
     :param resource_id:
     :param port_name:
     :return:
@@ -184,6 +189,7 @@ def portUpRequest(resource_id, port_name, debug_on=False):
 def port_up_request(resource_id, port_name, debug_on=False):
     """
     See http://localhost:8080/help/set_port
+    :param debug_on:
     :param resource_id:
     :param port_name:
     :return:
@@ -210,6 +216,7 @@ def port_down_request(resource_id, port_name, debug_on=False):
     """
     Does not change the use_dhcp flag
     See http://localhost:8080/help/set_port
+    :param debug_on:
     :param resource_id:
     :param port_name:
     :return:
@@ -233,6 +240,7 @@ def port_reset_request(resource_id, port_name, debug_on=False):
     """
     Does not change the use_dhcp flag
     See http://localhost:8080/help/reset_port
+    :param debug_on:
     :param resource_id:
     :param port_name:
     :return:
@@ -270,6 +278,7 @@ def portNameSeries(prefix_="sta", start_id_=0, end_id_=1, padding_number_=10000,
     the padding_number is added to the start and end numbers and the resulting sum
     has the first digit trimmed, so f(0, 1, 10000) => {"0000", "0001"}
     @deprecated -- please use port_name_series
+    :param radio:
     :param prefix_:
     :param start_id_:
     :param end_id_:
@@ -286,6 +295,7 @@ def port_name_series(prefix="sta", start_id=0, end_id=1, padding_number=10000, r
     the padding_number is added to the start and end numbers and the resulting sum
     has the first digit trimmed, so f(0, 1, 10000) => {"0000", "0001"}
     @deprecated -- please use port_name_series
+    :param radio:
     :param prefix: defaults to 'sta'
     :param start_id: beginning id
     :param end_id: ending_id
