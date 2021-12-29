@@ -450,12 +450,12 @@ def waitUntilPortsAdminDown(resource_id=1, base_url="http://localhost:8080", por
     return wait_until_ports_admin_down(resource_id=resource_id, base_url=base_url, port_list=port_list)
 
 
-def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080", debug_=False, port_list=()):
+def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080", debug_=False, port_list=(), timeout_sec=360):
     print("Waiting until ports appear admin-down...")
     up_stations = port_list.copy()
-    sleep(1)
+    sec_elapsed = 0
     port_url = "/port/1"
-    while len(up_stations) > 0:
+    while len(up_stations) > 0 and sec_elapsed < timeout_sec:
         up_stations = []
         for port_name in port_list:
             uri = "%s/%s/%s?fields=device,down" % (port_url, resource_id, port_name)
@@ -470,7 +470,11 @@ def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080",
             if json_response['down'] == "false":
                 up_stations.append(port_name)
         sleep(1)
-    return None
+        sec_elapsed += 1
+    if sec_elapsed >= timeout_sec:
+        return False
+    else:
+        return True
 
 
 def waitUntilPortsAdminUp(resource_id=0, base_url="http://localhost:8080", port_list=()):
