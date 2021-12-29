@@ -655,9 +655,7 @@ class Realm(LFCliBase):
                     else:
                         if debug:
                             print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
-                    if len(stas_without_ip4s) == 0 and not ipv6:
-                        print('Found IPs for all requested ports')
-                        return True
+
                 if ipv6:
                     v = response['interface']
                     ip6a = v['ipv6_address']
@@ -668,14 +666,10 @@ class Realm(LFCliBase):
                         stas_without_ip6s[sta_eid] = True
                         if debug:
                             print("Waiting for port %s to get IPv6 Address try %s / %s, reported: %s." % (sta_eid, sec_elapsed, timeout_sec, ip6a))
-                    if len(stas_without_ip6s) == 0 and not ipv4:
-                        print('Found IPs for all requested ports')
-                        return True
 
-                if ipv4 and ipv6:
-                    if len(stas_without_ip4s) == len(stas_without_ip6s) == 0:
-                        print('Found IPs for all requested ports')
-                        return True
+                if len(stas_without_ip4s) == len(stas_without_ip6s) == 0:
+                    print('Found IPs for all requested ports')
+                    return True
 
             time.sleep(1)
             sec_elapsed += 1
