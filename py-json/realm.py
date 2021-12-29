@@ -617,68 +617,82 @@ class Realm(LFCliBase):
 
     # timemout_sec of -1 means auto-calculate based on number of stations.
     def wait_for_ip(self, station_list=None, ipv4=True, ipv6=False, timeout_sec=360, debug=False):
+        timeout_auto = False
+
         if not (ipv4 or ipv6):
             raise ValueError("wait_for_ip: ipv4 and/or ipv6 must be set!")
-
         if timeout_sec >= 0:
             if debug:
                 print("Waiting for ips, timeout: %i..." % timeout_sec)
         else:
+            timeout_auto = True
             timeout_sec = 60 + len(station_list) * 5
             if debug:
                 print("Auto-Timeout requested, using: %s" % timeout_sec)
 
         stas_without_ip4s = {}
         stas_without_ip6s = {}
+
         sec_elapsed = 0
+        time_extended = False
+        # print(station_list)
         waiting_states = ["0.0.0.0", "NA", "", 'DELETED', 'AUTO']
         if (station_list is None) or (len(station_list) < 1):
             raise ValueError("wait_for_ip: expects non-empty list of ports")
+        wait_more = True
 
-        while sec_elapsed <= timeout_sec:
+        while wait_more and (sec_elapsed <= timeout_sec):
+            wait_more = False
+            some_passed = False
             stas_without_ip4s = {}
             stas_without_ip6s = {}
+
             for sta_eid in station_list:
                 eid = self.name_to_eid(sta_eid)
+
                 response = super().json_get("/port/%s/%s/%s?fields=alias,ip,port+type,ipv6+address" %
                                             (eid[0], eid[1], eid[2]))
+                # pprint(response)
+
                 if (response is None) or ("interface" not in response):
                     print("station_list: incomplete response for eid: %s:" % sta_eid)
                     pprint(response)
+                    wait_more = True
                     break
+
                 if ipv4:
                     v = response['interface']
                     if v['ip'] in waiting_states:
+                        wait_more = True
                         stas_without_ip4s[sta_eid] = True
                         if debug:
                             print("Waiting for port %s to get IPv4 Address try %s / %s" % (sta_eid, sec_elapsed, timeout_sec))
                     else:
+                        some_passed = True
                         if debug:
                             print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
-                    if len(stas_without_ip4s) == 0 and not ipv6:
-                        print('Found IPs for all requested ports')
-                        return True
+
                 if ipv6:
                     v = response['interface']
+                    # print(v)
                     ip6a = v['ipv6_address']
                     if ip6a != 'DELETED' and not ip6a.startswith('fe80') and ip6a != 'AUTO':
+                        some_passed = True
                         if debug:
                             print("Found IPv6: %s on port: %s" % (ip6a, sta_eid))
                     else:
                         stas_without_ip6s[sta_eid] = True
+                        wait_more = True
                         if debug:
                             print("Waiting for port %s to get IPv6 Address try %s / %s, reported: %s." % (sta_eid, sec_elapsed, timeout_sec, ip6a))
-                    if len(stas_without_ip6s) == 0 and not ipv4:
-                        print('Found IPs for all requested ports')
-                        return True
 
-                if ipv4 and ipv6:
-                    if len(stas_without_ip4s) == len(stas_without_ip6s) == 0:
-                        print('Found IPs for all requested ports')
-                        return True
-
-            time.sleep(1)
-            sec_elapsed += 1
+            if wait_more:
+                if timeout_auto and not some_passed:
+                    if sec_elapsed > 60:
+                        # Nothing has gotten IP for 60 seconds, consider timeout reached.
+                        break
+                time.sleep(1)
+                sec_elapsed += 1
 
         # If not all ports got IP addresses before timeout, and debugging is enabled, then
         # add logging.
@@ -688,8 +702,13 @@ class Realm(LFCliBase):
                     print('%s did not acquire IPv4 addresses' % stas_without_ip4s.keys())
                 if len(stas_without_ip6s) > 0:
                     print('%s did not acquire IPv6 addresses' % stas_without_ip6s.keys())
+                port_info = self.dump_all_port_info()
                 pprint(self.dump_all_port_info())
             return False
+        else:
+            if debug:
+                print("Found IPs for all requested ports.")
+            return True
 
     def get_curr_num_ips(self, num_sta_with_ips=0, station_list=None, ipv4=True, ipv6=False, debug=False):
         if debug:
