@@ -612,6 +612,9 @@ class Realm(LFCliBase):
             return eid
         return LFUtils.name_to_eid(eid, non_port=non_port)
 
+    def dump_all_port_info(self):
+        return self.json_get('/port/all')
+
     def wait_for_ip(self, station_list=None, ipv4=True, ipv6=False, timeout_sec=360, debug=False):
         if not (ipv4 or ipv6):
             raise ValueError("wait_for_ip: ipv4 and/or ipv6 must be set!")
@@ -624,7 +627,7 @@ class Realm(LFCliBase):
         sec_elapsed = 0
         time_extended = False
         # print(station_list)
-        waiting_states = ["0.0.0.0", "NA", ""]
+        waiting_states = ["0.0.0.0", "NA", "", 'DELETED', 'AUTO']
         if (station_list is None) or (len(station_list) < 1):
             raise ValueError("wait_for_ip: expects non-empty list of ports")
         wait_more = True
@@ -668,6 +671,8 @@ class Realm(LFCliBase):
                     else:
                         if sta_eid not in stas_with_ips:
                             stas_with_ips[sta_eid] = {'ipv4': v['ip']}
+                        else:
+                            stas_with_ips[sta_eid]['ipv4'] = v['ip']
                         if debug:
                             print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
 
@@ -678,6 +683,8 @@ class Realm(LFCliBase):
                             and v['ipv6 address'] != 'AUTO':
                         if sta_eid not in stas_with_ips:
                             stas_with_ips[sta_eid] = {'ipv6': v['ip']}
+                        else:
+                            stas_with_ips[sta_eid]['ipv6'] = v['ip']
                         if debug:
                             print("Found IPv6: %s on port: %s" % (v['ipv6 address'], sta_eid))
                     else:
@@ -688,6 +695,38 @@ class Realm(LFCliBase):
             if wait_more:
                 time.sleep(1)
                 sec_elapsed += 1
+
+        port_info = self.dump_all_port_info()
+        ports_of_interest = list()  # ports_of_interest = [item for item in port_info['interfaces'] if list(item.keys())[0] in station_list]
+        for item in port_info['interfaces']:
+            if list(item.keys())[0] in station_list:
+                ports_of_interest.append(item)
+        port_names = list()  # port_names = [list(port.keys())[0] for port in ports_of_interest]
+        ipv4_addresses = list()  # ipv4_addresses = [list(port.values())[0]['ip'] for port in ports_of_interest]
+        ipv6_addresses = list()  # ipv6_addresses = [list(port.values())[0]['ipv6 address'] for port in ports_of_interest]
+        for port in ports_of_interest:
+            port_names.append(list(port.keys())[0])
+            ipv4_addresses.append(list(port.values())[0]['ip'])
+            ipv6_addresses.append(list(port.values())[0]['ipv6 address'])
+
+        if ipv4:
+            if len(set(ipv4_addresses) & set(waiting_states)) > 0:
+                targets = dict(zip(port_names, ipv4_addresses))
+                sta_without_ips = {k: v for k, v in targets.items() if v in waiting_states}
+                if len(sta_without_ips) > 0:
+                    print('%s did not acquire IP addresses' % sta_without_ips.keys())
+                    if self.debug:
+                        pprint(self.dump_all_port_info())
+        if ipv6:
+            fe80_failures = [x.startswith('fe80') for x in ipv6_addresses]
+            if len(set(ipv6_addresses) & set(waiting_states)) > 0 or len(fe80_failures) > 0:
+                targets = dict(zip(port_names, ipv6_addresses))
+                sta_without_ips = {k: v for k, v in targets.items() if v in waiting_states}.keys()
+                sta_without_ips = list(sta_without_ips) + fe80_failures
+                if len(sta_without_ips) > 0:
+                    print('%s did not acquire IPv6 addresses' % sta_without_ips)
+                    if self.debug:
+                        pprint(self.dump_all_port_info())
 
         return not wait_more
 
@@ -830,7 +869,8 @@ class Realm(LFCliBase):
         return StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug, ipv6=ipv6, up=False)
 
     def new_multicast_profile(self):
-        return MULTICASTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug, report_timer_=3000)
+        return MULTICASTProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug,
+                                report_timer_=3000)
 
     def new_wifi_monitor_profile(self, resource_=1, debug_=False, up_=False):
         return WifiMonitor(self.lfclient_url,
