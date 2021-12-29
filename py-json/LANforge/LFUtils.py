@@ -492,7 +492,7 @@ def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", p
     while len(down_stations) > 0:
         if loops > timeout:
             print("WARNING:  Not all ports went admin up within %s+ seconds" % timeout)
-            return None
+            return False
 
         down_stations = []
         for port_name in port_list:
@@ -526,7 +526,7 @@ def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", p
 
         loops += 1
 
-    return None
+    return True
 
 
 def waitUntilPortsDisappear(base_url="http://localhost:8080", port_list=(), debug=False):
