@@ -533,7 +533,7 @@ def waitUntilPortsDisappear(base_url="http://localhost:8080", port_list=(), debu
     wait_until_ports_disappear(base_url, port_list, debug)
 
 
-def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), debug=False):
+def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), debug=False, timeout_sec=360):
     if (port_list is None) or (len(port_list) < 1):
         if debug:
             print("LFUtils: wait_until_ports_disappear: empty list, zipping back")
@@ -562,7 +562,8 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
             url, resource_id, ",".join(temp_names_by_resource[resource_id]))
     if debug:
         pprint.pprint(("temp_query_by_resource", temp_query_by_resource))
-    while len(found_stations) > 0:
+    sec_elapsed = 0
+    while len(found_stations) > 0 and sec_elapsed < timeout_sec:
         found_stations = []
         for (resource, check_url) in temp_query_by_resource.items():
             if debug:
@@ -589,6 +590,11 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
             if debug:
                 pprint.pprint(("wait_until_ports_disappear found_stations:", found_stations))
         sleep(1)  # check for ports once per second
+        sec_elapsed += 1
+    if sec_elapsed >= timeout_sec:
+        return False
+    else:
+        return True
 
 
 def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=False):
