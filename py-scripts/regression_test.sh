@@ -387,8 +387,7 @@ else
       'radio==$RADIO2 stations==1 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --test_duration 5s --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000  -o longevity.csv"
       "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       #"./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput -m $MGR"
-      #./test_l3_unicast_traffic_gen
-      #./test_l3_unicast_traffic_gen
+      "./test_l3_unicast_traffic_gen.py --radio $RADIO_USED 4 $SSID_USED $PASSWD_USED --debug"
       #./test_l3_WAN_LAN
       "./test_l4.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR --test_duration 15s"
       "./test_status_msg.py --debug --mgr $MGR" #this is all which is needed to run
