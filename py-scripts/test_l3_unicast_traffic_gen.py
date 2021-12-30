@@ -104,8 +104,8 @@ class L3VariableTimeLongevity(LFCliBase):
         for station_profile, station_list in zip(self.station_profiles, self.station_lists):
             if self.debug:
                 print("Bringing up station {}".format(station_profile))
-            station_profile.admin_up(self.resource)
-            if self.local_realm.wait_for_ip(self.resource, station_list, timeout_sec=10 * len(station_list)):
+            station_profile.admin_up()
+            if self.local_realm.wait_for_ip(station_list=station_list, timeout_sec=10 * len(station_list)):
                 if self.debug:
                     print("ip's aquired {}".format(station_list))
             else:
@@ -138,7 +138,6 @@ class L3VariableTimeLongevity(LFCliBase):
                 passes += 1
             else:
                 self._fail("FAIL: Not all stations increased traffic", print_fail)
-                break
             cur_time = datetime.datetime.now()
 
         if passes == expected_passes:
@@ -182,20 +181,6 @@ class L3VariableTimeLongevity(LFCliBase):
     def build(self):
         # refactor in LFUtils.port_zero_request()
         resource = 1
-
-        data = {
-            'shelf': 1,
-            'resource': 1,
-            'port': 'eth1',
-            'ip_addr': '0.0.0.0',
-            'netmask': '0.0.0.0',
-            'gateway': '0.0.0.0',
-            'current_flags': 0,
-            'interest': 402653212
-        }
-
-        url = "cli-json/set_port"
-        self.json_post(url, data)
 
         # refactor into LFUtils
         data = {
@@ -248,7 +233,7 @@ def main():
     lfjson_port = 8080
 
     parser = argparse.ArgumentParser(
-        prog='test_l3_longevity.py',
+        prog='test_l3_unicast_traffic_gen.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -262,7 +247,7 @@ Useful Information:
             ''',
 
         description='''\
-test_l3_longevity.py:
+test_l3_unicast_traffic_gen.py:
 --------------------
 Basic Idea: 
 
@@ -277,7 +262,7 @@ Scripts are executed from: ./lanforge/py-scripts
 Stations start counting form zero,  thus stations count from zero - number of las 
 
 Generic command layout:
-python ./test_l3_longevity.py 
+python ./test_l3_unicast_traffic_gen.py
         --test_duration <duration> 
         --endp_type <traffic type> 
         --upstream_port <port> 
@@ -307,7 +292,7 @@ Example:
     5. Radio #2 wiphy1 has 64 stations, ssid = candelaTech-wpa2-x2048-5-3, ssid password = candelaTech-wpa2-x2048-5-3
 
 Example: 
-python3 .\\test_l3_longevity.py --test_duration 4m --endp_type lf_tcp --upstream_port eth1 \
+python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp --upstream_port eth1 \
                                 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 \
                                 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 
 
