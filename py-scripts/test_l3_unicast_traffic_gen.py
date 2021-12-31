@@ -12,23 +12,23 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 
-class L3VariableTimeLongevity(LFCliBase):
-    def __init__(self, host, port, endp_type, side_b, radios, radio_name_list, number_of_stations_per_radio_list,
-                 ssid_list, ssid_password_list, security, station_lists, name_prefix, resource=1,
+class L3VariableTimeLongevity(Realm):
+    def __init__(self, host='localhost', port='8080', endp_type=None, side_b=None, radios=None, radio_name_list=None,
+                 number_of_stations_per_radio_list=None,
+                 ssid_list=None, ssid_password_list=None, security=None,
+                 station_lists=None, name_prefix=None, resource=1,
                  side_a_min_rate=256000, side_a_max_rate=0,
                  side_b_min_rate=256000, side_b_max_rate=0,
                  number_template="00", test_duration="125s",
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.endp_type = endp_type
@@ -46,12 +46,11 @@ class L3VariableTimeLongevity(LFCliBase):
         self.radios = radios  # from the command line
         self.radio_list = radio_name_list
         self.number_of_stations_per_radio_list = number_of_stations_per_radio_list
-        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
-        self.cx_profile = self.local_realm.new_l3_cx_profile()
+        self.cx_profile = self.new_l3_cx_profile()
         self.station_profiles = []
 
         for index in range(0, len(radios)):
-            self.station_profile = self.local_realm.new_station_profile()
+            self.station_profile = self.new_station_profile()
             self.station_profile.lfclient_url = self.lfclient_url
             self.station_profile.ssid = ssid_list[index]
             self.station_profile.ssid_pass = ssid_password_list[index]
@@ -100,17 +99,17 @@ class L3VariableTimeLongevity(LFCliBase):
     def start(self, print_pass=False, print_fail=False):
         print("Bringing up stations")
         up_request = LFUtils.port_up_request(resource_id=self.resource, port_name=self.side_b)
-        self.local_realm.json_post("/cli-json/set_port", up_request)
+        self.json_post("/cli-json/set_port", up_request)
         for station_profile, station_list in zip(self.station_profiles, self.station_lists):
             if self.debug:
                 print("Bringing up station {}".format(station_profile))
             station_profile.admin_up()
-            if self.local_realm.wait_for_ip(station_list=station_list, timeout_sec=10 * len(station_list)):
+            if self.wait_for_ip(station_list=station_list, timeout_sec=10 * len(station_list)):
                 if self.debug:
                     print("ip's aquired {}".format(station_list))
             else:
                 print("print failed to get IP's: {}".format(station_list))
-                if self.local_realm.wait_for_ip(self.resource, station_list, timeout_sec=120):
+                if self.wait_for_ip(self.resource, station_list, timeout_sec=120):
                     print("tried again:  print failed to get IP's: {}".format(station_list))
                     exit(1)
 
@@ -120,7 +119,7 @@ class L3VariableTimeLongevity(LFCliBase):
         old_rx_values = self.__get_rx_values()
         filtered_old_rx_values = old_rx_values
 
-        end_time = self.local_realm.parse_time(self.test_duration) + cur_time
+        end_time = self.parse_time(self.test_duration) + cur_time
 
         passes = 0
         expected_passes = 0
@@ -193,13 +192,8 @@ class L3VariableTimeLongevity(LFCliBase):
         url = "cli-json/add_br"
         self.json_post(url, data)
 
-        try:
-            data = LFUtils.port_dhcp_up_request(resource, self.side_b)
-            self.json_post("/cli-json/set_port", data)
-        except:
-            print("LFUtils.port_dhcp_up_request didn't complete ")
-            print("or the json_post failed either way {} did not set up dhcp so test may not pass data ".format(
-                self.side_b))
+        data = LFUtils.port_dhcp_up_request(resource, self.side_b)
+        self.json_post("/cli-json/set_port", data)
 
         index = 0
         temp_station_list = []
@@ -229,12 +223,9 @@ def valid_endp_type(endp_type):
 
 
 def main():
-    lfjson_host = "localhost"
-    lfjson_port = 8080
 
-    parser = argparse.ArgumentParser(
+    parser = Realm.create_basic_argparse(
         prog='test_l3_unicast_traffic_gen.py',
-        # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
 Useful Information:
@@ -298,20 +289,17 @@ python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp 
 
         ''')
 
-    parser.add_argument('-d', '--test_duration',
+    parser.add_argument('--test_duration',
                         help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',
                         default='3m')
     parser.add_argument('-t', '--endp_type',
                         help='--endp_type <type of traffic> example --endp_type lf_udp, default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6',
                         default='lf_udp', type=valid_endp_type)
-    parser.add_argument('-u', '--upstream_port', help='--upstream_port <upstream_port> example: --upstream_port eth1',
-                        default='eth1')
-    parser.add_argument('--debug', help='Enable debugging', default=False, action="store_true")
 
     requiredNamed = parser.add_argument_group('required arguments')
-    requiredNamed.add_argument('-r', '--radio', action='append', nargs=4,
+    requiredNamed.add_argument('--radio_list', action='append', nargs=4,
                                metavar=('<wiphyX>', '<number last station>', '<ssid>', '<ssid password>'),
-                               help='--radio  <number_of_wiphy> <number of last station> <ssid>  <ssid password> ',
+                               help='--radio_list  <number_of_wiphy> <number of last station> <ssid>  <ssid password>',
                                required=True)
     args = parser.parse_args()
 
@@ -330,7 +318,7 @@ python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp 
     ssid_password_list = []
 
     index = 0
-    for radio in args.radio:
+    for radio in args.radio_list:
         radio_name = radio[radio_offset]
         radio_name_list.append(radio_name)
         number_of_stations_per_radio = radio[number_of_stations_offset]
@@ -343,7 +331,7 @@ python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp 
 
     index = 0
     station_lists = []
-    for _ in args.radio:
+    for _ in args.radio_list:
         number_of_stations = int(number_of_stations_per_radio_list[index])
         if number_of_stations > MAX_NUMBER_OF_STATIONS:
             print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
@@ -352,29 +340,20 @@ python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp 
                                               end_id_=number_of_stations + index * 1000, padding_number_=10000)
         station_lists.append(station_list)
         index += 1
-    ip_var_test = L3VariableTimeLongevity(lfjson_host,
-                                          lfjson_port,
-                                          number_template="00",
-                                          station_lists=station_lists,
+    ip_var_test = L3VariableTimeLongevity(host=args.mgr, port=args.mgr_port, station_lists=station_lists,
                                           name_prefix="var_time",
-                                          endp_type=args.endp_type,
-                                          side_b=side_b,
-                                          radios=args.radio,
+                                          endp_type=args.endp_type, side_b=side_b, radios=args.radio_list,
                                           radio_name_list=radio_name_list,
                                           number_of_stations_per_radio_list=number_of_stations_per_radio_list,
-                                          ssid_list=ssid_list,
-                                          ssid_password_list=ssid_password_list,
-                                          resource=1,
-                                          security="wpa2", test_duration=args.test_duration,
-                                          side_a_min_rate=256000, side_b_min_rate=256000,
-                                          _debug_on=args.debug)
+                                          ssid_list=ssid_list, ssid_password_list=ssid_password_list, security="wpa2",
+                                          test_duration=args.test_duration, _debug_on=args.debug)
 
     ip_var_test.cleanup()
     ip_var_test.build()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
         exit(1)
-    ip_var_test.start(False, False)
+    ip_var_test.start()
     ip_var_test.stop()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
