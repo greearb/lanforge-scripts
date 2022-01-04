@@ -60,6 +60,7 @@ class StationProfile:
         self.security = security
         self.local_realm = local_realm
         self.use_ht160 = use_ht160
+        self.sta_prefix = "sta"
         self.COMMANDS = ["add_sta", "set_port"]
         self.desired_add_sta_flags = ["wpa2_enable", "80211u_enable", "create_admin_down"]
         self.desired_add_sta_flags_mask = ["wpa2_enable", "80211u_enable", "create_admin_down"]
@@ -394,6 +395,10 @@ class StationProfile:
                sleep_time=0.02):
         if (radio is None) or (radio == ""):
             raise ValueError("station_profile.create: will not create stations without radio")
+        # Get the last event number currently on the LANforge
+        starting_event = self.local_realm.json_get('/events/last/1')['event']['id']
+        if not starting_event:
+            starting_event = 0
         radio_eid = self.local_realm.name_to_eid(radio)
         radio_shelf = radio_eid[0]
         radio_resource = radio_eid[1]
@@ -449,14 +454,21 @@ class StationProfile:
         wifi_extra_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_extra", debug_=debug)
         wifi_txo_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_txo", debug_=debug)
         # add radio here
-        if (num_stations > 0) and (len(sta_names_) < 1):
+        if num_stations and not sta_names_:
             # print("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
-            my_sta_names = LFUtils.portNameSeries("sta", 0, num_stations - 1, int("1" + self.number_template))
+            sta_names_ = LFUtils.portNameSeries(prefix_="sta",
+                                                start_id_=int(self.number_template),
+                                                end_id_=num_stations + int(self.number_template) - 1,
+                                                padding_number_=10000,
+                                                radio=radio)
             # print("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
-        else:
-            my_sta_names = sta_names_
+        # list of EIDs being created
+        my_sta_eids = list()
+        for port in sta_names_:
+            eid = LFUtils.name_to_eid(port)
+            my_sta_eids.append("%s.%s.%s" % (radio_shelf, radio_resource, eid[2]))
 
-        if (len(my_sta_names) >= 15) or suppress_related_commands_:
+        if (len(my_sta_eids) >= 15) or suppress_related_commands_:
             self.add_sta_data["suppress_preexec_cli"] = "yes"
             self.add_sta_data["suppress_preexec_method"] = 1
             self.set_port_data["suppress_preexec_cli"] = "yes"
@@ -467,13 +479,13 @@ class StationProfile:
             print("== == Created STA names == == == == == == == == == == == == == == == == == == == == == == == ==")
             pprint(self.station_names)
             print("== == vs Pending STA names == ==")
-            pprint(my_sta_names)
+            pprint(my_sta_eids)
             print("== == == == == == == == == == == == == == == == == == == == == == == == == ==")
 
         # track the names of stations in case we have stations added multiple times
         finished_sta = []
 
-        for eidn in my_sta_names:
+        for eidn in my_sta_eids:
             if eidn in self.station_names:
                 print("Station %s already created, skipping." % eidn)
                 continue
@@ -536,7 +548,23 @@ class StationProfile:
             time.sleep(sleep_time)
 
         # print("- ~3287 - waitUntilPortsAppear - - - - - - - - - - - - - - - - - - "%eidn)
-        LFUtils.wait_until_ports_appear(self.lfclient_url, my_sta_names)
+        LFUtils.wait_until_ports_appear(self.lfclient_url, my_sta_eids)
+
+        # query the LANforge for all available ports
+        port_list_1 = self.local_realm.json_get("/port/%s/%s" % (radio_shelf, radio_resource))
+        # Filter port_list to include only ports which are the stations we are creating
+        port_list = list()
+        for port in port_list_1['interfaces']:
+            if list(port.keys())[0] in my_sta_eids:
+                port_list.append(port)
+
+        # If a requested port doesn't appear on the LANforge, raise an error and print debug
+        if len(port_list) != len(my_sta_eids):
+            print('Desired stations: %s' % my_sta_eids)
+            print("Existing stations: %s" % port_list)
+            pprint(port_list_1)
+            print(self.local_realm.find_new_events(starting_event))
+            raise ValueError("Unable to find ports: %s" % (set(my_sta_eids) - set(port_list)))
 
         # and set ports up
         if dry_run:
