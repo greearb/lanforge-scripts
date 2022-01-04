@@ -845,6 +845,19 @@ class Realm(LFCliBase):
         link = self.lfclient_url + link
         info = ()
 
+    @staticmethod
+    def get_events(event_log, value):
+        results = []
+        if event_log:
+            for event in event_log['events']:
+                if event.values():
+                    results.append(list(event.values())[0][value])
+        return results
+
+    # Find events since the given the last number from the original list of events
+    def find_new_events(self, previous_event_id):
+        return self.json_get('/events/since/%s' % previous_event_id)
+
     def new_station_profile(self, ipv6=False):
         return StationProfile(self.lfclient_url, local_realm=self, debug_=self.debug, ipv6=ipv6, up=False)
 
