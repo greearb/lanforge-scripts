@@ -658,13 +658,14 @@ def name_to_eid(eid_input, non_port=False):
     return rv
 
 
-def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debug=False):
+def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debug=False, timeout=300):
     """
     Use this method to pause until the LANforge system has caught up and implemented the
     ports you have requested to create. This determines the presence of interfaces, it
     does not inspect their state. It is appropriate to use when creating stations in
     the admin-down state. Remember physical port changes, mac-vlans, and 1Qvlans might
     not appear if they are created admin-down.
+    :param timeout:
     :param base_url:
     :param port_list:
     :param debug:
@@ -678,8 +679,9 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
     if base_url.endswith('/'):
         port_url = port_url[1:]
         ncshow_url = ncshow_url[1:]
-
-    while len(found_stations) < len(port_list):
+    sec_elapsed = 0
+    attempts = 0
+    while len(found_stations) < len(port_list) and sec_elapsed < timeout:
         found_stations = []
         for port_eid in port_list:
             eid = name_to_eid(port_eid)
@@ -698,10 +700,18 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
                 lf_r.jsonPost()
         if len(found_stations) < len(port_list):
             sleep(2)
+            sec_elapsed += 2
+            attempts += 1
+            if debug:
+                print('Found %s out of %s stations in %s out of %s tries' % (len(found_stations), len(port_list), attempts, timeout/2))
+        else:
+            return True
 
     if debug:
         print("These stations appeared: " + ", ".join(found_stations))
-    return
+        print("These stations did not appear: " + ",".join(set(port_list) - set(found_stations)))
+        print(LFRequest.LFRequest("%s/ports" % base_url))
+    return False
 
 
 def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False):
