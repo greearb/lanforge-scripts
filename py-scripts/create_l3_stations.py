@@ -226,8 +226,10 @@ def main():
     args = parser.parse_args()
 
     num_sta = 2
-    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+    if args.num_stations:
         num_sta = int(args.num_stations)
+    elif args.station_list:
+        num_sta = len(args.station_list)
 
     if not args.station_list:
         station_list = LFUtils.portNameSeries(
@@ -241,22 +243,10 @@ def main():
             station_list = args.station_list[0].split()
         else:
             station_list = args.station_list
-    ip_var_test = CreateL3(host=args.mgr,
-                           port=args.mgr_port,
-                           number_template=str(args.number_template),
-                           sta_list=station_list,
-                           name_prefix="VT",
-                           upstream=args.upstream_port,
-                           ssid=args.ssid,
-                           password=args.passwd,
-                           radio=args.radio,
-                           security=args.security,
-                           use_ht160=False,
-                           side_a_min_rate=args.a_min,
-                           side_b_min_rate=args.b_min,
-                           mode=args.mode,
-                           ap=args.ap,
-                           _debug_on=args.debug)
+    ip_var_test = CreateL3(host=args.mgr, port=args.mgr_port, number_template=str(args.number_template),
+                           sta_list=station_list, name_prefix="VT", upstream=args.upstream_port, ssid=args.ssid,
+                           password=args.passwd, radio=args.radio, security=args.security, side_a_min_rate=args.a_min,
+                           side_b_min_rate=args.b_min, mode=args.mode, ap=args.ap, _debug_on=args.debug)
 
     if not args.no_cleanup:
         ip_var_test.pre_cleanup()
