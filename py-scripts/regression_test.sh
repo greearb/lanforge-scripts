@@ -612,6 +612,7 @@ function html_generator() {
     header="<!DOCTYPE html>
 <html>
 <head>
+<meta http-equiv='Cache-Control' content='no-store' />
 <title>${HOSTNAME} Regression Test Results $NOW</title>
 <link rel='stylesheet' href='report.css' />
 <style>
