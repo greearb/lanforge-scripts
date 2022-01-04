@@ -165,6 +165,7 @@ class StaConnect2(Realm):
 
         # Create stations and turn dhcp on
         self.station_profile = self.new_station_profile()
+        self.station_profile.sta_prefix = self.sta_prefix
 
         if self.dut_security == WPA2:
             self.station_profile.use_security(security_type="wpa2", ssid=self.dut_ssid, passwd=self.dut_passwd)
