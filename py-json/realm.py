@@ -205,13 +205,14 @@ class Realm(LFCliBase):
         self.freq_to_chan[4970] = 194
         self.freq_to_chan[4980] = 196
 
-    def wait_until_ports_appear(self, sta_list=None, debug_=False):
+    def wait_until_ports_appear(self, sta_list=None, debug_=False, timeout=360):
         if (sta_list is None) or (len(sta_list) < 1):
             print("realm.wait_until_ports_appear: no stations provided")
             return
         LFUtils.wait_until_ports_appear(base_url=self.lfclient_url,
                                         port_list=sta_list,
-                                        debug=debug_)
+                                        debug=debug_,
+                                        timeout=timeout)
 
     def wait_until_ports_disappear(self, sta_list=None, debug_=False):
         if (sta_list is None) or (len(sta_list) < 1):
