@@ -970,7 +970,7 @@ class L3VariableTime(Realm):
         tags['dl-pdu-size'] = dl_pdu
         tags['station-count'] = sta_count
         tags['attenuation'] = atten
-        tags["script"] = 'test_l3_longevity'
+        tags["script"] = 'test_l3'
 
         # Add user specified tags
         for k in self.user_tags:
@@ -1186,7 +1186,7 @@ def main():
     endp_types = "lf_udp"
 
     parser = argparse.ArgumentParser(
-        prog='test_l3_longevity.py',
+        prog='test_l3.py',
         # formatter_class=argparse.RawDescriptionHelpFormatter,
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -1279,7 +1279,7 @@ Setting wifi_settings per radio
 --polling_interval 5s --upstream_port eth2
 --radio "radio==wiphy1 stations==4 ssid==asus11ax-5 ssid_pw==hello123 security==wpa2  mode==0 wifi_settings==wifi_settings
     enable_flags==('ht160_enable'|'wpa2_enable'|'80211u_enable'|'create_admin_down'|'ht160_enable') "
---endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 --test_rig CT-US-001 --test_tag 'l3_longevity'
+--endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 --test_rig CT-US-001 --test_tag 'test_l3'
 
         wifi_mode
         Input       : Enum Val  : Shown by nc_show_ports
@@ -1692,14 +1692,14 @@ Setting wifi_settings per radio
     if local_lf_report_dir != "":
         report = lf_report.lf_report(
             _path=local_lf_report_dir,
-            _results_dir_name="test_l3_longevity",
-            _output_html="test_l3_longevity.html",
-            _output_pdf="test_l3_longevity.pdf")
+            _results_dir_name="test_l3",
+            _output_html="test_l3.html",
+            _output_pdf="test_l3.pdf")
     else:
         report = lf_report.lf_report(
-            _results_dir_name="test_l3_longevity",
-            _output_html="test_l3_longevity.html",
-            _output_pdf="test_l3_longevity.pdf")
+            _results_dir_name="test_l3",
+            _output_html="test_l3.html",
+            _output_pdf="test_l3.pdf")
 
     # Get the report path to create the kpi.csv path
     kpi_path = report.get_report_path()
@@ -1717,7 +1717,7 @@ Setting wifi_settings per radio
 
     if args.csv_outfile is not None:
         current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        csv_outfile = "{}_{}-test_l3_longevity.csv".format(
+        csv_outfile = "{}_{}-test_l3.csv".format(
             args.csv_outfile, current_time)
         csv_outfile = report.file_add_path(csv_outfile)
         print("csv output file : {}".format(csv_outfile))
@@ -1928,9 +1928,9 @@ Setting wifi_settings per radio
 
     # Results
     csv_kpi_file = ip_var_test.get_kpi_csv()
-    report.set_title("L3 Longevity")
+    report.set_title("Test L3 ")
     report.build_banner()
-    report.set_table_title("L3 Longevity Key Performance Indexes")
+    report.set_table_title("Test L3 Key Performance Indexes")
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_kpi_file)
     report.build_table()
