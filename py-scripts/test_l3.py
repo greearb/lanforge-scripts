@@ -21,7 +21,7 @@ EXAMPLE:
 ./test_l3.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 \
   --radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
   --radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" \
-  --test_duration 5s 
+  --test_duration 5s
 
 Example command using attenuator
 ./test_l3.py --test_duration 5m --polling_interval 1s --upstream_port eth2 \
@@ -604,8 +604,8 @@ class L3VariableTime(Realm):
                 "PASS: Stations & CX build finished: created/updated: %s stations and %s connections." %
                 (self.station_count, self.cx_count))
 
-
     # Run the main body of the test logic.
+
     def start(self, print_pass=False):
         print("Bringing up stations")
         self.admin_up(self.side_b)
@@ -1209,8 +1209,8 @@ and received.
 
 Generic command layout:
 -----------------------
-./test_l3.py --mgr <ip_address> --test_duration <duration> --endp_type <traffic types> --upstream_port <port> 
---radio "radio==<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password> 
+./test_l3.py --mgr <ip_address> --test_duration <duration> --endp_type <traffic types> --upstream_port <port>
+--radio "radio==<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password>
 security==<security type: wpa2, open, wpa3>" --debug
 
 Multiple radios may be entered with individual --radio switches
@@ -1660,7 +1660,6 @@ Setting wifi_settings per radio
     dut_serial_num = args.dut_serial_num
     # test_priority = args.test_priority  # this may need to be set per test
     test_id = args.test_id
-
 
     if args.test_duration:
         test_duration = args.test_duration
