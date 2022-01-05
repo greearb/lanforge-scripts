@@ -582,11 +582,10 @@ function test() {
     TDTEXT="Failure"
     STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
     LOGGING="<a href=\"${URL2}_logs\" target=\"_blank\">Logging directory</a>"
-    mkdir "${HOMEPATH}"/report-data/"${NOW}"/"${URL2}"_logs
     if [[ $MGR == "localhost" ]]; then
-      cp "${HOMEPATH}"/lanforge_log* "${HOMEPATH}"/report-data/"${NOW}"/"${URL2}"_logs
+      cp "${HOMEPATH}"/lanforge_log* "${TEST_DIR}"/"${URL2}"_logs
     else
-      sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${HOMEPATH}"/report-data/"${NOW}"/"${URL2}"_logs
+      sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${TEST_DIR}"/"${URL2}"_logs
     fi
 
   fi
@@ -744,6 +743,7 @@ NOW="${NOW/:/-}"
 TEST_DIR="${REPORT_DATA}/${NOW}"
 URL2="/report-data/${NOW}"
 mkdir "${TEST_DIR}"
+mkdir "${TEST_DIR}"/"${URL2}"_logs
 echo "Recording data to $TEST_DIR"
 
 start_tests
