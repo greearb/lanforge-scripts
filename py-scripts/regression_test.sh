@@ -581,6 +581,15 @@ function test() {
     TEXTCLASS="failure"
     TDTEXT="Failure"
     STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
+    LOGGING="<a href=\"${URL2}_logs\" target=\"_blank\">Logging directory</a>"
+    mkdir "${HOMEPATH}"/report-data/"${NOW}"/"${URL2}"_logs
+    if [[ $MGR == "localhost" ]]; then
+      cp "${HOMEPATH}"/lanforge_log* "${HOMEPATH}"/report-data/"${NOW}"/"${URL2}"_logs
+    else
+      then
+        sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${HOMEPATH}"/report-data/"${NOW}"/"${URL2}"_logs
+    fi
+
   fi
   results+=("<tr><td>${CURR_TEST_NAME}</td>
                        <td class='scriptdetails'>${testcommand}</td>
@@ -589,6 +598,7 @@ function test() {
                        <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
                        <td>${STDERR}</td>
                        <td>${LANforgeError}</td>
+                       <td>${LOGGING}</td>
                        </tr>")
 }
 
@@ -674,6 +684,7 @@ td.testname {
             <th onclick=\"sortTable('myTable2', 4)\">STDOUT</th>
             <th onclick=\"sortTable('myTable2', 5)\">STDERR</th>
             <th onclick=\"sortTable('myTable2', 6)\">LANforge Error</th>
+            <th onclick=\"sortTable('myTable2', 7\">LANforge logging</th>
         </tr>
     </thead>
     <tbody>"
