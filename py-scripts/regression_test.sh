@@ -586,8 +586,7 @@ function test() {
     if [[ $MGR == "localhost" ]]; then
       cp "${HOMEPATH}"/lanforge_log* "${HOMEPATH}"/report-data/"${NOW}"/"${URL2}"_logs
     else
-      then
-        sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${HOMEPATH}"/report-data/"${NOW}"/"${URL2}"_logs
+      sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${HOMEPATH}"/report-data/"${NOW}"/"${URL2}"_logs
     fi
 
   fi
