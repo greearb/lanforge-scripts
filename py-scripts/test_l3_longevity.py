@@ -2364,7 +2364,7 @@ and received.
 
 Generic command layout:
 -----------------------
-./test_l3_longevity.py --mgr <ip_address> --test_duration <duration> --endp_type <traffic types> 
+./test_l3_longevity.py --mgr <ip_address> --test_duration <duration> --endp_type <traffic types>
 --upstream_port <shelf>.<resource>.<port>
 --radio "radio==<shelf>.<resource>.<radio> stations==<number stations> ssid==<ssid> ssid_pw==<ssid password>
 security==<security type: wpa2, open, wpa3>" --debug
@@ -2372,14 +2372,14 @@ security==<security type: wpa2, open, wpa3>" --debug
 Multiple radios may be entered with individual --radio switches
 
 # UDP bi-directional test, no use of controller.
-./test_l3_longevity.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1 
---radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open" 
+./test_l3_longevity.py --mgr localhost --endp_type 'lf_udp lf_tcp' --upstream_port 1.1.eth1
+--radio "radio==1.1.wiphy0 stations==10 ssid==ASUS_70 ssid_pw==[BLANK] security==open"
 --radio "radio==1.1.wiphy2 stations==1 ssid==ASUS_70 ssid_pw==[BLANK] security==open" --test_duration 30s
 
 # Port resets, chooses random value between min and max
-./test_l3_longevity.py --lfmgr LF_MGR_IP --test_duration 90s --polling_interval 10s --upstream_port 1.1.eth2 
---radio 'radio==1.1.wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED, 
-reset_port_enable==TRUE,reset_port_time_min==10s,reset_port_time_max==20s' 
+./test_l3_longevity.py --lfmgr LF_MGR_IP --test_duration 90s --polling_interval 10s --upstream_port 1.1.eth2
+--radio 'radio==1.1.wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED,
+reset_port_enable==TRUE,reset_port_time_min==10s,reset_port_time_max==20s'
 --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000"
 
 
