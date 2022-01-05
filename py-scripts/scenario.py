@@ -18,28 +18,6 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 
-def get_events(event_log, value):
-    results = []
-    for event in event_log:
-        if event.values():
-            results.append(list(event.values())[0][value])
-    return results
-
-
-def find_new_events(original, new):
-    new_times = list()
-    new_events = list()
-    original_times = get_events(original['events'], 'time-stamp')
-    current_times = get_events(new['events'], 'time-stamp')
-    for x in current_times:
-        if x not in original_times:
-            new_times.append(x)
-    for x in new['events']:
-        if list(x.values())[0]['time-stamp'] in new_times:
-            new_events.append(x)
-    return new_events
-
-
 class LoadScenario(Realm):
     def __init__(self,
                  mgr='localhost',
@@ -66,10 +44,10 @@ class LoadScenario(Realm):
         self.quiesce = quiesce
         self.timeout = timeout
         self.BuildVersion = self.json_get('/')['VersionInfo']['BuildVersion']
-        self.starting_events = None
+        self.starting_events = 1
 
     def start_test(self):
-        self.starting_events = self.json_get('/events/since=time/1h')
+        self.starting_events = self.json_get('/events/last/1')['event']['id']
 
     def load_scenario(self):
         if self.scenario is not None:
@@ -99,11 +77,10 @@ class LoadScenario(Realm):
         completed = False
         timer = 0
         while not completed:
-            current_events = self.json_get('/events/since=time/1h')
-            new_events = find_new_events(self.starting_events, current_events)
-            target_events = [event for event in get_events(new_events, 'event description') if
+            new_events = self.find_new_events(self.starting_events)
+            target_events = [event for event in self.get_events(new_events, 'event description') if
                              event.startswith('LOAD COMPLETED')]
-            if 'LOAD-DB:  Load attempt has been completed.' in get_events(new_events, 'event description'):
+            if 'LOAD-DB:  Load attempt has been completed.' in self.get_events(new_events, 'event description'):
                 completed = True
                 print('Scenario %s fully loaded after %s seconds' % (self.scenario, timer))
             elif len(target_events) > 0:
@@ -116,7 +93,6 @@ class LoadScenario(Realm):
                     completed = True
                     print('Scenario failed to load after %s seconds' % self.timeout)
                 else:
-                    print(new_events)
                     print('Waiting %s out of %s seconds to load scenario %s' % (timer, self.timeout, self.scenario))
 
 
