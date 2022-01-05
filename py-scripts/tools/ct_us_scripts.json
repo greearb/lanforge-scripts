@@ -453,7 +453,7 @@
                     " --mgr LF_MGR_IP --cxs --sta"
             ]},
             "test_l3_powersave_traffic":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"test_l3_powersave_traffic.py",
                 "args":"",
                 "args_list":[
