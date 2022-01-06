@@ -545,7 +545,6 @@ function test() {
     TEXTCLASS="partial_failure"
     TDTEXT="Partial Failure"
     echo "Partial Failure"
-    mkdir "${LOG_DIR}/${NAME}"
     LOGGING="<a href=\"${URL2}/logs\" target=\"_blank\">Logging directory</a>"
 
   elif [[ $TEXT =~ "FAILED" ]]; then
@@ -573,9 +572,9 @@ function test() {
     else
       sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${LOG_DIR}/${NAME}"
     fi
-    LINE=$(grep -n 'Starting Scenario' "${LOG_DIR}/${NAME}/lanforge_log_0.txt" | awk -F: '{print $1}' | tail -1)
-    LOG_TEXT=$(tail -n+"${LINE}" "${LOG_DIR}/${NAME}/lanforge_log_0.txt")
-    $LOG_TEXT >> "${LOG_DIR}/${NAME}/lanforge_log_0.txt"
+    #LINE=$(grep -n 'Starting Scenario' "${LOG_DIR}/${NAME}/lanforge_log_0.txt" | awk -F: '{print $1}' | tail -1)
+    #LOG_TEXT=$(tail -n+"${LINE}" "${LOG_DIR}/${NAME}/lanforge_log_0.txt")
+    #$LOG_TEXT >> "${LOG_DIR}/${NAME}/lanforge_log_0.txt"
   fi
 
   results+=("<tr><td>${CURR_TEST_NAME}</td>
