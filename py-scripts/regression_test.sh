@@ -545,13 +545,13 @@ function test() {
     TEXTCLASS="partial_failure"
     TDTEXT="Partial Failure"
     echo "Partial Failure"
-    LOGGING="<a href=\"${URL2}/logs\" target=\"_blank\">Logging directory</a>"
+    LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
 
   elif [[ $TEXT =~ "FAILED" ]]; then
     TEXTCLASS="partial_failure"
     TDTEXT="ERROR"
     echo "ERROR"
-    LOGGING="<a href=\"${URL2}/logs\" target=\"_blank\">Logging directory</a>"
+    LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
   else 
     TEXTCLASS="success"
     TDTEXT="Success"
