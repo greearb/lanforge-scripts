@@ -243,26 +243,7 @@ function create_station_and_sensitivity {
 }
 if [[ ${#SHORT} -gt 0 ]]; then
   testCommands=(
-      "./lf_ap_auto_test.py \
-              --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
-              --instance_name ap-auto-instance --config_name test_con --upstream $UPSTREAM \
-              --dut5_0 '$DUT5' \
-              --dut2_0 '$DUT2' \
-              --radio2 $RADIO_USED \
-              --radio2 $RADIO2 \
-              --radio2 $RADIO2 \
-              --set 'Basic Client Connectivity' 1 \
-              --set 'Multi Band Performance' 1 \
-              --set 'Skip 2.4Ghz Tests' 1 \
-              --set 'Skip 5Ghz Tests' 1 \
-              --set 'Throughput vs Pkt Size' 0 \
-              --set 'Capacity' 0 \
-              --set 'Stability' 0 \
-              --set 'Band-Steering' 0 \
-              --set 'Multi-Station Throughput vs Pkt Size' 0 \
-              --set 'Long-Term' 0 \
-              --pull_report \
-              --local_lf_report_dir /home/matthew/html-reports/"
+      "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --layer3_cols $COL_NAMES --debug --mgr $MGR  --traffic_type lf_udp"
 
 
   )
@@ -560,16 +541,32 @@ function test() {
   execution="$((end-start))"
   TEXT=$(cat "${FILENAME}".txt)
   STDERR=""
+  LOGGING=""
   if [[ $TEXT =~ "tests failed" ]]
   then 
     TEXTCLASS="partial_failure"
     TDTEXT="Partial Failure"
     echo "Partial Failure"
+    mkdir "${LOG_DIR}/${NAME}"
+    LOGGING="<a href=\"${URL2}/logs\" target=\"_blank\">Logging directory</a>"
+    if [[ $MGR == "localhost" ]]; then
+      cp "${HOMEPATH}"/lanforge_log* "${LOG_DIR}/${NAME}"
+    else
+      sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${LOG_DIR}/${NAME}"
+    fi
+
   elif [[ $TEXT =~ "FAILED" ]]
   then
     TEXTCLASS="partial_failure"
     TDTEXT="ERROR"
     echo "ERROR"
+    LOGGING="<a href=\"${URL2}/logs\" target=\"_blank\">Logging directory</a>"
+    mkdir "${LOG_DIR}/${NAME}"
+    if [[ $MGR == "localhost" ]]; then
+      cp "${HOMEPATH}"/lanforge_log* "${LOG_DIR}/${NAME}"
+    else
+      sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${LOG_DIR}/${NAME}"
+    fi
   else 
     TEXTCLASS="success"
     TDTEXT="Success"
@@ -581,12 +578,19 @@ function test() {
     TEXTCLASS="failure"
     TDTEXT="Failure"
     STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
-    LOGGING="<a href=\"${URL2}_logs\" target=\"_blank\">Logging directory</a>"
+    LOGGING="<a href=\"${URL2}/logs\" target=\"_blank\">Logging directory</a>"
+    mkdir "${LOG_DIR}/${NAME}"
     if [[ $MGR == "localhost" ]]; then
-      cp "${HOMEPATH}"/lanforge_log* "${TEST_DIR}"/"${URL2}"_logs
+      cp "${HOMEPATH}"/lanforge_log* "${LOG_DIR}/${NAME}"
     else
-      sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${TEST_DIR}"/"${URL2}"_logs
+      sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${LOG_DIR}/${NAME}"
     fi
+
+  if [[ ${#LOGGING} -gt 0 ]]; then
+    LINE=$(grep -n 'Starting Scenario' "${LOG_DIR}/${NAME}/lanforge_log_0.txt" | awk -F: '{print $1}' | tail -1)
+    LOG_TEXT=$(tail -N+"${LINE}" "${LOG_DIR}/${NAME}/lanforge_log_0.txt")
+    $LOG_TEXT >> "${LOG_DIR}/${NAME}/lanforge_log_0.txt"
+  fi
 
   fi
   results+=("<tr><td>${CURR_TEST_NAME}</td>
@@ -742,8 +746,9 @@ NOW=$(date +"%Y-%m-%d-%H-%M")
 NOW="${NOW/:/-}"
 TEST_DIR="${REPORT_DATA}/${NOW}"
 URL2="/report-data/${NOW}"
+LOG_DIR="${TEST_DIR}/logs"
 mkdir "${TEST_DIR}"
-mkdir "${TEST_DIR}"/"${URL2}"_logs
+mkdir "${LOG_DIR}"
 echo "Recording data to $TEST_DIR"
 
 start_tests
