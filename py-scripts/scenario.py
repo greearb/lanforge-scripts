@@ -45,6 +45,7 @@ class LoadScenario(Realm):
         self.timeout = timeout
         self.BuildVersion = self.json_get('/')['VersionInfo']['BuildVersion']
         self.starting_events = 1
+        self.add_event("Starting Scenario.py")
 
     def start_test(self):
         self.starting_events = self.json_get('/events/last/1')['event']['id']
