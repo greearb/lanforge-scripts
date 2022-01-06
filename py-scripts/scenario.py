@@ -66,9 +66,10 @@ class LoadScenario(Realm):
                 return True
         else:
             for port in port_data['interfaces']:
-                if port['phantom']:
-                    print('%s is phantom' % port)
-                    return True
+                if 'phantom' in port.keys():
+                    if port['phantom']:
+                        print('%s is phantom' % port)
+                        return True
 
         return False
 
