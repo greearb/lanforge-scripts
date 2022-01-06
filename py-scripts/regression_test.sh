@@ -157,7 +157,6 @@ if [[ ${#SSID_USED} -gt 0 ]]; then
 fi
 NUM_STA=${NUM_STA:-4}
 TEST_HTTP_IP=${TEST_HTTP_IP:-10.40.0.1}
-MGRLEN=${#MGR}
 COL_NAMES="name,tx_bytes,rx_bytes,dropped"
 
 if [[ ${#DUT2} -eq 0 ]]; then
@@ -399,10 +398,10 @@ function echo_print() {
 }
 
 function test() {
-  if [[ $MGRLEN -gt 0 ]]; then
-    ./scenario.py --load BLANK --mgr "${MGR}" --check_phantom "${PORTS}" || return 1 # --quit_on_phantom || return 1
+  if [[ ${#PORTS} -gt 0 ]]; then
+    ./scenario.py --load BLANK --mgr "${MGR}" --check_phantom "${PORTS}" || return 1
   else
-    ./scenario.py --load BLANK --check_phantom "${PORTS}" || return 1
+    ./scenario.py --load BLANK --mgr "${MGR}" || return 1
   fi
 
   echo ""
