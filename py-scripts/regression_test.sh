@@ -530,8 +530,7 @@ function test() {
   FILESIZE=$(stat -c%s "${FILENAME}_stderr.txt") || 0
   # Check to see if the error is due to LANforge
   ERROR_DATA=$(cat "${FILENAME}_stderr.txt")
-  if [[ $ERROR_DATA =~ "LANforge Error Messages" ]]
-  then
+  if [[ $ERROR_DATA =~ "LANforge Error Messages" ]]; then
     LANforgeError="Lanforge Error"
     echo "LANforge Error"
   else
@@ -542,16 +541,14 @@ function test() {
   TEXT=$(cat "${FILENAME}".txt)
   STDERR=""
   LOGGING=""
-  if [[ $TEXT =~ "tests failed" ]]
-  then 
+  if [[ $TEXT =~ "tests failed" ]]; then
     TEXTCLASS="partial_failure"
     TDTEXT="Partial Failure"
     echo "Partial Failure"
     mkdir "${LOG_DIR}/${NAME}"
     LOGGING="<a href=\"${URL2}/logs\" target=\"_blank\">Logging directory</a>"
 
-  elif [[ $TEXT =~ "FAILED" ]]
-  then
+  elif [[ $TEXT =~ "FAILED" ]]; then
     TEXTCLASS="partial_failure"
     TDTEXT="ERROR"
     echo "ERROR"
@@ -562,8 +559,7 @@ function test() {
     echo "No errors detected"
   fi
 
-  if (( FILESIZE > 0))
-  then
+  if (( FILESIZE > 0)); then
     TEXTCLASS="failure"
     TDTEXT="Failure"
     STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
@@ -578,7 +574,7 @@ function test() {
       sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${LOG_DIR}/${NAME}"
     fi
     LINE=$(grep -n 'Starting Scenario' "${LOG_DIR}/${NAME}/lanforge_log_0.txt" | awk -F: '{print $1}' | tail -1)
-    LOG_TEXT=$(tail -N+"${LINE}" "${LOG_DIR}/${NAME}/lanforge_log_0.txt")
+    LOG_TEXT=$(tail -n+"${LINE}" "${LOG_DIR}/${NAME}/lanforge_log_0.txt")
     $LOG_TEXT >> "${LOG_DIR}/${NAME}/lanforge_log_0.txt"
   fi
 
