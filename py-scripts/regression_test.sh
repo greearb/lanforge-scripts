@@ -400,9 +400,9 @@ function echo_print() {
 
 function test() {
   if [[ $MGRLEN -gt 0 ]]; then
-    ./scenario.py --load BLANK --mgr "${MGR}" --check_phantom="${PORTS}" || return 1 # --quit_on_phantom || return 1
+    ./scenario.py --load BLANK --mgr "${MGR}" --check_phantom "${PORTS}" || return 1 # --quit_on_phantom || return 1
   else
-    ./scenario.py --load BLANK --check_phantom="${PORTS}" || return 1
+    ./scenario.py --load BLANK --check_phantom "${PORTS}" || return 1
   fi
 
   echo ""
