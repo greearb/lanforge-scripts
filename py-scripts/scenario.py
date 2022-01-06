@@ -47,6 +47,24 @@ class LoadScenario(Realm):
         self.starting_events = 1
         self.add_event("Starting Scenario.py")
 
+    def are_any_ports_phantom(self):
+        ports = self.json_get('/ports')['interfaces']
+        for port in ports:
+            port = list(port.values())[0]
+            if port['phantom']:
+                return True
+        return False
+
+    def is_port_phantom(self, port_eid):
+        if not port_eid:
+            return False
+        port = self.name_to_eid(port_eid)
+        port_data = self.json_get('/ports/%s/%s/%s' % (port[0], port[1], port[2]))
+        if port_data['interface']['phantom']:
+            print('%s is phantom' % port_eid)
+            return True
+        return False
+
     def start_test(self):
         self.starting_events = self.json_get('/events/last/1')['event']['id']
 
@@ -132,6 +150,8 @@ def main():
     group.add_argument('--quiesce', help='name of test group to quiesce', default=None)
     group.add_argument('--stop', help='name of test group to stop', default=None)
     parser.add_argument('--timeout', help='Stop trying to load scenario after this many seconds', default=120)
+    parser.add_argument('--quit_on_phantom', help='do not load the database if a phantom port is present', action='store_true')
+    parser.add_argument('--check_phantom', help='check if these ports are phantom', default=None, nargs="+")
     args = parser.parse_args()
 
     scenario = LoadScenario(mgr=args.mgr,
@@ -144,6 +164,16 @@ def main():
                             quiesce=args.quiesce,
                             timeout=args.timeout,
                             debug=args.debug)
+    if args.check_phantom:
+        print(args.check_phantom)
+        for port in args.check_phantom:
+            if scenario.is_port_phantom(port):
+                print('Phantom ports detected')
+
+    if args.quit_on_phantom:
+        if scenario.are_any_ports_phantom():
+            raise EnvironmentError("There are phantom ports on your LANforge")
+
     if scenario.BuildVersion == '5.4.4':
         scenario.start_test()
 
