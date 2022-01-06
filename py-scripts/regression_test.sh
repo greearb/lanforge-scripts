@@ -563,7 +563,7 @@ function test() {
     TEXTCLASS="failure"
     TDTEXT="Failure"
     STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
-    LOGGING="<a href=\"${URL2}/logs\" target=\"_blank\">Logging directory</a>"
+    LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
   fi
 
   if [[ ${#LOGGING} -gt 0 ]]; then
