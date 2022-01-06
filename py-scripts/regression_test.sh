@@ -21,7 +21,7 @@ Help()
 }
 
 
-while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:M:C:e:V:" option; do
+while getopts ":h:s:S:p:w:m:r:F:B:U:D:H:M:C:e:V:" option; do
   case "${option}" in
     h) # display Help
       Help
@@ -41,9 +41,6 @@ while getopts ":h:s:S:p:w:m:A:r:F:B:U:D:H:M:C:e:V:" option; do
       ;;
     m)
       MGR=${OPTARG}
-      ;;
-    A)
-      A=${OPTARG}
       ;;
     r)
       RADIO_USED=${OPTARG}
@@ -90,7 +87,7 @@ PYTHON_VERSION=$(python3 -c 'import sys; print(sys.version)')
 
 BuildVersion=$(wget $MGR:8080 -q -O - | jq '.VersionInfo.BuildVersion')
 BuildDate=$(wget $MGR:8080 -q -O - | jq '.VersionInfo.BuildDate')
-OS_Version=$(cat /etc/os-release | grep 'VERSION=')
+OS_Version=$(grep 'VERSION=' /etc/os-release)
 HOSTNAME=$(cat /etc/hostname)
 IP_ADDRESS=$(ip a sho eth0 | grep 'inet ' | cut -d "/" -f1 | cut -d "t" -f2)
 PYTHON_ENVIRONMENT=$(which python3)
@@ -390,114 +387,6 @@ else
       "python3 -c 'import lanforge_scripts'"
   )
 fi
-#declare -A name_to_num
-#if you want to run just one test as part of regression_test, you can call one test by calling its name_to_num identifier.
-name_to_num=(
-    ["create_bond"]=1
-    ["create_bridge"]=2
-    ["create_l3"]=3
-    ["create_l4"]=4
-    ["create_macvlan"]=5
-    ["create_qvlan"]=6
-    ["create_station"]=7
-    ["create_va"]=8
-    ["create_vr"]=9
-    ["create_wanlink"]=10
-    ["csv_convert"]=11
-    ["csv_processor"]=12
-    ["csv_to_grafana"]=13
-    ["csv_to_influx"]=14
-    ["cv_manager"]=15
-    ["cv_to_grafana"]=16
-    ["docstrings"]=17
-    ["event_breaker"]=18
-    ["event_flood"]=19
-    ["example_security_connection"]=20
-    ["ftp_html"]=21
-    ["ghost_profile"]=22
-    ["grafana_profile"]=23
-    ["html_template"]=24
-    ["influx"]=25
-    ["layer3_test"]=26
-    ["layer4_test"]=27
-    ["lf_ap_auto_test"]=28
-    ["lf_atten_mod_test"]=29
-    ["lf_csv"]=30
-    ["lf_dataplane_config"]=31
-    ["lf_dataplane_test"]=32
-    ["lf_dut_sta_vap_test"]=34
-    ["lf_ft"]=35
-    ["lf_ftp_test"]=36
-    ["lf_graph"]=37
-    ["lf_influx_db"]=38
-    ["lf_mesh_test"]=39
-    ["lf_multipsk"]=40
-    ["lf_report"]=41
-    ["lf_report_test"]=42
-    ["lf_rvr_test"]=43
-    ["lf_rx_sensitivity_test"]=44
-    ["lf_sniff_radio"]=45
-    ["lf_snp_test"]=46
-    ["lf_tr398_test"]=47
-    ["lf_webpage"]=48
-    ["lf_wifi_capacity_test"]=49
-    ["measure_station_time_u"]=50
-    ["modify_station"]=51
-    ["modify_va"]=52
-    ["run_cv_scenario"]=53
-    ["rvr_scenario"]=54
-    ["scenario"]=55
-    ["sta_connect"]=56
-    ["sta_connect2"]=57
-    ["sta_connect_bssid_mac"]=58
-    ["sta_connect_example"]=59
-    ["sta_connect_multi_example"]=60
-    ["sta_connect_bssid_mac"]=61
-    ["sta_connect_example"]=62
-    ["sta_connect_multi_example"]=63
-    ["sta_scan_test"]=64
-    ["station_layer3"]=65
-    ["stations_connected"]=66
-    ["sta_scan_test"]=67
-    ["station_layer3"]=68
-    ["stations_connected"]=69
-    ["test_1k_clients_jedtest"]=70
-    ["test_client_admission"]=71
-    ["test_fileio"]=72
-    ["test_generic"]=73
-    ["test_generic"]=74
-    ["test_generic"]=75
-    ["test_generic"]=76
-    ["testgrou"]=77
-    ["testgroup_list_groups"]=78
-    ["testgroup_list_connections"]=79
-    ["testgroup_delete_grou"]=80
-    ["testgroup2"]=81
-    ["test_ip_connection"]=82
-    ["test_ip_variable_time"]=83
-    ["test_ip_variable_time"]=84
-    ["test_ip_connection"]=85
-    ["test_ip_variable_time"]=86
-    ["test_ipv4_ps"]=87
-    ["test_ipv4_ttls"]=88
-    ["test_l3_longevit"]=89
-    ["test_l3_powersave_traffic"]=90
-    ["test_l3_scenario_throughput"]=91
-    ["test_l3_unicast_traffic_gen"]=92
-    ["test_l3_unicast_traffic_gen"]=93
-    ["test_l3_WAN_LAN"]=94
-    ["test_l4"]=95
-    ["test_status_msg"]=96
-    ["test_wanlink"]=97
-    ["test_wpa_passphrases"]=98
-    ["tip_station_powersave"]=99
-    ["vap_stations_example"]=100
-    ["video_rates"]=101
-    ["wlan_capacity_calculator"]=102
-    ["wlan_capacity_calculator"]=103
-    ["wlan_capacity_calculator"]=104
-    ["ws_generic_monitor_test"]=105
-)
 
 function blank_db() {
     echo "Loading blank scenario..." >>"${HOMEPATH}/regression_file.txt"
@@ -511,9 +400,9 @@ function echo_print() {
 
 function test() {
   if [[ $MGRLEN -gt 0 ]]; then
-    ./scenario.py --load BLANK --mgr "${MGR}"
+    ./scenario.py --load BLANK --mgr "${MGR}" --check_phantom="${PORTS}" || return 1 # --quit_on_phantom || return 1
   else
-    ./scenario.py --load BLANK
+    ./scenario.py --load BLANK --check_phantom="${PORTS}" || return 1
   fi
 
   echo ""
@@ -589,25 +478,23 @@ function test() {
 }
 
 function start_tests()  {
-  if [[ ${#A} -gt 0 ]]; then
-    for testcommand in "${testCommands[@]}"; do
-      NAME=$(cat < /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
-      CURR_TEST_NAME=${testcommand%%.py*}
-      CURR_TEST_NAME=${CURR_TEST_NAME#./*}
-      #CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
-      if [[ $A == "$CURR_TEST_NAME" ]]; then
-        test
-      fi
-    done
-  else
-    for testcommand in "${testCommands[@]}"; do
-      NAME=$(cat < /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
-      CURR_TEST_NAME=${testcommand%%.py*}
-      CURR_TEST_NAME=${CURR_TEST_NAME#./*}
-      #CURR_TEST_NUM="${name_to_num[$CURR_TEST_NAME]}"
-      test
-    done
-  fi
+  for testcommand in "${testCommands[@]}"; do
+    NAME=$(cat < /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+    CURR_TEST_NAME=${testcommand%%.py*}
+    CURR_TEST_NAME=${CURR_TEST_NAME#./*}
+    CHECK_PORTS=()
+    if [[ ${testcommand} =~ ${RADIO_USED} ]]; then
+      CHECK_PORTS+=("$RADIO_USED")
+    fi
+    if [[ ${testcommand} =~ ${RADIO2} ]]; then
+      CHECK_PORTS+=("$RADIO2")
+    fi
+    if [[ ${testcommand} =~ ${UPSTREAM} ]]; then
+      CHECK_PORTS+=("$UPSTREAM")
+    fi
+    PORTS=$( IFS=$','; echo "${CHECK_PORTS[*]}" )
+    test
+  done
 }
 
 function html_generator() {
@@ -677,7 +564,7 @@ td.testname {
     tail="</body></html>"
 
     fname="${HOMEPATH}/html-reports/regression_file-${NOW}.html"
-    echo "$header"  >> "$fname"
+    echo "$header" >> "$fname"
     echo "${results[@]}"  >> "$fname"
     echo "</tbody>
     </table>
