@@ -60,9 +60,16 @@ class LoadScenario(Realm):
             return False
         port = self.name_to_eid(port_eid)
         port_data = self.json_get('/ports/%s/%s/%s' % (port[0], port[1], port[2]))
-        if port_data['interface']['phantom']:
-            print('%s is phantom' % port_eid)
-            return True
+        if 'interface' in port_data.keys():
+            if port_data['interface']['phantom']:
+                print('%s is phantom' % port_eid)
+                return True
+        else:
+            for port in port_data['interfaces']:
+                if port['phantom']:
+                    print('%s is phantom' % port)
+                    return True
+
         return False
 
     def start_test(self):
@@ -165,10 +172,9 @@ def main():
                             timeout=args.timeout,
                             debug=args.debug)
     if args.check_phantom:
-        print(args.check_phantom)
         for port in args.check_phantom:
             if scenario.is_port_phantom(port):
-                print('Phantom ports detected')
+                print('%s is phantom' % port)
 
     if args.quit_on_phantom:
         if scenario.are_any_ports_phantom():
