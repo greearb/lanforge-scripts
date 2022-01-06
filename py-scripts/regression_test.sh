@@ -549,11 +549,6 @@ function test() {
     echo "Partial Failure"
     mkdir "${LOG_DIR}/${NAME}"
     LOGGING="<a href=\"${URL2}/logs\" target=\"_blank\">Logging directory</a>"
-    if [[ $MGR == "localhost" ]]; then
-      cp "${HOMEPATH}"/lanforge_log* "${LOG_DIR}/${NAME}"
-    else
-      sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${LOG_DIR}/${NAME}"
-    fi
 
   elif [[ $TEXT =~ "FAILED" ]]
   then
@@ -561,12 +556,6 @@ function test() {
     TDTEXT="ERROR"
     echo "ERROR"
     LOGGING="<a href=\"${URL2}/logs\" target=\"_blank\">Logging directory</a>"
-    mkdir "${LOG_DIR}/${NAME}"
-    if [[ $MGR == "localhost" ]]; then
-      cp "${HOMEPATH}"/lanforge_log* "${LOG_DIR}/${NAME}"
-    else
-      sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${LOG_DIR}/${NAME}"
-    fi
   else 
     TEXTCLASS="success"
     TDTEXT="Success"
@@ -579,20 +568,20 @@ function test() {
     TDTEXT="Failure"
     STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
     LOGGING="<a href=\"${URL2}/logs\" target=\"_blank\">Logging directory</a>"
+  fi
+
+  if [[ ${#LOGGING} -gt 0 ]]; then
     mkdir "${LOG_DIR}/${NAME}"
     if [[ $MGR == "localhost" ]]; then
       cp "${HOMEPATH}"/lanforge_log* "${LOG_DIR}/${NAME}"
     else
       sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${LOG_DIR}/${NAME}"
     fi
-
-  if [[ ${#LOGGING} -gt 0 ]]; then
     LINE=$(grep -n 'Starting Scenario' "${LOG_DIR}/${NAME}/lanforge_log_0.txt" | awk -F: '{print $1}' | tail -1)
     LOG_TEXT=$(tail -N+"${LINE}" "${LOG_DIR}/${NAME}/lanforge_log_0.txt")
     $LOG_TEXT >> "${LOG_DIR}/${NAME}/lanforge_log_0.txt"
   fi
 
-  fi
   results+=("<tr><td>${CURR_TEST_NAME}</td>
                        <td class='scriptdetails'>${testcommand}</td>
                        <td class='${TEXTCLASS}'>$TDTEXT</td>
