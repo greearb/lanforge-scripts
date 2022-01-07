@@ -144,7 +144,7 @@ def main(args):
         lf_r = LFRequest.LFRequest(base_url+"/wl/"+args['name']+"?fields=name,state,_links")
         try:
             json_response = lf_r.getAsJson()
-            if json_response is None:
+            if not json_response:
                 continue
             LFUtils.debug_printer.pprint(json_response)
             for key, value in json_response.items():
@@ -181,7 +181,7 @@ def main(args):
         lf_r = LFRequest.LFRequest(base_url+"/wl/"+args['name']+"?fields=name,state,_links")
         try:
             json_response = lf_r.getAsJson()
-            if json_response is None:
+            if not json_response:
                 continue
             for key, value in json_response.items():
                 if isinstance(value, dict):
@@ -212,7 +212,7 @@ if __name__ == '__main__':
         if group.title == "optional arguments":
             optional_args = group
             break
-    if optional_args is not None:
+    if optional_args:
         optional_args.add_argument('--host', help='The resource IP address', default="localhost")
         optional_args.add_argument('--port_A', help='Endpoint A', default="eth1")
         optional_args.add_argument('--port_B', help='Endpoint B', default="eth2")
@@ -246,20 +246,20 @@ if __name__ == '__main__':
         "port_A": parseargs.port_A,
         "port_B": parseargs.port_B,
         "latency": parseargs.latency,
-        "latency_A": (parseargs.latency_A if parseargs.latency_A is not None else parseargs.latency),
-        "latency_B": (parseargs.latency_B if parseargs.latency_B is not None else parseargs.latency),
+        "latency_A": (parseargs.latency_A if parseargs.latency_A else parseargs.latency),
+        "latency_B": (parseargs.latency_B if parseargs.latency_B else parseargs.latency),
         "rate": parseargs.rate,
-        "rate_A": (parseargs.rate_A if parseargs.rate_A is not None else parseargs.rate),
-        "rate_B": (parseargs.rate_B if parseargs.rate_B is not None else parseargs.rate),
+        "rate_A": (parseargs.rate_A if parseargs.rate_A else parseargs.rate),
+        "rate_B": (parseargs.rate_B if parseargs.rate_B else parseargs.rate),
         "jitter": parseargs.jitter,
-        "jitter_A": (parseargs.jitter_A if parseargs.jitter_A is not None else parseargs.jitter),
-        "jitter_B": (parseargs.jitter_B if parseargs.jitter_B is not None else parseargs.jitter),
+        "jitter_A": (parseargs.jitter_A if parseargs.jitter_A else parseargs.jitter),
+        "jitter_B": (parseargs.jitter_B if parseargs.jitter_B else parseargs.jitter),
         "jitter_freq": parseargs.jitter,
-        "jitter_freq_A": (parseargs.jitter_freq_A if parseargs.jitter_freq_A is not None else parseargs.jitter_freq),
-        "jitter_freq_B": (parseargs.jitter_freq_B if parseargs.jitter_freq_B is not None else parseargs.jitter_freq),
+        "jitter_freq_A": (parseargs.jitter_freq_A if parseargs.jitter_freq_A else parseargs.jitter_freq),
+        "jitter_freq_B": (parseargs.jitter_freq_B if parseargs.jitter_freq_B else parseargs.jitter_freq),
         "drop": parseargs.drop,
-        "drop_A": (parseargs.drop_A if parseargs.drop_A is not None else parseargs.drop),
-        "drop_B": (parseargs.drop_B if parseargs.drop_B is not None else parseargs.drop),
+        "drop_A": (parseargs.drop_A if parseargs.drop_A else parseargs.drop),
+        "drop_B": (parseargs.drop_B if parseargs.drop_B else parseargs.drop),
     }
 
     main(args)
