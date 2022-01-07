@@ -20,11 +20,7 @@ INCLUDE_IN_README
 import sys
 import os
 import importlib
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-import numpy as np
 import pandas as pd
-import pdfkit
 import random
 import argparse
 
