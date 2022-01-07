@@ -39,7 +39,7 @@ class GenCXProfile(LFCliBase):
 
     def parse_command(self, sta_name, gen_name):
         if self.type == "lfping":
-            if ((self.dest is not None) or (self.dest != "")) and ((self.interval is not None) or (self.interval > 0)):
+            if self.dest and self.interval:
                 self.cmd = "%s  -i %s -I %s %s" % (self.type, self.interval, sta_name, self.dest)
                 # print(self.cmd)
             else:
@@ -49,14 +49,14 @@ class GenCXProfile(LFCliBase):
                 raise ValueError("Please ensure cmd has been set correctly")
         elif self.type == "speedtest":
             self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % sta_name
-        elif self.type == "iperf3" and self.dest is not None:
+        elif self.type == "iperf3" and self.dest:
             self.cmd = "iperf3 --forceflush --format k --precision 4 -c %s -t 60 --tos 0 -b 1K --bind_dev %s -i 1 " \
                        "--pidfile /tmp/lf_helper_iperf3_%s.pid" % (self.dest, sta_name, gen_name)
-        elif self.type == "iperf3_serv" and self.dest is not None:
+        elif self.type == "iperf3_serv" and self.dest:
             self.cmd = "iperf3 --forceflush --format k --precision 4 -s --bind_dev %s -i 1 " \
                        "--pidfile /tmp/lf_helper_iperf3_%s.pid" % (sta_name, gen_name)
         elif self.type == "lfcurl":
-            if self.file_output is not None:
+            if self.file_output:
                 self.cmd = "./scripts/lf_curl.sh  -p %s -i AUTO -o %s -n %s -d %s" % \
                            (sta_name, self.file_output, self.loop_count, self.dest)
             else:
@@ -122,7 +122,7 @@ class GenCXProfile(LFCliBase):
 
     def parse_command_gen(self, sta_name, dest):
         if self.type == "lfping":
-            if ((self.dest is not None) or (self.dest != "")) and ((self.interval is not None) or (self.interval > 0)):
+            if self.dest and self.interval:
                 self.cmd = "%s  -i %s -I %s %s" % (self.type, self.interval, sta_name, dest)
                 # print(self.cmd)
             else:
@@ -132,11 +132,11 @@ class GenCXProfile(LFCliBase):
                 raise ValueError("Please ensure cmd has been set correctly")
         elif self.type == "speedtest":
             self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % sta_name
-        elif self.type == "iperf3" and self.dest is not None:
+        elif self.type == "iperf3" and self.dest:
             self.cmd = "iperf3 --forceflush --format k --precision 4 -c %s -t 60 --tos 0 -b 1K --bind_dev %s -i 1 " \
                        "--pidfile /tmp/lf_helper_iperf3_test.pid" % (self.dest, sta_name)
         elif self.type == "lfcurl":
-            if self.file_output is not None:
+            if self.file_output:
                 self.cmd = "./scripts/lf_curl.sh  -p %s -i AUTO -o %s -n %s -d %s" % \
                            (sta_name, self.file_output, self.loop_count, self.dest)
             else:
@@ -192,8 +192,6 @@ class GenCXProfile(LFCliBase):
             resource = endp_tpl[1]
             name = endp_tpl[2]
             gen_name_a = endp_tpl[3]
-            # gen_name_b  = endp_tpl[3]
-            # (self, alias=None, shelf=1, resource=1, port=None, type=None)
 
             data = {
                 "alias": gen_name_a,
@@ -278,7 +276,7 @@ class GenCXProfile(LFCliBase):
         time.sleep(sleep_time)
 
     def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None):
-        if ports is None:
+        if not ports:
             ports = []
         if self.debug:
             debug_ = True
@@ -301,8 +299,6 @@ class GenCXProfile(LFCliBase):
             resource = endp_tpl[1]
             name = endp_tpl[2]
             gen_name_a = endp_tpl[3]
-            # gen_name_b  = endp_tpl[3]
-            # (self, alias=None, shelf=1, resource=1, port=None, type=None)
 
             data = {
                 "alias": gen_name_a,
@@ -369,7 +365,7 @@ class GenCXProfile(LFCliBase):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
         if self.debug:
             print(gen_results)
-        if gen_results['endpoints'] is not None:
+        if gen_results['endpoints']:
             for name in gen_results['endpoints']:
                 for k, v in name.items():
                     if v['name'] in self.created_endp and not v['name'].endswith('1'):
@@ -382,7 +378,7 @@ class GenCXProfile(LFCliBase):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
         if self.debug:
             print(gen_results)
-        if gen_results['endpoints'] is not None:
+        if gen_results['endpoints']:
             for name in gen_results['endpoints']:
                 for k, v in name.items():
                     if v['name'] != '':
@@ -395,7 +391,7 @@ class GenCXProfile(LFCliBase):
 
     def choose_iperf3_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if gen_results['endpoints'] is not None:
+        if gen_results['endpoints']:
             pprint(gen_results['endpoints'])
             # for name in gen_results['endpoints']:
             # pprint(name.items)
@@ -404,12 +400,12 @@ class GenCXProfile(LFCliBase):
 
     def choose_speedtest_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if gen_results['endpoints'] is not None:
+        if gen_results['endpoints']:
             for name in gen_results['endpoints']:
                 for k, v in name.items():
-                    if v['last results'] is not None and v['name'] in self.created_endp and v['last results'] != '':
+                    if v['last results'] and v['name'] in self.created_endp and v['last results'] != '':
                         last_results = json.loads(v['last results'])
-                        if last_results['download'] is None and last_results['upload'] is None and last_results['ping'] is None:
+                        if not last_results['download'] and not last_results['upload'] and not last_results['ping']:
                             return False, v['name']
                         elif last_results['download'] >= self.speedtest_min_dl and \
                                 last_results['upload'] >= self.speedtest_min_up and \
@@ -418,7 +414,7 @@ class GenCXProfile(LFCliBase):
 
     def choose_generic_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if gen_results['endpoints'] is not None:
+        if gen_results['endpoints']:
             for name in gen_results['endpoints']:
                 for k, v in name.items():
                     if v['name'] in self.created_endp and not v['name'].endswith('1'):
@@ -445,21 +441,21 @@ class GenCXProfile(LFCliBase):
         try:
             duration_sec = self.parse_time(duration_sec).seconds
         except ValueError:
-            if (duration_sec is None) or (duration_sec <= 1):
+            if not duration_sec or (duration_sec <= 1):
                 raise ValueError("GenCXProfile::monitor wants duration_sec > 1 second")
             if duration_sec <= monitor_interval_ms:
                 raise ValueError("GenCXProfile::monitor wants duration_sec > monitor_interval")
-        if report_file is None:
+        if not report_file:
             raise ValueError("Monitor requires an output file to be defined")
-        if systeminfopath is None:
+        if not systeminfopath:
             raise ValueError("Monitor requires a system info path to be defined")
-        if created_cx is None:
+        if not created_cx:
             raise ValueError("Monitor needs a list of Layer 3 connections")
-        if (monitor_interval_ms is None) or (monitor_interval_ms < 1):
+        if not monitor_interval_ms or (monitor_interval_ms < 1):
             raise ValueError("GenCXProfile::monitor wants monitor_interval >= 1 second")
-        if generic_cols is None:
+        if not generic_cols:
             raise ValueError("GenCXProfile::monitor wants a list of column names to monitor")
-        if output_format is not None:
+        if output_format:
             if output_format.lower() != report_file.split('.')[-1]:
                 raise ValueError(
                     'Filename %s has an extension that does not match output format %s .' % (report_file, output_format))
@@ -476,13 +472,13 @@ class GenCXProfile(LFCliBase):
         generic_fields = ",".join(generic_cols)
         default_cols = ['Timestamp', 'Timestamp milliseconds epoch', 'Timestamp seconds epoch', 'Duration elapsed']
         default_cols.extend(generic_cols)
-        if port_mgr_cols is not None:
+        if port_mgr_cols:
             default_cols.extend(port_mgr_cols)
         header_row = default_cols
 
         # csvwriter.writerow([systeminfo['VersionInfo']['BuildVersion'], script_name, str(arguments)])
 
-        if port_mgr_cols is not None:
+        if port_mgr_cols:
             port_mgr_cols = [self.replace_special_char(x) for x in port_mgr_cols]
             port_mgr_cols_labelled = []
             for col_name in port_mgr_cols:
@@ -536,7 +532,7 @@ class GenCXProfile(LFCliBase):
             else:
                 continue
             expected_passes += 1
-            if result is not None:
+            if result:
                 if result[0]:
                     passes += 1
                 else:
@@ -556,16 +552,16 @@ class GenCXProfile(LFCliBase):
 
             generic_response = self.json_get("/generic/%s?fields=%s" % (created_cx, generic_fields))
 
-            if port_mgr_cols is not None:
+            if port_mgr_cols:
                 port_mgr_response = self.json_get("/port/1/1/%s?fields=%s" % (sta_list, port_mgr_fields))
             # get info from port manager with list of values from cx_a_side_list
-            if "endpoints" not in generic_response or generic_response is None:
+            if "endpoints" not in generic_response or not generic_response:
                 print(generic_response)
-                raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
                 if debug:
                     print("Json generic_response from LANforge... " + str(generic_response))
-            if port_mgr_cols is not None:
-                if "interfaces" not in port_mgr_response or port_mgr_response is None:
+                raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
+            if port_mgr_cols:
+                if "interfaces" not in port_mgr_response or not port_mgr_response:
                     print(port_mgr_response)
                     raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
                 if debug:
@@ -576,7 +572,7 @@ class GenCXProfile(LFCliBase):
                 temp_list = basecolumns
                 for columnname in header_row[len(basecolumns):]:
                     temp_list.append(endp_values[columnname])
-                    if port_mgr_cols is not None:
+                    if port_mgr_cols:
                         for sta_name in sta_list_edit:
                             if sta_name in current_sta:
                                 for interface in port_mgr_response["interfaces"]:
@@ -596,7 +592,7 @@ class GenCXProfile(LFCliBase):
         csvfile.close()
 
         # comparison to last report / report inputted
-        if compared_report is not None:
+        if compared_report:
             compared_df = pandas_extensions.compare_two_df(dataframe_one=pandas_extensions.file_to_df(report_file),
                                                            dataframe_two=pandas_extensions.file_to_df(compared_report))
             exit(1)
