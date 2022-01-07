@@ -106,6 +106,7 @@ git pull --rebase
 python3 -m pip install --upgrade pip
 if [ -d "/home/lanforge/lanforge_env" ]
 then
+  source /home/lanforge/lanforge_env/bin/activate
   pip3 install --upgrade lanforge-scripts
 else
   pip3 install --user -r ../requirements.txt --upgrade
