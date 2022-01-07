@@ -197,52 +197,6 @@ def main(args):
 
     print("Wanlink is running")
 
-    # # stop wanlink
-    # lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_cx_state")
-    # lf_r.addPostData({
-    #    'test_mgr': 'all',
-    #    'cx_name': args['name'],
-    #    'cx_state': 'STOPPED'
-    # })
-    # lf_r.jsonPost()
-    # running = 1
-    # while (running > 0):
-    #     sleep(1)
-    #     lf_r = LFRequest.LFRequest(base_url+"/wl/"+args['name']+"?fields=name,eid,state,_links")
-    #     LFUtils.debug_printer.pprint(json_response)
-    #     try:
-    #         json_response = lf_r.getAsJson()
-    #         if (json_response is None):
-    #             continue
-    #         for key, value in json_response.items():
-    #             if (isinstance(value, dict)):
-    #                 if ("_links" in value):
-    #                     if (value["name"] == args['name']):
-    #                         if (value["state"].startswith("Stop")):
-    #                             LFUtils.debug_printer.pprint(json_response)
-    #                             running = 0
-
-    #     except urllib.error.HTTPError as error:
-    #         print("Error code "+error.code)
-    #         continue
-
-    # print("Wanlink is stopped.")
-
-    # print("Wanlink info:")
-    # lf_r = LFRequest.LFRequest(base_url+"/wl/wl_eg1")
-    # json_response = lf_r.getAsJson()
-    # LFUtils.debug_printer.pprint(json_response)
-
-    # lf_r = LFRequest.LFRequest(base_url+"/wl_ep/wl_eg1-A")
-    # json_response = lf_r.getAsJson()
-    # LFUtils.debug_printer.pprint(json_response)
-
-    # lf_r = LFRequest.LFRequest(base_url+"/wl_ep/wl_eg1-B")
-    # json_response = lf_r.getAsJson()
-    # LFUtils.debug_printer.pprint(json_response)
-
-# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
 
 if __name__ == '__main__':
     parser = LFCliBase.create_basic_argparse(
