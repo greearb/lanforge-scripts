@@ -399,6 +399,7 @@ function echo_print() {
 }
 
 function test() {
+  START_TIME=$(date +%s%N | cut -b1-13)
   if [[ ${#PORTS} -gt 0 ]]; then
     ./scenario.py --load BLANK --mgr "${MGR}" --check_phantom "${PORTS}" || return 1
   else
@@ -461,9 +462,9 @@ function test() {
     else
       sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${LOG_DIR}/${NAME}"
     fi
-    #LINE=$(grep -n 'Starting Scenario' "${LOG_DIR}/${NAME}/lanforge_log_0.txt" | awk -F: '{print $1}' | tail -1)
-    #LOG_TEXT=$(tail -n+"${LINE}" "${LOG_DIR}/${NAME}/lanforge_log_0.txt")
-    #$LOG_TEXT >> "${LOG_DIR}/${NAME}/lanforge_log_0.txt"
+    for file in ${LOG_DIR}/${NAME}; do
+      ./log_filter.py --input_file "$file" --timestamp "$START_TIME" --output_file "$file"
+    done
   fi
 
   results+=("<tr><td>${CURR_TEST_NAME}</td>
