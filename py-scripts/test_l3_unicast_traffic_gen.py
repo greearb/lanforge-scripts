@@ -109,7 +109,7 @@ class L3VariableTimeLongevity(Realm):
                     print("ip's aquired {}".format(station_list))
             else:
                 print("print failed to get IP's: {}".format(station_list))
-                if self.wait_for_ip(self.resource, station_list, timeout_sec=120):
+                if self.wait_for_ip(station_list=station_list, timeout_sec=120):
                     print("tried again:  print failed to get IP's: {}".format(station_list))
                     exit(1)
 
