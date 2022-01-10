@@ -459,10 +459,14 @@ function test() {
     mkdir "${LOG_DIR}/${NAME}"
     if [[ $MGR == "localhost" ]]; then
       cp "${HOMEPATH}"/lanforge_log* "${LOG_DIR}/${NAME}"
+      cp "${HOMEPATH}"/run_client* "${LOG_DIR}/${NAME}"
+      cp "${HOMEPATH}"/run_mgr* "${LOG_DIR}/${NAME}"
     else
       sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${LOG_DIR}/${NAME}"
+      sshpass -p "lanforge" scp lanforge@"${MGR}":~/run_client* "${LOG_DIR}/${NAME}"
+      sshpass -p "lanforge" scp lanforge@"${MGR}":~/run_mgr* "${LOG_DIR}/${NAME}"
     fi
-    for file in ${LOG_DIR}/${NAME}; do
+    for file in "${LOG_DIR}/${NAME}"/lanforge_log*; do
       ./log_filter.py --input_file "$file" --timestamp "$START_TIME" --output_file "$file"
     done
   fi
