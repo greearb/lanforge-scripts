@@ -455,7 +455,7 @@ function test() {
     LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
   fi
 
-  if [[ ${#LOGGING} -gt 0 ]]; then
+  if [[ ${#LOGGING} == "farfegnugen" ]]; then
     mkdir "${LOG_DIR}/${NAME}"
     if [[ $MGR == "localhost" ]]; then
       cp "${HOMEPATH}"/lanforge_log* "${LOG_DIR}/${NAME}"
@@ -466,9 +466,9 @@ function test() {
       sshpass -p "lanforge" scp lanforge@"${MGR}":~/run_client* "${LOG_DIR}/${NAME}"
       sshpass -p "lanforge" scp lanforge@"${MGR}":~/run_mgr* "${LOG_DIR}/${NAME}"
     fi
-    for file in "${LOG_DIR}/${NAME}"/lanforge_log*; do
-      ./log_filter.py --input_file "$file" --timestamp "$START_TIME" --output_file "$file"
-    done
+    #for file in "${LOG_DIR}/${NAME}"/lanforge_log*; do
+    #  ./log_filter.py --input_file "$file" --timestamp "$START_TIME" --output_file "$file"
+    #done
   fi
 
   results+=("<tr><td>${CURR_TEST_NAME}</td>
