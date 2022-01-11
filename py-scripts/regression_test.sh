@@ -240,6 +240,14 @@ function create_station_and_sensitivity {
 }
 if [[ ${#SHORT} -gt 0 ]]; then
   testCommands=(
+      "./create_bond.py --network_dev_list $RESOURCE.eth0,$UPSTREAM --debug --mgr $MGR"
+      "./create_l3.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR --endp_a wiphy0 --endp_b wiphy1"
+      "./create_l3_stations.py --mgr $MGR --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug"
+      "./create_l4.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
+      "./create_macvlan.py --radio 1.$RADIO_USED --macvlan_parent $UPSTREAM --debug --mgr $MGR"
+      "./create_qvlan.py --first_qvlan_ip 192.168.1.50 --mgr $MGR --qvlan_parent $UPSTREAM"
+      "./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
+      "./create_vap.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --layer3_cols $COL_NAMES --debug --mgr $MGR  --traffic_type lf_udp"
 
 
@@ -400,10 +408,13 @@ function echo_print() {
 
 function test() {
   START_TIME=$(date +%s%N | cut -b1-13)
+  FILENAME="${TEST_DIR}/${NAME}"
+
   if [[ ${#PORTS} -gt 0 ]]; then
-    ./scenario.py --load BLANK --mgr "${MGR}" --check_phantom "${PORTS}" || return 1
+    { eval "./scenario.py --load BLANK --mgr ${MGR} --check_phantom ${PORTS} --debug || return 1" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } > "${FILENAME}.txt" 3>&1
   else
-    ./scenario.py --load BLANK --mgr "${MGR}" || return 1
+    { eval "./scenario.py --load BLANK --mgr ${MGR} --debug || return 1" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } > "${FILENAME}.txt" 3>&1
+
   fi
 
   echo ""
@@ -414,8 +425,7 @@ function test() {
   start=$(date +%s)
   # this command saves stdout and stderr to the stdout file, and has a special file for stderr text.
   # Modified from https://unix.stackexchange.com/a/364176/327076
-  FILENAME="${TEST_DIR}/${NAME}"
-  { eval "$testcommand" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } > "${FILENAME}.txt" 3>&1
+  { eval "$testcommand" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } >> "${FILENAME}.txt" 3>&1
   chmod 664 "${FILENAME}.txt"
   FILESIZE=$(stat -c%s "${FILENAME}_stderr.txt") || 0
   # Check to see if the error is due to LANforge
