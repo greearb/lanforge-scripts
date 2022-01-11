@@ -152,7 +152,7 @@ class L3VariableTimeLongevity(Realm):
 
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
-        self.rm_port('br0', check_exists=True, debug_=False)
+        self.rm_port('br0', check_exists=True, debug_=False)  # Ensure that br0 which is created by this script does not exist
         station_list = sum(self.station_lists, [])
         for sta in station_list:
             self.rm_port(sta, check_exists=True, debug_=False)
