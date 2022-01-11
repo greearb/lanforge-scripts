@@ -106,7 +106,7 @@ class L3VariableTimeLongevity(Realm):
             station_profile.admin_up()
             if self.wait_for_ip(station_list=station_list, timeout_sec=10 * len(station_list)):
                 if self.debug:
-                    print("ip's aquired {}".format(station_list))
+                    print("ips acquired {}".format(station_list))
             else:
                 print("print failed to get IP's: {}".format(station_list))
                 if self.wait_for_ip(station_list=station_list, timeout_sec=120):
@@ -149,6 +149,14 @@ class L3VariableTimeLongevity(Realm):
                 data = LFUtils.portDownRequest(1, station_name)
                 url = "cli-json/set_port"
                 self.json_post(url, data)
+
+    def pre_cleanup(self):
+        self.cx_profile.cleanup_prefix()
+        self.rm_port('br0', check_exists=True, debug_=False)
+        station_list = sum(self.station_lists, [])
+        for sta in station_list:
+            self.rm_port(sta, check_exists=True, debug_=False)
+        self.wait_until_ports_disappear(station_list)
 
     def cleanup(self,):
         data = {
@@ -348,7 +356,7 @@ python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp 
                                           ssid_list=ssid_list, ssid_password_list=ssid_password_list, security="wpa2",
                                           test_duration=args.test_duration, _debug_on=args.debug)
 
-    ip_var_test.cleanup()
+    ip_var_test.pre_cleanup()
     ip_var_test.build()
     if not ip_var_test.passes():
         print(ip_var_test.get_fail_message())
