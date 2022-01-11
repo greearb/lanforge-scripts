@@ -150,7 +150,7 @@ class L3VariableTimeLongevity(Realm):
                 url = "cli-json/set_port"
                 self.json_post(url, data)
 
-    def pre_cleanup(self):
+    def pre_cleanup(self):  # Remove all existing ports which are created by this script
         self.cx_profile.cleanup_prefix()
         self.rm_port('br0', check_exists=True, debug_=False)  # Ensure that br0 which is created by this script does not exist
         station_list = sum(self.station_lists, [])
