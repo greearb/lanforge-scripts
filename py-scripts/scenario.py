@@ -121,6 +121,8 @@ class LoadScenario(Realm):
                     print('Scenario failed to load after %s seconds' % self.timeout)
                 else:
                     print('Waiting %s out of %s seconds to load scenario %s' % (timer, self.timeout, self.scenario))
+        if self.debug:
+            print(self.json_get('/port'))
 
 
 def main():
