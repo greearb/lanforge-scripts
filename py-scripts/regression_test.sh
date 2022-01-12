@@ -516,7 +516,7 @@ function start_tests()  {
     fi
     PORTS=$( IFS=$','; echo "${CHECK_PORTS[*]}" )
     if [[ ${#EXIT_ON_ERROR} -gt 0 ]]; then
-      if [[ $(CONTINUE) == "True" ]]; then
+      if [[ ${CONTINUE} == "True" ]]; then
         test
       fi
     fi
