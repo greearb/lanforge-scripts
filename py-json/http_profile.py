@@ -96,10 +96,17 @@ class HTTPProfile(LFCliBase):
             sta_list = []
         for sta_eid in sta_list:
             eid = self.local_realm.name_to_eid(sta_eid)
-            sta_list = self.json_get("/port/%s/%s/%s?fields=alias,ip" %
-                                     (eid[0], eid[1], eid[2]))
+            sta_list = self.json_get("/port/%s/%s/%s?fields=alias,ip" % (eid[0], eid[1], eid[2]))
+            # print("map_sta_ips - sta_list:{sta_list}".format(sta_list=sta_list))
+            '''
+            sta_list_tmp = self.json_get("/port/%s/%s/%s?fields=ip" % (eid[0], eid[1], eid[2]))
+            print("map_sta_ips - sta_list_tmp:{sta_list_tmp}".format(sta_list_tmp=sta_list_tmp))
+            '''
             if sta_list['interface'] is not None:
-                self.ip_map[sta_list['interface']['alias']] = sta_list['interface']['ip']
+                # print("map_sta_ips - sta_list_2:{sta_list_2}".format(sta_list_2=sta_list['interface']))
+                # self.ip_map[sta_list['interface']['alias']] = sta_list['interface']['ip']
+                eid_key = "{eid0}.{eid1}.{eid2}".format(eid0=eid[0], eid1=eid[1], eid2=eid[2])
+                self.ip_map[eid_key] = sta_list['interface']['ip']
 
     def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False,
                https=False, user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None,
@@ -107,8 +114,10 @@ class HTTPProfile(LFCliBase):
         if ports is None:
             ports = []
         cx_post_data = []
+        # print("http_profile - ports:{ports}".format(ports=ports))
         self.map_sta_ips(ports)
-        print("Create CXs...")
+        print("Create HTTP CXs...")
+        # print("http_profile - self.ip_map:{ip_map}".format(ip_map=self.ip_map))
 
         for i in range(len(list(self.ip_map))):
             url = None
@@ -122,9 +131,18 @@ class HTTPProfile(LFCliBase):
             if (ip_addr is None) or (ip_addr == ""):
                 raise ValueError("HTTPProfile::create encountered blank ip/hostname")
 
+            # print("http_profile - port_name:{port_name}".format(port_name=port_name))
+            rv = self.local_realm.name_to_eid(port_name)
+            # print("http_profile - rv:{rv}".format(rv=rv))
+            '''
             shelf = self.local_realm.name_to_eid(port_name)[0]
             resource = self.local_realm.name_to_eid(port_name)[1]
             name = self.local_realm.name_to_eid(port_name)[2]
+            '''
+            shelf = rv[0]
+            resource = rv[1]
+            name = rv[2]
+            # eid_port = "{shelf}.{resource}.{name}".format(shelf=rv[0], resource=rv[1], name=rv[2])
 
             if upload_name is not None:
                 name = upload_name
@@ -145,6 +163,7 @@ class HTTPProfile(LFCliBase):
                     url = "%s https://%s/ %s" % (self.direction, ip_addr, self.dest)
 
             if ftp:
+                # print("create() - eid_port:{eid_port}".format(eid_port=eid_port))
                 self.port_util.set_ftp(port_name=name, resource=resource, on=True)
                 if user is not None and passwd is not None and source is not None:
                     if ftp_ip is not None:
@@ -200,6 +219,7 @@ class HTTPProfile(LFCliBase):
                 "tx_endp": name + "_l4",
                 "rx_endp": "NA"
             }
+            # print("http_profile - endp_data:{endp_data}".format(endp_data=endp_data))
             cx_post_data.append(endp_data)
             self.created_cx[name + "_l4"] = "CX_" + name + "_l4"
 
