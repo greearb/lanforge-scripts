@@ -519,6 +519,8 @@ function start_tests()  {
       if [[ ${CONTINUE} == "True" ]]; then
         test
       fi
+    else
+      test
     fi
   done
 }
