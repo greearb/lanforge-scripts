@@ -547,7 +547,9 @@ class StationProfile:
             self.station_names.append("%s.%s.%s" % (radio_shelf, radio_resource, name))
             time.sleep(sleep_time)
 
-        # print("- ~3287 - waitUntilPortsAppear - - - - - - - - - - - - - - - - - - "%eidn)
+        if debug:
+            print('StationProfile.create debug: %s' % self.local_realm.json_get('/port/'))
+            print("- ~3287 - waitUntilPortsAppear - - - - - - - - - - - - - - - - - - ")
         LFUtils.wait_until_ports_appear(self.lfclient_url, my_sta_eids)
 
         # query the LANforge for all available ports
@@ -562,8 +564,10 @@ class StationProfile:
         if len(port_list) != len(my_sta_eids):
             print('Desired stations: %s' % my_sta_eids)
             print("Existing stations: %s" % port_list)
+            print('full port list')
             pprint(port_list_1)
-            print(self.local_realm.find_new_events(starting_event))
+            print('events')
+            pprint(self.local_realm.find_new_events(starting_event))
             raise ValueError("Unable to find ports: %s" % (set(my_sta_eids) - set(port_list)))
 
         # and set ports up
