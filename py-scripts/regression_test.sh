@@ -471,7 +471,7 @@ function test() {
       cp "${HOMEPATH}"/lanforge_log* "${LOG_DIR}/${NAME}"
       cp "${HOMEPATH}"/run_client* "${LOG_DIR}/${NAME}"
       cp "${HOMEPATH}"/run_mgr* "${LOG_DIR}/${NAME}"
-      journalctl -u lanforge --since "today" > "${LOG_DIR}/${NAME}/lanforge_log.txt"
+      journalctl -u lanforge --since "today" > "${LOG_DIR}/${NAME}/gui_log.txt"
     else
       sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${LOG_DIR}/${NAME}"
       sshpass -p "lanforge" scp lanforge@"${MGR}":~/run_client* "${LOG_DIR}/${NAME}"
