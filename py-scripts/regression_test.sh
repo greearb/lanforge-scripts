@@ -21,7 +21,7 @@ Help()
 }
 
 
-while getopts ":h:s:S:p:w:m:r:F:B:U:D:H:M:C:e:V:" option; do
+while getopts ":h:s:S:p:w:m:r:F:B:U:D:H:M:C:e:V:E:" option; do
   case "${option}" in
     h) # display Help
       Help
@@ -72,6 +72,9 @@ while getopts ":h:s:S:p:w:m:r:F:B:U:D:H:M:C:e:V:" option; do
       ;;
     V)
       VAP_SSID=${OPTARG}
+      ;;
+    E)
+      EXIT_ON_ERROR=${OPTARG}
       ;;
     *)
 
@@ -444,12 +447,14 @@ function test() {
   if [[ $TEXT =~ "tests failed" ]]; then
     TEXTCLASS="partial_failure"
     TDTEXT="Partial Failure"
+    CONTINUE="False"
     echo "Partial Failure"
     LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
 
   elif [[ $TEXT =~ "FAILED" ]]; then
     TEXTCLASS="partial_failure"
     TDTEXT="ERROR"
+    CONTINUE="False"
     echo "ERROR"
     LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
   else 
@@ -461,6 +466,7 @@ function test() {
   if (( FILESIZE > 0)); then
     TEXTCLASS="failure"
     TDTEXT="Failure"
+    CONTINUE="False"
     STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
     LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
   fi
@@ -509,7 +515,11 @@ function start_tests()  {
       CHECK_PORTS+=("$UPSTREAM")
     fi
     PORTS=$( IFS=$','; echo "${CHECK_PORTS[*]}" )
-    test
+    if [[ ${#EXIT_ON_ERROR} -gt 0 ]]; then
+      if [[ $(CONTINUE) == "True" ]]; then
+        test
+      fi
+    fi
   done
 }
 
@@ -628,6 +638,7 @@ td.testname {
     #mail -s "Regression Results" scripters@candelatech.com <<<$content
 }
 
+CONTINUE="True"
 results=()
 NOW=$(date +"%Y-%m-%d-%H-%M")
 NOW="${NOW/:/-}"
