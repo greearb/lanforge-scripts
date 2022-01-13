@@ -10,7 +10,7 @@ Note: To Run this script gui should be opened with
 This script is used to automate running Mesh tests.  You
 may need to view a Mesh test configured through the GUI to understand
 the options and how best to input data.
-    
+
     ./lf_mesh_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name mesh-instance --config_name test_con --upstream 1.1.eth1 \
       --raw_line 'selected_dut2: RootAP wactest 08:36:c9:19:47:40 (1)' \
@@ -35,7 +35,7 @@ show_log: 0
 port_sorting: 0
 kpi_id: Mesh
 bg: 0xE0ECF8
-test_rig: 
+test_rig:
 show_scan: 1
 auto_helper: 1
 skip_2: 0
@@ -46,7 +46,7 @@ skip_tri: 1
 selected_dut5: RootAP wactest 08:36:c9:19:47:50 (2)
 selected_dut2: RootAP wactest 08:36:c9:19:47:40 (1)
 upstream_port: 1.1.1 eth1
-operator: 
+operator:
 mconn: 5
 tos: 0
 dur: 60
@@ -66,7 +66,7 @@ show_rx_mcs: 1
 chamber-0: RootAP
 chamber-1: Node1
 chamber-2: Node2
-chamber-3: 
+chamber-3:
 chamber-4: MobileStations
 sta_amount-0: 1
 sta_amount-1: 1
@@ -74,35 +74,35 @@ sta_amount-2: 1
 sta_amount-3: 1
 sta_amount-4: 1
 radios-0-0: 1.2.2 wiphy0
-radios-0-1: 
-radios-0-2: 
+radios-0-1:
+radios-0-2:
 radios-0-3: 1.2.3 wiphy1
-radios-0-4: 
-radios-0-5: 
+radios-0-4:
+radios-0-5:
 radios-1-0: 1.3.2 wiphy0
-radios-1-1: 
-radios-1-2: 
+radios-1-1:
+radios-1-2:
 radios-1-3: 1.3.3 wiphy1
-radios-1-4: 
-radios-1-5: 
+radios-1-4:
+radios-1-5:
 radios-2-0: 1.4.2 wiphy0
-radios-2-1: 
-radios-2-2: 
+radios-2-1:
+radios-2-2:
 radios-2-3: 1.4.3 wiphy1
-radios-2-4: 
-radios-2-5: 
-radios-3-0: 
-radios-3-1: 
-radios-3-2: 
-radios-3-3: 
-radios-3-4: 
-radios-3-5: 
+radios-2-4:
+radios-2-5:
+radios-3-0:
+radios-3-1:
+radios-3-2:
+radios-3-3:
+radios-3-4:
+radios-3-5:
 radios-4-0: 1.1.2 wiphy0
-radios-4-1: 
-radios-4-2: 
+radios-4-1:
+radios-4-2:
 radios-4-3: 1.1.3 wiphy1
-radios-4-4: 
-radios-4-5: 
+radios-4-4:
+radios-4-5:
 ap_arrangements: Current Position
 tests: Roam
 traf_combo: STA
@@ -123,7 +123,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
@@ -136,6 +135,9 @@ class MeshTest(cvtest):
     def __init__(self,
                  lf_host="localhost",
                  lf_port=8080,
+                 ssh_port=22,
+                 local_lf_report_dir="",
+                 graph_groups=None,
                  lf_user="lanforge",
                  lf_password="lanforge",
                  instance_name="dpt_instance",
@@ -165,7 +167,7 @@ class MeshTest(cvtest):
         self.lf_host = lf_host
         self.lf_port = lf_port
         self.lf_user = lf_user
-        self.lf_password =lf_password
+        self.lf_password = lf_password
         self.instance_name = instance_name
         self.config_name = config_name
         self.duration = duration
@@ -180,11 +182,13 @@ class MeshTest(cvtest):
         self.raw_lines = raw_lines
         self.raw_lines_file = raw_lines_file
         self.sets = sets
+        self.ssh_port = ssh_port
+        self.graph_groups = graph_groups
+        self.local_lf_report_dir = local_lf_report_dir
 
     def setup(self):
         # Nothing to do at this time.
         return
-
 
     def run(self):
         self.sync_cv()
@@ -220,12 +224,12 @@ class MeshTest(cvtest):
         self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
                                  self.config_name, self.sets,
                                  self.pull_report, self.lf_host, self.lf_user, self.lf_password,
-                                 cv_cmds)
+                                 cv_cmds, ssh_port=self.ssh_port, local_lf_report_dir=self.local_lf_report_dir,
+                                 graph_groups_file=self.graph_groups)
         self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
 
 
 def main():
-
     parser = argparse.ArgumentParser(
         prog="lf_mesh_test.py",
         formatter_class=argparse.RawTextHelpFormatter,
@@ -246,9 +250,9 @@ def main():
       NOTE:  There is quite a lot of config needed, see example-configs/mesh-ferndale-cfg.txt
          Suggestion is to configure the test through the GUI, make sure it works, then view
          the config and paste it into your own cfg.txt file.
-    
+
       """
-                                     )
+    )
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
@@ -261,34 +265,40 @@ def main():
                         help="Specify requested upload speed.  Percentage of theoretical is also supported.  Default: 0")
     parser.add_argument("--duration", default="",
                         help="Specify duration of each traffic run")
+    parser.add_argument("--graph_groups", help="File to save graph_groups to", default=None)
+    parser.add_argument("--report_dir", default="")
+    parser.add_argument("--local_lf_report_dir",
+                        help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",
+                        default="")
 
     args = parser.parse_args()
 
     cv_base_adjust_parser(args)
 
-    CV_Test = MeshTest(lf_host = args.mgr,
-                       lf_port = args.port,
-                       lf_user = args.lf_user,
-                       lf_password = args.lf_password,
-                       instance_name = args.instance_name,
-                       config_name = args.config_name,
-                       upstream = args.upstream,
-                       pull_report = args.pull_report,
-                       load_old_cfg = args.load_old_cfg,
-                       download_speed = args.download_speed,
-                       upload_speed = args.upload_speed,
-                       duration = args.duration,
-                       enables = args.enable,
-                       disables = args.disable,
-                       raw_lines = args.raw_line,
-                       raw_lines_file = args.raw_lines_file,
-                       sets = args.set
+    CV_Test = MeshTest(lf_host=args.mgr,
+                       lf_port=args.port,
+                       lf_user=args.lf_user,
+                       lf_password=args.lf_password,
+                       instance_name=args.instance_name,
+                       config_name=args.config_name,
+                       upstream=args.upstream,
+                       pull_report=args.pull_report,
+                       load_old_cfg=args.load_old_cfg,
+                       download_speed=args.download_speed,
+                       upload_speed=args.upload_speed,
+                       duration=args.duration,
+                       enables=args.enable,
+                       disables=args.disable,
+                       raw_lines=args.raw_line,
+                       raw_lines_file=args.raw_lines_file,
+                       sets=args.set
                        )
     CV_Test.setup()
     CV_Test.run()
 
     # Mesh does not do KPI currently.
-    #CV_Test.check_influx_kpi(args)
+    # CV_Test.check_influx_kpi(args)
+
 
 if __name__ == "__main__":
     main()
