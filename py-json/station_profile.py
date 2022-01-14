@@ -4,6 +4,7 @@ import os
 import importlib
 from pprint import pprint
 import time
+import datetime
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -393,6 +394,8 @@ class StationProfile:
                use_radius=False,
                hs20_enable=False,
                sleep_time=0.02):
+        if debug:
+            print('Start station_profile.create')
         if (radio is None) or (radio == ""):
             raise ValueError("station_profile.create: will not create stations without radio")
         # Get the last event number currently on the LANforge
@@ -455,13 +458,15 @@ class StationProfile:
         wifi_txo_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_txo", debug_=debug)
         # add radio here
         if num_stations and not sta_names_:
-            # print("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
+            if debug:
+                print("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
             sta_names_ = LFUtils.portNameSeries(prefix_="sta",
                                                 start_id_=int(self.number_template),
                                                 end_id_=num_stations + int(self.number_template) - 1,
                                                 padding_number_=10000,
                                                 radio=radio)
-            # print("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
+            if debug:
+                print("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
         # list of EIDs being created
         my_sta_eids = list()
         for port in sta_names_:
@@ -490,7 +495,8 @@ class StationProfile:
                 print("Station %s already created, skipping." % eidn)
                 continue
 
-            # print (" EIDN "+eidn);
+            if self.debug:
+                print(" EIDN "+eidn);
             if eidn in finished_sta:
                 # pprint(my_sta_names)
                 # raise ValueError("************ duplicate ****************** "+eidn)
@@ -511,7 +517,8 @@ class StationProfile:
 
             add_sta_r.addPostData(self.add_sta_data)
             if debug:
-                print("- 3254 - %s- - - - - - - - - - - - - - - - - - " % eidn)
+                print("%s - 3254 - %s- - - - - - - - - - - - - - - - - - " % (datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                                                                              eidn))
                 pprint(add_sta_r.requested_url)
                 pprint(add_sta_r.proxies)
                 pprint(self.add_sta_data)
@@ -521,15 +528,19 @@ class StationProfile:
                 print("dry run: not creating " + eidn)
                 continue
 
-            # print("- 3264 - ## %s ##  add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
+            if debug:
+                print("- 3264 - ## %s ##  add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
             add_sta_r.jsonPost(debug=self.debug)
             finished_sta.append(eidn)
-            # print("- ~3264 - %s - add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
+            if debug:
+                print("- ~3264 - %s - add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
             time.sleep(0.01)
             set_port_r.addPostData(self.set_port_data)
-            # print("- 3270 -- %s --  set_port_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
-            set_port_r.jsonPost(debug)
-            # print("- ~3270 - %s - set_port_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
+            if debug:
+                print("- 3270 -- %s --  set_port_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
+            set_port_r.jsonPost(debug=debug)
+            if debug:
+                print("- ~3270 - %s - set_port_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
             time.sleep(0.01)
 
             self.wifi_extra_data["resource"] = radio_resource
@@ -550,7 +561,7 @@ class StationProfile:
         if debug:
             print('StationProfile.create debug: %s' % self.local_realm.json_get('/port/'))
             print("- ~3287 - waitUntilPortsAppear - - - - - - - - - - - - - - - - - - ")
-        LFUtils.wait_until_ports_appear(self.lfclient_url, my_sta_eids)
+        LFUtils.wait_until_ports_appear(self.lfclient_url, my_sta_eids, debug=debug)
 
         # query the LANforge for all available ports
         port_list_1 = self.local_realm.json_get("/port/%s/%s" % (radio_shelf, radio_resource))
