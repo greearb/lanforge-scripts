@@ -12,7 +12,7 @@ from time import sleep
 from random import seed, randint
 import re
 import ipaddress
-import logging
+import math
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -563,6 +563,12 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
     if debug:
         pprint.pprint(("temp_query_by_resource", temp_query_by_resource))
     sec_elapsed = 0
+    rm_ports_iteration = math.ceil(timeout_sec / 4)
+    if rm_ports_iteration > 30:
+        rm_ports_iteration = 30
+    if rm_ports_iteration == 0:
+        rm_ports_iteration = 1
+
     while len(found_stations) > 0 and sec_elapsed < timeout_sec:
         found_stations = []
         for (resource, check_url) in temp_query_by_resource.items():
@@ -589,6 +595,12 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
         if len(found_stations) > 0:
             if debug:
                 pprint.pprint(("wait_until_ports_disappear found_stations:", found_stations))
+
+        if (sec_elapsed + 1) % rm_ports_iteration == 0:
+            for port in found_stations:
+                if debug:
+                    print('removing port %s' % '.'.join(port))
+                remove_port(port[1], port[2], base_url)
         sleep(1)  # check for ports once per second
         sec_elapsed += 1
     if sec_elapsed >= timeout_sec:
@@ -673,6 +685,9 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
     """
     if debug:
         print("Waiting until ports appear...")
+        existing_stations = LFRequest.LFRequest(base_url, '/ports', debug_=debug)
+        print('existing stations')
+        pprint.pprint(existing_stations)
     found_stations = []
     port_url = "/port/1"
     ncshow_url = "/cli-json/nc_show_ports"
@@ -703,7 +718,7 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
             sec_elapsed += 2
             attempts += 1
             if debug:
-                print('Found %s out of %s stations in %s out of %s tries' % (len(found_stations), len(port_list), attempts, timeout/2))
+                print('Found %s out of %s stations in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(port_list), attempts, timeout/2))
         else:
             return True
 
