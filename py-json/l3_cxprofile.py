@@ -418,6 +418,7 @@ class L3CXProfile(LFCliBase):
                tos=None):
         if self.debug:
             debug_ = True
+            print('Start L3CXProfile.create')
 
         cx_post_data = []
         timer_post_data = []
