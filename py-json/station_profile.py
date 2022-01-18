@@ -496,7 +496,7 @@ class StationProfile:
                 continue
 
             if self.debug:
-                print(" EIDN "+eidn);
+                print(" EIDN " + eidn)
             if eidn in finished_sta:
                 # pprint(my_sta_names)
                 # raise ValueError("************ duplicate ****************** "+eidn)
@@ -529,18 +529,18 @@ class StationProfile:
                 continue
 
             if debug:
-                print("- 3264 - ## %s ##  add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
+                print("- 3264 - ## %s ##  add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - " % eidn)
             add_sta_r.jsonPost(debug=self.debug)
             finished_sta.append(eidn)
             if debug:
-                print("- ~3264 - %s - add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
+                print("- ~3264 - %s - add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - " % eidn)
             time.sleep(0.01)
             set_port_r.addPostData(self.set_port_data)
             if debug:
-                print("- 3270 -- %s --  set_port_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
+                print("- 3270 -- %s --  set_port_r.jsonPost - - - - - - - - - - - - - - - - - - " % eidn)
             set_port_r.jsonPost(debug=debug)
             if debug:
-                print("- ~3270 - %s - set_port_r.jsonPost - - - - - - - - - - - - - - - - - - "%eidn)
+                print("- ~3270 - %s - set_port_r.jsonPost - - - - - - - - - - - - - - - - - - " % eidn)
             time.sleep(0.01)
 
             self.wifi_extra_data["resource"] = radio_resource
