@@ -690,10 +690,10 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
         pprint.pprint(existing_stations)
     found_stations = []
     port_url = "/port/1"
-    ncshow_url = "/cli-json/nc_show_ports"
+    show_url = "/cli-json/show_ports"
     if base_url.endswith('/'):
         port_url = port_url[1:]
-        ncshow_url = ncshow_url[1:]
+        show_url = show_url[1:]
     sec_elapsed = 0
     attempts = 0
     while len(found_stations) < len(port_list) and sec_elapsed < timeout:
@@ -710,7 +710,7 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
             if json_response is not None:
                 found_stations.append(port_name)
             else:
-                lf_r = LFRequest.LFRequest(base_url, ncshow_url, debug_=debug)
+                lf_r = LFRequest.LFRequest(base_url, show_url, debug_=debug)
                 lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "probe_flags": 5})
                 lf_r.jsonPost()
         if len(found_stations) < len(port_list):
