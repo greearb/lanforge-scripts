@@ -8,8 +8,6 @@ import datetime
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 set_port = importlib.import_module("py-json.LANforge.set_port")
