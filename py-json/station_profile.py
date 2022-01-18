@@ -215,8 +215,7 @@ class StationProfile:
         self.wifi_extra_data["network_auth_type"] = network_auth_type
         self.wifi_extra_data["anqp_3gpp_cell_net"] = anqp_3gpp_cell_net
 
-    def set_reset_extra(self, reset_port_enable=False, test_duration=0, reset_port_min_time=0, reset_port_max_time=0,
-                        reset_port_timer_start=False, port_to_reset=0, time_till_reset=0):
+    def set_reset_extra(self, reset_port_enable=False, test_duration=0, reset_port_min_time=0, reset_port_max_time=0):
         self.reset_port_extra_data["reset_port_enable"] = reset_port_enable
         self.reset_port_extra_data["test_duration"] = test_duration
         self.reset_port_extra_data["reset_port_time_min"] = reset_port_min_time
@@ -247,7 +246,8 @@ class StationProfile:
                 self.set_command_param("add_sta", "ieee80211w", 2)
             # self.add_sta_data["key"] = passwd
 
-    def station_mode_to_number(self, mode):
+    @staticmethod
+    def station_mode_to_number(mode):
         modes = ['a', 'b', 'g', 'abg', 'an', 'abgn', 'bgn', 'bg', 'abgn-AC', 'bgn-AC', 'an-AC']
         return modes.index(mode) + 1
 
