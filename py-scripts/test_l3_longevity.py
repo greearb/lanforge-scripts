@@ -2879,7 +2879,6 @@ Setting wifi_settings per radio
     args = parser.parse_args()
 
     # print("args: {}".format(args))
-    debug = args.debug
 
     # for kpi.csv generation
     local_lf_report_dir = args.local_lf_report_dir
@@ -3194,7 +3193,7 @@ Setting wifi_settings per radio
         polling_interval=polling_interval,
         lfclient_host=lfjson_host,
         lfclient_port=lfjson_port,
-        debug=debug,
+        debug=args.debug,
         influxdb=influxdb,
         kpi_csv=kpi_csv,
         ap_scheduler_stats=ap_scheduler_stats,
