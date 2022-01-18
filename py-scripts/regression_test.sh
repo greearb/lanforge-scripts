@@ -364,13 +364,13 @@ else
       # --b_max 0
       # --debug"
       #test_client_admission.py
-      "./test_fileio.py --macvlan_parent $UPSTREAM --num_ports 3 --use_macvlans --first_mvlan_ip 10.40.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1 --test_duration 30s --mgr $MGR" # Better tested on Kelly, where VRF is turned off
+      "./test_fileio.py --macvlan_parent $UPSTREAM --num_ports 3 --use_macvlans --first_mvlan_ip 10.40.92.13 --netmask 255.255.255.0 --gateway 192.168.92.1 --test_duration 30s --mgr $MGR --debug" # Better tested on Kelly, where VRF is turned off
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfping --dest $TEST_HTTP_IP --debug --mgr $MGR"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security $SECURITY --debug --mgr $MGR"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type iperf3 --debug --mgr $MGR"
       "./test_generic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED  --security $SECURITY --num_stations $NUM_STA --type lfcurl --dest $TEST_HTTP_IP --file_output ${HOMEPATH}/Documents/lfcurl_output.txt --debug --mgr $MGR"
       "./testgroup.py --group_name group1 --add_group --list_groups --debug --mgr $MGR"
-      "./testgroup2.py --num_stations 4 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --group_name group0 --add_group --mgr $MGR"
+      "./testgroup2.py --num_stations 4 --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --radio $RADIO_USED --group_name group0 --add_group --mgr $MGR --debug"
       "./test_ip_connection.py --radio $RADIO_USED --num_stations $NUM_STA --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format excel --layer3_cols $COL_NAMES --debug --mgr $MGR  --traffic_type lf_udp"
       "./test_ip_variable_time.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --test_duration 15s --output_format csv --layer3_cols $COL_NAMES --debug --mgr $MGR  --traffic_type lf_udp"
@@ -380,7 +380,8 @@ else
       #"./test_ipv4_ttls.py --radio $RADIO_USED --ssid $VAP_SSID --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       "./test_l3_longevity.py --mgr $MGR --endp_type 'lf_tcp' --upstream_port $UPSTREAM --radio \
       'radio==$RADIO_USED stations==10 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --radio \
-      'radio==$RADIO2 stations==1 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --test_duration 5s --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000  -o longevity.csv"
+      'radio==$RADIO2 stations==1 ssid==$SSID_USED ssid_pw==$PASSWD_USED security==$SECURITY' --test_duration 5s --rates_are_totals --side_a_min_bps=20000 \
+      --side_b_min_bps=300000000  -o longevity.csv --debug"
       "./test_l3_powersave_traffic.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
       #"./test_l3_scenario_throughput.py -t 15s -sc test_l3_scenario_throughput -m $MGR"
       "./test_l3_unicast_traffic_gen.py --mgr $MGR --radio_list $RADIO_USED 4 $SSID_USED $PASSWD_USED --debug"
@@ -457,18 +458,16 @@ function test() {
     CONTINUE="False"
     echo "ERROR"
     LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
+  elif [[ $TEXT =~ "ERROR" ]]; then
+    TEXTCLASS="failure"
+    TDTEXT="Failure"
+    CONTINUE="False"
+    echo "ERROR"
+    LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
   else 
     TEXTCLASS="success"
     TDTEXT="Success"
     echo "No errors detected"
-  fi
-
-  if (( FILESIZE > 0)); then
-    TEXTCLASS="failure"
-    TDTEXT="Failure"
-    CONTINUE="False"
-    STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
-    LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
   fi
 
   if [[ ${#LOGGING} -gt 0 ]]; then
