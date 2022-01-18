@@ -394,6 +394,7 @@ class StationProfile:
                sleep_time=0.02):
         if debug:
             print('Start station_profile.create')
+            pprint('Current ports: %s' % LFRequest.LFRequest('/ports'))
         if (radio is None) or (radio == ""):
             raise ValueError("station_profile.create: will not create stations without radio")
         # Get the last event number currently on the LANforge
