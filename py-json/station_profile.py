@@ -568,7 +568,7 @@ class StationProfile:
         port_list = list()
         for port in port_list_1['interfaces']:
             if list(port.keys())[0] in my_sta_eids:
-                port_list.append(port)
+                port_list.append(list(port.keys())[0])
 
         # If a requested port doesn't appear on the LANforge, raise an error and print debug
         if len(port_list) != len(my_sta_eids):
