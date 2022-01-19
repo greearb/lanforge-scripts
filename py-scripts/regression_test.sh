@@ -209,10 +209,7 @@ function create_station_and_dataplane() {
           --dut linksys-8450 --duration 15s --station $RESOURCE.sta0001 \
           --download_speed 85% --upload_speed 0 \
           --test_rig Testbed-01 --pull_report \
-          #--influx_host 192.168.100.153 --influx_port 8086 --influx_org Candela \
-          #--influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-          #--influx_bucket ben \
-          #--influx_tag testbed Ferndale-01
+          --local_lf_report_dir ~/html-reports/dataplane_"$NOW"
 }
 function create_dut_and_chamberview() {
         ./create_chamberview.py -m $MGR -cs 'regression_test' --delete_scenario \
@@ -236,6 +233,7 @@ function create_station_and_sensitivity {
                       --raw_line 'txo_retries\: No Retry' \
                       --raw_line 'txo_txpower\: 17' \
                       --test_rig Testbed-01 --pull_report \
+                      --local_lf_report_dir rx_sens_"$NOW"
                       #--influx_host 192.168.100.153 --influx_port 8086 --influx_org Candela \
                       #--influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
                       #--influx_bucket ben \
@@ -302,7 +300,8 @@ else
         --set 'Band-Steering' 0 \
         --set 'Multi-Station Throughput vs Pkt Size' 0 \
         --set 'Long-Term' 0 \
-        --pull_report"
+        --pull_report \
+        --local_lf_report_dir ~/html-reports/ap_auto_$NOW"
       #"./lf_atten_mod_test.py --host $MGR --debug"
       #./lf_csv
       #./lf_dataplane_config
@@ -330,7 +329,7 @@ else
       "./lf_wifi_capacity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
              --instance_name this_inst --config_name test_con --upstream $UPSTREAM --batch_size 1,5,25,50,100 --loop_iter 1 \
              --protocol UDP-IPv4 --duration 6000 --pull_report --ssid $SSID_USED --paswd $PASSWD_USED --security $SECURITY\
-             --test_rig Testbed-01 --create_stations --stations $RESOURCE.sta0000,$RESOURCE.sta0001"
+             --test_rig Testbed-01 --create_stations --stations $RESOURCE.sta0000,$RESOURCE.sta0001 --local_lf_report_dir ~/report-data/wifi_capacity_$NOW"
       "./measure_station_time_up.py --radio $RADIO_USED --num_stations 3 --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED \
       --debug --report_file measure_station_time_up.pkl --radio2 wiphy1 --mgr $MGR"
       "./create_station.py --mgr $MGR --radio $RADIO_USED --security $SECURITY --ssid $SSID_USED --passwd $PASSWD_USED && ./modify_station.py \
@@ -458,10 +457,6 @@ function test() {
     CONTINUE="False"
     echo "ERROR"
     LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
-  else 
-    TEXTCLASS="success"
-    TDTEXT="Success"
-    echo "No errors detected"
   fi
 
   if (( FILESIZE > 0)); then
@@ -470,6 +465,11 @@ function test() {
     CONTINUE="False"
     STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
     LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
+    echo "errors detected"
+  else
+    TEXTCLASS="success"
+    TDTEXT="Success"
+    echo "No errors detected"
   fi
 
   if [[ ${#LOGGING} -gt 0 ]]; then
