@@ -73,6 +73,9 @@ sub info {
 
 my $MgrHostname = `cat /etc/hostname`;
 chomp($MgrHostname);
+if ($MgrHostname =~ /^\s*$/) {
+    die("System does not appear to have a hostname or /etc/hostname is misformatted.");
+}
 info("Will be setting hostname to $MgrHostname");
 sleep 3 if ($debug);
 
@@ -468,27 +471,43 @@ foreach my $file (@places_to_check) {
         # we want to match Listen 80$ or Listen 443 https$
         # we want to replace with Listen lanforge-mgr:80$ or Listen lanforge-mgr:443 https$
         @hunks = grep {/^\s*(Listen|SSLCertificate)/} @lines;
+        #print Dumper(["hunks", \@hunks]);
         if (@hunks) {
             my $edited = 0;
             my @newlines = ();
+            print "[$file] has something to change...\n";
+            for my $ln (@hunks) {
+                print " > $ln\n";
+            }
             @hunks = (@hunks, "\n");
-            print "Something to change in $file\n";
-            print "These lines are interesting:\n";
-            print join("\n", @hunks);
             foreach my $confline (@lines) {
-                if ($confline =~ /^\s*Listen\s+(?:80|443) */) {
-                    $confline =~ s/Listen /Listen ${MgrHostname}:/;
-                    print "$confline\n";
+                my $has_listen = 0;
+                my $old_confline = $confline;
+                if ($confline =~ /^\s*Listen/) {
+                    $has_listen++;
                 }
-                elsif ($confline =~ /^\s*Listen\s+(?:[^:]+:(80|443)) */) {
-                    $confline =~ s/Listen [^:]+:/Listen ${MgrHostname}:/;
-                    print "$confline\n";
+                if ($confline =~ /^\s*Listen\s+(?:80|443)\b/) {
+                    $confline =~ s/Listen\s+/Listen ${MgrHostname}:/;
+                    print " [$file] new line: $confline\n";
                 }
-                if ($confline =~ /^\s*SSLCertificateFile /) {
+                elsif ($confline =~ /^\s*Listen\s+:\d+\b/) {
+                    $confline =~ s/Listen\s+:/Listen ${MgrHostname}:/;
+                    print " [$file] new line: $confline\n";
+                }
+                elsif ($confline =~ /^\s*Listen\s+(?:[^:]+:(80|443))\b/) {
+                    $confline =~ s/Listen\s+[^:]+:/Listen ${MgrHostname}:/;
+                    print " [$file] new line: $confline\n";
+                }
+                if ($confline =~ /^\s*SSLCertificateFile\b/) {
                     $confline = "SSLCertificateFile $hostname_crt" if ("" ne $hostname_crt);
+                    print " [$file] new line: $confline\n";
                 }
-                if ($confline =~ /^\s*SSLCertificateKeyFile /) {
+                if ($confline =~ /^\s*SSLCertificateKeyFile\b/) {
                     $confline = "SSLCertificateKeyFile $hostname_key" if ("" ne $hostname_key);
+                    print " [$file] new line: $confline\n";
+                }
+                if (($has_listen > 0) && ($old_confline eq $confline)) {
+                    print " [$file] Listen line unchanged: [$confline]\n";
                 }
                 push @newlines, $confline;
                 $edited++ if ($confline =~ /# modified by lanforge/);
