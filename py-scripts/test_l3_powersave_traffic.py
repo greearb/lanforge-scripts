@@ -41,27 +41,28 @@ class L3PowersaveTraffic(Realm):
         self.monitor_radio = monitor_radio
         self.debug = _debug_on
         # upload
-        self.cx_prof_upload = l3_cxprofile.L3CXProfile(self.host, self.port, self,
+        # self is referring to the Realm which test_l3_powersave_traffic is inheriting.
+        self.cx_prof_upload = l3_cxprofile.L3CXProfile(self.host, self.port, local_realm=self,
                                                        side_a_min_bps=side_a_min_rate, side_b_min_bps=0,
                                                        side_a_max_bps=side_a_max_rate, side_b_max_bps=0,
                                                        side_a_min_pdu=pdu_size, side_a_max_pdu=pdu_size,
-                                                       side_b_min_pdu=0, side_b_max_pdu=0, debug_=False)
+                                                       side_b_min_pdu=0, side_b_max_pdu=0, debug_=self.debug)
 
         # download
-        self.cx_prof_download = l3_cxprofile.L3CXProfile(self.host, self.port, self,
+        self.cx_prof_download = l3_cxprofile.L3CXProfile(self.host, self.port, local_realm=self,
                                                          side_a_min_bps=0, side_b_min_bps=side_b_min_rate,
                                                          side_a_max_bps=0, side_b_max_bps=side_b_max_rate,
                                                          side_a_min_pdu=0, side_a_max_pdu=0,
-                                                         side_b_min_pdu=pdu_size, side_b_max_pdu=pdu_size, debug_=False)
+                                                         side_b_min_pdu=pdu_size, side_b_max_pdu=pdu_size, debug_=self.debug)
         self.test_duration = test_duration
-        self.station_profile = station_profile.StationProfile(self.lfclient_url, self, ssid=self.ssid,
+        self.station_profile = station_profile.StationProfile(self.lfclient_url, local_realm=self, ssid=self.ssid,
                                                               ssid_pass=self.password,
                                                               security=self.security, number_template_=self.prefix,
                                                               mode=0,
                                                               up=True,
                                                               dhcp=True,
-                                                              debug_=False)
-        self.new_monitor = wifi_monitor.WifiMonitor(self.lfclient_url, self, debug_=_debug_on)
+                                                              debug_=self.debug)
+        self.new_monitor = wifi_monitor.WifiMonitor(self.lfclient_url, local_realm=self, debug_=self.debug)
 
     def build(self):
         self.station_profile.use_security(self.security, ssid=self.ssid, passwd=self.password)
@@ -74,7 +75,7 @@ class L3PowersaveTraffic(Realm):
         # rint("The channel name is...")
 
         self.new_monitor.create(resource_=1, channel=149, radio_=self.monitor_radio, name_="moni0")
-        self.station_profile.create(radio=self.station_radio, sta_names_=self.sta_list, debug=False)
+        self.station_profile.create(radio=self.station_radio, sta_names_=self.sta_list)
         # station_channel = self.json_get("/port/1/%s/%s")
         # pprint.pprint(station_channel)
 
@@ -89,7 +90,7 @@ class L3PowersaveTraffic(Realm):
                                      sleep_time=.05)
 
     def __get_rx_values(self):
-        cx_list = self.json_get("/endp/list?fields=name,rx+bytes", debug_=False)
+        cx_list = self.json_get("/endp/list?fields=name,rx+bytes", debug_=self.debug)
         # print("==============\n", cx_list, "\n==============")
         cx_rx_map = {}
         for cx_name in cx_list['endpoint']:
@@ -190,10 +191,9 @@ Example of creating traffic on an l3 connection
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=0, padding_number_=10000)
     ip_powersave_test = L3PowersaveTraffic(lfjson_host, lfjson_port, ssid=args.ssid, security=args.security,
                                            password=args.passwd, station_list=station_list, side_a_min_rate=2000,
-                                           side_b_min_rate=2000, side_a_max_rate=0, station_radio=args.radio,
-                                           monitor_radio=args.monitor_radio, side_b_max_rate=0, prefix="00000",
-                                           test_duration="30s", _debug_on=False, _exit_on_error=True,
-                                           _exit_on_fail=True)
+                                           side_b_min_rate=2000, station_radio=args.radio,
+                                           monitor_radio=args.monitor_radio, test_duration="30s", _debug_on=args.debug,
+                                           _exit_on_error=True, _exit_on_fail=True)
     ip_powersave_test.cleanup()
     ip_powersave_test.build()
     ip_powersave_test.start()
