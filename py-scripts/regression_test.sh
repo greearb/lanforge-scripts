@@ -428,7 +428,7 @@ function test() {
   # this command saves stdout and stderr to the stdout file, and has a special file for stderr text.
   # Modified from https://unix.stackexchange.com/a/364176/327076
   FILENAME="${TEST_DIR}/${NAME}"
-  { eval "$testcommand" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } > "${FILENAME}.txt" 3>&1
+  { eval "$testcommand" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } >> "${FILENAME}.txt" 3>&1
   chmod 664 "${FILENAME}.txt"
   FILESIZE=$(stat -c%s "${FILENAME}_stderr.txt") || 0
   # Check to see if the error is due to LANforge
