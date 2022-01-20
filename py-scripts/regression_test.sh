@@ -209,7 +209,7 @@ function create_station_and_dataplane() {
           --dut linksys-8450 --duration 15s --station $RESOURCE.sta0001 \
           --download_speed 85% --upload_speed 0 \
           --test_rig Testbed-01 --pull_report \
-          --report_dir ~/html-reports/dataplane_"$NOW"
+          --local_lf_report_dir ~/html-reports/dataplane_"$NOW"
 }
 function create_dut_and_chamberview() {
         ./create_chamberview.py -m $MGR -cs 'regression_test' --delete_scenario \
