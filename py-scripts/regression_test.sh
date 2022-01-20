@@ -233,7 +233,7 @@ function create_station_and_sensitivity {
                       --raw_line 'txo_retries\: No Retry' \
                       --raw_line 'txo_txpower\: 17' \
                       --test_rig Testbed-01 --pull_report \
-                      --local_lf_report_dir rx_sens_"$NOW"
+                      --report_dir rx_sens_"$NOW"
                       #--influx_host 192.168.100.153 --influx_port 8086 --influx_org Candela \
                       #--influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
                       #--influx_bucket ben \
@@ -457,9 +457,7 @@ function test() {
     CONTINUE="False"
     echo "ERROR"
     LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
-  fi
-
-  if (( FILESIZE > 0)); then
+  elif (( FILESIZE > 0)); then
     TEXTCLASS="failure"
     TDTEXT="Failure"
     CONTINUE="False"
