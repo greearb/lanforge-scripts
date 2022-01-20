@@ -5,6 +5,7 @@ import importlib
 import time
 import datetime
 import argparse
+from pprint import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -163,6 +164,8 @@ class L3PowersaveTraffic(Realm):
         self.cx_prof_download.cleanup()
         self.cx_prof_upload.cleanup()
         self.station_profile.cleanup(desired_stations=self.sta_list)
+        if self.debug:
+            pprint('Current ports: %s' % self.json_get('/ports/'))
 
 
 def main():
