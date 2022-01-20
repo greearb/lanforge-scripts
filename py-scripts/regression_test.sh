@@ -209,7 +209,7 @@ function create_station_and_dataplane() {
           --dut linksys-8450 --duration 15s --station $RESOURCE.sta0001 \
           --download_speed 85% --upload_speed 0 \
           --test_rig Testbed-01 --pull_report \
-          --local_lf_report_dir ~/html-reports/dataplane_"$NOW"
+          --report_dir ~/html-reports/dataplane_"$NOW"
 }
 function create_dut_and_chamberview() {
         ./create_chamberview.py -m $MGR -cs 'regression_test' --delete_scenario \
@@ -417,7 +417,6 @@ function test() {
     { eval "./scenario.py --load BLANK --mgr ${MGR} --check_phantom ${PORTS} --debug || return 1" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } > "${FILENAME}.txt" 3>&1
   else
     { eval "./scenario.py --load BLANK --mgr ${MGR} --debug || return 1" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } > "${FILENAME}.txt" 3>&1
-
   fi
 
   echo ""
@@ -428,7 +427,8 @@ function test() {
   start=$(date +%s)
   # this command saves stdout and stderr to the stdout file, and has a special file for stderr text.
   # Modified from https://unix.stackexchange.com/a/364176/327076
-  { eval "$testcommand" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } >> "${FILENAME}.txt" 3>&1
+  FILENAME="${TEST_DIR}/${NAME}"
+  { eval "$testcommand" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } > "${FILENAME}.txt" 3>&1
   chmod 664 "${FILENAME}.txt"
   FILESIZE=$(stat -c%s "${FILENAME}_stderr.txt") || 0
   # Check to see if the error is due to LANforge
@@ -443,31 +443,24 @@ function test() {
   execution="$((end-start))"
   TEXT=$(cat "${FILENAME}".txt)
   STDERR=""
-  LOGGING=""
   if [[ $TEXT =~ "tests failed" ]]; then
     TEXTCLASS="partial_failure"
     TDTEXT="Partial Failure"
-    CONTINUE="False"
     echo "Partial Failure"
-    LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
-
   elif [[ $TEXT =~ "FAILED" ]]; then
     TEXTCLASS="partial_failure"
     TDTEXT="ERROR"
-    CONTINUE="False"
     echo "ERROR"
-    LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
-  elif (( FILESIZE > 0)); then
-    TEXTCLASS="failure"
-    TDTEXT="Failure"
-    CONTINUE="False"
-    STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
-    LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
-    echo "errors detected"
   else
     TEXTCLASS="success"
     TDTEXT="Success"
     echo "No errors detected"
+  fi
+
+  if (( FILESIZE > 0)); then
+    TEXTCLASS="failure"
+    TDTEXT="Failure"
+    STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
   fi
 
   if [[ ${#LOGGING} -gt 0 ]]; then
