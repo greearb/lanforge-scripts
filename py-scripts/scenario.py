@@ -185,16 +185,16 @@ def main():
 
     build_version = [int(n) for n in scenario.BuildVersion.split('.')]
 
-    if build_version[0] >= 5 & build_version[1] >= 4 & build_version[2] >= 4:
+    if build_version >= [5, 4, 4]:
         scenario.start_test()
 
     scenario.load_scenario()
 
-    if build_version[0] <= 5 & build_version[1] <= 4 & build_version[2] < 4:
+    if build_version < [5, 4, 4]:
         print('sleeping 30 seconds, please upgrade your LANforge for a better experience, more information at https://www.candelatech.com/downloads.php#releases')
         time.sleep(30)
 
-    if build_version[0] >= 5 & build_version[1] >= 4 & build_version[2] >= 4:
+    if build_version >= [5, 4, 4]:
         scenario.check_if_complete()
 
     # scenario_loader.load_scenario()
