@@ -183,16 +183,16 @@ def main():
         if scenario.are_any_ports_phantom():
             raise EnvironmentError("There are phantom ports on your LANforge")
 
-    if scenario.BuildVersion == '5.4.4':
+    if scenario.BuildVersion in ['5.4.4', '5.4.5']:
         scenario.start_test()
 
     scenario.load_scenario()
 
-    if scenario.BuildVersion != '5.4.4':
+    if scenario.BuildVersion not in ['5.4.4', '5.4.5']:
         print('sleeping 30 seconds, please upgrade your LANforge for a better experience, more information at https://www.candelatech.com/downloads.php#releases')
         time.sleep(30)
 
-    if scenario.BuildVersion == '5.4.4':
+    if scenario.BuildVersion in ['5.4.4', '5.4.5']:
         scenario.check_if_complete()
 
     # scenario_loader.load_scenario()
