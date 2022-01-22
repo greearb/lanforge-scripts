@@ -394,7 +394,7 @@ class StaConnect2(Realm):
         # do not clean up station if existed prior to test
         if not self.use_existing_sta:
             for sta in self.station_names:
-                self.rm_port(sta, check_exists=True, debug_=False)
+                self.rm_port(sta, check_exists=True, debug_=self.debug)
 
 # ~class
 
@@ -461,7 +461,7 @@ CLI Example:
                              _upstream_port=upstream_port[2],
                              _radio=args.radio,
                              _sta_mode=args.sta_mode,
-                             debug_=True,
+                             debug_=args.debug,
                              _influx_db=args.influx_db,
                              _influx_passwd=args.influx_passwd,
                              _influx_user=args.influx_user,
