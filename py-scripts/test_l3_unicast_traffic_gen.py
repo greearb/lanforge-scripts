@@ -68,7 +68,7 @@ class L3VariableTimeLongevity(Realm):
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
     def __get_rx_values(self):
-        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=False)
+        cx_list = self.json_get("endp?fields=name,rx+bytes", debug_=self.debug)
         cx_rx_map = {}
         for cx_name in cx_list['endpoint']:
             if cx_name != 'uri' and cx_name != 'handler':
@@ -152,11 +152,11 @@ class L3VariableTimeLongevity(Realm):
 
     def pre_cleanup(self):  # Remove all existing ports which are created by this script
         self.cx_profile.cleanup_prefix()
-        self.rm_port('br0', check_exists=True, debug_=False)  # Ensure that br0 which is created by this script does not exist
+        self.rm_port('br0', check_exists=True, debug_=self.debug)  # Ensure that br0 which is created by this script does not exist
         station_list = sum(self.station_lists, [])
         for sta in station_list:
-            self.rm_port(sta, check_exists=True, debug_=False)
-        self.wait_until_ports_disappear(station_list)
+            self.rm_port(sta, check_exists=True, debug_=self.debug)
+        self.wait_until_ports_disappear(station_list, debug=self.debug)
 
     def cleanup(self,):
         data = {
@@ -214,7 +214,7 @@ class L3VariableTimeLongevity(Realm):
 
             for station in range(len(station_list)):
                 temp_station_list.append(str(self.resource) + "." + station_list[station])
-            station_profile.create(radio=self.radio_list[index], sta_names_=station_list, debug=False)
+            station_profile.create(radio=self.radio_list[index], sta_names_=station_list, debug=self.debug)
             index += 1
         self.cx_profile.create(endp_type=self.endp_type, side_a=temp_station_list, side_b='1.' + self.side_b,
                                sleep_time=.5)
