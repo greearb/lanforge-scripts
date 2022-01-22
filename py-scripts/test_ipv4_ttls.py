@@ -200,7 +200,7 @@ class TTLSTest(Realm):
                                     radio=self.radio,
                                     channel=36,
                                     up_=True,
-                                    debug=False,
+                                    debug=self.debug,
                                     suppress_related_commands_=True,
                                     use_radius=True,
                                     hs20_enable=False)
@@ -284,7 +284,7 @@ class TTLSTest(Realm):
         # do not clean up station if existed prior to test
         if not self.l3_cx_obj_udp.use_existing_sta:
             for sta in self.sta_list:
-                self.rm_port(sta, check_exists=True, debug_=False)
+                self.rm_port(sta, check_exists=True, debug_=self.debug)
 
     def collect_endp_stats(self, endp_map, traffic_type="TCP"):
         print("Collecting Data")
