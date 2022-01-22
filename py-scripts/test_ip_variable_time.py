@@ -181,7 +181,7 @@ class IPVariableTime(Realm):
         # do not clean up station if existed prior to test
         if not self.use_existing_sta:
             for sta in self.sta_list:
-                self.rm_port(sta, check_exists=True, debug_=False)
+                self.rm_port(sta, check_exists=True, debug_=self.debug)
 
     def cleanup(self):
         self.cx_profile.cleanup()
