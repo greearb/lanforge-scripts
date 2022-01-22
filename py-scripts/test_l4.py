@@ -98,7 +98,7 @@ class IPV4L4(Realm):
                  test_type=None,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(lfclient_host=host, lfclient_port=port)
+        super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on)
 
         self.host = host
         self.port = port
