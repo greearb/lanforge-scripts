@@ -146,7 +146,8 @@ class TIPStationPowersave(LFCliBase):
                                          name_=self.monitor_name)
 
         LFUtils.wait_until_ports_appear(base_url=self.local_realm.lfclient_url,
-                                        port_list=[self.monitor_name])
+                                        port_list=[self.monitor_name],
+                                        debug=self.debug)
         time.sleep(0.2)
         mon_j = self.json_get("/port/1/%s/%s"%(self.resource, self.monitor_name))
         if ("interface" not in mon_j):
@@ -169,7 +170,7 @@ class TIPStationPowersave(LFCliBase):
         if len(temp_sta_map) < 1:
             self._fail("Misconfigured build(), bye", print_=True)
             exit(1)
-        self.local_realm.wait_until_ports_appear(temp_sta_map.keys())
+        self.local_realm.wait_until_ports_appear(temp_sta_map.keys(), debug=self.debug)
 
         if len(temp_sta_map) == (len(self.sta_powersave_disabled_profile.station_names) + len(self.sta_powersave_enabled_profile.station_names)):
             self._pass("Stations created", print_=True)
@@ -262,7 +263,8 @@ class TIPStationPowersave(LFCliBase):
         self.sta_powersave_enabled_profile.admin_up()
 
         LFUtils.wait_until_ports_admin_up(base_url=self.local_realm.lfclient_url,
-                                          port_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
+                                          port_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names,
+                                          debug=self.debug)
         self.local_realm.wait_for_ip(station_list=self.sta_powersave_disabled_profile.station_names + self.sta_powersave_enabled_profile.station_names)
         time.sleep(2)
         # collect BSSID of AP so we can tshark on it
