@@ -103,7 +103,7 @@ class IPV4VariableTime(Realm):
 
         self.vap_profile.set_command_flag("add_vap", "use-bss-load", 1)
         self.vap_profile.set_command_flag("add_vap", "use-bss-transition", 1)
-        self.vap_profile.create(resource=1, radio="wiphy1", channel=161, up_=True, debug=False,
+        self.vap_profile.create(resource=1, radio="wiphy1", channel=161, up_=True, debug=self.debug,
                                 suppress_related_commands_=True)
         self.monitor.create(resource_=1, channel=161, radio_=self.radio2, name_="moni0")
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
@@ -159,7 +159,7 @@ class IPV4VariableTime(Realm):
     def pre_cleanup(self):
         self.cx_profile.cleanup_prefix()
         for sta in self.sta_list:
-            self.rm_port(sta, check_exists=True, debug_=False)
+            self.rm_port(sta, check_exists=True, debug_=self.debug)
 
     def cleanup(self):
         self.cx_profile.cleanup()
