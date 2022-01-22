@@ -131,7 +131,7 @@ class CreateVR(Realm):
         self.vr_profile.add_vrcx(
             vr_eid=self.vr_name,
             connection_name_list="rd90a",
-            debug=True)
+            debug=self.debug)
 
         self.vr_profile.refresh_netsmith(
             resource=self.vr_name[1], debug=self.debug)
@@ -149,7 +149,7 @@ class CreateVR(Realm):
             (router_eid[0],
              router_eid[1],
              self.vr_name[2]),
-            debug_=True)
+            debug_=self.debug)
         pprint(("full router: ", full_router))
         time.sleep(5)
         if router is None:
