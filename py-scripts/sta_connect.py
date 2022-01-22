@@ -174,9 +174,9 @@ class StaConnect(Realm):
             return False
 
         for sta_name in self.station_names:
-            if self.port_exists(sta_name, debug=False):
-                self.rm_port(sta_name, debug_=False)
-        self.wait_until_ports_disappear(self.station_names)
+            if self.port_exists(sta_name, debug=self.debug):
+                self.rm_port(sta_name, debug_=self.debug)
+        self.wait_until_ports_disappear(self.station_names, debug=self.debug)
 
         # Create stations and turn dhcp on
 
@@ -392,7 +392,7 @@ class StaConnect(Realm):
             }
             self.json_post("/cli-json/set_cx_report_timer", data, suppress_related_commands_=True)
 
-        self.wait_until_cxs_appear(self.cx_names)
+        self.wait_until_cxs_appear(self.cx_names, debug=self.debug)
         return True
 
     def start(self):
