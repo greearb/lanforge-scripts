@@ -88,7 +88,7 @@ class MultiPsk(Realm):
                                                       radio=self.radio)
                 # implementation for non vlan pending ****
             print("creating stations")
-            self.station_profile.use_security(self.security, self.ssid, self.passwd)
+            self.station_profile.use_security(self.security, self.ssid, str(input['password']))
             self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
             self.station_profile.set_command_param("set_port", "report_timer", 1500)
             self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
