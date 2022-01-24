@@ -92,7 +92,7 @@ class MultiPsk(Realm):
             self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
             self.station_profile.set_command_param("set_port", "report_timer", 1500)
             self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-            self.station_profile.create(radio=self.radio, sta_names_=station_list, debug=self.debug)
+            self.station_profile.create(radio=input['radio'], sta_names_=station_list, debug=self.debug)
             self.wait_until_ports_appear(sta_list=station_list)
             self.station_profile.admin_up()
             if self.wait_for_ip(station_list, timeout_sec=120):
