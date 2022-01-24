@@ -528,6 +528,7 @@ class StationProfile:
                 continue
 
             if debug:
+                print('Timestamp: %s' % time.time() * 1000)
                 print("- 3264 - ## %s ##  add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - " % eidn)
             add_sta_r.jsonPost(debug=self.debug)
             finished_sta.append(eidn)
