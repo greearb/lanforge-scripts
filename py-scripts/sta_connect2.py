@@ -436,7 +436,7 @@ CLI Example:
     parser.add_argument("--dut_security", type=str, help="DUT security: openLF, wpa, wpa2, wpa3")
     parser.add_argument("--dut_passwd", type=str, help="DUT PSK password.  Do not set for OPEN auth")
     parser.add_argument("--dut_bssid", type=str, help="DUT BSSID to which we expect to connect.")
-    parser.add_argument("--debug", type=str, help="enable debugging")
+    parser.add_argument("--debug", help="enable debugging", action="store_true")
     parser.add_argument("--prefix", type=str, help="Station prefix. Default: 'sta'", default='sta')
     parser.add_argument("--bringup_time", type=int,
                         help="Seconds to wait for stations to associate and aquire IP. Default: 300", default=300)
