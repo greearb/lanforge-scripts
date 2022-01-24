@@ -156,7 +156,7 @@ class L3VariableTimeLongevity(Realm):
         station_list = sum(self.station_lists, [])
         for sta in station_list:
             self.rm_port(sta, check_exists=True, debug_=self.debug)
-        self.wait_until_ports_disappear(station_list, debug=self.debug)
+        self.wait_until_ports_disappear(station_list, debug_=self.debug)
 
     def cleanup(self,):
         data = {

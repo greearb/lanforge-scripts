@@ -176,7 +176,7 @@ class StaConnect(Realm):
         for sta_name in self.station_names:
             if self.port_exists(sta_name, debug=self.debug):
                 self.rm_port(sta_name, debug_=self.debug)
-        self.wait_until_ports_disappear(self.station_names, debug=self.debug)
+        self.wait_until_ports_disappear(self.station_names, debug_=self.debug)
 
         # Create stations and turn dhcp on
 
