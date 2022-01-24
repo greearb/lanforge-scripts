@@ -231,7 +231,7 @@ class Realm(LFCliBase):
         req_url = "/cli-json/rm_vlan"
         eid = self.name_to_eid(port_eid)
         if check_exists:
-            if not self.port_exists(port_eid, debug=debug_):
+            if not self.port_exists(port_eid, debug=False):
                 return False
 
         data = {
