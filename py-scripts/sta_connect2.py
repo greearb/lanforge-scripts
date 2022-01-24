@@ -278,7 +278,7 @@ class StaConnect2(Realm):
             self.json_post("/cli-json/nc_show_ports", data)
             if self.influx_db:
                 grapher.getdata()
-        LFUtils.wait_until_ports_appear(debug=self.debug)
+        LFUtils.wait_until_ports_appear(port_list=self.station_names, debug=self.debug)
 
         for sta_name in self.station_names:
             sta_url = self.get_station_url(sta_name)
