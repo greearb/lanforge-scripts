@@ -61,6 +61,7 @@ import random
 import sys
 import time
 from pprint import pprint
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -71,10 +72,13 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
+
 Realm = realm.Realm
 
+logger = logging.getLogger(__name__)
 
 # This class handles running the test and generating reports.
 class L3VariableTime(Realm):
@@ -213,7 +217,7 @@ class L3VariableTime(Realm):
         self.atten_vals = atten_vals
         if ((len(self.atten_vals) > 0) and (
                 self.atten_vals[0] != -1) and (len(self.attenuators) == 0)):
-            print(
+            logger.error(
                 "ERROR:  Attenuation values configured, but no Attenuator EIDs specified.\n")
             exit(1)
 
@@ -297,7 +301,7 @@ class L3VariableTime(Realm):
         self.tcp_endps = None
 
     def get_kpi_csv(self):
-        # print("self.csv_kpi_file {}".format(self.csv_kpi_file.name))
+        # logger.info("self.csv_kpi_file {}".format(self.csv_kpi_file.name))
         return self.csv_kpi_file.name
 
     # Find avg latency, jitter for connections using specified port.
@@ -313,9 +317,9 @@ class L3VariableTime(Realm):
         count = 0
         sta_name = 'no_station'
 
-        # print("endp-stats-for-port, port-eid: {}".format(eid_name))
+        # logger.info("endp-stats-for-port, port-eid: {}".format(eid_name))
         eid = self.name_to_eid(eid_name)
-        print(
+        logger.debug(
             "eid_name: {eid_name} eid: {eid}".format(
                 eid_name=eid_name,
                 eid=eid))
@@ -328,7 +332,7 @@ class L3VariableTime(Realm):
         for endp in endps:
             pprint(endp)
             eid_endp = endp["eid"].split(".")
-            print(
+            logger.debug(
                 "Comparing eid:{eid} to endp-id {eid_endp}".format(eid=eid, eid_endp=eid_endp))
             # Look through all the endpoints (endps), to find the port the eid_name is using.
             # The eid_name that has the same Shelf, Resource, and Port as the eid_endp (looking at all the endps)
@@ -339,17 +343,17 @@ class L3VariableTime(Realm):
                 lat += int(endp["delay"])
                 jit += int(endp["jitter"])
                 name = endp["name"]
-                print("endp name {name}".format(name=name))
+                logger.debug("endp name {name}".format(name=name))
                 sta_name = name.replace('-A', '')
                 # only the -A endpoint will be found so need to look
 
                 count += 1
-                print(
+                logger.debug(
                     "Matched: name: {name} eid:{eid} to endp-id {eid_endp}".format(
                         name=name, eid=eid, eid_endp=eid_endp))
             else:
                 name = endp["name"]
-                print(
+                logger.debug(
                     "No Match: name: {name} eid:{eid} to endp-id {eid_endp}".format(
                         name=name, eid=eid, eid_endp=eid_endp))
 
@@ -400,8 +404,8 @@ class L3VariableTime(Realm):
                 for item, endp_value in endp_name.items():
                     if item in our_endps:
                         endps.append(endp_value)
-                        print("endpoint: ", item, " value:\n")
-                        pprint(endp_value)
+                        logger.debug("endpoint: {item} value:\n".format(item=item))
+                        logger.debug(endp_value)
 
                         for value_name, value in endp_value.items():
                             if value_name == 'rx bytes':
@@ -429,7 +433,7 @@ class L3VariableTime(Realm):
                                 else:
                                     total_ul_ll += int(value)
 
-        # print("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
+        # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endp_rx_drop_map, endps, total_dl, total_ul, total_dl_ll, total_ul_ll
     # This script supports resetting ports, allowing one to test AP/controller under data load
     # while bouncing wifi stations.  Check here to see if we should reset
@@ -439,27 +443,27 @@ class L3VariableTime(Realm):
         for station_profile in self.station_profiles:
             if station_profile.reset_port_extra_data['reset_port_enable']:
                 if not station_profile.reset_port_extra_data['reset_port_timer_started']:
-                    print(
+                    logger.debug(
                         "reset_port_timer_started {}".format(
                             station_profile.reset_port_extra_data['reset_port_timer_started']))
-                    print(
+                    logger.debug(
                         "reset_port_time_min: {}".format(
                             station_profile.reset_port_extra_data['reset_port_time_min']))
-                    print(
+                    logger.debug(
                         "reset_port_time_max: {}".format(
                             station_profile.reset_port_extra_data['reset_port_time_max']))
                     station_profile.reset_port_extra_data['seconds_till_reset'] = random.randint(
                         station_profile.reset_port_extra_data['reset_port_time_min'],
                         station_profile.reset_port_extra_data['reset_port_time_max'])
                     station_profile.reset_port_extra_data['reset_port_timer_started'] = True
-                    print(
+                    logger.debug(
                         "on radio {} seconds_till_reset {}".format(
                             station_profile.add_sta_data['radio'],
                             station_profile.reset_port_extra_data['seconds_till_reset']))
                 else:
                     station_profile.reset_port_extra_data[
                         'seconds_till_reset'] = station_profile.reset_port_extra_data['seconds_till_reset'] - 1
-                    print(
+                    logger.debug(
                         "radio: {} countdown seconds_till_reset {}".format(
                             station_profile.add_sta_data['radio'],
                             station_profile.reset_port_extra_data['seconds_till_reset']))
@@ -468,7 +472,7 @@ class L3VariableTime(Realm):
                         station_profile.reset_port_extra_data['reset_port_timer_started'] = False
                         port_to_reset = random.randint(
                             0, len(station_profile.station_names) - 1)
-                        print(
+                        logger.debug(
                             "reset on radio {} station: {}".format(
                                 station_profile.add_sta_data['radio'],
                                 station_profile.station_names[port_to_reset]))
@@ -527,14 +531,14 @@ class L3VariableTime(Realm):
             # stations, so allow skipping it.
             # Do clean cx lists so that when we re-apply them we get same endp name
             # as we had previously
-            # print("rebuild: Clearing cx profile lists.\n")
+            # logger.info("rebuild: Clearing cx profile lists.\n")
             self.cx_profile.clean_cx_lists()
             self.multicast_profile.clean_mc_lists()
 
         if self.dataplane:
             for etype in self.endp_types:
                 for _tos in self.tos:
-                    print(
+                    logger.info(
                         "Creating connections for endpoint type: %s TOS: %s  cx-count: %s" %
                         (etype, _tos, self.cx_profile.get_cx_count()))
                     # use brackes on [self.side_a] to make it a list
@@ -557,7 +561,7 @@ class L3VariableTime(Realm):
                         station_profile.ssid_pass)
                     station_profile.set_number_template(
                         station_profile.number_template)
-                    print(
+                    logger.info(
                         "Creating stations on radio %s" %
                         (self.radio_name_list[index]))
 
@@ -574,7 +578,7 @@ class L3VariableTime(Realm):
                 for etype in self.endp_types:
                     # TODO multi cast does not work
                     if etype == "mc_udp" or etype == "mc_udp6":
-                        print(
+                        logger.info(
                             "Creating Multicast connections for endpoint type: %s" %
                             etype)
                         self.multicast_profile.create_mc_tx(
@@ -583,7 +587,7 @@ class L3VariableTime(Realm):
                             etype, side_rx=station_profile.station_names)
                     else:
                         for _tos in self.tos:
-                            print(
+                            logger.info(
                                 "Creating connections for endpoint type: %s TOS: %s  cx-count: %s" %
                                 (etype, _tos, self.cx_profile.get_cx_count()))
                             these_cx, these_endp = self.cx_profile.create(
@@ -607,7 +611,7 @@ class L3VariableTime(Realm):
     # Run the main body of the test logic.
 
     def start(self, print_pass=False):
-        print("Bringing up stations")
+        logger.info("Bringing up stations")
         self.admin_up(self.side_b)
         for station_profile in self.station_profiles:
             for sta in station_profile.station_names:
@@ -622,20 +626,20 @@ class L3VariableTime(Realm):
         temp_stations_list_with_side_b = temp_stations_list.copy()
         # wait for b side to get IP
         temp_stations_list_with_side_b.append(self.side_b)
-        print("temp_stations_list {temp_stations_list}".format(
+        logger.debug("temp_stations_list {temp_stations_list}".format(
             temp_stations_list=temp_stations_list))
-        print("temp_stations_list_with_side_b {temp_stations_list_with_side_b}".format(
+        logger.debug("temp_stations_list_with_side_b {temp_stations_list_with_side_b}".format(
             temp_stations_list_with_side_b=temp_stations_list_with_side_b))
 
         if self.wait_for_ip(temp_stations_list_with_side_b, timeout_sec=120):
-            print("ip's acquired")
+            logger.info("ip's acquired")
         else:
             # No reason to continue
-            print("ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
+            logger.critical("ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
             exit(1)
 
         self.csv_generate_column_headers()
-        # print(csv_header)
+        # logger.debug(csv_header)
         self.csv_add_column_headers()
 
         # dl - ports
@@ -679,7 +683,7 @@ class L3VariableTime(Realm):
                 if dl_pdu == "AUTO" or dl_pdu == "MTU":
                     dl_pdu = "-1"
 
-                print(
+                logger.debug(
                     "ul: %s  dl: %s  cx-count: %s  rates-are-totals: %s\n" %
                     (ul, dl, self.cx_count, self.rates_are_totals))
 
@@ -702,20 +706,20 @@ class L3VariableTime(Realm):
                         for atten_idx in self.attenuators:
                             self.set_atten(atten_idx, atten_val)
 
-                    print("Starting multicast traffic (if any configured)")
+                    logger.info("Starting multicast traffic (if any configured)")
                     self.multicast_profile.start_mc(debug_=self.debug)
                     self.multicast_profile.refresh_mc(debug_=self.debug)
-                    print("Starting layer-3 traffic (if any configured)")
+                    logger.info("Starting layer-3 traffic (if any configured)")
                     self.cx_profile.start_cx()
                     self.cx_profile.refresh_cx()
 
                     cur_time = datetime.datetime.now()
-                    print("Getting initial values.")
+                    logger.info("Getting initial values.")
                     self.__get_rx_values()
 
                     end_time = self.parse_time(self.test_duration) + cur_time
 
-                    print(
+                    logger.info(
                         "Monitoring throughput for duration: %s" %
                         self.test_duration)
 
@@ -745,7 +749,7 @@ class L3VariableTime(Realm):
                         self.epoch_time = int(time.time())
                         new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
 
-                        print(
+                        logger.debug(
                             "main loop, total-dl: ",
                             total_dl_bps,
                             " total-ul: ",
@@ -768,7 +772,7 @@ class L3VariableTime(Realm):
                             response = self.json_get(url)
                             if (response is None) or (
                                     "interface" not in response):
-                                print(
+                                logger.info(
                                     "query-port: %s: incomplete response:" % url)
                                 pprint(response)
                             else:
@@ -895,10 +899,10 @@ class L3VariableTime(Realm):
             total_dl_ll_bps,
             total_ul_ll_bps):
 
-        print("NOTE:  Adding kpi to kpi.csv, sta_count {sta_count}  total-download-bps:{total_dl_bps}  upload: {total_ul_bps}  bi-directional: {total}\n".format(
+        logger.debug("NOTE:  Adding kpi to kpi.csv, sta_count {sta_count}  total-download-bps:{total_dl_bps}  upload: {total_ul_bps}  bi-directional: {total}\n".format(
               sta_count=sta_count, total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total=(total_ul_bps + total_dl_bps)))
 
-        print("NOTE:  Adding kpi to kpi.csv, sta_count {sta_count}  total-download-bps:{total_dl_ll_bps}  upload: {total_ul_ll_bps}  bi-directional: {total_ll}\n".format(
+        logger.debug("NOTE:  Adding kpi to kpi.csv, sta_count {sta_count}  total-download-bps:{total_dl_ll_bps}  upload: {total_ul_ll_bps}  bi-directional: {total_ll}\n".format(
               sta_count=sta_count, total_dl_ll_bps=total_dl_ll_bps, total_ul_ll_bps=total_ul_ll_bps, total_ll=(total_ul_ll_bps + total_dl_ll_bps)))
 
         # the short description will all for more data to show up in one
@@ -1172,7 +1176,7 @@ def valid_endp_types(_endp_type):
             'mc_udp',
             'mc_udp6']
         if not (str(endp_type) in valid_endp_type):
-            print(
+            logger.debug(
                 'invalid endp_type: %s. Valid types lf, lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6' %
                 endp_type)
             exit(1)
@@ -1645,8 +1649,21 @@ Setting wifi_settings per radio
         help="--wait <time> , time to wait at the end of the test",
         default='0')
 
+    # logging configuration
+    parser.add_argument(
+        "--lf_logger_config_json",
+        help="--lf_logger_config_json <json file> , json configuration of logger")
+
+
     args = parser.parse_args()
 
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+    
     # print("args: {}".format(args))
     debug = args.debug
 
@@ -1702,7 +1719,7 @@ Setting wifi_settings per radio
 
     # Get the report path to create the kpi.csv path
     kpi_path = report.get_report_path()
-    print("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
+    logger.info("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
 
     kpi_csv = lf_kpi_csv.lf_kpi_csv(
         _kpi_path=kpi_path,
@@ -1719,7 +1736,7 @@ Setting wifi_settings per radio
         csv_outfile = "{}_{}-test_l3.csv".format(
             args.csv_outfile, current_time)
         csv_outfile = report.file_add_path(csv_outfile)
-        print("csv output file : {}".format(csv_outfile))
+        logger.info("csv output file : {}".format(csv_outfile))
 
     MAX_NUMBER_OF_STATIONS = 1000
 
@@ -1740,10 +1757,10 @@ Setting wifi_settings per radio
     reset_port_time_max_list = []
 
     if radios is not None:
-        print("radios {}".format(radios))
+        logger.info("radios {}".format(radios))
         for radio_ in radios:
             radio_keys = ['radio', 'stations', 'ssid', 'ssid_pw', 'security']
-            print("radio_dict before format {}".format(radio_))
+            logger.info("radio_dict before format {}".format(radio_))
             radio_info_dict = dict(
                 map(
                     lambda x: x.split('=='),
@@ -1760,11 +1777,11 @@ Setting wifi_settings per radio
                         " ").split()))
             # radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('"', '').split()))
 
-            print("radio_dict {}".format(radio_info_dict))
+            logger.info("radio_dict {}".format(radio_info_dict))
 
             for key in radio_keys:
                 if key not in radio_info_dict:
-                    print(
+                    logger.critical(
                         "missing config, for the {}, all of the following need to be present {} ".format(
                             key, radio_keys))
                     exit(1)
@@ -1781,7 +1798,7 @@ Setting wifi_settings per radio
             wifi_settings_found = True
             for key in wifi_settings_keys:
                 if key not in radio_info_dict:
-                    print("wifi_settings_keys not enabled")
+                    logger.error("wifi_settings_keys not enabled")
                     wifi_settings_found = False
                     break
 
@@ -1789,7 +1806,7 @@ Setting wifi_settings per radio
                 # Check for additional flags
                 if {'wifi_mode', 'enable_flags'}.issubset(
                         radio_info_dict.keys()):
-                    print("wifi_settings flags set")
+                    logger.info("wifi_settings flags set")
                 else:
                     print(
                         "wifi_settings is present wifi_mode, enable_flags need to be set")
