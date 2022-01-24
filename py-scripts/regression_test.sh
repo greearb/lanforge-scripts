@@ -458,6 +458,7 @@ function test() {
     TEXTCLASS="success"
     TDTEXT="Success"
     echo "No errors detected"
+    LOGGING=""
   fi
 
   if (( FILESIZE > 0)); then
