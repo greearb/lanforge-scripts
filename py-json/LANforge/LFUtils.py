@@ -675,11 +675,10 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
     Use this method to pause until the LANforge system has caught up and implemented the
     ports you have requested to create. This determines the presence of interfaces, it
     does not inspect their state. It is appropriate to use when creating stations in
-    the admin-down state. Remember physical port changes, mac-vlans, and 1Qvlans might
-    not appear if they are created admin-down.
+    the admin-down state.
     :param timeout:
     :param base_url:
-    :param port_list:
+    :param port_list: list or str. Pass a list of multiple port EIDs. If you pass a single port EID a string, that is also valid.
     :param debug:
     :return:
     """
@@ -696,6 +695,8 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
         show_url = show_url[1:]
     sec_elapsed = 0
     attempts = 0
+    if type(port_list) is not list:
+        port_list = [port_list]
     while len(found_stations) < len(port_list) and sec_elapsed < timeout:
         found_stations = []
         for port_eid in port_list:
