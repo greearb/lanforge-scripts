@@ -330,7 +330,8 @@ class L3VariableTime(Realm):
         eid[2] = str(eid[2])
 
         for endp in endps:
-            pprint(endp)
+            # pprint(endp)
+            logger.info(endp)
             eid_endp = endp["eid"].split(".")
             logger.debug(
                 "Comparing eid:{eid} to endp-id {eid_endp}".format(eid=eid, eid_endp=eid_endp))
@@ -367,7 +368,7 @@ class L3VariableTime(Realm):
             if sta_name in endp["name"]:
                 name = endp["name"]
                 if name.endswith("-A"):
-                    print("name has -A")
+                    logger.info("name has -A")
                     total_dl_rate += int(endp["rx rate"])
                     total_dl_rate_ll += int(endp["rx rate ll"])
                     total_dl_pkts_ll += int(endp["rx pkts ll"])
@@ -420,7 +421,7 @@ class L3VariableTime(Realm):
                                 endp_rx_drop_map[item] = value
                             if value_name == 'rx rate':
                                 # This hack breaks for mcast or if someone names endpoints weirdly.
-                                # print("item: ", item, " rx-bps: ", value_rx_bps)
+                                # logger.info("item: ", item, " rx-bps: ", value_rx_bps)
                                 if item.endswith("-A"):
                                     total_dl += int(value)
                                 else:
@@ -615,7 +616,7 @@ class L3VariableTime(Realm):
         self.admin_up(self.side_b)
         for station_profile in self.station_profiles:
             for sta in station_profile.station_names:
-                print("Bringing up station %s" % sta)
+                logger.info("Bringing up station %s" % sta)
                 self.admin_up(sta)
 
         temp_stations_list = []
@@ -737,7 +738,7 @@ class L3VariableTime(Realm):
                         interval_time = cur_time + \
                             datetime.timedelta(
                                 seconds=self.polling_interval_seconds)
-                        # print("polling_interval_seconds {}".format(self.polling_interval_seconds))
+                        # logger.infi("polling_interval_seconds {}".format(self.polling_interval_seconds))
 
                         while cur_time < interval_time:
                             cur_time = datetime.datetime.now()
@@ -748,16 +749,19 @@ class L3VariableTime(Realm):
 
                         self.epoch_time = int(time.time())
                         new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
-
-                        logger.debug(
-                            "main loop, total-dl: ",
-                            total_dl_bps,
+                        log_msg=("main loop, total-dl: ",
+                            "{total_dl_bps}" ,
                             " total-ul: ",
-                            total_ul_bps,
+                            "{total_ul_bps}",
                             " total-dl-ll: ",
-                            total_dl_ll_bps,
+                            "{total_dl_ll_bps}",
                             " total-ul-ll: ",
-                            total_ul_ll_bps)
+                            "total_ul_ll_bps".format(
+                                total_dl_bps=total_dl_bps,
+                                total_ul_bps=total_ul_bps,
+                                total_dl_ll_bps=total_dl_ll_bps))
+
+                        logger.debug(log_msg)
 
                         # AP OUTPUT
                         # call to AP to return values
@@ -1664,7 +1668,7 @@ Setting wifi_settings per radio
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
     
-    # print("args: {}".format(args))
+    # logger.critical("args: {}".format(args))
     debug = args.debug
 
     # for kpi.csv generation
@@ -1808,9 +1812,9 @@ Setting wifi_settings per radio
                         radio_info_dict.keys()):
                     logger.info("wifi_settings flags set")
                 else:
-                    print(
+                    logger.info(
                         "wifi_settings is present wifi_mode, enable_flags need to be set")
-                    print(
+                    logger.info(
                         "or remove the wifi_settings or set wifi_settings==False flag on the radio for defaults")
                     exit(1)
                 wifi_mode_list.append(radio_info_dict['wifi_mode'])
@@ -1829,7 +1833,7 @@ Setting wifi_settings per radio
             radio_reset_found = True
             for key in optional_radio_reset_keys:
                 if key not in radio_info_dict:
-                    # print("port reset test not enabled")
+                    # logger.debug("port reset test not enabled")
                     radio_reset_found = False
                     break
 
@@ -1850,7 +1854,7 @@ Setting wifi_settings per radio
                 radio_name_list, number_of_stations_per_radio_list):
             number_of_stations = int(number_of_stations_per_radio_)
             if number_of_stations > MAX_NUMBER_OF_STATIONS:
-                print("number of stations per radio exceeded max of : {}".format(
+                logger.critical("number of stations per radio exceeded max of : {}".format(
                     MAX_NUMBER_OF_STATIONS))
                 quit(1)
             station_list = LFUtils.portNameSeries(
@@ -1862,7 +1866,7 @@ Setting wifi_settings per radio
             station_lists.append(station_list)
             index += 1
 
-    # print("endp-types: %s"%(endp_types))
+    # logger.info("endp-types: %s"%(endp_types))
 
     ul_rates = args.side_a_min_bps.split(",")
     dl_rates = args.side_b_min_bps.split(",")
@@ -1878,11 +1882,11 @@ Setting wifi_settings per radio
         atten_vals = args.atten_vals.split(",")
 
     if len(ul_rates) != len(dl_rates):
-        print(
+        logger.error(
             "ERROR:  ul_rates %s and dl_rates %s arrays must be same length\n" %
             (len(ul_rates), len(dl_rates)))
     if len(ul_pdus) != len(dl_pdus):
-        print(
+        logger.error(
             "ERROR:  ul_pdus %s and dl_pdus %s arrays must be same length\n" %
             (len(ul_rates), len(dl_rates)))
 
@@ -1925,22 +1929,22 @@ Setting wifi_settings per radio
 
     ip_var_test.build()
     if not ip_var_test.passes():
-        print("build step failed.")
-        print(ip_var_test.get_fail_message())
+        logger.critical("build step failed.")
+        logger.critical(ip_var_test.get_fail_message())
         exit(1)
     ip_var_test.start(False)
     ip_var_test.stop()
     if not ip_var_test.passes():
-        print("Test Ended: There were Failures")
-        print(ip_var_test.get_fail_message())
+        logger.critical("Test Ended: There were Failures")
+        logger.critical(ip_var_test.get_fail_message())
 
-    print(
+    logger.critical(
         "Pausing {} seconds for manual inspection before clean up.".format(
             args.wait))
     time.sleep(int(args.wait))
     ip_var_test.cleanup()
     if ip_var_test.passes():
-        print("Full test passed, all connections increased rx bytes")
+        logger.critical("Full test passed, all connections increased rx bytes")
 
     # Results
     csv_kpi_file = ip_var_test.get_kpi_csv()

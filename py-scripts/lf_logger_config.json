@@ -36,18 +36,18 @@
             "propagate": false
         },
         "py-json.LANforge.LFRequest":{
-            "level": "DEBUG",
+            "level": "CRITICAL",
             "handlers": ["console", "file"],
             "propagate": false
         },
         "__main__":{
-            "level": "WARNING",
+            "level": "DEBUG",
             "handlers": ["console", "file"],
             "propagate": false
         }
     },        
     "root": {
-        "level": "WARNING",
+        "level": "DEBUG",
         "handlers": ["console", "file"],
         "propagate": false
     }
