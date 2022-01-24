@@ -192,7 +192,7 @@ class StaScan(Realm):
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
         self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, num_stations=1, debug=self.debug)
         self._pass("PASS: Station build finished")
-        LFUtils.wait_until_ports_appear(','.join(self.sta_list), debug=self.debug)
+        LFUtils.wait_until_ports_appear(base_url=self.lfclient_url, port_list=','.join(self.sta_list), debug=self.debug)
 
 
 def main():
