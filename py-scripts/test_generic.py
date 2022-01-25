@@ -38,21 +38,23 @@ import pprint
 import argparse
 import time
 import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
-    print("This script requires Python 3")
+    logger.critical("This script requires Python 3")
     exit(1)
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
-LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
-class GenTest(LFCliBase):
+class GenTest(Realm):
     def __init__(self, ssid, security, passwd, sta_list, client, name_prefix, upstream, host="localhost", port=8080,
                  number_template="000", test_duration="5m", test_type="lfping", dest=None, cmd=None,
                  interval=1, radio=None, speedtest_min_up=None, speedtest_min_dl=None, speedtest_max_ping=None,
@@ -61,7 +63,7 @@ class GenTest(LFCliBase):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port, _local_realm=Realm(host, port), _debug=_debug_on, _exit_on_fail=_exit_on_fail)
+        super().__init__(host, port, debug_=_debug_on, _exit_on_fail=_exit_on_fail)
         self.ssid = ssid
         self.radio = radio
         self.upstream = upstream
@@ -74,8 +76,8 @@ class GenTest(LFCliBase):
         self.debug = _debug_on
         if client:
             self.client_name = client
-        self.station_profile = self.local_realm.new_station_profile()
-        self.generic_endps_profile = self.local_realm.new_generic_endp_profile()
+        self.station_profile = self.new_station_profile()
+        self.generic_endps_profile = self.new_generic_endp_profile()
 
         self.station_profile.lfclient_url = self.lfclient_url
         self.station_profile.ssid = self.ssid
@@ -109,12 +111,12 @@ class GenTest(LFCliBase):
         self.station_profile.admin_up()
         temp_stas = []
         for station in self.sta_list.copy():
-            temp_stas.append(self.local_realm.name_to_eid(station)[2])
+            temp_stas.append(self.name_to_eid(station)[2])
         if self.debug:
             pprint.pprint(self.station_profile.station_names)
         LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
                                           debug_=self.debug)
-        if self.local_realm.wait_for_ip(station_list=temp_stas, ipv4=True, debug=self.debug, timeout_sec=-1):
+        if self.wait_for_ip(station_list=temp_stas, ipv4=True, debug=self.debug, timeout_sec=-1):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
@@ -123,14 +125,14 @@ class GenTest(LFCliBase):
         self.generic_endps_profile.start_cx()
 
     def stop(self):
-        print("Stopping Test...")
+        logger.info("Stopping Test...")
         self.generic_endps_profile.stop_cx()
         self.station_profile.admin_down()
 
     def build(self):
         self.station_profile.use_security(self.security, self.ssid, self.passwd)
         self.station_profile.set_number_template(self.number_template)
-        print("Creating stations")
+        logger.info("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
@@ -165,7 +167,7 @@ def main():
                      'help': 'how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
                      'default': '2s'})
 
-    parser = LFCliBase.create_basic_argparse(
+    parser = Realm.create_basic_argparse(
         prog='test_generic.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''Create generic endpoints and test for their ability to execute chosen commands\n''',
@@ -222,6 +224,13 @@ python3 ./test_generic.py
     parser.add_argument('--loop_count', help='determines the number of loops to use in lf_curl', default=None)
 
     args = parser.parse_args()
+
+    logger_config = lf_logger_config.lf_logger_config()
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
@@ -250,8 +259,7 @@ python3 ./test_generic.py
             report_f = str(path) + '/data.' + args.output_format
             output = args.output_format
         else:
-            print(
-                'Not supporting this report format or cannot find report format provided. Defaulting to csv data file output type, naming it data.csv.')
+            logger.info('Not supporting this report format or cannot find report format provided. Defaulting to csv data file output type, naming it data.csv.')
             report_f = str(path) + '/data.csv'
             output = 'csv'
 
@@ -262,7 +270,7 @@ python3 ./test_generic.py
             output = str(args.report_file).split('.')[-1]
         else:
             output = args.output_format
-    print("Saving final report data in ... " + report_f)
+    logger.info("Saving final report data in ... " + report_f)
 
     # Retrieve last data file
     compared_rept = None
@@ -270,8 +278,7 @@ python3 ./test_generic.py
         compared_report_format = args.compared_report.split('.')[-1]
         # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
         if compared_report_format != 'csv':
-            print(ValueError("Cannot process this file type. Please select a different file and re-run script."))
-            exit(1)
+            raise ValueError("Cannot process this file type. Please select a different file and re-run script.")
         else:
             compared_rept = args.compared_report
 
@@ -308,11 +315,11 @@ python3 ./test_generic.py
     generic_test.cleanup(station_list)
     generic_test.build()
     if not generic_test.passes():
-        print(generic_test.get_fail_message())
+        logger.error(generic_test.get_fail_message())
         generic_test.exit_fail()
     generic_test.start()
     if not generic_test.passes():
-        print(generic_test.get_fail_message())
+        logger.error(generic_test.get_fail_message())
         generic_test.exit_fail()
 
     try:
@@ -334,18 +341,15 @@ python3 ./test_generic.py
     else:
         port_mgr_cols = args.port_mgr_cols
         # send col names here to file to reformat
-    if args.debug:
-        print("Generic Endp column names are...")
-        print(generic_cols)
-        print("Port Manager column names are...")
-        print(port_mgr_cols)
+    logger.info("Generic Endp column names are...")
+    logger.info(generic_cols)
+    logger.info("Port Manager column names are...")
+    logger.info(port_mgr_cols)
     try:
         monitor_interval = Realm.parse_time(args.monitor_interval).total_seconds()
     except ValueError as error:
-        print(ValueError(
-            "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. \n"
-            "%s" % error))
-        exit(1)
+        raise ValueError("The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. %s" % error)
+
     generic_test.start()
     generic_test.generic_endps_profile.monitor(generic_cols=generic_cols,
                                                sta_list=station_list,
