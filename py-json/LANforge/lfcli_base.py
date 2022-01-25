@@ -662,6 +662,8 @@ class LFCliBase:
                               '--debug',
                               action="store_true",
                               help='Enable debugging')
+        optional.add_argument('--lf_logger_config_json',
+                              help="--lf_logger_config_json <json file> , json configuration of logger")
         optional.add_argument('--proxy',
                               nargs='?',
                               default=None,
