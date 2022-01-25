@@ -31,7 +31,7 @@
     },
     "loggers": {
         "py-scripts.sandbox.lf_sublogger_2":{
-            "level": "DEBUG",
+            "level": "CRITICAL",
             "handlers": ["console", "file"],
             "propagate": false
         },
@@ -40,14 +40,24 @@
             "handlers": ["console", "file"],
             "propagate": false
         },
-        "__main__":{
+        "py-scripts.sandbox.lf_sublogger_2.json":{
             "level": "DEBUG",
+            "handlers": ["console", "file"],
+            "propagate": false
+        },
+        "py-scripts.sandbox.lf_sublogger_2.http":{
+            "level": "INFO",
+            "handlers": ["console", "file"],
+            "propagate": false
+        },
+        "__main__":{
+            "level": "CRITICAL",
             "handlers": ["console", "file"],
             "propagate": false
         }
     },        
     "root": {
-        "level": "DEBUG",
+        "level": "CRITICAL",
         "handlers": ["console", "file"],
         "propagate": false
     }
