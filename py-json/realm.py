@@ -394,16 +394,14 @@ class Realm(LFCliBase):
             time.sleep(1)
             wait_more = False
             endp_list = self.json_get("/endp/list")
-            found_endps = {}
+            found_endps = set()
             if debug:
                 print("Waiting on endpoint endp_list {}".format(endp_list))
             if endp_list and ("items" not in endp_list):
-                try:
-                    endp_list = list(endp_list['endpoint'])
-                    for idx in range(len(endp_list)):
-                        name = list(endp_list[idx])[0]
-                        found_endps[name] = name
-                except:
+                if 'endpoint' in endp_list.keys():
+                    for endpoint in list(endp_list['endpoint']):
+                        found_endps.add(endpoint[0])
+                else:
                     print(
                         "non-fatal exception endp_list = list(endp_list['endpoint'] did not exist, will wait some more")
 
