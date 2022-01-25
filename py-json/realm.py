@@ -400,7 +400,8 @@ class Realm(LFCliBase):
             if endp_list and ("items" not in endp_list):
                 if 'endpoint' in endp_list.keys():
                     for endpoint in list(endp_list['endpoint']):
-                        found_endps.add(endpoint[0])
+                        if len(endpoint) > 1:
+                            found_endps.add(endpoint[0])
                 else:
                     print(
                         "non-fatal exception endp_list = list(endp_list['endpoint'] did not exist, will wait some more")
