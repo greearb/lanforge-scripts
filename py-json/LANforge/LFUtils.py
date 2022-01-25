@@ -436,13 +436,11 @@ def find_port_eids(resource_id=1, base_url="http://localhost:8080", port_names=(
     for port_name in port_names:
         uri = "%s/%s/%s" % (port_url, resource_id, port_name)
         lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug)
-        try:
-            response = lf_r.getAsJson()
-            if response is None:
-                continue
-            port_eids.append(PortEID(response))
-        except:
+        response = lf_r.get_as_json()
+        if response is None:
             print("Not found: " + port_name)
+        else:
+            port_eids.append(PortEID(response))
     return port_eids
 
 
@@ -452,15 +450,13 @@ def waitUntilPortsAdminDown(resource_id=1, base_url="http://localhost:8080", por
 
 def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080", debug_=False, port_list=(), timeout_sec=360):
     print("Waiting until ports appear admin-down...")
-    up_stations = port_list.copy()
-    sec_elapsed = 0
     port_url = "/port/1"
-    while len(up_stations) > 0 and sec_elapsed < timeout_sec:
+    for _ in range(0, timeout_sec):
         up_stations = []
         for port_name in port_list:
             uri = "%s/%s/%s?fields=device,down" % (port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug_)
-            json_response = lf_r.getAsJson()
+            json_response = lf_r.get_as_json()
             if json_response is None:
                 if debug_:
                     print("port %s disappeared" % port_name)
@@ -469,12 +465,11 @@ def wait_until_ports_admin_down(resource_id=1, base_url="http://localhost:8080",
                 json_response = json_response['interface']
             if json_response['down'] == "false":
                 up_stations.append(port_name)
+        if len(up_stations) == 0:
+            return True
         sleep(1)
-        sec_elapsed += 1
-    if sec_elapsed >= timeout_sec:
-        return False
-    else:
-        return True
+
+    return False
 
 
 def waitUntilPortsAdminUp(resource_id=0, base_url="http://localhost:8080", port_list=()):
@@ -489,11 +484,7 @@ def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", p
     loops = 0
 
     # url = /%s/%s?fields=device,down" % (resource_id, port_name)
-    while len(down_stations) > 0:
-        if loops > timeout:
-            print("WARNING:  Not all ports went admin up within %s+ seconds" % timeout)
-            return False
-
+    for _ in range(0, timeout):
         down_stations = []
         for port_name in port_list:
             eid = name_to_eid(port_name)
@@ -502,7 +493,7 @@ def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", p
                 rid = eid[1]  # use resource-id from the eid instead.
             uri = "%s/%s/%s/%s?fields=device,down" % (port_url, eid[0], rid, eid[2])
             lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug_)
-            json_response = lf_r.getAsJson()
+            json_response = lf_r.get_as_json()
 
             if debug_:
                 print("uri: %s response:\n%s" % (uri, json_response))
@@ -523,10 +514,14 @@ def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", p
 
         if len(down_stations) > 0:
             sleep(1)
+        else:
+            return True
 
         loops += 1
 
-    return True
+
+    print("WARNING:  Not all ports went admin up within %s+ seconds" % timeout)
+    return False
 
 
 def waitUntilPortsDisappear(base_url="http://localhost:8080", port_list=(), debug=False):
@@ -541,10 +536,6 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
 
     print("LFUtils: Waiting until %s ports disappear..." % len(port_list))
     url = "/port/1"
-    if isinstance(port_list, list):
-        found_stations = port_list.copy()
-    else:
-        found_stations = [port_list]
 
     temp_names_by_resource = {1: []}
     temp_query_by_resource = {1: ""}
@@ -569,7 +560,8 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
     if rm_ports_iteration == 0:
         rm_ports_iteration = 1
 
-    while len(found_stations) > 0 and sec_elapsed < timeout_sec:
+    found_stations = []
+    for _ in range(0, timeout_sec):
         found_stations = []
         for (resource, check_url) in temp_query_by_resource.items():
             if debug:
@@ -595,18 +587,20 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
         if len(found_stations) > 0:
             if debug:
                 pprint.pprint(("wait_until_ports_disappear found_stations:", found_stations))
+        else:
+            return True
 
         if (sec_elapsed + 1) % rm_ports_iteration == 0:
             for port in found_stations:
                 if debug:
                     print('removing port %s' % '.'.join(port))
                 remove_port(port[1], port[2], base_url)
+        if len(found_stations) == 0:
+            return True
         sleep(1)  # check for ports once per second
-        sec_elapsed += 1
-    if sec_elapsed >= timeout_sec:
-        return False
-    else:
-        return True
+
+    print('%s stations were still found' % found_stations)
+    return False
 
 
 def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=False):
@@ -689,13 +683,14 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
         pprint.pprint(existing_stations)
     port_url = "/port/1"
     show_url = "/cli-json/show_ports"
+    found_stations = set()
     if base_url.endswith('/'):
         port_url = port_url[1:]
         show_url = show_url[1:]
     if type(port_list) is not list:
         port_list = [port_list]
     if debug:
-        current_ports = LFRequest.LFRequest(base_url, '/ports', debug_=debug).getAsJson()
+        current_ports = LFRequest.LFRequest(base_url, '/ports', debug_=debug).get_as_json()
         print("LFUtils:wait_until_ports_appear, full port listing: %s" % current_ports)
         for port in current_ports['interfaces']:
             if list(port.values())[0]['phantom']:
@@ -709,7 +704,7 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
             port_name = eid[2]
             uri = "%s/%s/%s" % (port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug)
-            json_response = lf_r.getAsJson()
+            json_response = lf_r.get_as_json()
             if json_response is not None:
                 if not json_response['interface']['phantom']:
                     found_stations.add("%s.%s.%s" % (shelf, resource_id, port_name))
@@ -731,7 +726,7 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
     return False
 
 
-def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False):
+def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False, timeout=360):
     """
 
     :param base_url:
@@ -746,7 +741,7 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
         port_url = port_url[1:]
         ncshow_url = ncshow_url[1:]
     found_stations = []
-    while len(found_stations) < len(endp_list):
+    for _ in range(0, int(timeout / 2)):
         found_stations = []
         for port_eid in endp_list:
 
@@ -757,7 +752,7 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
 
             uri = "%s/%s/%s" % (port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug)
-            json_response = lf_r.getAsJson()
+            json_response = lf_r.get_as_json()
             if json_response is not None:
                 found_stations.append(port_name)
             else:
@@ -766,6 +761,8 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
                 lf_r.formPost()
         if len(found_stations) < len(endp_list):
             sleep(2)
+        else:
+            return True
 
     if debug:
         print("These stations appeared: " + ", ".join(found_stations))
