@@ -78,7 +78,7 @@ class lf_logger_config:
             logging.root.removeHandler(handler)
         # for now just configure the output formatting. Basic defaults
         # Change to level=logging.WARNING , also may limit some of the output
-        logging.basicConfig(handlers=[logging.StreamHandler(stream=sys.stdout)], level=logging.WARNING,
+        logging.basicConfig(handlers=[logging.StreamHandler(stream=sys.stdout)], level=logging.INFO,
                             format='%(created)-16f %(name)-8s %(levelname)-12s  %(lineno)-6s %(funcName)-30s [%(module)s]: %(message)s')
         # Note the propagate is tricky in the sence if not set correctly will create duplicate logs output, 
         # setting to false 
