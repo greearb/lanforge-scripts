@@ -687,39 +687,40 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
         existing_stations = LFRequest.LFRequest(base_url, '/ports', debug_=debug)
         print('existing stations')
         pprint.pprint(existing_stations)
-    found_stations = []
     port_url = "/port/1"
     show_url = "/cli-json/show_ports"
     if base_url.endswith('/'):
         port_url = port_url[1:]
         show_url = show_url[1:]
-    sec_elapsed = 0
-    attempts = 0
     if type(port_list) is not list:
         port_list = [port_list]
-    while len(found_stations) < len(port_list) and sec_elapsed < timeout:
-        found_stations = []
+    if debug:
+        current_ports = LFRequest.LFRequest(base_url, '/ports', debug_=debug).getAsJson()
+        print("LFUtils:wait_until_ports_appear, full port listing: %s" % current_ports)
+        for port in current_ports['interfaces']:
+            if list(port.values())[0]['phantom']:
+                print("LFUtils:waittimeout_until_ports_appear: %s is phantom" % list(port.values())[0]['alias'])
+    for attempt in range(0, int(timeout / 2)):
+        found_stations = set()
         for port_eid in port_list:
             eid = name_to_eid(port_eid)
             shelf = eid[0]
             resource_id = eid[1]
             port_name = eid[2]
-            # print("waiting for sta sta "+port_eid)
             uri = "%s/%s/%s" % (port_url, resource_id, port_name)
             lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug)
             json_response = lf_r.getAsJson()
             if json_response is not None:
-                found_stations.append(port_name)
+                if not json_response['interface']['phantom']:
+                    found_stations.add("%s.%s.%s" % (shelf, resource_id, port_name))
             else:
                 lf_r = LFRequest.LFRequest(base_url, show_url, debug_=debug)
                 lf_r.addPostData({"shelf": shelf, "resource": resource_id, "port": port_name, "probe_flags": 5})
                 lf_r.jsonPost()
         if len(found_stations) < len(port_list):
             sleep(2)
-            sec_elapsed += 2
-            attempts += 1
             if debug:
-                print('Found %s out of %s stations in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(port_list), attempts, timeout/2))
+                print('Found %s out of %s stations in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(port_list), attempt, timeout/2))
         else:
             return True
 
