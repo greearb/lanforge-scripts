@@ -405,20 +405,17 @@ class LFCliBase:
         pprint.pprint(exception)
         traceback.print_exception(Exception, exception, exception.__traceback__, chain=True)
 
-    def check_connect(self):
+    def check_connect(self, timeout=300):
         if self.debug:
             print("Checking for LANforge GUI connection: %s" % self.lfclient_url)
-        response = self.json_get("/", debug_=self.debug)
-        duration = 0
-        while (response is None) and (duration < 300):
+        for _ in range(0, int(timeout / 2)):
             print("LANforge GUI connection not found sleeping 5 seconds, tried: %s" % self.lfclient_url)
-            duration += 2
             time.sleep(2)
-            response = self.json_get("", debug_=self.debug)
+            if self.json_get("/", debug_=self.debug):
+                return True
 
-        if duration >= 300:
-            print("Could not connect to LANforge GUI")
-            sys.exit(1)
+        print("Could not connect to LANforge GUI")
+        sys.exit(1)
 
     # return ALL messages in list form
     def get_result_list(self):
