@@ -242,9 +242,8 @@ class L3VariableTime(Realm):
         self.atten_vals = atten_vals
         if ((len(self.atten_vals) > 0) and (
                 self.atten_vals[0] != -1) and (len(self.attenuators) == 0)):
-            print(
+            raise ValueError(
                 "ERROR:  Attenuation values configured, but no Attenuator EIDs specified.\n")
-            exit(1)
 
         self.cx_profile.mconn = mconn
         self.cx_profile.side_a_min_bps = side_a_min_rate[0]
@@ -965,8 +964,7 @@ class L3VariableTime(Realm):
             print("ip's acquired")
         else:
             # No reason to continue
-            print("ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
-            exit(1)
+            raise ValueError("ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
 
         csv_header = self.csv_generate_column_headers()
         # print(csv_header)
@@ -3152,11 +3150,11 @@ Setting wifi_settings per radio
         atten_vals = args.atten_vals.split(",")
 
     if len(ul_rates) != len(dl_rates):
-        print(
+        raise ValueError(
             "ERROR:  ul_rates %s and dl_rates %s arrays must be same length\n" %
             (len(ul_rates), len(dl_rates)))
     if len(ul_pdus) != len(dl_pdus):
-        print(
+        raise ValueError(
             "ERROR:  ul_pdus %s and dl_pdus %s arrays must be same length\n" %
             (len(ul_rates), len(dl_rates)))
 
