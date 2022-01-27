@@ -384,14 +384,13 @@ class Realm(LFCliBase):
         response = self.json_get("/cx/list")
         return response
 
-    def waitUntilEndpsAppear(self, these_endp, debug=False):
-        return self.wait_until_endps_appear(these_endp, debug=debug)
+    def waitUntilEndpsAppear(self, these_endp, debug=False, timeout=300):
+        return self.wait_until_endps_appear(these_endp, debug=debug, timeout=timeout)
 
-    def wait_until_endps_appear(self, these_endp, debug=False):
+    def wait_until_endps_appear(self, these_endp, debug=False, timeout=100):
         wait_more = True
         count = 0
         while wait_more:
-            time.sleep(1)
             wait_more = False
             endp_list = self.json_get("/endp/list")
             found_endps = {}
@@ -413,19 +412,21 @@ class Realm(LFCliBase):
                         print("Waiting on endpoint: %s" % req)
                     wait_more = True
             count += 1
-            if count > 100:
-                break
+            if count > timeout:
+                print("ERROR:  Could not find all endpoints: %s" % these_endp)
+                return False
+            if wait_more:
+                time.sleep(1)
 
-        return not wait_more
+        return True
 
-    def waitUntilCxsAppear(self, these_cx, debug=False):
-        return self.wait_until_cxs_appear(these_cx, debug=debug)
+    def waitUntilCxsAppear(self, these_cx, debug=False, timeout=100):
+        return self.wait_until_cxs_appear(these_cx, debug=debug, timeout=timeout)
 
-    def wait_until_cxs_appear(self, these_cx, debug=False):
+    def wait_until_cxs_appear(self, these_cx, debug=False, timeout=100):
         wait_more = True
         count = 0
         while wait_more:
-            time.sleep(1)
             wait_more = False
             found_cxs = {}
             cx_list = self.cx_list()
@@ -442,10 +443,14 @@ class Realm(LFCliBase):
                         print("Waiting on CX: %s" % req)
                     wait_more = True
             count += 1
-            if count > 100:
-                break
+            if count > timeout:
+                if debug:
+                    print("ERROR:  Failed to find all cxs: %s" % these_cx)
+                return False
+            if wait_more:
+                time.sleep(1)
 
-        return not wait_more
+        return True
 
     # def wait_until_database_loaded(self):
 

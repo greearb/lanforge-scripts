@@ -415,7 +415,10 @@ class L3CXProfile(LFCliBase):
         self.created_endp.clear()
 
     def create(self, endp_type, side_a, side_b, sleep_time=0.03, suppress_related_commands=None, debug_=False,
-               tos=None):
+               tos=None, timeout=300):
+        # Returns a 2-member array, list of cx, list of endp on success.
+        # If endpoints creation fails, returns False, False
+        # if Endpoints creation is OK, but CX creation fails, returns False, list of endp
         if self.debug:
             debug_ = True
             print('Start L3CXProfile.create')
@@ -628,15 +631,24 @@ class L3CXProfile(LFCliBase):
             raise ValueError(
                 "side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (
                     type(side_a), type(side_b)))
-        print("wait_until_endps_appear these_endp: {} debug_ {}".format(these_endp, debug_))
-        self.local_realm.wait_until_endps_appear(these_endp, debug=debug_)
+        if debug_:
+            print("wait_until_endps_appear these_endp: {} debug_ {}".format(these_endp, debug_))
+        rv = self.local_realm.wait_until_endps_appear(these_endp, debug=debug_, timeout=timeout)
+        if not rv:
+            if debug_:
+                print("ERROR:  L3CXProfile::create, Could not create/find endpoints")
+            return False, False
 
         for data in cx_post_data:
             url = "/cli-json/add_cx"
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands)
             time.sleep(0.01)
 
-        self.local_realm.wait_until_cxs_appear(these_cx, debug=debug_)
+        rv = self.local_realm.wait_until_cxs_appear(these_cx, debug=debug_, timeout=timeout)
+        if not rv:
+            if debug_:
+                print("ERROR: L3CXProfile::create, Could not create/find connections.")
+            return False, these_endp
 
         return these_cx, these_endp
 

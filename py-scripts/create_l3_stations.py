@@ -118,10 +118,17 @@ class CreateL3(Realm):
             print("ERROR: create_l3_stations: could not create all ports, exiting with error.");
             exit(1);
 
-        self.cx_profile.create(endp_type="lf_udp",
-                               side_a=self.station_profile.station_names,
-                               side_b=self.upstream,
-                               sleep_time=0)
+        cx_timeout=300
+        #cx_timeout=0 # expect this to fail
+        rv = self.cx_profile.create(endp_type="lf_udp",
+                                    side_a=self.station_profile.station_names,
+                                    side_b=self.upstream,
+                                    sleep_time=0,
+                                    timeout=cx_timeout)
+        if not rv:
+            print("ERROR: create_l3_stations: could not create all cx/endpoints, exiting with error.");
+            exit(1);
+
         self._pass("PASS: Station build finished")
 
 
