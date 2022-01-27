@@ -63,7 +63,7 @@ def main():
 
     # Example to read the json config
     # set the configuration file 
-    logger_config.lf_logger_config_json = "lf_logger_config_example.json"
+    logger_config.lf_logger_config_json = "../lf_logger_config.json"
     logger_config.load_lf_logger_config()
 
     logger.info("An INFO message asctime from " + __name__)

@@ -3,13 +3,13 @@
     "disable_existing_loggers": false,
     "formatters": {
         "simple": {
-            "format": "%(created)-16f %(name)-16s %(levelname)-12s %(lineno)-6s %(funcName)-16s [%(module)s]:  %(message)s"
+            "format": "%(created)f %(name)s %(levelname)-8s %(filename)s %(lineno)s %(funcName)s  [%(module)s]: %(message)s"
         },
         "extra": {
-            "format":"%(asctime)-16s %(name)-8s %(filename)-12s %(lineno)-6s %(funcName)-16s %(levelname)-8s [%(module)s]: %(message)s",
+            "format":"%(asctime)-16s %(name)-8s %(levelname)-8s %(filename)-12s %(lineno)-6s %(funcName)-16s  [%(module)s]: %(message)s",
                  "datefmt":"%m-%d %H:%M:%S"},
         "extra2": {
-            "format":"%(created)f %(name)-8s %(filename)-12s %(lineno)-6s %(funcName)-16s %(levelname)-8s [%(module)s]: %(message)s",
+            "format":"%(created)f %(name)-8s %(levelname)-8s %(filename)-12s %(lineno)-6s %(funcName)-16s [%(module)s]: %(message)s",
                     "datefmt":"%m-%d %H:%M:%S"}
     },
 
