@@ -421,14 +421,13 @@ function echo_print() {
 }
 
 function test() {
-  START_TIME=$(date +%s%N | cut -b1-13)
   FILENAME="${TEST_DIR}/${NAME}"
   START_JC=$(date '+%Y-%m-%d %H:%M:%S') # Start of journalctl logging.
 
   if [[ ${#PORTS} -gt 0 ]]; then
-    "./scenario.py --load BLANK --mgr ${MGR} --check_phantom ${PORTS} --debug" > ${FILENAME}.txt
+    ./scenario.py --load BLANK --mgr ${MGR} --check_phantom "${PORTS}" --debug > "${FILENAME}.txt"
   else
-    "./scenario.py --load BLANK --mgr ${MGR} --debug" > ${FILENAME}.txt
+    ./scenario.py --load BLANK --mgr ${MGR} --debug > "${FILENAME}.txt"
   fi
 
   echo ""
@@ -439,7 +438,7 @@ function test() {
   start=$(date +%s)
   # this command saves stdout and stderr to the stdout file
   FILENAME="${TEST_DIR}/${NAME}"
-  "$testcommand" >> ${FILENAME}.txt 2>&1
+  "$testcommand" >> "${FILENAME}.txt" 2>&1
   TESTRV=$?
   #echo "TESTRV: $TESTRV"
 
@@ -649,7 +648,6 @@ td.testname {
     #mail -s "Regression Results" scripters@candelatech.com <<<$content
 }
 
-CONTINUE="True"
 results=()
 NOW=$(date +"%Y-%m-%d-%H-%M")
 NOW="${NOW/:/-}"
