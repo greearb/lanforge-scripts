@@ -1661,14 +1661,22 @@ Setting wifi_settings per radio
 
     args = parser.parse_args()
 
+    # initialize pass / fail
+    test_passed = False
+
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
+
+    # set the logger level to debug
+    if args.debug:
+        logger_config.set_level_debug()
+
+    # lf_logger_config_json will take presidence to changing debug levels
     if args.lf_logger_config_json:
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
-    
-    # logger.critical("args: {}".format(args))
+
     debug = args.debug
 
     # for kpi.csv generation
@@ -1935,16 +1943,17 @@ Setting wifi_settings per radio
     ip_var_test.start(False)
     ip_var_test.stop()
     if not ip_var_test.passes():
-        logger.critical("Test Ended: There were Failures")
-        logger.critical(ip_var_test.get_fail_message())
+        logger.warning("Test Ended: There were Failures")
+        logger.warning(ip_var_test.get_fail_message())
 
-    logger.critical(
+    logger.info(
         "Pausing {} seconds for manual inspection before clean up.".format(
             args.wait))
     time.sleep(int(args.wait))
     ip_var_test.cleanup()
     if ip_var_test.passes():
-        logger.critical("Full test passed, all connections increased rx bytes")
+        test_passed = True
+        logger.info("Full test passed, all connections increased rx bytes")
 
     # Results
     csv_kpi_file = ip_var_test.get_kpi_csv()
@@ -1959,6 +1968,11 @@ Setting wifi_settings per radio
     # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
     report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+
+    if test_passed:
+        exit(0)
+    else:
+        exit(1)
 
 
 if __name__ == "__main__":
