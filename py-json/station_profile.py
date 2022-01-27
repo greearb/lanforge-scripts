@@ -391,7 +391,8 @@ class StationProfile:
                suppress_related_commands_=True,
                use_radius=False,
                hs20_enable=False,
-               sleep_time=0.02):
+               sleep_time=0.02,
+               timeout=300):
         if debug:
             print('Start station_profile.create')
             pprint('Current ports: %s' % LFRequest.LFRequest(self.lfclient_url + '/ports', debug_=debug))
@@ -561,25 +562,14 @@ class StationProfile:
         if debug:
             print('StationProfile.create debug: %s' % self.local_realm.json_get('/port/'))
             print("- ~3287 - waitUntilPortsAppear - - - - - - - - - - - - - - - - - - ")
-        LFUtils.wait_until_ports_appear(self.lfclient_url, my_sta_eids, debug=debug)
 
-        # query the LANforge for all available ports
-        port_list_1 = self.local_realm.json_get("/port/%s/%s" % (radio_shelf, radio_resource))
-        # Filter port_list to include only ports which are the stations we are creating
-        port_list = list()
-        for port in port_list_1['interfaces']:
-            if list(port.keys())[0] in my_sta_eids:
-                port_list.append(list(port.keys())[0])
-
-        # If a requested port doesn't appear on the LANforge, raise an error and print debug
-        if len(port_list) != len(my_sta_eids):
-            print('Desired stations: %s' % my_sta_eids)
-            print("Existing stations: %s" % port_list)
-            print('full port list')
-            pprint(port_list_1)
+        rv = LFUtils.wait_until_ports_appear(self.lfclient_url, my_sta_eids, debug=debug, timeout=timeout)
+        if not rv:
+            # port creation failed somehow.
+            print('ERROR: Failed to create all ports, Desired stations: %s' % my_sta_eids)
             print('events')
             pprint(self.local_realm.find_new_events(starting_event))
-            raise ValueError("Unable to find ports: %s" % (set(my_sta_eids) - set(port_list)))
+            return False;
 
         # and set ports up
         if dry_run:
@@ -594,6 +584,7 @@ class StationProfile:
         #     time.sleep(0.03)
         if self.debug:
             print("created %s stations" % num)
+        return True
 
     def modify(self, radio):
         for station in self.station_names:

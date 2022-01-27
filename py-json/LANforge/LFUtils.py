@@ -666,13 +666,11 @@ def name_to_eid(eid_input, non_port=False):
 
 def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debug=False, timeout=300):
     """
-    Use this method to pause until the LANforge system has caught up and implemented the
-    ports you have requested to create. This determines the presence of interfaces, it
-    does not inspect their state. It is appropriate to use when creating stations in
-    the admin-down state.
+    Wait until ports are found and non phantom, or if timeout expires.
+    Returns True if all are found and non phantom, returns False if timeout expires first.
     :param timeout:
     :param base_url:
-    :param port_list: list or str. Pass a list of multiple port EIDs. If you pass a single port EID a string, that is also valid.
+    :param port_list: list or str. Pass a list of multiple port EIDs, or a single EID string.
     :param debug:
     :return:
     """
@@ -722,6 +720,7 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
     if debug:
         print("These stations appeared: " + ", ".join(found_stations))
         print("These stations did not appear: " + ",".join(set(port_list) - set(found_stations)))
+        # TODO: This probably needs some pprint logic
         print(LFRequest.LFRequest("%s/ports" % base_url))
     return False
 

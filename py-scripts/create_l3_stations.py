@@ -107,9 +107,17 @@ class CreateL3(Realm):
         self.station_profile.set_command_param(
             "set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(radio=self.radio,
-                                    sta_names_=self.sta_list,
-                                    debug=self.debug)
+
+        sta_timeout=300
+        #sta_timeout=3 # expect this to fail
+        rv = self.station_profile.create(radio=self.radio,
+                                         sta_names_=self.sta_list,
+                                         debug=self.debug,
+                                         timeout=sta_timeout)
+        if not rv:
+            print("ERROR: create_l3_stations: could not create all ports, exiting with error.");
+            exit(1);
+
         self.cx_profile.create(endp_type="lf_udp",
                                side_a=self.station_profile.station_names,
                                side_b=self.upstream,
