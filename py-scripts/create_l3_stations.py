@@ -97,9 +97,9 @@ class CreateL3(Realm):
 
     def build(self):
 
-        self.station_profile.use_security(self.security,
-                                          self.ssid,
-                                          self.password)
+        self.station_profile.use_security(security_type=self.security,
+                                          ssid=self.ssid,
+                                          passwd=self.password)
         self.station_profile.set_number_template(self.number_template)
         print("Creating stations")
         self.station_profile.set_command_flag(
@@ -108,26 +108,26 @@ class CreateL3(Realm):
             "set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
 
-        sta_timeout=300
-        #sta_timeout=3 # expect this to fail
+        sta_timeout = 300
+        # sta_timeout=3 # expect this to fail
         rv = self.station_profile.create(radio=self.radio,
                                          sta_names_=self.sta_list,
                                          debug=self.debug,
                                          timeout=sta_timeout)
         if not rv:
-            print("ERROR: create_l3_stations: could not create all ports, exiting with error.");
-            exit(1);
+            print("ERROR: create_l3_stations: could not create all ports, exiting with error.")
+            exit(1)
 
-        cx_timeout=300
-        #cx_timeout=0 # expect this to fail
+        cx_timeout = 300
+        # cx_timeout=0 # expect this to fail
         rv = self.cx_profile.create(endp_type="lf_udp",
                                     side_a=self.station_profile.station_names,
                                     side_b=self.upstream,
                                     sleep_time=0,
                                     timeout=cx_timeout)
         if not rv:
-            print("ERROR: create_l3_stations: could not create all cx/endpoints, exiting with error.");
-            exit(1);
+            print("ERROR: create_l3_stations: could not create all cx/endpoints, exiting with error.")
+            exit(1)
 
         self._pass("PASS: Station build finished")
 
