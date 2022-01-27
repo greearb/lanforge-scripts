@@ -17,11 +17,15 @@ Help()
   echo "H is used to test the help feature of each script, to make sure it renders properly."
   echo "L is used to give the IP address of the LANforge device which is under test"
   echo "Example command: ./regression_test.sh -s SSID -p PASSWD -w SECURITY -m MGR"
+  echo "Example command: ./regression_test.sh -s j-wpa2-153 -p j-wpa2-153 -w wpa2 -r 1.1.wiphy0 \\\\"
+  echo "   e-M 1.1.wiphy1 -B 04:F0:21:CB:01:8B -V heather_ssid_2022 -m heather -R /tmp/ 1"
   echo "If using the help flag, put the H flag at the end of the command after other flags."
 }
 
+HOMEPATH=$(realpath ~)
+REPORT_DIR="${HOMEPATH}/html-reports"
 
-while getopts ":h:s:S:p:w:m:r:F:B:U:D:H:M:C:e:V:E:" option; do
+while getopts ":h:s:S:p:w:m:r:R:F:B:U:D:H:M:C:e:V:E:" option; do
   case "${option}" in
     h) # display Help
       Help
@@ -44,6 +48,9 @@ while getopts ":h:s:S:p:w:m:r:F:B:U:D:H:M:C:e:V:E:" option; do
       ;;
     r)
       RADIO_USED=${OPTARG}
+      ;;
+    R)
+      REPORT_DIR=${OPTARG}
       ;;
     F)
       REGRESSION_COMMANDS=${OPTARG}
@@ -87,6 +94,12 @@ if [[ ${#MGR} -eq 0 ]]; then # Allow the user to change the radio they test agai
 fi
 
 PYTHON_VERSION=$(python3 -c 'import sys; print(sys.version)')
+
+which jq > /dev/null 2>&1 || (echo "jq not found, please install" && exit 1)
+if [[ $? != "0" ]]
+    then
+    exit 1
+fi
 
 BuildVersion=$(wget $MGR:8080 -q -O - | jq '.VersionInfo.BuildVersion')
 BuildDate=$(wget $MGR:8080 -q -O - | jq '.VersionInfo.BuildDate')
@@ -151,8 +164,6 @@ if test -f "$FILE"; then
   exit 0
 fi
 
-HOMEPATH=$(realpath ~)
-
 if [[ ${#SSID_USED} -gt 0 ]]; then
   if [ -f ./regression_test.rc ]; then
     source ./regression_test.rc # this version is a better unix name
@@ -171,7 +182,6 @@ fi
 #CURR_TEST_NUM=0
 CURR_TEST_NAME="BLANK"
 
-REPORT_DIR="${HOMEPATH}/html-reports"
 if [ ! -d "$REPORT_DIR" ]; then
     echo "Report directory [$REPORT_DIR] not found, bye."
     exit 1
@@ -413,11 +423,12 @@ function echo_print() {
 function test() {
   START_TIME=$(date +%s%N | cut -b1-13)
   FILENAME="${TEST_DIR}/${NAME}"
+  START_JC=$(date '+%Y-%m-%d %H:%M:%S') # Start of journalctl logging.
 
   if [[ ${#PORTS} -gt 0 ]]; then
-    { eval "./scenario.py --load BLANK --mgr ${MGR} --check_phantom ${PORTS} --debug || return 1" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } > "${FILENAME}.txt" 3>&1
+    "./scenario.py --load BLANK --mgr ${MGR} --check_phantom ${PORTS} --debug" > ${FILENAME}.txt
   else
-    { eval "./scenario.py --load BLANK --mgr ${MGR} --debug || return 1" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } > "${FILENAME}.txt" 3>&1
+    "./scenario.py --load BLANK --mgr ${MGR} --debug" > ${FILENAME}.txt
   fi
 
   echo ""
@@ -426,14 +437,15 @@ function test() {
   echo_print
   echo "$testcommand"
   start=$(date +%s)
-  # this command saves stdout and stderr to the stdout file, and has a special file for stderr text.
-  # Modified from https://unix.stackexchange.com/a/364176/327076
+  # this command saves stdout and stderr to the stdout file
   FILENAME="${TEST_DIR}/${NAME}"
-  { eval "$testcommand" 2>&1 >&3 3>&- | tee "${FILENAME}_stderr.txt" 3>&-; } >> "${FILENAME}.txt" 3>&1
+  "$testcommand" >> ${FILENAME}.txt 2>&1
+  TESTRV=$?
+  #echo "TESTRV: $TESTRV"
+
   chmod 664 "${FILENAME}.txt"
-  FILESIZE=$(stat -c%s "${FILENAME}_stderr.txt") || 0
   # Check to see if the error is due to LANforge
-  ERROR_DATA=$(cat "${FILENAME}_stderr.txt")
+  ERROR_DATA=$(cat "${FILENAME}.txt")
   if [[ $ERROR_DATA =~ "LANforge Error Messages" ]]; then
     LANforgeError="Lanforge Error"
     echo "LANforge Error"
@@ -443,8 +455,13 @@ function test() {
   end=$(date +%s)
   execution="$((end-start))"
   TEXT=$(cat "${FILENAME}".txt)
-  STDERR=""
-  if [[ $TEXT =~ "tests failed" ]]; then
+
+  if [[ $TESTRV != "0" ]]; then
+    echo "Test failed with non-zero return code"
+    TEXTCLASS="failure"
+    TDTEXT="Failure"
+    LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
+  elif [[ $TEXT =~ "tests failed" ]]; then
     TEXTCLASS="partial_failure"
     TDTEXT="Partial Failure"
     echo "Partial Failure"
@@ -461,24 +478,21 @@ function test() {
     LOGGING=""
   fi
 
-  if (( FILESIZE > 0)); then
-    TEXTCLASS="failure"
-    TDTEXT="Failure"
-    STDERR="<a href=\"${URL2}/${NAME}_stderr.txt\" target=\"_blank\">STDERR</a>"
-    LOGGING="<a href=\"${URL2}/logs/${NAME}\" target=\"_blank\">Logging directory</a>"
-  fi
-
   if [[ ${#LOGGING} -gt 0 ]]; then
     mkdir "${LOG_DIR}/${NAME}"
     if [[ $MGR == "localhost" ]]; then
       cp "${HOMEPATH}"/lanforge_log* "${LOG_DIR}/${NAME}"
       cp "${HOMEPATH}"/run_client* "${LOG_DIR}/${NAME}"
       cp "${HOMEPATH}"/run_mgr* "${LOG_DIR}/${NAME}"
-      journalctl -u lanforge --since "today" > "${LOG_DIR}/${NAME}/gui_log.txt"
+      journalctl --since "$START_JC" > "${LOG_DIR}/${NAME}/journalctl_log.txt"
     else
+      # TODO:  Need to parameterize the password some day.
       sshpass -p "lanforge" scp lanforge@"${MGR}":~/lanforge_log* "${LOG_DIR}/${NAME}"
       sshpass -p "lanforge" scp lanforge@"${MGR}":~/run_client* "${LOG_DIR}/${NAME}"
       sshpass -p "lanforge" scp lanforge@"${MGR}":~/run_mgr* "${LOG_DIR}/${NAME}"
+      # TODO:  Add ability to get logs from secondary resource(s) as well.
+      sshpass -p "lanforge" scp root@"${MGR}":/home/lanforge/wifi/*supplicant*log*.txt "${LOG_DIR}/${NAME}"
+      sshpass -p "lanforge" ssh root@"${MGR}" "journalctl --since '$START_JC'" > "${LOG_DIR}/${NAME}/journalctl_log.txt"
     fi
     #for file in "${LOG_DIR}/${NAME}"/lanforge_log*; do
     #  ./log_filter.py --input_file "$file" --timestamp "$START_TIME" --output_file "$file"
@@ -490,10 +504,11 @@ function test() {
                        <td class='${TEXTCLASS}'>$TDTEXT</td>
                        <td>${execution}</td>
                        <td><a href=\"${URL2}/${NAME}.txt\" target=\"_blank\">STDOUT</a></td>
-                       <td>${STDERR}</td>
                        <td>${LANforgeError}</td>
                        <td>${LOGGING}</td>
                        </tr>")
+  # Propagate test script exit code
+  return $TESTRV
 }
 
 function start_tests()  {
@@ -513,9 +528,7 @@ function start_tests()  {
     fi
     PORTS=$( IFS=$','; echo "${CHECK_PORTS[*]}" )
     if [[ ${#EXIT_ON_ERROR} -gt 0 ]]; then
-      if [[ ${CONTINUE} == "True" ]]; then
-        test
-      fi
+      test || exit $?
     else
       test
     fi
@@ -580,7 +593,6 @@ td.testname {
             <th onclick=\"sortTable('myTable2', 2)\">Status</th>
             <th onclick=\"sortTable('myTable2', 3)\">Execution time</th>
             <th onclick=\"sortTable('myTable2', 4)\">STDOUT</th>
-            <th onclick=\"sortTable('myTable2', 5)\">STDERR</th>
             <th onclick=\"sortTable('myTable2', 6)\">LANforge Error</th>
             <th onclick=\"sortTable('myTable2', 7\">LANforge logging</th>
         </tr>
