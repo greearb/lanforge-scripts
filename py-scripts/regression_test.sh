@@ -439,7 +439,7 @@ function test() {
   start=$(date +%s)
   # this command saves stdout and stderr to the stdout file
   FILENAME="${TEST_DIR}/${NAME}"
-  $testcommand >> "${FILENAME}.txt" 2>&1
+  eval "$($testcommand >> "${FILENAME}.txt" 2>&1)"
   TESTRV=$?
   #echo "TESTRV: $TESTRV"
 
