@@ -20,6 +20,7 @@ import argparse
 import paramiko
 from datetime import datetime
 import pandas as pd
+import logging
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
@@ -31,6 +32,7 @@ PortUtils = realm.PortUtils
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class HttpDownload(Realm):
@@ -126,7 +128,8 @@ class HttpDownload(Realm):
 
     def build(self):
         # enable http on ethernet
-        self.port_util.set_http(port_name=self.local_realm.name_to_eid(self.upstream)[2], resource=1, on=True)
+        self.port_util.set_http(port_name=self.local_realm.name_to_eid(self.upstream)[2],
+                                resource=self.local_realm.name_to_eid(self.upstream)[1], on=True)
         for rad in range(len(self.radio)):
             print(self.station_list[rad])
             self.station_profile.use_security(self.security[rad], self.ssid[rad], self.password[rad])
@@ -146,10 +149,12 @@ class HttpDownload(Realm):
             data = self.local_realm.json_get("ports/list?fields=IP")
 
             # getting eth ip
+            eid = self.local_realm.name_to_eid(self.upstream)
             for i in data["interfaces"]:
                 for j in i:
-                    if "1.1." + self.upstream == j:
-                        ip_upstream = i["1.1." + self.upstream]['ip']
+                    if "{shelf}.{resource}.{port}".format(shelf=eid[0], resource=eid[1], port=eid[2]) == j:
+                        ip_upstream = i["{shelf}.{resource}.{port}".format(
+                            shelf=eid[0], resource=eid[1], port=eid[2])]['ip']
 
             # create http profile
             self.http_profile.create(ports=self.station_profile.station_names, sleep_time=.5,
@@ -233,7 +238,7 @@ class HttpDownload(Realm):
                 download_time[i] = result_data[i]['dl_time']
             except BaseException:
                 download_time[i] = []
-        print(download_time)
+        print("dl_times: ", download_time)
         lst = []
         lst1 = []
         lst2 = []
@@ -574,6 +579,8 @@ class HttpDownload(Realm):
 
 
 def main():
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
     parser = argparse.ArgumentParser(
         prog="lf_webpage.py",
         formatter_class=argparse.RawTextHelpFormatter,
