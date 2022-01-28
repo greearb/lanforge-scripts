@@ -2,7 +2,7 @@
 import sys
 import os
 import importlib
-from pprint import pprint
+from pprint import pformat
 import csv
 import pandas as pd
 import time
@@ -213,9 +213,7 @@ class GenCXProfile(LFCliBase):
                 "port": name,
                 "type": "gen_generic"
             }
-            pprint(data)
-            if self.debug:
-                pprint(data)
+            logger.info(pformat(data))
 
             self.json_post("cli-json/add_gen_endp", data, debug_=self.debug)
 
@@ -275,9 +273,7 @@ class GenCXProfile(LFCliBase):
 
         for data in post_data:
             url = "/cli-json/add_cx"
-            pprint(data)
-            if self.debug:
-                pprint(data)
+            logger.info(pformat(data))
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
             time.sleep(2)
         time.sleep(sleep_time)
@@ -320,8 +316,7 @@ class GenCXProfile(LFCliBase):
                 "port": name,
                 "type": "gen_generic"
             }
-            if self.debug:
-                pprint(data)
+            logger.debug(pformat(data))
 
             self.json_post("cli-json/add_gen_endp", data, debug_=self.debug)
 
@@ -362,8 +357,7 @@ class GenCXProfile(LFCliBase):
 
         for data in post_data:
             url = "/cli-json/add_cx"
-            if self.debug:
-                pprint(data)
+            logger.info(pformat(data))
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
             time.sleep(2)
         time.sleep(sleep_time)
@@ -376,8 +370,7 @@ class GenCXProfile(LFCliBase):
 
     def choose_ping_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if self.debug:
-            print(gen_results)
+        logger.debug(pformat(gen_results))
         if gen_results['endpoints']:
             for name in gen_results['endpoints']:
                 for k, v in name.items():
@@ -389,8 +382,7 @@ class GenCXProfile(LFCliBase):
 
     def choose_lfcurl_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
-        if self.debug:
-            print(gen_results)
+        logger.debug(pformat(gen_results))
         if gen_results['endpoints']:
             for name in gen_results['endpoints']:
                 for k, v in name.items():
@@ -405,7 +397,7 @@ class GenCXProfile(LFCliBase):
     def choose_iperf3_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
         if gen_results['endpoints']:
-            pprint(gen_results['endpoints'])
+            logger.info(gen_results['endpoints'])
             # for name in gen_results['endpoints']:
             # pprint(name.items)
             # for k,v in name.items():
