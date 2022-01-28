@@ -3,6 +3,7 @@ import sys
 import os
 import importlib
 import time
+import logging
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -10,6 +11,7 @@ port_utils = importlib.import_module("py-json.port_utils")
 PortUtils = port_utils.PortUtils
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
+logger = logging.getLogger(__name__)
 
 
 class HTTPProfile(LFCliBase):
@@ -44,15 +46,16 @@ class HTTPProfile(LFCliBase):
                             passes -= 1
                             debug_info[name] = {field: info[field.replace("+", " ")]}
             if debug:
-                print(debug_info)
+                logger.info(debug_info)
             if passes == expected_passes:
                 return True
             else:
-                print(list(debug_info), " Endps in this list showed errors getting to its URL")  # %s") % self.url)
+                # %s") % self.url)
+                logger.info(list(debug_info), " Endps in this list showed errors getting to its URL")
                 return False
 
     def start_cx(self):
-        print("Starting CXs...")
+        logger.info("Starting CXs...")
         for cx_name in self.created_cx.keys():
             self.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
@@ -63,7 +66,7 @@ class HTTPProfile(LFCliBase):
         print("")
 
     def stop_cx(self):
-        print("Stopping CXs...")
+        logger.info("Stopping CXs...")
         for cx_name in self.created_cx.keys():
             self.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
@@ -74,7 +77,7 @@ class HTTPProfile(LFCliBase):
         print("")
 
     def cleanup(self):
-        print("Cleaning up cxs and endpoints")
+        logger.info("Cleaning up cxs and endpoints")
         if len(self.created_cx) != 0:
             for cx_name in self.created_cx.keys():
                 req_url = "cli-json/rm_cx"
@@ -116,7 +119,7 @@ class HTTPProfile(LFCliBase):
         cx_post_data = []
         # print("http_profile - ports:{ports}".format(ports=ports))
         self.map_sta_ips(ports)
-        print("Create HTTP CXs...")
+        logger.info("Create HTTP CXs..." + __name__)
         # print("http_profile - self.ip_map:{ip_map}".format(ip_map=self.ip_map))
 
         for i in range(len(list(self.ip_map))):
@@ -169,7 +172,7 @@ class HTTPProfile(LFCliBase):
                     if ftp_ip is not None:
                         ip_addr = ftp_ip
                     url = "%s ftp://%s:%s@%s%s %s" % (self.direction, user, passwd, ip_addr, source, self.dest)
-                    print("###### url:{}".format(url))
+                    logger.info("###### url:{}".format(url))
                 else:
                     raise ValueError("user: %s, passwd: %s, and source: %s must all be set" % (user, passwd, source))
             if not http and not ftp and not https:
@@ -197,7 +200,8 @@ class HTTPProfile(LFCliBase):
                     "alias": name + "_l4",
                     "shelf": shelf,
                     "resource": resource,
-                    "port": ports[0],
+                    # "port": ports[0],
+                    "port": rv[2],
                     "type": "l4_generic",
                     "timeout": 10,
                     "url_rate": self.requests_per_ten,
