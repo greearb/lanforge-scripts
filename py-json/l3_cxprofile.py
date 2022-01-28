@@ -2,10 +2,10 @@
 import sys
 import os
 import importlib
-import pprint
 import pandas as pd
 import time
 import datetime
+import logging
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -14,6 +14,8 @@ LFCliBase = lfcli_base.LFCliBase
 pandas_extensions = importlib.import_module("py-json.LANforge.pandas_extensions")
 port_probe = importlib.import_module("py-json.port_probe")
 ProbePort = port_probe.ProbePort
+
+logger = logging.getLogger(__name__)
 
 
 class L3CXProfile(LFCliBase):
@@ -83,9 +85,8 @@ class L3CXProfile(LFCliBase):
 
     def __get_rx_values(self):
         cx_list = self.json_get("endp?fields=name,rx+bytes")
-        if self.debug:
-            print(self.created_cx.values())
-            print("==============\n", cx_list, "\n==============")
+        logger.debug(self.created_cx.values())
+        logger.debug("==============\n {cx_list}\n==============".format(cx_list=cx_list))
         cx_rx_map = {}
         for cx_name in cx_list['endpoint']:
             if cx_name != 'uri' and cx_name != 'handler':
@@ -132,30 +133,39 @@ class L3CXProfile(LFCliBase):
         if duration_sec:
             duration_sec = self.parse_time(duration_sec).seconds
         else:
+            logger.critical("L3CXProfile::monitor wants duration_sec > 1 second")
             raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
         if duration_sec <= monitor_interval_ms:
+            logger.critical("L3CXProfile::monitor wants duration_sec > monitor_interval")
             raise ValueError("L3CXProfile::monitor wants duration_sec > monitor_interval")
         if report_file is None:
+            logger.critical("Monitor requires an output file to be defined")
             raise ValueError("Monitor requires an output file to be defined")
         if systeminfopath is None:
             raise ValueError("Monitor requires a system info path to be defined")
         if created_cx is None:
+            logger.critical("Monitor needs a list of Layer 3 connections")
             raise ValueError("Monitor needs a list of Layer 3 connections")
         if (monitor_interval_ms is None) or (monitor_interval_ms < 1):
+            logger.critical("L3CXProfile::monitor wants monitor_interval >= 1 second")
             raise ValueError("L3CXProfile::monitor wants monitor_interval >= 1 second")
         if layer3_cols is None:
+            logger.critical("L3CXProfile::monitor wants a list of column names to monitor")
             raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
         if output_format:
             if output_format.lower() != report_file.split('.')[-1]:
-                raise ValueError('Filename %s has an extension that does not match output format %s .' % (
-                    report_file, output_format))
+                logger.critical('Filename {report_file} has an extension that does not match output format {output_format} '.format(
+                    report_file=report_file, output_format=output_format))
+
+                raise ValueError('Filename {report_file} has an extension that does not match output format {output_format} '.format(
+                    report_file=report_file, output_format=output_format))
         else:
             output_format = report_file.split('.')[-1]
 
         # default save to csv first
         if report_file.split('.')[-1] != 'csv':
             report_file = report_file.replace(str(output_format), 'csv', 1)
-            print("Saving rolling data into..." + str(report_file))
+            logger.info("Saving rolling data into...{report_file}".format(report_file=report_file))
 
         # ================== Step 1, set column names and header row
         layer3_cols = [self.replace_special_char(x) for x in layer3_cols]
@@ -216,22 +226,21 @@ class L3CXProfile(LFCliBase):
             layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
 
             new_cx_rx_values = self.__get_rx_values()
-            if debug:
-                print(old_cx_rx_values, new_cx_rx_values)
-                print("\n-----------------------------------")
-                print(t)
-                print("-----------------------------------\n")
+            logger.debug(old_cx_rx_values, new_cx_rx_values)
+            logger.debug("\n-----------------------------------")
+            logger.debug(t)
+            logger.debug("-----------------------------------\n")
             expected_passes += 1
             if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):
                 passes += 1
             else:
+                # TODO track where this goes?
                 self.fail("FAIL: Not all stations increased traffic")
 
             result = dict()  # create dataframe from layer 3 results
             if type(layer_3_response) is dict:
                 for dictionary in layer_3_response['endpoint']:
-                    # if debug:
-                    print('layer_3_data: %s' % dictionary)
+                    logger.debug('layer_3_data: {dictionary}'.format(dictionary=dictionary))
                     result.update(dictionary)
             else:
                 pass
@@ -241,25 +250,22 @@ class L3CXProfile(LFCliBase):
             if port_mgr_cols:  # create dataframe from port mgr results
                 result = dict()
                 if type(port_mgr_response) is dict:
-                    print("port_mgr_response {pmr}".format(pmr=port_mgr_response))
+                    logger.info("port_mgr_response {pmr}".format(pmr=port_mgr_response))
                     if 'interfaces' in port_mgr_response:
                         for dictionary in port_mgr_response['interfaces']:
-                            if debug:
-                                print('port mgr data: %s' % dictionary)
+                            logger.debug('port mgr data: {dictionary}'.format(dictionary=dictionary))
                             result.update(dictionary)
 
                     elif 'interface' in port_mgr_response:
                         dict_update = {port_mgr_response['interface']['alias']: port_mgr_response['interface']}
-                        if debug:
-                            print(dict_update)
+                        logger.debug(dict_update)
                         result.update(dict_update)
-                        if debug:
-                            print(result)
+                        logger.debug(result)
                     else:
-                        print('interfaces and interface not in port_mgr_response')
-                        exit(1)
+                        logger.critical('interfaces and interface not in port_mgr_response')
+                        raise ValueError('interfaces and interface not in port_mgr_response')
                     portdata_df = pd.DataFrame(result.values())
-                    print("portdata_df {pd}".format(pd=portdata_df))
+                    logger.info("portdata_df {pd}".format(pd=portdata_df))
                     portdata_df.columns = ['port-' + x for x in portdata_df.columns]
                     portdata_df['alias'] = portdata_df['port-alias']
 
@@ -271,8 +277,10 @@ class L3CXProfile(LFCliBase):
                     if len(layer3_alias) == layer3.shape[0]:
                         layer3['alias'] = layer3_alias
                     else:
-                        raise ValueError("The Stations or Connection on LANforge did not match expected, \
-                        Check if LANForge initial state correct or delete/cleanup corrects")
+                        logger.critical(("The Stations or Connection on LANforge did not match expected,",
+                                        " Check if LANForge initial state correct or delete/cleanup corrects"))
+                        raise ValueError(("The Stations or Connection on LANforge did not match expected,",
+                                        " Check if LANForge initial state correct or delete/cleanup corrects"))
 
                     timestamp_df = pd.merge(layer3, portdata_df, on='alias')
             else:
@@ -350,6 +358,7 @@ class L3CXProfile(LFCliBase):
         if compared_report:
             pandas_extensions.compare_two_df(dataframe_one=pandas_extensions.file_to_df(report_file),
                                              dataframe_two=pandas_extensions.file_to_df(compared_report))
+            # TODO why is this exit here?
             exit(1)
             # append compared df to created one
             if output_format.lower() != 'csv':
@@ -364,27 +373,29 @@ class L3CXProfile(LFCliBase):
                 "test_mgr": "ALL",
                 "cross_connect": cx_name
             }, debug_=self.debug)
+            # this is for a visual affect someone watching the screen, leave as print
             print(".", end='')
 
     def start_cx(self):
-        print("Starting CXs...")
+        logger.info("Starting CXs...")
         for cx_name in self.created_cx.keys():
-            if self.debug:
-                print("cx-name: %s" % cx_name)
+            logger.debug("cx-name: {cx_name}".format(cx_name=cx_name))
             self.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
                 "cx_name": cx_name,
                 "cx_state": "RUNNING"
             }, debug_=self.debug)
+            # this is for a visual affect someone watching the screen, leave as print
             if self.debug:
                 print(".", end='')
         if self.debug:
             print("")
 
     def stop_cx(self):
-        print("Stopping CXs...")
+        logger.info("Stopping CXs...")
         for cx_name in self.created_cx.keys():
             self.local_realm.stop_cx(cx_name)
+            # this is for a visual affect someone watching the screen, leave as print
             print(".", end='')
         print("")
 
@@ -392,17 +403,15 @@ class L3CXProfile(LFCliBase):
         self.local_realm.cleanup_cxe_prefix(self.name_prefix)
 
     def cleanup(self):
-        print("Cleaning up cxs and endpoints")
+        logger.info("Cleaning up cxs and endpoints")
         if len(self.created_cx) != 0:
             for cx_name in self.created_cx.keys():
-                if self.debug:
-                    print("Cleaning cx: %s" % cx_name)
+                logger.debug("Cleaning cx: {cx_name}".format(cx_name=cx_name))
                 self.local_realm.rm_cx(cx_name)
 
                 for side in range(len(self.created_cx[cx_name])):
                     ename = self.created_cx[cx_name][side]
-                    if self.debug:
-                        print("Cleaning endpoint: %s" % ename)
+                    logger.debug("Cleaning endpoint: {ename}".format(ename=ename))
                     self.local_realm.rm_endp(self.created_cx[cx_name][side])
 
         self.clean_cx_lists()
@@ -421,19 +430,19 @@ class L3CXProfile(LFCliBase):
         # if Endpoints creation is OK, but CX creation fails, returns False, list of endp
         if self.debug:
             debug_ = True
-            print('Start L3CXProfile.create')
+            logger.info('Start L3CXProfile.create')
 
         cx_post_data = []
         timer_post_data = []
         these_endp = []
         these_cx = []
 
-        # print(self.side_a_min_rate, self.side_a_max_rate)
-        # print(self.side_b_min_rate, self.side_b_max_rate)
         if (self.side_a_min_bps is None) \
                 or (self.side_a_max_bps is None) \
                 or (self.side_b_min_bps is None) \
                 or (self.side_b_max_bps is None):
+            logger.critical(
+                "side_a_min_bps, side_a_max_bps, side_b_min_bps, and side_b_max_bps must all be set to a value")
             raise ValueError(
                 "side_a_min_bps, side_a_max_bps, side_b_min_bps, and side_b_max_bps must all be set to a value")
 
@@ -487,14 +496,11 @@ class L3CXProfile(LFCliBase):
                     "multi_conn": mconn_b,
                 }
 
-                # print("1: endp-side-b: ", endp_side_b)
-
                 url = "/cli-json/add_endp"
                 self.local_realm.json_post(url, endp_side_a, debug_=debug_,
                                            suppress_related_commands_=suppress_related_commands)
                 self.local_realm.json_post(url, endp_side_b, debug_=debug_,
                                            suppress_related_commands_=suppress_related_commands)
-                # print("napping %f sec"%sleep_time)
                 time.sleep(sleep_time)
 
                 url = "cli-json/set_endp_flag"
@@ -528,7 +534,6 @@ class L3CXProfile(LFCliBase):
                     "tx_endp": endp_a_name,
                     "rx_endp": endp_b_name,
                 }
-                # pprint(data)
                 cx_post_data.append(data)
                 timer_post_data.append({
                     "test_mgr": "default_tm",
@@ -540,10 +545,9 @@ class L3CXProfile(LFCliBase):
             side_a_info = self.local_realm.name_to_eid(side_a, debug=debug_)
             side_a_shelf = side_a_info[0]
             side_a_resource = side_a_info[1]
-            # side_a_name = side_a_info[2]
 
             for port_name in side_b:
-                print(side_b)
+                logger.info(side_b)
                 side_b_info = self.local_realm.name_to_eid(port_name, debug=debug_)
                 side_b_shelf = side_b_info[0]
                 side_b_resource = side_b_info[1]
@@ -587,14 +591,11 @@ class L3CXProfile(LFCliBase):
                     "multi_conn": mconn_b,
                 }
 
-                # print("2: endp-side-b: ", endp_side_b)
-
                 url = "/cli-json/add_endp"
                 self.local_realm.json_post(url, endp_side_a, debug_=debug_,
                                            suppress_related_commands_=suppress_related_commands)
                 self.local_realm.json_post(url, endp_side_b, debug_=debug_,
                                            suppress_related_commands_=suppress_related_commands)
-                # print("napping %f sec" %sleep_time )
                 time.sleep(sleep_time)
 
                 url = "cli-json/set_endp_flag"
@@ -614,7 +615,6 @@ class L3CXProfile(LFCliBase):
                 }
                 self.local_realm.json_post(url, data, debug_=debug_,
                                            suppress_related_commands_=suppress_related_commands)
-                # print("CXNAME451: %s" % cx_name)
                 data = {
                     "alias": cx_name,
                     "test_mgr": "default_tm",
@@ -628,15 +628,18 @@ class L3CXProfile(LFCliBase):
                     "milliseconds": self.report_timer
                 })
         else:
+            logger.critical(
+                "side_a or side_b must be of type list but not both: side_a is type {side_a} side_b is type {side_b}".format(
+                    side_a=type(side_a), side_b=type(side_b)))
+
             raise ValueError(
                 "side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (
                     type(side_a), type(side_b)))
-        if debug_:
-            print("wait_until_endps_appear these_endp: {} debug_ {}".format(these_endp, debug_))
+        logger.debug("wait_until_endps_appear these_endp: {these_endp} debug_ {debug_}".format(
+            these_endp=these_endp, debug_=debug_))
         rv = self.local_realm.wait_until_endps_appear(these_endp, debug=debug_, timeout=timeout)
         if not rv:
-            if debug_:
-                print("ERROR:  L3CXProfile::create, Could not create/find endpoints")
+            logger.error("L3CXProfile::create, Could not create/find endpoints")
             return False, False
 
         for data in cx_post_data:
@@ -646,11 +649,7 @@ class L3CXProfile(LFCliBase):
 
         rv = self.local_realm.wait_until_cxs_appear(these_cx, debug=debug_, timeout=timeout)
         if not rv:
-            if debug_:
-                print("ERROR: L3CXProfile::create, Could not create/find connections.")
+            logger.error("L3CXProfile::create, Could not create/find connections.")
             return False, these_endp
 
         return these_cx, these_endp
-
-    def to_string(self):
-        pprint.pprint(self)
