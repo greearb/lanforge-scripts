@@ -715,6 +715,8 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
             if debug:
                 print('Found %s out of %s stations in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(port_list), attempt, timeout/2))
         else:
+            if debug:
+                print('All %s stations appeared' % len(found_stations))
             return True
 
     if debug:
