@@ -8,12 +8,16 @@ import pandas as pd
 import time
 import datetime
 import json
+import logging
+
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 pandas_extensions = importlib.import_module("py-json.LANforge.pandas_extensions")
+
+logger = logging.getLogger(__name__)
 
 
 class GenCXProfile(LFCliBase):
@@ -41,11 +45,12 @@ class GenCXProfile(LFCliBase):
         if self.type == "lfping":
             if self.dest and self.interval:
                 self.cmd = "%s  -i %s -I %s %s" % (self.type, self.interval, sta_name, self.dest)
-                # print(self.cmd)
             else:
+                logger.critical("Please ensure dest and interval have been set correctly")
                 raise ValueError("Please ensure dest and interval have been set correctly")
         elif self.type == "generic":
             if self.cmd == "":
+                logger.critical("Please ensure cmd has been set correctly")
                 raise ValueError("Please ensure cmd has been set correctly")
         elif self.type == "speedtest":
             self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % sta_name
@@ -60,36 +65,40 @@ class GenCXProfile(LFCliBase):
                 self.cmd = "./scripts/lf_curl.sh  -p %s -i AUTO -o %s -n %s -d %s" % \
                            (sta_name, self.file_output, self.loop_count, self.dest)
             else:
+                logger.critical("Please ensure file_output has been set correctly")
                 raise ValueError("Please ensure file_output has been set correctly")
         else:
+            logger.critical("Unknown command type")
             raise ValueError("Unknown command type")
 
     def start_cx(self):
-        print("Starting CXs...")
-        # print(self.created_cx)
-        # print(self.created_endp)
+        logger.info("Starting CXs...")
+        logger.debug(self.created_cx)
+        logger.debug(self.created_endp)
         for cx_name in self.created_cx:
             self.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
                 "cx_name": cx_name,
                 "cx_state": "RUNNING"
             }, debug_=self.debug)
+            # this is for a visual affect someone watching the screen, leave as print
             print(".", end='')
         print("")
 
     def stop_cx(self):
-        print("Stopping CXs...")
+        logger.info("Stopping CXs...")
         for cx_name in self.created_cx:
             self.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
                 "cx_name": cx_name,
                 "cx_state": "STOPPED"
             }, debug_=self.debug)
+            # this is for a visual affect someone watching the screen, leave as print
             print(".", end='')
         print("")
 
     def cleanup(self):
-        print("Cleaning up cxs and endpoints")
+        logger.info("Cleaning up cxs and endpoints")
         for cx_name in self.created_cx:
             req_url = "cli-json/rm_cx"
             data = {
@@ -124,11 +133,13 @@ class GenCXProfile(LFCliBase):
         if self.type == "lfping":
             if self.dest and self.interval:
                 self.cmd = "%s  -i %s -I %s %s" % (self.type, self.interval, sta_name, dest)
-                # print(self.cmd)
+                logger.debug(self.cmd)
             else:
+                logger.critical("Please ensure dest and interval have been set correctly")
                 raise ValueError("Please ensure dest and interval have been set correctly")
         elif self.type == "generic":
             if self.cmd == "":
+                logger.critical("Please ensure cmd has been set correctly")
                 raise ValueError("Please ensure cmd has been set correctly")
         elif self.type == "speedtest":
             self.cmd = "vrf_exec.bash %s speedtest-cli --json --share" % sta_name
@@ -140,8 +151,10 @@ class GenCXProfile(LFCliBase):
                 self.cmd = "./scripts/lf_curl.sh  -p %s -i AUTO -o %s -n %s -d %s" % \
                            (sta_name, self.file_output, self.loop_count, self.dest)
             else:
+                logger.critical("Please ensure file_output has been set correctly")
                 raise ValueError("Please ensure file_output has been set correctly")
         else:
+            logger.critical("Unknown command type")
             raise ValueError("Unknown command type")
 
     def create_gen(self, sta_port, dest, add, sleep_time=.5, debug_=False, suppress_related_commands_=None):
@@ -168,7 +181,7 @@ class GenCXProfile(LFCliBase):
             print(endp_tpls)
         elif type(sta_port) == list:
             for port_name in sta_port:
-                print("hello............", sta_port)
+                logger.info("hello............{sta_port}".format(sta_port=sta_port))
                 for i in range(0, 5):
                     port_info = self.local_realm.name_to_eid(port_name)
                     try:
@@ -176,7 +189,8 @@ class GenCXProfile(LFCliBase):
                         shelf = port_info[0]
                         name = port_info[2]
                     except ValueError:
-                        raise ValueError("Unexpected name for port_name %s" % port_name)
+                        logger.critical("Unexpected name for port_name {port_name}".format(port_name=port_name))
+                        raise ValueError("Unexpected name for port_name {port_name}".format(port_name=port_name))
 
                     # this naming convention follows what you see when you use
                     # lf_firemod.pl --action list_endp after creating a generic endpoint
@@ -184,8 +198,7 @@ class GenCXProfile(LFCliBase):
                     gen_name_b = "D_%s-%s" % (self.name_prefix, name) + "_" + str(i) + add
                     endp_tpls.append((shelf, resource, name, gen_name_a, gen_name_b))
 
-        # exit(1)
-        print(endp_tpls)
+        logger.info(endp_tpls)
 
         for endp_tpl in endp_tpls:
             shelf = endp_tpl[0]
@@ -258,7 +271,7 @@ class GenCXProfile(LFCliBase):
             self.created_endp.append(gen_name_b)
         time.sleep(sleep_time)
 
-        print(self.created_cx)
+        logger.info(self.created_cx)
 
         for data in post_data:
             url = "/cli-json/add_cx"
@@ -423,6 +436,7 @@ class GenCXProfile(LFCliBase):
                         else:
                             return False, v['name']
 
+    # TODO monitor is broken
     def monitor(self,
                 duration_sec=60,
                 monitor_interval_ms=1,
@@ -442,30 +456,41 @@ class GenCXProfile(LFCliBase):
             duration_sec = self.parse_time(duration_sec).seconds
         except ValueError:
             if not duration_sec or (duration_sec <= 1):
+                logger.critical("GenCXProfile::monitor wants duration_sec > 1 second")
                 raise ValueError("GenCXProfile::monitor wants duration_sec > 1 second")
             if duration_sec <= monitor_interval_ms:
+                logger.critical("GenCXProfile::monitor wants duration_sec > monitor_interval")
                 raise ValueError("GenCXProfile::monitor wants duration_sec > monitor_interval")
         if not report_file:
+            logger.critical("Monitor requires an output file to be defined")
             raise ValueError("Monitor requires an output file to be defined")
         if not systeminfopath:
+            logger.critical("Monitor requires a system info path to be defined")
             raise ValueError("Monitor requires a system info path to be defined")
         if not created_cx:
+            logger.critical("Monitor needs a list of Layer 3 connections")
             raise ValueError("Monitor needs a list of Layer 3 connections")
         if not monitor_interval_ms or (monitor_interval_ms < 1):
+            logger.critical("GenCXProfile::monitor wants monitor_interval >= 1 second")
             raise ValueError("GenCXProfile::monitor wants monitor_interval >= 1 second")
         if not generic_cols:
+            logger.critical("GenCXProfile::monitor wants a list of column names to monitor")
             raise ValueError("GenCXProfile::monitor wants a list of column names to monitor")
         if output_format:
             if output_format.lower() != report_file.split('.')[-1]:
+                logger.critical(
+                    'Filename {report_file} has an extension that does not match output format {output_format}'.format(
+                        report_file=report_file, output_format=output_format))
                 raise ValueError(
-                    'Filename %s has an extension that does not match output format %s .' % (report_file, output_format))
+                    'Filename {report_file} has an extension that does not match output format {output_format}'.format(
+                        report_file=report_file, output_format=output_format))
         else:
             output_format = report_file.split('.')[-1]
 
         # default save to csv first
         if report_file.split('.')[-1] != 'csv':
             report_file = report_file.replace(str(output_format), 'csv', 1)
-            print("Saving rolling data into..." + str(report_file))
+            logger.info("Saving rolling data into..." + str(report_file))
 
         # ================== Step 1, set column names and header row
         generic_cols = [self.replace_special_char(x) for x in generic_cols]
@@ -511,14 +536,13 @@ class GenCXProfile(LFCliBase):
 
         # for x in range(0,int(round(iterations,0))):
         initial_starttime = datetime.datetime.now()
-        print("Starting Test...")
+        logger.info("Starting Test...")
         while datetime.datetime.now() < end_time:
 
             passes = 0
             expected_passes = 0
             time.sleep(15)
             result = False
-            cur_time = datetime.datetime.now()
             if self.type == "lfping":
                 result = self.choose_ping_command()
             elif self.type == "generic":
@@ -556,16 +580,16 @@ class GenCXProfile(LFCliBase):
                 port_mgr_response = self.json_get("/port/1/1/%s?fields=%s" % (sta_list, port_mgr_fields))
             # get info from port manager with list of values from cx_a_side_list
             if "endpoints" not in generic_response or not generic_response:
-                print(generic_response)
-                if debug:
-                    print("Json generic_response from LANforge... " + str(generic_response))
+                logger.critical(generic_response)
+                logger.critical("Json generic_response from LANforge... {generic_response}".format(generic_response=generic_response))
+                logger.critical("Cannot find columns requested to be searched. Exiting script, please retry.")
                 raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
             if port_mgr_cols:
                 if "interfaces" not in port_mgr_response or not port_mgr_response:
-                    print(port_mgr_response)
+                    logger.critical(port_mgr_response)
+                    logger.critical("Cannot find columns requested to be searched. Exiting script, please retry.")
                     raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
-                if debug:
-                    print("Json port_mgr_response from LANforge... " + str(port_mgr_response))
+                logger.debug("Json port_mgr_response from LANforge... {port_mgr_response}".format(port_mgr_response=port_mgr_response))
 
             for endpoint in generic_response["endpoints"]:  # each endpoint is a dictionary
                 endp_values = list(endpoint.values())[0]
