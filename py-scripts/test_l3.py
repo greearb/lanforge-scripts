@@ -80,6 +80,7 @@ Realm = realm.Realm
 
 logger = logging.getLogger(__name__)
 
+
 # This class handles running the test and generating reports.
 class L3VariableTime(Realm):
     def __init__(self,
@@ -749,17 +750,8 @@ class L3VariableTime(Realm):
 
                         self.epoch_time = int(time.time())
                         new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
-                        log_msg=("main loop, total-dl: ",
-                            "{total_dl_bps}" ,
-                            " total-ul: ",
-                            "{total_ul_bps}",
-                            " total-dl-ll: ",
-                            "{total_dl_ll_bps}",
-                            " total-ul-ll: ",
-                            "total_ul_ll_bps".format(
-                                total_dl_bps=total_dl_bps,
-                                total_ul_bps=total_ul_bps,
-                                total_dl_ll_bps=total_dl_ll_bps))
+                        log_msg = "main loop, total-dl: {total_dl_bps} total-ul: {total_ul_bps} total-dl-ll: {total_dl_ll_bps}".format(
+                                total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total_dl_ll_bps=total_dl_ll_bps)
 
                         logger.debug(log_msg)
 
@@ -1657,7 +1649,6 @@ Setting wifi_settings per radio
     parser.add_argument(
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
-
 
     args = parser.parse_args()
 
