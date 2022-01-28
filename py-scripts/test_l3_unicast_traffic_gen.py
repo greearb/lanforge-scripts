@@ -21,7 +21,7 @@ class L3VariableTimeLongevity(Realm):
     def __init__(self, host='localhost', port='8080', endp_type=None, side_b=None, radios=None, radio_name_list=None,
                  number_of_stations_per_radio_list=None,
                  ssid_list=None, ssid_password_list=None, security=None,
-                 station_lists=None, name_prefix=None, resource=1,
+                 station_lists=None, name_prefix=None, resource=None,
                  side_a_min_rate=256000, side_a_max_rate=0,
                  side_b_min_rate=256000, side_b_max_rate=0,
                  number_template="00", test_duration="125s",
@@ -49,11 +49,11 @@ class L3VariableTimeLongevity(Realm):
         self.cx_profile = self.new_l3_cx_profile()
         self.station_profiles = []
 
-        for index in range(0, len(radios)):
+        for radio in range(0, len(radios)):
             self.station_profile = self.new_station_profile()
             self.station_profile.lfclient_url = self.lfclient_url
-            self.station_profile.ssid = ssid_list[index]
-            self.station_profile.ssid_pass = ssid_password_list[index]
+            self.station_profile.ssid = ssid_list[radio]
+            self.station_profile.ssid_pass = ssid_password_list[radio]
             self.station_profile.security = self.security
             self.station_profile.number_template = self.number_template
             self.station_profile.mode = 0
@@ -146,7 +146,7 @@ class L3VariableTimeLongevity(Realm):
         self.cx_profile.stop_cx()
         for station_list in self.station_lists:
             for station_name in station_list:
-                data = LFUtils.portDownRequest(1, station_name)
+                data = LFUtils.portDownRequest(self.resource, station_name)
                 url = "cli-json/set_port"
                 self.json_post(url, data)
 
@@ -187,26 +187,30 @@ class L3VariableTimeLongevity(Realm):
 
     def build(self):
         # refactor in LFUtils.port_zero_request()
-        resource = 1
+        #resource = 1
 
         # refactor into LFUtils
-        data = {
-            "shelf": 1,
-            "resource": resource,
-            "port": "br0",
-            "network_devs": "eth1",
-            "br_flags": 1
-        }
-        url = "cli-json/add_br"
-        self.json_post(url, data)
+        #data = {
+        #    "shelf": 1,
+        #    "resource": resource,
+        #    "port": "br0",
+        #    "network_devs": "eth1,"
 
-        data = LFUtils.port_dhcp_up_request(resource, self.side_b)
+        #}
+        #url = "cli-json/add_br"
+        #self.json_post(url, data)
+
+        data = LFUtils.port_dhcp_up_request(self.resource, self.side_b)
         self.json_post("/cli-json/set_port", data)
 
-        index = 0
         temp_station_list = []
+        self.station_profile.set_command_param(
+            "set_port", "report_timer", 1500)
+        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+        index = 0
         for station_profile, station_list in zip(self.station_profiles, self.station_lists):
-            station_profile.use_security(station_profile.security, station_profile.ssid, station_profile.ssid_pass)
+            station_profile.use_security(security_type=station_profile.security,
+                                         ssid=station_profile.ssid, passwd=station_profile.ssid_pass)
             station_profile.set_number_template(station_profile.number_template)
             if self.debug:
                 print("radio: {} station_profile: {} Creating stations: {} ".format(self.radio_list[index],
@@ -214,10 +218,15 @@ class L3VariableTimeLongevity(Realm):
 
             for station in range(len(station_list)):
                 temp_station_list.append(str(self.resource) + "." + station_list[station])
-            station_profile.create(radio=self.radio_list[index], sta_names_=station_list, debug=self.debug)
+            create = station_profile.create(radio=self.radio_list[index],
+                                            sta_names_=temp_station_list,
+                                            debug=self.debug)
+            if not create:
+                raise RuntimeError("Station is phantom")
+
             index += 1
-        self.cx_profile.create(endp_type=self.endp_type, side_a=temp_station_list, side_b='1.' + self.side_b,
-                               sleep_time=.5)
+            self.cx_profile.create(endp_type=self.endp_type, side_a=temp_station_list, side_b='1.' + self.side_b,
+                                   sleep_time=.5)
         self._pass("PASS: Stations build finished")
 
 
@@ -252,9 +261,9 @@ Basic Idea:
 
 create stations, create traffic between upstream port and stations,  run traffic. 
 The traffic on the stations will be checked once per minute to verify that traffic is transmitted
-and recieved.
+and received.
 
-Test will exit on failure of not recieving traffice for one minute on any station.
+Test will exit on failure of not receiving traffic for one minute on any station.
 
 Scripts are executed from: ./lanforge/py-scripts  
 
@@ -269,7 +278,7 @@ python ./test_l3_unicast_traffic_gen.py
 
 Note:   
 multiple --radio switches may be entered up to the number of radios available:
---radio <radio 0> <number ofstations> <ssid> <ssid password>  --radio <radio 01> <number of stations> <ssid> <ssid password>
+--radio <radio 0> <number of stations> <ssid> <ssid password>  --radio <radio 01> <number of stations> <ssid> <ssid password>
 
 <duration>: number followed by one of the following 
             d - days
@@ -311,7 +320,9 @@ python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp 
                                required=True)
     args = parser.parse_args()
 
-    side_b = args.upstream_port
+    side_b = LFUtils.name_to_eid(args.upstream_port)
+    resource = side_b[1]
+    upstream_port =  side_b[2]
 
     radio_offset = 0
     number_of_stations_offset = 1
@@ -325,7 +336,6 @@ python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp 
     ssid_list = []
     ssid_password_list = []
 
-    index = 0
     for radio in args.radio_list:
         radio_name = radio[radio_offset]
         radio_name_list.append(radio_name)
@@ -335,22 +345,20 @@ python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp 
         ssid_list.append(ssid)
         ssid_password = radio[ssid_password_offset]
         ssid_password_list.append(ssid_password)
-        index += 1
 
-    index = 0
     station_lists = []
-    for _ in args.radio_list:
-        number_of_stations = int(number_of_stations_per_radio_list[index])
+    for radio_list in range(0, len(args.radio_list)):
+        number_of_stations = int(number_of_stations_per_radio_list[radio_list])
         if number_of_stations > MAX_NUMBER_OF_STATIONS:
             print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
             quit(1)
-        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=1 + index * 1000,
-                                              end_id_=number_of_stations + index * 1000, padding_number_=10000)
+        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=1 + radio_list * 1000,
+                                              end_id_=number_of_stations + radio_list * 1000, padding_number_=10000)
         station_lists.append(station_list)
-        index += 1
+
     ip_var_test = L3VariableTimeLongevity(host=args.mgr, port=args.mgr_port, station_lists=station_lists,
-                                          name_prefix="var_time",
-                                          endp_type=args.endp_type, side_b=side_b, radios=args.radio_list,
+                                          name_prefix="var_time", resource=resource,
+                                          endp_type=args.endp_type, side_b=upstream_port, radios=args.radio_list,
                                           radio_name_list=radio_name_list,
                                           number_of_stations_per_radio_list=number_of_stations_per_radio_list,
                                           ssid_list=ssid_list, ssid_password_list=ssid_password_list, security="wpa2",
