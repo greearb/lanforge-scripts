@@ -291,7 +291,8 @@ class StationProfile:
         if command_name == "add_sta":
             if (param_name not in add_sta.add_sta_flags) and (param_name not in add_sta.add_sta_modes):
                 logger.critical("Parameter name [{param_name}] not defined in add_sta.py".format(param_name=param_name))
-                logger.debug(pformat(add_sta.add_sta_flags))
+                if self.debug:
+                    logger.debug(pformat(add_sta.add_sta_flags))
                 # this should be and exception - yet do not wish to break existing scripts, will be separate commit
                 # raise ValueError("Parameter name [{param_name}] not defined in add_sta.py".format(param_name=param_name))
                 return
@@ -307,9 +308,10 @@ class StationProfile:
                     param_name not in set_port.set_port_cmd_flags) and (
                     param_name not in set_port.set_port_interest_flags):
                 logger.critical("Parameter name [{param_name}] not defined in set_port.py".format(param_name=param_name))
-                logger.debug(set_port.set_port_cmd_flags)
-                logger.debug(set_port.set_port_current_flags)
-                logger.debug(set_port.set_port_interest_flags)
+                if self.debug:
+                    logger.debug(set_port.set_port_cmd_flags)
+                    logger.debug(set_port.set_port_current_flags)
+                    logger.debug(set_port.set_port_interest_flags)
                 # this should be an ValueError - yet do not wish to break existing scripts, will be separate commit
                 # raise ValueError("Parameter name [{param_name}] not defined in set_port.py".format(param_name=param_name))
                 return
@@ -402,8 +404,9 @@ class StationProfile:
                hs20_enable=False,
                sleep_time=0.02,
                timeout=300):
-        logger.debug('Start station_profile.create')
-        logger.debug(pformat('Current ports:{ports}'.format(ports=LFRequest.LFRequest(self.lfclient_url + '/ports', debug_=debug))))
+        if debug:
+            logger.debug('Start station_profile.create')
+            logger.debug(pformat('Current ports:{ports}'.format(ports=LFRequest.LFRequest(self.lfclient_url + '/ports', debug_=debug))))
 
         if (radio is None) or (radio == ""):
             logger.critical("station_profile.create: will not create stations without radio")
@@ -469,13 +472,15 @@ class StationProfile:
         wifi_txo_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_wifi_txo", debug_=debug)
         # add radio here
         if num_stations and not sta_names_:
-            logger.debug("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
+            if debug:
+                logger.debug("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
             sta_names_ = LFUtils.portNameSeries(prefix_="sta",
                                                 start_id_=int(self.number_template),
                                                 end_id_=num_stations + int(self.number_template) - 1,
                                                 padding_number_=10000,
                                                 radio=radio)
-            logger.debug("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
+            if debug:
+                logger.debug("CREATING MORE STA NAMES == == == == == == == == == == == == == == == == == == == == == == == ==")
         # list of EIDs being created
         my_sta_eids = list()
         for port in sta_names_:
@@ -489,11 +494,12 @@ class StationProfile:
             self.set_port_data["suppress_preexec_method"] = 1
 
         num = 0
-        logger.debug("== == Created STA names == == == == == == == == == == == == == == == == == == == == == == == ==")
-        logger.debug(pformat(self.station_names))
-        logger.debug("== == vs Pending STA names == ==")
-        logger.debug(pformat(my_sta_eids))
-        logger.debug("== == == == == == == == == == == == == == == == == == == == == == == == == ==")
+        if debug:
+            logger.debug("== == Created STA names == == == == == == == == == == == == == == == == == == == == == == == ==")
+            logger.debug(pformat(self.station_names))
+            logger.debug("== == vs Pending STA names == ==")
+            logger.debug(pformat(my_sta_eids))
+            logger.debug("== == == == == == == == == == == == == == == == == == == == == == == == == ==")
 
         # track the names of stations in case we have stations added multiple times
         finished_sta = []
@@ -502,9 +508,11 @@ class StationProfile:
             if eidn in self.station_names:
                 logger.info("Station {eidn} already created, skipping.".format(eidn=eidn))
                 continue
-            logger.debug(" EIDN " + eidn)
+            if self.debug:
+                logger.debug(" EIDN " + eidn)
             if eidn in finished_sta:
-                logger.debug("Station {eidn} already created".format(eidn=eidn))
+                if self.debug:
+                    logger.debug("Station {eidn} already created".format(eidn=eidn))
                 continue
 
             eid = self.local_realm.name_to_eid(eidn)
@@ -519,28 +527,33 @@ class StationProfile:
             self.set_port_data["resource"] = radio_resource
 
             add_sta_r.addPostData(self.add_sta_data)
-            logger.debug("{date} - 3254 - {eidn}- - - - - - - - - - - - - - - - - - ".format(
-                date=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], eidn=eidn))
+            if debug:
+                logger.debug("{date} - 3254 - {eidn}- - - - - - - - - - - - - - - - - - ".format(
+                    date=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], eidn=eidn))
 
-            logger.debug(pformat(add_sta_r.requested_url))
-            logger.debug(pformat(add_sta_r.proxies))
-            logger.debug(pformat(self.add_sta_data))
-            logger.debug(self.set_port_data)
-            logger.debug("- ~3254 - - - - - - - - - - - - - - - - - - - ")
+                logger.debug(pformat(add_sta_r.requested_url))
+                logger.debug(pformat(add_sta_r.proxies))
+                logger.debug(pformat(self.add_sta_data))
+                logger.debug(self.set_port_data)
+                logger.debug("- ~3254 - - - - - - - - - - - - - - - - - - - ")
             if dry_run:
-                logger.debug("dry run: not creating {eidn} ".format(eidn=eidn))
+                if debug:
+                    logger.debug("dry run: not creating {eidn} ".format(eidn=eidn))
                 continue
-
-            logger.debug('Timestamp: {time_}'.format(time_=(time.time() * 1000)))
-            logger.debug("- 3264 - ## {eidn} ##  add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - ".format(eidn=eidn))
+            if debug:
+                logger.debug('Timestamp: {time_}'.format(time_=(time.time() * 1000)))
+                logger.debug("- 3264 - ## {eidn} ##  add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - ".format(eidn=eidn))
             add_sta_r.jsonPost(debug=self.debug)
             finished_sta.append(eidn)
-            logger.debug("- ~3264 - {eidn} - add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - ".format(eidn=eidn))
+            if debug:
+                logger.debug("- ~3264 - {eidn} - add_sta_r.jsonPost - - - - - - - - - - - - - - - - - - ".format(eidn=eidn))
             time.sleep(0.01)
             set_port_r.addPostData(self.set_port_data)
-            logger.debug("- 3270 -- {eidn} --  set_port_r.jsonPost - - - - - - - - - - - - - - - - - - ".format(eidn=eidn))
+            if debug:
+                logger.debug("- 3270 -- {eidn} --  set_port_r.jsonPost - - - - - - - - - - - - - - - - - - ".format(eidn=eidn))
             set_port_r.jsonPost(debug=debug)
-            logger.debug("- ~3270 - {eidn} - set_port_r.jsonPost - - - - - - - - - - - - - - - - - - ".format(eidn=eidn))
+            if debug:
+                logger.debug("- ~3270 - {eidn} - set_port_r.jsonPost - - - - - - - - - - - - - - - - - - ".format(eidn=eidn))
             time.sleep(0.01)
 
             self.wifi_extra_data["resource"] = radio_resource
@@ -565,8 +578,8 @@ class StationProfile:
         if not rv:
             # port creation failed somehow.
             logger.error('ERROR: Failed to create all ports, Desired stations: {my_sta_eids}'.format(my_sta_eids=my_sta_eids))
-            logger.debug('events')
-            logger.debug(pformat(self.local_realm.find_new_events(starting_event)))
+            logger.error('events')
+            logger.error(pformat(self.local_realm.find_new_events(starting_event)))
             return False
 
         # and set ports up
