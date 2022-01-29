@@ -8,6 +8,7 @@ import sys
 import os
 import importlib
 import argparse
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -19,8 +20,11 @@ lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 Realm = realm.Realm
 TestGroupProfile = realm.TestGroupProfile
+
+logger = logging.getLogger(__name__)
 
 
 class CreateL4(Realm):
@@ -99,7 +103,7 @@ class CreateL4(Realm):
         self.station_profile.use_security(
             self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
-        print("Creating stations")
+        logger.info("Creating stations")
         self.station_profile.set_command_flag(
             "add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param(
@@ -188,6 +192,18 @@ python3 ./layer4.py
             '--ap', help='Used to force a connection to a particular AP')
     args = parser.parse_args()
 
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    # set the logger level to debug
+    if args.debug:
+        logger_config.set_level_debug()
+
+    # lf_logger_config_json will take presidence to changing debug levels
+    if args.lf_logger_config_json:
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_sta = int(args.num_stations)
@@ -218,10 +234,10 @@ python3 ./layer4.py
     ip_var_test.cleanup()
     ip_var_test.build()
     if not ip_var_test.passes():
-        print(ip_var_test.get_fail_message())
+        logger.info(ip_var_test.get_fail_message())
         ip_var_test.exit_fail()
 
-    print('Created %s stations and connections' % num_sta)
+    logger.info('Created %s stations and connections' % num_sta)
 
 
 if __name__ == "__main__":
