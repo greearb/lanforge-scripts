@@ -85,8 +85,9 @@ class L3CXProfile(LFCliBase):
 
     def __get_rx_values(self):
         cx_list = self.json_get("endp?fields=name,rx+bytes")
-        logger.debug(self.created_cx.values())
-        logger.debug("==============\n {cx_list}\n==============".format(cx_list=cx_list))
+        if self.debug:
+            logger.debug(self.created_cx.values())
+            logger.debug("==============\n {cx_list}\n==============".format(cx_list=cx_list))
         cx_rx_map = {}
         for cx_name in cx_list['endpoint']:
             if cx_name != 'uri' and cx_name != 'handler':
@@ -226,10 +227,11 @@ class L3CXProfile(LFCliBase):
             layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
 
             new_cx_rx_values = self.__get_rx_values()
-            logger.debug(old_cx_rx_values, new_cx_rx_values)
-            logger.debug("\n-----------------------------------")
-            logger.debug(t)
-            logger.debug("-----------------------------------\n")
+            if debug:
+                logger.debug(old_cx_rx_values, new_cx_rx_values)
+                logger.debug("\n-----------------------------------")
+                logger.debug(t)
+                logger.debug("-----------------------------------\n")
             expected_passes += 1
             if self.__compare_vals(old_cx_rx_values, new_cx_rx_values):
                 passes += 1
@@ -253,14 +255,17 @@ class L3CXProfile(LFCliBase):
                     logger.info("port_mgr_response {pmr}".format(pmr=port_mgr_response))
                     if 'interfaces' in port_mgr_response:
                         for dictionary in port_mgr_response['interfaces']:
-                            logger.debug('port mgr data: {dictionary}'.format(dictionary=dictionary))
+                            if debug:
+                                logger.debug('port mgr data: {dictionary}'.format(dictionary=dictionary))
                             result.update(dictionary)
 
                     elif 'interface' in port_mgr_response:
                         dict_update = {port_mgr_response['interface']['alias']: port_mgr_response['interface']}
-                        logger.debug(dict_update)
+                        if debug:
+                            logger.debug(dict_update)
                         result.update(dict_update)
-                        logger.debug(result)
+                        if debug:
+                            logger.debug(result)
                     else:
                         logger.critical('interfaces and interface not in port_mgr_response')
                         raise ValueError('interfaces and interface not in port_mgr_response')
@@ -379,7 +384,8 @@ class L3CXProfile(LFCliBase):
     def start_cx(self):
         logger.info("Starting CXs...")
         for cx_name in self.created_cx.keys():
-            logger.debug("cx-name: {cx_name}".format(cx_name=cx_name))
+            if self.debug:
+                logger.debug("cx-name: {cx_name}".format(cx_name=cx_name))
             self.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
                 "cx_name": cx_name,
@@ -406,12 +412,14 @@ class L3CXProfile(LFCliBase):
         logger.info("Cleaning up cxs and endpoints")
         if len(self.created_cx) != 0:
             for cx_name in self.created_cx.keys():
-                logger.debug("Cleaning cx: {cx_name}".format(cx_name=cx_name))
+                if self.debug:
+                    logger.debug("Cleaning cx: {cx_name}".format(cx_name=cx_name))
                 self.local_realm.rm_cx(cx_name)
 
                 for side in range(len(self.created_cx[cx_name])):
                     ename = self.created_cx[cx_name][side]
-                    logger.debug("Cleaning endpoint: {ename}".format(ename=ename))
+                    if self.debug:
+                        logger.debug("Cleaning endpoint: {ename}".format(ename=ename))
                     self.local_realm.rm_endp(self.created_cx[cx_name][side])
 
         self.clean_cx_lists()
@@ -635,8 +643,9 @@ class L3CXProfile(LFCliBase):
             raise ValueError(
                 "side_a or side_b must be of type list but not both: side_a is type %s side_b is type %s" % (
                     type(side_a), type(side_b)))
-        logger.debug("wait_until_endps_appear these_endp: {these_endp} debug_ {debug_}".format(
-            these_endp=these_endp, debug_=debug_))
+        if debug_:
+            logger.debug("wait_until_endps_appear these_endp: {these_endp} debug_ {debug_}".format(
+                these_endp=these_endp, debug_=debug_))
         rv = self.local_realm.wait_until_endps_appear(these_endp, debug=debug_, timeout=timeout)
         if not rv:
             logger.error("L3CXProfile::create, Could not create/find endpoints")
