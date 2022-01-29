@@ -13,6 +13,10 @@ import importlib
 import re
 import time
 from pprint import pprint
+from pprint import pformat
+import logging
+
+logger = logging.getLogger(__name__)
 
 # ---- ---- ---- ---- LANforge Base Imports ---- ---- ---- ----
 
@@ -107,8 +111,8 @@ class Realm(LFCliBase):
             _capture_signal_list = []
         self.debug = debug_
         # if debug_:
-        #     print("Realm _proxy_str: %s" % _proxy_str)
-        #     pprint(_proxy_str)
+        #     logger.debug("Realm _proxy_str: %s" % _proxy_str)
+        #     logger.debug(pformat(_proxy_str))
         self.check_connect()
         self.chan_to_freq = {}
         self.freq_to_chan = {}
@@ -207,7 +211,7 @@ class Realm(LFCliBase):
 
     def wait_until_ports_appear(self, sta_list=None, debug_=False, timeout=360):
         if (sta_list is None) or (len(sta_list) < 1):
-            print("realm.wait_until_ports_appear: no stations provided")
+            logger.info("realm.wait_until_ports_appear: no stations provided")
             return
         LFUtils.wait_until_ports_appear(base_url=self.lfclient_url,
                                         port_list=sta_list,
@@ -216,7 +220,7 @@ class Realm(LFCliBase):
 
     def wait_until_ports_disappear(self, sta_list=None, debug_=False):
         if (sta_list is None) or (len(sta_list) < 1):
-            print("realm.wait_until_ports_appear: no stations provided")
+            logger.info("realm.wait_until_ports_appear: no stations provided")
             return
 
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
@@ -225,6 +229,7 @@ class Realm(LFCliBase):
 
     def rm_port(self, port_eid, check_exists=True, debug_=None):
         if port_eid is None:
+            logger.critical("realm.rm_port: want a port eid like 1.1.eth1")
             raise ValueError("realm.rm_port: want a port eid like 1.1.eth1")
         if debug_ is None:
             debug_ = self.debug
@@ -253,12 +258,12 @@ class Realm(LFCliBase):
         return False
 
     def admin_up(self, port_eid):
-        # print("186 admin_up port_eid: "+port_eid)
+        # logger.info("186 admin_up port_eid: "+port_eid)
         eid = self.name_to_eid(port_eid)
         resource = eid[1]
         port = eid[2]
         request = LFUtils.port_up_request(resource_id=resource, port_name=port)
-        # print("192.admin_up request: resource: %s port_name %s"%(resource, port))
+        # logger.info("192.admin_up request: resource: %s port_name %s"%(resource, port))
         # time.sleep(2)
         self.json_post("/cli-json/set_port", request)
 
@@ -333,7 +338,7 @@ class Realm(LFCliBase):
                         self.rm_endp(endp_name)
             else:
                 if self.debug:
-                    print("cleanup_cxe_prefix no endpoints: endp_list{}".format(endp_list))
+                    logger.debug("cleanup_cxe_prefix no endpoints: endp_list{}".format(endp_list))
 
     def channel_freq(self, channel_=0):
         return self.chan_to_freq[channel_]
@@ -354,7 +359,7 @@ class Realm(LFCliBase):
 
         while last_response != "YES":
             self.json_post("/gui-json/cmd%s" % dbg_param, data, debug_=debug_, response_json_list_=response_json)
-            # LFUtils.debug_printer.pprint(response_json)
+            # logger.info(pformat(response_json))
             last_response = response_json[0]["LAST"]["response"]
             if last_response != "YES":
                 last_response = None
@@ -367,6 +372,8 @@ class Realm(LFCliBase):
     # loads a database
     def load(self, name):
         if (name is None) or (name == ""):
+            logger.critical(
+                "Realm::load: wants a test scenario database name, please find one in the Status tab of the GUI")
             raise ValueError(
                 "Realm::load: wants a test scenario database name, please find one in the Status tab of the GUI")
 
@@ -395,7 +402,7 @@ class Realm(LFCliBase):
             endp_list = self.json_get("/endp/list")
             found_endps = {}
             if debug:
-                print("Waiting on endpoint endp_list {}".format(endp_list))
+                logger.debug("Waiting on endpoint endp_list {}".format(endp_list))
             if endp_list and ("items" not in endp_list):
                 try:
                     endp_list = list(endp_list['endpoint'])
@@ -403,17 +410,17 @@ class Realm(LFCliBase):
                         name = list(endp_list[idx])[0]
                         found_endps[name] = name
                 except:
-                    print(
+                    logger.info(
                         "non-fatal exception endp_list = list(endp_list['endpoint'] did not exist, will wait some more")
 
             for req in these_endp:
                 if req not in found_endps:
                     if debug:
-                        print("Waiting on endpoint: %s" % req)
+                        logger.debug("Waiting on endpoint: %s" % req)
                     wait_more = True
             count += 1
             if count > timeout:
-                print("ERROR:  Could not find all endpoints: %s" % these_endp)
+                logger.error("ERROR:  Could not find all endpoints: %s" % these_endp)
                 return False
             if wait_more:
                 time.sleep(1)
@@ -440,12 +447,12 @@ class Realm(LFCliBase):
             for req in these_cx:
                 if req not in found_cxs:
                     if debug:
-                        print("Waiting on CX: %s" % req)
+                        logger.debug("Waiting on CX: %s" % req)
                     wait_more = True
             count += 1
             if count > timeout:
                 if debug:
-                    print("ERROR:  Failed to find all cxs: %s" % these_cx)
+                    logger.error("ERROR:  Failed to find all cxs: %s" % these_cx)
                 return False
             if wait_more:
                 time.sleep(1)
@@ -459,8 +466,8 @@ class Realm(LFCliBase):
     def station_map(self):
         response = super().json_get("/port/list?fields=port,_links,alias,device,port+type")
         if (response is None) or ("interfaces" not in response):
-            pprint(response)
-            print("station_list: incomplete response, halting")
+            logger.critical(pformat(response))
+            logger.critical("station_list: incomplete response, halting")
             exit(1)
         sta_map = {}
         temp_map = LFUtils.portListToAliasMap(response)
@@ -477,8 +484,8 @@ class Realm(LFCliBase):
         sta_list = []
         response = super().json_get("/port/list?fields=_links,alias,device,port+type")
         if (response is None) or ("interfaces" not in response):
-            print("station_list: incomplete response:")
-            pprint(response)
+            logger.critical("station_list: incomplete response:")
+            logger.critical(pformat(response))
             exit(1)
 
         for x in range(len(response['interfaces'])):
@@ -492,8 +499,8 @@ class Realm(LFCliBase):
     def port_list(self):
         response = super().json_get("/port/list?fields=all")
         if (response is None) or ("interfaces" not in response):
-            print("port_list: incomplete response:")
-            pprint(response)
+            logger.info("port_list: incomplete response:")
+            logger.info(pformat(response))
             return None
 
         return response['interfaces']
@@ -530,12 +537,13 @@ class Realm(LFCliBase):
     # removes port by eid/eidpn
     def remove_vlan_by_eid(self, eid):
         if (eid is None) or (eid == ""):
+            logger.critical("removeVlanByEid wants eid like 1.1.sta0 but given[%s]" % eid)
             raise ValueError("removeVlanByEid wants eid like 1.1.sta0 but given[%s]" % eid)
         hunks = self.name_to_eid(eid)
-        # print("- - - - - - - - - - - - - - - - -")
-        # pprint(hunks)
-        # pprint(self.lfclient_url)
-        # print("- - - - - - - - - - - - - - - - -")
+        # logger.info("- - - - - - - - - - - - - - - - -")
+        # logger.info(pformat(hunks))
+        # logger.info(pformat(self.lfclient_url))
+        # logger.info("- - - - - - - - - - - - - - - - -")
         if (len(hunks) > 3) or (len(hunks) < 2):
             raise ValueError("removeVlanByEid wants eid like 1.1.sta0 but given[%s]" % eid)
         elif len(hunks) == 3:
@@ -551,18 +559,18 @@ class Realm(LFCliBase):
             url = "/port/1/%s/list?fields=%s" % (resource, _fields)
         response = self.json_get(url)
         if debug_:
-            print("# find_ports_like r:%s, u:%s #" % (resource, url))
-            pprint(response)
+            logger.debug("# find_ports_like r:%s, u:%s #" % (resource, url))
+            logger.debug(pformat(response))
         alias_map = LFUtils.portListToAliasMap(response, debug_=debug_)
         if debug_:
-            pprint(alias_map)
+            logger.debug(pformat(alias_map))
         prelim_map = {}
         matched_map = {}
         for name, record in alias_map.items():
             try:
                 if debug_:
-                    print("- prelim - - - - - - - - - - - - - - - - - - -")
-                    pprint(record)
+                    logger.debug("- prelim - - - - - - - - - - - - - - - - - - -")
+                    logger.debug(pformat(record))
                 if record["port type"] == "WIFI-STA":
                     prelim_map[name] = record
 
@@ -577,7 +585,7 @@ class Realm(LFCliBase):
                     prefix = match.group(1)
                 for port_eid, record in prelim_map.items():
                     if debug_:
-                        print("name:", port_eid, " Group 1: ", match.group(1))
+                        logger.debug("name:", port_eid, " Group 1: ", match.group(1))
                     if port_eid.find(prefix) >= 0:
                         matched_map[port_eid] = record
 
@@ -586,7 +594,7 @@ class Realm(LFCliBase):
                 if match.group(1):
                     prefix = match.group(1)
                     if debug_:
-                        print("group 1: ", prefix)
+                        logger.debug("group 1: ", prefix)
                 for port_eid, record in prelim_map.items():
                     if port_eid.find(prefix) >= 0:
                         matched_map[port_eid] = record
@@ -596,15 +604,15 @@ class Realm(LFCliBase):
                 match = re.search(r"^([^\[]+)\[(\d+)\.\.(\d+)\]$", pattern)
                 if match.group(0):
                     if debug_:
-                        print("[group1]: ", match.group(1))
-                        print("[group2]: ", match.group(2))
-                        print("[group3]: ", match.group(3))
+                        logger.debug("[group1]: ", match.group(1))
+                        logger.debug("[group2]: ", match.group(2))
+                        logger.debug("[group3]: ", match.group(3))
                     prefix = match.group(1)
                     for port_eid, record in prelim_map.items():
                         if port_eid.find(prefix) >= 0:
                             port_suf = record["device"][len(prefix):]
                             if (port_suf >= match.group(2)) and (port_suf <= match.group(3)):
-                                # print("%s: suffix[%s] between %s:%s" % (port_name, port_name, match.group(2), match.group(3))
+                                # logger.info("%s: suffix[%s] between %s:%s" % (port_name, port_name, match.group(2), match.group(3))
                                 matched_map[port_eid] = record
         except ValueError as e:
             self.error(e)
@@ -629,21 +637,22 @@ class Realm(LFCliBase):
             raise ValueError("wait_for_ip: ipv4 and/or ipv6 must be set!")
         if timeout_sec >= 0:
             if debug:
-                print("Waiting for ips, timeout: %i..." % timeout_sec)
+                logger.debug("Waiting for ips, timeout: %i..." % timeout_sec)
         else:
             timeout_auto = True
             timeout_sec = 60 + len(station_list) * 5
             if debug:
-                print("Auto-Timeout requested, using: %s" % timeout_sec)
+                logger.debug("Auto-Timeout requested, using: %s" % timeout_sec)
 
         stas_without_ip4s = {}
         stas_without_ip6s = {}
 
         sec_elapsed = 0
         time_extended = False
-        # print(station_list)
+        # logger.info(station_list)
         waiting_states = ["0.0.0.0", "NA", "", 'DELETED', 'AUTO']
         if (station_list is None) or (len(station_list) < 1):
+            logger.critical("wait_for_ip: expects non-empty list of ports")
             raise ValueError("wait_for_ip: expects non-empty list of ports")
         wait_more = True
 
@@ -658,11 +667,11 @@ class Realm(LFCliBase):
 
                 response = super().json_get("/port/%s/%s/%s?fields=alias,ip,port+type,ipv6+address" %
                                             (eid[0], eid[1], eid[2]))
-                # pprint(response)
+                # logger.info(pformat(response))
 
                 if (response is None) or ("interface" not in response):
-                    print("station_list: incomplete response for eid: %s:" % sta_eid)
-                    pprint(response)
+                    logger.info("station_list: incomplete response for eid: %s:" % sta_eid)
+                    logger.info(pformat(response))
                     wait_more = True
                     break
 
@@ -672,25 +681,25 @@ class Realm(LFCliBase):
                         wait_more = True
                         stas_without_ip4s[sta_eid] = True
                         if debug:
-                            print("Waiting for port %s to get IPv4 Address try %s / %s" % (sta_eid, sec_elapsed, timeout_sec))
+                            logger.debug("Waiting for port %s to get IPv4 Address try %s / %s" % (sta_eid, sec_elapsed, timeout_sec))
                     else:
                         some_passed = True
                         if debug:
-                            print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
+                            logger.debug("Found IP: %s on port: %s" % (v['ip'], sta_eid))
 
                 if ipv6:
                     v = response['interface']
-                    # print(v)
+                    # logger.info(v)
                     ip6a = v['ipv6_address']
                     if ip6a != 'DELETED' and not ip6a.startswith('fe80') and ip6a != 'AUTO':
                         some_passed = True
                         if debug:
-                            print("Found IPv6: %s on port: %s" % (ip6a, sta_eid))
+                            logger.debug("Found IPv6: %s on port: %s" % (ip6a, sta_eid))
                     else:
                         stas_without_ip6s[sta_eid] = True
                         wait_more = True
                         if debug:
-                            print("Waiting for port %s to get IPv6 Address try %s / %s, reported: %s." % (sta_eid, sec_elapsed, timeout_sec, ip6a))
+                            logger.debug("Waiting for port %s to get IPv6 Address try %s / %s, reported: %s." % (sta_eid, sec_elapsed, timeout_sec, ip6a))
 
             if wait_more:
                 if timeout_auto and not some_passed:
@@ -705,45 +714,45 @@ class Realm(LFCliBase):
         if len(stas_without_ip4s) + len(stas_without_ip6s) > 0:
             if debug:
                 if len(stas_without_ip4s) > 0:
-                    print('%s did not acquire IPv4 addresses' % stas_without_ip4s.keys())
+                    logger.info('%s did not acquire IPv4 addresses' % stas_without_ip4s.keys())
                 if len(stas_without_ip6s) > 0:
-                    print('%s did not acquire IPv6 addresses' % stas_without_ip6s.keys())
+                    logger.info('%s did not acquire IPv6 addresses' % stas_without_ip6s.keys())
                 port_info = self.dump_all_port_info()
-                pprint(self.dump_all_port_info())
+                logger.debug(pformat(self.dump_all_port_info()))
             return False
         else:
             if debug:
-                print("Found IPs for all requested ports.")
+                logger.debug("Found IPs for all requested ports.")
             return True
 
     def get_curr_num_ips(self, num_sta_with_ips=0, station_list=None, ipv4=True, ipv6=False, debug=False):
         if debug:
-            print("checking number of stations with ips...")
+            logger.debug("checking number of stations with ips...")
         waiting_states = ["0.0.0.0", "NA", ""]
         if (station_list is None) or (len(station_list) < 1):
             raise ValueError("check for num curr ips expects non-empty list of ports")
         for sta_eid in station_list:
             if debug:
-                print("checking sta-eid: %s" % sta_eid)
+                logger.debug("checking sta-eid: %s" % sta_eid)
             eid = self.name_to_eid(sta_eid)
             response = super().json_get("/port/%s/%s/%s?fields=alias,ip,port+type,ipv6+address" %
                                         (eid[0], eid[1], eid[2]))
             if debug:
-                pprint(response)
+                logger.debug(pformat(response))
             if (response is None) or ("interface" not in response):
-                print("station_list: incomplete response:")
-                pprint(response)
+                logger.info("station_list: incomplete response:")
+                logger.info(pformat(response))
                 # wait_more = True
                 break
             if ipv4:
                 v = response['interface']
                 if v['ip'] in waiting_states:
                     if debug:
-                        print("Waiting for port %s to get IPv4 Address." % sta_eid)
+                        logger.debug("Waiting for port %s to get IPv4 Address." % sta_eid)
                 else:
                     if debug:
-                        print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
-                        print("Incrementing stations with IP addresses found")
+                        logger.debug("Found IP: %s on port: %s" % (v['ip'], sta_eid))
+                        logger.debug("Incrementing stations with IP addresses found")
                         num_sta_with_ips += 1
                     else:
                         num_sta_with_ips += 1
@@ -751,12 +760,12 @@ class Realm(LFCliBase):
                 v = response['interface']
                 if v['ip'] in waiting_states:
                     if debug:
-                        print("Waiting for port %s to get IPv6 Address." % sta_eid)
+                        logger.debug("Waiting for port %s to get IPv6 Address." % sta_eid)
 
                 else:
                     if debug:
-                        print("Found IP: %s on port: %s" % (v['ip'], sta_eid))
-                        print("Incrementing stations with IP addresses found")
+                        logger.debug("Found IP: %s on port: %s" % (v['ip'], sta_eid))
+                        logger.debug("Incrementing stations with IP addresses found")
                         num_sta_with_ips += 1
                     else:
                         num_sta_with_ips += 1
@@ -788,7 +797,7 @@ class Realm(LFCliBase):
         port_list = self.station_list()
         sta_list = []
         if port_list:
-            print("Removing all stations")
+            logger.info("Removing all stations")
             for item in list(port_list):
                 if "sta" in list(item)[0]:
                     sta_list.append(self.name_to_eid(list(item)[0])[2])
@@ -807,7 +816,7 @@ class Realm(LFCliBase):
         if "items" in endp_list or "empty" in endp_list:
             return
         if endp_list:
-            print("Removing all endps")
+            logger.info("Removing all endps")
             endp_list = list(endp_list['endpoint'])
             for endp_name in range(len(endp_list)):
                 name = list(endp_list[endp_name])[0]
@@ -826,7 +835,7 @@ class Realm(LFCliBase):
             cx_list = list(self.cx_list())
             not_cx = ['warnings', 'errors', 'handler', 'uri', 'items', 'empty']
             if cx_list:
-                print("Removing all cxs")
+                logger.info("Removing all cxs")
                 for cx_name in cx_list:
                     if cx_name in not_cx:
                         continue
@@ -837,7 +846,7 @@ class Realm(LFCliBase):
                     }
                     self.json_post(req_url, data)
         else:
-            print("no cxs to remove")
+            logger.info("no cxs to remove")
 
         if remove_all_endpoints:
             self.remove_all_endps()
@@ -947,7 +956,7 @@ class PacketFilter:
     def run_filter(pcap_file, file_filter):
         filename = "/tmp/tshark_dump.txt"
         cmd = "tshark -r %s %s > %s" % (pcap_file, file_filter, filename)
-        # print("CMD: ", cmd)
+        # logger.info("CMD: ", cmd)
         os.system(cmd)
         lines = []
         with open(filename) as tshark_file:
