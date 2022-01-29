@@ -3,6 +3,7 @@ import sys
 import os
 import importlib
 import argparse
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -11,13 +12,16 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 
 
 class IPv4Test(Realm):
-    def __init__(self, ssid, security, password, sta_list=None, ap=None, mode=0, number_template="00000",  host="localhost", port=8080, radio="wiphy0", _debug_on=False,
+    def __init__(self, ssid, security, password, sta_list=None, ap=None, mode=0, number_template="00000",
+                 host="localhost", port=8080, radio="wiphy0", _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(host, port, debug_=_debug_on, _exit_on_fail=_exit_on_fail)
@@ -51,27 +55,31 @@ class IPv4Test(Realm):
         self.station_profile.use_security(
             self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
-        print("Creating stations")
+        logger.info("Creating stations")
         self.station_profile.set_command_flag(
             "add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param(
             "set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(
-            radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
+
+        if self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug):
+            self._pass("Station build successful")
+        else:
+            self._fail("Station build was not successful")
+
         self.station_profile.admin_up()
         if self.wait_for_ip(station_list=self.sta_list, debug=self.debug, timeout_sec=30):
-            self._pass("Station build finished")
-            self.exit_success()
+            self._pass("Stations went admin up and acquired IP address")
         else:
-            self._fail(
-                "Stations not able to acquire IP. Please check network input.")
-            self.exit_fail()
+            self._fail("Stations not able to acquire IP. Please check network input.")
 
     def cleanup(self, sta_list):
         self.station_profile.cleanup(sta_list)
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
-                                           debug=self.debug)
+        if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
+                                              debug=self.debug):
+            self._pass("Successfully deleted stations.")
+        else:
+            self._fail("Could not successfully delete stations")
 
 
 def main():
@@ -110,6 +118,14 @@ def main():
             '--ap', help='Add BSSID of access point to connect to')
 
     args = parser.parse_args()
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    # set the logger level to debug
+    if args.debug:
+        logger_config.set_level_debug()
+
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
@@ -124,7 +140,7 @@ def main():
                        ssid=args.ssid, password=args.passwd,
                        radio=args.radio, mode=args.mode,
                        security=args.security, sta_list=station_list,
-                       ap=args.ap)
+                       ap=args.ap, _debug_on=args.debug)
     ip_test.cleanup(station_list)
     ip_test.timeout = 60
     ip_test.build()
