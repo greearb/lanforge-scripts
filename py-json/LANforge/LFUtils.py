@@ -13,6 +13,8 @@ from random import seed, randint
 import re
 import ipaddress
 import math
+import logging
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -21,7 +23,8 @@ if sys.version_info[0] != 3:
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
 LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
-Logg = importlib.import_module("lanforge_client.logg")  # .Logg
+logger = logging.getLogger(__name__)
+
 
 debug_printer = pprint.PrettyPrinter(indent=2)
 
@@ -90,7 +93,7 @@ class PortEID:
         if json_response['interface'] is not None:
             json_s = json_response['interface']
 
-        debug_printer(json_s)
+        logger.info(debug_printer.pformat(json_s))
 
 
 # end class PortEID
@@ -124,7 +127,7 @@ def sta_new_down_sta_request(sta_name, resource_id=1, radio="wiphy0", ssid="", p
         "rate": "DEFAULT"
     }
     if debug_on:
-        debug_printer.pprint(data)
+        logger.debug(debug_printer.pformat(data))
     return data
 
 
@@ -150,7 +153,7 @@ def port_set_dhcp_down_request(resource_id, port_name, debug_on=False):
         "report_timer": REPORT_TIMER_MS_FAST
     }
     if debug_on:
-        debug_printer.pprint(data)
+        logger.debug(debug_printer.pformat(data))
     return data
 
 
@@ -167,7 +170,7 @@ def port_dhcp_up_request(resource_id, port_name, debug_on=False):
     :return:
     """
     if debug_on:
-        print("portDhcpUpRequest")
+        logger.debug("portDhcpUpRequest")
     data = {
         "shelf": 1,
         "resource": resource_id,
@@ -177,7 +180,7 @@ def port_dhcp_up_request(resource_id, port_name, debug_on=False):
         "report_timer": REPORT_TIMER_MS_FAST,
     }
     if debug_on:
-        debug_printer.pprint(data)
+        logger.debug(debug_printer.pformat(data))
     return data
 
 
@@ -203,8 +206,8 @@ def port_up_request(resource_id, port_name, debug_on=False):
         "report_timer": REPORT_TIMER_MS_FAST,
     }
     if debug_on:
-        print("Port up request")
-        debug_printer.pprint(data)
+        logger.debug("Port up request")
+        logger.debug(debug_printer.pformat(data))
     return data
 
 
@@ -231,8 +234,8 @@ def port_down_request(resource_id, port_name, debug_on=False):
         "report_timer": REPORT_TIMER_MS_FAST,
     }
     if debug_on:
-        print("Port down request")
-        debug_printer.pprint(data)
+        logger.debug("Port down request")
+        logger.debug(debug_printer.pformat(data))
     return data
 
 
@@ -252,8 +255,8 @@ def port_reset_request(resource_id, port_name, debug_on=False):
         "port": port_name
     }
     if debug_on:
-        print("Port reset request")
-        debug_printer.pprint(data)
+        logger.debug("Port reset request")
+        logger.debug(debug_printer.pformat(data))
     return data
 
 
@@ -506,11 +509,11 @@ def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", p
                 json_response = json_response['interface']
             if json_response['down'] == "true":
                 if debug_:
-                    print("waiting for port: %s to go admin up." % port_name)
+                    logger.debug("waiting for port: %s to go admin up." % port_name)
                 down_stations.append(port_name)
             else:
                 if debug_:
-                    print("port %s is admin up" % port_name)
+                    logger.debug("port %s is admin up" % port_name)
 
         if len(down_stations) > 0:
             sleep(1)
@@ -519,8 +522,7 @@ def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", p
 
         loops += 1
 
-
-    print("WARNING:  Not all ports went admin up within %s+ seconds" % timeout)
+    logger.warning("Not all ports went admin up within %s+ seconds" % timeout)
     return False
 
 
@@ -531,10 +533,10 @@ def waitUntilPortsDisappear(base_url="http://localhost:8080", port_list=(), debu
 def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), debug=False, timeout_sec=360):
     if (port_list is None) or (len(port_list) < 1):
         if debug:
-            print("LFUtils: wait_until_ports_disappear: empty list, zipping back")
+            logger.debug("LFUtils: wait_until_ports_disappear: empty list, zipping back")
         return
 
-    print("LFUtils: Waiting until %s ports disappear..." % len(port_list))
+    logger.info("LFUtils: Waiting until {len_port_list} ports disappear...".format(len_port_list=len(port_list)))
     url = "/port/1"
 
     temp_names_by_resource = {1: []}
@@ -552,7 +554,7 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
         temp_query_by_resource[resource_id] = "%s/%s/%s?fields=alias" % (
             url, resource_id, ",".join(temp_names_by_resource[resource_id]))
     if debug:
-        pprint.pprint(("temp_query_by_resource", temp_query_by_resource))
+        logger.debug(pprint.pformat(("temp_query_by_resource", temp_query_by_resource)))
     sec_elapsed = 0
     rm_ports_iteration = math.ceil(timeout_sec / 4)
     if rm_ports_iteration > 30:
@@ -572,7 +574,7 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
             lf_r = LFRequest.LFRequest(base_url, check_url, debug_=debug)
             json_response = lf_r.get_as_json()
             if json_response is None:
-                print("LFUtils::wait_until_ports_disappear:: Request returned None: [{}]".format(base_url + check_url))
+                logger.info("LFUtils::wait_until_ports_disappear:: Request returned None: [{}]".format(base_url + check_url))
             else:
                 if debug:
                     pprint.pprint(("wait_until_ports_disappear json_response:", json_response))
@@ -582,24 +584,23 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
                     mapped_list = list_to_alias_map(json_response, from_element="interfaces", debug_=debug)
                     found_stations.extend(mapped_list.keys())
             if debug:
-                pprint.pprint([("port_list", port_list),
-                               ("found_stations", found_stations)])
+                logger.debug(pprint.pformat([("port_list", port_list), ("found_stations", found_stations)]))
         if len(found_stations) > 0:
             if debug:
-                pprint.pprint(("wait_until_ports_disappear found_stations:", found_stations))
+                logger.debug(pprint.pformat(("wait_until_ports_disappear found_stations:", found_stations)))
         else:
             return True
 
         if (sec_elapsed + 1) % rm_ports_iteration == 0:
             for port in found_stations:
                 if debug:
-                    print('removing port %s' % '.'.join(port))
+                    logger.debug('removing port %s' % '.'.join(port))
                 remove_port(port[1], port[2], base_url)
         if len(found_stations) == 0:
             return True
         sleep(1)  # check for ports once per second
 
-    print('%s stations were still found' % found_stations)
+    logger.info('%s stations were still found' % found_stations)
     return False
 
 
@@ -617,8 +618,11 @@ def waitUntilPortsAppear(base_url="http://localhost:8080", port_list=(), debug=F
 def name_to_eid(eid_input, non_port=False):
     rv = [1, 1, "", ""]
     if (eid_input is None) or (eid_input == ""):
+        logger.critical("name_to_eid wants eid like 1.1.sta0 but given[%s]" % eid_input)
         raise ValueError("name_to_eid wants eid like 1.1.sta0 but given[%s]" % eid_input)
     if type(eid_input) is not str:
+        logger.critical(
+            "name_to_eid wants string formatted like '1.2.name', not a tuple or list or [%s]" % type(eid_input))
         raise ValueError(
             "name_to_eid wants string formatted like '1.2.name', not a tuple or list or [%s]" % type(eid_input))
 
@@ -675,10 +679,10 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
     :return:
     """
     if debug:
-        print("Waiting until ports appear...")
+        logger.debug("Waiting until ports appear...")
         existing_stations = LFRequest.LFRequest(base_url, '/ports', debug_=debug)
-        print('existing stations')
-        pprint.pprint(existing_stations)
+        logger.debug('existing stations')
+        logger.debug(pprint.pformat(existing_stations))
     port_url = "/port/1"
     show_url = "/cli-json/show_ports"
     found_stations = set()
@@ -689,10 +693,10 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
         port_list = [port_list]
     if debug:
         current_ports = LFRequest.LFRequest(base_url, '/ports', debug_=debug).get_as_json()
-        print("LFUtils:wait_until_ports_appear, full port listing: %s" % current_ports)
+        logger.debug("LFUtils:wait_until_ports_appear, full port listing: %s" % current_ports)
         for port in current_ports['interfaces']:
             if list(port.values())[0]['phantom']:
-                print("LFUtils:waittimeout_until_ports_appear: %s is phantom" % list(port.values())[0]['alias'])
+                logger.debug("LFUtils:waittimeout_until_ports_appear: %s is phantom" % list(port.values())[0]['alias'])
     for attempt in range(0, int(timeout / 2)):
         found_stations = set()
         for port_eid in port_list:
@@ -713,17 +717,15 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
         if len(found_stations) < len(port_list):
             sleep(2)
             if debug:
-                print('Found %s out of %s stations in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(port_list), attempt, timeout/2))
+                logger.debug('Found %s out of %s stations in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(port_list), attempt, timeout/2))
         else:
             if debug:
-                print('All %s stations appeared' % len(found_stations))
+                logger.debug('All %s stations appeared' % len(found_stations))
             return True
-
     if debug:
-        print("These stations appeared: " + ", ".join(found_stations))
-        print("These stations did not appear: " + ",".join(set(port_list) - set(found_stations)))
-        # TODO: This probably needs some pprint logic
-        print(LFRequest.LFRequest("%s/ports" % base_url))
+        logger.debug("These stations appeared: " + ", ".join(found_stations))
+        logger.debug("These stations did not appear: " + ",".join(set(port_list) - set(found_stations)))
+        logger.debug(pprint.pformat(LFRequest.LFRequest("%s/ports" % base_url)))
     return False
 
 
@@ -764,9 +766,8 @@ def wait_until_endps(base_url="http://localhost:8080", endp_list=(), debug=False
             sleep(2)
         else:
             return True
-
     if debug:
-        print("These stations appeared: " + ", ".join(found_stations))
+        logger.debug("These stations appeared: " + ", ".join(found_stations))
     return
 
 
@@ -811,7 +812,7 @@ def removeEndps(baseurl, endp_names, debug=False):
 
 def remove_endps(baseurl, endp_names, debug=False):
     if debug:
-        print("Removing endp %s" % ", ".join(endp_names))
+        logger.debug("Removing endp %s" % ", ".join(endp_names))
     url = "/cli-json/rm_endp"
     lf_r = LFRequest.LFRequest(baseurl, url, debug_=debug)
     for name in endp_names:
@@ -868,6 +869,7 @@ def expand_endp_histogram(distribution_payload=None):
         return None
     if ("histogram" not in distribution_payload) \
             or ("histo_category_width" not in distribution_payload):
+        logger.critical("Unexpected histogram format.")
         raise ValueError("Unexpected histogram format.")
     multiplier = int(distribution_payload["histo_category_width"])
     formatted_dict = {
@@ -882,7 +884,6 @@ def expand_endp_histogram(distribution_payload=None):
             category_name = "{:-05.0f} < x <= {:-05.0f}".format(pow1, pow2)
         formatted_dict[category_name] = distribution_payload["histogram"][bucket_index]
 
-    pprint.pprint([("historgram", distribution_payload["histogram"]),
-                   ("formatted", formatted_dict)])
+    logger.info(pprint.pformat([("historgram", distribution_payload["histogram"]), ("formatted", formatted_dict)]))
     return formatted_dict
 ###
