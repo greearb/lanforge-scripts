@@ -526,15 +526,15 @@ def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", p
     return False
 
 
-def waitUntilPortsDisappear(base_url="http://localhost:8080", port_list=(), debug=False):
-    wait_until_ports_disappear(base_url, port_list, debug)
+def waitUntilPortsDisappear(base_url="http://localhost:8080", port_list=(), debug=False, timeout=360):
+    wait_until_ports_disappear(base_url, port_list, debug=debug, timeout_sec=timeout)
 
 
 def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), debug=False, timeout_sec=360):
     if (port_list is None) or (len(port_list) < 1):
         if debug:
-            logger.debug("LFUtils: wait_until_ports_disappear: empty list, zipping back")
-        return
+            logger.debug("LFUtils: wait_until_ports_disappear: empty list, returning")
+        return True  # no ports to remove, so we are done
 
     logger.info("LFUtils: Waiting until {len_port_list} ports disappear...".format(len_port_list=len(port_list)))
     url = "/port/1"
@@ -596,11 +596,9 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
                 if debug:
                     logger.debug('removing port %s' % '.'.join(port))
                 remove_port(port[1], port[2], base_url)
-        if len(found_stations) == 0:
-            return True
         sleep(1)  # check for ports once per second
 
-    logger.info('%s stations were still found' % found_stations)
+    logger.critical('%s stations were still found' % found_stations)
     return False
 
 
