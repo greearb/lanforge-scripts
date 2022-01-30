@@ -226,10 +226,9 @@ python3 ./test_generic.py
     args = parser.parse_args()
 
     logger_config = lf_logger_config.lf_logger_config()
-    if args.lf_logger_config_json:
-        # logger_config.lf_logger_config_json = "lf_logger_config.json"
-        logger_config.lf_logger_config_json = args.lf_logger_config_json
-        logger_config.load_lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):

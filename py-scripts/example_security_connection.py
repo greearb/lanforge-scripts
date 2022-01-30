@@ -127,6 +127,7 @@ def main():
 
     # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):

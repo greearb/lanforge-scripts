@@ -88,6 +88,12 @@ class lf_logger_config:
         logging.propagate = False
         print(logging.propagate)
 
+    def set_json(self, json_file):
+        if json_file:
+            # logger_config.lf_logger_config_json = "lf_logger_config.json"
+            self.lf_logger_config_json = args.lf_logger_config_json
+            self.load_lf_logger_config()
+
     def set_level(self, level):
         if not level:
             return # no change from defaults
