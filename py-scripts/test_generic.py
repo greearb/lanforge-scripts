@@ -114,8 +114,14 @@ class GenTest(Realm):
             temp_stas.append(self.name_to_eid(station)[2])
         if self.debug:
             pprint.pprint(self.station_profile.station_names)
-        LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
-                                          debug_=self.debug)
+
+        if LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
+                                             port_list=self.station_profile.station_names,
+                                             debug_=self.debug):
+            self._pass("All stations went admin up.")
+        else:
+            self._fail("All stations did NOT go admin up.")
+
         if self.wait_for_ip(station_list=temp_stas, ipv4=True, debug=self.debug, timeout_sec=-1):
             self._pass("All stations got IPs")
         else:
@@ -137,22 +143,30 @@ class GenTest(Realm):
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
 
-        self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
+        if self.station_profile.create(radio=self.radio, sleep_time=0, sta_names_=self.sta_list, debug=self.debug):
+            self._pass("Station creation completed.")
+        else:
+            self._fail("Station creation failed.")
 
-        self.generic_endps_profile.create(ports=self.station_profile.station_names, sleep_time=.5)
-        self._pass("PASS: Station build finished")
+        if self.generic_endps_profile.create(ports=self.station_profile.station_names, sleep_time=.5):
+            self._pass("Generic endpoints creation completed.")
+        else:
+            self._fail("Generic endpoints NOT completed.")
 
     def cleanup(self, sta_list):
         self.generic_endps_profile.cleanup()
         self.station_profile.cleanup(sta_list)
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list, debug=self.debug)
+        if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list, debug=self.debug):
+            self._pass("Ports successfully cleaned up.")
+        else:
+            self._fail("Ports NOT successfully cleaned up.")
 
 
 def main():
     optional = []
     optional.append({'name': '--mode', 'help': 'Used to force mode of stations'})
     optional.append({'name': '--ap', 'help': 'Used to force a connection to a particular AP'})
-    optional.append({'name': '--output_format', 'help': 'choose either csv or xlsx'})
+    optional.append({'name': '--output_format', 'default': 'csv', 'help': 'choose either csv or xlsx'})
     optional.append({'name': '--report_file', 'help': 'where you want to store results', 'default': None})
     optional.append({'name': '--a_min', 'help': '--a_min bps rate minimum for side_a', 'default': 256000})
     optional.append({'name': '--b_min', 'help': '--b_min bps rate minimum for side_b', 'default': 256000})
@@ -258,7 +272,7 @@ python3 ./test_generic.py
             report_f = str(path) + '/data.' + args.output_format
             output = args.output_format
         else:
-            logger.info('Not supporting this report format or cannot find report format provided. Defaulting to csv data file output type, naming it data.csv.')
+            logger.info('Not supporting report format: %s. Defaulting to csv data file output type, naming it data.csv.' % args.output_format)
             report_f = str(path) + '/data.csv'
             output = 'csv'
 
@@ -269,7 +283,7 @@ python3 ./test_generic.py
             output = str(args.report_file).split('.')[-1]
         else:
             output = args.output_format
-    logger.info("Saving final report data in ... " + report_f)
+    logger.warning("Saving final report data in: " + report_f)
 
     # Retrieve last data file
     compared_rept = None
@@ -349,14 +363,17 @@ python3 ./test_generic.py
     except ValueError as error:
         raise ValueError("The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. %s" % error)
 
+    logger.info("Starting connections with 5 second settle time.")
     generic_test.start()
+    time.sleep(5) # give traffic a chance to get started.
+
     generic_test.generic_endps_profile.monitor(generic_cols=generic_cols,
                                                sta_list=station_list,
                                                # port_mgr_cols=port_mgr_cols,
                                                report_file=report_f,
                                                systeminfopath=systeminfopath,
                                                duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
-                                               monitor_interval_ms=monitor_interval,
+                                               monitor_interval=monitor_interval,
                                                created_cx=genconnections,
                                                output_format=output,
                                                compared_report=compared_rept,
@@ -364,12 +381,15 @@ python3 ./test_generic.py
                                                arguments=args,
                                                debug=args.debug)
 
+    logger.info("Running connections for: %s" % args.test_duration)
+    time.sleep(Realm.parse_time(args.test_duration).total_seconds())
     generic_test.stop()
-    time.sleep(30)
+
     generic_test.cleanup(station_list)
     if generic_test.passes():
         generic_test.exit_success()
-
+    else:
+        generic_test.exit_fail()
 
 if __name__ == "__main__":
     main()

@@ -321,13 +321,15 @@ class GenCXProfile(LFCliBase):
             self.json_post("cli-json/add_gen_endp", data, debug_=self.debug)
 
         self.local_realm.json_post("/cli-json/nc_show_endpoints", {"endpoint": "all"})
-        time.sleep(sleep_time)
+        if sleep_time:
+            time.sleep(sleep_time)
 
         for endp_tpl in endp_tpls:
             gen_name_a = endp_tpl[3]
             gen_name_b = endp_tpl[4]
             self.set_flags(gen_name_a, "ClearPortOnStart", 1)
-        time.sleep(sleep_time)
+        if sleep_time:
+            time.sleep(sleep_time)
 
         for endp_tpl in endp_tpls:
             name = endp_tpl[2]
@@ -335,7 +337,8 @@ class GenCXProfile(LFCliBase):
             # gen_name_b  = endp_tpl[4]
             self.parse_command(name, gen_name_a)
             self.set_cmd(gen_name_a, self.cmd)
-        time.sleep(sleep_time)
+        if sleep_time:
+            time.sleep(sleep_time)
 
         for endp_tpl in endp_tpls:
             name = endp_tpl[2]
@@ -353,20 +356,23 @@ class GenCXProfile(LFCliBase):
             self.created_endp.append(gen_name_a)
             self.created_endp.append(gen_name_b)
 
-        time.sleep(sleep_time)
+        if sleep_time:
+            time.sleep(sleep_time)
 
         for data in post_data:
             url = "/cli-json/add_cx"
             logger.info(pformat(data))
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
-            time.sleep(2)
-        time.sleep(sleep_time)
+            #time.sleep(2)
+        if sleep_time:
+            time.sleep(sleep_time)
+
         for data in post_data:
             self.local_realm.json_post("/cli-json/show_cx", {
                 "test_mgr": "default_tm",
                 "cross_connect": data["alias"]
             })
-        time.sleep(sleep_time)
+        return True
 
     def choose_ping_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
@@ -431,7 +437,7 @@ class GenCXProfile(LFCliBase):
     # TODO monitor is broken
     def monitor(self,
                 duration_sec=60,
-                monitor_interval_ms=1,
+                monitor_interval=2, # seconds
                 sta_list=None,
                 generic_cols=None,
                 port_mgr_cols=None,
@@ -450,7 +456,7 @@ class GenCXProfile(LFCliBase):
             if not duration_sec or (duration_sec <= 1):
                 logger.critical("GenCXProfile::monitor wants duration_sec > 1 second")
                 raise ValueError("GenCXProfile::monitor wants duration_sec > 1 second")
-            if duration_sec <= monitor_interval_ms:
+            if duration_sec <= monitor_interval:
                 logger.critical("GenCXProfile::monitor wants duration_sec > monitor_interval")
                 raise ValueError("GenCXProfile::monitor wants duration_sec > monitor_interval")
         if not report_file:
@@ -462,7 +468,7 @@ class GenCXProfile(LFCliBase):
         if not created_cx:
             logger.critical("Monitor needs a list of Layer 3 connections")
             raise ValueError("Monitor needs a list of Layer 3 connections")
-        if not monitor_interval_ms or (monitor_interval_ms < 1):
+        if not monitor_interval or (monitor_interval < 1):
             logger.critical("GenCXProfile::monitor wants monitor_interval >= 1 second")
             raise ValueError("GenCXProfile::monitor wants monitor_interval >= 1 second")
         if not generic_cols:
@@ -523,17 +529,13 @@ class GenCXProfile(LFCliBase):
         csvwriter = csv.writer(csvfile, delimiter=",")
         csvwriter.writerow(header_row)
 
-        # wait 10 seconds to get proper port data
-        time.sleep(10)
-
         # for x in range(0,int(round(iterations,0))):
         initial_starttime = datetime.datetime.now()
-        logger.info("Starting Test...")
+        logger.info("Starting Test Monitoring for %s seconds..." % duration_sec)
         while datetime.datetime.now() < end_time:
 
             passes = 0
             expected_passes = 0
-            time.sleep(15)
             result = False
             if self.type == "lfping":
                 result = self.choose_ping_command()
@@ -554,7 +556,6 @@ class GenCXProfile(LFCliBase):
                 else:
                     self._fail("%s Failed to ping %s " % (result[1], self.dest))
                     break
-            time.sleep(1)
 
             if passes == expected_passes:
                 self._pass("PASS: All tests passed")
@@ -604,7 +605,9 @@ class GenCXProfile(LFCliBase):
                                             temp_list.append(merge[name])
                 csvwriter.writerow(temp_list)
 
-            time.sleep(monitor_interval_ms)
+            time.sleep(monitor_interval)
+            # End of while loop for duration of monitor period.
+
         csvfile.close()
 
         # comparison to last report / report inputted
