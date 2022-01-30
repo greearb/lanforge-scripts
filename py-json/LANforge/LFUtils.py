@@ -503,10 +503,19 @@ def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", p
 
             if json_response is None:
                 if debug_:
-                    print("port %s appeared" % port_name)
+                    print("port response is None for port name: %s" % port_name)
+                down_stations.append(port_name)
                 continue
+
             if "interface" in json_response:
                 json_response = json_response['interface']
+            else:
+                if debug_:
+                    print("interface not found in json response:")
+                    pprint(json_response)
+                down_stations.append(port_name)
+                continue
+
             if json_response['down'] == "true":
                 if debug_:
                     logger.debug("waiting for port: %s to go admin up." % port_name)
