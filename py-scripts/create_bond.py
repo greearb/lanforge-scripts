@@ -14,11 +14,14 @@ import os
 import importlib
 import argparse
 import time
+import logging
+from time import sleep
+
+logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
-    print("This script requires Python 3")
+    logger.critical("This script requires Python 3")
     exit(1)
-
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -27,9 +30,10 @@ LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
-class CreateBond(LFCliBase):
+class CreateBond(Realm):
     def __init__(self, _network_dev_list=None,
                  _host=None,
                  _port=None,
@@ -52,7 +56,7 @@ class CreateBond(LFCliBase):
             'network_devs': self.network_dev_list
         }
         self.json_post("cli-json/add_bond", data)
-        time.sleep(3)
+        #time.sleep(3)
         bond_set_port = {
             "shelf": self.shelf,
             "resource": self.resource,
@@ -63,6 +67,20 @@ class CreateBond(LFCliBase):
         }
         self.json_post("cli-json/set_port", bond_set_port)
 
+        if LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
+                                             port_list=["bond0000"],
+                                             debug_=self.debug):
+            self._pass("Bond interface went admin up.")
+        else:
+            self._fail("Bond interface did NOT go admin up.")
+
+    def cleanup(self):
+        bond_eid = "%s.%s.%s" % (self.shelf, self.resource, "bond0000")
+        self.rm_port(bond_eid, check_exists=False, debug_=self.debug)
+        if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=[bond_eid], debug=self.debug):
+            self._pass("Ports successfully cleaned up.")
+        else:
+            self._fail("Ports NOT successfully cleaned up.")
 
 def main():
     parser = LFCliBase.create_basic_argparse(
@@ -87,6 +105,11 @@ Command example:
 
     args = parser.parse_args()
 
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
+
     create_bond = CreateBond(_host=args.mgr,
                              _port=args.mgr_port,
                              _network_dev_list=args.network_dev_list,
@@ -94,6 +117,14 @@ Command example:
                              )
     create_bond.build()
 
+    sleep(5)
+
+    create_bond.cleanup()
+
+    if create_bond.passes():
+        create_bond.exit_success()
+    else:
+        create_bond.exit_fail()
 
 if __name__ == "__main__":
     main()
