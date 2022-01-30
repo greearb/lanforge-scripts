@@ -3,6 +3,7 @@ import sys
 import os
 import importlib
 from pprint import pformat
+from pprint import pprint
 import csv
 import pandas as pd
 import time
@@ -13,6 +14,7 @@ import logging
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 pandas_extensions = importlib.import_module("py-json.LANforge.pandas_extensions")
@@ -72,9 +74,8 @@ class GenCXProfile(LFCliBase):
             raise ValueError("Unknown command type")
 
     def start_cx(self):
-        logger.info("Starting CXs...")
-        logger.debug(self.created_cx)
-        logger.debug(self.created_endp)
+        logger.info("Starting CXs: %s" %self.created_cx)
+        logger.info("Created-Endp: %s" % self.created_endp)
         for cx_name in self.created_cx:
             self.json_post("/cli-json/set_cx_state", {
                 "test_mgr": "default_tm",
@@ -300,8 +301,7 @@ class GenCXProfile(LFCliBase):
             # this naming convention follows what you see when you use
             # lf_firemod.pl --action list_endp after creating a generic endpoint
             gen_name_a = "%s-%s" % (self.name_prefix, name)
-            gen_name_b = "D_%s-%s" % (self.name_prefix, name)
-            endp_tpls.append((shelf, resource, name, gen_name_a, gen_name_b))
+            endp_tpls.append((shelf, resource, name, gen_name_a))
 
         for endp_tpl in endp_tpls:
             shelf = endp_tpl[0]
@@ -326,7 +326,6 @@ class GenCXProfile(LFCliBase):
 
         for endp_tpl in endp_tpls:
             gen_name_a = endp_tpl[3]
-            gen_name_b = endp_tpl[4]
             self.set_flags(gen_name_a, "ClearPortOnStart", 1)
         if sleep_time:
             time.sleep(sleep_time)
@@ -343,18 +342,15 @@ class GenCXProfile(LFCliBase):
         for endp_tpl in endp_tpls:
             name = endp_tpl[2]
             gen_name_a = endp_tpl[3]
-            gen_name_b = endp_tpl[4]
             cx_name = "CX_%s-%s" % (self.name_prefix, name)
             data = {
                 "alias": cx_name,
                 "test_mgr": "default_tm",
-                "tx_endp": gen_name_a,
-                "rx_endp": gen_name_b
+                "tx_endp": gen_name_a
             }
             post_data.append(data)
             self.created_cx.append(cx_name)
             self.created_endp.append(gen_name_a)
-            self.created_endp.append(gen_name_b)
 
         if sleep_time:
             time.sleep(sleep_time)
@@ -374,12 +370,14 @@ class GenCXProfile(LFCliBase):
             })
         return True
 
+    # Looks incorrect to me. --Ben
     def choose_ping_command(self):
         gen_results = self.json_get("generic/list?fields=name,last+results", debug_=self.debug)
         logger.debug(pformat(gen_results))
         if gen_results['endpoints']:
             for name in gen_results['endpoints']:
                 for k, v in name.items():
+                    logger.info("k: %s  v: %s" % (k, v))
                     if v['name'] in self.created_endp and not v['name'].endswith('1'):
                         if v['last results'] != "" and "Unreachable" not in v['last results']:
                             return True, v['name']
@@ -395,6 +393,7 @@ class GenCXProfile(LFCliBase):
                     if v['name'] != '':
                         results = v['last results'].split()
                         if 'Finished' in v['last results']:
+                            # TODO: What is this actually doing?
                             if results[1][:-1] == results[2]:
                                 return True, v['name']
                             else:
@@ -435,13 +434,16 @@ class GenCXProfile(LFCliBase):
                             return False, v['name']
 
     # TODO monitor is broken
+    # TODO:  Can only monitor ports on a single resource.
     def monitor(self,
                 duration_sec=60,
                 monitor_interval=2, # seconds
                 sta_list=None,
+                resource_id=1,
                 generic_cols=None,
                 port_mgr_cols=None,
-                created_cx=None,
+                must_increase_cols=None,
+                monitor_endps=None, # list of endpoints to monitor
                 monitor=True,
                 report_file=None,
                 systeminfopath=None,
@@ -465,9 +467,9 @@ class GenCXProfile(LFCliBase):
         if not systeminfopath:
             logger.critical("Monitor requires a system info path to be defined")
             raise ValueError("Monitor requires a system info path to be defined")
-        if not created_cx:
-            logger.critical("Monitor needs a list of Layer 3 connections")
-            raise ValueError("Monitor needs a list of Layer 3 connections")
+        if not monitor_endps:
+            logger.critical("Monitor needs a list of Endpoints to monitor")
+            raise ValueError("Monitor needs a list of Endpoints to monitor")
         if not monitor_interval or (monitor_interval < 1):
             logger.critical("GenCXProfile::monitor wants monitor_interval >= 1 second")
             raise ValueError("GenCXProfile::monitor wants monitor_interval >= 1 second")
@@ -488,7 +490,7 @@ class GenCXProfile(LFCliBase):
         # default save to csv first
         if report_file.split('.')[-1] != 'csv':
             report_file = report_file.replace(str(output_format), 'csv', 1)
-            logger.info("Saving rolling data into..." + str(report_file))
+            logger.info("Saving rolling data into: " + str(report_file))
 
         # ================== Step 1, set column names and header row
         generic_cols = [self.replace_special_char(x) for x in generic_cols]
@@ -509,6 +511,7 @@ class GenCXProfile(LFCliBase):
 
             port_mgr_fields = ",".join(port_mgr_cols)
             header_row.extend(port_mgr_cols_labelled)
+
         # create sys info file
         systeminfo = self.json_get('/')
         sysinfo = [str("LANforge GUI Build: " + systeminfo['VersionInfo']['BuildVersion']),
@@ -521,8 +524,15 @@ class GenCXProfile(LFCliBase):
         start_time = datetime.datetime.now()
         end_time = start_time + datetime.timedelta(seconds=duration_sec)
 
-        passes = 0
-        expected_passes = 0
+        fail_incr_count = 0
+        pass_incr_count = 0
+        prev_results = {} # dict of dicts
+        if must_increase_cols:
+            for en in monitor_endps:
+                print("Monitoring Endpoint: %s" %(en))
+                prev_results[en] = {} # dict of col names to values
+                for cn in must_increase_cols:
+                    prev_results[en][cn] = 0
 
         # instantiate csv file here, add specified column headers
         csvfile = open(str(report_file), 'w')
@@ -533,33 +543,6 @@ class GenCXProfile(LFCliBase):
         initial_starttime = datetime.datetime.now()
         logger.info("Starting Test Monitoring for %s seconds..." % duration_sec)
         while datetime.datetime.now() < end_time:
-
-            passes = 0
-            expected_passes = 0
-            result = False
-            if self.type == "lfping":
-                result = self.choose_ping_command()
-            elif self.type == "generic":
-                result = self.choose_generic_command()
-            elif self.type == "lfcurl":
-                result = self.choose_lfcurl_command()
-            elif self.type == "speedtest":
-                result = self.choose_speedtest_command()
-            elif self.type == "iperf3":
-                result = self.choose_iperf3_command()
-            else:
-                continue
-            expected_passes += 1
-            if result:
-                if result[0]:
-                    passes += 1
-                else:
-                    self._fail("%s Failed to ping %s " % (result[1], self.dest))
-                    break
-
-            if passes == expected_passes:
-                self._pass("PASS: All tests passed")
-
             t = datetime.datetime.now()
             timestamp = t.strftime("%m/%d/%Y %I:%M:%S")
             t_to_millisec_epoch = int(self.get_milliseconds(t))
@@ -567,11 +550,15 @@ class GenCXProfile(LFCliBase):
             time_elapsed = int(self.get_seconds(t)) - int(self.get_seconds(initial_starttime))
             basecolumns = [timestamp, t_to_millisec_epoch, t_to_sec_epoch, time_elapsed]
 
-            generic_response = self.json_get("/generic/%s?fields=%s" % (created_cx, generic_fields))
+            # get endp values
+            gen_url = "/generic/%s?fields=%s" % (",".join(monitor_endps), generic_fields);
+            #print("gen-url: %s" % (gen_url))
+            generic_response = self.json_get(gen_url)
 
             if port_mgr_cols:
-                port_mgr_response = self.json_get("/port/1/1/%s?fields=%s" % (sta_list, port_mgr_fields))
-            # get info from port manager with list of values from cx_a_side_list
+                # get info from port manager with list of values from cx_a_side_list
+                port_mgr_response = self.json_get("/port/1/%s/%s?fields=%s" % (resource_id, sta_list, port_mgr_fields))
+
             if "endpoints" not in generic_response or not generic_response:
                 logger.critical(generic_response)
                 logger.critical("Json generic_response from LANforge... {generic_response}".format(generic_response=generic_response))
@@ -584,11 +571,44 @@ class GenCXProfile(LFCliBase):
                     raise ValueError("Cannot find columns requested to be searched. Exiting script, please retry.")
                 logger.debug("Json port_mgr_response from LANforge... {port_mgr_response}".format(port_mgr_response=port_mgr_response))
 
-            for endpoint in generic_response["endpoints"]:  # each endpoint is a dictionary
-                endp_values = list(endpoint.values())[0]
-                temp_list = basecolumns
-                for columnname in header_row[len(basecolumns):]:
-                    temp_list.append(endp_values[columnname])
+            #print("generic response: ")
+            #pprint(generic_response)
+            endp_array = generic_response["endpoints"]
+            #print("endp-array: ")
+            #pprint(endp_array)
+            for endpoint in endp_array:  # each endpoint is a dictionary
+                #print("endpoint: ")
+                #pprint(endpoint)
+                #print("endpoint values: ")
+                #pprint(endpoint.values())
+
+                endp_values_list = list(endpoint.values())
+                #for x in endp_values_list:
+                #    pprint(x)
+
+                # There is only one value in the endp_values_list, the key is the name,
+                # but the name is also in the value dict, so we ignore the key.
+                endp_values = endp_values_list[0]
+
+                endp_name = endp_values["name"]
+                temp_list = basecolumns.copy() # Must make a deep copy or we just keep appending to basecolumns object.
+                for columnname in generic_cols:
+                    val = endp_values[columnname]
+                    #print("column-name: %s val: %s must-increase-cols: %s" % (columnname, val, must_increase_cols))
+                    temp_list.append(val)
+                    if must_increase_cols:
+                        if columnname in must_increase_cols:
+                            # Ensure this has increased since last sample.
+                            #print("endp_name: %s columname: %s value: %s  endpoint: %s" % (endp_name, columnname, val, endpoint))
+                            if prev_results[endp_name][columnname] >= LFUtils.speed_to_int(val):
+                                self._fail("Endpoint %s column: %s did not increase, old: %s  new: %s" %
+                                           (endp_name, columnname, prev_results[endp_name][columnname], val))
+                                fail_incr_count += 1
+                            else:
+                                logger.debug("Endpoint %s column: %s did increase, old: %s  new: %s" %
+                                             (endp_name, columnname, prev_results[endp_name][columnname], val))
+                                pass_incr_count += 1
+
                     if port_mgr_cols:
                         for sta_name in sta_list_edit:
                             if sta_name in current_sta:
@@ -610,6 +630,16 @@ class GenCXProfile(LFCliBase):
 
         csvfile.close()
 
+        if fail_incr_count == 0:
+            if pass_incr_count > 0:
+                self._pass("Verified requested counters: %s increased each of %s monitor attempts" %
+                           (must_increase_cols, pass_incr_count));
+        else:
+            if pass_incr_count > 0:
+                self._fail("Partial success: Verified requested counters: %s increased % of % attempts" %
+                           (must_increase_cols, pass_incr_count, (pass_incr_count + fail_incr_count)));
+
+        # TODO:  This looks broken, figure out intent and fix, or remove.
         # comparison to last report / report inputted
         if compared_report:
             compared_df = pandas_extensions.compare_two_df(dataframe_one=pandas_extensions.file_to_df(report_file),

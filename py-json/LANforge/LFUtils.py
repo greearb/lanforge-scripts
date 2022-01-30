@@ -525,6 +525,23 @@ def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", p
     logger.warning("Not all ports went admin up within %s+ seconds" % timeout)
     return False
 
+def speed_to_int(speed):
+    # Parse speed into a number.  Initial implementation is for ping output, but
+    # add more as needed.
+    tokens = speed.split(" ");
+    rv = float(tokens[0])
+    if len(tokens) > 1:
+        units = tokens[1];
+        if units == "B":
+            return int(rv)
+        elif units == "KB":
+            return int(rv * 1000);
+        elif units == "MB":
+            return int(rv * 1000000);
+        elif units == "GB":
+            return int(rv * 1000000000);
+        else:
+            raise ValueError("Un-handled units -:%s:-" % (units))
 
 def waitUntilPortsDisappear(base_url="http://localhost:8080", port_list=(), debug=False, timeout=360):
     wait_until_ports_disappear(base_url, port_list, debug=debug, timeout_sec=timeout)

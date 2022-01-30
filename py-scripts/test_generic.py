@@ -283,6 +283,7 @@ python3 ./test_generic.py
             output = str(args.report_file).split('.')[-1]
         else:
             output = args.output_format
+
     logger.warning("Saving final report data in: " + report_f)
 
     # Retrieve last data file
@@ -335,12 +336,7 @@ python3 ./test_generic.py
         logger.error(generic_test.get_fail_message())
         generic_test.exit_fail()
 
-    try:
-        genconnections = ','.join([[*x.keys()][0] for x in generic_test.json_get('generic')['endpoints']])
-    except ValueError as error:
-        raise ValueError(
-            '1. Enable the generic tab in LANforge GUI , if still fails 2. Try setting the upstream port flag if your device does not have an eth1 port \n'
-            '%s' % error)
+    mon_endp = generic_test.generic_endps_profile.created_endp;
 
     if type(args.gen_cols) is not list:
         generic_cols = list(args.gen_cols.split(","))
@@ -367,26 +363,44 @@ python3 ./test_generic.py
     generic_test.start()
     time.sleep(5) # give traffic a chance to get started.
 
+    resource_id = LFUtils.name_to_eid(args.radio)[1]
+
+    must_increase_cols = None
+    if args.type == "lfping":
+        must_increase_cols = ["rx bytes"]
+
     generic_test.generic_endps_profile.monitor(generic_cols=generic_cols,
+                                               must_increase_cols=must_increase_cols,
                                                sta_list=station_list,
+                                               resource_id=resource_id,
                                                # port_mgr_cols=port_mgr_cols,
                                                report_file=report_f,
                                                systeminfopath=systeminfopath,
                                                duration_sec=Realm.parse_time(args.test_duration).total_seconds(),
                                                monitor_interval=monitor_interval,
-                                               created_cx=genconnections,
+                                               monitor_endps=mon_endp,
                                                output_format=output,
                                                compared_report=compared_rept,
                                                script_name='test_generic',
                                                arguments=args,
                                                debug=args.debug)
 
-    logger.info("Running connections for: %s" % args.test_duration)
-    time.sleep(Realm.parse_time(args.test_duration).total_seconds())
+    logger.info("Done with connection monitoring")
     generic_test.stop()
 
     generic_test.cleanup(station_list)
-    if generic_test.passes():
+
+
+    if len(generic_test.get_passed_result_list()) > 0:
+        logger.info("Test-Generic Passing results:\n%s" % "\n".join(generic_test.get_passed_result_list()))
+    if len(generic_test.generic_endps_profile.get_passed_result_list()) > 0:
+        logger.info("Test-Generic Monitor Passing results:\n%s" % "\n".join(generic_test.generic_endps_profile.get_passed_result_list()))
+    if len(generic_test.get_failed_result_list()) > 0:
+        logger.warning("Test-Generic Failing results:\n%s" % "\n".join(generic_test.get_failed_result_list()))
+    if len(generic_test.generic_endps_profile.get_failed_result_list()) > 0:
+        logger.warning("Test-Generic Monitor Failing results:\n%s" % "\n".join(generic_test.generic_endps_profile.get_failed_result_list()))
+
+    if generic_test.passes() and generic_test.generic_endps_profile.passes():
         generic_test.exit_success()
     else:
         generic_test.exit_fail()
