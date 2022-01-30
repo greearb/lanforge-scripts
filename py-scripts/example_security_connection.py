@@ -88,7 +88,8 @@ def main():
         prog='example_security_connection.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-             This python script creates an inputted number of stations using user-inputted security. This verifies that the most basic form of security works with the LANforge device.
+             This python script creates a specified number of stations using with specified configuration.
+             This verifies that the most basic form of security works with the LANforge device.
                 ''',
         description='''\
         example_security_connection.py
@@ -104,8 +105,10 @@ def main():
         --security {open|wep|wpa|wpa2|wpa3} 
         --ssid netgear-wpa3 
         --ap "00:0e:8e:78:e1:76"
-        --passwd admin123-wpa3 
+        --passwd admin123-wpa3
+        --radio 1.1.wiphy0
         --debug 
+        --log_level info
             ''')
     # if required is not None:
     optional = None
@@ -122,9 +125,8 @@ def main():
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
 
-    # set the logger level to debug
-    if args.debug:
-        logger_config.set_level_debug()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):

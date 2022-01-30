@@ -88,6 +88,21 @@ class lf_logger_config:
         logging.propagate = False
         print(logging.propagate)
 
+    def set_level(self, level):
+        if not level:
+            return # no change from defaults
+
+        if level == "debug":
+            self.set_level_debug()
+        elif level == "info":
+            self.set_level_info()
+        elif level == "warning":
+            self.set_level_warning()
+        elif level == "critical":
+            self.set_level_warning()
+        else:
+            print("ERROR:  Invalid log level requested: %s" % (level))
+
     def set_level_debug(self):
         logging.getLogger().setLevel(logging.DEBUG)
 
