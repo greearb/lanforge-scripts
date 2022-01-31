@@ -10,8 +10,10 @@ import importlib
 import argparse
 import logging
 
+logger = logging.getLogger(__name__)
+
 if sys.version_info[0] != 3:
-    print("This script requires Python 3")
+    logger.critical("This script requires Python 3")
     exit(1)
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
@@ -23,8 +25,6 @@ realm = importlib.import_module("py-json.realm")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 Realm = realm.Realm
 TestGroupProfile = realm.TestGroupProfile
-
-logger = logging.getLogger(__name__)
 
 
 class CreateL4(Realm):
@@ -93,10 +93,13 @@ class CreateL4(Realm):
     def cleanup(self):
         self.cx_profile.cleanup()
         self.station_profile.cleanup()
-        LFUtils.wait_until_ports_disappear(
+        if LFUtils.wait_until_ports_disappear(
             base_url=self.lfclient_url,
             port_list=self.station_profile.station_names,
-            debug=self.debug)
+            debug=self.debug):
+            self._pass("Ports were properly deleted.")
+        else:
+            self._fail("Ports were NOT properly deleted.")
 
     def build(self):
         # Build stations
@@ -109,17 +112,25 @@ class CreateL4(Realm):
         self.station_profile.set_command_param(
             "set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(
-            radio=self.radio,
-            sta_names_=self.sta_list,
-            debug=self.debug)
-        self._pass("PASS: Station build finished")
 
-        self.cx_profile.create(
-            ports=self.station_profile.station_names,
-            sleep_time=.5,
-            debug_=self.debug,
-            suppress_related_commands_=True)
+        timeout = len(self.sta_list) * 2 + 20
+        if self.station_profile.create(
+            radio=self.radio,
+            timeout=timeout,
+            sta_names_=self.sta_list,
+            debug=self.debug):
+            self._pass("PASS: Station build finished")
+
+            if self.cx_profile.create(
+                ports=self.station_profile.station_names,
+                sleep_time=0,
+                debug_=self.debug,
+                suppress_related_commands_=True):
+                self._pass("CX creation succeeded.")
+            else:
+                self._fail("CX creation did not succeed.")
+        else:
+            self._fail("Station build did not succeed.")
 
 
 def main():
@@ -194,15 +205,9 @@ python3 ./layer4.py
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
-
-    # set the logger level to debug
-    if args.debug:
-        logger_config.set_level_debug()
-
-    # lf_logger_config_json will take presidence to changing debug levels
-    if args.lf_logger_config_json:
-        logger_config.lf_logger_config_json = args.lf_logger_config_json
-        logger_config.load_lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
@@ -233,11 +238,13 @@ python3 ./layer4.py
 
     ip_var_test.cleanup()
     ip_var_test.build()
-    if not ip_var_test.passes():
-        logger.info(ip_var_test.get_fail_message())
-        ip_var_test.exit_fail()
 
-    logger.info('Created %s stations and connections' % num_sta)
+    # TODO:  Clean up by default, and add --noclean option to NOT do cleanup.
+
+    if ip_var_test.passes():
+        ip_var_test.exit_success()
+    else:
+        ip_var_test.exit_fail()
 
 
 if __name__ == "__main__":

@@ -189,6 +189,10 @@ class L4CXProfile(LFCliBase):
                                        suppress_related_commands_=suppress_related_commands_)
             time.sleep(sleep_time)
 
+        # TODO:  Verify they were created here, or at least add a method to verify they were
+        # created and add that to create_l4.py
+        return True
+
     def monitor(self,
                 duration_sec=60,
                 monitor_interval=1,
