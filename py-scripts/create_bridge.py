@@ -108,14 +108,10 @@ Command example:
     --debug
             ''')
     required = parser.add_argument_group('required arguments')
-    optional = parser.add_argument_group('optional arguments')
 
     required.add_argument('--bridge_name', help='Name of the bridge to create', required=True)
     required.add_argument('--target_device', help='The interfaces the bridge should contain', required=True)
-    optional.add_argument('--noclean', help='Do not remove the bridge device before exit',
-                          action='store_true')
 
-    optional = parser.add_argument_group('optional arguments')
     args = parser.parse_args()
     # if args.debug:
     #    pprint.pprint(args)
