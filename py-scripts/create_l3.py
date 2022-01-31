@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 
- Create Layer-3 Cross Connection Using LANforge JSON AP : https://www.candelatech.com/cookbook.php?vol=fire&book=scripted+layer-3+test
+ Create Layer-3 Cross Connection Using LANforge JSON API : https://www.candelatech.com/cookbook.php?vol=fire&book=scripted+layer-3+test
  Written by Candela Technologies Inc.
  Updated by: Erin Grimes
  Example Command:
@@ -11,9 +11,12 @@ import sys
 import os
 import importlib
 import argparse
+import logging
+
+logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
-    print("This script requires Python 3")
+    logger.critical("This script requires Python 3")
     exit(1)
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
@@ -25,6 +28,7 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 TestGroupProfile = realm.TestGroupProfile
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class CreateL3(Realm):
@@ -63,13 +67,13 @@ class CreateL3(Realm):
         self.cx_profile.cleanup_prefix()
 
     def build(self):
-        self.cx_profile.create(endp_type="lf_udp",
-                               side_a=self.endp_a,
-                               side_b=self.endp_b,
-                               sleep_time=0)
-        # self.cx_profile.start_cx()
-        self._pass("PASS: Cross-connect build finished")
-
+        if self.cx_profile.create(endp_type="lf_udp",
+                                  side_a=self.endp_a,
+                                  side_b=self.endp_b,
+                                  sleep_time=0):
+            self._pass("Cross-connect build finished")
+        else:
+            self._fail("Cross-connect build did not succeed.")
 
 def main(args):
 
@@ -89,10 +93,15 @@ def main(args):
 
     # ip_var_test.pre_cleanup()
     ip_var_test.build()
-    if not ip_var_test.passes():
-        print(ip_var_test.get_fail_message())
+
+    # TODO:  Delete the thing just created, unless --noclean option was added.
+    # Similar to how the create_bond.py does it.
+
+    if ip_var_test.passes():
+        logger.info("Created %s stations and connections" % (num_sta))
+        ip_var_test.exit_success()
+    else:
         ip_var_test.exit_fail()
-    print(f'Created {num_sta} stations and connections')
 
 
 if __name__ == "__main__":
