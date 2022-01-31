@@ -114,13 +114,10 @@ Command example:
             ''')
 
     required = parser.add_argument_group('required arguments')
-    optional = parser.add_argument_group('optional arguments')
 
     required.add_argument('--bond_name', help='Name of the bridge to create', required=True)
     required.add_argument('--network_dev_list', help='list of network devices in the bond, must be comma separated '
                           'with no spaces', required=True)
-    optional.add_argument('--noclean', help='Do not remove the bond device before exit',
-                          action='store_true')
 
     args = parser.parse_args()
 
