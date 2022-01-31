@@ -2,6 +2,7 @@
 
 """
     This script will create a variable number of layer3 stations each with their own set of cross-connects and endpoints.
+    The connections are not started, nor are stations set admin up in this script.
 
     Example script:
     './create_l3_stations.py --radio wiphy0 --ssid lanforge --password password --security wpa2'
@@ -11,9 +12,13 @@
 
 import sys
 import os
+import importlib
+import logging
+
+logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
-    print("This script requires Python 3")
+    logger.critical("This script requires Python 3")
     exit(1)
 
 if 'py-json' not in sys.path:
@@ -23,6 +28,7 @@ import argparse
 from LANforge.lfcli_base import LFCliBase
 from LANforge import LFUtils
 from realm import Realm
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class CreateL3(Realm):
@@ -101,7 +107,7 @@ class CreateL3(Realm):
                                           ssid=self.ssid,
                                           passwd=self.password)
         self.station_profile.set_number_template(self.number_template)
-        print("Creating stations")
+        logger.info("Creating stations")
         self.station_profile.set_command_flag(
             "add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param(
@@ -115,21 +121,21 @@ class CreateL3(Realm):
                                          debug=self.debug,
                                          timeout=sta_timeout)
         if not rv:
-            print("ERROR: create_l3_stations: could not create all ports, exiting with error.")
-            exit(1)
+            self._fail("create_l3_stations: could not create all ports, exiting with error.")
+        else:
+            self._pass("Station creation succeeded.")
 
-        cx_timeout = 300
-        # cx_timeout=0 # expect this to fail
-        rv = self.cx_profile.create(endp_type="lf_udp",
-                                    side_a=self.station_profile.station_names,
-                                    side_b=self.upstream,
-                                    sleep_time=0,
-                                    timeout=cx_timeout)
-        if not rv:
-            print("ERROR: create_l3_stations: could not create all cx/endpoints, exiting with error.")
-            exit(1)
-
-        self._pass("PASS: Station build finished")
+            cx_timeout = 300
+            # cx_timeout=0 # expect this to fail
+            rv = self.cx_profile.create(endp_type="lf_udp",
+                                        side_a=self.station_profile.station_names,
+                                        side_b=self.upstream,
+                                        sleep_time=0,
+                                        timeout=cx_timeout)
+            if rv:
+                self._pass("CX creation finished")
+            else:
+                self._fail("create_l3_stations: could not create all cx/endpoints.")
 
 
 def main():
@@ -242,6 +248,11 @@ def main():
             action='store_true')
     args = parser.parse_args()
 
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
+
     num_sta = 2
     if args.num_stations:
         num_sta = int(args.num_stations)
@@ -268,11 +279,14 @@ def main():
     if not args.no_cleanup:
         ip_var_test.pre_cleanup()
     ip_var_test.build()
-    if not ip_var_test.passes():
-        print(ip_var_test.get_fail_message())
-        ip_var_test.exit_fail()
-    print('Successfully created %s stations and connections' % num_sta)
 
+    # TODO:  Do cleanup by default, allow --noclean option to skip cleanup.
+
+    if ip_var_test.passes():
+        logger.info("Created %s stations and connections" % (num_sta))
+        ip_var_test.exit_success()
+    else:
+        ip_var_test.exit_fail()
 
 if __name__ == "__main__":
     main()

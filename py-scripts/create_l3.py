@@ -145,4 +145,9 @@ if __name__ == "__main__":
         default=0000)
     args = parser.parse_args()
 
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
+
     main(args)
