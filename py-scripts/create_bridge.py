@@ -8,9 +8,12 @@ import os
 import importlib
 import pprint
 import argparse
+import logging
+from time import sleep
 
+logger = logging.getLogger(__name__)
 if sys.version_info[0] != 3:
-    print("This script requires Python 3")
+    logger.critical("This script requires Python 3")
     exit(1)
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
@@ -20,60 +23,72 @@ LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 class CreateBridge(Realm):
-    def __init__(self, sta_list, resource, target_device, radio,
-                 _ssid=None,
-                 _security=None,
-                 _password=None,
+    def __init__(self, target_device,
                  _host=None,
                  _port=None,
                  _bridge_list=None,
-                 _number_template="00000",
-                 _resource=1,
                  _debug_on=False):
         super().__init__(_host,
                          _port)
         self.host = _host
         self.port = _port
-        self.ssid = _ssid
-        self.security = _security
-        self.password = _password
         self.bridge_list = _bridge_list
-        self.radio = radio
-        self.timeout = 120
-        self.number_template = _number_template
         self.debug = _debug_on
-        self.sta_list = sta_list
-        self.resource = resource
         self.target_device = target_device
-        if self.debug:
-            print("----- bridge List ----- ----- ----- ----- ----- ----- \n")
-            pprint.pprint(self.sta_list)
-            print("---- ~bridge List ----- ----- ----- ----- ----- ----- \n")
+
+        eid = self.name_to_eid(self.bridge_list[0])
+        self.shelf = eid[0]
+        self.resource = eid[1]
+        self.bridge_name = eid[2]
 
     def build(self):
         # Build bridges
+        eid_str = "%s.%s.%s" % (1, self.resource, self.bridge_name)
+        nd = False
+        for td in self.target_device.split(","):
+            eid = self.name_to_eid(td)
+            if not nd:
+                nd = eid[2]
+            else:
+                nd += ","
+                nd += eid[2]
 
         data = {
-            "shelf": 1,
+            "shelf": self.shelf,
             "resource": self.resource,
-            "port": "br0",
-            "network_devs": "eth1,%s" % self.target_device
+            "port": self.bridge_name,
+            "network_devs": nd # eth1,eth2
         }
         self.json_post("cli-json/add_br", data)
 
         bridge_set_port = {
-            "shelf": 1,
+            "shelf": self.shelf,
             "resource": self.resource,
-            "port": "br0",
+            "port": self.bridge_name,
             "current_flags": 0x80000000,
             # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
             "interest": 0x4000
         }
         self.json_post("cli-json/set_port", bridge_set_port)
 
+
+        if LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
+                                             port_list=[eid_str],
+                                             debug_=self.debug):
+            self._pass("Bond interface went admin up.")
+        else:
+            self._fail("Bond interface did NOT go admin up.")
+
+    def cleanup(self):
+        eid = "%s.%s.%s" % (self.shelf, self.resource, self.bridge_name)
+        self.rm_port(eid, check_exists=False, debug_=self.debug)
+        if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=[eid], debug=self.debug):
+            self._pass("Ports successfully cleaned up.")
+        else:
+            self._fail("Ports NOT successfully cleaned up.")
 
 def main():
     parser = LFCliBase.create_basic_argparse(
@@ -88,56 +103,50 @@ def main():
 --------------------
 Command example:
 ./create_bridge.py
-    --upstream_port eth1
-    --radio wiphy0
-    --num_bridges 3
-    --target_device wlan0
-    --security open
-    --ssid netgear
-    --passwd BLANK
+    --bridge_name br0
+    --target_device eth1,eth2
     --debug
             ''')
     required = parser.add_argument_group('required arguments')
-    required.add_argument(
-        '--target_device', help='Where the bridges should be connecting', required=True)
-    # required.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', required=True)
+    optional = parser.add_argument_group('optional arguments')
+
+    required.add_argument('--bridge_name', help='Name of the bridge to create', required=True)
+    required.add_argument('--target_device', help='The interfaces the bridge should contain', required=True)
+    optional.add_argument('--noclean', help='Do not remove the bridge device before exit',
+                          action='store_true')
 
     optional = parser.add_argument_group('optional arguments')
-    optional.add_argument(
-        '--num_bridges', help='Number of bridges to Create', required=False)
     args = parser.parse_args()
     # if args.debug:
     #    pprint.pprint(args)
     #    time.sleep(5)
-    if args.radio is None:
-        raise ValueError("--radio required")
 
-    num_bridge = 2
-    if (args.num_bridges is not None) and (int(args.num_bridges) > 0):
-        num_bridges_converted = int(args.num_bridges)
-        num_bridge = num_bridges_converted
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    bridge_list = LFUtils.port_name_series(prefix="bridge",
-                                           start_id=0,
-                                           end_id=num_bridge - 1,
-                                           padding_number=10000,
-                                           radio=args.radio)
+    # This code supports creating only single bridge at a time
+    bridge_list = [args.bridge_name]
 
     create_bridge = CreateBridge(_host=args.mgr,
                                  _port=args.mgr_port,
-                                 _ssid=args.ssid,
-                                 _password=args.passwd,
-                                 _security=args.security,
                                  _bridge_list=bridge_list,
-                                 radio=args.radio,
                                  _debug_on=args.debug,
-                                 sta_list=bridge_list,
-                                 resource=1,
                                  target_device=args.target_device)
 
     create_bridge.build()
-    print('Created %s bridges' % num_bridge)
+    logger.info('Created bridge: %s' % bridge_list[0])
 
+    if not args.noclean:
+        sleep(5)
+
+        create_bridge.cleanup()
+
+    if create_bridge.passes():
+        create_bridge.exit_success()
+    else:
+        create_bridge.exit_fail()
 
 if __name__ == "__main__":
     main()

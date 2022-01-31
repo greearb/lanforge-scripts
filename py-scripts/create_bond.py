@@ -37,30 +37,42 @@ class CreateBond(Realm):
     def __init__(self, _network_dev_list=None,
                  _host=None,
                  _port=None,
-                 _shelf=1,
-                 _resource=1,
+                 _eid=None,
                  _debug_on=False):
         super().__init__(_host, _port)
         self.host = _host
-        self.shelf = _shelf
-        self.resource = _resource
         self.timeout = 120
         self.debug = _debug_on
         self.network_dev_list = _network_dev_list
 
+        eid = self.name_to_eid(_eid)
+        self.shelf = eid[0]
+        self.resource = eid[1]
+        self.bond_name = eid[2]
+
     def build(self):
+        eid = "%s.%s.%s" % (self.shelf, self.resource, self.bond_name)
+        nd = False
+        for td in self.network_dev_list.split(","):
+            e2 = self.name_to_eid(td)
+            if not nd:
+                nd = e2[2]
+            else:
+                nd += ","
+                nd += e2[2]
+
         data = {
             'shelf': self.shelf,
             'resource': self.resource,
-            'port': 'bond0000',
-            'network_devs': self.network_dev_list
+            'port': self.bond_name,
+            'network_devs': nd
         }
         self.json_post("cli-json/add_bond", data)
         #time.sleep(3)
         bond_set_port = {
             "shelf": self.shelf,
             "resource": self.resource,
-            "port": "bond0000",
+            "port": self.bond_name,
             "current_flags": 0x80000000,
             # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
             "interest": 0x4000
@@ -68,16 +80,16 @@ class CreateBond(Realm):
         self.json_post("cli-json/set_port", bond_set_port)
 
         if LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
-                                             port_list=["bond0000"],
+                                             port_list=[eid],
                                              debug_=self.debug):
             self._pass("Bond interface went admin up.")
         else:
             self._fail("Bond interface did NOT go admin up.")
 
     def cleanup(self):
-        bond_eid = "%s.%s.%s" % (self.shelf, self.resource, "bond0000")
-        self.rm_port(bond_eid, check_exists=False, debug_=self.debug)
-        if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=[bond_eid], debug=self.debug):
+        eid = "%s.%s.%s" % (self.shelf, self.resource, self.bond_name)
+        self.rm_port(eid, check_exists=False, debug_=self.debug)
+        if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=[eid], debug=self.debug):
             self._pass("Ports successfully cleaned up.")
         else:
             self._fail("Ports NOT successfully cleaned up.")
@@ -95,13 +107,20 @@ def main():
 --------------------
 Command example:
 ./create_bond.py
+    --bond_name bond0
     --network_dev_list eth0,eth1
+    --noclean
     --debug
             ''')
 
     required = parser.add_argument_group('required arguments')
+    optional = parser.add_argument_group('optional arguments')
+
+    required.add_argument('--bond_name', help='Name of the bridge to create', required=True)
     required.add_argument('--network_dev_list', help='list of network devices in the bond, must be comma separated '
-                                                     'with no spaces', required=True)
+                          'with no spaces', required=True)
+    optional.add_argument('--noclean', help='Do not remove the bond device before exit',
+                          action='store_true')
 
     args = parser.parse_args()
 
@@ -112,14 +131,16 @@ Command example:
 
     create_bond = CreateBond(_host=args.mgr,
                              _port=args.mgr_port,
+                             _eid = args.bond_name,
                              _network_dev_list=args.network_dev_list,
                              _debug_on=args.debug
                              )
     create_bond.build()
 
-    sleep(5)
+    if not args.noclean:
+        sleep(5)
 
-    create_bond.cleanup()
+        create_bond.cleanup()
 
     if create_bond.passes():
         create_bond.exit_success()

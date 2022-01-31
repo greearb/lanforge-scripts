@@ -209,10 +209,7 @@ function testgroup_delete_group() {
   ./testgroup.py --group_name group1 --add_group --add_cx cx0000,cx0001,cx0002 --remove_cx cx0003
   ./testgroup.py --group_name group1--del_group --debug --mgr "$MGR"
 }
-function create_bridge_and_station() {
-  ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
-  ./create_bridge.py --radio $RADIO_USED --upstream_port $UPSTREAM --target_device $RESOURCE.sta0000 --debug --mgr $MGR
-}
+
 function create_station_and_dataplane() {
       ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
       ./lf_dataplane_test.py --mgr $MGR --lf_user lanforge --lf_password lanforge \
@@ -268,8 +265,8 @@ elif [[ ${#REGRESSION_COMMANDS} -gt 0 ]]; then
   testCommands=(cat "$REGRESSION_COMMANDS")
 else
   testCommands=(
-      "./create_bond.py --network_dev_list $RESOURCE.eth0,$UPSTREAM --debug --mgr $MGR"
-      create_bridge_and_station
+      "./create_bond.py --network_dev_list $RESOURCE.eth2,$UPSTREAM --bond_name $RESOURCE.bond5 --debug --mgr $MGR"
+      "./create_bridge.py --target_device $RESOURCE.eth2,$UPSTREAM --bridge_name $RESOURCE.br5 --debug --mgr $MGR"
       create_dut_and_chamberview
       "./create_l3.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR --endp_a wiphy0 --endp_b wiphy1"
       "./create_l3_stations.py --mgr $MGR --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug"
