@@ -4,15 +4,18 @@ from time import sleep
 # import pandas as pd
 import sys
 import os
-from pprint import pprint
+from pprint import pformat
+import logging
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 
+logger = logging.getLogger(__name__)
 
 # Probe data can change frequently. It is recommended to update
+
 
 class ProbePort(LFCliBase):
     def __init__(self,
@@ -61,33 +64,33 @@ class ProbePort(LFCliBase):
         response = self.json_get(self.probepath)
         self.response = response
         if self.debug:
-            print("probepath (eid): {probepath}".format(probepath=self.probepath))
-            pprint("Probe response: {response}".format(response=self.response))
+            logger.debug("probepath (eid): {probepath}".format(probepath=self.probepath))
+            logger.debug(pformat("Probe response: {response}".format(response=self.response)))
         text = self.response['probe-results'][0][self.eid_str]['probe results'].split('\n')
         signals = [x.strip('\t').split('\t') for x in text if 'signal' in x]
         keys = [x[0].strip(' ').strip(':') for x in signals]
         values = [x[1].strip('dBm').strip(' ') for x in signals]
-        # if self.debug:
-        print("signals keys: {keys}".format(keys=keys))
-        print("signals values: {values}".format(values=values))
+        if self.debug:
+            logger.debug("signals keys: {keys}".format(keys=keys))
+            logger.debug("signals values: {values}".format(values=values))
         self.signals = dict(zip(keys, values))
 
         tx_bitrate = [x for x in text if 'tx bitrate' in x][0].replace('\t', ' ')
         # if 'HE' in tx_bitrate:
-        #    print("HE not supported ")
-        print("tx_bitrate {tx_bitrate}".format(tx_bitrate=tx_bitrate))
+        #    logger.info("HE not supported ")
+        logger.debug("tx_bitrate {tx_bitrate}".format(tx_bitrate=tx_bitrate))
         self.tx_bitrate = tx_bitrate.split(':')[-1].strip(' ')
         if 'MHz' in tx_bitrate:
             self.tx_mhz = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('MHz')[0].rsplit(' ')[-1].strip(
                 ' ')
-            print("tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
+            logger.debug("tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
         else:
             self.tx_mhz = 20
-            print("HT: tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
+            logger.deub("HT: tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
         tx_mcs = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split(':')[1].strip('\t')
         if 'MCS' in tx_mcs:
             self.tx_mcs = int(tx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
-            print("self.tx_mcs {tx_mcs}".format(tx_mcs=self.tx_mcs))
+            logger.debug("self.tx_mcs {tx_mcs}".format(tx_mcs=self.tx_mcs))
             if 'NSS' in text:
                 self.tx_nss = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('NSS')[1].strip(' ')
             else:
@@ -100,9 +103,9 @@ class ProbePort(LFCliBase):
                     self.tx_nss = 3
                 elif 24 <= self.tx_mcs <= 31:
                     self.tx_nss = 4
-            print("tx_nss {tx_nss}".format(tx_nss=self.tx_nss))
+            logger.debug("tx_nss {tx_nss}".format(tx_nss=self.tx_nss))
             self.tx_mbit = float(self.tx_bitrate.split(' ')[0])
-            print("tx_mbit {tx_mbit}".format(tx_mbit=self.tx_mbit))
+            logger.debug("tx_mbit {tx_mbit}".format(tx_mbit=self.tx_mbit))
             if 'HE' in tx_bitrate:
                 self.calculated_data_rate_tx_HE()
             elif 'VHT' in tx_bitrate:
@@ -110,19 +113,19 @@ class ProbePort(LFCliBase):
             else:
                 self.calculated_data_rate_tx_HT()
         else:
-            print("No tx MCS value:{tx_bitrate}".format(tx_bitrate=tx_bitrate))
+            logger.debug("No tx MCS value:{tx_bitrate}".format(tx_bitrate=tx_bitrate))
 
         rx_bitrate = [x for x in text if 'rx bitrate' in x][0].replace('\t', ' ')
-        print("rx_bitrate {rx_bitrate}".format(rx_bitrate=rx_bitrate))
+        logger.debug("rx_bitrate {rx_bitrate}".format(rx_bitrate=rx_bitrate))
         self.rx_bitrate = rx_bitrate.split(':')[-1].strip(' ')
-        print("self.rx_bitrate {rx_bitrate}".format(rx_bitrate=self.rx_bitrate))
+        logger.debug("self.rx_bitrate {rx_bitrate}".format(rx_bitrate=self.rx_bitrate))
         # rx will received : 6Mbps encoding is legacy frame
         # for 24g - MHz is 20
         # try:
         if 'MHz' in rx_bitrate:
             self.rx_mhz = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('MHz')[0].rsplit(' ')[
                 -1].strip(' ')
-            print("rx_mhz {rx_mhz}".format(rx_mhz=self.rx_mhz))
+            logger.debug("rx_mhz {rx_mhz}".format(rx_mhz=self.rx_mhz))
         else:
             self.rx_mhz = 20
 
@@ -130,7 +133,7 @@ class ProbePort(LFCliBase):
         # MCS is not in the 6.0MBit/s frame
         if 'MCS' in rx_mcs:
             self.rx_mcs = int(rx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
-            print("self.rx_mcs {rx_mcs}".format(rx_mcs=self.rx_mcs))
+            logger.debug("self.rx_mcs {rx_mcs}".format(rx_mcs=self.rx_mcs))
             if 'NSS' in text:
                 self.rx_nss = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('NSS')[1].strip(' ')
             else:
@@ -145,9 +148,9 @@ class ProbePort(LFCliBase):
                     self.rx_nss = 4
 
             self.rx_mbit = self.rx_bitrate.split(' ')[0]
-            print("rx_nss {rx_nss}".format(rx_nss=self.rx_nss))
+            logger.debug("rx_nss {rx_nss}".format(rx_nss=self.rx_nss))
             self.rx_mbit = float(self.rx_bitrate.split(' ')[0])
-            print("rx_mbit {rx_mbit}".format(rx_mbit=self.rx_mbit))
+            logger.debug("rx_mbit {rx_mbit}".format(rx_mbit=self.rx_mbit))
             if 'HE' in rx_bitrate:
                 self.calculated_data_rate_rx_HE()
             elif 'VHT' in rx_bitrate:
@@ -155,7 +158,7 @@ class ProbePort(LFCliBase):
             else:
                 self.calculated_data_rate_rx_HT()
         else:
-            print("No rx MCS value:{rx_bitrate}".format(rx_bitrate=rx_bitrate))
+            logger.debug("No rx MCS value:{rx_bitrate}".format(rx_bitrate=rx_bitrate))
 
     def getSignalAvgCombined(self):
         return self.signals['signal avg'].split(' ')[0]
@@ -173,7 +176,7 @@ class ProbePort(LFCliBase):
         return ' '.join(self.signals['beacon signal avg']).replace(' ', '')
 
     def calculated_data_rate_tx_HT(self):
-        print("calculated_data_rate_tx_HT")
+        logger.info("calculated_data_rate_tx_HT")
         # TODO compare with standard for 40 MHz if values change
         N_sd = 0  # Number of Data Subcarriers based on modulation and bandwith
         N_bpscs = 0  # Number of coded bits per Subcarrier(Determined by the modulation, MCS)
@@ -186,7 +189,7 @@ class ProbePort(LFCliBase):
         # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
         # the nubmer of Data Subcarriers is based on modulation and bandwith
         bw = int(self.tx_mhz)
-        print("Mhz {Mhz}".format(Mhz=self.tx_mhz))
+        logger.info("Mhz {Mhz}".format(Mhz=self.tx_mhz))
         if bw == 20:
             N_sd = 52
         elif bw == 40:
@@ -196,7 +199,7 @@ class ProbePort(LFCliBase):
         elif bw == 160:
             N_sd = 468
         else:
-            print("For HT if cannot be read bw is assumed to be 20")
+            logger.info("For HT if cannot be read bw is assumed to be 20")
             N_sd = 52
             self.tx_mhz = 20
 
@@ -237,19 +240,19 @@ class ProbePort(LFCliBase):
             R = 5 / 6
             N_bpscs = 6
 
-        print(
+        logger.debug(
             "tx: mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_short {T_gi_short}".format(
                 mcs=self.tx_mcs, N_sd=N_sd, N_bpscs=N_bpscs, R=R, N_ss=N_ss, T_dft=T_dft, T_gi_short=T_gi_short))
 
         self.tx_data_rate_gi_short_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_short)) / 1000000
-        print("tx_data_rate gi_short {data_rate} Mbit/s".format(data_rate=self.tx_data_rate_gi_short_Mbps))
+        logger.debug("tx_data_rate gi_short {data_rate} Mbit/s".format(data_rate=self.tx_data_rate_gi_short_Mbps))
 
-        print(
+        logger.debug(
             "tx: mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_long {T_gi_long}".format(
                 mcs=self.tx_mcs, N_sd=N_sd, N_bpscs=N_bpscs, R=R, N_ss=N_ss, T_dft=T_dft, T_gi_long=T_gi_long))
 
         self.tx_data_rate_gi_long_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_long)) / 1000000
-        print("data_rate gi_long {data_rate} Mbps".format(data_rate=self.tx_data_rate_gi_long_Mbps))
+        logger.info("data_rate gi_long {data_rate} Mbps".format(data_rate=self.tx_data_rate_gi_long_Mbps))
 
         if abs(self.tx_mbit - self.tx_data_rate_gi_short_Mbps) <= abs(self.tx_mbit - self.tx_data_rate_gi_long_Mbps):
             self.tx_mbit_calc = self.tx_data_rate_gi_short_Mbps
@@ -259,7 +262,7 @@ class ProbePort(LFCliBase):
             self.tx_gi = T_gi_long
 
     def calculated_data_rate_rx_HT(self):
-        print("calculated_data_rate_rx_HT")
+        logger.info("calculated_data_rate_rx_HT")
         N_sd = 0  # Number of Data Subcarriers based on modulation and bandwith
         N_bpscs = 0  # Number of coded bits per Subcarrier(Determined by the modulation, MCS)
         R = 0  # coding ,  (Determined by the modulation, MCS )
@@ -272,7 +275,7 @@ class ProbePort(LFCliBase):
         # the nubmer of Data Subcarriers is based on modulation and bandwith
 
         bw = int(self.rx_mhz)
-        print("Mhz {Mhz}".format(Mhz=self.rx_mhz))
+        logger.info("Mhz {Mhz}".format(Mhz=self.rx_mhz))
         if bw == 20:
             N_sd = 52
         elif bw == 40:
@@ -282,7 +285,7 @@ class ProbePort(LFCliBase):
         elif bw == 160:
             N_sd = 468
         else:
-            print("For HT if cannot be read bw is assumed to be 20")
+            logger.info("For HT if cannot be read bw is assumed to be 20")
             N_sd = 52
             self.rx_mhz = 20
         # NSS
@@ -321,16 +324,16 @@ class ProbePort(LFCliBase):
         elif self.rx_mcs == 7 or self.rx_mcs == 15 or self.rx_mcs == 23 or self.rx_mcs == 31:
             R = 5 / 6
             N_bpscs = 6
-        print(
+        logger.debug(
             "mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_short {T_gi_short}".format(
                 mcs=self.rx_mcs, N_sd=N_sd, N_bpscs=N_bpscs, R=R, N_ss=N_ss, T_dft=T_dft, T_gi_short=T_gi_short))
         self.rx_data_rate_gi_short_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_short)) / 1000000
-        print("rx_data_rate gi_short {data_rate} Mbit/s".format(data_rate=self.rx_data_rate_gi_short_Mbps))
-        print(
+        logger.debug("rx_data_rate gi_short {data_rate} Mbit/s".format(data_rate=self.rx_data_rate_gi_short_Mbps))
+        logger.debug(
             "mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_long {T_gi_long}".format(
                 mcs=self.rx_mcs, N_sd=N_sd, N_bpscs=N_bpscs, R=R, N_ss=N_ss, T_dft=T_dft, T_gi_long=T_gi_long))
         self.rx_data_rate_gi_long_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_long)) / 1000000
-        print("rx_data_rate gi_long {data_rate} Mbps".format(data_rate=self.rx_data_rate_gi_long_Mbps))
+        logger.debug("rx_data_rate gi_long {data_rate} Mbps".format(data_rate=self.rx_data_rate_gi_long_Mbps))
         if abs(self.rx_mbit - self.rx_data_rate_gi_short_Mbps) <= abs(
                 self.rx_mbit - self.rx_data_rate_gi_long_Mbps):
             self.rx_mbit_calc = self.rx_data_rate_gi_short_Mbps
@@ -340,7 +343,7 @@ class ProbePort(LFCliBase):
             self.rx_gi = T_gi_long
 
     def calculated_data_rate_tx_VHT(self):
-        print("calculated_data_rate_tx_VHT")
+        logger.info("calculated_data_rate_tx_VHT")
         # TODO compare with standard for 40 MHz if values change
         N_sd = 0  # Number of Data Subcarriers based on modulation and bandwith
         N_bpscs = 0  # Number of coded bits per Subcarrier(Determined by the modulation, MCS)
@@ -354,7 +357,7 @@ class ProbePort(LFCliBase):
         # the nubmer of Data Subcarriers is based on modulation and bandwith
         bw = int(self.tx_mhz)
 
-        print("Mhz {Mhz}".format(Mhz=self.tx_mhz))
+        logger.info("Mhz {Mhz}".format(Mhz=self.tx_mhz))
         if bw == 20:
             N_sd = 52
         elif bw == 40:
@@ -364,7 +367,7 @@ class ProbePort(LFCliBase):
         elif bw == 160:
             N_sd = 468
         else:
-            print("For HT if cannot be read bw is assumed to be 20")
+            logger.info("For HT if cannot be read bw is assumed to be 20")
             N_sd = 52
             self.tx_mhz = 20
 
@@ -413,19 +416,19 @@ class ProbePort(LFCliBase):
             R = 5 / 6
             N_bpscs = 8
 
-        print(
+        logger.debug(
             "tx: mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_short {T_gi_short}".format(
                 mcs=self.tx_mcs, N_sd=N_sd, N_bpscs=N_bpscs, R=R, N_ss=N_ss, T_dft=T_dft, T_gi_short=T_gi_short))
 
         self.tx_data_rate_gi_short_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_short)) / 1000000
-        print("tx_data_rate gi_short {data_rate} Mbit/s".format(data_rate=self.tx_data_rate_gi_short_Mbps))
+        logger.debug("tx_data_rate gi_short {data_rate} Mbit/s".format(data_rate=self.tx_data_rate_gi_short_Mbps))
 
-        print(
+        logger.debug(
             "tx: mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_long {T_gi_long}".format(
                 mcs=self.tx_mcs, N_sd=N_sd, N_bpscs=N_bpscs, R=R, N_ss=N_ss, T_dft=T_dft, T_gi_long=T_gi_long))
 
         self.tx_data_rate_gi_long_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_long)) / 1000000
-        print("data_rate gi_long {data_rate} Mbps".format(data_rate=self.tx_data_rate_gi_long_Mbps))
+        logger.debug("data_rate gi_long {data_rate} Mbps".format(data_rate=self.tx_data_rate_gi_long_Mbps))
 
         if abs(self.tx_mbit - self.tx_data_rate_gi_short_Mbps) <= abs(self.tx_mbit - self.tx_data_rate_gi_long_Mbps):
             self.tx_mbit_calc = self.tx_data_rate_gi_short_Mbps
@@ -435,7 +438,7 @@ class ProbePort(LFCliBase):
             self.tx_gi = T_gi_long
 
     def calculated_data_rate_rx_VHT(self):
-        print("calculated_data_rate_rx_VHT")
+        logger.info("calculated_data_rate_rx_VHT")
         N_sd = 0  # Number of Data Subcarriers based on modulation and bandwith
         N_bpscs = 0  # Number of coded bits per Subcarrier(Determined by the modulation, MCS)
         R = 0  # coding ,  (Determined by the modulation, MCS )
@@ -446,7 +449,7 @@ class ProbePort(LFCliBase):
         # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
         # the nubmer of Data Subcarriers is based on modulation and bandwith
         bw = int(self.rx_mhz)
-        print("Mhz {Mhz}".format(Mhz=self.rx_mhz))
+        logger.info("Mhz {Mhz}".format(Mhz=self.rx_mhz))
         if bw == 20:
             N_sd = 52
         elif bw == 40:
@@ -456,7 +459,7 @@ class ProbePort(LFCliBase):
         elif bw == 160:
             N_sd = 468
         else:
-            print("For HT if cannot be read bw is assumed to be 20")
+            logger.info("For HT if cannot be read bw is assumed to be 20")
             N_sd = 52
             self.rx_mhz = 20
         # NSS
@@ -503,16 +506,16 @@ class ProbePort(LFCliBase):
         elif self.rx_mcs == 9:
             R = 5 / 6
             N_bpscs = 8
-        print(
+        logger.debug(
             "mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_short {T_gi_short}".format(
                 mcs=self.rx_mcs, N_sd=N_sd, N_bpscs=N_bpscs, R=R, N_ss=N_ss, T_dft=T_dft, T_gi_short=T_gi_short))
         self.rx_data_rate_gi_short_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_short)) / 1000000
-        print("rx_data_rate gi_short {data_rate} Mbit/s".format(data_rate=self.rx_data_rate_gi_short_Mbps))
-        print(
+        logger.debug("rx_data_rate gi_short {data_rate} Mbit/s".format(data_rate=self.rx_data_rate_gi_short_Mbps))
+        logger.debug(
             "mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_long {T_gi_long}".format(
                 mcs=self.rx_mcs, N_sd=N_sd, N_bpscs=N_bpscs, R=R, N_ss=N_ss, T_dft=T_dft, T_gi_long=T_gi_long))
         self.rx_data_rate_gi_long_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_long)) / 1000000
-        print("rx_data_rate gi_long {data_rate} Mbps".format(data_rate=self.rx_data_rate_gi_long_Mbps))
+        logger.debug("rx_data_rate gi_long {data_rate} Mbps".format(data_rate=self.rx_data_rate_gi_long_Mbps))
         if abs(self.rx_mbit - self.rx_data_rate_gi_short_Mbps) <= abs(
                 self.rx_mbit - self.rx_data_rate_gi_long_Mbps):
             self.rx_mbit_calc = self.rx_data_rate_gi_short_Mbps
@@ -527,7 +530,7 @@ class ProbePort(LFCliBase):
         ###########################################
 
     def calculated_data_rate_tx_HE(self):
-        print("calculated_data_rate_tx_HE")
+        logger.info("calculated_data_rate_tx_HE")
         # TODO compare with standard for 40 MHz if values change
         N_sd = 0  # Number of Data Subcarriers based on modulation and bandwith
         N_bpscs = 0  # Number of coded bits per Subcarrier(Determined by the modulation, MCS)
@@ -540,7 +543,7 @@ class ProbePort(LFCliBase):
         # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
         # the nubmer of Data Subcarriers is based on modulation and bandwith
         bw = int(self.tx_mhz)
-        print("Mhz {Mhz}".format(Mhz=self.tx_mhz))
+        logger.info("Mhz {Mhz}".format(Mhz=self.tx_mhz))
         if bw == 20:
             N_sd = 52
         elif bw == 40:
@@ -550,7 +553,7 @@ class ProbePort(LFCliBase):
         elif bw == 160:
             N_sd = 468
         else:
-            print("For HT if cannot be read bw is assumed to be 20")
+            logger.info("For HT if cannot be read bw is assumed to be 20")
             N_sd = 52
             self.tx_mhz = 20
 
@@ -599,19 +602,19 @@ class ProbePort(LFCliBase):
             R = 5 / 6
             N_bpscs = 8
 
-        print(
+        logger.debug(
             "tx: mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_short {T_gi_short}".format(
                 mcs=self.tx_mcs, N_sd=N_sd, N_bpscs=N_bpscs, R=R, N_ss=N_ss, T_dft=T_dft, T_gi_short=T_gi_short))
 
         self.tx_data_rate_gi_short_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_short)) / 1000000
-        print("tx_data_rate gi_short {data_rate} Mbit/s".format(data_rate=self.tx_data_rate_gi_short_Mbps))
+        logger.debug("tx_data_rate gi_short {data_rate} Mbit/s".format(data_rate=self.tx_data_rate_gi_short_Mbps))
 
-        print(
+        logger.debug(
             "tx: mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_long {T_gi_long}".format(
                 mcs=self.tx_mcs, N_sd=N_sd, N_bpscs=N_bpscs, R=R, N_ss=N_ss, T_dft=T_dft, T_gi_long=T_gi_long))
 
         self.tx_data_rate_gi_long_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_long)) / 1000000
-        print("data_rate gi_long {data_rate} Mbps".format(data_rate=self.tx_data_rate_gi_long_Mbps))
+        logger.debug("data_rate gi_long {data_rate} Mbps".format(data_rate=self.tx_data_rate_gi_long_Mbps))
 
         if abs(self.tx_mbit - self.tx_data_rate_gi_short_Mbps) <= abs(self.tx_mbit - self.tx_data_rate_gi_long_Mbps):
             self.tx_mbit_calc = self.tx_data_rate_gi_short_Mbps
@@ -621,7 +624,7 @@ class ProbePort(LFCliBase):
             self.tx_gi = T_gi_long
 
     def calculated_data_rate_rx_HE(self):
-        print("calculated_data_rate_rx_HE")
+        logger.info("calculated_data_rate_rx_HE")
         N_sd = 0  # Number of Data Subcarriers based on modulation and bandwith
         N_bpscs = 0  # Number of coded bits per Subcarrier(Determined by the modulation, MCS)
         R = 0  # coding ,  (Determined by the modulation, MCS )
@@ -632,7 +635,7 @@ class ProbePort(LFCliBase):
         # Note the T_gi is not exactly know so need to calculate bothh with .4 and .8
         # the nubmer of Data Subcarriers is based on modulation and bandwith
         bw = int(self.rx_mhz)
-        print("Mhz {Mhz}".format(Mhz=self.rx_mhz))
+        logger.info("Mhz {Mhz}".format(Mhz=self.rx_mhz))
         if bw == 20:
             N_sd = 52
         elif bw == 40:
@@ -642,7 +645,7 @@ class ProbePort(LFCliBase):
         elif bw == 160:
             N_sd = 468
         else:
-            print("For HT if cannot be read bw is assumed to be 20")
+            logger.info("For HT if cannot be read bw is assumed to be 20")
             N_sd = 52
             self.rx_mhz = 20
         # NSS
@@ -689,16 +692,16 @@ class ProbePort(LFCliBase):
         elif self.rx_mcs == 9:
             R = 5 / 6
             N_bpscs = 8
-        print(
+        logger.debug(
             "mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_short {T_gi_short}".format(
                 mcs=self.rx_mcs, N_sd=N_sd, N_bpscs=N_bpscs, R=R, N_ss=N_ss, T_dft=T_dft, T_gi_short=T_gi_short))
         self.rx_data_rate_gi_short_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_short)) / 1000000
-        print("rx_data_rate gi_short {data_rate} Mbit/s".format(data_rate=self.rx_data_rate_gi_short_Mbps))
-        print(
+        logger.debug("rx_data_rate gi_short {data_rate} Mbit/s".format(data_rate=self.rx_data_rate_gi_short_Mbps))
+        logger.debug(
             "mcs {mcs} N_sd {N_sd} N_bpscs {N_bpscs} R {R} N_ss {N_ss}  T_dft {T_dft} T_gi_long {T_gi_long}".format(
                 mcs=self.rx_mcs, N_sd=N_sd, N_bpscs=N_bpscs, R=R, N_ss=N_ss, T_dft=T_dft, T_gi_long=T_gi_long))
         self.rx_data_rate_gi_long_Mbps = ((N_sd * N_bpscs * R * float(N_ss)) / (T_dft + T_gi_long)) / 1000000
-        print("rx_data_rate gi_long {data_rate} Mbps".format(data_rate=self.rx_data_rate_gi_long_Mbps))
+        logger.debug("rx_data_rate gi_long {data_rate} Mbps".format(data_rate=self.rx_data_rate_gi_long_Mbps))
         if abs(self.rx_mbit - self.rx_data_rate_gi_short_Mbps) <= abs(
                 self.rx_mbit - self.rx_data_rate_gi_long_Mbps):
             self.rx_mbit_calc = self.rx_data_rate_gi_short_Mbps
