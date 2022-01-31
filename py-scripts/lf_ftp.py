@@ -8,6 +8,14 @@ cli- ./lf_ftp.py --ssid <SSID> --passwd <PASSWORD>  --file_sizes 2MB --fiveg_dur
 
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
+
+
+* Currently, the test must run with both directions enabled for kpi.csv results: '--directions Download Upload'
+* test command that includes kpi.csv features on resource-1:
+./lf_ftp.py --ssid SSID --passwd PASSWRD  --file_sizes 2MB --fiveg_duration 1 --mgr 192.168.1.101
+ --upstream_port eth2 --traffic_duration 1 --security wpa2  --bands 5G --fiveg_radio wiphy0 --directions Download Upload
+ --csv_outfile FTP_CSV.csv --test_rig LF-LAB --test_tag LF_FTP --dut_hw_version Linux --dut_model_num 1
+ --dut_sw_version 5.4.4 --dut_serial_num 1234
 """
 import sys
 import importlib
@@ -18,6 +26,7 @@ import time
 import os
 import matplotlib.patches as mpatches
 import pandas as pd
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -34,15 +43,17 @@ Realm = realm.Realm
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class FtpTest(LFCliBase):
     def __init__(self, lfclient_host="localhost", lfclient_port=8080, sta_prefix="sta", start_id=0, num_sta=None,
                  dut_ssid=None, dut_security=None, dut_passwd=None, file_size=None, band=None, twog_radio=None,
                  fiveg_radio=None, upstream="eth1", _debug_on=False, _exit_on_error=False, _exit_on_fail=False,
-                 direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None):
+                 direction=None, duration=None, traffic_duration=None, ssh_port=None, kpi_csv=None, kpi_results=None):
         super().__init__(lfclient_host, lfclient_port, _debug=_debug_on, _exit_on_fail=_exit_on_fail)
-        print("Test is about to start")
+        logger.info("Test is about to start")
         self.host = lfclient_host
         self.port = lfclient_port
         # self.radio = radio
@@ -56,6 +67,7 @@ class FtpTest(LFCliBase):
         self.requests_per_ten = 1
         self.band = band
         self.kpi_csv = kpi_csv
+        self.kpi_results = kpi_results
         self.file_size = file_size
         self.direction = direction
         self.twog_radio = twog_radio
@@ -69,7 +81,7 @@ class FtpTest(LFCliBase):
         self.port_util = realm.PortUtils(self.local_realm)
         self.cx_profile.requests_per_ten = self.requests_per_ten
 
-        print("Test is Initialized")
+        logger.info("Test is Initialized")
 
     def set_values(self):
         '''This method will set values according user input'''
@@ -148,14 +160,17 @@ class FtpTest(LFCliBase):
                                                debug=self.debug)
             time.sleep(1)
 
-        print("precleanup done")
+        logger.info("precleanup done")
 
     def build(self):
         # set ftp
-        self.port_util.set_ftp(port_name=self.local_realm.name_to_eid(self.upstream)[2], resource=1, on=True)
+        # self.port_util.set_ftp(port_name=self.local_realm.name_to_eid(self.upstream)[2], resource=2, on=True)
+        rv = self.local_realm.name_to_eid(self.upstream)
+        # rv[0]=shelf, rv[1]=resource, rv[2]=port
+        self.port_util.set_ftp(port_name=rv[2], resource=rv[1], on=True)
+        # self.port_util.set_ftp(port_name=rv, resource=rv[1], on=True)
 
         for rad in self.radio:
-
             # station build
             self.station_profile.use_security(self.security, self.ssid, self.password)
             self.station_profile.set_number_template("00")
@@ -172,25 +187,39 @@ class FtpTest(LFCliBase):
                 # exit(1)
 
             # building layer4
+            logger.info("Build Layer4")
             self.cx_profile.direction = "dl"
             self.cx_profile.dest = "/dev/null"
-            print('Direction:', self.direction)
+            logger.info('Direction: %s', self.direction)
 
             if self.direction == "Download":
-
                 # data from GUI for find out ip addr of upstream port
                 data = self.json_get("ports/list?fields=IP")
-
+                rv = self.local_realm.name_to_eid(self.upstream)
+                # rv[0]=shelf, rv[1]=resource, rv[2]=port
+                ip_upstream = None
                 for i in data["interfaces"]:
                     for j in i:
-                        if "1.1." + self.upstream == j:
-                            ip_upstream = i["1.1." + self.upstream]['ip']
+                        # if "1.1." + self.upstream == j:
+                        # ip_upstream = i["1.1." + self.upstream]['ip']
+                        interface = "{shelf}.{resource}.{port}".format(shelf=rv[0], resource=rv[1], port=rv[2])
+                        if interface == j:
+                            ip_upstream = i[interface]['ip']
+                            # print("ip_upstream:{ip_upstream}".format(ip_upstream=ip_upstream))
 
-                self.cx_profile.create(ports=self.station_profile.station_names, ftp_ip=ip_upstream + "/ftp_test.txt",
+                        '''
+                        elif self.upstream == j:
+                            ip_upstream = i[self.upstream]['ip']
+                        '''
+
+                if ip_upstream is not None:
+                    # print("station:{station_names}".format(station_names=self.station_profile.station_names))
+                    # print("ip_upstream:{ip_upstream}".format(ip_upstream=ip_upstream))
+                    self.cx_profile.create(ports=self.station_profile.station_names, ftp_ip=ip_upstream +
+                                       "/ftp_test.txt",
                                        sleep_time=.5, debug_=self.debug, suppress_related_commands_=True, ftp=True,
                                        user="lanforge",
                                        passwd="lanforge", source="")
-
 
             elif self.direction == "Upload":
                 dict_sta_and_ip = {}
@@ -207,7 +236,7 @@ class FtpTest(LFCliBase):
 
                 # list of ip addr of all stations
                 ip = list(dict_sta_and_ip.values())
-
+                # print("build() - ip:{ip}".format(ip=ip))
                 eth_list = []
                 client_list = []
 
@@ -218,7 +247,7 @@ class FtpTest(LFCliBase):
                 # list of upstream port
                 eth_list.append(self.upstream)
 
-                # create layer for connection for upload
+                # create layer four connection for upload
                 for client_num in range(len(self.station_list)):
                     self.cx_profile.create(ports=eth_list, ftp_ip=ip[client_num] + "/ftp_test.txt", sleep_time=.5,
                                            debug_=self.debug, suppress_related_commands_=True, ftp=True,
@@ -231,13 +260,13 @@ class FtpTest(LFCliBase):
 
                 # if Both band then another 20 stations will connects to 2.4G
                 self.station_profile.mode = 6
-        print("Test Build done")
+        logger.info("Test Build done")
 
     def start(self, print_pass=False, print_fail=False):
         for rad in self.radio:
             self.cx_profile.start_cx()
 
-        print("Test Started")
+        logger.info("Test Started")
 
     def stop(self):
         self.cx_profile.stop_cx()
@@ -254,16 +283,27 @@ class FtpTest(LFCliBase):
         '''This method will Create file for given file size'''
 
         ip = self.host
+        entity_id = self.local_realm.name_to_eid(self.upstream)
+        # entity_id[0]=shelf, entity_id[1]=resource, entity_id[2]=port
+
         user = "root"
         pswd = "lanforge"
         port = self.ssh_port
         ssh = paramiko.SSHClient()  # creating shh client object we use this object to connect to router
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())  # automatically adds the missing host key
+
+        # get upstream port ip-address from test ftp server
+        if entity_id[1] > 1:
+            resource_val = str(entity_id[1])
+            ftp_resource_url = self.json_get("ports/1/" + resource_val + "/0/list?fields=IP")
+            ftp_server_ip = ftp_resource_url["interface"]["ip"]
+            ip = ftp_server_ip
+
         ssh.connect(ip, port=port, username=user, password=pswd, banner_timeout=600)
         cmd = '[ -f /home/lanforge/ftp_test.txt ] && echo "True" || echo "False"'
         stdin, stdout, stderr = ssh.exec_command(str(cmd))
         output = stdout.readlines()
-        print(output)
+        logger.info(output)
         if output == ["True\n"]:
             cmd1 = "rm /home/lanforge/ftp_test.txt"
             stdin, stdout, stderr = ssh.exec_command(str(cmd1))
@@ -271,12 +311,12 @@ class FtpTest(LFCliBase):
             time.sleep(10)
             cmd2 = "sudo fallocate -l " + self.file_size + " /home/lanforge/ftp_test.txt"
             stdin, stdout, stderr = ssh.exec_command(str(cmd2))
-            print("File creation done %s" % self.file_size)
+            logger.info("File creation done %s", self.file_size)
             output = stdout.readlines()
         else:
             cmd2 = "sudo fallocate -l " + self.file_size + " /home/lanforge/ftp_test.txt"
             stdin, stdout, stderr = ssh.exec_command(str(cmd2))
-            print("File creation done %s" % self.file_size)
+            logger.info("File creation done %s", self.file_size)
             output = stdout.readlines()
         ssh.close()
         time.sleep(1)
@@ -285,11 +325,23 @@ class FtpTest(LFCliBase):
     def convert_file_size_in_Bytes(self, size):
         '''convert file size MB or GB into Bytes'''
 
+        '''
         if (size.endswith("MB")) or (size.endswith("Mb")) or (size.endswith("GB")) or (size.endswith("Gb")):
             if (size.endswith("MB")) or (size.endswith("Mb")):
                 return float(size[:-2]) * 10 ** 6
             elif (size.endswith("GB")) or (size.endswith("Gb")):
                 return float(size[:-2]) * 10 ** 9
+        '''
+
+        upper = size.upper()
+        if upper.endswith("MB"):
+            return float(upper[:-2]) * 10 ** 6
+        elif upper.endswith("GB"):
+            return float(upper[:-2]) * 10 ** 9
+        # assume data is MB if no designator is on end of str
+        else:
+            return float(upper[:-2]) * 10 ** 6
+
 
     def my_monitor(self, time1):
         # data in json format
@@ -309,7 +361,7 @@ class FtpTest(LFCliBase):
 
         for i in range(self.num_sta):
             list_of_time.append(0)
-        #running layer 4 traffic upto user given time
+        # running layer 4 traffic upto user given time
         while str(datetime.now() - time1) <= self.traffic_duration:
             if list_of_time.count(0) == 0:
                 break
@@ -440,13 +492,14 @@ class FtpTest(LFCliBase):
 
         return table_dict_pass_fail
 
-    def download_upload_time_table(self,result_data):
+    def download_upload_time_table(self, result_data):
         '''Method for create dict for download/upload table for report'''
-
+        # print("download_upload_time_table - result_data:{result_data}".format(result_data=result_data))
         table_dict_time = {}
         string_data = ""
         i = 0
         table_dict_time[""] = self.rows_head
+        self.kpi_results = []
 
         for size in self.file_sizes:
             for d in self.directions:
@@ -471,13 +524,16 @@ class FtpTest(LFCliBase):
                             Sum = int(sum(data_time))
                             Len = len(data_time)
                             Avg = round(Sum / Len, 2)
+
                         string_data = "Min=" + str(Min) + ",Max=" + str(Max) + ",Avg=" + str(Avg) + " (sec)"
 
                         if data["band"] == b and data["direction"] == d and data["file_size"] == size:
+                            # print("download_upload_time_table - data:{data}".format(data=data))
                             list_data.append(string_data)
 
                 table_dict_time[self.column_head[i]] = list_data
                 i = i + 1
+                self.kpi_results.append(list_data)
 
         return table_dict_time
 
@@ -644,7 +700,7 @@ class FtpTest(LFCliBase):
 
         graph_png = graph.build_bar_graph()
 
-        print("graph name {}".format(graph_png))
+        logger.info("graph name {}".format(graph_png))
 
         self.report.set_graph_image(graph_png)
         # need to move the graph image to the results
@@ -666,10 +722,14 @@ class FtpTest(LFCliBase):
                 self.generate_graph_time(result_data, x_axis, b, size)
                 self.generate_graph_throughput(result_data, x_axis, b, size)
 
-    def generate_report(self, ftp_data, date,test_setup_info, input_setup_info):
+
+    def generate_report(self, ftp_data, date, test_setup_info, input_setup_info, test_rig, test_tag, dut_hw_version,
+                        dut_sw_version, dut_model_num, dut_serial_num, test_id, bands,
+                        csv_outfile):
         '''Method for generate the report'''
 
         self.report = lf_report.lf_report(_results_dir_name="ftp_test", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf")
+
         self.report.set_title("FTP Test")
         self.report.set_date(date)
         self.report.build_banner()
@@ -698,13 +758,192 @@ class FtpTest(LFCliBase):
         self.report.test_setup_table(value="Information", test_setup_data=input_setup_info)
         self.report.build_footer()
         html_file = self.report.write_html()
-        print("returned file {}".format(html_file))
-        print(html_file)
+        logger.info("returned file {}".format(html_file))
+        logger.info(html_file)
         self.report.write_pdf()
+        self.kpi_results
+        # print("generate_report - self.kpi_results:{kpi_results}".format(kpi_results=self.kpi_results))
+
+        # Begin kpi.csv
+        # start splicing data from self.kpi_results to feed table dicts
+        for dwnld_rts in self.kpi_results[0]:
+            split_download_rates = dwnld_rts.split(',')
+
+            # split download data rates for download_table_values dict
+            x_fin = []
+            y_fin = []
+            z_fin = []
+
+            x = split_download_rates[0]
+            y = split_download_rates[1]
+            z = split_download_rates[2]
+
+            split_min = x.split('=')
+            split_max = y.split('=')
+            split_avg = z.split('=')
+
+            x1 = split_min[1]
+            y1 = split_max[1]
+            z1 = split_avg[1]
+            z2 = z1.split()
+            z3 = z2[0]
+
+            x_fin.append(x1)
+            y_fin.append(y1)
+            z_fin.append(z3)
+
+            download_table_value = {
+                "Band": bands,
+                "Minimum": x_fin,
+                "Maximum": y_fin,
+                "Average": z_fin
+            }
+            # print("download_table_value:{download_table_value}".format(download_table_value=download_table_value))
+
+        # if upload tests are being ran as well:
+        if len(self.kpi_results) > 1:
+                for upload_rts in self.kpi_results[1]:
+                    split_upload_rates = upload_rts.split(',')
+                    # print("split_upload_rates:{split_upload_rates}".format(split_upload_rates=split_upload_rates))
+
+                    up_x_fin = []
+                    up_y_fin = []
+                    up_z_fin = []
+
+                    # split upload data rates for upload_table_values dict
+                    up_x = split_upload_rates[0]
+                    up_y = split_upload_rates[1]
+                    up_z = split_upload_rates[2]
+
+                    up_split_min = up_x.split('=')
+                    up_split_max = up_y.split('=')
+                    up_split_avg = up_z.split('=')
+
+                    up_x1 = up_split_min[1]
+                    up_y1 = up_split_max[1]
+                    up_z1 = up_split_avg[1]
+                    up_z2 = up_z1.split()
+                    up_z3 = up_z2[0]
+
+                    up_x_fin.append(up_x1)
+                    up_y_fin.append(up_y1)
+                    up_z_fin.append(up_z3)
+
+                    upload_table_value = {
+                        "Band": bands,
+                        "Minimum": up_x_fin,
+                        "Maximum": up_y_fin,
+                        "Average": up_z_fin
+                    }
+                    # print("upload_table_value:{upload_table_value}".format(upload_table_value=upload_table_value))
 
 
+        # Get the report path to create the kpi.csv path
+        kpi_path = self.report.get_report_path()
+        # print("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
 
+        self.kpi_csv = lf_kpi_csv.lf_kpi_csv(
+            _kpi_path=kpi_path,
+            _kpi_test_rig=test_rig,
+            _kpi_test_tag=test_tag,
+            _kpi_dut_hw_version=dut_hw_version,
+            _kpi_dut_sw_version=dut_sw_version,
+            _kpi_dut_model_num=dut_model_num,
+            _kpi_dut_serial_num=dut_serial_num,
+            _kpi_test_id=test_id)
 
+        self.kpi_csv.kpi_dict['Units'] = "Mbps"
+        for band in range(len(download_table_value["Band"])):
+            self.kpi_csv.kpi_csv_get_dict_update_time()
+
+            # ftp download data for kpi.csv
+            self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Download {band}".format(
+                band=download_table_value['Band'][band])
+            self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Minimum".format(
+                band=download_table_value['Band'][band])
+            self.kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=download_table_value['Minimum'][band])
+            self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+            self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Maximum".format(
+                band=download_table_value['Band'][band])
+            self.kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=download_table_value['Maximum'][band])
+            self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+            self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Average".format(
+                band=download_table_value['Band'][band])
+            self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=download_table_value['Average'][band])
+            self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+
+            # ftp upload data for kpi.csv
+            self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Upload {band}".format(
+                band=upload_table_value['Band'][band])
+            self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Minimum".format(
+                band=upload_table_value['Band'][band])
+            self.kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=upload_table_value['Minimum'][band])
+            self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+            self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Maximum".format(
+                band=upload_table_value['Band'][band])
+            self.kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=upload_table_value['Maximum'][band])
+            self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+            self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Average".format(
+                band=upload_table_value['Band'][band])
+            self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=upload_table_value['Average'][band])
+            self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+
+            '''
+            # ftp download data for kpi.csv
+            if self.direction == "Download":
+                self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Download {band}".format(
+                    band=download_table_value['Band'][band])
+                self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Minimum".format(
+                    band=download_table_value['Band'][band])
+                self.kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=download_table_value['Minimum'][band])
+                self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+                self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Maximum".format(
+                    band=download_table_value['Band'][band])
+                self.kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=download_table_value['Maximum'][band])
+                self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+                self.kpi_csv.kpi_dict['short-description'] = "FTP Download {band} Average".format(
+                    band=download_table_value['Band'][band])
+                self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=download_table_value['Average'][band])
+                self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+                        
+            # ftp upload data for kpi.csv
+            if self.direction == "Upload":
+                self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Upload {band}".format(
+                    band=upload_table_value['Band'][band])
+                self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Minimum".format(
+                    band=upload_table_value['Band'][band])
+                self.kpi_csv.kpi_dict['numeric-score'] = "{min}".format(min=upload_table_value['Minimum'][band])
+                self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+                self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Maximum".format(
+                    band=upload_table_value['Band'][band])
+                self.kpi_csv.kpi_dict['numeric-score'] = "{max}".format(max=upload_table_value['Maximum'][band])
+                self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+                self.kpi_csv.kpi_dict['short-description'] = "FTP Upload {band} Average".format(
+                    band=upload_table_value['Band'][band])
+                self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=upload_table_value['Average'][band])
+                self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+            '''
+
+        if csv_outfile is not None:
+            current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+            csv_outfile = "{}_{}-test_l4_ftp.csv".format(
+                csv_outfile, current_time)
+            csv_outfile = self.report.file_add_path(csv_outfile)
+            logger.info("csv output file : {}".format(csv_outfile))
+
+        exit()
+
+        test_setup = pd.DataFrame(download_table_value)
+        self.report.set_table_dataframe(test_setup)
+        self.report.build_table()
+        self.report.set_table_title("Test input Information")
+        self.report.build_table_title()
+        self.report.test_setup_table(value="Information", test_setup_data=input_setup_info)
+        self.report.build_footer()
+        html_file = self.report.write_html()
+        logger.info("returned file {}".format(html_file))
+        logger.info(html_file)
+        self.report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
 
 
@@ -739,6 +978,8 @@ CLI Example:
     parser.add_argument('--fiveg_duration', nargs="+", help='Pass and Fail duration for 5G band in minutes')
     parser.add_argument('--both_duration', nargs="+", help='Pass and Fail duration for Both band in minutes')
     parser.add_argument('--traffic_duration', type=int, help='duration for layer 4 traffic running in minutes')
+    # allow for test run as seconds, minutes, etc
+    # TODO: add --debug support
     parser.add_argument('--ssh_port', type=int, help="specify the shh port: eg 22 [default = 22]", default=22)
 
     # Test variables
@@ -748,9 +989,59 @@ CLI Example:
                         default=["Download", "Upload"])
     parser.add_argument('--file_sizes', nargs="+", help='--File Size defaults ["2MB","500MB","1000MB"]',
                         default=["2MB", "500MB", "1000MB"])
-    parser.add_argument('--num_stations', type=int, help='--num_stations is number of stations [default = 40 stations]', default=40)
+    parser.add_argument('--num_stations', type=int, help='--num_stations is number of stations', default=40)
+
+    # kpi_csv arguments
+    parser.add_argument(
+        "--test_rig",
+        default="",
+        help="test rig for kpi.csv, testbed that the tests are run on")
+    parser.add_argument(
+        "--test_tag",
+        default="",
+        help="test tag for kpi.csv,  test specific information to differenciate the test")
+    parser.add_argument(
+        "--dut_hw_version",
+        default="",
+        help="dut hw version for kpi.csv, hardware version of the device under test")
+    parser.add_argument(
+        "--dut_sw_version",
+        default="",
+        help="dut sw version for kpi.csv, software version of the device under test")
+    parser.add_argument(
+        "--dut_model_num",
+        default="",
+        help="dut model for kpi.csv,  model number / name of the device under test")
+    parser.add_argument(
+        "--dut_serial_num",
+        default="",
+        help="dut serial for kpi.csv, serial number / serial number of the device under test")
+    parser.add_argument(
+        "--test_priority",
+        default="",
+        help="dut model for kpi.csv,  test-priority is arbitrary number")
+    parser.add_argument(
+        "--test_id",
+        default="FTP Data",
+        help="test-id for kpi.csv,  script or test name")
+    parser.add_argument(
+        '--csv_outfile',
+        help="--csv_outfile <Output file for csv data>",
+        default="")
+
+    # logging configuration
+    parser.add_argument(
+        "--lf_logger_config_json",
+        help="--lf_logger_config_json <json file> , json configuration of logger")
 
     args = parser.parse_args()
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
 
     # 1st time stamp for test duration
     time_stamp1 = datetime.now()
@@ -812,7 +1103,7 @@ CLI Example:
                               fiveg_radio=args.fiveg_radio,
                               duration=pass_fail_duration(band, file_size),
                               traffic_duration=args.traffic_duration,
-                              ssh_port=args.ssh_port
+                              ssh_port=args.ssh_port,
                               )
 
                 interation_num = interation_num + 1
@@ -821,7 +1112,7 @@ CLI Example:
                 obj.precleanup()
                 obj.build()
                 if not obj.passes():
-                    print(obj.get_fail_message())
+                    logger.info(obj.get_fail_message())
                     exit(1)
 
                 # First time stamp
@@ -831,14 +1122,14 @@ CLI Example:
 
                 # return list of download/upload completed time stamp
                 time_list = obj.my_monitor(time1)
-
+                # print("pass_fail_duration - time_list:{time_list}".format(time_list=time_list))
                 # check pass or fail
                 pass_fail = obj.pass_fail_check(time_list)
 
                 # dictionary of whole data
                 ftp_data[interation_num] = obj.ftp_test_data(time_list, pass_fail, args.bands, args.file_sizes,
                                                               args.directions, args.num_stations)
-
+                # print("pass_fail_duration - ftp_data:{ftp_data}".format(ftp_data=ftp_data))
                 obj.stop()
                 obj.postcleanup()
 
@@ -869,10 +1160,11 @@ CLI Example:
         "Security": args.security,
         "Contact": "support@candelatech.com"
     }
-    obj.generate_report(ftp_data,
-                    date,
-                    test_setup_info,
-                    input_setup_info)
+    obj.generate_report(ftp_data, date, test_setup_info, input_setup_info, test_rig=args.test_rig,
+                        test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
+                        dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
+                        dut_serial_num=args.dut_serial_num, test_id=args.test_id,
+                        bands=args.bands, csv_outfile=args.csv_outfile)
 
 
 if __name__ == '__main__':
