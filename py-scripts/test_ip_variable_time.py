@@ -28,6 +28,7 @@ import os
 import importlib
 import argparse
 import datetime
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -40,6 +41,10 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 InfluxRequest = importlib.import_module('py-dashboard.InfluxRequest')
 RecordInflux = InfluxRequest.RecordInflux
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
+
+logger = logging.getLogger(__name__)
 
 
 class IPVariableTime(Realm):
@@ -164,7 +169,7 @@ class IPVariableTime(Realm):
         # to-do- check here if upstream port got IP
         self.station_profile.admin_up()
         temp_stas = self.station_profile.station_names.copy()
-        print("temp_stas {temp_stas}".format(temp_stas=temp_stas))
+        logger.info("temp_stas {temp_stas}".format(temp_stas=temp_stas))
         if self.wait_for_ip(temp_stas, ipv4=not self.ipv6, ipv6=self.ipv6, debug=self.debug):
             self._pass("All stations got IPs")
         else:
@@ -193,15 +198,15 @@ class IPVariableTime(Realm):
     def build(self):
         self.station_profile.use_security(self.security, self.ssid, self.password)
         self.station_profile.set_number_template(self.number_template)
-        # print("sta_list {}".format(self.sta_list))
+        # logger.info("sta_list {}".format(self.sta_list))
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
 
         if self.use_existing_sta:
-            print("Use Existing Stations: {sta_list}".format(sta_list=self.sta_list))
+            logger.info("Use Existing Stations: {sta_list}".format(sta_list=self.sta_list))
         else:
-            print("Creating stations")
+            logger.info("Creating stations")
             self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
             self._pass("PASS: Station build finished")
 
@@ -227,7 +232,7 @@ class IPVariableTime(Realm):
                 report_f = str(path) + '/data.' + self.output_format
                 output = self.output_format
             else:
-                print(
+                logger.info(
                     'Not supporting this report format or cannot find report format provided. Defaulting to csv data file '
                     'output type, naming it data.csv.')
                 report_f = str(path) + '/data.csv'
@@ -246,7 +251,7 @@ class IPVariableTime(Realm):
         # CMR What is this code doing
         if not self.use_existing_sta:
             if not self.passes():
-                print(self.get_fail_message())
+                logger.error(self.get_fail_message())
                 self.exit_fail()
 
         try:
@@ -267,15 +272,17 @@ class IPVariableTime(Realm):
             port_mgr_cols = self.port_mgr_cols
             # send col names here to file to reformat
         if self.debug:
-            print("Layer 3 Endp column names are...")
-            print(layer3_cols)
-            print("Port Manager column names are...")
-            print(port_mgr_cols)
+            logger.debug("Layer 3 Endp column names are...")
+            logger.debug(layer3_cols)
+            logger.debug("Port Manager column names are...")
+            logger.debug(port_mgr_cols)
 
         try:
             monitor_interval = Realm.parse_time(self.monitor_interval).total_seconds()
         except ValueError as error:
-            print(error)
+            logger.critical(error)
+            logger.critical(
+                "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. ")
             return ValueError(
                 "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. ")
         self.start()
@@ -303,6 +310,7 @@ class IPVariableTime(Realm):
             compared_report_format = self.compared_report.split('.')[-1]
             # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
             if compared_report_format != 'csv':
+                logger.critical("Cannot process this file type. Please select a different file and re-run script.")
                 raise ValueError("Cannot process this file type. Please select a different file and re-run script.")
             else:
                 compared_rept = self.compared_report
@@ -323,13 +331,13 @@ class IPVariableTime(Realm):
         self.stop()
         if not self.use_existing_sta:
             if not self.passes():
-                print(self.get_fail_message())
+                logger.info(self.get_fail_message())
                 self.exit_fail()
 
             if self.passes():
                 self.success()
         self.cleanup()
-        print("IP Variable Time Test Report Data: {}".format(report_f))
+        logger.info("IP Variable Time Test Report Data: {}".format(report_f))
 
 
 def main():
@@ -611,23 +619,35 @@ python3 ./test_ip_variable_time.py
     parser.add_argument('--sta_names', help='Used to force a connection to a particular AP', default="sta0000")
     args = parser.parse_args()
 
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    # set the logger level to debug
+    if args.debug:
+        logger_config.set_level_debug()
+
+    # lf_logger_config_json will take presidence to changing debug levels
+    if args.lf_logger_config_json:
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
     num_sta = 1
     if args.num_stations:
-        print("one")
+        logger.info("one")
         num_sta = int(args.num_stations)
     if not args.use_existing_sta:
-        print("two")
+        logger.info("two")
         station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1,
                                               padding_number_=10000,
                                               radio=args.radio)
     else:
-        print("three")
+        logger.info("three")
         station_list = args.sta_names.split(",")
 
-    print("args.num_stations: {create}".format(create=args.num_stations))
-    print("args.sta_names: {create}".format(create=args.sta_names))
-    print("args.use_existing_sta: {create} {typeof}".format(create=args.use_existing_sta, typeof=type(args.use_existing_sta)))
-    print("station_list: {sta}".format(sta=station_list))
+    logger.info("args.num_stations: {create}".format(create=args.num_stations))
+    logger.info("args.sta_names: {create}".format(create=args.sta_names))
+    logger.info("args.use_existing_sta: {create} {typeof}".format(create=args.use_existing_sta, typeof=type(args.use_existing_sta)))
+    logger.info("station_list: {sta}".format(sta=station_list))
 
     # Create directory
     # if file path with output file extension is not given...
@@ -637,7 +657,7 @@ python3 ./test_ip_variable_time.py
     CX_TYPES = ("tcp", "udp", "lf_tcp", "lf_udp")
 
     if not args.traffic_type or (args.traffic_type not in CX_TYPES):
-        print("cx_type needs to be lf_tcp, lf_udp, tcp, or udp, bye")
+        logger.error("cx_type needs to be lf_tcp, lf_udp, tcp, or udp, bye")
         exit(1)
 
     if args.ipv6:
