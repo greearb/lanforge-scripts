@@ -37,6 +37,9 @@ import argparse
 import time
 import re
 from pprint import pprint
+import shlex
+
+# TODO:  Add logging support.
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -102,15 +105,7 @@ class CreateChamberview(cv):
                 #print("item: ")
                 #pprint(item)
 
-                if " " in item[0]:
-                    item[0] = (re.split(' ', item[0]))
-                elif "," in item[0]:
-                    item[0] = (re.split(',', item[0]))
-                else:
-                    print("Wrong arguments entered !")
-                    exit(1)
-
-                for sub_item in item[0]:
+                for sub_item in shlex.split(item[0]):
                     #print("sub-item: ")
                     #pprint(sub_item)
 
@@ -137,6 +132,8 @@ class CreateChamberview(cv):
                     elif sub_item[0] == "VLAN" or sub_item[0] == "Vlan" or sub_item[0] == "V":
                         VLAN = sub_item[1]
                     else:
+                        print("ERROR:  Unknown line argument -:%s:-" %(sub_item[0]))
+                        raise ValueError("Un-supported line argument")  # Bad user input, terminate script.
                         continue
 
                 self.add_text_blob_line(scenario_name,
@@ -197,6 +194,9 @@ def main():
              --raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
              --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
 
+           DUT_Radio is really the last part of the 'maps to' component of the scenario,
+           so it can also be LAN when using and Upstream profile, for instance.
+
            """)
     parser.add_argument(
         "-m",
@@ -247,6 +247,14 @@ def main():
                              raw_line=args.raw_line)
     Create_Chamberview.build(args.create_scenario)
 
+    # TODO:  Build the scenario (cv click the 'Build Scenario' button, wait until build has completed
+    # TODO:  Find and admin up all wlan* and sta* ports,
+    # TODO:  Verify they admin up and get IP address.
+
+    if Create_Chamberview.passes():
+        Create_Chamberview.exit_success()
+    else:
+        Create_Chamberview.exit_fail()
 
 if __name__ == "__main__":
     main()

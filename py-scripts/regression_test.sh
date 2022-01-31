@@ -25,7 +25,7 @@ Help()
 HOMEPATH=$(realpath ~)
 REPORT_DIR="${HOMEPATH}/html-reports"
 
-while getopts ":h:s:S:p:w:m:r:R:F:B:U:D:H:M:C:e:V:E:" option; do
+while getopts ":h:s:S:p:w:m:r:R:F:B:u:U:D:H:M:C:e:V:E:" option; do
   case "${option}" in
     h) # display Help
       Help
@@ -58,7 +58,12 @@ while getopts ":h:s:S:p:w:m:r:R:F:B:U:D:H:M:C:e:V:E:" option; do
     B)
       BSSID=${OPTARG}
       ;;
+    u)
+      # like eth0
+      UPSTREAM_BARE=${OPTARG}
+      ;;
     U)
+      # like 1.1.eth0
       UPSTREAM=${OPTARG}
       ;;
     D)
@@ -146,8 +151,13 @@ fi
 if [[ ${#RADIO2} -eq 0 ]]; then # Allow the user to change the radio they test against
   RADIO2="1.1.wiphy0"
 fi
+
+if [[ ${#UPSTREAM_BARE} -eq 0 ]]; then
+  UPSTREAM_BARE="eth1"
+fi
+
 if [[ ${#UPSTREAM} -eq 0 ]]; then
-  UPSTREAM="1.1.eth1"
+  UPSTREAM=$UPSTREAM_BARE
 fi
 
 if [[ ${#BSSID} -eq 0 ]]; then
@@ -220,11 +230,11 @@ function create_station_and_dataplane() {
           --local_lf_report_dir ~/html-reports/dataplane_"$NOW"
 }
 function create_dut_and_chamberview() {
-        ./create_chamberview.py -m $MGR -cs 'regression_test' --delete_scenario \
-        --line "Resource=$RESOURCE Profile=STA-AC Amount=1 Uses-1=$RADIO_USED Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http" \
-        --line "Resource=$RESOURCE Profile=upstream Amount=1 Uses-1=$UPSTREAM Uses-2=AUTO Freq=-1 DUT=regression_dut DUT_RADIO=$RADIO_USED Traffic=http"
         ./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut \
-        --ssid "ssid_idx=0 ssid='$SSID_USED' security='$SECURITY' password='$PASSWD_USED' bssid=$BSSID"
+            --ssid "ssid_idx=0 ssid='$SSID_USED' security='$SECURITY' password='$PASSWD_USED' bssid=$BSSID"
+        ./create_chamberview.py -m $MGR -cs 'regression_test' --delete_scenario \
+            --line "Resource=1.$RESOURCE Profile=STA-AC Amount=1 Uses-1=$RADIO_USED Freq=-1 DUT=regression_dut DUT_Radio=$RADIO_USED Traffic=http" \
+            --line "Resource=1.$RESOURCE Profile=upstream Amount=1 Uses-1=$UPSTREAM_BARE Uses-2=AUTO Freq=-1 DUT=regression_dut DUT_Radio=LAN Traffic=http"
     }
 
 function create_station_and_sensitivity {

@@ -194,9 +194,11 @@ def main():
         default="NA",
         help="DUT Serial number.")
     parser.add_argument("--model_num", default="NA", help="DUT Model Number.")
+
+    # TODO:  Add example flag options from py-json/LANforge/add_dut.py somehow.
     parser.add_argument(
         '--dut_flag',
-        help='station flags to add',
+        help='DUT flags to add',
         default=None,
         action='append')
 
