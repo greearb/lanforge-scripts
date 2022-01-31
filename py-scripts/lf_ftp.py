@@ -216,10 +216,10 @@ class FtpTest(LFCliBase):
                     # print("station:{station_names}".format(station_names=self.station_profile.station_names))
                     # print("ip_upstream:{ip_upstream}".format(ip_upstream=ip_upstream))
                     self.cx_profile.create(ports=self.station_profile.station_names, ftp_ip=ip_upstream +
-                                       "/ftp_test.txt",
-                                       sleep_time=.5, debug_=self.debug, suppress_related_commands_=True, ftp=True,
-                                       user="lanforge",
-                                       passwd="lanforge", source="")
+                                           "/ftp_test.txt",
+                                           sleep_time=.5, debug_=self.debug, suppress_related_commands_=True, ftp=True,
+                                           user="lanforge",
+                                           passwd="lanforge", source="")
 
             elif self.direction == "Upload":
                 dict_sta_and_ip = {}
@@ -342,7 +342,6 @@ class FtpTest(LFCliBase):
         else:
             return float(upper[:-2]) * 10 ** 6
 
-
     def my_monitor(self, time1):
         # data in json format
         data = self.json_get("layer4/list?fields=bytes-rd")
@@ -439,11 +438,12 @@ class FtpTest(LFCliBase):
         return create_dict
 
     def convert_min_in_time(self, total_minutes):
+        '''
         # Get hours with floor division
         hours = total_minutes // 60
-
         # Get additional minutes with modulus
         minutes = total_minutes % 60
+        '''
 
         # Create time as a string
         time_string = str("%d:%02d" % (divmod(total_minutes, 60))) + ":00" + ":000000"
@@ -475,7 +475,7 @@ class FtpTest(LFCliBase):
             else:
                 self.rows_head.append(str(self.num_stations // 2) + "+" + str(self.num_stations // 2) + " Clients-2.4G+5G")
 
-        #creating dict for a table
+        # creating dict for a table
         table_dict_pass_fail = {}
         i = 0
         table_dict_pass_fail[""] = self.rows_head
@@ -537,7 +537,7 @@ class FtpTest(LFCliBase):
 
         return table_dict_time
 
-    def generate_graph_time(self,result_data, x_axis, band, size):
+    def generate_graph_time(self, result_data, x_axis, band, size):
         '''Method for generating graph for time'''
 
         num_stations = result_data[1]["num_stations"]
@@ -553,9 +553,9 @@ class FtpTest(LFCliBase):
                 dataset.append(data["time"])
                 labels.append("Download")
 
-                #Adding red bar if client unable to download/upload file
+                # Adding red bar if client unable to download/upload file
                 color_list = []
-                #converting minutes in seconds
+                # converting minutes in seconds
                 duration = data["duration"] * 60
                 for i in data["time"]:
                     if i < duration:
@@ -629,10 +629,9 @@ class FtpTest(LFCliBase):
                 else:
                     handles.append(mpatches.Patch(color='red', label='Upload/Download > threshold time'))
 
-
         self.report.set_obj_html(graph_name, graph_description)
         self.report.build_objective()
-        image_name = "image"+band+size
+        image_name = "image" + band + size
         x_axis_name = "Stations"
         y_axis_name = "Time in seconds"
         self.bar_graph(x_axis, image_name, dataset, color, labels, x_axis_name, y_axis_name, handles, ncol=num_col, box=box, fontsize=12)
@@ -654,7 +653,8 @@ class FtpTest(LFCliBase):
                 color.append("Orange")
                 graph_name = "File size " + size + " " + str(
                     num_stations) + " Clients " + band + "-File Download Throughput(MB)"
-                graph_description = str(data["num_stations"] - data["time"].count(0)) + " clients are able to download " + data["file_size"] + " file."
+                graph_description = str(data["num_stations"] - data["time"].count(0)) + \
+                    " clients are able to download " + data["file_size"] + " file."
                 count = count + 1
             if data["band"] == band and data["file_size"] == size and data["direction"] == "Upload":
                 dataset.append(data["throughput"])
@@ -662,7 +662,8 @@ class FtpTest(LFCliBase):
                 color.append("Blue")
                 graph_name = "File size " + size + " " + str(
                     num_stations) + " Clients " + band + "-File Upload Throughput(MB)"
-                graph_description = graph_description + str(data["num_stations"] - data["time"].count(0)) + " clients are able to upload " + data["file_size"] + " file."
+                graph_description = graph_description + str(data["num_stations"] - data["time"].count(0)) + \
+                    " clients are able to upload " + data["file_size"] + " file."
                 count = count + 1
         if count == 2:
             graph_name = "File size " + size + " " + str(
@@ -676,27 +677,27 @@ class FtpTest(LFCliBase):
         box = (1.1, 1.05)
         self.bar_graph(x_axis, image_name, dataset, color, labels, x_axis_name, y_axis_name, handles=None, ncol=1, box=box, fontsize=None)
 
-    def bar_graph(self, x_axis, image_name, dataset, color, labels, x_axis_name, y_axis_name,handles, ncol, box, fontsize):
+    def bar_graph(self, x_axis, image_name, dataset, color, labels, x_axis_name, y_axis_name, handles, ncol, box, fontsize):
         '''This Method will plot bar graph'''
 
         graph = lf_graph.lf_bar_graph(_data_set=dataset,
-                             _xaxis_name=x_axis_name,
-                             _yaxis_name=y_axis_name,
-                             _xaxis_categories=x_axis,
-                             _label=labels,
-                             _graph_image_name=image_name,
-                             _figsize=(18, 6),
-                             _color=color,
-                             _show_bar_value=False,
-                             _xaxis_step=None,
-                             _legend_handles=handles,
-                             _color_edge=None,
-                             _text_rotation=40,
-                             _legend_loc="upper right",
-                             _legend_box=box,
-                             _legend_ncol=ncol,
-                             _legend_fontsize=fontsize,
-                             _enable_csv=True)
+                                      _xaxis_name=x_axis_name,
+                                      _yaxis_name=y_axis_name,
+                                      _xaxis_categories=x_axis,
+                                      _label=labels,
+                                      _graph_image_name=image_name,
+                                      _figsize=(18, 6),
+                                      _color=color,
+                                      _show_bar_value=False,
+                                      _xaxis_step=None,
+                                      _legend_handles=handles,
+                                      _color_edge=None,
+                                      _text_rotation=40,
+                                      _legend_loc="upper right",
+                                      _legend_box=box,
+                                      _legend_ncol=ncol,
+                                      _legend_fontsize=fontsize,
+                                      _enable_csv=True)
 
         graph_png = graph.build_bar_graph()
 
@@ -722,7 +723,6 @@ class FtpTest(LFCliBase):
                 self.generate_graph_time(result_data, x_axis, b, size)
                 self.generate_graph_throughput(result_data, x_axis, b, size)
 
-
     def generate_report(self, ftp_data, date, test_setup_info, input_setup_info, test_rig, test_tag, dut_hw_version,
                         dut_sw_version, dut_model_num, dut_serial_num, test_id, bands,
                         csv_outfile):
@@ -738,16 +738,18 @@ class FtpTest(LFCliBase):
         self.report.test_setup_table(value="Device under test", test_setup_data=test_setup_info)
 
         self.report.set_obj_html("Objective",
-                            "This FTP Test is used to Verify that N clients connected on Specified band and can simultaneously download/upload some amount of file from FTP server and measuring the time taken by client to Download/Upload the file.")
+                                 "This FTP Test is used to Verify that N clients connected on Specified band and can "
+                                 "simultaneously download/upload some amount of file from FTP server and measuring the "
+                                 "time taken by client to Download/Upload the file.")
         self.report.build_objective()
         self.report.set_obj_html("PASS/FAIL Results",
-                            "This Table will give Pass/Fail results.")
+                                 "This Table will give Pass/Fail results.")
         self.report.build_objective()
         dataframe1 = pd.DataFrame(self.add_pass_fail_table(ftp_data))
         self.report.set_table_dataframe(dataframe1)
         self.report.build_table()
         self.report.set_obj_html("File Download/Upload Time (sec)",
-                            "This Table will  give FTP Download/Upload Time of Clients.")
+                                 "This Table will  give FTP Download/Upload Time of Clients.")
         self.report.build_objective()
         dataframe2 = pd.DataFrame(self.download_upload_time_table(ftp_data))
         self.report.set_table_dataframe(dataframe2)
@@ -802,41 +804,40 @@ class FtpTest(LFCliBase):
 
         # if upload tests are being ran as well:
         if len(self.kpi_results) > 1:
-                for upload_rts in self.kpi_results[1]:
-                    split_upload_rates = upload_rts.split(',')
-                    # print("split_upload_rates:{split_upload_rates}".format(split_upload_rates=split_upload_rates))
+            for upload_rts in self.kpi_results[1]:
+                split_upload_rates = upload_rts.split(',')
+                # print("split_upload_rates:{split_upload_rates}".format(split_upload_rates=split_upload_rates))
 
-                    up_x_fin = []
-                    up_y_fin = []
-                    up_z_fin = []
+                up_x_fin = []
+                up_y_fin = []
+                up_z_fin = []
 
-                    # split upload data rates for upload_table_values dict
-                    up_x = split_upload_rates[0]
-                    up_y = split_upload_rates[1]
-                    up_z = split_upload_rates[2]
+                # split upload data rates for upload_table_values dict
+                up_x = split_upload_rates[0]
+                up_y = split_upload_rates[1]
+                up_z = split_upload_rates[2]
 
-                    up_split_min = up_x.split('=')
-                    up_split_max = up_y.split('=')
-                    up_split_avg = up_z.split('=')
+                up_split_min = up_x.split('=')
+                up_split_max = up_y.split('=')
+                up_split_avg = up_z.split('=')
 
-                    up_x1 = up_split_min[1]
-                    up_y1 = up_split_max[1]
-                    up_z1 = up_split_avg[1]
-                    up_z2 = up_z1.split()
-                    up_z3 = up_z2[0]
+                up_x1 = up_split_min[1]
+                up_y1 = up_split_max[1]
+                up_z1 = up_split_avg[1]
+                up_z2 = up_z1.split()
+                up_z3 = up_z2[0]
 
-                    up_x_fin.append(up_x1)
-                    up_y_fin.append(up_y1)
-                    up_z_fin.append(up_z3)
+                up_x_fin.append(up_x1)
+                up_y_fin.append(up_y1)
+                up_z_fin.append(up_z3)
 
-                    upload_table_value = {
-                        "Band": bands,
-                        "Minimum": up_x_fin,
-                        "Maximum": up_y_fin,
-                        "Average": up_z_fin
-                    }
-                    # print("upload_table_value:{upload_table_value}".format(upload_table_value=upload_table_value))
-
+                upload_table_value = {
+                    "Band": bands,
+                    "Minimum": up_x_fin,
+                    "Maximum": up_y_fin,
+                    "Average": up_z_fin
+                }
+                # print("upload_table_value:{upload_table_value}".format(upload_table_value=upload_table_value))
 
         # Get the report path to create the kpi.csv path
         kpi_path = self.report.get_report_path()
@@ -905,7 +906,7 @@ class FtpTest(LFCliBase):
                     band=download_table_value['Band'][band])
                 self.kpi_csv.kpi_dict['numeric-score'] = "{avg}".format(avg=download_table_value['Average'][band])
                 self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-                        
+
             # ftp upload data for kpi.csv
             if self.direction == "Upload":
                 self.kpi_csv.kpi_dict['Graph-Group'] = "FTP Upload {band}".format(
@@ -946,7 +947,6 @@ class FtpTest(LFCliBase):
         self.report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
 
-
 def main():
     parser = argparse.ArgumentParser(
         prog='lf_ftp.py',
@@ -956,11 +956,11 @@ def main():
 FTP Test Script - lf_ftp.py
 ---------------------------
 Summary:
-lf_ftp.py will verify that N clients are connected on a specified band and can simultaneously download/upload 
- some amount of file data from the FTP server while measuring the time taken by clients to download/upload the file. 
+lf_ftp.py will verify that N clients are connected on a specified band and can simultaneously download/upload
+ some amount of file data from the FTP server while measuring the time taken by clients to download/upload the file.
 ---------------------------
-CLI Example: 
-./lf_ftp.py --ssid <SSID> --passwd <PASSWORD> --file_sizes 2MB --fiveg_duration <MIN> --mgr 192.168.1.101 
+CLI Example:
+./lf_ftp.py --ssid <SSID> --passwd <PASSWORD> --file_sizes 2MB --fiveg_duration <MIN> --mgr 192.168.1.101
 --traffic_duration <MIN> --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
 ---------------------------
                     ''')
@@ -1128,7 +1128,7 @@ CLI Example:
 
                 # dictionary of whole data
                 ftp_data[interation_num] = obj.ftp_test_data(time_list, pass_fail, args.bands, args.file_sizes,
-                                                              args.directions, args.num_stations)
+                                                             args.directions, args.num_stations)
                 # print("pass_fail_duration - ftp_data:{ftp_data}".format(ftp_data=ftp_data))
                 obj.stop()
                 obj.postcleanup()
@@ -1141,7 +1141,7 @@ CLI Example:
 
     date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
 
-    #print(ftp_data)
+    # print(ftp_data)
 
     test_setup_info = {
         "AP Name": args.ap_name,
@@ -1169,4 +1169,3 @@ CLI Example:
 
 if __name__ == '__main__':
     main()
-
