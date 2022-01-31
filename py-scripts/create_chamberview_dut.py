@@ -27,6 +27,10 @@ How to Run this:
                 --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41"
                 --ssid "ssid_idx=1 ssid=NET1 security=WPA password=test bssid=78:d2:94:bf:16:40"
 
+    The contents of '--ssid' argument are split with shlex, so you can do commands like this as well:
+    ./create_chamberview_dut.py --lfmgr localhost --dut_name regression_dut
+       --ssid "ssid_idx=0 ssid='j-wpa2-153 space' security='wpa2' password=j-wpa2-153 bssid=04:f0:21:cb:01:8b"
+
     --lfmgr = IP of lanforge
     --port = Default 8080
     --dut_name = Enter name of DUT ( to update DUT enter same DUT name )
@@ -49,6 +53,7 @@ import os
 import importlib
 import argparse
 import time
+import shlex
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -107,9 +112,12 @@ class DUT(dut):
         flags['eap-peap'] = 0x800
         if self.ssid:
             for j in range(len(self.ssid)):
-                self.ssid[j] = self.ssid[j][0].split(' ')
+                self.ssid[j] = shlex.split(self.ssid[j][0])
                 for k in range(len(self.ssid[j])):
-                    self.ssid[j][k] = self.ssid[j][k].split('=')
+                    kvp = self.ssid[j][k].split('=')
+                    #print("key -:%s:-  val -:%s:-" % (kvp[0], kvp[1]))
+                    self.ssid[j][k] = kvp
+
                 d = dict()
                 for item in self.ssid[j]:
                     d[item[0].lower()] = item[1]
@@ -118,11 +126,17 @@ class DUT(dut):
 
                 flag = 0x0
                 if 'security' in self.ssid[j].keys():
-                    self.ssid[j]['security'] = self.ssid[j]['security'].split(
-                        '|')
+                    self.ssid[j]['security'] = self.ssid[j]['security'].split('|')
                     for security in self.ssid[j]['security']:
+                        #print("security: %s  flags: %s  keys: %s" % (security, flags, flags.keys()))
                         if security.lower() in flags:
                             flag |= flags[security.lower()]
+                            #print("updated flag: %s" % (flag))
+                        else:
+                            emsg = "ERROR:  Un-supported security flag: %s" % (security)
+                            print(emsg)
+                            raise ValueError("Un-supported security flag")  # Bad user input, terminate script.
+
                 self.ssid[j]['flag'] = flag
 
                 if 'bssid' not in self.ssid[j].keys():
