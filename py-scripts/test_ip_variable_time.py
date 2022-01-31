@@ -622,9 +622,8 @@ python3 ./test_ip_variable_time.py
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
 
-    # set the logger level to debug
-    if args.debug:
-        logger_config.set_level_debug()
+    # set the logger level to requested level
+    logger_config.set_level(level=args.log_level)
 
     # lf_logger_config_json will take presidence to changing debug levels
     if args.lf_logger_config_json:
