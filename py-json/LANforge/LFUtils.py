@@ -740,11 +740,9 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
                 lf_r.jsonPost()
         if len(found_stations) < len(port_list):
             sleep(2)
-            if debug:
-                logger.debug('Found %s out of %s stations in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(port_list), attempt, timeout/2))
+            logger.info('Found %s out of %s stations in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(port_list), attempt, timeout/2))
         else:
-            if debug:
-                logger.debug('All %s stations appeared' % len(found_stations))
+            logger.info('All %s stations appeared' % len(found_stations))
             return True
     if debug:
         logger.debug("These stations appeared: " + ", ".join(found_stations))
