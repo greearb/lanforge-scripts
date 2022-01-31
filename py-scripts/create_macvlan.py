@@ -20,7 +20,6 @@ Realm = realm.Realm
 
 class CreateMacVlan(Realm):
     def __init__(self, host, port,
-                 radio="wiphy0",
                  upstream_port="eth1",
                  num_ports=1,
                  macvlan_parent=None,
@@ -36,7 +35,6 @@ class CreateMacVlan(Realm):
                  _exit_on_fail=False):
         super().__init__(host, port)
         self.port = port
-        self.radio = radio
         self.upstream_port = upstream_port
         self.port_list = []
         self.connections_per_port = connections_per_port
@@ -90,14 +88,14 @@ Generic command layout:
 ./create_macvlan.py --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
                  --netmask 255.255.255.0 --gateway 192.168.92.1
 
-./create_macvlan.py --radio 1.wiphy0 --macvlan_parent eth1 --num_ports 3
+./create_macvlan.py --macvlan_parent eth1 --num_ports 3
                  --use_ports eth1#0,eth1#1,eth1#2 --connections_per_port 2
 
-./create_macvlan.py --radio 1.wiphy0 --macvlan_parent eth1 --num_ports 3
+./create_macvlan.py --macvlan_parent eth1 --num_ports 3
                  --first_mvlan_ip 10.40.3.100 --netmask 255.255.240.0 --gateway 10.40.0.1
                  --add_to_group test_wo
 
-./create_macvlan.py --radio 1.wiphy0 --macvlan_parent eth1 --num_ports 3
+./create_macvlan.py --macvlan_parent eth1 --num_ports 3
                  --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2 --connections_per_port 2
                  --netmask 255.255.240.0 --gateway 10.40.0.1
 
@@ -108,7 +106,6 @@ Generic command layout:
         '--num_stations',
         help='Number of stations to create',
         default=0)
-    parser.add_argument('--radio', help='radio EID, e.g: 1.wiphy2')
     parser.add_argument(
         '-u',
         '--upstream_port',
@@ -167,8 +164,7 @@ Generic command layout:
                     prefix="sta",
                     start_id=start_num,
                     end_id=start_num + num_ports - 1,
-                    padding_number=10000,
-                    radio=args.radio)
+                    padding_number=10000)
         else:
             if (args.num_ports is not None) and args.macvlan_parent is not None and (
                     int(args.num_ports) > 0) and args.macvlan_parent[2] in args.first_port:
@@ -179,8 +175,7 @@ Generic command layout:
                     prefix=args.macvlan_parent[2] + "#",
                     start_id=start_num,
                     end_id=start_num + num_ports - 1,
-                    padding_number=100000,
-                    radio=args.radio)
+                    padding_number=100000)
             else:
                 raise ValueError(
                     "Invalid values for num_ports [%s], macvlan_parent [%s], and/or first_port [%s].\n"
@@ -193,8 +188,7 @@ Generic command layout:
                 prefix=args.macvlan_parent[2] + "#",
                 start_id=0,
                 end_id=num_ports - 1,
-                padding_number=100000,
-                radio=args.radio)
+                padding_number=100000)
         else:
             temp_list = args.use_ports.split(',')
             for port in temp_list:
