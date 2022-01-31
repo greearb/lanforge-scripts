@@ -683,6 +683,8 @@ class LFCliBase:
         optional.add_argument('--debug_log',
                               default=None,
                               help="Specify a file to send debug output to")
+        optional.add_argument('--noclean', help='Do not cleanup before exit',
+                              action='store_true')
         if more_optional is not None:
             for argument in more_optional:
                 if 'default' in argument.keys():
