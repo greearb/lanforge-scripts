@@ -36,6 +36,7 @@ import importlib
 import argparse
 import time
 import re
+from pprint import pprint
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -51,10 +52,12 @@ class CreateChamberview(cv):
     def __init__(self,
                  lfmgr="localhost",
                  port="8080",
+                 _debug_on=False,
                  ):
         super().__init__(
             lfclient_host=lfmgr,
             lfclient_port=port,
+            debug_=_debug_on
         )
         self.lfmgr = lfmgr
         self.port = port
@@ -71,9 +74,11 @@ class CreateChamberview(cv):
               raw_line=None):
 
         if raw_line:
-            print("creating %s scenario" % create_scenario)
+            print("creating %s scenario using raw lines" % create_scenario)
             for create_lines in raw_line:
-                self.pass_raw_lines_to_cv(create_scenario, create_lines[0])
+                ln = create_lines[0]
+                #print("ln: %s" % (ln))
+                self.pass_raw_lines_to_cv(create_scenario, ln)
 
         # check for lines
         if line:
@@ -90,7 +95,13 @@ class CreateChamberview(cv):
             Freq = "-1"
             VLAN = ""
 
+            #print("line: ")
+            #pprint(line)
+
             for item in line:
+                #print("item: ")
+                #pprint(item)
+
                 if " " in item[0]:
                     item[0] = (re.split(' ', item[0]))
                 elif "," in item[0]:
@@ -99,8 +110,10 @@ class CreateChamberview(cv):
                     print("Wrong arguments entered !")
                     exit(1)
 
-                print("creating %s scenario" % scenario_name)
                 for sub_item in item[0]:
+                    #print("sub-item: ")
+                    #pprint(sub_item)
+
                     sub_item = sub_item.split("=")
                     if sub_item[0] == "Resource" or str(
                             sub_item[0]) == "Res" or sub_item[0] == "R":
@@ -212,9 +225,16 @@ def main():
         default=False,
         action='store_true',
         help="delete scenario (by default: False)")
+    parser.add_argument('--debug',
+                        '-d',
+                        default=False,
+                        action="store_true",
+                        help='Enable debugging')
+
     args = parser.parse_args()
 
     Create_Chamberview = CreateChamberview(lfmgr=args.lfmgr,
+                                           _debug_on=args.debug,
                                            port=args.port,
                                            )
     if args.delete_scenario:

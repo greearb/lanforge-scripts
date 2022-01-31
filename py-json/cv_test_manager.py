@@ -85,10 +85,13 @@ class cv_test(Realm):
     def __init__(self,
                  lfclient_host="localhost",
                  lfclient_port=8080,
-                 lf_report_dir=None
+                 lf_report_dir=None,
+                 debug_=False,
                  ):
         super().__init__(lfclient_host=lfclient_host,
-                         lfclient_port=lfclient_port)
+                         lfclient_port=lfclient_port,
+                         debug_=debug_
+                         )
         self.lf_report_dir = lf_report_dir
         self.report_name = None
 
@@ -439,6 +442,9 @@ class cv_test(Realm):
 
         text_blob = "profile_link" + " " + Resources + " " + Profile + " " + Amount + " " + "\'DUT:" + " " + DUT \
                     + " " + Dut_Radio + "\' " + Traffic + " " + Uses1 + "," + Uses2 + " " + Freq + " " + VLAN
+
+        if self.debug:
+            print("text-blob-line: %s" % (text_blob))
 
         data = {
             "type": "Network-Connectivity",
