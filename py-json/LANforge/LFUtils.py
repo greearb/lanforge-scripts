@@ -516,9 +516,9 @@ def wait_until_ports_admin_up(resource_id=0, base_url="http://localhost:8080", p
                 down_stations.append(port_name)
                 continue
 
-            if json_response['down'] == "true":
+            if json_response['down']:  # This is a boolean object, not a string
                 if debug_:
-                    logger.debug("waiting for port: %s to go admin up." % port_name)
+                    logger.info("waiting for port: %s to go admin up." % port_name)
                 down_stations.append(port_name)
             else:
                 if debug_:
@@ -728,12 +728,18 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
             shelf = eid[0]
             resource_id = eid[1]
             port_name = eid[2]
+            # TODO:  If port_name happens to be a number, especialy '1', then the request below
+            # gets a list instead of a single item...and see a few lines down.
             uri = "%s/%s/%s" % (port_url, resource_id, port_name)
             #print("port-eid: %s uri: %s" % (port_eid, uri))
             lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug)
             json_response = lf_r.get_as_json()
             if json_response is not None:
                 #pprint.pprint(json_response)
+                # TODO:  If a list was (accidentally) requested, this code below will blow up.
+                # This can currently happen if someone manages to name a port 1.1.vap0, ie using
+                # an EID as a name.
+                # TODO:  Fix name_to_eid to somehow detect this and deal with it.
                 if not json_response['interface']['phantom']:
                     found_stations.add("%s.%s.%s" % (shelf, resource_id, port_name))
             else:
