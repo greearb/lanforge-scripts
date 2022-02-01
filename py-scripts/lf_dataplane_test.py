@@ -322,6 +322,10 @@ def main():
                         help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",
                         default="")
 
+    # TODO:  Add debug and log-level support, and propagate as needed.
+    # TODO:  Add ability to pull from a machine that is not running the
+    #   GUI, for instance when GUI is running locally against a remote LANforge system.
+
     args = parser.parse_args()
 
     # use json config file
@@ -414,6 +418,10 @@ def main():
 
     CV_Test.check_influx_kpi(args)
 
+    if CV_Test.passes():
+        CV_Test.exit_success()
+    else:
+        CV_Test.exit_fail()
 
 if __name__ == "__main__":
     main()

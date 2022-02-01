@@ -24,8 +24,11 @@ Help()
 
 HOMEPATH=$(realpath ~)
 REPORT_DIR="${HOMEPATH}/html-reports"
+TESTBED=UNKNOWN
+NOW=$(date +"%Y-%m-%d-%H-%M")
+NOW="${NOW/:/-}"
 
-while getopts ":h:s:S:p:w:m:r:R:F:B:u:U:D:H:M:C:e:V:E:" option; do
+while getopts ":h:s:S:p:w:m:r:R:F:B:u:U:D:H:M:C:e:V:E:T:" option; do
   case "${option}" in
     h) # display Help
       Help
@@ -36,6 +39,9 @@ while getopts ":h:s:S:p:w:m:r:R:F:B:u:U:D:H:M:C:e:V:E:" option; do
       ;;
     S)
       SHORT="yes"
+      ;;
+    T)
+      TESTBED=${OPTARG}
       ;;
     p)
       PASSWD_USED=${OPTARG}
@@ -221,13 +227,15 @@ function testgroup_delete_group() {
 }
 
 function create_station_and_dataplane() {
-      ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
+      set -x
+      ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR --noclean
       ./lf_dataplane_test.py --mgr $MGR --lf_user lanforge --lf_password lanforge \
           --instance_name dataplane-instance --config_name test_con --upstream $UPSTREAM \
-          --dut linksys-8450 --duration 15s --station $RESOURCE.sta0001 \
+          --dut regression_dut --duration 15s --station $RESOURCE.sta0001 \
           --download_speed 85% --upload_speed 0 \
-          --test_rig Testbed-01 --pull_report \
-          --local_lf_report_dir ~/html-reports/dataplane_"$NOW"
+          --test_rig $TESTBED --pull_report \
+          --local_lf_report_dir ~/html-reports/dataplane_${NOW}
+      set +x
 }
 function create_dut_and_chamberview() {
         ./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut \
