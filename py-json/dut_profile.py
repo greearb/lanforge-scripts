@@ -3,14 +3,18 @@ import sys
 import os
 import importlib
 from pprint import pprint
+from pprint import pformat
 import base64
+import logging
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 add_dut = importlib.import_module("py-json.LANforge.add_dut")
+
+logger = logging.getLogger(__name__)
 
 
 class DUTProfile(LFCliBase):
@@ -60,6 +64,7 @@ class DUTProfile(LFCliBase):
         elif (self.name is not None) and (self.name != ""):
             data["name"] = self.name
         else:
+            logger.critical("cannot create/update DUT record lacking a name")
             raise ValueError("cannot create/update DUT record lacking a name")
 
         for param in add_dut.dut_params:
@@ -68,9 +73,10 @@ class DUTProfile(LFCliBase):
                         and (self.__dict__[param.name] != "NA"):
                     data[param.name] = self.__dict__[param.name]
             else:
-                print("---------------------------------------------------------")
-                pprint(self.__dict__[param.name])
-                print("---------------------------------------------------------")
+                logger.error("---------------------------------------------------------")
+                logger.error(pformat(self.__dict__[param.name]))
+                logger.error("---------------------------------------------------------")
+                logger.critical("parameter %s not in dut_profile" % param)
                 raise ValueError("parameter %s not in dut_profile" % param)
 
         if (flags is not None) and (int(flags) > -1):
@@ -85,11 +91,11 @@ class DUTProfile(LFCliBase):
 
         url = "/cli-json/add_dut"
         if self.debug:
-            print("---- DATA -----------------------------------------------")
-            pprint(data)
-            pprint(self.notes)
-            pprint(self.append)
-            print("---------------------------------------------------------")
+            logger.debug("---- DATA -----------------------------------------------")
+            logger.debug(pformat(data))
+            logger.debug(pformat(self.notes))
+            logger.debug(pformat(self.append))
+            logger.debug("---------------------------------------------------------")
         self.json_post(url, data, debug_=self.debug)
 
         if (self.notes is not None) and (len(self.notes) > 0):
@@ -100,10 +106,10 @@ class DUTProfile(LFCliBase):
             for line in self.notes:
                 notebytes = base64.b64encode(line.encode('ascii'))
                 if self.debug:
-                    print("------ NOTES ---------------------------------------------------")
-                    pprint(self.notes)
-                    pprint(str(notebytes))
-                    print("---------------------------------------------------------")
+                    logger.debug("------ NOTES ---------------------------------------------------")
+                    logger.debug(pformat(self.notes))
+                    logger.debug(pformat(str(notebytes)))
+                    logger.debug("---------------------------------------------------------")
                 self.json_post("/cli-json/add_dut_notes", {
                     "dut": self.name,
                     "text-64": notebytes.decode('ascii')
@@ -112,10 +118,10 @@ class DUTProfile(LFCliBase):
             for line in self.append:
                 notebytes = base64.b64encode(line.encode('ascii'))
                 if self.debug:
-                    print("----- APPEND ----------------------------------------------------")
-                    pprint(line)
-                    pprint(str(notebytes))
-                    print("---------------------------------------------------------")
+                    logger.debug("----- APPEND ----------------------------------------------------")
+                    logger.debug(pformat(line))
+                    logger.debug(pformat(str(notebytes)))
+                    logger.debug("---------------------------------------------------------")
                 self.json_post("/cli-json/add_dut_notes", {
                     "dut": self.name,
                     "text-64": notebytes.decode('ascii')
