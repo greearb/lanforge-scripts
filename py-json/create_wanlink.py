@@ -20,14 +20,18 @@ from time import sleep
 from urllib import error
 import pprint
 import argparse
+import logging
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
+logger = logging.getLogger(__name__)
 
 j_printer = pprint.PrettyPrinter(indent=2)
 # todo: this needs to change
@@ -43,7 +47,7 @@ def main(args):
 
     # see if there are old wanlinks to remove
     lf_r = LFRequest.LFRequest(base_url+"/wl/list")
-    print(lf_r.get_as_json())
+    logger.info(lf_r.get_as_json())
 
     # remove old wanlinks
     if num_wanlinks > 0:
@@ -62,7 +66,7 @@ def main(args):
             if isinstance(value, dict) and "_links" in value:
                 num_wanlinks = 1
     except urllib.error.HTTPError as error:
-        print("Error code %s" % error.code)
+        logger.error("Error code %s" % error.code)
 
         lf_r = LFRequest.LFRequest(base_url+"/cli-json/rm_endp")
         lf_r.addPostData({
@@ -162,7 +166,7 @@ def main(args):
             #     print("value not a dict")
 
         except urllib.error.HTTPError as error:
-            print("Error code %s " % error.code)
+            logger.error("Error code %s " % error.code)
             continue
 
     # print("starting wanlink:")
@@ -192,10 +196,10 @@ def main(args):
                                 running = 1
 
         except urllib.error.HTTPError as error:
-            print("Error code %s" % error.code)
+            logger.error("Error code %s" % error.code)
             continue
 
-    print("Wanlink is running")
+    logger.info("Wanlink is running")
 
 
 if __name__ == '__main__':
@@ -239,6 +243,9 @@ if __name__ == '__main__':
                 optional_args = group
                 break
     parseargs = parser.parse_args()
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
     args = {
         "host": parseargs.mgr,
         "port": parseargs.mgr_port,
