@@ -23,6 +23,7 @@ debug_printer = pprint.PrettyPrinter(indent=2)
 LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 Logg = importlib.import_module("lanforge_client.logg")
+logger = logging.getLogger(__name__)
 
 if os.environ.get("LF_USE_AUTOGEN") == 1:
     lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
@@ -33,9 +34,6 @@ class LFCliBase:
     SHOULD_RUN = 0  # indicates normal operation
     SHOULD_QUIT = 1  # indicates to quit loops, close files, send SIGQUIT to threads and return
     SHOULD_HALT = 2  # indicates to quit loops, send SIGABRT to threads and exit
-
-    # - LOGGING -
-    _logger = logging.getLogger(__name__)
 
     # do not use `super(LFCLiBase,self).__init__(self, host, port, _debug)
     # that is py2 era syntax and will force self into the host variable, making you
@@ -55,7 +53,7 @@ class LFCliBase:
         self.lfclient_port = _lfjson_port
         self.debug = _debug
         # if (_debug):
-        #     print("LFCliBase._proxy_str: %s" % _proxy_str)
+        #     logger.debug("LFCliBase._proxy_str: %s" % _proxy_str)
         self.proxy = {}
         self.adjust_proxy(_proxy_str)
 
@@ -63,7 +61,7 @@ class LFCliBase:
             self.local_realm = _local_realm
 
         # if (_debug):
-        #     print("LFCliBase._proxy_str: %s" % _proxy_str)
+        #     logger.debug("LFCliBase._proxy_str: %s" % _proxy_str)
         self.lfclient_url = "http://%s:%s" % (self.lfclient_host, self.lfclient_port)
         self.test_results = []
         self.exit_on_error = _exit_on_error
@@ -140,11 +138,11 @@ class LFCliBase:
 
     def send_thread_signals(self, signum, fname):
         if len(self.thread_map) < 1:
-            print("no threads to signal")
+            logger.info("no threads to signal")
             return
         for (name, thread) in self.thread_map.items():
             if self.debug:
-                print("sending signal %s to thread %s" % (signum, name))
+                logger.debug("sending signal %s to thread %s" % (signum, name))
             # do a thing
 
     @staticmethod
@@ -155,7 +153,7 @@ class LFCliBase:
 
         :return: True if we processed this signal
         """
-        print("my_captured_signal should be overridden")
+        logger.info("my_captured_signal should be overridden")
         return False
 
     def captured_signal(self, signum):
@@ -165,18 +163,18 @@ class LFCliBase:
         finishing soon or halting immediately. Use signal.signal(signal.STOP) to enable this.
         """
         if self.debug:
-            print("Captured signal %s" % signum)
+            logger.debug("Captured signal %s" % signum)
         if self.my_captured_signal(signum):
             if self.debug:
-                print("subclass processed signal")
+                logger.debug("subclass processed signal")
         else:
             if self.debug:
-                print("subclass ignored signal")
+                logger.debug("subclass ignored signal")
 
     def clear_test_results(self):
         self.test_results.clear()
 
-    # - LOGGING - we want to remove old logging code
+    # To be deprecated
     def log_register_method_name(self, method_name=None):
         if not method_name:
             return
@@ -252,19 +250,19 @@ class LFCliBase:
 
             lf_r.addPostData(_data)
             if debug_:
-                debug_printer.pprint(_data)
+                logger.debug(debug_printer.pformat(_data))
             json_response = lf_r.json_post(show_error=debug_,
                                            debug=debug_,
                                            response_json_list_=response_json_list_,
                                            die_on_error_=self.exit_on_error)
             if debug_ and (response_json_list_ is not None):
-                pprint.pprint(response_json_list_)
+                logger.debug(pprint.pformat(response_json_list_))
         except Exception as x:
             if debug_ or self.exit_on_error:
-                print("json_post posted to %s" % _req_url)
-                pprint.pprint(_data)
-                print("Exception %s:" % x)
-                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                logger.debug("json_post posted to %s" % _req_url)
+                logger.debug(pprint.pformat(_data))
+                logger.debug("Exception %s:" % x)
+                logger.debug(traceback.format_exception(Exception, x, x.__traceback__, chain=True))
             if self.exit_on_error:
                 exit(1)
         return json_response
@@ -290,7 +288,7 @@ class LFCliBase:
                                        die_on_error_=self.exit_on_error)
             lf_r.addPostData(_data)
             if debug_:
-                debug_printer.pprint(_data)
+                logger.debug(debug_printer.pformat(_data))
             json_response = lf_r.json_put(show_error=self.debug,
                                           debug=debug_,
                                           response_json_list_=response_json_list_,
@@ -299,10 +297,10 @@ class LFCliBase:
                 pprint.pprint(response_json_list_)
         except Exception as x:
             if debug_ or self.exit_on_error:
-                print("json_put submitted to %s" % _req_url)
-                pprint.pprint(_data)
-                print("Exception %s:" % x)
-                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                logger.debug("json_put submitted to %s" % _req_url)
+                logger.debug(pprint.pformat(_data))
+                logger.debug("Exception %s:" % x)
+                logger.debug(traceback.format_exception(Exception, x, x.__traceback__, chain=True))
             if self.exit_on_error:
                 exit(1)
         return json_response
@@ -324,17 +322,18 @@ class LFCliBase:
             json_response = lf_r.get_as_json()
             if json_response is None:
                 if debug_:
+                    # TODO Figure this out.
                     if hasattr(lf_r, 'print_errors'):
                         lf_r.print_errors()
                     else:
-                        print("LFCliBase.json_get: no entity/response, check other errors")
+                        logger.debug("LFCliBase.json_get: no entity/response, check other errors")
                         time.sleep(10)
                 return None
         except ValueError as ve:
             if debug_ or self.exit_on_error:
-                print("jsonGet asked for " + _req_url)
-                print("Exception %s:" % ve)
-                traceback.print_exception(ValueError, ve, ve.__traceback__, chain=True)
+                logger.debug("jsonGet asked for " + _req_url)
+                logger.debug("Exception %s:" % ve)
+                logger.debug(traceback.format_exception(ValueError, ve, ve.__traceback__, chain=True))
             if self.exit_on_error:
                 sys.exit(1)
 
@@ -343,26 +342,26 @@ class LFCliBase:
     def json_delete(self, _req_url, debug_=False):
         debug_ |= self.debug
         if debug_:
-            print("DELETE: " + _req_url)
+            logger.debug("DELETE: " + _req_url)
         json_response = None
         try:
-            # print("----- DELETE ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
+            # logger.info("----- DELETE ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
             lf_r = LFRequest.LFRequest(url=self.lfclient_url,
                                        uri=_req_url,
                                        proxies_=self.proxy,
                                        debug_=debug_,
                                        die_on_error_=self.exit_on_error)
             json_response = lf_r.json_delete(debug=debug_, die_on_error_=False)
-            print(json_response)
-            # debug_printer.pprint(json_response)
+            logger.info(json_response)
+            # logger.debug(debug_printer.pformat(json_response))
             if (json_response is None) and debug_:
-                print("LFCliBase.json_delete: no entity/response, probabily status 404")
+                logger.debug("LFCliBase.json_delete: no entity/response, probabily status 404")
                 return None
         except ValueError as ve:
             if debug_ or self.exit_on_error:
-                print("json_delete asked for " + _req_url)
-                print("Exception %s:" % ve)
-                traceback.print_exception(ValueError, ve, ve.__traceback__, chain=True)
+                logger.debug("json_delete asked for " + _req_url)
+                logger.debug("Exception %s:" % ve)
+                logger.debug(traceback.format_exception(ValueError, ve, ve.__traceback__, chain=True))
             if self.exit_on_error:
                 sys.exit(1)
         # print("----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
@@ -373,7 +372,8 @@ class LFCliBase:
         reverse_map = {}
         if (json_list is None) or (len(json_list) < 1):
             if debug_:
-                print("response_list_to_map: no json_list provided")
+                logger.debug("response_list_to_map: no json_list provided")
+                logger.critical("response_list_to_map: no json_list provided")
                 raise ValueError("response_list_to_map: no json_list provided")
             return reverse_map
 
@@ -401,20 +401,20 @@ class LFCliBase:
 
     @staticmethod
     def error(exception):
-        # print("lfcli_base error: %s" % exception)
-        pprint.pprint(exception)
-        traceback.print_exception(Exception, exception, exception.__traceback__, chain=True)
+        # logger.info("lfcli_base error: %s" % exception)
+        logger.info(pprint.pformat(exception))
+        logger.info(traceback.format_exception(Exception, exception, exception.__traceback__, chain=True))
 
     def check_connect(self, timeout=300):
         if self.debug:
-            print("Checking for LANforge GUI connection: %s" % self.lfclient_url)
+            logger.debug("Checking for LANforge GUI connection: %s" % self.lfclient_url)
         for _ in range(0, int(timeout / 2)):
-            print("LANforge GUI connection not found sleeping 5 seconds, tried: %s" % self.lfclient_url)
+            logger.info("LANforge GUI connection not found sleeping 5 seconds, tried: %s" % self.lfclient_url)
             time.sleep(2)
             if self.json_get("/", debug_=self.debug):
                 return True
 
-        print("Could not connect to LANforge GUI")
+        logger.info("Could not connect to LANforge GUI")
         sys.exit(1)
 
     # return ALL messages in list form
@@ -479,14 +479,18 @@ class LFCliBase:
         self.print_pass_fail()
         total_len = len(self.get_result_list())
         fail_len = len(self.get_failed_result_list())
+        # Leave in both for now, until scripts updated for logger
         print(message % (fail_len, total_len))
+        logger.info(message % (fail_len, total_len))
         sys.exit(1)
 
     # use this inside the class to log a failure result and print it if wished
     def _fail(self, message, print_=False):
         self.test_results.append(self.fail_pref + message)
         if print_ or self.exit_on_fail:
+            # Leave in both for now, until scripts updated for logger
             print(self.fail_pref + message)
+            logger.info(self.fail_pref + message)
         if self.exit_on_fail:
             sys.exit(1)
 
@@ -495,19 +499,23 @@ class LFCliBase:
         self.print_pass_fail()
         num_total = len(self.get_result_list())
         num_passing = len(self.get_passed_result_list())
+        # Leave in both for now, until scripts updated for logger
         print(message % (num_passing, num_total))
+        logger.info(message % (num_passing, num_total))
         sys.exit(0)
 
     def success(self, message="%d out of %d tests passed successfully."):
         num_total = len(self.get_result_list())
         num_passing = len(self.get_passed_result_list())
         print(message % (num_passing, num_total))
+        logger.info(message % (num_passing, num_total))
 
     # use this inside the class to log a pass result and print if wished.
     def _pass(self, message, print_=False):
         self.test_results.append(self.pass_pref + message)
         if print_:
             print(self.pass_pref + message)
+            logger.info(self.pass_pref + message)
 
     def adjust_proxy(self, proxy_str):
         # if self.debug:
@@ -526,12 +534,14 @@ class LFCliBase:
         #     pprint.pprint(self.proxy)
 
     @staticmethod
+    # TODO 1/31/2022 need to see all locations that used and switch to logger
     def logg2(level="debug", mesg=None):
         if (mesg is None) or (mesg == ""):
             return
         print("[{level}]: {msg}".format(level=level, msg=mesg))
 
     @staticmethod
+    # TODO 1/31/2022 need to see all locations that used and switch to logger
     def logg(level=None,
              mesg=None,
              filename=None,
