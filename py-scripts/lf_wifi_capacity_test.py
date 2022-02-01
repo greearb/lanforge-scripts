@@ -243,7 +243,7 @@ show_log: 0
 port_sorting: 0
 kpi_id: WiFi Capacity
 bg: 0xE0ECF8
-test_rig: 
+test_rig:
 show_scan: 1
 auto_helper: 1
 skip_2: 0
@@ -262,7 +262,7 @@ dl_rate: 1000000000
 ul_rate_sel: Total Upload Rate:
 ul_rate: 10000000
 prcnt_tcp: 100000
-l4_endp: 
+l4_endp:
 pdu_sz: -1
 mss_sel: 1
 sock_buffer: 0
@@ -307,6 +307,8 @@ import os
 import importlib
 import argparse
 import time
+import logging
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -320,6 +322,9 @@ cv_test_manager = importlib.import_module("py-json.cv_test_manager")
 cv_test = cv_test_manager.cv_test
 cv_add_base_parser = cv_test_manager.cv_add_base_parser
 cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
+logger = logging.getLogger(__name__)
 
 
 class WiFiCapacityTest(cv_test):
@@ -416,7 +421,7 @@ class WiFiCapacityTest(cv_test):
             self.station_profile.create(radio=self.radio, sta_names_=sta, debug=self.debug)
             self.station_profile.admin_up()
             self.wait_for_ip(station_list=sta)
-            print("stations created")
+            logger.info("stations created")
 
     def run(self):
         self.sync_cv()
@@ -547,6 +552,14 @@ def main():
     args = parser.parse_args()
 
     cv_base_adjust_parser(args)
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    # lf_logger_config_json will take presidence to changing debug levels
+    if args.lf_logger_config_json:
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
 
     WFC_Test = WiFiCapacityTest(lfclient_host=args.mgr,
                                 lf_port=args.port,
