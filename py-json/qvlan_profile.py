@@ -115,8 +115,8 @@ class QVLANProfile(LFCliBase):
             else:
                 raise ValueError("Unknown param name: " + param_name)
 
-    def create(self, sleep_time=1):
-        print("Creating qvlans...")
+    def create(self, debug=False, sleep_time=1):
+        print("Creating 802.1q Vlans...")
         req_url = "/cli-json/add_vlan"
 
         if not self.dhcp and self.first_ip_addr and self.netmask and self.gateway:
@@ -137,19 +137,37 @@ class QVLANProfile(LFCliBase):
                                                               set_port.set_port_interest_flags)
         set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
 
+        qv_parent_bare = self.local_realm.name_to_eid(self.qvlan_parent)[2];
         for i in range(len(self.desired_qvlans)):
             data = {
                 "shelf": self.shelf,
                 "resource": self.resource,
-                "port": self.local_realm.name_to_eid(self.qvlan_parent)[2],
+                "port": qv_parent_bare,
                 "vid": i + 1
             }
-            self.created_qvlans.append("%s.%s.%s#%d" % (self.shelf, self.resource,
-                                                        self.qvlan_parent, int(self.desired_qvlans[i][self.desired_qvlans[i].index('#') + 1:])))
+            self.created_qvlans.append("%s.%s.%s.%d" % (self.shelf, self.resource,
+                                                        qv_parent_bare, i + 1))
             self.local_realm.json_post(req_url, data)
             time.sleep(sleep_time)
 
+        if not LFUtils.wait_until_ports_appear(base_url=self.lfclient_url, port_list=self.created_qvlans, debug=debug):
+            return False
+
         print(self.created_qvlans)
+
+        for i in range(len(self.created_qvlans)):
+            eid = self.local_realm.name_to_eid(self.created_qvlans[i])
+            name = eid[2]
+            self.set_port_data["port"] = name  # for set_port calls.
+            if not self.dhcp and self.first_ip_addr and self.netmask and self.gateway:
+                self.set_port_data["ip_addr"] = self.ip_list[i]
+                self.set_port_data["netmask"] = self.netmask
+                self.set_port_data["gateway"] = self.gateway
+            set_port_r.addPostData(self.set_port_data)
+            set_port_r.jsonPost(debug)
+            time.sleep(sleep_time)
+
+        return True
 
     def cleanup(self):
         print("Cleaning up qvlans...")

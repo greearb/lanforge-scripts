@@ -3,9 +3,12 @@ import sys
 import os
 import importlib
 import argparse
+import logging
+
+logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
-    print("This script requires Python 3")
+    logger.critical("This script requires Python 3")
     exit(1)
 
 
@@ -17,6 +20,7 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 add_file_endp = importlib.import_module("py-json.LANforge.add_file_endp")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class CreateQVlan(Realm):
@@ -57,9 +61,14 @@ class CreateQVlan(Realm):
         self.qvlan_profile.dhcp = dhcp
 
     def build(self):
-        print("Creating QVLAN stations")
-        self.qvlan_profile.create(
-            sleep_time=.5)
+        logger.info("Creating QVLAN stations")
+        if self.qvlan_profile.create(
+            debug=self.debug,
+            sleep_time=0,
+            ):
+            self._pass("802.1q VLAN creation successful.")
+        else:
+            self._fail("802.1q VLAN creation failed.")
 
 
 def main():
@@ -118,7 +127,19 @@ def main():
         action='store_true',
         default=False)
 
+    # TODO:  Use lfcli_base for common arguments.
+    parser.add_argument('--log_level',
+                        default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
+    parser.add_argument('--lf_logger_config_json',
+                        help="--lf_logger_config_json <json file> , json configuration of logger")
+
     args = parser.parse_args()
+
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
 
     update_group_args = {
         "name": None,
@@ -200,7 +221,14 @@ def main():
                                ip_list=ip_list,
                                debug=args.debug)
     create_qvlan.build()
-    print('Created %s QVLAN stations' % args.num_ports)
+
+    # TODO:  Add code to clean up the stations built, unless --noclean is specified.
+
+    if create_qvlan.passes():
+        logging.info('Created %s QVLAN stations' % args.num_ports)
+        create_qvlan.exit_success()
+    else:
+        create_vlan.exit_fail()
 
 
 if __name__ == "__main__":

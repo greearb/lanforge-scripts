@@ -729,9 +729,11 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
             resource_id = eid[1]
             port_name = eid[2]
             uri = "%s/%s/%s" % (port_url, resource_id, port_name)
+            #print("port-eid: %s uri: %s" % (port_eid, uri))
             lf_r = LFRequest.LFRequest(base_url, uri, debug_=debug)
             json_response = lf_r.get_as_json()
             if json_response is not None:
+                #pprint.pprint(json_response)
                 if not json_response['interface']['phantom']:
                     found_stations.add("%s.%s.%s" % (shelf, resource_id, port_name))
             else:
