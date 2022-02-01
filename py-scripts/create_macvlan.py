@@ -3,9 +3,12 @@ import sys
 import os
 import importlib
 import argparse
+import logging
+
+logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
-    print("This script requires Python 3")
+    logger.critical("This script requires Python 3")
     exit(1)
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
@@ -16,6 +19,7 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 add_file_endp = importlib.import_module("py-json.LANforge.add_file_endp")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class CreateMacVlan(Realm):
@@ -33,7 +37,9 @@ class CreateMacVlan(Realm):
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
-        super().__init__(host, port)
+        super().__init__(host, port, debug_=_debug_on,
+                         _exit_on_error=_exit_on_error,
+                         _exit_on_fail=_exit_on_fail)
         self.port = port
         self.upstream_port = upstream_port
         self.port_list = []
@@ -63,12 +69,14 @@ class CreateMacVlan(Realm):
     def build(self):
         # Build stations
         print("Creating MACVLANs")
-        self.mvlan_profile.create(
+        if self.mvlan_profile.create(
             admin_down=False,
-            sleep_time=.5,
-            debug=self.debug)
-        self._pass("PASS: MACVLAN build finished")
-        self.created_ports += self.mvlan_profile.created_macvlans
+            sleep_time=0,
+            debug=self.debug):
+            self._pass("MACVLAN build finished")
+            self.created_ports += self.mvlan_profile.created_macvlans
+        else:
+            self._fail("MACVLAN port build failed.")
 
 
 def main():
@@ -150,7 +158,19 @@ Generic command layout:
         '--cxs',
         help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group',
         default=None)
+
+    # TODO:  Use lfcli_base for common arguments.
+    parser.add_argument('--log_level',
+                        default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
+    parser.add_argument('--lf_logger_config_json',
+                        help="--lf_logger_config_json <json file> , json configuration of logger")
     args = parser.parse_args()
+
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
 
     args.macvlan_parent = LFUtils.name_to_eid(args.macvlan_parent)
     port_list = []
@@ -229,7 +249,14 @@ Generic command layout:
                             )
 
     ip_test.build()
-    print('Created %s MacVlan connections' % args.num_ports)
+
+    # TODO:  Cleanup by default, add --noclean option to not do cleanup.
+
+    if ip_test.passes():
+        print('Created %s MacVlan connections' % args.num_ports)
+        ip_test.exit_success()
+    else:
+        ip_test.exit_fail()
 
 
 if __name__ == "__main__":

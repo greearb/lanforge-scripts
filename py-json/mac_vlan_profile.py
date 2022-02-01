@@ -162,10 +162,10 @@ class MACVLANProfile(LFCliBase):
             self.local_realm.json_post(req_url, data)
             time.sleep(sleep_time)
 
-        LFUtils.wait_until_ports_appear(base_url=self.lfclient_url, port_list=self.created_macvlans)
-        print(self.created_macvlans)
+        if not LFUtils.wait_until_ports_appear(base_url=self.lfclient_url, port_list=self.created_macvlans, debug=debug):
+            return False
 
-        time.sleep(5)
+        print(self.created_macvlans)
 
         for i in range(len(self.created_macvlans)):
             eid = self.local_realm.name_to_eid(self.created_macvlans[i])
@@ -178,6 +178,8 @@ class MACVLANProfile(LFCliBase):
             set_port_r.addPostData(self.set_port_data)
             set_port_r.jsonPost(debug)
             time.sleep(sleep_time)
+
+        return True
 
     def cleanup(self):
         print("Cleaning up MACVLANs...")
