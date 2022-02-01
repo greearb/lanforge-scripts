@@ -7,9 +7,11 @@ import os
 import importlib
 import argparse
 import pprint
+import logging
 
+logger = logging.getLogger(__name__)
 if sys.version_info[0] != 3:
-    print("This script requires Python 3")
+    logger.critical("This script requires Python 3")
     exit(1)
 
 
@@ -20,6 +22,7 @@ LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class CreateVAP(Realm):
@@ -38,8 +41,6 @@ class CreateVAP(Realm):
                  _radio=None,
                  _channel=36,
                  _country_code=0,
-                 _nss=False,
-                 _bridge=False,
                  _proxy_str=None,
                  _debug_on=False,
                  _exit_on_error=False,
@@ -69,7 +70,6 @@ class CreateVAP(Realm):
         self.number_template = _number_template
         self.debug = _debug_on
         self.dhcp = _dhcp
-        self.bridge = _bridge
         self.vap_profile = self.new_vap_profile()
         self.vap_profile.vap_name = self.vap_list
         self.vap_profile.ssid = self.ssid
@@ -92,19 +92,23 @@ class CreateVAP(Realm):
             self.security, self.ssid, passwd=self.password)
 
         print("Creating VAPs")
-        self.vap_profile.create(resource=self.resource,
+        # TODO:  Add cmd line arguments to control the various options of the VAP profile.
+        if self.vap_profile.create(resource=self.resource,
                                 radio=self.radio,
                                 channel=self.channel,
-                                up_=True,
-                                debug=False,
+                                up=True,
+                                debug=self.debug,
                                 use_ht40=True,
                                 use_ht80=True,
                                 use_ht160=False,
                                 suppress_related_commands_=True,
                                 use_radius=False,
-                                hs20_enable=False,
-                                bridge=self.bridge)
-        self._pass("PASS: VAP build finished")
+                                hs20_enable=False):
+            self._pass("PASS: VAP build finished")
+            return True
+        else:
+            self._fail("VAP profile creation failed.")
+            return False
 
 
 def main():
@@ -142,22 +146,22 @@ Command example:
         default=None,
         action='append')
     optional.add_argument(
-        '--bridge',
-        help='Create a bridge connecting the VAP to a port',
-        required=False,
-        default=False)
-    optional.add_argument(
         '--mac',
         help='Custom mac address',
         default="xx:xx:xx:xx:*:xx")
-    optional.add_argument('--mode', default='AUTO')
+    optional.add_argument('--mode', default='0') # 0 means auto  # TODO:  Add help for other available modes.
     optional.add_argument('--channel', default=36)
     optional.add_argument('--country_code', default=0)
-    optional.add_argument('--nss', default=False)
     optional.add_argument('--resource', default=1)
     optional.add_argument('--start_id', default=0)
-    optional.add_argument('--vap_name', default=None)
+    optional.add_argument('--vap_suffix', default=None, help='The numeric suffix, like the 005 in vap005')
     args = parser.parse_args()
+
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
+
     # if args.debug:
     #    pprint.pprint(args)
     #    time.sleep(5)
@@ -174,7 +178,8 @@ Command example:
     # print(args.passwd)
     # print(args.ssid)
 
-    if args.vap_name is None:
+    create_vaps = []
+    if args.vap_suffix is None:
         for vap in vap_list:
             create_vap = CreateVAP(_host=args.mgr,
                                    _port=args.mgr_port,
@@ -188,15 +193,16 @@ Command example:
                                    _radio=args.radio,
                                    _channel=args.channel,
                                    _country_code=args.country_code,
-                                   _nss=args.nss,
                                    _proxy_str=args.proxy,
-                                   _bridge=args.bridge,
                                    _debug_on=args.debug)
             print('Creating VAP')
-
-            create_vap.build()
+            if create_vap.build():
+                create_vap._pass("VAP %s created." % (vap))
+            else:
+                create_vap._fail("VAP %s was not created." % (vap))
+            create_vaps.append(create_vap)
     else:
-        vap_name = "vap" + args.vap_name
+        vap_name = "vap" + args.vap_suffix
         create_vap = CreateVAP(_host=args.mgr,
                                _port=args.mgr_port,
                                _ssid=args.ssid,
@@ -209,14 +215,26 @@ Command example:
                                _radio=args.radio,
                                _channel=args.channel,
                                _country_code=args.country_code,
-                               _nss=args.nss,
                                _proxy_str=args.proxy,
-                               _bridge=args.bridge,
                                _debug_on=args.debug)
         print('Creating VAP')
+        if create_vap.build():
+            create_vap._pass("VAP %s created." % (vap))
+        else:
+            create_vap._fail("VAP %s was not created." % (vap))
+        create_vaps.append(create_vap)
 
-        create_vap.build()
+    # TODO:  Add logic to clean up vap, unless --noclean option is specified.
 
+    any_failed = False
+    for v in create_vaps:
+        if not v.passes():
+            any_failed = True
+        v.print_pass_fail()
+
+    if any_failed:
+        exit(1)
+    exit(0)
 
 if __name__ == "__main__":
     main()

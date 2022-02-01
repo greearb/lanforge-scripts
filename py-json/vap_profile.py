@@ -72,7 +72,6 @@ class VAPProfile(LFCliBase):
             "realm": None,
             "domain": None
         }
-        self.up = None
 
     def set_wifi_extra(self,
                        key_mgmt="WPA-EAP",
@@ -97,7 +96,7 @@ class VAPProfile(LFCliBase):
     def admin_up(self, resource):
         set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
         req_json = LFUtils.portUpRequest(resource, None, debug_on=self.debug)
-        req_json["port"] = self.vap_name
+        req_json["port"] = LFUtils.name_to_eid(self.vap_name)[2]
         set_port_r.addPostData(req_json)
         set_port_r.jsonPost(self.debug)
         time.sleep(0.03)
@@ -105,7 +104,7 @@ class VAPProfile(LFCliBase):
     def admin_down(self, resource):
         set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
         req_json = LFUtils.port_down_request(resource, None, debug_on=self.debug)
-        req_json["port"] = self.vap_name
+        req_json["port"] = LFUtils.name_to_eid(self.vap_name)[2]
         set_port_r.addPostData(req_json)
         set_port_r.jsonPost(self.debug)
         time.sleep(0.03)
@@ -219,9 +218,11 @@ class VAPProfile(LFCliBase):
 
         return result
 
-    def create(self, resource, radio, channel=None, up_=None, debug=False, use_ht40=True, use_ht80=True,
+    # NOTE:  This method does not have enough knowledge of desired setup to build or modify
+    # a bridge, so work-flow would be to create vap, then create bridge to hold the VAP.
+    def create(self, resource, radio, channel=None, up=False, debug=False, use_ht40=True, use_ht80=True,
                use_ht160=False,
-               suppress_related_commands_=True, use_radius=False, hs20_enable=False, bridge=True):
+               suppress_related_commands_=True, use_radius=False, hs20_enable=False):
         eid = LFUtils.name_to_eid(radio)
         self.shelf = eid[0]
         self.resource = eid[1]
@@ -229,14 +230,18 @@ class VAPProfile(LFCliBase):
 
         if resource:
             self.resource = resource
+        resource = self.resource
 
-        port_list = self.local_realm.json_get("port/1/1/list")
+        # Removes port if it exists already.
+        # TODO:  Make this optional, that way this profile could modify existing VAP in place.
+        port_list = self.local_realm.json_get("port/1/%s/list" % (resource))
         if port_list is not None:
             port_list = port_list['interfaces']
             for port in port_list:
                 for k, v in port.items():
-                    if v['alias'] == self.vap_name:
-                        self.local_realm.rm_port(k, check_exists=True)
+                    if v['alias'] == LFUtils.name_to_eid(self.vap_name)[2]:
+                        self.local_realm.rm_port(k, check_exists=False)
+
         if use_ht160:
             self.desired_add_vap_flags.append("enable_80211d")
             self.desired_add_vap_flags_mask.append("enable_80211d")
@@ -279,9 +284,7 @@ class VAPProfile(LFCliBase):
             "frequency": self.local_realm.channel_freq(channel_=channel)
         }
         self.local_realm.json_post("/cli-json/set_wifi_radio", _data=data)
-        if up_ is not None:
-            self.up = up_
-        if self.up:
+        if up:
             if "create_admin_down" in self.desired_add_vap_flags:
                 del self.desired_add_vap_flags[self.desired_add_vap_flags.index("create_admin_down")]
         elif "create_admin_down" not in self.desired_add_vap_flags:
@@ -311,8 +314,8 @@ class VAPProfile(LFCliBase):
 
         # pprint(self.station_names)
         # exit(1)
-        self.set_port_data["port"] = self.vap_name
-        self.add_vap_data["ap_name"] = self.vap_name
+        self.set_port_data["port"] = LFUtils.name_to_eid(self.vap_name)[2]
+        self.add_vap_data["ap_name"] = LFUtils.name_to_eid(self.vap_name)[2]
         add_vap_r.addPostData(self.add_vap_data)
         if debug:
             print("- 1502 - %s- - - - - - - - - - - - - - - - - - " % self.vap_name)
@@ -322,57 +325,37 @@ class VAPProfile(LFCliBase):
             print("- ~1502 - - - - - - - - - - - - - - - - - - - ")
 
         add_vap_r.jsonPost(debug)
-        # time.sleep(0.03)
-        time.sleep(2)
         set_port_r.addPostData(self.set_port_data)
         set_port_r.jsonPost(debug)
-        time.sleep(0.03)
 
         self.wifi_extra_data["resource"] = resource
-        self.wifi_extra_data["port"] = self.vap_name
+        self.wifi_extra_data["port"] = LFUtils.name_to_eid(self.vap_name)[2]
         if self.wifi_extra_data_modified:
             wifi_extra_r.addPostData(self.wifi_extra_data)
             wifi_extra_r.jsonPost(debug)
 
-        port_list = self.local_realm.json_get("port/1/1/list")
-        if port_list is not None:
-            port_list = port_list['interfaces']
-            for port in port_list:
-                for k, v in port.items():
-                    if v['alias'] == 'br0':
-                        self.local_realm.rm_port(k, check_exists=True)
-                        time.sleep(5)
-
-        # create bridge
-        if bridge:
-            print("creating bridge")
-            data = {
-                "shelf": 1,
-                "resource": resource,
-                "port": "br0",
-                "network_devs": "eth1,%s" % self.vap_name
-            }
-            self.local_realm.json_post("cli-json/add_br", data)
-
-            bridge_set_port = {
-                "shelf": 1,
-                "resource": resource,
-                "port": "br0",
-                "current_flags": 0x80000000,
-                "interest": 0x4000  # (0x2 + 0x4000 + 0x800000)  # current, dhcp, down
-            }
-            self.local_realm.json_post("cli-json/set_port", bridge_set_port)
-
-        if self.up:
-            self.admin_up(resource)
+        desired_ports = ["1.%s.%s" % (resource, LFUtils.name_to_eid(self.vap_name)[2])]
+        if LFUtils.wait_until_ports_appear(base_url=self.lfclient_url, port_list=desired_ports, debug=debug):
+            if up:
+                self.admin_up(resource)
+            
+                if LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url, port_list=desired_ports, debug_=debug):
+                    return True
+                else:
+                    return False # Ports did not go admin up
+            else:
+                return True # We are not trying to admin them up
+        else:
+            return False # Ports did not appear
 
     def cleanup(self, resource):
-        print("Cleaning up VAPs")
-        desired_ports = ["1.%s.%s" % (resource, self.vap_name), "1.%s.br0" % resource]
+        print("Cleaning up VAP")
+
+        desired_ports = ["1.%s.%s" % (resource, LFUtils.name_to_eid(self.vap_name)[2])]
 
         # First, request remove on the list.
         for port_eid in desired_ports:
             self.local_realm.rm_port(port_eid, check_exists=True)
 
         # And now see if they are gone
-        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_ports)
+        return LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=desired_ports)
