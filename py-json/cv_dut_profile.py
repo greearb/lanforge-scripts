@@ -2,18 +2,20 @@
 import sys
 import os
 import importlib
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit()
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 add_dut = importlib.import_module("py-json.LANforge.add_dut")
 add_dut_flags = add_dut.add_dut_flags
+logger = logging.getLogger(__name__)
 
 
 class cv_dut(LFCliBase):
@@ -49,11 +51,13 @@ class cv_dut(LFCliBase):
 
     def add_named_flags(self, desired_list, command_ref):
         if desired_list is None:
+            logger.critical("addNamedFlags wants a list of desired flag names")
             raise ValueError("addNamedFlags wants a list of desired flag names")
         if len(desired_list) < 1:
-            print("addNamedFlags: empty desired list")
+            logger.info("addNamedFlags: empty desired list")
             return 0
         if (command_ref is None) or (len(command_ref) < 1):
+            logger.critical("addNamedFlags wants a maps of flag values")
             raise ValueError("addNamedFlags wants a maps of flag values")
 
         result = 0
@@ -62,7 +66,8 @@ class cv_dut(LFCliBase):
                 continue
             if name not in command_ref:
                 if self.debug:
-                    print(command_ref)
+                    logger.debug(command_ref)
+                logger.critical("flag %s not in map" % name)
                 raise ValueError("flag %s not in map" % name)
             result += command_ref[name]
 
@@ -127,13 +132,13 @@ class cv_dut(LFCliBase):
                  ssid_flags=0,
                  ssid_flags_mask=0xFFFFFFFF):
         req_url = "/cli-json/add_dut_ssid"
-        print("name: %s" % dut_name,
-              "ssid_idx: %s" % ssid_idx,
-              "ssid: %s" % ssid,
-              "passwd: %s" % passwd,
-              "bssid: %s" % bssid,
-              "ssid_flags: %s" % ssid_flags,
-              "ssid_flags_mask: %s" % ssid_flags_mask)
+        logger.info("name: %s" % dut_name,
+                    "ssid_idx: %s" % ssid_idx,
+                    "ssid: %s" % ssid,
+                    "passwd: %s" % passwd,
+                    "bssid: %s" % bssid,
+                    "ssid_flags: %s" % ssid_flags,
+                    "ssid_flags_mask: %s" % ssid_flags_mask)
 
         self.json_post(req_url, {
             "name": dut_name,
