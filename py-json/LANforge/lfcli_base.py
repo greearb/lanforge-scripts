@@ -12,6 +12,7 @@ import datetime
 import argparse
 import re
 import logging
+import math
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -406,13 +407,58 @@ class LFCliBase:
         logger.info(traceback.format_exception(Exception, exception, exception.__traceback__, chain=True))
 
     def check_connect(self, timeout=300):
-        if self.debug:
-            logger.debug("Checking for LANforge GUI connection: %s" % self.lfclient_url)
+        curr_time = math.floor(time.time())
+        in30d_time = math.floor(curr_time + datetime.timedelta(days=30).total_seconds())
+        logger.debug("Checking for LANforge GUI connection: %s" % self.lfclient_url)
+        # negative naptime indicates a warning not an error. Keep this a negative value.
+        # naptime will be transformed to positive if licenses are expired. Missing license
+        # will use the absolute value of this.
+        naptime = -5
+        warnings = list()
         for _ in range(0, int(timeout / 2)):
-            logger.info("LANforge GUI connection not found sleeping 5 seconds, tried: %s" % self.lfclient_url)
-            time.sleep(2)
-            if self.json_get("/", debug_=self.debug):
-                return True
+            lic_json = self.json_get("/misc/license", debug_=self.debug)
+            if lic_json:
+                if ("license" in lic_json) and lic_json["license"]:
+                    lic_block = lic_json["license"].replace("\\n|\\r|\r|\n", "____")
+                    lic_block = lic_block.replace("____+", "\n")
+                    logger.debug("\nlicense contents found:\n"+ lic_block)
+                    lic_list = lic_block.split("\n")
+
+                    for line in lic_list:
+                        line = line.strip()
+                        if (not line) or (line is "\\n"):
+                            continue
+                        hunks = re.split("\s+", line)
+                        if (hunks[-1]) == "forever":
+                            continue
+
+                        expire_at = int(hunks[-1])
+                        if expire_at < curr_time:
+                            warnings.append("** License item %s EXPIRED on %s"
+                                            % ( hunks[0],
+                                                time.strftime('%Y-%m-%d %H:%M', time.localtime(expire_at))))
+                            naptime = abs(naptime)
+                        elif expire_at <= in30d_time:
+                            warnings.append("** License item %s WILL expire on %s"
+                                            % ( hunks[0],
+                                                time.strftime('%Y-%m-%d %H:%M', time.localtime(expire_at))))
+                    if len(warnings) > 0:
+                        combined_warn = "\nScripts might fail because of unavailable features:\n" \
+                                        +("\n".join(warnings))
+                        if (naptime > 0):
+                            logger.error(combined_warn)
+                            time.sleep(naptime)
+                        else:
+                            logger.warning(combined_warn)
+                    return True
+                else:
+                    logging.error("System lacks a license. Scripts might fail because of unavailable features.")
+                    time.sleep(abs(naptime))
+                    return True
+            else:
+                logger.warning("LANforge GUI connection not found sleeping %s seconds, tried: %s"
+                               % (naptime, self.lfclient_url))
+                time.sleep(abs(naptime))
 
         logger.info("Could not connect to LANforge GUI")
         sys.exit(1)
