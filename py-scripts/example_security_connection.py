@@ -4,15 +4,16 @@ import os
 import importlib
 import argparse
 import logging
+from time import sleep
+
+logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
-    print("This script requires Python 3")
+    logger.critical("This script requires Python 3")
     exit(1)
-
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
-logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
@@ -148,6 +149,14 @@ def main():
     ip_test.timeout = 60
     ip_test.build()
 
+    if not args.noclean:
+        sleep(5)
+        ip_test.cleanup(station_list)
+
+    if ip_test.passes():
+        ip_test.exit_success()
+    else:
+        ip_test.exit_fail()
 
 if __name__ == "__main__":
     main()

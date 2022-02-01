@@ -225,6 +225,7 @@ Command example:
         create_vaps.append(create_vap)
 
     # TODO:  Add logic to clean up vap, unless --noclean option is specified.
+    # TODO:  Set radio back to previous channel.
 
     any_failed = False
     for v in create_vaps:
