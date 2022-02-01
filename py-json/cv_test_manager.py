@@ -9,6 +9,7 @@ import importlib
 import time
 import json
 from pprint import pprint
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -25,6 +26,7 @@ lf_rpt = cv_test_reports.lanforge_reports
 InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")
 influx_add_parser_args = InfluxRequest.influx_add_parser_args
 RecordInflux = InfluxRequest.RecordInflux
+logger = logging.getLogger(__name__)
 
 
 def cv_base_adjust_parser(args):
@@ -105,7 +107,7 @@ class cv_test(Realm):
             "text": text
         }
 
-        print("adding- " + text + " " + "to test config")
+        logger.info("adding- {text} to test config".format(text=text))
 
         self.json_post(req_url, data)
         # time.sleep(1)
@@ -176,7 +178,7 @@ class cv_test(Realm):
         val = self.run_cv_cmd(cmd)
         # pprint(val)
         rv = val[0]["LAST"]["response"] == 'YES'
-        print("is-built: ", rv)
+        logger.info("is-built: {rv} ".format(rv=rv))
         return rv
 
     # delete the test instance
@@ -188,7 +190,7 @@ class cv_test(Realm):
         tries = 0
         while True:
             if self.get_exists(instance):
-                print("Waiting %i/60 for test instance: %s to be deleted." % (tries, instance))
+                logger.info("Waiting %i/60 for test instance: %s to be deleted." % (tries, instance))
                 tries += 1
                 if tries > 60:
                     break
@@ -200,7 +202,7 @@ class cv_test(Realm):
         tries = 0
         while True:
             if not self.get_cv_is_built():
-                print("Waiting %i/60 for Chamber-View to be built." % tries)
+                logger.info("Waiting %i/60 for Chamber-View to be built." % tries)
                 tries += 1
                 if tries > 60:
                     break
@@ -302,11 +304,11 @@ class cv_test(Realm):
             if response[0]["LAST"]["response"] == "OK":
                 break
             else:
-                print("Could not create test, try: %i/60:\n" % start_try)
+                logger.info("Could not create test, try: %i/60:\n" % start_try)
                 pprint(response)
                 start_try += 1
                 if start_try > 60:
-                    print("ERROR:  Could not start within 60 tries, aborting.")
+                    logger.error("ERROR:  Could not start within 60 tries, aborting.")
                     exit(1)
                 time.sleep(1)
 
@@ -315,16 +317,16 @@ class cv_test(Realm):
 
         for kv in sets:
             cmd = "cv set '%s' '%s' '%s'" % (instance_name, kv[0], kv[1])
-            print("Running CV set command: ", cmd)
+            logger.info("Running CV set command:{cmd}".format(cmd=cmd))
             self.run_cv_cmd(cmd)
 
         for cmd in cv_cmds:
-            print("Running CV command: ", cmd)
+            logger.info("Running CV set command:{cmd}".format(cmd=cmd))
             self.run_cv_cmd(cmd)
 
         response = self.start_test(instance_name)
         if response[0]["LAST"]["response"].__contains__("Could not find instance:"):
-            print("ERROR:  start_test failed: ", response[0]["LAST"]["response"], "\n")
+            logger.error("ERROR:  start_test failed: ", response[0]["LAST"]["response"], "\n")
             # pprint(response)
             exit(1)
 
@@ -333,17 +335,17 @@ class cv_test(Realm):
             cmd = "cv get_and_close_dialog"
             dialog = self.run_cv_cmd(cmd)
             if dialog[0]["LAST"]["response"] != "NO-DIALOG":
-                print("Popup Dialog:\n")
-                print(dialog[0]["LAST"]["response"])
+                logger.info("Popup Dialog:\n")
+                logger.info(dialog[0]["LAST"]["response"])
 
             check = self.get_report_location(instance_name)
             location = json.dumps(check[0]["LAST"]["response"])
             if location != '\"Report Location:::\"':
-                print(location)
+                logger.info(location)
                 location = location.replace('\"Report Location:::', '')
                 location = location.replace('\"', '')
                 report = lf_rpt()
-                print(graph_groups_file)
+                logger.info(graph_groups_file)
                 if graph_groups_file is not None:
                     filelocation = open(graph_groups_file, 'a')
                     if pull_report:
@@ -352,23 +354,23 @@ class cv_test(Realm):
                     else:
                         filelocation.write(location + '/kpi.csv\n')
                     filelocation.close()
-                print(location)
+                logger.info(location)
                 self.lf_report_dir = location
                 if pull_report:
                     try:
-                        print("Pulling report to directory: %s from %s@%s/%s" %
-                              (local_lf_report_dir, lf_user, lf_host, location))
+                        logger.info("Pulling report to directory: %s from %s@%s/%s" %
+                                    (local_lf_report_dir, lf_user, lf_host, location))
                         report.pull_reports(hostname=lf_host, username=lf_user, password=lf_password,
                                             port=ssh_port, report_dir=local_lf_report_dir,
                                             report_location=location)
                     except Exception as e:
-                        print("SCP failed, user %s, password %s, dest %s" % (lf_user, lf_password, lf_host))
+                        logger.critical("SCP failed, user %s, password %s, dest %s" % (lf_user, lf_password, lf_host))
                         raise e  # Exception("Could not find Reports")
                     break
 
             # Of if test stopped for some reason and could not generate report.
             if not self.get_is_running(instance_name):
-                print("Detected test is not running.")
+                logger.info("Detected test is not running.")
                 not_running += 1
                 if not_running > 5:
                     break
@@ -382,8 +384,8 @@ class cv_test(Realm):
         while True:
             dialog = self.run_cv_cmd(cmd)
             if dialog[0]["LAST"]["response"] != "NO-DIALOG":
-                print("Popup Dialog:\n")
-                print(dialog[0]["LAST"]["response"])
+                logger.info("Popup Dialog:\n")
+                logger.info(dialog[0]["LAST"]["response"])
             else:
                 break
 
@@ -392,16 +394,16 @@ class cv_test(Realm):
     def check_influx_kpi(self, args):
         if self.lf_report_dir is None:
             # Nothing to report on.
-            print("Not submitting to influx, no report-dir.\n")
+            logger.info("Not submitting to influx, no report-dir.\n")
             return
 
         if args.influx_host is None:
             # No influx configured, return.
-            print("Not submitting to influx, influx_host not configured.\n")
+            logger.info("Not submitting to influx, influx_host not configured.\n")
             return
 
-        print("Creating influxdb connection, host: %s:%s org: %s  token: %s  bucket: %s\n" %
-              (args.influx_host, args.influx_port, args.influx_org, args.influx_token, args.influx_bucket))
+        logger.info("Creating influxdb connection, host: %s:%s org: %s  token: %s  bucket: %s\n" %
+                    (args.influx_host, args.influx_port, args.influx_org, args.influx_token, args.influx_bucket))
         # lfjson_host would be if we are reading out of LANforge or some other REST
         # source, which we are not.  So dummy those out.
         influxdb = RecordInflux(_influx_host=args.influx_host,
@@ -419,11 +421,11 @@ class cv_test(Realm):
             # the lf_report_dir is the parent directory,  need to get the directory name
             csv_path = "%s/kpi.csv" % kpi_location
 
-        print("Attempt to submit kpi: ", csv_path)
-        print("Posting to influx...\n")
+        logger.info("Attempt to submit kpi: ", csv_path)
+        logger.info("Posting to influx...\n")
         influxdb.csv_to_influx(csv_path)
 
-        print("All done posting to influx.\n")
+        logger.info("All done posting to influx.\n")
 
     # ************************** chamber view **************************
     def add_text_blob_line(self,
@@ -470,12 +472,12 @@ class cv_test(Realm):
     def apply_cv_scenario(self, cv_scenario):
         cmd = "cv apply '%s'" % cv_scenario  # To apply scenario
         self.run_cv_cmd(cmd)
-        print("Applying %s scenario" % cv_scenario)
+        logger.info("Applying %s scenario" % cv_scenario)
 
     def build_cv_scenario(self):  # build chamber view scenario
         cmd = "cv build"
         self.run_cv_cmd(cmd)
-        print("Building scenario")
+        logger.info("Building scenario")
 
     def get_cv_build_status(self):  # check if scenario is build
         cmd = "cv is_built"
@@ -484,7 +486,7 @@ class cv_test(Realm):
 
     def sync_cv(self):  # sync
         cmd = "cv sync"
-        print(self.run_cv_cmd(cmd))
+        logger.info(self.run_cv_cmd(cmd))
 
     def run_cv_cmd(self, command):  # Send chamber view commands
         response_json = []
@@ -501,5 +503,5 @@ class cv_test(Realm):
         cmd = "cv get_and_close_dialog"
         dialog = self.run_cv_cmd(cmd)
         if dialog[0]["LAST"]["response"] != "NO-DIALOG":
-            print("Popup Dialog:\n")
-            print(dialog[0]["LAST"]["response"])
+            logger.info("Popup Dialog:\n")
+            logger.info(dialog[0]["LAST"]["response"])
