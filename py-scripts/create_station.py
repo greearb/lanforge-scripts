@@ -7,9 +7,11 @@ import os
 import importlib
 import argparse
 import pprint
+import logging
 
+logger = logging.getLogger(__name__)
 if sys.version_info[0] != 3:
-    print("This script requires Python 3")
+    logger.critical("This script requires Python 3")
     exit(1)
 
 
@@ -20,6 +22,7 @@ LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class CreateStation(Realm):
@@ -95,12 +98,19 @@ class CreateStation(Realm):
                 retries=self.set_txo_data["retries"],
                 sgi=self.set_txo_data["sgi"],
             )
-        self.station_profile.create(
+
+        if self.station_profile.create(
             radio=self.radio,
             sta_names_=self.sta_list,
-            debug=self.debug)
+            debug=self.debug):
+            self._pass("Stations created.")
+        else:
+            self._fail("Stations not properly created.")
+
         if self.up:
             self.station_profile.admin_up()
+
+        # TODO:  Add check for whether stations went admin up or not.
 
         self._pass("PASS: Station build finished")
 
@@ -145,6 +155,12 @@ def main():
         action='append')
 
     args = parser.parse_args()
+
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
+
     # if args.debug:
     #    pprint.pprint(args)
     #    time.sleep(5)
@@ -182,7 +198,14 @@ def main():
                                    _debug_on=args.debug)
 
     create_station.build()
-    print('Created %s stations' % num_sta)
+
+    # TODO:  Add code to clean up the station, unless --noclean was specified.
+
+    if create_station.passes():
+        print('Created %s stations' % num_sta)
+        create_station.exit_success()
+    else:
+        create_station.exit_fail()
 
 
 if __name__ == "__main__":

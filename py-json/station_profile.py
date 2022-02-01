@@ -367,7 +367,6 @@ class StationProfile:
     def admin_up(self):
         for eid in self.station_names:
             self.local_realm.admin_up(eid)
-            time.sleep(0.005)
 
     def admin_down(self):
         for sta_name in self.station_names:
@@ -393,6 +392,8 @@ class StationProfile:
                                            debug=debug_)
 
     # Checks for errors in initialization values and creates specified number of stations using init parameters
+    # TODO:  Add option to check if stations exist already.  If they do, then warn user, and set MAC to 'NA' so that is
+    # is not attempted to be mofidified when submitting the create-station URL request.
     def create(self, radio,
                num_stations=0,
                sta_names_=None,
