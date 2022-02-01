@@ -461,8 +461,22 @@ class LFCliBase:
             return True
         return False
 
+    def print_pass_fail(self):
+        pl = self.get_passed_result_list()
+        if len(pl) > 0:
+            print("------------ PASSING TESTS --------------")
+            for p in pl:
+                logging.info(p)
+
+        fl = self.get_failed_result_list()
+        if len(fl) > 0:
+            print("------------ FAILED TESTS --------------")
+            for f in fl:
+                logging.error(f)
+
     # EXIT script with a fail
     def exit_fail(self, message="%d out of %d tests failed. Exiting script with script failure."):
+        self.print_pass_fail()
         total_len = len(self.get_result_list())
         fail_len = len(self.get_failed_result_list())
         print(message % (fail_len, total_len))
@@ -478,6 +492,7 @@ class LFCliBase:
 
     # EXIT script with a success
     def exit_success(self, message="%d out of %d tests passed successfully. Exiting script with script success."):
+        self.print_pass_fail()
         num_total = len(self.get_result_list())
         num_passing = len(self.get_passed_result_list())
         print(message % (num_passing, num_total))
