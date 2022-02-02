@@ -262,10 +262,16 @@ class Realm(LFCliBase):
         eid = self.name_to_eid(port_eid)
         resource = eid[1]
         port = eid[2]
-        request = LFUtils.port_up_request(resource_id=resource, port_name=port)
+        request = LFUtils.port_up_request(resource_id=resource, port_name=port, debug_on=self.debug)
         # logger.info("192.admin_up request: resource: %s port_name %s"%(resource, port))
-        # time.sleep(2)
-        self.json_post("/cli-json/set_port", request)
+        dbg_param = ""
+        if logger.getEffectiveLevel() == logging.DEBUG:
+            dbg_param = "?__debug=1"
+        collected_responses = list()
+        self.json_post("/cli-json/set_port%s" % dbg_param, request, debug_=self.debug,
+                                  response_json_list_=collected_responses)
+        # TODO: when doing admin-up ath10k radios, want a LF complaint about a license exception
+        # if len(collected_responses) > 0: ...
 
     def admin_down(self, port_eid):
         eid = self.name_to_eid(port_eid)
