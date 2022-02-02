@@ -38,8 +38,9 @@ import time
 import re
 from pprint import pprint
 import shlex
+import logging
 
-# TODO:  Add logging support.
+logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -49,6 +50,7 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
 cv = cv_test_manager.cv_test
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class CreateChamberview(cv):
@@ -77,10 +79,10 @@ class CreateChamberview(cv):
               raw_line=None):
 
         if raw_line:
-            print("creating %s scenario using raw lines" % create_scenario)
+            logger.info("creating %s scenario using raw lines" % create_scenario)
             for create_lines in raw_line:
                 ln = create_lines[0]
-                #print("ln: %s" % (ln))
+                # print("ln: %s" % (ln))
                 self.pass_raw_lines_to_cv(create_scenario, ln)
 
         # check for lines
@@ -98,16 +100,16 @@ class CreateChamberview(cv):
             Freq = "-1"
             VLAN = ""
 
-            #print("line: ")
-            #pprint(line)
+            # print("line: ")
+            # pprint(line)
 
             for item in line:
-                #print("item: ")
-                #pprint(item)
+                # print("item: ")
+                # pprint(item)
 
                 for sub_item in shlex.split(item[0]):
-                    #print("sub-item: ")
-                    #pprint(sub_item)
+                    # print("sub-item: ")
+                    # pprint(sub_item)
 
                     sub_item = sub_item.split("=")
                     if sub_item[0] == "Resource" or str(
@@ -132,7 +134,8 @@ class CreateChamberview(cv):
                     elif sub_item[0] == "VLAN" or sub_item[0] == "Vlan" or sub_item[0] == "V":
                         VLAN = sub_item[1]
                     else:
-                        print("ERROR:  Unknown line argument -:%s:-" %(sub_item[0]))
+                        logger.critical("ERROR:  Unknown line argument -:%s:-" % (sub_item[0]))
+                        logger.critical("Un-supported line argument")
                         raise ValueError("Un-supported line argument")  # Bad user input, terminate script.
                         continue
 
@@ -149,6 +152,7 @@ class CreateChamberview(cv):
                                         VLAN
                                         )  # To manage scenario
         if not line and not raw_line:
+            logger.critical("scenario creation failed")
             raise Exception("scenario creation failed")
 
         return True
@@ -166,14 +170,15 @@ class CreateChamberview(cv):
             if not self.get_cv_is_built():
                 # It can take a while to build a large scenario, so wait-time
                 # is currently max of 5 minutes.
-                print("Waiting %i/300 for Chamber-View to be built." % tries)
+                logger.info("Waiting %i/300 for Chamber-View to be built." % tries)
                 tries += 1
                 if tries > 300:
+                    self._fail("Waiting %i/300 for Chamber-View to be built." % tries)
                     break
                 time.sleep(1)
             else:
+                self._pass("completed building %s scenario" % scenario_name)
                 break
-        print("completed building %s scenario" % scenario_name)
 
 
 def main():
@@ -230,8 +235,19 @@ def main():
                         default=False,
                         action="store_true",
                         help='Enable debugging')
+    # TODO - check if base args parser may be used
+    parser.add_argument('--log_level',
+                        default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
+    parser.add_argument('--lf_logger_config_json',
+                        help="--lf_logger_config_json <json file> , json configuration of logger")
 
     args = parser.parse_args()
+
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
 
     Create_Chamberview = CreateChamberview(lfmgr=args.lfmgr,
                                            _debug_on=args.debug,
@@ -255,6 +271,7 @@ def main():
         Create_Chamberview.exit_success()
     else:
         Create_Chamberview.exit_fail()
+
 
 if __name__ == "__main__":
     main()
