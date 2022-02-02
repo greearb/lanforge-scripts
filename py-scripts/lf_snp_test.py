@@ -6,10 +6,12 @@ PURPOSE:
 
 This program is to test an AP connected to a controller.
     The AP name is configurable.
-    The controler
-     with with a specific ap mode, wifi mode (2.4 Ghz or 5 Ghz), Bandwidth (20,40,80,160) and TX power.
+    The controler with with a specific ap mode, wifi mode (2.4 Ghz or 5 Ghz),
+     Bandwidth (20,40,80,160) and TX power.
+    This currently only works with certain models of Cisco controllers.
+
 The controller will configure the AP.
-The Lanforge radios are configured for a specific client dencity, Packet type (TCP, UDP), Direction (download, upload) and Packet-size.
+The Lanforge radios are configured for a specific client density, Packet type (TCP, UDP), Direction (download, upload) and Packet-size.
 The transmission rate will be recorded and compared against the expected rate to determine pass or fail.
 The results will be recorded in CSV file with the following data
 AP, Band, wifi_mode, Bandwidth, encryption, ap mode, number of clients, packet type, direction, packet size, measured rx bytes, upload bits per second,
@@ -2892,6 +2894,7 @@ LANforge GUI what is displayed in the Column and how to access the value with cl
     if args.log:
         logg.info("output_log: {}".format(outfile_log))
 
+    # TODO:  Check pass/fail and do exit code accordingly.
 
 if __name__ == "__main__":
     main()
