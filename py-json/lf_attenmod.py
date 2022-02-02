@@ -3,14 +3,16 @@ import sys
 import os
 import importlib
 import time
+import logging
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+logger = logging.getLogger(__name__)
 
 
 class ATTENUATORProfile(LFCliBase):
@@ -47,11 +49,12 @@ class ATTENUATORProfile(LFCliBase):
             self.atten_data[param_name] = param_value
 
     def show(self):
-        print("Show Attenuators.........")
+        logger.info("Show Attenuators.........")
         response = self.json_get("/attenuators/")
         time.sleep(0.01)
         if response is None:
-            print(response)
+            logger.critical(response)
+            logger.critical("Cannot find any endpoints")
             raise ValueError("Cannot find any endpoints")
         elif 'attenuator' or 'attenuators' in response.keys():
             try:
@@ -62,21 +65,23 @@ class ATTENUATORProfile(LFCliBase):
                 for key, val in attenuator.items():
                     if key == "entity id":
                         serial_num = val.split(".")
-                        print("Serial-num : %s" % serial_num[-1])
-                    print("%s : %s" % (key, val))
-                    print('\n')
+                        logger.info("Serial-num : %s" % serial_num[-1])
+                    logger.info("%s : %s" % (key, val))
 
         else:
+            logger.critical('No attenuators in response')
             raise ValueError('No attenuators in response')
 
     def create(self):
         if self.atten_idx == 'all':
             self.atten_idx = 8
         if int(self.atten_val) > 955:
+            logger.critical("Attenuation ddB value must be 955 or less")
             raise ValueError("Attenuation ddB value must be 955 or less")
         if int(self.atten_idx) > 7:
+            logger.critical("Attenuation idx value must be 7 or less")
             raise ValueError("Attenuation idx value must be 7 or less")
-        print("Setting Attenuator...")
+        logger.info("Setting Attenuator...")
         self.set_command_param("set_attenuator", "serno", self.atten_serno)
         self.set_command_param("set_attenuator", "atten_idx", self.atten_idx)
         self.set_command_param("set_attenuator", "val", self.atten_val)
