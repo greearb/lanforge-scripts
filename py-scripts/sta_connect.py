@@ -105,6 +105,7 @@ class StaConnect(Realm):
     def remove_stations(self):
         for name in self.station_names:
             LFUtils.removePort(self.resource, name, self.lfclient_url)
+        # TODO:  Add wait-until-removed call to LFUtils, check return code.
 
     def num_associated(self, bssid):
         counter = 0
@@ -175,6 +176,7 @@ class StaConnect(Realm):
 
         for sta_name in self.station_names:
             self.rm_port(sta_name, check_exists=True, debug_=self.debug)
+        # TODO:  Check return code.
         self.wait_until_ports_disappear(self.station_names, debug_=self.debug)
 
         # Create stations and turn dhcp on
@@ -214,11 +216,13 @@ class StaConnect(Realm):
             set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
             set_port_r.addPostData(set_port_data)
             set_port_r.jsonPost()
-
+            # TODO:  Remove sleep
             time.sleep(0.01)
+
         print("\nBringing ports up...")
         for port in self.station_names:
             self.admin_up(port)
+        # TODO:  Check return code.
         LFUtils.waitUntilPortsAdminUp(self.resource, self.lfclient_url, self.station_names)
 
         # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
@@ -226,6 +230,8 @@ class StaConnect(Realm):
         maxTime = 300
         ip = "0.0.0.0"
         ap = ""
+
+        # TODO:  Move this logic to LFUtils, ensure it does proper return code.
         print("Waiting for %s stations to associate to AP: " % len(self.station_names), end="")
         connected_stations = {}
         while (len(connected_stations.keys()) < len(self.station_names)) and (duration < maxTime):
@@ -391,6 +397,7 @@ class StaConnect(Realm):
             }
             self.json_post("/cli-json/set_cx_report_timer", data, suppress_related_commands_=True)
 
+        # TODO:  Check return code and do pass/fail, unless base class does that?  If so, add comment about it.
         self.wait_until_cxs_appear(self.cx_names, debug=self.debug)
         return True
 
@@ -524,6 +531,7 @@ Example:
 
     print(staConnect.get_all_message())
 
+    # TODO:  Do proper exit codes.
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
