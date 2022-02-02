@@ -62,12 +62,19 @@ class LFRequest:
         #         print("LFRequest: proxies: ")
         #         pprint.pprint(self.proxies)
 
+        if url and uri and (url.startswith("http:/") or url.startswith("https:/"))\
+                and (uri.startswith("http:/") or uri.startswith("https:/")):
+            raise ValueError("URL and PATH are both URLs: url[%s] uri[%s]" % (url, uri))
+        if url and uri and uri.startswith("http:/"):
+            raise ValueError("URL is present and PATH is an URL: url[%s] uri[%s]" % (url, uri))
         if not url.startswith("http://") and not url.startswith("https://"):
             self.logger.warning("No http:// or https:// found, prepending http:// to " + url)
             url = "http://" + url
         if uri is not None:
             if not url.endswith('/') and not uri.startswith('/'):
                 url += '/'
+            if (uri.find("http:")>=0) or (uri.find("https:")>=0):
+                self.logger.warning("PATH contains an protocol that is not URL encoded: [%s]" % uri)
             self.requested_url = url + uri
         else:
             self.requested_url = url
