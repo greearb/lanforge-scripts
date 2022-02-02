@@ -572,7 +572,7 @@ class StationProfile:
             self.station_names.append("%s.%s.%s" % (radio_shelf, radio_resource, name))
             time.sleep(sleep_time)
 
-        logger.debug('StationProfile.create debug: {port}'.format(port=self.local_realm.json_get('/port/')))
+        logger.debug('StationProfile.create debug: {port}'.format(port=pformat(self.local_realm.json_get('/port/'))))
         logger.debug("- ~3287 - waitUntilPortsAppear - - - - - - - - - - - - - - - - - - ")
 
         rv = LFUtils.wait_until_ports_appear(self.lfclient_url, my_sta_eids, debug=debug, timeout=timeout)
