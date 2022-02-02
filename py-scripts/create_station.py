@@ -109,8 +109,12 @@ class CreateStation(Realm):
 
         if self.up:
             self.station_profile.admin_up()
-
-        # TODO:  Add check for whether stations went admin up or not.
+            if not LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
+                                                     port_list=self.station_profile.station_names,
+                                                     debug_=self.debug,
+                                                     timeout=10):
+                self._fail("Unable to bring all stations up")
+                return
 
         self._pass("PASS: Station build finished")
 
