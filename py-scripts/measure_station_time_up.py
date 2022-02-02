@@ -95,11 +95,13 @@ class MeasureTimeUp(Realm):
                                                 radio=item)
             start_num = self.num_sta + start_num + 1
             sta_names.extend(sta_list)
+            # TODO:  Add checks for return code 
             self.station_profile.create(radio=item, sta_names_=sta_list, debug=self.debug)
 
     def station_up(self):
         if self.up:
             self.station_profile.admin_up()
+        # TODO:  Add checks for whethere it actually got IP or not
         self.wait_for_ip(station_list=self.station_profile.station_names)
         self._pass("PASS: Station build finished")
 
@@ -174,6 +176,8 @@ Command example:
                                        _debug_on=args.debug,
                                        _load=args.database)
         create_station.scenario()
+        # Remove sleep, instead use the wait_for logic in LFUtils
+        # or some other way to wait inteligently.
         time.sleep(5.0 + num_sta / 10)
         start = datetime.datetime.now()
         create_station.build()
@@ -181,7 +185,9 @@ Command example:
         create_station.station_up()
         stationsup = datetime.datetime.now()
         dictionary[num_sta] = [start, built, stationsup]
+        # TODO:  Check return code of the method below.
         create_station.wait_until_ports_disappear()
+        # TODO:  Remove this sleep or add comment as to why it is needed.
         time.sleep(5.0 + num_sta / 20)
     df = pd.DataFrame.from_dict(dictionary).transpose()
     df.columns = ['Start', 'Built', 'Stations Up']
@@ -197,6 +203,7 @@ Command example:
     if 'xlsx' in args.report_file:
         df.to_excel(args.report_file)
 
+    # TODO:  Check pass/fail and exit accordingly
 
 if __name__ == "__main__":
     main()
