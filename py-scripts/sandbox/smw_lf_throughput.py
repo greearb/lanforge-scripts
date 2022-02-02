@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-"""throughput.py will create stations and layer-3 traffic to calculate the throughput of AP.
+"""
+throughput.py will create stations and layer-3 traffic to calculate the throughput of AP.
 
 This script will create a VAP and apply some load by creating stations in AP's channel under VAP in order to make the channel
 utilized after the channel utilized to specific level again create specific number of stations each with their own set of cross-connects and endpoints.
@@ -13,7 +14,39 @@ License: Free to distribute and modify. LANforge systems must be licensed.
 """
 
 import sys
-import os, paramiko, pprint
+import importlib
+import paramiko
+import argparse
+import pprint
+from datetime import datetime
+import time
+import traceback
+import os
+import matplotlib.patches as mpatches
+import pandas as pd
+import logging
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit(1)
+
+
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
+lf_report = importlib.import_module("py-scripts.lf_report")
+lf_graph = importlib.import_module("py-scripts.lf_graph")
+lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+create_bridge = importlib.import_module("py-scripts.create_bridge")
+CreateBridge = create_bridge.CreateBridge
+
+'''
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
@@ -34,6 +67,7 @@ import pandas as pd
 from lf_report import lf_report
 from lf_graph import lf_bar_graph
 from lf_csv import lf_csv
+'''
 
 # this class create VAP, station, and traffic
 class IPV4VariableTime(Realm):
@@ -60,12 +94,15 @@ class IPV4VariableTime(Realm):
         self.name_prefix = name_prefix
         self.test_duration = test_duration
         self._dhcp = _dhcp
-
+        self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
 
         # initializing station profile
+        '''
         self.station_profile = StationProfile(lfclient_url=self.lfclient_url,   local_realm=super(), debug_=self.debug,     up=False,
                                               dhcp = self._dhcp,                ssid = self.ssid,    ssid_pass = self.password,
                                               security = self.security,         number_template_ = self.number_template,    use_ht160 = use_ht160)#self.new_station_profile()##
+        '''
+        self.station_profile = self.local_realm.new_station_profile()
 
         if self.station_profile.use_ht160:
             self.station_profile.mode = 9
@@ -80,9 +117,9 @@ class IPV4VariableTime(Realm):
         self.vap_profile.ssid_pass = self.password
         self.vap_profile.mode = self.mode
         if self.debug:
-            print("----- VAP List ----- ----- ----- ----- ----- ----- \n")
+            logger.info("----- VAP List ----- ----- ----- ----- ----- ----- \n")
             pprint.pprint(self.vap_list)
-            print("---- ~VAP List ----- ----- ----- ----- ----- ----- \n")
+            logger.info("---- ~VAP List ----- ----- ----- ----- ----- ----- \n")
 
         # initializing traffic profile
         self.cx_profile = self.new_l3_cx_profile()
@@ -101,7 +138,7 @@ class IPV4VariableTime(Realm):
         temp_stas = self.station_profile.station_names.copy()
 
         if self.wait_for_ip(temp_stas):
-            print("admin-up....")
+            logger.info("admin-up....")
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
@@ -116,7 +153,7 @@ class IPV4VariableTime(Realm):
 
     def pre_cleanup(self):
         # deleting the previously created stations
-        print("clearing...")
+        logger.info("clearing...")
         exist_sta = []
         for u in self.json_get("/port/?fields=port+type,alias")['interfaces']:
             if list(u.values())[0]['port type'] not in ['Ethernet', 'WIFI-Radio', 'NA']:
@@ -140,11 +177,24 @@ class IPV4VariableTime(Realm):
         self.vap_profile.set_command_flag("set_port", "ip_Mask", 1)
         self.vap_profile.set_command_param("set_port", "gateway", "192.168.0.1")
         self.vap_profile.set_command_flag("set_port", "ip_gateway", 1)
-        print("Creating VAPs")
+        # self.vap_profile.set_command_param("set_port", "dhcp_client_id", "enabled")
+        self.vap_profile.set_command_flag("set_port", "use_dhcp", 1)
+        logger.info("Creating VAPs")
+        '''
         self.vap_profile.create(resource = 1,   radio = self.vap_radio,     channel = int(chn),       up_ = True,     debug = False,
                                 suppress_related_commands_ = True,          use_radius = True,  hs20_enable = False,
                                 create_bridge = False)
+        '''
+        self.vap_profile.create(resource=1, radio=self.vap_radio, channel=int(chn), up=True, debug=False,
+                                suppress_related_commands_=True, use_radius=True, hs20_enable=False)
         self._pass("PASS: VAP build finished")
+
+        logger.info("Creating Bridge")
+        self.create_bridge = CreateBridge(_host=args.mgr,
+                                 _port=args.mgr_port,
+                                 _bridge_list=bridge_list,
+                                 _debug_on=args.debug,
+                                 target_device=args.target_device)
 
     def build(self):
         # creating stations using static IP and DHCP enabled stations
@@ -153,7 +203,7 @@ class IPV4VariableTime(Realm):
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        print("Creating stations")
+        logger.info("Creating stations")
         start_ip = 2
         if self._dhcp:
             self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
@@ -186,15 +236,15 @@ class IPV4VariableTime(Realm):
             print(stdout, "----- channel utilization")
             return int(stdout)
         except paramiko.ssh_exception.NoValidConnectionsError as e:
-            print("####", e, "####")
+            logger.info("#### %s ####", e)
             exit(1)
         except TimeoutError as e:
-            print("####", e, "####")
+            # print("####", e, "####")
             exit(1)
 
     def re_run_traff(self, adj_trf_rate, add_sub_rate):
         # if channel utilization level is not met re-run the traffic
-        print("Re-run the traffic...")
+        logger.info("Re-run the traffic...")
         self.cx_profile.cleanup_prefix()
         time.sleep(.5)
         # give data rate to run the traffic
@@ -227,7 +277,7 @@ class IPV4VariableTime(Realm):
         #report.set_graph_title(graph_image_name)
         #report.build_graph_title()
         report.build_objective()
-        graph = lf_bar_graph(_data_set = data_set,
+        graph = lf_graph.lf_bar_graph(_data_set = data_set,
                              _xaxis_name = xaxis_name,
                              _yaxis_name = yaxis_name,
                              _xaxis_categories = xaxis_categories,
@@ -239,10 +289,30 @@ class IPV4VariableTime(Realm):
                              _xticks_font= xticks_font,_xaxis_value_location=multi_bar_width,
                              _xaxis_step = step,_legend_handles=None, _legend_loc="best", _legend_box=(1.0,0.5), _legend_ncol=1)
         graph_png = graph.build_bar_graph()
-        print("graph name {}".format(graph_png))
+        logger.info("graph name {}".format(graph_png))
         report.set_graph_image(graph_png)
         report.move_graph_image()
         report.build_graph()
+
+    def generates_csv(self, _columns=None, _rows=None, _filename='test.csv' ):
+        if _columns is None:
+            _columns = ['Stations', 'bk', 'be', 'vi', 'vo']
+        if _rows is None:
+            _rows = [['sta0001', 'sta0002', 'sta0003', 'sta0004', 'sta0005'],
+                     [1, 2, 3, 4, 5],
+                     [11, 22, 33, 44, 55],
+                     [6, 7, 8, 9, 10],
+                     [66, 77, 88, 99, 100]]
+        rows = _rows
+        columns = _columns
+        filename = _filename
+
+        df = {}
+        for i in range(len(columns)):
+            df[columns[i]] = rows[i]
+        csv_df = pd.DataFrame(df)
+        logger.info(csv_df)
+        csv_df.to_csv(filename, index=False, encoding='utf-8', na_rep='NA', float_format='%.2f')
 
     def report(self,util, sta_num, bps_rx_a,bps_rx_b, rep_title, upload = 1000000, download = 1000000,
               test_setup_info = None,input_setup_info = None,threshold=None):
@@ -374,15 +444,15 @@ class IPV4VariableTime(Realm):
         report.test_setup_table(test_setup_data=input_setup_info, value="Information")
         report.build_footer()
         html_file = report.write_html()
-        print("returned file {}".format(html_file))
-        print(html_file)
+        logger.info("returned file {}".format(html_file))
+        logger.info(html_file)
         report.write_pdf()
         colmn = ['Stations']#'No.of.times(download/upload']
         colmn.extend(range(1, len(self.bps_rx) + 1))
         data = list(self.bps_rx.values())
         data.insert(0, self.sta_list)
-        csv = lf_csv(_columns= colmn, _rows= data,
-                     _filename='throughput_under_channel_load.csv')
+        csv = self.generates_csv(_columns= colmn, _rows= data,
+                                 _filename='throughput_under_channel_load.csv')
         csv.generate_csv()
         report.csv_file_name = "throughput_under_channel_load.csv"
         report.move_csv_file()
@@ -467,7 +537,7 @@ class IPV4VariableTime(Realm):
                 else:
                     # channel utilization is less than the expected utilization value
                     if util_val < (util - 3):
-                        print("less than {}% util...".format(util))
+                        logger.info("less than {}% util...".format(util))
                         if ((util ) - util_val) <= 4:
                             self.re_run_traff(100000, "add")
                         elif ((util ) - util_val) <= 8:
@@ -481,7 +551,7 @@ class IPV4VariableTime(Realm):
 
                     # channel utilization is less than the expected utilization value
                     elif util_val > (util + 3):
-                        print("greater than {}% util...".format(util))
+                        logger.info("greater than {}% util...".format(util))
                         if (util_val - (util )) <= 4:
                             self.re_run_traff(100000, "sub")
                         elif (util_val - (util )) <= 8:
@@ -496,7 +566,7 @@ class IPV4VariableTime(Realm):
         print(f"bps_rx_a {bps_rx_a}\nbps_rx_b {bps_rx_b}")
 
         test_end = datetime.datetime.now().strftime("%b %d %H:%M:%S")
-        print("Test ended at ", test_end)
+        logger.info("Test ended at %s", test_end)
 
         if len(threshold) < len(util_list):
             for i in range(len(util_list)):
@@ -595,6 +665,20 @@ def main():
 
         args = parser.parse_args()
 
+        # set up logger
+        logger_config = lf_logger_config.lf_logger_config()
+        if args.lf_logger_config_json:
+            # logger_config.lf_logger_config_json = "lf_logger_config.json"
+            logger_config.lf_logger_config_json = args.lf_logger_config_json
+            logger_config.load_lf_logger_config()
+
+        bridge_list = "br0"
+        create_bridge = CreateBridge(_host=args.mgr,
+                            _port=args.mgr_port,
+                            _bridge_list=bridge_list,
+                            _debug_on=args.debug,
+                            target_device=args.target_device)
+
         util_rate = args.util.split(',')
         if args.threshold != None:
             threshold = [int(float(i)) for i in args.threshold.split(',')]
@@ -628,15 +712,18 @@ def main():
 
         # ip_var_test.stop()
         # time.sleep(30)
-        test_time = datetime.datetime.now().strftime("%b %d %H:%M:%S")
-        print("Test started at ", test_time)
+        # test_time = datetime.datetime.now().strftime("%b %d %H:%M:%S")
+        test_time = datetime.now().strftime("%b %d %H:%M:%S")
+        logger.info("Test started at %s", test_time)
 
         ip_var_test.pre_cleanup() # clear existing clients
         ip_var_test.build_vaps(chn = int(float(args.vap_channel)))  # create VAPs
+        # maybe create def for bridge creation?:
+        # create_bridge.build_bridge()
         ip_var_test.build()     # create Stations and traffic
 
         if not ip_var_test.passes():
-            print(ip_var_test.get_fail_message())
+            logger.info(ip_var_test.get_fail_message())
             ip_var_test.exit_fail()
 
         try:
@@ -648,7 +735,7 @@ def main():
 
         station_list1 = LFUtils.portNameSeries(prefix_="Thsta", start_id_=0, end_id_=int(num_sta(args.num_stations))-1, padding_number_=10000,
                                                radio=args.radio)
-        print("Station list for netgear AP.....\n",station_list1)
+        logger.info("Station list for netgear AP.....\n%s", station_list1)
         ip_var_test1 = IPV4VariableTime(host=args.mgr,          port=args.mgr_port,         number_template="0000",
                                         sta_list=station_list1, name_prefix="Thrp",         upstream=args.upstream_port,
                                         ssid= args.ssid,   password=args.passwd,       radio=args.radio,
@@ -661,7 +748,7 @@ def main():
            ssh_passwd = args.ap_password,test_time = test_time, up_down=rate_list,threshold = threshold,channnel = int(float(args.vap_channel)))
 
         if not ip_var_test.passes():
-            print(ip_var_test.get_fail_message())
+            logger.info(ip_var_test.get_fail_message())
             ip_var_test.exit_fail()
 
         ip_var_test.pre_cleanup() # clean the existing sta and traffics
@@ -669,9 +756,15 @@ def main():
             ip_var_test.exit_success()
 
     except Exception as e:
-        print("###",e,"###\nUnable to run the script...\nProvide the right values with the help of --help command\n"
-                      "OR Re-run the script if the script stopped by some unexpected behavior..")
-        print(traceback.format_exc())
+        '''
+        logger.info("### %s ###\nUnable to run the script...\nProvide the right values with the help of --help command\n"
+                      "OR Re-run the script if the script stopped by some unexpected behavior..", e)
+        '''
+        logger.info("### %s ###", e)
+        logger.info("Unable to run the script...")
+        logger.info("Provide the right values with the help of --help command")
+        logger.info("OR Re-run the script if the script stopped by some unexpected behavior..")
+        logger.info(traceback.format_exc())
 
 
 if __name__ == "__main__":
