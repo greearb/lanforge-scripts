@@ -246,6 +246,10 @@ function create_dut_and_chamberview() {
     }
 
 function create_station_and_sensitivity {
+  set -x
+  # TODO:  This uses wrong dut name for generic testbed, probably it fails in other ways too.
+  # I guess we can at least use it as a negative test hoping to see failure.
+  # until we can make it work better.
   ./create_station.py --radio $RADIO_USED --ssid $SSID_USED --passwd $PASSWD_USED --security $SECURITY --debug --mgr $MGR
   ./lf_rx_sensitivity_test.py --mgr $MGR --port 8080 --lf_user lanforge --lf_password lanforge \
                       --instance_name rx-sensitivity-instance --config_name test_con --upstream $UPSTREAM \
@@ -264,6 +268,7 @@ function create_station_and_sensitivity {
                       #--influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
                       #--influx_bucket ben \
                       #--influx_tag testbed Ferndale-01
+  set +x
 }
 if [[ ${#SHORT} -gt 0 ]]; then
   testCommands=(

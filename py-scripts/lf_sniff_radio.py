@@ -56,6 +56,7 @@ class SniffRadio(Realm):
         self.radio = radio
 
     def setup(self, ht40_value, ht80_value, ht160_value):
+        # TODO: Store original channel settings so that radio can be set back to original values.
         self.monitor.set_flag(param_name="disable_ht40", value=ht40_value)
         self.monitor.set_flag(param_name="disable_ht80", value=ht80_value)
         self.monitor.set_flag(param_name="ht160_enable", value=ht160_value)
@@ -63,6 +64,7 @@ class SniffRadio(Realm):
 
     def start(self):
         self.monitor.admin_up()
+        # TODO:  Use LFUtils.wait_until_ports_admin_up instead of sleep, check return code.
         time.sleep(5)
         self.monitor.start_sniff(capname=self.outfile, duration_sec=self.duration)
         for i in range(0, self.duration):
@@ -73,6 +75,8 @@ class SniffRadio(Realm):
         time.sleep(2)
 
     def cleanup(self):
+        # TODO:  Add error checking to make sure monitor port really went away.
+        # TODO:  Set radio back to original channel
         self.monitor.cleanup()
 
 
@@ -117,10 +121,12 @@ def main():
                      radio_mode=args.radio_mode
                      )
     obj.setup(int(args.disable_ht40), int(args.disable_ht80), int(args.ht160_enable))
+    # TODO: Add wait-for logic instead of a sleep
     time.sleep(5)
     obj.start()
     obj.cleanup()
 
+    # TODO:  Check if passed or not.
 
 if __name__ == '__main__':
     main()
