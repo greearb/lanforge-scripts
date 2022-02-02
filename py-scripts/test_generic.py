@@ -402,6 +402,7 @@ python3 ./test_generic.py
     if len(generic_test.generic_endps_profile.get_failed_result_list()) > 0:
         logger.warning("Test-Generic Monitor Failing results:\n%s" % "\n".join(generic_test.generic_endps_profile.get_failed_result_list()))
 
+    generic_test.generic_endps_profile.print_pass_fail()
     if generic_test.passes() and generic_test.generic_endps_profile.passes():
         generic_test.exit_success()
     else:

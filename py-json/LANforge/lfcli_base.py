@@ -503,7 +503,7 @@ class LFCliBase:
                 pass_counter += 1
             else:
                 fail_counter += 1
-        if (fail_counter == 0) and (pass_counter > 0):
+        if (fail_counter == 0):
             return True
         return False
 
