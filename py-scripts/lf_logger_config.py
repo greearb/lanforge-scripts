@@ -78,25 +78,30 @@ class lf_logger_config:
             logging.root.removeHandler(handler)
         # for now just configure the output formatting. Basic defaults
         # Change to level=logging.WARNING , also may limit some of the output
+        # This is terse output
         logging.basicConfig(handlers=[logging.StreamHandler(stream=sys.stdout)], level=logging.INFO,
-                            format='%(created)f %(name)s %(levelname)-8s %(filename)s %(lineno)s %(funcName)s  [%(module)s]: %(message)s')
+                            format='%(created)f %(levelname)-8s %(message)s %(filename)s %(lineno)s')
+
+        # Note: leave basicConfig example for reference for more verbose output
+        # logging.basicConfig(handlers=[logging.StreamHandler(stream=sys.stdout)], level=logging.INFO,
+        #                     format='%(created)f %(name)s %(levelname)-8s %(filename)s %(lineno)s %(funcName)s  [%(module)s]: %(message)s')
         # Note: leave this for reference
         # logging.basicConfig(handlers=[logging.StreamHandler(stream=sys.stdout)], level=logging.INFO,
         #                    format='%(created)-16f %(name)-8s %(levelname)-12s  %(lineno)-6s %(funcName)-30s [%(module)s]: %(message)s')
-        # Note the propagate is tricky in the sence if not set correctly will create duplicate logs output, 
-        # setting to false 
+        # Note the propagate is tricky in the sence if not set correctly will create duplicate logs output,
+        # setting to false
         logging.propagate = False
         print(logging.propagate)
 
     def set_json(self, json_file):
         if json_file:
             # logger_config.lf_logger_config_json = "lf_logger_config.json"
-            self.lf_logger_config_json = args.lf_logger_config_json
+            self.lf_logger_config_json = json_file
             self.load_lf_logger_config()
 
     def set_level(self, level):
         if not level:
-            return # no change from defaults
+            return  # no change from defaults
 
         if level == "debug":
             self.set_level_debug()
