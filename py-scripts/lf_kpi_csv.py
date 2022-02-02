@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
 NAME: lf_kpi_csv.py
 
@@ -23,14 +24,15 @@ INCLUDE_IN_README
 import csv
 import time
 import argparse
+import traceback
 
 '''
 Note teh delimiter for the kpi.csv is a tab
 
 kpi.csv : specific file that is used for the database, dashboard and blog post
-A blank entry is a valid entry in some cases. 
+A blank entry is a valid entry in some cases.
 
-    Date: date of run 
+    Date: date of run
     test-rig : testbed that the tests are run on for example ct_us_001
     test-tag : test specific information to differenciate the test,  LANforge radios used, security modes (wpa2 , open)
     dut-hw-version : hardware version of the device under test
@@ -49,6 +51,8 @@ A blank entry is a valid entry in some cases.
 '''
 
 
+# NOTE, Passing in _kpi_headers only used for testing.
+# Do Not pass in headers , Please use the defaults
 class lf_kpi_csv:
     def __init__(self,
                 # NOTE, Passing in _kpi_headers only used for testing.
@@ -93,8 +97,9 @@ class lf_kpi_csv:
             self.kpi_file = open(kpifile, 'w')
             self.kpi_writer = csv.DictWriter(self.kpi_file, delimiter="\t", fieldnames=self.kpi_headers)
             self.kpi_writer.writeheader()
-        except:
+        except Exception as x:
             print("lf_kpi_csv.py: {} WARNING unable to open".format(self.kpi_file))
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
 
         self.kpi_dict = dict()
         self.kpi_dict['Date'] = '{date}'.format(date=int(time.time()))
@@ -139,8 +144,8 @@ lf_kpi_csv.py
 Summary :
 ---------
 lf_kpi_csv.py library :
-    
-    Date: date of run 
+
+    Date: date of run
     test-rig : testbed that the tests are run on for example ct_us_001
     test-tag : test specific information to differenciate the test,  LANforge radios used, security modes (wpa2 , open)
     dut-hw-version : hardware version of the device under test
@@ -155,10 +160,10 @@ lf_kpi_csv.py library :
     test-details : what was measured in the numeric-score,  e.g. bits per second, bytes per second, upload speed, minimum cx time (ms)
     Units : units used for the numeric-scort
     Graph-Group - Items graphed together used by dashboard, For the lf_qa.py dashboard
-    
+
 Example :
 
-    This module is included to assist in filling out the kpi.csv correctly 
+    This module is included to assist in filling out the kpi.csv correctly
     The Unit test is used for helping to become familiar with the library
 
 ---------
