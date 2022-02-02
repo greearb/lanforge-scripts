@@ -2,6 +2,7 @@
 
 """
     Script for creating a variable number of stations.
+    Measures the time it took to admin them up and get IP addresses.
 """
 import sys
 import os
@@ -204,6 +205,8 @@ Command example:
         df.to_excel(args.report_file)
 
     # TODO:  Check pass/fail and exit accordingly
+    # TODO:  Add KPI:  Min/max/avg of each station's time to get an IP address, data can be read/deduced
+    # by looking at port-mgr output.
 
 if __name__ == "__main__":
     main()

@@ -154,6 +154,8 @@ def main():
                                    _debug_on=args.debug)
     modify_station.set_station()
 
+    # TODO:  Check return code and exit accordingly
+
 
 if __name__ == "__main__":
     main()
