@@ -51,6 +51,8 @@ A blank entry is a valid entry in some cases.
 
 class lf_kpi_csv:
     def __init__(self,
+                # NOTE, Passing in _kpi_headers only used for testing.
+                # Do Not pass in headers , Please use the defaults
                  _kpi_headers=None,
                  _kpi_filename='kpi.csv',  # Currently this is the only file name accepted
                  _kpi_path="",
