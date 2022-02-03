@@ -717,7 +717,7 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
         port_list = [port_list]
     if debug:
         current_ports = LFRequest.LFRequest(base_url, '/ports', debug_=debug).get_as_json()
-        logger.debug("LFUtils:wait_until_ports_appear, full port listing: %s" % current_ports)
+        logger.debug("LFUtils:wait_until_ports_appear, full port listing: %s" % pprint.pformat(current_ports))
         for port in current_ports['interfaces']:
             if list(port.values())[0]['phantom']:
                 logger.debug("LFUtils:waittimeout_until_ports_appear: %s is phantom" % list(port.values())[0]['alias'])
