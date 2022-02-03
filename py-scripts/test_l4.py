@@ -69,6 +69,8 @@ Realm = realm.Realm
 TestGroupProfile = realm.TestGroupProfile
 port_utils = importlib.import_module("py-json.port_utils")
 PortUtils = port_utils.PortUtils
+lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
+lf_report = importlib.import_module("py-scripts.lf_report")
 
 
 class IPV4L4(Realm):
@@ -96,6 +98,13 @@ class IPV4L4(Realm):
                  source=None,
                  dest=None,
                  test_type=None,
+                 test_rig=None,
+                 test_tag=None,
+                 dut_hw_version=None,
+                 dut_sw_version=None,
+                 dut_model_num=None,
+                 dut_serial_num=None,
+                 test_id=None,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on)
@@ -150,6 +159,16 @@ class IPV4L4(Realm):
         if self.test_type not in test_types:
             raise ValueError(
                 "Unknown test type: %s\nValid test types are urls, bytes-rd, or bytes-wr" % self.test_type)
+        self.report = lf_report.lf_report(_results_dir_name="test_l4", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf")
+        kpi_path = self.report.get_report_path()
+        self.kpi_csv = lf_kpi_csv.lf_kpi_csv(
+                 test_rig=None,
+                 test_tag=None,
+                 dut_hw_version=None,
+                 dut_sw_version=None,
+                 dut_model_num=None,
+                 dut_serial_num=None,
+                 test_id=None,
 
     def build(self):
         # Build stations
@@ -198,6 +217,35 @@ class IPV4L4(Realm):
         print("Starting test")
 
     def stop(self):
+        cx_list = self.json_get('layer4/sta0000_l4,sta0001_l4?urls%2Fs,rx-bps')['endpoint']
+        cx_map = dict()
+        for sub in cx_list:
+                for key in sub:
+                    cx_map[key] = sub[key]
+                cx_map[key].pop('name')
+        print(cx_map)
+        urls = 0
+        rx_bps = 0
+
+        for value in cx_map.values():
+                urls += value['urls/s']
+            rx_bps += value['rx rate']
+
+
+        self.kpi_csv.kpi_csv_get_dict_update_time()
+        self.kpi_csv.kpi_dict['Graph-Group'] = "Average URLs per Second"
+        self.kpi_csv.kpi_dict['short-description'] = "Average URLs per Second"
+        self.kpi_csv.kpi_dict['numeric-score'] = urls
+        self.kpi_csv.kpi_dict['Units'] = "urls/s"
+        self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+
+
+        self.kpi_csv.kpi_dict['Graph-Group'] = "RX BPS"
+        self.kpi_csv.kpi_dict['short-description'] = "RX BPS"
+        self.kpi_csv.kpi_dict['numeric-score'] = rx_bps
+        self.kpi_csv.kpi_dict['Units'] = "bps"
+        self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+
         self.cx_profile.stop_cx()
         if self.ftp:
             self.port_util.set_ftp(port_name=self.name_to_eid(self.upstream_port)[2], resource=1, on=False)
@@ -257,6 +305,39 @@ Generic command example:
     parser.add_argument('--source',
                         help='--source specifies the source of the file, should be used when uploading',
                         default="/var/www/html/data_slug_4K.bin")
+    # kpi_csv arguments
+    parser.add_argument(
+        "--test_rig",
+        default="",
+        help="test rig for kpi.csv, testbed that the tests are run on")
+    parser.add_argument(
+        "--test_tag",
+        default="",
+        help="test tag for kpi.csv,  test specific information to differenciate the test")
+    parser.add_argument(
+        "--dut_hw_version",
+        default="",
+        help="dut hw version for kpi.csv, hardware version of the device under test")
+    parser.add_argument(
+        "--dut_sw_version",
+        default="",
+        help="dut sw version for kpi.csv, software version of the device under test")
+    parser.add_argument(
+        "--dut_model_num",
+        default="",
+        help="dut model for kpi.csv,  model number / name of the device under test")
+    parser.add_argument(
+        "--dut_serial_num",
+        default="",
+        help="dut serial for kpi.csv, serial number / serial number of the device under test")
+    parser.add_argument(
+        "--test_priority",
+        default="",
+        help="dut model for kpi.csv,  test-priority is arbitrary number")
+    parser.add_argument(
+        '--csv_outfile',
+        help="--csv_outfile <Output file for csv data>",
+        default="")
 
     args = parser.parse_args()
 
