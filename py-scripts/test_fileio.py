@@ -8,7 +8,7 @@ test_fileio.py will create stations or macvlans with matching fileio endpoints t
 This script will create a variable number of stations or macvlans to test fileio traffic. Pre-existing stations and
 macvlans can be used as well. Command line options are available to update cross-connects as well as using a list of
 existing cross-connects if desired. if none are given, cross-connects and endpoints will be created by the script.
-Modes such as read-only, write-only, or both can be specified as well as ip addresses and starting numbers for sequential
+Modes such as read-only, write-only, or both can be specified along with ip addresses and starting numbers for sequential
 stations or macvlans that are created in case of limited or pre-existing configurations. The test that is run during
 this script will depend on the mode used, a read-only test will check the read-bps attribute, write-only will check write-bps
 and both will check both attributes. If the relevant attributes increase over the duration of the test it will pass,
@@ -44,6 +44,8 @@ add_file_endp = importlib.import_module("py-json.LANforge.add_file_endp")
 fe_fstype = add_file_endp.fe_fstype
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
+lf_report = importlib.import_module("py-scripts.lf_report")
 
 
 class FileIOTest(Realm):
@@ -80,6 +82,13 @@ class FileIOTest(Realm):
                  connections_per_port=1,
                  mode="both",
                  update_group_args=None,
+                 test_rig=None,
+                 test_tag=None,
+                 dut_hw_version=None,
+                 dut_sw_version=None,
+                 dut_model_num=None,
+                 dut_serial_num=None,
+                 test_id=None,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -232,6 +241,19 @@ class FileIOTest(Realm):
                     if len(self.ro_tg_profile.list_cxs()) > 0:
                         self.ro_tg_cx_exists = True
 
+        self.report = lf_report.lf_report(_results_dir_name="test_l4", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf")
+
+        kpi_path = self.report.get_report_path()
+        self.kpi_csv = lf_kpi_csv.lf_kpi_csv(
+            _kpi_path=kpi_path,
+            _kpi_test_rig=test_rig,
+            _kpi_test_tag=test_tag,
+            _kpi_dut_hw_version=dut_hw_version,
+            _kpi_dut_sw_version=dut_sw_version,
+            _kpi_dut_model_num=dut_model_num,
+            _kpi_dut_serial_num=dut_serial_num,
+            _kpi_test_id=test_id)
+
     def __compare_vals(self, val_list):
         passes = 0
         expected_passes = 0
@@ -324,8 +346,8 @@ class FileIOTest(Realm):
                     else:
                         raise ValueError("Netmask and gateway must be specified")
 
-        # if use test groups and test group does not exist, create cxs, create test group, assign to test group
-        # if use test groups and test group exists and no cxs, create cxs, assign to test group
+        # if use test groups and test group do not exist, create cxs, create test group, assign to test group
+        # if use test groups and test group exist and no cxs, create cxs, assign to test group
         # if use test groups and test group exist and cxs exist, do nothing
         # if not use test groups, create cxs
         if self.mode:
@@ -421,7 +443,7 @@ class FileIOTest(Realm):
                         for cx in self.ro_profile.created_cx.values():
                             self.ro_tg_profile.add_cx(cx)
                 else:
-                    raise ValueError("Uknown mode used, must be (read, write, both)")
+                    raise ValueError("Unknown mode used, must be (read, write, both)")
             else:
                 if self.mode == "write":
                     print("Creating Write Only CXs")
@@ -482,18 +504,20 @@ class FileIOTest(Realm):
         passes = 0
         expected_passes = 0
         print("Starting Test...")
+        write_bps = 0
+        read_bps = 0
         while cur_time < end_time:
+            write_bps = 0
+            read_bps = 0
             interval_time = cur_time + datetime.timedelta(seconds=1)
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 time.sleep(1)
-
             new_rx_values = self.__get_values()
-            # exit(1)
-            # print(new_rx_values)
-            # print("\n-----------------------------------")
-            # print(cur_time, end_time, cur_time + datetime.timedelta(minutes=1))
-            # print("-----------------------------------\n")
+            for key, value in new_rx_values.items():
+                write_bps += value['write-bps']
+                read_bps += value['read-bps']
+
             expected_passes += 1
             if self.__compare_vals(new_rx_values):
                 passes += 1
@@ -502,6 +526,22 @@ class FileIOTest(Realm):
                 # break
             # old_rx_values = new_rx_values
             cur_time = datetime.datetime.now()
+
+
+        self.kpi_csv.kpi_csv_get_dict_update_time()
+        self.kpi_csv.kpi_dict['Graph-Group'] = 'Total write BPS'
+        self.kpi_csv.kpi_dict['short-description'] = "write-bps %s" % self.wo_profile.fs_type
+        self.kpi_csv.kpi_dict['numeric-score'] = write_bps
+        self.kpi_csv.kpi_dict['Units'] = "bps"
+        self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+
+        self.kpi_csv.kpi_csv_get_dict_update_time()
+        self.kpi_csv.kpi_dict['Graph-Group'] = 'Total read BPS'
+        self.kpi_csv.kpi_dict['short-description'] = "read-bps %s" % self.wo_profile.fs_type
+        self.kpi_csv.kpi_dict['numeric-score'] = read_bps
+        self.kpi_csv.kpi_dict['Units'] = "bps"
+        self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
+
         if passes == expected_passes:
             self._pass("PASS: All tests passes", print_pass)
 
@@ -645,6 +685,39 @@ Generic command layout:
     parser.add_argument('--read_only_test_group', help='specifies name to use for read only test group', default=None)
     parser.add_argument('--write_only_test_group', help='specifies name to use for write only test group', default=None)
     parser.add_argument('--mode', help='write,read,both', default='both', type=str)
+    # kpi_csv arguments
+    parser.add_argument(
+        "--test_rig",
+        default="",
+        help="test rig for kpi.csv, testbed that the tests are run on")
+    parser.add_argument(
+        "--test_tag",
+        default="",
+        help="test tag for kpi.csv,  test specific information to differentiate the test")
+    parser.add_argument(
+        "--dut_hw_version",
+        default="",
+        help="dut hw version for kpi.csv, hardware version of the device under test")
+    parser.add_argument(
+        "--dut_sw_version",
+        default="",
+        help="dut sw version for kpi.csv, software version of the device under test")
+    parser.add_argument(
+        "--dut_model_num",
+        default="",
+        help="dut model for kpi.csv,  model number / name of the device under test")
+    parser.add_argument(
+        "--dut_serial_num",
+        default="",
+        help="dut serial for kpi.csv, serial number / serial number of the device under test")
+    parser.add_argument(
+        "--test_priority",
+        default="",
+        help="dut model for kpi.csv,  test-priority is arbitrary number")
+    parser.add_argument(
+        '--csv_outfile',
+        help="--csv_outfile <Output file for csv data>",
+        default="")
     tg_group = parser.add_mutually_exclusive_group()
     tg_group.add_argument('--add_to_group', help='name of test group to add cxs to', default=None)
     tg_group.add_argument('--del_from_group', help='name of test group to delete cxs from', default=None)
