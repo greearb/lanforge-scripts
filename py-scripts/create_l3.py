@@ -75,36 +75,8 @@ class CreateL3(Realm):
         else:
             self._fail("Cross-connect build did not succeed.")
 
-def main(args):
 
-    num_sta = 0
-    # if (args.num_stations is not None) and (int(args.num_stations) > 0):
-    #     num_sta = int(args.num_stations)
-
-    ip_var_test = CreateL3(host=args.mgr,
-                           port=args.mgr_port,
-                           name_prefix="VT",
-                           endp_a=args.endp_a,
-                           endp_b=args.endp_b,
-                           min_rate_a=args.min_rate_a,
-                           min_rate_b=args.min_rate_b,
-                           mode=args.mode,
-                           _debug_on=args.debug)
-
-    # ip_var_test.pre_cleanup()
-    ip_var_test.build()
-
-    # TODO:  Delete the thing just created, unless --noclean option was added.
-    # Similar to how the create_bond.py does it.
-
-    if ip_var_test.passes():
-        logger.info("Created %s stations and connections" % (num_sta))
-        ip_var_test.exit_success()
-    else:
-        ip_var_test.exit_fail()
-
-
-if __name__ == "__main__":
+def main():
     parser = LFCliBase.create_basic_argparse(
         prog='create_l3.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -112,6 +84,7 @@ if __name__ == "__main__":
             Generate traffic between ports
             ''',
         description='''\
+        ./create_l3.py --ssid lanforge --password password --security wpa2 --radio 1.1.wiphy0 --endp_a wiphy0 --endp_b wiphy1 --noclean
         ''')
     parser.add_argument(
         '--min_rate_a',
@@ -150,4 +123,38 @@ if __name__ == "__main__":
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    main(args)
+    num_sta = 0
+    # if (args.num_stations is not None) and (int(args.num_stations) > 0):
+    #     num_sta = int(args.num_stations)
+
+    ip_var_test = CreateL3(host=args.mgr,
+                           port=args.mgr_port,
+                           name_prefix="VT",
+                           endp_a=args.endp_a,
+                           endp_b=args.endp_b,
+                           min_rate_a=args.min_rate_a,
+                           min_rate_b=args.min_rate_b,
+                           mode=args.mode,
+                           _debug_on=args.debug)
+
+    ip_var_test.pre_cleanup()
+
+    ip_var_test.build()
+
+    # TODO:  Delete the thing just created, unless --noclean option was added.
+    # Similar to how the create_bond.py does it.
+
+    if not args.noclean:
+        ip_var_test.pre_cleanup()
+
+    if ip_var_test.passes():
+        logger.info("Created %s stations and connections" % num_sta)
+        ip_var_test.exit_success()
+    else:
+        ip_var_test.exit_fail()
+
+
+
+if __name__ == "__main__":
+
+    main()
