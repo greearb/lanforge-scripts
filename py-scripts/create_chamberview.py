@@ -35,8 +35,6 @@ import os
 import importlib
 import argparse
 import time
-import re
-from pprint import pprint
 import shlex
 import logging
 
@@ -49,11 +47,11 @@ if sys.version_info[0] != 3:
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
-cv = cv_test_manager.cv_test
+cv_test = cv_test_manager.cv_test
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
-class CreateChamberview(cv):
+class CreateChamberview(cv_test):
     def __init__(self,
                  lfmgr="localhost",
                  port="8080",
@@ -182,14 +180,14 @@ class CreateChamberview(cv):
 
 
 def main():
-    parser = argparse.ArgumentParser(
+    parser = cv_test.create_basic_argparse(
         prog='create_chamberview.py',
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
         For Two line scenario use --line twice as shown in example, for multi line scenario
         use --line argument to create multiple lines
         \n
-           create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
+           create_chamberview.py --mgr "localhost" --mgr_port "8080" -cs "scenario_name"
              --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1
                     DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN="
              --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1
@@ -203,17 +201,6 @@ def main():
            so it can also be LAN when using and Upstream profile, for instance.
 
            """)
-    parser.add_argument(
-        "-m",
-        "--lfmgr",
-        type=str,
-        help="address of the LANforge GUI machine (localhost is default)")
-    parser.add_argument(
-        "-o",
-        "--port",
-        type=int,
-        default=8080,
-        help="IP Port the LANforge GUI is listening on (8080 is default)")
     parser.add_argument(
         "-cs",
         "--create_scenario",
@@ -230,17 +217,6 @@ def main():
         default=False,
         action='store_true',
         help="delete scenario (by default: False)")
-    parser.add_argument('--debug',
-                        '-d',
-                        default=False,
-                        action="store_true",
-                        help='Enable debugging')
-    # TODO - check if base args parser may be used
-    parser.add_argument('--log_level',
-                        default=None,
-                        help='Set logging level: debug | info | warning | error | critical')
-    parser.add_argument('--lf_logger_config_json',
-                        help="--lf_logger_config_json <json file> , json configuration of logger")
 
     args = parser.parse_args()
 
@@ -249,9 +225,9 @@ def main():
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    Create_Chamberview = CreateChamberview(lfmgr=args.lfmgr,
+    Create_Chamberview = CreateChamberview(lfmgr=args.mgr,
                                            _debug_on=args.debug,
-                                           port=args.port,
+                                           port=args.mgr_port,
                                            )
     if args.delete_scenario:
         Create_Chamberview.clean_cv_scenario(
