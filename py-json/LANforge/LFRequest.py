@@ -349,13 +349,14 @@ def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, er
     logger = logging.getLogger(__name__)
     # logger.error("LFRequest::print_diagnostics: error_.__class__: %s"%error_.__class__)
     # logger.error(pformat(error_))
-
+    warnings_list = []
+    errors_list = []
     if url_ is None:
-        logger.warning("WARNING LFRequest::print_diagnostics: url_ is None")
+        warnings_list.append("WARNING LFRequest::print_diagnostics: url_ is None")
     if request_ is None:
-        logger.warning("WARNING LFRequest::print_diagnostics: request_ is None")
+        warnings_list.append("WARNING LFRequest::print_diagnostics: request_ is None")
     if error_ is None:
-        logger.warning("WARNING LFRequest::print_diagnostics: error_ is None")
+        warnings_list.append("WARNING LFRequest::print_diagnostics: error_ is None")
 
     method = 'NA'
     if hasattr(request_, 'method'):
@@ -381,47 +382,50 @@ def print_diagnostics(url_=None, request_=None, responses_=None, error_=None, er
                 if headername.startswith("X-Error-"):
                     xerrors.append("%s: %s" % (headername, err_headers.get(headername)))
         if len(xerrors) > 0:
-            logger.error(" = = LANforge Error Messages = =")
-            logger.error(" = = URL: %s" % err_full_url)
+            errors_list.append("\n = = LANforge Error Messages = =")
+            errors_list.append(" = = URL: %s" % err_full_url)
             for xerr in xerrors:
-                logger.error(xerr)
+                errors_list.append("  "+xerr)
                 if (error_list_ is not None) and isinstance(error_list_, list):
                     error_list_.append(xerr)
-            logger.error(" = = = = = = = = = = = = = = = =")
+            errors_list.append(" = = = = = = = = = = = = = = = =")
+            logger.error("\n".join(errors_list))
 
     if error_.__class__ is urllib.error.HTTPError:
-        logger.debug("----- LFRequest: HTTPError: --------------------------------------------")
-        logger.debug("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
+        debug_list = []
+        debug_list.append("\n----- LFRequest: HTTPError: --------------------------------------------")
+        debug_list.append("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
 
         if err_code == 404:
             if (error_list_ is not None) and isinstance(error_list_, list):
                 error_list_.append("[%s HTTP %s] <%s> : %s" % (method, err_code, err_full_url, err_reason))
         else:
-            logger.debug(
+            debug_list.append(
                 "  Content-type:[%s] Accept[%s]" % (request_.get_header('Content-type'), request_.get_header('Accept')))
 
             if hasattr(request_, "data") and (request_.data is not None):
-                logger.debug("  Data:")
-                logger.debug(debug_printer.pformat(request_.data))
+                debug_list.append("  Data:")
+                debug_list.append(debug_printer.pformat(request_.data))
             elif debug_:
-                logger.debug("    <no request data>")
+                debug_list.append("    <no request data>")
 
         if len(err_headers) > 0:
             # the HTTPError is of type HTTPMessage a subclass of email.message
-            logger.debug("  Response Headers: ")
+            debug_list.append("  Response Headers: ")
             for headername in sorted(err_headers.keys()):
-                logger.debug("    %s: %s" % (headername, err_headers.get(headername)))
+                debug_list.append("    %s: %s" % (headername, err_headers.get(headername)))
 
         if len(responses_) > 0:
-            logger.debug("----- Response: --------------------------------------------------------")
-            logger.debug(debug_printer.pformat(responses_[0].reason))
+            debug_list.append("----- Response: --------------------------------------------------------")
+            debug_list.append(debug_printer.pformat(responses_[0].reason))
 
-        logger.debug("------------------------------------------------------------------------")
+        debug_list.append("------------------------------------------------------------------------")
+        logger.debug("\n".join(debug_list))
         return
 
     if error_.__class__ is urllib.error.URLError:
-        logger.error("----- LFRequest: URLError: ---------------------------------------------")
-        logger.error("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
-        logger.error("------------------------------------------------------------------------")
-
+        errors_list.append("\n----- LFRequest: URLError: ---------------------------------------------")
+        errors_list.append("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
+        errors_list.append("------------------------------------------------------------------------")
+        logger.error("\n".join(errors_list))
 # ~LFRequest
