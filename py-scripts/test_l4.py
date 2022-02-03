@@ -159,16 +159,19 @@ class IPV4L4(Realm):
         if self.test_type not in test_types:
             raise ValueError(
                 "Unknown test type: %s\nValid test types are urls, bytes-rd, or bytes-wr" % self.test_type)
+
         self.report = lf_report.lf_report(_results_dir_name="test_l4", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf")
+
         kpi_path = self.report.get_report_path()
         self.kpi_csv = lf_kpi_csv.lf_kpi_csv(
-                 test_rig=None,
-                 test_tag=None,
-                 dut_hw_version=None,
-                 dut_sw_version=None,
-                 dut_model_num=None,
-                 dut_serial_num=None,
-                 test_id=None,
+            _kpi_path=kpi_path,
+            _kpi_test_rig=test_rig,
+            _kpi_test_tag=test_tag,
+            _kpi_dut_hw_version=dut_hw_version,
+            _kpi_dut_sw_version=dut_sw_version,
+            _kpi_dut_model_num=dut_model_num,
+            _kpi_dut_serial_num=dut_serial_num,
+            _kpi_test_id=test_id)
 
     def build(self):
         # Build stations
@@ -228,7 +231,7 @@ class IPV4L4(Realm):
         rx_bps = 0
 
         for value in cx_map.values():
-                urls += value['urls/s']
+            urls += value['urls/s']
             rx_bps += value['rx rate']
 
 
