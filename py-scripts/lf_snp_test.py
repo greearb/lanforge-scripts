@@ -188,7 +188,7 @@ class FileAdapter(object):
 
 ################################################################################
 #
-# Controller Class : CrateCtlr  controller interface
+# Controller Class : CreateCtlr  controller interface
 #
 ################################################################################
 class CreateCtlr:
@@ -274,7 +274,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                     process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
@@ -306,7 +306,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                     process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
@@ -334,7 +334,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                     process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
@@ -362,7 +362,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                     process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
@@ -391,7 +391,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                     process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
@@ -420,7 +420,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                         process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
@@ -446,7 +446,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                         process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
@@ -475,7 +475,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                         process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
@@ -501,7 +501,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                         process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
@@ -531,7 +531,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                         process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
@@ -564,7 +564,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                         process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
@@ -595,7 +595,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                     process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
@@ -630,7 +630,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                     process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
@@ -658,7 +658,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                     process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
@@ -688,7 +688,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                         process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
@@ -720,7 +720,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                         process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
@@ -751,7 +751,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                     process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
@@ -780,7 +780,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                         process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
@@ -806,7 +806,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                         process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
@@ -835,7 +835,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                         process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
@@ -861,7 +861,7 @@ class CreateCtlr:
 
             except subprocess.CalledProcessError as process_error:
                 logg.info(
-                    "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                    "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                         process_error.returncode, process_error.output))
                 time.sleep(1)
                 exit(1)
@@ -889,7 +889,7 @@ class CreateCtlr:
 
         except subprocess.CalledProcessError as process_error:
             logg.info(
-                "Command Error, Controller unable to commicate to AP or unable to communicate to controller error code: {} output {}".format(
+                "Command Error, Controller unable to communicate to AP or unable to communicate to controller error code: {} output {}".format(
                     process_error.returncode, process_error.output))
             time.sleep(1)
             exit(1)
