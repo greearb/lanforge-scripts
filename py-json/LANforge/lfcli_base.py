@@ -426,7 +426,7 @@ class LFCliBase:
 
                     for line in lic_list:
                         line = line.strip()
-                        if (not line) or (line is "\\n"):
+                        if (not line) or (line == "\\n"):
                             continue
                         hunks = re.split("\s+", line)
                         if (hunks[-1]) == "forever":
@@ -498,10 +498,15 @@ class LFCliBase:
     def passes(self):
         pass_counter = 0
         fail_counter = 0
+        if len(self.test_results) < 1:
+            logger.error("passes: zero test results")
         for result in self.test_results:
+            logger.debug("test_result: %s" % result)
             if result.startswith("PASS"):
+                logger.debug("passes")
                 pass_counter += 1
             else:
+                logger.debug("fails")
                 fail_counter += 1
         if (fail_counter == 0):
             return True
