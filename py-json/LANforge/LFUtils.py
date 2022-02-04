@@ -706,7 +706,7 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
         logger.debug("Waiting until ports appear...")
         existing_stations = LFRequest.LFRequest(base_url, '/ports', debug_=debug)
         logger.debug('existing stations')
-        logger.debug(pprint.pformat(existing_stations))
+        # logger.debug(pprint.pformat(existing_stations)) # useless
     port_url = "/port/1"
     show_url = "/cli-json/show_ports"
     found_stations = set()
