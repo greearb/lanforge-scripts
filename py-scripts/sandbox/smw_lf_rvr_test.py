@@ -17,21 +17,31 @@ License: Free to distribute and modify. LANforge systems must be licensed.
 import sys
 import os
 import pandas as pd
+import argparse
+import time
+import importlib
+import logging
+from datetime import datetime, timedelta
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
-
+'''
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+'''
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
-import argparse
-from LANforge import LFUtils
-from realm import Realm
-from lf_report import lf_report
-from lf_graph import lf_bar_graph
-import time
-from datetime import datetime, timedelta
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
+lf_report = importlib.import_module("py-scripts.lf_report")
+lf_graph = importlib.import_module("py-scripts.lf_graph")
+lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class RvR(Realm):
@@ -336,7 +346,7 @@ class RvR(Realm):
                 _obj="The below graph represents overall {} throughput for different attenuation (RSSI) ".format(
                     res["graph_df"][traffic_type]["direction"]))
             report.build_objective()
-            graph = lf_bar_graph(_data_set=res["graph_df"][traffic_type]["dataset"],
+            graph = lf_graph.bar_graph(_data_set=res["graph_df"][traffic_type]["dataset"],
                                  _xaxis_name="Attenuation",
                                  _yaxis_name="Throughput(in Mbps)",
                                  _xaxis_categories=[str(traffic_type) for traffic_type in res[traffic_type].keys()],
@@ -382,7 +392,7 @@ class RvR(Realm):
                         _obj_title=f"Individual {direction} Throughput for {len(self.station_names)} clients using {traffic_type} traffic over {attenuation} attenuation",
                         _obj=f"The below graph represents Individual {direction} throughput of all stations when attenuation (RSSI) set to {attenuation}")
                     report.build_objective()
-                    graph = lf_bar_graph(_data_set=[res[traffic_type][attenuation][direction]],
+                    graph = lf_graph.bar_graph(_data_set=[res[traffic_type][attenuation][direction]],
                                          _xaxis_name="No.of Stations",
                                          _yaxis_name="Throughput(in Mbps)",
                                          _xaxis_categories=[str(i + 1) for i in range(len(self.station_names))],
