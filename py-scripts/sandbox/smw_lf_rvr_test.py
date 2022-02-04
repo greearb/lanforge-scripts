@@ -51,7 +51,7 @@ class RvR(Realm):
                  side_a_min_rate=0, side_a_max_rate=0,
                  sta_names=None, side_b_min_rate=56, side_b_max_rate=0, number_template="00000", test_duration="2m",
                  sta_list=[1, 1],
-                 serial_number='2222', indices="all", atten_val="0", traffic=500, radio_list=['wiphy0', 'wiphy3'],
+                 serial_number='2222', indices="all", atten_val="0", atten_idx='all', traffic=500, radio_list=['wiphy0', 'wiphy3'],
                  _debug_on=False, _exit_on_error=False, _exit_on_fail=False):
         super().__init__(lfclient_host=host,
                          lfclient_port=port),
@@ -94,11 +94,13 @@ class RvR(Realm):
         self.attenuator_profile = self.new_attenuator_profile()
         self.serial_number = serial_number
         self.indices = indices.split(",")
+        self.atten_idx = atten_idx
         self.atten_values = atten_val
 
     def initialize_attenuator(self):
         self.attenuator_profile.atten_serno = self.serial_number
-        self.attenuator_profile.atten_idx = "all"
+        # self.attenuator_profile.atten_idx = "all"
+        self.attenuator_profile.atten_idx = self.atten_idx
         self.attenuator_profile.atten_val = '0'
         self.attenuator_profile.mode = None
         self.attenuator_profile.pulse_width_us5 = None
@@ -110,7 +112,8 @@ class RvR(Realm):
 
     def set_attenuation(self, value):
         self.attenuator_profile.atten_serno = self.serial_number
-        self.attenuator_profile.atten_idx = "all"
+        # self.attenuator_profile.atten_idx = "all"
+        self.attenuator_profile.atten_idx = self.atten_idx
         self.attenuator_profile.atten_val = str(int(value) * 10)
         self.attenuator_profile.create()
         # self.attenuator_profile.show()
@@ -318,7 +321,7 @@ class RvR(Realm):
 
     def generate_report(self, data, test_setup_info, input_setup_info):
         res = self.set_report_data(data)
-        report = lf_report(_output_pdf="rvr_test.pdf", _output_html="rvr_test.html", _results_dir_name="RvR_Test")
+        report = lf_report.lf_report(_output_pdf="rvr_test.pdf", _output_html="rvr_test.html", _results_dir_name="RvR_Test")
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
         logger.info("path: {}".format(report_path))
@@ -348,7 +351,7 @@ class RvR(Realm):
                 _obj="The below graph represents overall {} throughput for different attenuation (RSSI) ".format(
                     res["graph_df"][traffic_type]["direction"]))
             report.build_objective()
-            graph = lf_graph.bar_graph(_data_set=res["graph_df"][traffic_type]["dataset"],
+            graph = lf_graph.lf_bar_graph(_data_set=res["graph_df"][traffic_type]["dataset"],
                                  _xaxis_name="Attenuation",
                                  _yaxis_name="Throughput(in Mbps)",
                                  _xaxis_categories=[str(traffic_type) for traffic_type in res[traffic_type].keys()],
@@ -394,7 +397,7 @@ class RvR(Realm):
                         _obj_title=f"Individual {direction} Throughput for {len(self.station_names)} clients using {traffic_type} traffic over {attenuation} attenuation",
                         _obj=f"The below graph represents Individual {direction} throughput of all stations when attenuation (RSSI) set to {attenuation}")
                     report.build_objective()
-                    graph = lf_graph.bar_graph(_data_set=[res[traffic_type][attenuation][direction]],
+                    graph = lf_graph.lf_bar_graph(_data_set=[res[traffic_type][attenuation][direction]],
                                          _xaxis_name="No.of Stations",
                                          _yaxis_name="Throughput(in Mbps)",
                                          _xaxis_categories=[str(i + 1) for i in range(len(self.station_names))],
@@ -569,7 +572,8 @@ def main():
                   mode=args.mode,
                   ap_model=args.ap_model,
                   serial_number=args.atten_serno,
-                  indices=args.atten_idx,
+                  # indices=args.atten_idx,
+                  atten_idx=args.atten_idx,
                   atten_val=args.atten_val,
                   traffic_type=args.traffic_type,
                   traffic_direction=args.traffic_direction,
