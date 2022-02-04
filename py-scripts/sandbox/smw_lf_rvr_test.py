@@ -128,7 +128,7 @@ class RvR(Realm):
                 self.json_post(req_url, data)
         time.sleep(5)
         self.cx_profile.start_cx()
-        print("Monitoring CX's & Endpoints for %s seconds" % self.test_duration)
+        logger.info("Monitoring CX's & Endpoints for %s seconds", self.test_duration)
 
     def stop_l3(self):
         self.cx_profile.stop_cx()
@@ -183,7 +183,7 @@ class RvR(Realm):
         self.station_profile.use_security(security_type=self.station_profile.security,
                                           ssid=self.station_profile.ssid,
                                           passwd=self.station_profile.ssid_pass)
-        print("Creating stations")
+        logger.info("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
@@ -191,11 +191,13 @@ class RvR(Realm):
         for i in range(len(self.radio)):
             if i != 0:
                 last = last + self.sta_list[i]
-            print(first, last)
+            # print(first, last)
+            logger.info(first)
+            logger.info(last)
             station_names = self.station_names[first:last]
             self.station_profile.create(radio=self.radio[i], sta_names_=station_names, debug=self.debug)
             first = first + self.sta_list[i]
-            print(station_names)
+            logger.info(station_names)
         self.start_stations()
         for traffic in self.traffic_type:
             self.cx_profile.create(endp_type=traffic, side_a=self.station_profile.station_names,
@@ -214,7 +216,7 @@ class RvR(Realm):
                 throughput['download'] = download
                 throughput_dbm[''.join(traffic)][f"{val} dB"] = throughput
             self.cx_profile.cleanup()
-        print(throughput_dbm)
+        logger.info(throughput_dbm)
         return throughput_dbm
 
     def monitor(self):
@@ -238,17 +240,17 @@ class RvR(Realm):
                 map(lambda i: [x for x in i.values()], response))
             time.sleep(1)
         # # rx_rate list is calculated
-        # print("Total rx values are %s", throughput)
+        # logger.info("Total rx values are %s", throughput)
         for index, key in enumerate(throughput):
             for i in range(len(throughput[key])):
                 upload[i].append(throughput[key][i][0])
                 download[i].append(throughput[key][i][1])
-        print("Upload values", upload)
-        print("Download Values", download)
+        logger.info("Upload values %s", upload)
+        logger.info("Download Values %s", download)
         upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
         download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
-        print("upload: ", upload_throughput)
-        print("download: ", download_throughput)
+        logger.info("upload: %s", upload_throughput)
+        logger.info("download: %s", download_throughput)
         return upload_throughput, download_throughput
 
     def set_report_data(self, data):
@@ -256,7 +258,7 @@ class RvR(Realm):
         if data is not None:
             res = data
         else:
-            print("No Data found to generate report!")
+            logger.info("No Data found to generate report!")
             exit(1)
         if self.traffic_type is not None:
             if self.traffic_direction == 'upload':
@@ -284,7 +286,7 @@ class RvR(Realm):
             #         table_df.update({"Mode": []})
             #         table_df.update({"Throughput for traffic {}".format(key): []})
             #     graph_df.update({case: [throughput_df]})
-            # print(throughput)
+            # logger.info(throughput)
             # table_df.update({"No of Stations": num_stations})
             # table_df.update({"Mode": mode})
             for traffic in self.traffic_type:
@@ -319,8 +321,8 @@ class RvR(Realm):
         report = lf_report(_output_pdf="rvr_test.pdf", _output_html="rvr_test.html", _results_dir_name="RvR_Test")
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
-        print("path: {}".format(report_path))
-        print("path_date_time: {}".format(report_path_date_time))
+        logger.info("path: {}".format(report_path))
+        logger.info("path_date_time: {}".format(report_path_date_time))
         report.set_title("Rate vs Range")
         report.build_banner()
         # objective title and description
@@ -336,7 +338,7 @@ class RvR(Realm):
         # df_throughput = pd.DataFrame(res["throughput_table_df"])
         # report.set_table_dataframe(df_throughput)
         # report.build_table()
-        print(res)
+        logger.info(res)
         for traffic_type in res["graph_df"]:
             report.set_obj_html(
                 _obj_title="Overall {} throughput for {} clients using {} traffic.".format(res["graph_df"]
@@ -366,7 +368,7 @@ class RvR(Realm):
                                  _enable_csv=True)
             graph_png = graph.build_bar_graph()
 
-            print("graph name {}".format(graph_png))
+            logger.info("graph name {}".format(graph_png))
 
             report.set_graph_image(graph_png)
             # need to move the graph image to the results directory
@@ -413,7 +415,7 @@ class RvR(Realm):
                                          _enable_csv=True)
                     graph_png = graph.build_bar_graph()
 
-                    print("graph name {}".format(graph_png))
+                    logger.info("graph name {}".format(graph_png))
 
                     report.set_graph_image(graph_png)
                     # need to move the graph image to the results directory
@@ -467,10 +469,23 @@ def main():
     optional.add_argument('-av', '--atten_val',
                           help='Requested attenuation in dB ex:--> --atten_val 0, 10', default='0')
     optional.add_argument('--debug', help="to enable debug", default=False)
+    # logging configuration
+    parser.add_argument(
+        "--lf_logger_config_json",
+        help="--lf_logger_config_json <json file> , json configuration of logger")
+
     args = parser.parse_args()
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
     test_start_time = datetime.now().strftime("%b %d %H:%M:%S")
-    print("Test started at ", test_start_time)
-    print(parser.parse_args())
+    logger.info("Test started at %s", test_start_time)
+    logger.info(parser.parse_args())
     if args.test_duration.endswith('s') or args.test_duration.endswith('S'):
         args.test_duration = abs(int(float(args.test_duration[0:-1])))
     elif args.test_duration.endswith('m') or args.test_duration.endswith('M'):
@@ -482,18 +497,18 @@ def main():
 
     if not isinstance(args.radio_list, list):
         if isinstance(args.radio_list, str):
-            print(args.radio_list)
+            logger.info(args.radio_list)
             args.radio_list = args.radio_list.split(",")
-            print(args.radio_list)
+            logger.info(args.radio_list)
         else:
             raise TypeError("radio_list should be a list or a string of radio names separated with ','")
 
     if not isinstance(args.sta_list, list):
         if isinstance(args.sta_list, str):
-            print(args.sta_list)
+            logger.info(args.sta_list)
             args.sta_list = args.sta_list.split(",")
             args.sta_list = [int(x) for x in args.sta_list]
-            print(args.sta_list)
+            logger.info(args.sta_list)
         else:
             raise TypeError("sta_list should be a list of no. of stations or a string of no. of stations separated "
                             "with ','")
@@ -531,7 +546,7 @@ def main():
                 last = last + args.sta_list[i]
             station_list.extend(LFUtils.portNameSeries(prefix_="sta", start_id_=first, end_id_=abs(last) - 1, padding_number_=10000, radio=args.radio_list[i]))
             first = first + args.sta_list[i]
-            print(station_list)
+            logger.info(station_list)
     else:
         station_list = args.sta_names.split(",")
 
@@ -565,7 +580,7 @@ def main():
     rvr_obj.cleanup()
 
     test_end_time = datetime.now().strftime("%b %d %H:%M:%S")
-    print("Test ended at: ", test_end_time)
+    logger.info("Test ended at: %s", test_end_time)
 
     test_setup_info = {
         "AP Model": rvr_obj.ap_model,
