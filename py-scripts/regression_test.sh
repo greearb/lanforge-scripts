@@ -16,9 +16,13 @@ Help()
   echo "F is used to pass in an RC file which can store the credentials for running regression multiple times on your system"
   echo "H is used to test the help feature of each script, to make sure it renders properly."
   echo "L is used to give the IP address of the LANforge device which is under test"
+  echo "D is DUT5 string, used in ap-auto and similar chamber-view tests."
+  echo "2 is DUT2 string, used in ap-auto and similar chamber-view tests."
+  echo "r is 5Ghz radio, default is 1.1.wiphy1"
+  echo "M is 2.4Ghz radio, default is 1.1.wiphy0"
   echo "Example command: ./regression_test.sh -s SSID -p PASSWD -w SECURITY -m MGR"
   echo "Example command: ./regression_test.sh -s j-wpa2-153 -p j-wpa2-153 -w wpa2 -r 1.1.wiphy0 \\\\"
-  echo "   e-M 1.1.wiphy1 -B 04:F0:21:CB:01:8B -V heather_ssid_2022 -m heather -R /tmp/ 1"
+  echo "   -M 1.1.wiphy1 -B 04:F0:21:CB:01:8B -V heather_ssid_2022 -m heather -R /tmp/ 1"
   echo "If using the help flag, put the H flag at the end of the command after other flags."
 }
 
@@ -27,8 +31,13 @@ REPORT_DIR="${HOMEPATH}/html-reports"
 TESTBED=UNKNOWN
 NOW=$(date +"%Y-%m-%d-%H-%M")
 NOW="${NOW/:/-}"
+DUT2=
+DUT5=
+RADIO_USED="1.1.wiphy1"
+RADIO5=$RADIO_USED
+RADIO2="1.1.wiphy0"
 
-while getopts ":h:s:S:p:w:m:r:R:F:B:u:U:D:H:M:C:e:V:E:T:" option; do
+while getopts ":h:s:S:p:w:m:r:R:F:B:u:U:D:2:H:M:C:e:V:E:T:" option; do
   case "${option}" in
     h) # display Help
       Help
@@ -54,6 +63,10 @@ while getopts ":h:s:S:p:w:m:r:R:F:B:u:U:D:H:M:C:e:V:E:T:" option; do
       ;;
     r)
       RADIO_USED=${OPTARG}
+      RADIO5=${OPTARG}
+      ;;
+    M)
+      RADIO2=${OPTARG}
       ;;
     R)
       REPORT_DIR=${OPTARG}
@@ -74,13 +87,12 @@ while getopts ":h:s:S:p:w:m:r:R:F:B:u:U:D:H:M:C:e:V:E:T:" option; do
       ;;
     D)
       DUT5=${OPTARG}
+      ;;
+    2)
       DUT2=${OPTARG}
       ;;
     H)
       ./lf_help_check.bash
-      ;;
-    M)
-      RADIO2=${OPTARG}
       ;;
     C)
       RESOURCE=${OPTARG}
@@ -150,14 +162,6 @@ if [[ ${#VAP_SSID} -eq 0 ]]; then
   VAP_SSID=SSID_USED
 fi
 
-if [[ ${#RADIO_USED} -eq 0 ]]; then # Allow the user to change the radio they test against
-  RADIO_USED="1.1.wiphy1"
-fi
-
-if [[ ${#RADIO2} -eq 0 ]]; then # Allow the user to change the radio they test against
-  RADIO2="1.1.wiphy0"
-fi
-
 if [[ ${#UPSTREAM_BARE} -eq 0 ]]; then
   UPSTREAM_BARE="eth1"
 fi
@@ -191,10 +195,6 @@ NUM_STA=${NUM_STA:-4}
 TEST_HTTP_IP=${TEST_HTTP_IP:-10.40.0.1}
 COL_NAMES="name,tx_bytes,rx_bytes,dropped"
 
-if [[ ${#DUT2} -eq 0 ]]; then
-  DUT5="linksys-8450 j-wpa2-153 c4:41:1e:f5:3f:25 (1)"
-  DUT2="linksys-8450 j-wpa2-153 c4:41:1e:f5:3f:25 (1)"
-fi
 #CURR_TEST_NUM=0
 CURR_TEST_NAME="BLANK"
 
@@ -238,11 +238,6 @@ function create_station_and_dataplane() {
       set +x
 }
 function create_dut_and_chamberview() {
-        ./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut \
-            --ssid "ssid_idx=0 ssid='$SSID_USED' security='$SECURITY' password='$PASSWD_USED' bssid=$BSSID"
-        ./create_chamberview.py -m $MGR -cs 'regression_test' --delete_scenario \
-            --line "Resource=1.$RESOURCE Profile=STA-AC Amount=1 Uses-1=$RADIO_USED Freq=-1 DUT=regression_dut DUT_Radio=$RADIO_USED Traffic=http" \
-            --line "Resource=1.$RESOURCE Profile=upstream Amount=1 Uses-1=$UPSTREAM_BARE Uses-2=AUTO Freq=-1 DUT=regression_dut DUT_Radio=LAN Traffic=http"
     }
 
 function create_station_and_sensitivity {
@@ -290,7 +285,7 @@ else
   testCommands=(
       "./create_bond.py --network_dev_list $RESOURCE.eth2,$UPSTREAM --bond_name $RESOURCE.bond5 --debug --mgr $MGR"
       "./create_bridge.py --target_device $RESOURCE.eth2,$UPSTREAM --bridge_name $RESOURCE.br5 --debug --mgr $MGR"
-      create_dut_and_chamberview
+      "./create_chamberview_dut.py --lfmgr $MGR --dut_name regression_dut --ssid \"ssid_idx=0 ssid='$SSID_USED' security='$SECURITY' password='$PASSWD_USED' bssid=$BSSID\" && ./create_chamberview.py -m $MGR -cs 'regression_test' --delete_scenario --line \"Resource=1.$RESOURCE Profile=STA-AC Amount=1 Uses-1=$RADIO_USED Freq=-1 DUT=regression_dut DUT_Radio=$RADIO_USED Traffic=http\" --line \"Resource=1.$RESOURCE Profile=upstream Amount=1 Uses-1=$UPSTREAM_BARE Uses-2=AUTO Freq=-1 DUT=regression_dut DUT_Radio=LAN Traffic=http\""
       "./create_l3.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR --endp_a wiphy0 --endp_b wiphy1"
       "./create_l3_stations.py --mgr $MGR --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug"
       "./create_l4.py --radio $RADIO_USED --ssid $SSID_USED --password $PASSWD_USED --security $SECURITY --debug --mgr $MGR"
@@ -319,12 +314,13 @@ else
         --max_stations_2 64 \
         --max_stations_5 64 \
         --max_stations_dual 64 \
-        --radio2 $RADIO_USED \
+        --radio5 $RADIO5 \
         --radio2 $RADIO2 \
         --set 'Basic Client Connectivity' 1 \
-        --set 'Multi Band Performance' 1 \
+        --set 'Multi Band Performance' 0 \
         --set 'Skip 2.4Ghz Tests' 1 \
         --set 'Skip 5Ghz Tests' 1 \
+        --set 'Skip Dual-Band Tests' 1 \
         --set 'Throughput vs Pkt Size' 0 \
         --set 'Capacity' 0 \
         --set 'Stability' 0 \

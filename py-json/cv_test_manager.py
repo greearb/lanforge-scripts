@@ -107,10 +107,9 @@ class cv_test(Realm):
             "text": text
         }
 
-        logger.info("adding- {text} to test config".format(text=text))
+        logger.info("adding -:%s:- to test config: %s  blob-name: %s" %(text, config_name, blob_test_name))
 
         self.json_post(req_url, data)
-        # time.sleep(1)
 
     # Tell LANforge GUI Chamber View to launch a test
     def create_test(self, test_name, instance, load_old_cfg):

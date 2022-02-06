@@ -54,9 +54,12 @@ import importlib
 import argparse
 import time
 import shlex
+import logging
+
+logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
-    print("This script requires Python 3")
+    logger.critical("This script requires Python 3")
     exit(1)
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
@@ -67,7 +70,7 @@ dut = cv_dut_profile.cv_dut
 # from cv_test_manager import cv_test as cvtest
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
 cvtest = cv_test_manager.cv_test
-
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 class DUT(dut):
     def __init__(self,
@@ -134,7 +137,7 @@ class DUT(dut):
                             #print("updated flag: %s" % (flag))
                         else:
                             emsg = "ERROR:  Un-supported security flag: %s" % (security)
-                            print(emsg)
+                            logger.critical(emsg)
                             raise ValueError("Un-supported security flag")  # Bad user input, terminate script.
 
                 self.ssid[j]['flag'] = flag
@@ -202,7 +205,21 @@ def main():
         default=None,
         action='append')
 
+    # TODO:  Use lfcli_base for common arguments.
+    parser.add_argument('--debug', help='Enable debugging', default=False, action="store_true")
+    parser.add_argument('--log_level',
+                        default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
+    parser.add_argument('--lf_logger_config_json',
+                        help="--lf_logger_config_json <json file> , json configuration of logger")
+
     args = parser.parse_args()
+
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
+    
     new_dut = DUT(lfmgr=args.lfmgr,
                   port=args.port,
                   dut_name=args.dut_name,

@@ -6,7 +6,7 @@ import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
-    exit()
+    exit(1)
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
@@ -132,13 +132,13 @@ class cv_dut(LFCliBase):
                  ssid_flags=0,
                  ssid_flags_mask=0xFFFFFFFF):
         req_url = "/cli-json/add_dut_ssid"
-        logger.info("name: %s" % dut_name,
-                    "ssid_idx: %s" % ssid_idx,
-                    "ssid: %s" % ssid,
-                    "passwd: %s" % passwd,
-                    "bssid: %s" % bssid,
-                    "ssid_flags: %s" % ssid_flags,
-                    "ssid_flags_mask: %s" % ssid_flags_mask)
+        logger.info("DUT profile add-ssid: name: %s" % dut_name +
+                    " ssid_idx: %s" % ssid_idx +
+                    " ssid: %s" % ssid +
+                    " passwd: %s" % passwd +
+                    " bssid: %s" % bssid +
+                    " ssid_flags: %s" % ssid_flags +
+                    " ssid_flags_mask: %s" % ssid_flags_mask)
 
         self.json_post(req_url, {
             "name": dut_name,
