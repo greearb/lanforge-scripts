@@ -11,6 +11,9 @@ PURPOSE:
         like what is used in TIP labs with APs set up for VLANs and LANforge set up to serve DHCP address
         on un-tagged ports as well as tagged 1q vlans.  This script may be improved in the future to be more flexible.
 
+        NOTE:  This script does not create the .1q vlan interfaces, it assumes they already exist before this script
+        runs.
+
 DESCRIPTION:
             The script will follow basic functionality as:-
             1- create station on input parameters provided
@@ -95,7 +98,7 @@ class MultiPsk(Realm):
                                                       end_id_=input['num_station'] - 1, padding_number_=100,
                                                       radio=self.radio)
                 # implementation for non vlan pending ****
-            print("creating stations")
+            logger.info("creating stations: %s" % (station_list))
             self.station_profile.use_security(self.security, self.ssid, self.passwd)
             self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
             self.station_profile.set_command_param("set_port", "report_timer", 1500)
@@ -112,7 +115,7 @@ class MultiPsk(Realm):
             else:
                 self._fail("Stations failed to get IPs")
 
-            print("create udp endp")
+            logger.info("create udp endp")
             self.cx_profile_udp = self.new_l3_cx_profile()
             self.cx_profile_udp.side_a_min_bps = 128000
             self.cx_profile_udp.side_b_min_bps = 128000
@@ -161,7 +164,7 @@ class MultiPsk(Realm):
             # TODO:  Properly detect if it is a real vlan interface, don't just match on a period in the name.
             if "." in i['upstream']:
                 # print(str(i['upstream']) + " is a vlan upstream port")
-                print("checking VLAN upstream port: %s ip .." %(i['upstream']))
+                logger.info("checking VLAN upstream port: %s ip .." %(i['upstream']))
                 data = self.json_get("ports/list?fields=IP")
                 for val in data["interfaces"]:
                     for j in val:
@@ -178,7 +181,7 @@ class MultiPsk(Realm):
         for i in self.input:
             if "." not in i['upstream']:
                 # print(str(i['upstream']) + " is not an vlan upstream port")
-                print("checking its ip ..")
+                logger.info("checking non-vlan ip ..")
                 data = self.json_get("ports/list?fields=IP")
                 for val in data["interfaces"]:
                     for j in val:
@@ -341,7 +344,7 @@ class MultiPsk(Realm):
         else:
             self._fail("cleanup: Failed to delete ports.")
 
-        print("Test Completed")
+        logger.info("post-cleanup completed")
 
 
 def main():
@@ -353,6 +356,12 @@ def main():
     parser.add_argument('--mode', help="Mode for lf_multipsk", default=None)
     args = parser.parse_args()
 
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
+
+    # TODO:  Allow specifying this data on the command line.
     input_data = [{
         "password": args.passwd,
         "upstream": "eth2.100",
@@ -401,25 +410,21 @@ def main():
     else:
         multi_obj.get_sta_ip_for_more_vlan()
 
+    logger.info("checking for vlan ips")
     result = multi_obj.compare_ip()
-    print("checking for vlan ips")
-    if result == "Pass":
-        print("Test pass")
-    else:
-        print("Test Fail")
-    print("now checking ip for non vlan port")
+
+    logger.info("now checking ip for non vlan port")
     multi_obj.monitor_non_vlan_ip()
     multi_obj.get_non_vlan_sta_ip()
     if args.mode == "BRIDGE":
         result1 = multi_obj.compare_nonvlan_ip_bridge()
     else:
         result1 = multi_obj.compare_nonvlan_ip_nat()
-    if result1 == "Pass":
-        print("Test passed for non vlan ip ")
-    else:
-        print("Test failed for non vlan ip")
-    print("all result gathered")
-    print("clean up")
+
+    # TODO:  Verify connections were able to start and pass traffic.
+
+    logger.info("all result gathered")
+    logger.info("clean up")
     multi_obj.postcleanup()
 
     if multi_obj.passes():

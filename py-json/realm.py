@@ -418,6 +418,7 @@ class Realm(LFCliBase):
                 except:
                     logger.info(
                         "non-fatal exception endp_list = list(endp_list['endpoint'] did not exist, will wait some more")
+                    pprint(endp_list)
 
             for req in these_endp:
                 if req not in found_endps:

@@ -515,13 +515,13 @@ class LFCliBase:
     def print_pass_fail(self):
         pl = self.get_passed_result_list()
         if len(pl) > 0:
-            print("------------ PASSING TESTS --------------")
+            logging.info("------------ PASSING TESTS --------------")
             for p in pl:
                 logging.info(p)
 
         fl = self.get_failed_result_list()
         if len(fl) > 0:
-            print("------------ FAILED TESTS --------------")
+            logging.error("------------ FAILED TESTS --------------")
             for f in fl:
                 logging.error(f)
 
