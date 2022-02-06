@@ -3,7 +3,9 @@ import sys
 import os
 import importlib
 from pprint import pprint
+from pprint import pformat
 import time
+import logging
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -13,7 +15,7 @@ LFRequest = importlib.import_module("py-json.LANforge.LFRequest")
 add_vap = importlib.import_module("py-json.LANforge.add_vap")
 set_port = importlib.import_module("py-json.LANforge.set_port")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
-
+logger = logging.getLogger(__name__)
 
 class VAPProfile(LFCliBase):
     def __init__(self, lfclient_host, lfclient_port, local_realm,
@@ -93,21 +95,14 @@ class VAPProfile(LFCliBase):
         self.wifi_extra_data["domain"] = domain
         self.wifi_extra_data["hessid"] = hessid
 
+    # TODO:  remove 'resource' so we can just use EIDs
     def admin_up(self, resource):
-        set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
-        req_json = LFUtils.portUpRequest(resource, None, debug_on=self.debug)
-        req_json["port"] = LFUtils.name_to_eid(self.vap_name)[2]
-        set_port_r.addPostData(req_json)
-        set_port_r.jsonPost(self.debug)
-        time.sleep(0.03)
+        eid = "%s.%s.%s" % (1, resource, LFUtils.name_to_eid(self.vap_name)[2])
+        self.local_realm.admin_up(eid)
 
     def admin_down(self, resource):
-        set_port_r = LFRequest.LFRequest(self.lfclient_url, "/cli-json/set_port", debug_=self.debug)
-        req_json = LFUtils.port_down_request(resource, None, debug_on=self.debug)
-        req_json["port"] = LFUtils.name_to_eid(self.vap_name)[2]
-        set_port_r.addPostData(req_json)
-        set_port_r.jsonPost(self.debug)
-        time.sleep(0.03)
+        eid = "%s.%s.%s" % (1, resource, LFUtils.name_to_eid(self.vap_name)[2])
+        self.local_realm.admin_down(eid)
 
     def use_security(self, security_type, ssid=None, passwd=None):
         types = {"wep": "wep_enable", "wpa": "wpa_enable", "wpa2": "wpa2_enable", "wpa3": "use-wpa3", "open": "[BLANK]"}

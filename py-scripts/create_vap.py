@@ -46,8 +46,7 @@ class CreateVAP(Realm):
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  _dhcp=True):
-        super().__init__(_host,
-                         _port)
+        super().__init__(_host, _port, debug_=_debug_on)
         self.host = _host
         self.port = _port
         self.ssid = _ssid
@@ -91,7 +90,7 @@ class CreateVAP(Realm):
         self.vap_profile.use_security(
             self.security, self.ssid, passwd=self.password)
 
-        print("Creating VAPs")
+        logger.info("Creating VAPs")
         # TODO:  Add cmd line arguments to control the various options of the VAP profile.
         if self.vap_profile.create(resource=self.resource,
                                 radio=self.radio,
@@ -195,7 +194,7 @@ Command example:
                                    _country_code=args.country_code,
                                    _proxy_str=args.proxy,
                                    _debug_on=args.debug)
-            print('Creating VAP')
+            logger.info('Creating VAP')
             if create_vap.build():
                 create_vap._pass("VAP %s created." % (vap))
             else:
@@ -217,7 +216,7 @@ Command example:
                                _country_code=args.country_code,
                                _proxy_str=args.proxy,
                                _debug_on=args.debug)
-        print('Creating VAP')
+        logger.info('Creating VAP')
         if create_vap.build():
             create_vap._pass("VAP %s created." % (vap))
         else:

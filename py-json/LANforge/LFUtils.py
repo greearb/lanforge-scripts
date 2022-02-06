@@ -183,12 +183,12 @@ def port_dhcp_up_request(resource_id, port_name, debug_on=False):
         logger.debug(debug_printer.pformat(data))
     return data
 
-
+# Return json request object, does not actually attempt to admin up a port
 def portUpRequest(resource_id, port_name, debug_on=False):
-    return port_up_request(resource_id, port_name, debug_on)
+    return port_up_request(resource_id, port_name, debug_on=debug_on)
 
 
-# port_name cannot be in eid syntax in this method at this time.
+# Return json request object, does not actually attempt to admin up a port
 def port_up_request(resource_id, port_name, debug_on=False):
     """
     See http://localhost:8080/help/set_port
@@ -197,6 +197,13 @@ def port_up_request(resource_id, port_name, debug_on=False):
     :param port_name:
     :return:
     """
+
+    if port_name:
+        eid = name_to_eid(port_name)
+        if resource_id == None:
+            resource_id = eid[1];
+            port_name = eid[2]
+
     data = {
         "shelf": 1,
         "resource": resource_id,
@@ -624,7 +631,7 @@ def wait_until_ports_disappear(base_url="http://localhost:8080", port_list=(), d
                 remove_port(port[1], port[2], base_url)
         sleep(1)  # check for ports once per second
 
-    logger.critical('%s stations were still found' % found_stations)
+    logger.critical('%s ports were still found' % found_stations)
     return False
 
 
@@ -705,7 +712,7 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
     if debug:
         logger.debug("Waiting until ports appear...")
         existing_stations = LFRequest.LFRequest(base_url, '/ports', debug_=debug)
-        logger.debug('existing stations')
+        # logger.debug('existing ports')
         # logger.debug(pprint.pformat(existing_stations)) # useless
     port_url = "/port/1"
     show_url = "/cli-json/show_ports"
@@ -748,13 +755,13 @@ def wait_until_ports_appear(base_url="http://localhost:8080", port_list=(), debu
                 lf_r.jsonPost()
         if len(found_stations) < len(port_list):
             sleep(2)
-            logger.info('Found %s out of %s stations in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(port_list), attempt, timeout/2))
+            logger.info('Found %s out of %s ports in %s out of %s tries in wait_until_ports_appear' % (len(found_stations), len(port_list), attempt, timeout/2))
         else:
-            logger.info('All %s stations appeared' % len(found_stations))
+            logger.info('All %s ports appeared' % len(found_stations))
             return True
     if debug:
-        logger.debug("These stations appeared: " + ", ".join(found_stations))
-        logger.debug("These stations did not appear: " + ",".join(set(port_list) - set(found_stations)))
+        logger.debug("These ports appeared: " + ", ".join(found_stations))
+        logger.debug("These ports did not appear: " + ",".join(set(port_list) - set(found_stations)))
         logger.debug(pprint.pformat(LFRequest.LFRequest("%s/ports" % base_url)))
     return False
 

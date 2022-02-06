@@ -266,10 +266,11 @@ class Realm(LFCliBase):
         # logger.info("192.admin_up request: resource: %s port_name %s"%(resource, port))
         dbg_param = ""
         if logger.getEffectiveLevel() == logging.DEBUG:
+            #logger.info("enabling url debugging")
             dbg_param = "?__debug=1"
         collected_responses = list()
         self.json_post("/cli-json/set_port%s" % dbg_param, request, debug_=self.debug,
-                                  response_json_list_=collected_responses)
+                       response_json_list_=collected_responses)
         # TODO: when doing admin-up ath10k radios, want a LF complaint about a license exception
         # if len(collected_responses) > 0: ...
 

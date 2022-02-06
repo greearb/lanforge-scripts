@@ -8,16 +8,19 @@ Help()
   echo "OPTION ONE: ./regression_test.sh : this command runs all the scripts in the array \"testCommands\""
   echo "OPTION TWO: ./regression_test.sh 4 5 :  this command runs py-script commands (in testCommands array) that include the py-script options beginning with 4 and 5 (inclusive) in case function ret_case_num."
   echo "Optional Variables:"
-  echo "SSID is the name of the network you are testing against"
+  echo "s is the SSID of the 5g network you are testing against.  This is treated as the main ssid for tests that take one SSID"
+  echo "u is the SSID of the 2g network you are testing against"
   echo "PASSWD is the password of said network"
   echo "SECURITY is the security protocol of the network"
   echo "MGR is the IP address of the device which has LANforge installed, if different from the system you are using."
   echo "A is used to call to test a specific command based on"
+  echo "b is 2g BSSID"
+  echo "B is 5g BSSID"
   echo "F is used to pass in an RC file which can store the credentials for running regression multiple times on your system"
   echo "H is used to test the help feature of each script, to make sure it renders properly."
   echo "L is used to give the IP address of the LANforge device which is under test"
-  echo "D is DUT5 string, used in ap-auto and similar chamber-view tests."
-  echo "2 is DUT2 string, used in ap-auto and similar chamber-view tests."
+  echo "D is DUT5 name."
+  echo "2 is DUT2 name."
   echo "r is 5Ghz radio, default is 1.1.wiphy1"
   echo "M is 2.4Ghz radio, default is 1.1.wiphy0"
   echo "Example command: ./regression_test.sh -s SSID -p PASSWD -w SECURITY -m MGR"
@@ -31,13 +34,25 @@ REPORT_DIR="${HOMEPATH}/html-reports"
 TESTBED=UNKNOWN
 NOW=$(date +"%Y-%m-%d-%H-%M")
 NOW="${NOW/:/-}"
-DUT2=
-DUT5=
+DUT2_NAME=regression_dut
+DUT5_NAME=regression_dut
 RADIO_USED="1.1.wiphy1"
 RADIO5=$RADIO_USED
 RADIO2="1.1.wiphy0"
+SSID_USED=
+SSID_USED2=
+BSSID=
+BSSID2=
 
-while getopts ":h:s:S:p:w:m:r:R:F:B:u:U:D:2:H:M:C:e:V:E:T:" option; do
+# Load config file
+if [ -f ./regression_test.rc ]; then
+    source ./regression_test.rc # this version is a better unix name
+elif [ -f ./regression_test.txt ]; then
+    source ./regression_test.txt # this less unixy name was discussed earlier
+fi
+
+# cmd line arguments take precedence over config file, so they are processed here.
+while getopts ":h:s:S:p:w:m:r:R:F:b:B:u:U:D:2:H:M:C:e:u:V:E:T:" option; do
   case "${option}" in
     h) # display Help
       Help
@@ -45,6 +60,9 @@ while getopts ":h:s:S:p:w:m:r:R:F:B:u:U:D:2:H:M:C:e:V:E:T:" option; do
       ;;
     s)
       SSID_USED=${OPTARG}
+      ;;
+    u)
+      SSID_USED2=${OPTARG}
       ;;
     S)
       SHORT="yes"
@@ -77,6 +95,9 @@ while getopts ":h:s:S:p:w:m:r:R:F:B:u:U:D:2:H:M:C:e:V:E:T:" option; do
     B)
       BSSID=${OPTARG}
       ;;
+    b)
+      BSSID2=${OPTARG}
+      ;;
     u)
       # like eth0
       UPSTREAM_BARE=${OPTARG}
@@ -86,10 +107,10 @@ while getopts ":h:s:S:p:w:m:r:R:F:B:u:U:D:2:H:M:C:e:V:E:T:" option; do
       UPSTREAM=${OPTARG}
       ;;
     D)
-      DUT5=${OPTARG}
+      DUT5_NAME=${OPTARG}
       ;;
     2)
-      DUT2=${OPTARG}
+      DUT2_NAME=${OPTARG}
       ;;
     H)
       ./lf_help_check.bash
@@ -111,6 +132,16 @@ while getopts ":h:s:S:p:w:m:r:R:F:B:u:U:D:2:H:M:C:e:V:E:T:" option; do
       ;;
   esac
 done
+
+if [ "_$BSSID2" != "_" ]
+then
+    DUT2="$DUT2_NAME $SSID_USED2 $BSSID2 (1)"
+fi
+
+if [ "_$BSSID" != "_" ]
+then
+    DUT5="$DUT5_NAME $SSID_USED5 $BSSID (1)"
+fi
 
 if [[ ${#MGR} -eq 0 ]]; then # Allow the user to change the radio they test against
   MGR="localhost"
@@ -184,13 +215,6 @@ if test -f "$FILE"; then
   exit 0
 fi
 
-if [[ ${#SSID_USED} -gt 0 ]]; then
-  if [ -f ./regression_test.rc ]; then
-    source ./regression_test.rc # this version is a better unix name
-  elif [ -f ./regression_test.txt ]; then
-    source ./regression_test.txt # this less unixy name was discussed earlier
-  fi
-fi
 NUM_STA=${NUM_STA:-4}
 TEST_HTTP_IP=${TEST_HTTP_IP:-10.40.0.1}
 COL_NAMES="name,tx_bytes,rx_bytes,dropped"
@@ -237,8 +261,6 @@ function create_station_and_dataplane() {
           --local_lf_report_dir ~/html-reports/dataplane_${NOW}
       set +x
 }
-function create_dut_and_chamberview() {
-    }
 
 function create_station_and_sensitivity {
   set -x
