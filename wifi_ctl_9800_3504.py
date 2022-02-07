@@ -25,6 +25,7 @@ ssh -L 8888:172.16.0.2:22 root@192.168.100.109
 ./wifi_ctl_9800_3504.py --scheme ssh -d localhost --port 8888 --user admin --passwd Cisco123 --ap APA453.0E7B.CF9C --series 9800  --action cmd --value "show ap config slots" --prompt "WLC2" --timeout 10
 
 
+
 telnet 172.19.36.168(Pwd:), go to the privileged mode and execute the command “clear line 43”.
 
 Cisco uses 9130 AP
@@ -116,6 +117,10 @@ def main():
    parser.add_argument("-a", "--ap",      type=str, help="select AP", default="APA453.0E7B.CF9C")
    parser.add_argument("-b", "--band",    type=str, help="Select band (a | b | abgn)",
                        choices=["a", "b", "abgn"])
+   parser.add_argument("--tag_policy",     type=str, help="--tag_policy default-tag-policy", default="default-tag-policy")
+   # parser.add_argument("--tag_policy",     type=str, help="--tag_policy default-tag-policy", default="RM204-TB2")
+   parser.add_argument("--policy_profile", type=str, help="--policy_profile default-policy-profile", default="default-policy-profile")
+
 
    parser.add_argument("--action",        type=str, help="perform action",
       choices=["config", "debug_disable_all","no_logging_console", "line_console_0", "country", "ap_country", "enable", "disable", "summary", "advanced",
@@ -1178,7 +1183,9 @@ def main():
       sleep(0.1)
       i = egg.expect_exact(["(config)#",pexpect.TIMEOUT], timeout=timeout)
       if i == 0:
-         for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile"]:
+         # RM204-TB2
+         # for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile"]:
+         for command in ["wireless tag policy {policy_tag}".format(policy_tag=args.tag_policy),"wlan open-wlan policy {policy_profile}".format(policy_profile=args.policy_profile)]:
             egg.sendline(command)
             sleep(1)
             j = egg.expect_exact([CCP_POLICY_TAG,pexpect.TIMEOUT], timeout=timeout)
@@ -1255,10 +1262,10 @@ def main():
              if j == 0:
                  # previous commands for command in ["shutdown","no security ft","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
                  #      "no security wpa akm dot1x","no shutdown"]:
-                  
+
                  # 1/14/2021 - Cisco suggestion
                  # We are basically disabling all the possible security parameters for Authentication
-                 for command in [
+                  for command in [
                      "no security ft",
                      "no security ft adaptive",
                      "no security wpa",

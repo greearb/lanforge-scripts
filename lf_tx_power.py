@@ -11,6 +11,9 @@ EPILOG = '''\
 # Support History 
 ##############################################################################################    
 
+# Verified 2/7/2022 : Run against already created station "--station sta0001" 
+./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8888 --scheme ssh --ap AP687D.B45C.1D1C --bandwidth "160" --channel "36" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy1 --slot 1 --ssid open-wlan --prompt "WLC2" --station sta0001 --ssidpw [BLANK] --security open   --wlan open-wlan --wlanID 1 --wlanSSID open-wlan --lfmgr 192.168.100.131 --lfresource 1 --vht160  --tag_policy "RM204-TB2"
+
 ##############################################################################
 Sample script to run create station, wlan and talk to ap 1/26/2021 run on 9800
 carriage returns specifically left out
@@ -348,6 +351,9 @@ def main():
    parser.add_argument('--beacon_dbm_diff',  type=str,help="--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured",default="7")
    parser.add_argument('--show_lf_portmod',  action='store_true',help="--show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
    parser.add_argument('-api','--ap_info',   action='append', nargs=1, type=str, help="--ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
+   parser.add_argument("--tag_policy",     type=str, help="--tag_policy default-tag-policy", default="default-tag-policy")
+   # parser.add_argument("--tag_policy",     type=str, help="--tag_policy default-tag-policy", default="RM204-TB2")
+   parser.add_argument("--policy_profile", type=str, help="--policy_profile default-policy-profile", default="default-policy-profile")
 
 
    #current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]  
@@ -652,20 +658,22 @@ def main():
            exit_test(workbook)
        elif (args.vht160):
            logg.info("creating station with VHT160 set: {} on radio {}".format(args.create_station,args.radio))
-           subprocess.run(["./lf_associate_ap.pl", "--radio", args.radio, "--ssid", args.ssid , "--passphrase", args.ssidpw,
+           print()
+           subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid , "--passphrase", args.ssidpw,
                    "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
                    "--first_sta",args.create_station,"--action","add","--xsec","ht160_enable"], timeout=20, capture_output=True)
            sleep(3)
        else:    
            logg.info("creating station: {} on radio {}".format(args.create_station,args.radio))
-           subprocess.run(["./lf_associate_ap.pl", "--radio", args.radio, "--ssid", args.ssid , "--passphrase", args.ssidpw,
+           subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid , "--passphrase", args.ssidpw,
                    "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
                    "--first_sta",args.create_station,"--action","add"], timeout=20, capture_output=True)
            sleep(3)
 
-
    # Find LANforge station parent radio
    parent = None
+   logg.info("portmod command: ./lf_portmod.pl --manager {lfmgr} --card {lfresource} --port_name {lfstation} --show_port Parent/Peer".format(
+       lfmgr=lfmgr,lfresource=lfresource,lfstation=lfstation))
    port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card",  lfresource, "--port_name", lfstation,
                                 "--show_port", "Parent/Peer"], capture_output=True);
    pss = port_stats.stdout.decode('utf-8', 'ignore');
@@ -1034,7 +1042,8 @@ def main():
                           try:
                               logg.info("9800 wifi_ctl_9800_3504.py: wireless_tag_policy")
                               ctl_output =subprocess.run(["./wifi_ctl_9800_3504.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
-                                      "--action", "wireless_tag_policy","--series",args.series,"--port", args.port,"--prompt",args.prompt], capture_output=cap_ctl_out, check=True) 
+                                      "--action", "wireless_tag_policy","--series",args.series,"--port", args.port,"--prompt",args.prompt,
+                                      "--tag_policy", args.tag_policy, "--policy_profile", args.policy_profile], capture_output=cap_ctl_out, check=True) 
                               if cap_ctl_out:   
                                  pss = ctl_output.stdout.decode('utf-8', 'ignore')
                                  logg.info(pss) 
