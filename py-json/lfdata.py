@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import datetime
+import logging
 
+logger = logging.getLogger(__name__)
 
 # LFData class actions:
 # - Methods to collect data/store data (use from monitor instance) - used by Profile class.
@@ -27,9 +29,13 @@ class LFDataCollection:
     @staticmethod
     def check_json_validity(keyword=None, json_response=None):
         if json_response is None:
+            logger.critical(
+                "Cannot find columns requested to be searched in port manager. Exiting script, please retry.")
             raise ValueError(
                 "Cannot find columns requested to be searched in port manager. Exiting script, please retry.")
         if keyword is not None and keyword not in json_response:
+            logger.critical(
+                "Cannot find proper information from json. Please check your json request. Exiting script, please retry.")
             raise ValueError(
                 "Cannot find proper information from json. Please check your json request. Exiting script, please retry.")
 
@@ -67,8 +73,8 @@ class LFDataCollection:
         temp_list = []
         for endpoint in layer_3_response["endpoint"]:
             if self.debug:
-                print("Current endpoint values list... ")
-                print(list(endpoint.values())[0])
+                logger.debug("Current endpoint values list... ")
+                logger.debug(list(endpoint.values())[0])
             temp_endp_values = list(endpoint.values())[0]  # dict
             temp_list.extend([timestamp, t_to_millisec_epoch, time_elapsed])
             current_sta = temp_endp_values['name']
