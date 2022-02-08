@@ -16,8 +16,10 @@ import sys
 import os
 import importlib
 import argparse
-import pprint
+from pprint import pformat
 import time
+import logging
+import pandas as pd
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -32,6 +34,11 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 influx = importlib.import_module("py-scripts.influx_utils")
 RecordInflux = influx.RecordInflux
+lf_report = importlib.import_module("py-scripts.lf_report")
+lf_graph = importlib.import_module("py-scripts.lf_graph")
+lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 OPEN = "open"
 WEP = "wep"
@@ -130,12 +137,12 @@ class StaConnect2(Realm):
         if (self.station_results is None) or (len(self.station_results) < 1):
             self.get_failed_result_list()
         for eid, record in self.station_results.items():
-            # print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
-            # pprint(eid)
-            # pprint(record)
+            # logger.info("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
+            logger.debug(pformat(eid))
+            # logger.debug(pformat(record))
             if record["ap"] == bssid:
                 counter += 1
-            # print("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
+            # logger.info("-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- ")
         return counter
 
     def clear_test_results(self):
@@ -157,7 +164,7 @@ class StaConnect2(Realm):
 
         if upstream_json['interface']['ip'] == "0.0.0.0":
             if self.debug:
-                pprint.pprint(upstream_json)
+                logger.debug(pformat(upstream_json))
             self._fail("Warning: %s lacks ip address" % self.get_upstream_url(), print_=True)
             return False
 
@@ -180,7 +187,8 @@ class StaConnect2(Realm):
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         for security in extra_securities:
             self.station_profile.add_security_extra(security=security)
-        print("Adding new stations ", end="")
+        # print("Adding new stations ", end="")
+        logger.info("Adding new stations ")
         self.station_profile.create(radio=self.radio, sta_names_=self.station_names, up_=False, debug=self.debug,
                                     suppress_related_commands_=True)
         LFUtils.wait_until_ports_appear(self.lfclient_url, self.station_names, debug=self.debug)
@@ -215,11 +223,12 @@ class StaConnect2(Realm):
     def start(self):
         if self.station_profile is None:
             self._fail("Incorrect setup")
-        pprint.pprint(self.station_profile)
+        logger.debug(pformat(self.station_profile))
         if self.station_profile.up is None:
             self._fail("Incorrect station profile, missing profile.up")
         if not self.station_profile.up:
-            print("\nBringing ports up...")
+            logger.info("Bringing ports up...")
+            # logger.info("start() - self.lf_client_url: %s", self.lfclient_url)
             data = {"shelf": 1,
                     "resource": self.resource,
                     "port": "ALL",
@@ -243,7 +252,8 @@ class StaConnect2(Realm):
         maxTime = self.bringup_time_sec
         ip = "0.0.0.0"
         ap = ""
-        print("Waiting for %s stations to associate to AP: " % len(self.station_names), end="")
+        # print("Waiting for %s stations to associate to AP: " % len(self.station_names), end="")
+        logger.info("Waiting for %s stations to associate to AP: ", len(self.station_names))
         connected_stations = {}
         while (len(connected_stations.keys()) < len(self.station_names)) and (duration < maxTime):
             duration += 3
@@ -262,11 +272,13 @@ class StaConnect2(Realm):
 
                 if (ap == "Not-Associated") or (ap == ""):
                     if self.debug:
-                        print(" -%s," % sta_name, end="")
+                        # print(" -%s," % sta_name, end="")
+                        logger.info(" -%s,", sta_name)
                 else:
                     if ip == "0.0.0.0":
                         if self.debug:
-                            print(" %s (0.0.0.0)" % sta_name, end="")
+                            # print(" %s (0.0.0.0)" % sta_name, end="")
+                            logger.info(" %s (0.0.0.0)", sta_name)
                     else:
                         connected_stations[sta_name] = sta_url
             data = {
@@ -278,18 +290,19 @@ class StaConnect2(Realm):
             self.json_post("/cli-json/nc_show_ports", data)
             if self.influx_db:
                 grapher.getdata()
-        LFUtils.wait_until_ports_appear(port_list=self.station_names, debug=self.debug)
+        # LFUtils.wait_until_ports_appear(port_list=self.station_names, debug=self.debug)
+        LFUtils.wait_until_ports_appear(self.lfclient_url, port_list=self.station_names, debug=self.debug)
 
         for sta_name in self.station_names:
             sta_url = self.get_station_url(sta_name)
             station_info = self.json_get(sta_url)  # + "?fields=port,ip,ap")
             if station_info is None:
-                print("unable to query %s" % sta_url)
+                logger.info("unable to query %s", sta_url)
             self.resulting_stations[sta_url] = station_info
             try:
                 ap = station_info["interface"]["ap"]
             except Exception as e:
-                print(e)
+                logger.info(e)
                 ap = "NULL"
             ip = station_info["interface"]["ip"]
             if (ap != "") and (ap != "Not-Associated"):
@@ -298,7 +311,7 @@ class StaConnect2(Realm):
                     if self.dut_bssid.lower() == ap.lower():
                         self._pass(sta_name + " connected to BSSID: " + ap)
                         # self.test_results.append("PASSED: )
-                        # print("PASSED: Connected to BSSID: "+ap)
+                        logger.info("PASSED: Connected to BSSID: %s", ap)
                     else:
                         self._fail(
                             "%s connected to wrong BSSID, requested: %s  Actual: %s" % (sta_name, self.dut_bssid, ap))
@@ -313,12 +326,12 @@ class StaConnect2(Realm):
 
         if not self.passes():
             if self.cleanup_on_exit:
-                print("Cleaning up...")
+                logger.info("Cleaning up...")
                 self.remove_stations()
             return False
 
         # start cx traffic
-        print("\nStarting CX Traffic")
+        logger.info("Starting CX Traffic")
         self.l3_udp_profile.start_cx()
         self.l3_tcp_profile.start_cx()
         time.sleep(1)
@@ -327,7 +340,7 @@ class StaConnect2(Realm):
         self.l3_tcp_profile.refresh_cx()
 
     def collect_endp_stats(self, endp_map):
-        print("Collecting Data")
+        logger.info("Collecting Data")
         fields = "/all"
         for (cx_name, endps) in endp_map.items():
             try:
@@ -356,22 +369,21 @@ class StaConnect2(Realm):
 
     def stop(self):
         # stop cx traffic
-        print("Stopping CX Traffic")
+        logger.info("Stopping CX Traffic")
         self.l3_udp_profile.stop_cx()
         self.l3_tcp_profile.stop_cx()
 
         # Refresh stats
-        print("\nRefresh CX stats")
+        logger.info("Refresh CX stats")
         self.l3_udp_profile.refresh_cx()
         self.l3_tcp_profile.refresh_cx()
 
-        print("Sleeping for 5 seconds")
+        logger.info("Sleeping for 5 seconds")
         time.sleep(5)
 
         # get data for endpoints JSON
         self.collect_endp_stats(self.l3_udp_profile.created_cx)
         self.collect_endp_stats(self.l3_tcp_profile.created_cx)
-        # print("\n")
 
     def cleanup(self):
         # remove all endpoints and cxs
@@ -447,8 +459,20 @@ CLI Example:
                         help='Host of your influx database if different from the system you are running on',
                         default='localhost')
     parser.add_argument('--monitor_interval', help='How frequently you want to append to your database', default='5s')
+    # logging configuration
+    parser.add_argument(
+        "--lf_logger_config_json",
+        help="--lf_logger_config_json <json file> , json configuration of logger")
 
     args = parser.parse_args()
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
     upstream_port = LFUtils.name_to_eid(args.upstream_port)
     if args.upstream_resource:
         upstream_resource = args.upstream_resource
@@ -488,17 +512,19 @@ CLI Example:
 
     staConnect.setup()
     staConnect.start()
-    print("napping %f sec" % staConnect.runtime_secs)
+    logger.info("napping %f sec", staConnect.runtime_secs)
 
     time.sleep(staConnect.runtime_secs)
     staConnect.stop()
     staConnect.get_result_list()
     is_passing = staConnect.passes()
+
+    # TODO clean up pass fail  to use realm
     if not is_passing:
-        print("FAIL:  Some tests failed")
+        logger.info("FAIL:  Some tests failed")
     else:
-        print("PASS:  All tests pass")
-    print(staConnect.get_all_message())
+        logger.info("PASS:  All tests pass")
+    logger.info(staConnect.get_all_message())
 
     staConnect.pre_cleanup()
 
