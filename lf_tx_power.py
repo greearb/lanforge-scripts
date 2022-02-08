@@ -23,6 +23,9 @@ EPILOG = '''\
 # Verified 2/7/2022 : Run against already created station "--station sta0001"
 ./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8888 --scheme ssh --ap AP687D.B45C.1D1C --bandwidth "160" --channel "36" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy1 --slot 1 --ssid open-wlan --prompt "WLC2" --station sta0001 --ssidpw [BLANK] --security open   --wlan open-wlan --wlanID 1 --wlanSSID open-wlan --lfmgr 192.168.100.131 --lfresource 1 --vht160  --tag_policy "RM204-TB2"
 
+
+
+
 ##############################################################################
 Sample script to run create station, wlan and talk to ap 1/26/2021 run on 9800
 carriage returns specifically left out
@@ -747,6 +750,11 @@ def main():
 
         try:
             logg.info("9800 wifi_ctl_9800_3504.py: no_logging_console")
+            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} -d {dest} -u {user} -p {passwd} -a {ap} --band {band}"
+                        " --action 'no_logging_console' --series {series} --port {port} --prompt  {prompt}").format(
+                        scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
+                        series=args.series,port=args.port,prompt=args.prompt))
+            
             advanced = subprocess.run(["./wifi_ctl_9800_3504.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "no_logging_console", "--series", args.series, "--port", args.port, "--prompt", args.prompt], capture_output=True, check=True)
             pss = advanced.stdout.decode('utf-8', 'ignore')
@@ -763,6 +771,11 @@ def main():
 
         try:
             logg.info("9800 wifi_ctl_9800_3504.py: line_console_0")
+            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} -d {dest} -u {user} -p {passwd} -a {ap} --band {band}"
+                        " --action 'line_console_0' --series {series} --port {port} --prompt  {prompt}").format(
+                        scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
+                        series=args.series,port=args.port,prompt=args.prompt))
+
             advanced = subprocess.run(["./wifi_ctl_9800_3504.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                        "--action", "line_console_0", "--series", args.series, "--port", args.port, "--prompt", args.prompt], capture_output=True, check=True)
             pss = advanced.stdout.decode('utf-8', 'ignore')
@@ -773,6 +786,11 @@ def main():
 
     try:
         logg.info("9800/3504 wifi_ctl_9800_3504.py: summary")
+        logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} -d {dest} -u {user} -p {passwd} -a {ap} --band {band}"
+                    " --action 'summary' --series {series} --port {port} --prompt  {prompt}").format(
+                    scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
+                    series=args.series,port=args.port,prompt=args.prompt))
+
         advanced = subprocess.run(["./wifi_ctl_9800_3504.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                    "--action", "summary", "--series", args.series, "--port", args.port, "--prompt", args.prompt], capture_output=True, check=True)
         pss = advanced.stdout.decode('utf-8', 'ignore')
@@ -866,6 +884,11 @@ def main():
                     # Disable AP, apply settings, enable AP
                     try:
                         logg.info("3504/9800 wifi_ctl_9800_3504.py: disable AP {}".format(args.ap))
+                        logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} -d {dest} -u {user} -p {passwd} -a {ap} --band {band}"
+                            " --action 'disable' --series {series} --port {port} --prompt  {prompt}").format(
+                            scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
+                            series=args.series,port=args.port,prompt=args.prompt))
+
                         ctl_output = subprocess.run(["./wifi_ctl_9800_3504.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                                      "--action", "disable", "--series", args.series, "--port", args.port, "--prompt", args.prompt], capture_output=cap_ctl_out, check=True)
                         if cap_ctl_out:
@@ -887,6 +910,13 @@ def main():
 
                         try:
                             logg.info("9800 wifi_ctl_9800_3504.py: disable_wlan")
+                            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} -d {dest} -u {user} -p {passwd} -a {ap} --band {band}"
+                                " --action 'disable_wlan' --wlan {wlan} --wlanID {wlanID} --wlanSSID {wlanSSID}"
+                                " --series {series} --port {port} --prompt  {prompt}").format(
+                                scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
+                                wlan=args.wlan,wlanID=args.wlanID,wlanSSID=args.wlanID,
+                                series=args.series,port=args.port,prompt=args.prompt))
+
                             ctl_output = subprocess.run(["./wifi_ctl_9800_3504.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                                          "--action", "disable_wlan", "--wlan", args.wlan, "--wlanID", args.wlanID, "--wlanSSID", args.wlanSSID,
                                                          "--series", args.series, "--port", args.port, "--prompt", args.prompt], capture_output=cap_ctl_out, check=True)

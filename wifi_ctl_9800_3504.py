@@ -164,6 +164,7 @@ def main():
     console_handler = logging.StreamHandler()
     formatter = logging.Formatter(FORMAT)
     logg = logging.getLogger(__name__)
+    # TODO need to migrate to logging library
     logg.setLevel(logging.DEBUG)
     file_handler = None
     if (logfile is not None):
