@@ -94,10 +94,12 @@ class RvR(Realm):
         self.attenuator_profile = self.new_attenuator_profile()
         self.serial_number = serial_number
         self.indices = indices.split(",")
+        logger.info(self.indices)
         self.atten_idx = atten_idx
         self.atten_values = atten_val
 
     def initialize_attenuator(self):
+        '''
         self.attenuator_profile.atten_serno = self.serial_number
         # self.attenuator_profile.atten_idx = "all"
         self.attenuator_profile.atten_idx = self.atten_idx
@@ -109,6 +111,25 @@ class RvR(Realm):
         self.attenuator_profile.pulse_time_ms = None
         self.attenuator_profile.create()
         # self.attenuator_profile.show()
+        '''
+        self.atten_idx = self.atten_idx.split(",")
+        print(self.atten_idx)
+        print(self.atten_idx[0])
+        for atten_index in self.atten_idx:
+            print(atten_index)
+            atten_index = int(atten_index)
+            self.attenuator_profile.atten_serno = self.serial_number
+            # self.attenuator_profile.atten_idx = "all"
+            self.attenuator_profile.atten_idx = self.atten_idx[atten_index]
+            # self.attenuator_profile.atten_val = '0'
+            self.attenuator_profile.atten_val = str(self.atten_values)
+            self.attenuator_profile.mode = None
+            self.attenuator_profile.pulse_width_us5 = None
+            self.attenuator_profile.pulse_interval_ms = None,
+            self.attenuator_profile.pulse_count = None,
+            self.attenuator_profile.pulse_time_ms = None
+            self.attenuator_profile.create()
+            # self.attenuator_profile.show()
 
     def set_attenuation(self, value):
         self.attenuator_profile.atten_serno = self.serial_number
@@ -435,7 +456,7 @@ def main():
     Generic command layout:
     =====================================================================
     sudo python3 rvr_test.py --mgr localhost --mgr_port 8080 --upstream eth1 --num_stations 40 
-    --security wpa2 --ssid NETGEAR73-5G --password fancylotus986 --radio wiphy3 --atten_serno 2222 --atten_idx all
+    --security wpa2 --ssid <SSID> --password <PASS> --radio wiphy1 --atten_serno 2222 --atten_idx all
     --atten_val 10 --test_duration 1m --ap_model WAX610 --traffic 100''', allow_abbrev=False)
     optional = parser.add_argument_group('optional arguments')
     required = parser.add_argument_group('required arguments')
@@ -572,7 +593,7 @@ def main():
                   mode=args.mode,
                   ap_model=args.ap_model,
                   serial_number=args.atten_serno,
-                  # indices=args.atten_idx,
+                  indices=args.atten_idx,
                   atten_idx=args.atten_idx,
                   atten_val=args.atten_val,
                   traffic_type=args.traffic_type,
