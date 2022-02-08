@@ -116,7 +116,7 @@ def main():
     parser.add_argument("-t", "--tty", type=str, help="tty serial device")
     parser.add_argument("-l", "--log", type=str, help="logfile for messages, stdout means output to console", default="stdout")
     # parser.add_argument("-r", "--radio",   type=str, help="select radio")
-    parser.add_argument("-w", "--wlan", type=str, help="wlan name")
+    parser.add_argument("-w", "--wlan", "--wlan_name", type=str, dest="wlan",help="wlan open-wlan , wlan name", default="open-wlan1")
     parser.add_argument("-i", "--wlanID", type=str, help="wlan ID")
     parser.add_argument("--wlanSSID", type=str, help="wlan SSID")
     parser.add_argument("-a", "--ap", type=str, help="select AP", default="APA453.0E7B.CF9C")
@@ -125,6 +125,7 @@ def main():
     parser.add_argument("--tag_policy", type=str, help="--tag_policy default-tag-policy", default="default-tag-policy")
     # parser.add_argument("--tag_policy",     type=str, help="--tag_policy default-tag-policy", default="RM204-TB2")
     parser.add_argument("--policy_profile", type=str, help="--policy_profile default-policy-profile", default="default-policy-profile")
+    # parser.add_argument("--wlan_name", type=str, help="--wlan_name open-wlan", default="open-wlan")
 
     parser.add_argument("--action", type=str, help="perform action",
                         choices=["config", "debug_disable_all", "no_logging_console", "line_console_0", "country", "ap_country", "enable", "disable", "summary", "advanced",
@@ -1191,7 +1192,7 @@ def main():
         if i == 0:
             # RM204-TB2
             # for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile"]:
-            for command in ["wireless tag policy {policy_tag}".format(policy_tag=args.tag_policy), "wlan open-wlan policy {policy_profile}".format(policy_profile=args.policy_profile)]:
+            for command in ["wireless tag policy {policy_tag}".format(policy_tag=args.tag_policy), "wlan {wlan_name} policy {policy_profile}".format(wlan_name=args.wlan,policy_profile=args.policy_profile)]:
                 egg.sendline(command)
                 sleep(1)
                 j = egg.expect_exact([CCP_POLICY_TAG, pexpect.TIMEOUT], timeout=timeout)

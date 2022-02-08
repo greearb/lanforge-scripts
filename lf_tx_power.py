@@ -899,6 +899,11 @@ def main():
                             exit_test(workbook)
                         try:
                             logg.info("9800 wifi_ctl_9800_3504.py: disable_network_5ghz")
+                            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} -d {dest} -u {user} -p {passwd} -a {ap} --band {band}"
+                                        " --action 'disable_network_5ghz' --series {series} --port {port} --prompt  {prompt}").format(
+                                        scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
+                                        series=args.series,port=args.port,prompt=args.prompt))
+                                        
                             ctl_output = subprocess.run(["./wifi_ctl_9800_3504.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                                          "--action", "disable_network_5ghz", "--series", args.series, "--port", args.port, "--prompt", args.prompt], capture_output=cap_ctl_out, check=True)
                             if cap_ctl_out:
