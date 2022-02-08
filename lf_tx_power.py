@@ -1037,7 +1037,7 @@ def main():
                         try:
                             logg.info("9800/3504 wifi_ctl_9800_3504.py: bandwidth 20 prior to setting channel, some channels only support 20")
                             logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
-                                        " --action 'txPower' --value '20' --series {series} --port {port} --prompt  {prompt}").format(
+                                        " --action 'bandwidth' --value '20' --series {series} --port {port} --prompt  {prompt}").format(
                                         scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
                                         tx=tx,series=args.series,port=args.port,prompt=args.prompt))
 
