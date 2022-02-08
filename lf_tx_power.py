@@ -307,7 +307,7 @@ def main():
     global failed_low_threshold
 
     scheme = "ssh"
-
+    
     parser = argparse.ArgumentParser(description="Cisco TX Power report Script", epilog=EPILOG,
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-d", "--dest", type=str, help="address of the cisco controller", required=True)
@@ -750,7 +750,7 @@ def main():
 
         try:
             logg.info("9800 wifi_ctl_9800_3504.py: no_logging_console")
-            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} -d {dest} -u {user} -p {passwd} -a {ap} --band {band}"
+            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
                         " --action 'no_logging_console' --series {series} --port {port} --prompt  {prompt}").format(
                         scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
                         series=args.series,port=args.port,prompt=args.prompt))
@@ -771,7 +771,7 @@ def main():
 
         try:
             logg.info("9800 wifi_ctl_9800_3504.py: line_console_0")
-            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} -d {dest} -u {user} -p {passwd} -a {ap} --band {band}"
+            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
                         " --action 'line_console_0' --series {series} --port {port} --prompt  {prompt}").format(
                         scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
                         series=args.series,port=args.port,prompt=args.prompt))
@@ -786,7 +786,7 @@ def main():
 
     try:
         logg.info("9800/3504 wifi_ctl_9800_3504.py: summary")
-        logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} -d {dest} -u {user} -p {passwd} -a {ap} --band {band}"
+        logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
                     " --action 'summary' --series {series} --port {port} --prompt  {prompt}").format(
                     scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
                     series=args.series,port=args.port,prompt=args.prompt))
@@ -884,7 +884,7 @@ def main():
                     # Disable AP, apply settings, enable AP
                     try:
                         logg.info("3504/9800 wifi_ctl_9800_3504.py: disable AP {}".format(args.ap))
-                        logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} -d {dest} -u {user} -p {passwd} -a {ap} --band {band}"
+                        logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
                             " --action 'disable' --series {series} --port {port} --prompt  {prompt}").format(
                             scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
                             series=args.series,port=args.port,prompt=args.prompt))
@@ -910,7 +910,7 @@ def main():
 
                         try:
                             logg.info("9800 wifi_ctl_9800_3504.py: disable_wlan")
-                            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} -d {dest} -u {user} -p {passwd} -a {ap} --band {band}"
+                            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
                                 " --action 'disable_wlan' --wlan {wlan} --wlanID {wlanID} --wlanSSID {wlanSSID}"
                                 " --series {series} --port {port} --prompt  {prompt}").format(
                                 scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
@@ -929,7 +929,7 @@ def main():
                             exit_test(workbook)
                         try:
                             logg.info("9800 wifi_ctl_9800_3504.py: disable_network_5ghz")
-                            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} -d {dest} -u {user} -p {passwd} -a {ap} --band {band}"
+                            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
                                         " --action 'disable_network_5ghz' --series {series} --port {port} --prompt  {prompt}").format(
                                         scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
                                         series=args.series,port=args.port,prompt=args.prompt))
@@ -946,6 +946,11 @@ def main():
 
                         try:
                             logg.info("9800 wifi_ctl_9800_3504.py: disable_network_24ghz")
+                            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
+                                        " --action 'disable_network_24ghz' --series {series} --port {port} --prompt  {prompt}").format(
+                                        scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
+                                        series=args.series,port=args.port,prompt=args.prompt))
+
                             ctl_output = subprocess.run(["./wifi_ctl_9800_3504.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                                          "--action", "disable_network_24ghz", "--series", args.series, "--port", args.port, "--prompt", args.prompt], capture_output=cap_ctl_out, check=True)
                             if cap_ctl_out:
@@ -958,6 +963,11 @@ def main():
 
                         try:
                             logg.info("9800 wifi_ctl_9800_3504.py: manual")
+                            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
+                                        " --action 'manual' --series {series} --port {port} --prompt  {prompt}").format(
+                                        scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
+                                        series=args.series,port=args.port,prompt=args.prompt))
+
                             ctl_output = subprocess.run(["./wifi_ctl_9800_3504.py", "--scheme", scheme, "-d", args.dest, "-u", args.user, "-p", args.passwd, "-a", args.ap, "--band", band,
                                                          "--action", "manual", "--series", args.series, "--port", args.port, "--prompt", args.prompt], capture_output=cap_ctl_out, check=True)
                             if cap_ctl_out:
