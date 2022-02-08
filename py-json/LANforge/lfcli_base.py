@@ -715,9 +715,11 @@ class LFCliBase:
 
         # Optional Args
         optional.add_argument('--mgr',
+                              '--lfmgr',
                               default='localhost',
                               help='hostname for where LANforge GUI is running')
         optional.add_argument('--mgr_port',
+                              '--port',
                               default=8080,
                               help='port LANforge GUI HTTP service is running on')
         optional.add_argument('-u',
