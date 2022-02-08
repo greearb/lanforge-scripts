@@ -980,6 +980,11 @@ def main():
                     else:
                         try:
                             logg.info("3504 wifi_ctl_9800_3504.py: config 802.11a disable network")
+                            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
+                                        " --action 'cmd' --value 'config 802.11a disable network' --series {series} --port {port} --prompt  {prompt}").format(
+                                        scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
+                                        series=args.series,port=args.port,prompt=args.prompt))
+
                             ctl_output = subprocess.run(["./wifi_ctl_9800_3504.py", "--scheme", scheme, "--dest", args.dest, "--user", args.user, "--passwd", args.passwd, "--ap", args.ap, "--band", band,
                                                          "--action", "cmd", "--value", "config 802.11a disable network", "--series", args.series, "--port", args.port, "--prompt", args.prompt], capture_output=cap_ctl_out, check=True)
                             if cap_ctl_out:
@@ -992,6 +997,11 @@ def main():
 
                         try:
                             logg.info("3504 wifi_ctl_9800_3504.py: config 802.11b disable network")
+                            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
+                                        " --action 'cmd' --value 'config 802.11b disable network' --series {series} --port {port} --prompt  {prompt}").format(
+                                        scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
+                                        series=args.series,port=args.port,prompt=args.prompt))
+
                             ctl_output = subprocess.run(["./wifi_ctl_9800_3504.py", "--scheme", scheme, "--dest", args.dest, "--user", args.user, "--passwd", args.passwd, "--ap", args.ap, "--band", band,
                                                          "--action", "cmd", "--value", "config 802.11b disable network", "--series", args.series, "--port", args.port, "--prompt", args.prompt], capture_output=cap_ctl_out, check=True)
 
@@ -1008,6 +1018,11 @@ def main():
                         logg.info("9800/3504 test_parameters: set txPower: {}".format(tx))
                         try:
                             logg.info("9800/3504 wifi_ctl_9800_3504.py: txPower {}".format(tx))
+                            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
+                                        " --action 'txPower' --value {tx} --series {series} --port {port} --prompt  {prompt}").format(
+                                        scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
+                                        tx=tx,series=args.series,port=args.port,prompt=args.prompt))
+
                             ctl_output = subprocess.run(["./wifi_ctl_9800_3504.py", "--scheme", scheme, "--dest", args.dest, "--user", args.user, "--passwd", args.passwd, "--ap", args.ap, "--band", band,
                                                          "--action", "txPower", "--value", tx, "--series", args.series, "--port", args.port, "--prompt", args.prompt], capture_output=cap_ctl_out, check=True)
                             if cap_ctl_out:
@@ -1021,6 +1036,11 @@ def main():
                     if (bw != "NA"):
                         try:
                             logg.info("9800/3504 wifi_ctl_9800_3504.py: bandwidth 20 prior to setting channel, some channels only support 20")
+                            logg.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
+                                        " --action 'txPower' --value '20' --series {series} --port {port} --prompt  {prompt}").format(
+                                        scheme=scheme,dest=args.dest,user=args.user,passwd=args.passwd,ap=args.ap,band=args.band,
+                                        tx=tx,series=args.series,port=args.port,prompt=args.prompt))
+
                             ctl_output = subprocess.run(["./wifi_ctl_9800_3504.py", "--scheme", scheme, "--dest", args.dest, "--user", args.user, "--passwd", args.passwd, "--ap", args.ap, "--band", band,
                                                          "--action", "bandwidth", "--value", "20", "--series", args.series, "--port", args.port, "--prompt", args.prompt], capture_output=cap_ctl_out, check=True)
                             if cap_ctl_out:
