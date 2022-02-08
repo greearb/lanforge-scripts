@@ -86,7 +86,7 @@ class ProbePort(LFCliBase):
             logger.debug("tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
         else:
             self.tx_mhz = 20
-            logger.deub("HT: tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
+            logger.debug("HT: tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
         tx_mcs = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split(':')[1].strip('\t')
         if 'MCS' in tx_mcs:
             self.tx_mcs = int(tx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
