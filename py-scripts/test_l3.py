@@ -242,10 +242,10 @@ class L3VariableTime(Realm):
 
         # Full spread-sheet data
         if self.outfile is not None:
-            kpi = self.outfile[:-4]
-            kpi = kpi + "-kpi.csv"
-            self.csv_kpi_file = open(kpi, "w")
-            self.csv_kpi_writer = csv.writer(self.csv_kpi_file, delimiter=",")
+            results = self.outfile[:-4]
+            results = results + "-results.csv"
+            self.csv_results_file = open(results, "w")
+            self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
 
         # if it is a dataplane test the side_a is not None and an ethernet port
         # if side_a is None then side_a is radios
@@ -301,9 +301,9 @@ class L3VariableTime(Realm):
         self.udp_endps = None
         self.tcp_endps = None
 
-    def get_kpi_csv(self):
-        # logger.info("self.csv_kpi_file {}".format(self.csv_kpi_file.name))
-        return self.csv_kpi_file.name
+    def get_results_csv(self):
+        # print("self.csv_results_file {}".format(self.csv_results_file.name))
+        return self.csv_results_file.name
 
     # Find avg latency, jitter for connections using specified port.
     def get_endp_stats_for_port(self, eid_name, endps):
@@ -806,9 +806,8 @@ class L3VariableTime(Realm):
                         total_dl_ll_bps,
                         total_ul_ll_bps)
 
-                    # At end of test step, record KPI information. This is
-                    # different the kpi.csv
-                    self.record_kpi(
+                    # At end of test step, record results information. This is
+                    self.record_results(
                         len(temp_stations_list),
                         ul,
                         dl,
@@ -875,12 +874,6 @@ class L3VariableTime(Realm):
         writer = self.port_csv_writers[eid_name]
         writer.writerow(row)
         self.port_csv_files[eid_name].flush()
-
-    '''
-     _kpi_headers = ['Date','test-rig','test-tag','dut-hw-version','dut-sw-version','dut-model-num',
-                                'test-priority','test-id','short-description','pass/fail','numeric-score',
-                                'test details','Units','Graph-Group','Subtest-Pass','Subtest-Fail'],
-    '''
 
     def record_kpi_csv(
             self,
@@ -949,8 +942,8 @@ class L3VariableTime(Realm):
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
-    # This is not the kpi.csv
-    def record_kpi(
+    # Results csv
+    def record_results(
             self,
             sta_count,
             ul,
@@ -976,7 +969,7 @@ class L3VariableTime(Realm):
         for k in self.user_tags:
             tags[k[0]] = k[1]
 
-        if self.csv_kpi_file:
+        if self.csv_results_file:
             row = [self.epoch_time, self.time_stamp(), sta_count,
                    ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                    atten,
@@ -988,8 +981,8 @@ class L3VariableTime(Realm):
             for k in self.user_tags:
                 row.append(k[1])
 
-            self.csv_kpi_writer.writerow(row)
-            self.csv_kpi_file.flush()
+            self.csv_results_writer.writerow(row)
+            self.csv_results_file.flush()
 
     # Stop traffic and admin down stations.
     def stop(self):
@@ -1085,7 +1078,7 @@ class L3VariableTime(Realm):
 
         return csv_ul_rx_headers
 
-    def csv_generate_kpi_column_headers(self):
+    def csv_generate_results_column_headers(self):
         csv_rx_headers = [
             'Time epoch',
             'Time',
@@ -1112,10 +1105,10 @@ class L3VariableTime(Realm):
 
     # Write initial headers to csv file.
     def csv_add_column_headers(self):
-        if self.csv_kpi_file is not None:
-            self.csv_kpi_writer.writerow(
-                self.csv_generate_kpi_column_headers())
-            self.csv_kpi_file.flush()
+        if self.csv_results_file is not None:
+            self.csv_results_writer.writerow(
+                self.csv_generate_results_column_headers())
+            self.csv_results_file.flush()
 
     # Write initial headers to port csv file.
     def csv_add_port_column_headers(self, eid_name, headers):
@@ -1947,12 +1940,12 @@ Setting wifi_settings per radio
         logger.info("Full test passed, all connections increased rx bytes")
 
     # Results
-    csv_kpi_file = ip_var_test.get_kpi_csv()
-    report.set_title("Test L3 ")
+    csv_results_file = ip_var_test.get_results_csv()
+    report.set_title("L3 Longevity")
     report.build_banner()
     report.set_table_title("Test L3 Key Performance Indexes")
     report.build_table_title()
-    report.set_table_dataframe_from_csv(csv_kpi_file)
+    report.set_table_dataframe_from_csv(csv_results_file)
     report.build_table()
     report.write_html_with_timestamp()
     report.write_index_html()
