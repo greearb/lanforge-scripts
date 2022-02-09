@@ -14,6 +14,18 @@ import time
 import logging
 import re
 import sys
+
+import importlib
+import os
+
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../")))
+
+# TODO change the name from logg to logger 
+# to match consistency with other files.
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
+
 EPILOG = '''\
 
 ##############################################################################################
@@ -367,6 +379,10 @@ def main():
     parser.add_argument("--tag_policy", type=str, help="--tag_policy default-tag-policy", default="default-tag-policy")
     # parser.add_argument("--tag_policy",     type=str, help="--tag_policy default-tag-policy", default="RM204-TB2")
     parser.add_argument("--policy_profile", type=str, help="--policy_profile default-policy-profile", default="default-policy-profile")
+    parser.add_argument(
+        "--lf_logger_config_json",
+        help="--lf_logger_config_json <json file> , json configuration of logger")
+
 
     # current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]
     # print(current_time)
@@ -459,10 +475,19 @@ def main():
         usage()
         exit(2)
 
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
     console_handler = logging.StreamHandler()
     formatter = logging.Formatter(FORMAT)
+
+    # TODO refactor to be logger for consistency
     logg = logging.getLogger(__name__)
-    logg.setLevel(logging.DEBUG)
+    # logg.setLevel(logging.DEBUG)
 
     file_handler = None
     # Setting up log file if specified
