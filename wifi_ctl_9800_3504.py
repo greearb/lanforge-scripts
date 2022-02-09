@@ -52,6 +52,17 @@ import time
 from time import sleep
 import argparse
 import pexpect
+import importlib
+import os
+
+
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../")))
+
+# TODO change the name from logg to logger 
+# to match consistency with other files.
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
 
 default_host = "localhost"
 default_ports = {
@@ -88,7 +99,7 @@ def usage():
 
 # see https://stackoverflow.com/a/13306095/11014343
 
-
+# Used by pexpect 
 class FileAdapter(object):
     def __init__(self, logger):
         self.logger = logger
@@ -134,6 +145,11 @@ def main():
                                  "disable_network_5ghz", "disable_network_24ghz", "enable_network_5ghz", "enable_network_24ghz",
                                  "wireless_tag_policy", "no_wlan_wireless_tag_policy", "delete_wlan"])
     parser.add_argument("--value", type=str, help="set value")
+    # logging configuration
+    parser.add_argument(
+        "--lf_logger_config_json",
+        help="--lf_logger_config_json <json file> , json configuration of logger")
+
 
     args = None
     try:
@@ -155,6 +171,14 @@ def main():
         logging.exception(e)
         exit(2)
 
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
+
     if args.series == "9800":
         SEND_MORE = ' '
     else:
@@ -164,17 +188,20 @@ def main():
     console_handler = logging.StreamHandler()
     formatter = logging.Formatter(FORMAT)
     logg = logging.getLogger(__name__)
-    # TODO need to migrate to logging library
-    logg.setLevel(logging.DEBUG)
+    # TODO Refactor for script to work must have output go to console_handler
+    # This does work since it is a subordinate to the root logger
+    # logg.setLevel(logging.DEBUG)
+    # WARNING : pexpect uses the expect uses the fileadapter 
+    # TODO refactor pexpect
     file_handler = None
     if (logfile is not None):
-        if (logfile != "stdout"):
-            file_handler = logging.FileHandler(logfile, "w")
-            file_handler.setLevel(logging.DEBUG)
-            file_handler.setFormatter(formatter)
-            logg.addHandler(file_handler)
-            logging.basicConfig(format=FORMAT, handlers=[file_handler])
-        else:
+       if (logfile != "stdout"):
+           file_handler = logging.FileHandler(logfile, "w")
+           file_handler.setLevel(logging.DEBUG)
+           file_handler.setFormatter(formatter)
+           logg.addHandler(file_handler)
+           logging.basicConfig(format=FORMAT, handlers=[file_handler])
+       else:
             # stdout logging
             logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
