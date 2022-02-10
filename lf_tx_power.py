@@ -379,6 +379,7 @@ def main():
     parser.add_argument("--tag_policy", type=str, help="--tag_policy default-tag-policy", default="default-tag-policy")
     # parser.add_argument("--tag_policy",     type=str, help="--tag_policy default-tag-policy", default="RM204-TB2")
     parser.add_argument("--policy_profile", type=str, help="--policy_profile default-policy-profile", default="default-policy-profile")
+    parser.add_argument("--testbed_id", type=str, help="--testbed_id", default="")
     parser.add_argument(
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
@@ -628,13 +629,14 @@ def main():
     row = 0
     worksheet.write(row, col, 'Regulatory\nDomain', dblue_bold)
     col += 1
-    worksheet.set_column(col, col, 10)  # Set width
-    worksheet.write(row, col, 'Controller', dblue_bold)
+    worksheet.set_column(col, col, 16)  # Set width
+    worksheet.write(row, col, 'Controller\n{testbed_id}'.format(testbed_id=args.testbed_id), dblue_bold)
     col += 1
     worksheet.set_column(col, col, 12)  # Set width
     worksheet.write(row, col, 'Controller\nChannel', dblue_bold)
     col += 1
-    worksheet.write(row, col, 'AP\nChannel', dblue_bold)
+    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.write(row, col, 'AP\n{ap}\nChannel'.format(ap=args.ap), dblue_bold)
     col += 1
     worksheet.write(row, col, 'NSS', dblue_bold)
     col += 1
