@@ -185,6 +185,8 @@ class create_controller_series_object:
         logger.info("show_wlan_summary")
         self.action = "show_wlan_summary"
         self.send_command()
+        summary = self.send_command()
+        return summary
 
     def show_ap_dot11_5gz_summary(self):
         logger.info("show_ap_dot11_5gz_summary")
