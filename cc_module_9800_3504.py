@@ -152,7 +152,8 @@ class create_controller_series_object:
 
         logger.info(self.command)
         # for now do not capture all the output,  have the logger to the work
-        advanced = subprocess.run(self.command, capture_output=False, check=True)
+        advanced = subprocess.run(self.command, capture_output=True, check=True)
+        return advanced.stdout
 
     def show_ap_config_slots(self):
         logger.info("show ap config slots")
