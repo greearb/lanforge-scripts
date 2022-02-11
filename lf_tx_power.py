@@ -632,7 +632,7 @@ def main():
     worksheet.set_column(col, col, 16)  # Set width
     worksheet.write(row, col, 'Controller\n{testbed_id}'.format(testbed_id=args.testbed_id), dblue_bold)
     col += 1
-    worksheet.set_column(col, col, 12)  # Set width
+    worksheet.set_column(col, col, 20)  # Set width
     worksheet.write(row, col, 'Controller\nChannel', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
