@@ -38,7 +38,9 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../")))
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
-# 
+#
+
+
 class create_controller_series_object:
     def __init__(self,
                  scheme=None,
@@ -97,6 +99,8 @@ class create_controller_series_object:
             self.timeout = timeout
 
         self.bandwidth = None
+        self.wlan = None
+        self.wlanID = None
         self.wlanSSID = None
         self.wlanpw = None
         self.tag_policy = None
@@ -124,75 +128,266 @@ class create_controller_series_object:
             logger.critical("band needs to be set 24g 5g or 6g")
             raise ValueError("band needs to be set 24g 5g or 6g")
 
+    # TODO consolidate the command formats
     def send_command(self):
         # for backward compatibility wifi_ctl_9800_3504 expects 'a' for 5g and 'b' for 24b
         self.convert_band()
+        logger.info("action {action}".format(action=self.action))
 
         # Generate command
-        if self.action == 'cmd':
-            logger.debug("action {action}".format(action=self.action))
-            logger.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
-                         " --action {action} --value {value} --series {series} --port {port} --prompt  {prompt}").format(
-                scheme=self.scheme, dest=self.dest, user=self.user, passwd=self.passwd, ap=self.ap, band=self.band,
-                action=self.action, value=self.value, series=self.series, port=self.port, prompt=self.prompt))
+        if self.action in ['cmd', 'txPower', 'channel', 'bandwidth']:
 
             self.command = ["./wifi_ctl_9800_3504.py", "--scheme", self.scheme, "--dest", self.dest,
                             "--user", self.user, "--passwd", self.passwd, "--ap", self.ap, "--band", self.band,
                             "--action", self.action, "--value", self.value, "--series", self.series, "--port", self.port, "--prompt", self.prompt]
-        else:
-            logger.debug("action {action}".format(action=self.action))
-            logger.info(("./wifi_ctl_9800_3504.py --scheme {scheme} --dest {dest} --user {user} --passwd {passwd} --ap {ap} --band {band}"
-                         " --action {action} --series {series} --port {port} --prompt  {prompt}").format(
-                scheme=self.scheme, dest=self.dest, user=self.user, passwd=self.passwd, ap=self.ap, band=self.band,
-                action=self.action, series=self.series, port=self.port, prompt=self.prompt))
+
+        elif self.action in ["disable_wlan", "delete_wlan", "enable_wlan", "create_wlan"]:
+
+            self.command = ["./wifi_ctl_9800_3504.py",
+                            "--scheme", self.scheme, "--dest", self.dest,
+                            "--user", self.user, "--passwd", self.passwd, "--ap", self.ap, "--band", self.band,
+                            "--action", self.action, "--wlan", self.wlan, "--wlanID", self.wlanID, "--wlanSSID", self.wlanSSID,
+                            "--series", self.series, "--port", self.port, "--prompt", self.prompt]
+
+        elif self.action in ["wireless_tag_policy"]:
+
+            self.command = ["./wifi_ctl_9800_3504.py",
+                            "--scheme", self.scheme, "--dest", self.dest,
+                            "--user", self.user, "--passwd", self.passwd,
+                            "--ap", self.ap, "--band", self.band,
+                            "--action", self.action,
+                            "--tag_policy", self.tag_policy, "--policy_profile", self.profile_policy,
+                            "--series", self.series, "--port", self.port, "--prompt", self.prompt]
+
+        # possible need to look for exact command
+        elif self.action in ["summary", "no_logging_console", "line_console_0", "show_wlan_summary",
+                             "advanced", "disable", "disable_nework_5ghz", "disable_network_24ghz",
+                             "mamual", "enable_network_5ghz", "enable_network_24ghz", "enable"]:
 
             self.command = ["./wifi_ctl_9800_3504.py", "--scheme", self.scheme, "--dest", self.dest,
                             "--user", self.user, "--passwd", self.passwd, "--ap", self.ap, "--band", self.band,
                             "--action", self.action, "--series", self.series, "--port", self.port, "--prompt", self.prompt]
 
+        else:
+            logger.Critical("action {action} not supported".format(action=self.action))
+
         logger.info(self.command)
-        # for now do not capture all the output,  have the logger to the work
+        # capture output needs to be read
         advanced = subprocess.run(self.command, capture_output=True, check=True)
+        logger.info(advanced.stdout)
         return advanced.stdout
 
     def show_ap_config_slots(self):
         logger.info("show ap config slots")
         self.action = "cmd"
         self.value = "show ap config slots"
-        self.send_command()
+        summary = self.send_command()
+        return summary
 
     def show_ap_summary(self):
         logger.info("show ap summary")
         self.action = "summary"
-        self.send_command()
+        summary = self.send_command()
+        return summary
+
+    # NOTE: need to do _no_logging_console and line_console_0 at the beginning of every session
+    # to avoid unexpected log messages showing up
 
     # this command will disable debug logging to the terminal which causes issues with pexpect
     def no_logging_console(self):
         logger.info("no_logging_console")
         self.action = "no_logging_console"
-        self.send_command()
+        summary = self.send_command()
+        return summary
 
-    # The use of "line console 0" command is to connect a switch/router through medium console.
-    # If there is only one console port, you can only choose "line console 0".
-    # However if you have more than the number goes as 1,2,3,4 ... You can set different or same password to all your console ports.
     # Note: needed to be set for tx power script
     def line_console_0(self):
         logger.info("line_console_0")
         self.action = "line_console_0"
-        self.send_command()
+        summary = self.send_command()
+        return summary
 
     def show_wlan_summary(self):
         logger.info("show_wlan_summary")
         self.action = "show_wlan_summary"
-        self.send_command()
         summary = self.send_command()
         return summary
 
     def show_ap_dot11_5gz_summary(self):
         logger.info("show_ap_dot11_5gz_summary")
-        # TODO advanced was for legacy to 3504, refactor
+        self.band = '5g'
         self.action = "advanced"
-        self.send_command()
+        summary = self.send_command()
+        return summary
+
+    def show_ap_dot11_24gz_summary(self):
+        logger.info("show_ap_dot11_24gz_summary")
+        self.band = '24g'
+        self.action = "advanced"
+        summary = self.send_command()
+        return summary
+
+    def show_ap_dot11_5gz_shutdown(self):
+        logger.info("ap name {name} dot11 5ghz shutdown")
+        self.band = '5g'
+        self.action = "disable"
+        summary = self.send_command()
+        return summary
+
+    def show_ap_dot11_24gz_shutdown(self):
+        logger.info("ap name {name} dot11 5ghz shutdown")
+        self.band = '24g'
+        self.action = "disable"
+        summary = self.send_command()
+        return summary
+
+    def wlan_shutdown(self):
+        logger.info("wlan {wlan} shutdown wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        self.action = "disable_wlan"
+        summary = self.send_command()
+        return summary
+
+    def ap_dot11_5ghz_shutdown(self):
+        logger.info("ap dot11 5ghz shutdown")
+        self.action = "disable_network_5ghz"
+        summary = self.send_command()
+        return summary
+
+    def ap_dot11_24ghz_shutdown(self):
+        logger.info("wlan {wlan} shutdown".format(wlan=self.wlan))
+        self.action = "disable_network_24ghz"
+        summary = self.send_command()
+        return summary
+
+    def ap_dot11_5ghz_radio_role_manual_client_serving(self):
+        logger.info("ap name {ap_name} dot11 5ghz radio role manual client-serving".format(ap_name=self.ap_name))
+        self.band = '5g'
+        self.action = "manual"
+        summary = self.send_command()
+        return summary
+
+    def ap_dot11_24ghz_radio_role_manual_client_serving(self):
+        logger.info("ap name {ap_name} dot11 24ghz radio role manual client-serving".format(ap_name=self.ap_name))
+        self.band = '24g'
+        self.action = "manual"
+        summary = self.send_command()
+        return summary
+
+    def config_dot11_5ghz_disable_network(self):
+        logger.info("config_dot11_5ghz_disable_network")
+        self.action = "cmd"
+        self.value = "config 802.11a disable network"
+        summary = self.send_command()
+        return summary
+
+    def config_dot11_24ghz_disable_network(self):
+        logger.info("config_dot11_24ghz_disable_network")
+        self.action = "cmd"
+        self.value = "config 802.11b disable network"
+        summary = self.send_command()
+        return summary
+
+    # txPower
+    def config_dot11_5ghz_tx_power(self):
+        logger.info("config_dot11_5ghz_tx_power")
+        self.band = '5g'
+        self.action = "txPower"
+        self.value = "{tx_power}".format(tx_power=self.tx_power)
+        summary = self.send_command()
+        return summary
+
+    def config_dot11_24ghz_tx_power(self):
+        logger.info("config_dot11_5ghz_tx_power")
+        self.band = '24g'
+        self.action = "txPower"
+        self.value = "{tx_power}".format(tx_power=self.tx_power)
+        summary = self.send_command()
+        return summary
+
+    # set channel
+    def config_dot11_5ghz_channel(self):
+        logger.info("config_dot11_5ghz_channel {channel}".format(channel=self.channel))
+        self.band = '5g'
+        self.action = "channel"
+        self.value = "{channel}".format(channel=self.channel)
+        summary = self.send_command()
+        return summary
+
+    def config_dot11_24ghz_channel(self):
+        logger.info("config_dot11_24ghz_channel {channel}".format(channel=self.channel))
+        self.action = "channel"
+        self.value = "{channel}".format(channel=self.channel)
+        summary = self.send_command()
+        return summary
+
+    # set bandwidth
+    def config_dot11_5ghz_channel_width(self):
+        logger.info("config_dot11_5ghz_channel width {bandwidth}".format(bandwidth=self.bandwidth))
+        self.band = '5g'
+        self.action = "bandwidth"
+        self.value = "{bandwidth}".format(bandwidth=self.bandwidth)
+        summary = self.send_command()
+        return summary
+
+    # delete_wlan (may need to get the wlan from the summary)
+    def config_no_wlan(self):
+        logger.info("config_no_wlan {wlan}".format(wlan=self.wlan))
+        self.action = "delete_wlan"
+        summary = self.send_command()
+        return summary
+
+    # configure open wlan
+    def config_wlan_open(self):
+        logger.info("config_wlan wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        self.action = "create_wlan"
+        summary = self.send_command()
+        return summary
+
+    # config wireless tag policy and policy_profile
+    # this may need to be split up
+    # WCL1 : RM204-TB1 , WLC2 : RM204-TB2
+    def config_wireless_tag_policy_and_policy_profile(self):
+        logger.info("config_wireless_tag_policy: Profile name {wlan} tag policy {tag_policy} ".format(wlan=self.wlan, tag_policy=self.tag_policy))
+        self.action = "wireless_tag_policy"
+        summary = self.send_command()
+        return summary
+
+    # enable_wlan
+    def config_enable_wlan_send_no_shutdown(self):
+        logger.info("config_enable_wlan_send_no_shutdown: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        self.action = "enable_wlan"
+        summary = self.send_command()
+        return summary
+
+    # enable_network_5ghz
+    def config_no_ap_dot11_5ghz_shutdown(self):
+        logger.info("config_no_ap_dot11_5ghz_shutdown: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        self.action = "enable_network_5ghz"
+        summary = self.send_command()
+        return summary
+
+    # enable_network_24ghz
+    def config_no_ap_dot11_24ghz_shutdown(self):
+        logger.info("config_no_ap_dot11_24ghz_shutdown: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        self.action = "enable_network_24ghz"
+        summary = self.send_command()
+        return summary
+
+    # enable ap 5ghz
+    def config_ap_no_dot11_5ghz_shutdown(self):
+        logger.info("ap name %s dot11 5ghz shutdown {ap}".format(ap=self.ap))
+        self.band = '5g'
+        self.action = "enable"
+        summary = self.send_command()
+        return summary
+
+    # enable ap 24ghz
+    def config_ap_no_dot11_24ghz_shutdown(self):
+        logger.info("ap name %s dot11 5ghz shutdown {ap}".format(ap=self.ap))
+        self.band = '24g'
+        self.action = "enable"
+        summary = self.send_command()
+        return summary
 
 
 # unit test for 9800 3504 controller

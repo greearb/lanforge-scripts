@@ -941,7 +941,7 @@ def main():
                                        " --action 'disable_wlan' --wlan {wlan} --wlanID {wlanID} --wlanSSID {wlanSSID}"
                                        " --series {series} --port {port} --prompt  {prompt}").format(
                                 scheme=scheme, dest=args.dest, user=args.user, passwd=args.passwd, ap=args.ap, band=args.band,
-                                wlan=args.wlan, wlanID=args.wlanID, wlanSSID=args.wlanID,
+                                wlan=args.wlan, wlanID=args.wlanID, wlanSSID=args.wlanSSID,
                                 series=args.series, port=args.port, prompt=args.prompt))
 
                             ctl_output = subprocess.run(["./wifi_ctl_9800_3504.py", "--scheme", scheme, "--dest", args.dest, "--user", args.user, "--passwd", args.passwd, "--ap", args.ap, "--band", band,
