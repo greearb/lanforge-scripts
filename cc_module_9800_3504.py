@@ -139,7 +139,7 @@ class create_controller_series_object:
                             "--user", self.user, "--passwd", self.passwd, "--ap", self.ap, "--band", self.band,
                             "--action", self.action, "--value", self.value, "--series", self.series, "--port", self.port, "--prompt", self.prompt]
 
-        elif self.action in ["disable_wlan", "delete_wlan", "enable_wlan", "create_wlan", "create_wlan_wpa2"]:
+        elif self.action in ["disable_wlan", "delete_wlan", "enable_wlan", "create_wlan", "create_wlan_wpa2", "create_wlan_wpa3"]:
 
             self.command = ["./wifi_ctl_9800_3504.py",
                             "--scheme", self.scheme, "--dest", self.dest,
@@ -172,10 +172,12 @@ class create_controller_series_object:
 
         # logger.info(pformat(self.command))
         logger.info(self.command)
-        # capture output needs to be read
+        # TODO change the subprocess.run to pOpen 
+        # capture output needs to be read , also need to catch exceptions
         # advanced = subprocess.run(self.command, capture_output=False, check=True)
         advanced = subprocess.run(self.command, capture_output=True, check=True)
         logger.info(advanced.stdout.decode('utf-8', 'ignore'))
+        logger.info(advanced.stderr.decode('utf-8', 'ignore'))
         return advanced.stdout
 
     def show_ap_config_slots(self):
@@ -289,6 +291,14 @@ class create_controller_series_object:
         return summary
 
     # txPower
+    def config_dot11_6ghz_tx_power(self):
+        logger.info("config_dot11_6ghz_tx_power")
+        self.band = '6g'
+        self.action = "txPower"
+        self.value = "{tx_power}".format(tx_power=self.tx_power)
+        summary = self.send_command()
+        return summary
+
     def config_dot11_5ghz_tx_power(self):
         logger.info("config_dot11_5ghz_tx_power")
         self.band = '5g'
@@ -306,6 +316,14 @@ class create_controller_series_object:
         return summary
 
     # set channel
+    def config_dot11_6ghz_channel(self):
+        logger.info("config_dot11_5ghz_channel {channel}".format(channel=self.channel))
+        self.band = '6g'
+        self.action = "channel"
+        self.value = "{channel}".format(channel=self.channel)
+        summary = self.send_command()
+        return summary
+
     def config_dot11_5ghz_channel(self):
         logger.info("config_dot11_5ghz_channel {channel}".format(channel=self.channel))
         self.band = '5g'
@@ -322,6 +340,14 @@ class create_controller_series_object:
         return summary
 
     # set bandwidth
+    def config_dot11_6ghz_channel_width(self):
+        logger.info("config_dot11_6ghz_channel width {bandwidth}".format(bandwidth=self.bandwidth))
+        self.band = '6g'
+        self.action = "bandwidth"
+        self.value = "{bandwidth}".format(bandwidth=self.bandwidth)
+        summary = self.send_command()
+        return summary
+
     def config_dot11_5ghz_channel_width(self):
         logger.info("config_dot11_5ghz_channel width {bandwidth}".format(bandwidth=self.bandwidth))
         self.band = '5g'
@@ -330,30 +356,87 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    def config_dot11_24ghz_channel_width(self):
+        logger.info("config_dot11_24ghz_channel width {bandwidth}".format(bandwidth=self.bandwidth))
+        self.band = '24g'
+        self.action = "bandwidth"
+        self.value = "{bandwidth}".format(bandwidth=self.bandwidth)
+        summary = self.send_command()
+        return summary
+
     # delete_wlan (may need to get the wlan from the summary)
+
     def config_no_wlan(self):
         logger.info("config_no_wlan {wlan}".format(wlan=self.wlan))
         self.action = "delete_wlan"
         summary = self.send_command()
         return summary
 
-    # configure open wlan
+    # configure open wlan , commands sent
+    #    for command in [
+    #        "no security ft",
+    #        "no security ft adaptive",
+    #        "no security wpa",
+    #        "no security wpa wpa2",
+    #        "no security wpa wpa1",
+    #        "no security wpa wpa2 ciphers aes"
+    #        "no security dot1x authentication-list",
+    #        "no security wpa akm dot1x",
+    #        "no shutdown"]:
+
     def config_wlan_open(self):
         logger.info("config_wlan wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
         self.action = "create_wlan"
         summary = self.send_command()
         return summary
 
-    # configure wpa2 wlan wpa2
+    # TODO ability to pass in psk
+    # configuration for wpa2, commands
+    #    for command in [
+    #        "assisted-roaming dual-list",
+    #        "bss-transition dual-list",
+    #        "radio policy dot11 24ghz",
+    #        "radio policy dot11 5ghz",
+    #        "security wpa psk set-key ascii 0 hello123",
+    #        "no security wpa akm dot1x",
+    #        "security wpa akm psk"
+    #        "no shutdown"]:
+    # configure wpa2
     def config_wlan_wpa2(self):
         logger.info("config_wlan_wpa2 wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
         self.action = "create_wlan_wpa2"
         summary = self.send_command()
         return summary
 
+    # configuration for wpa3, commands
+    #    for command in [
+    #        "assisted-roaming dual-list"
+    #        "radio policy dot11 6ghz"
+    #        "no security ft adaptive"
+    #        "no security wpa wpa2"
+    #        "security wpa psk set-key ascii 0 hello123"
+    #        "no security wpa akm dot1x"
+    #        "security wpa akm sae"
+    #        "security wpa akm sae pwe h2e"
+    #        "security wpa wpa3"
+    #        "security pmf mandatory"
+    #        "no shutdown"]:
+
+    # configure wpa3
+    # TODO pass in
+
+    def config_wlan_wpa3(self):
+        logger.info("config_wlan_wpa3 wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        self.action = "create_wlan_wpa3"
+        summary = self.send_command()
+        return summary
+
     # config wireless tag policy and policy_profile
     # this may need to be split up
     # WCL1 : RM204-TB1 , WLC2 : RM204-TB2
+    # policy_profile = 'default-policy-profile'
+    # TODO remove hardcoded 'default-policy-profile' make configurable
+
     def config_wireless_tag_policy_and_policy_profile(self):
         logger.info("config_wireless_tag_policy: Profile name {wlan} tag policy {tag_policy} ".format(wlan=self.wlan, tag_policy=self.tag_policy))
         self.action = "wireless_tag_policy"
@@ -480,9 +563,9 @@ INCLUDE_IN_README
     cs.show_ap_dot11_5gz_shutdown()
     # cs.show_ap_dot11_24gz_shutdown() not in txpower
     # This needs to be here to disable and delete
-    cs.wlan = 'test wpa2'
-    cs.wlanID = '2'
-    cs.wlanSSID = 'hello123'
+    cs.wlan = 'wpa2_wlan_4'
+    cs.wlanID = '4'
+    cs.wlanSSID = 'wpa2_wlan_4'
 
     # disable_wlan
     cs.wlan_shutdown()
@@ -494,12 +577,15 @@ INCLUDE_IN_README
     cs.ap_dot11_5ghz_radio_role_manual_client_serving()
     # cs.ap_dot11_24ghz_radio_role_manual_client_serving()
     cs.tx_power = '1'
+
+    # Configuration for 5g
+
     # txPower
     cs.config_dot11_5ghz_tx_power()
     cs.bandwidth = '20'
     # bandwidth (to set to 20 if channel change does not support)
     cs.config_dot11_5ghz_channel_width()
-    cs.channel = '36'
+    cs.channel = '100'
     # channel
     cs.config_dot11_5ghz_channel()
     cs.bandwidth = '40'
@@ -508,12 +594,27 @@ INCLUDE_IN_README
     # show_wlan_summary
     cs.show_wlan_summary()
 
-    # delete_wlan 
+    # Configuration for 6g
+    # txPower
+    # cs.config_dot11_6ghz_tx_power()
+    # cs.bandwidth = '20'
+    # # bandwidth (to set to 20 if channel change does not support)
+    # cs.config_dot11_6ghz_channel_width()
+    # cs.channel = '36'
+    # # channel
+    # cs.config_dot11_6ghz_channel()
+    # cs.bandwidth = '40'
+    # # bandwidth
+    # cs.config_dot11_6ghz_channel_width()
+    # # show_wlan_summary
+    # cs.show_wlan_summary()
+
+    # delete_wlan
     # TODO (there were two in tx_power the logs)
     # need to check if wlan present
-    cs.wlan = 'test wpa2'
-    cs.wlanID = '2'
-    cs.wlanSSID = 'hello123'
+    cs.wlan = 'wpa2_wlan_3'
+    cs.wlanID = '3'
+    cs.wlanSSID = 'wpa2_wlan_3'
 
     # delete wlan
     cs.config_no_wlan()
@@ -523,21 +624,24 @@ INCLUDE_IN_README
     # cs.wlanID = '3'
     # cs.wlanSSID = 'open-wlan_3'
 
-
     # create_wlan  open
     # cs.wlan = 'open-wlan'
     # cs.wlanID = '1'
     # cs.wlanSSID = 'open-wlan'
-
     # cs.config_wlan_open()
 
-    # Create wpa2
+    # create_wlan_wpa2
     cs.wlan = 'wpa2_wlan_3'
     cs.wlanID = '3'
     cs.wlanSSID = 'wpa2_wlan_3'
-
-    # create_wlan_wpa2
     cs.config_wlan_wpa2()
+    
+    # # create_wlan_wpa3
+    # cs.wlan = 'wpa3_wlan_4'
+    # cs.wlanID = '4'
+    # cs.wlanSSID = 'wpa3_wlan_4'
+    # cs.config_wlan_wpa3()
+
     # wireless_tag_policy
     cs.tag_policy = 'RM204-TB1'
     cs.policy_profile = 'default-policy-profile'
