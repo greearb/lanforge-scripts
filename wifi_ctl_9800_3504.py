@@ -141,7 +141,7 @@ def main():
     parser.add_argument("--action", type=str, help="perform action",
                         choices=["config", "debug_disable_all", "no_logging_console", "line_console_0", "country", "ap_country", "enable", "disable", "summary", "advanced",
                                  "cmd", "txPower", "bandwidth", "manual", "auto", "no_wlan", "show_wlan_summary",
-                                 "ap_channel", "auto_rf", "channel", "show", "create_wlan", "enable_wlan", "disable_wlan", "wlan_qos",
+                                 "ap_channel", "auto_rf", "channel", "show", "create_wlan", "create_wlan_wpa2", "enable_wlan", "disable_wlan", "wlan_qos",
                                  "disable_network_5ghz", "disable_network_24ghz", "enable_network_5ghz", "enable_network_24ghz",
                                  "wireless_tag_policy", "no_wlan_wireless_tag_policy", "delete_wlan"])
     parser.add_argument("--value", type=str, help="set value")
@@ -1278,6 +1278,51 @@ def main():
         print("command show wlan summary ")
         command = "show wlan summary"
 
+    if (args.action == "create_wlan_wpa2" and ((args.wlanID is None) or (args.wlan is None) or (args.wlanSSID is None))):
+        raise Exception("create_wlan_wpa2 wlanID, wlan, wlanSSID are required an")
+    if (args.action == "create_wlan_wpa2"):
+        logg.info("create_wlan_wpa2 wlan {} wlanID {} wlanSSID {}".format(args.wlan, args.wlanID, args.wlanSSID))
+        if args.series == "9800":
+            egg.sendline("config t")
+            sleep(0.4)
+            i = egg.expect_exact(["(config)#", pexpect.TIMEOUT], timeout=timeout)
+            if i == 0:
+                logg.info("elevated to (config)#")
+                # for create wlan <name> <ID> <ssid>
+                command = "wlan {} {} {}".format(args.wlan, args.wlanID, args.wlanSSID)
+                logg.info("wpa2 network command {}".format(command))
+                egg.sendline(command)
+                sleep(0.4)
+                j = egg.expect_exact([CCP_CONFIG_WLAN, pexpect.TIMEOUT], timeout=timeout)
+                if j == 0:
+                    # previous commands for command in ["shutdown","no security ft","no security wpa","no security wpa wpa2","no security wpa wpa2 ciphers aes",
+                    #      "no security wpa akm dot1x","no shutdown"]:
+
+                    # 2/12/2022 - Cisco suggestion
+                    for command in [
+                        "assisted-roaming dual-list",
+                        "bss-transition dual-list",
+                        "radio policy dot11 24ghz",
+                        "radio policy dot11 5ghz",
+                        "security wpa psk set-key ascii 0 12345678",
+                        "no security wpa akm dot1x",
+                        "security wpa akm psk"
+                        "no shutdown"]:
+                        egg.sendline(command)
+                        sleep(1)
+                        k = egg.expect_exact([CCP_CONFIG_WLAN, pexpect.TIMEOUT], timeout=timeout)
+                        if k == 0:
+                            logg.info("command sent: {}".format(command))
+                        if k == 1:
+                            logg.info("command time out: {}".format(command))
+                if j == 1:
+                    logg.info("did not get the (config-wlan)# prompt")
+            if i == 0:
+                logg.info("did not get the (config)# prompt")
+        else:
+            command = "config wlan create {} {} {}".format(args.wlanID, args.wlan, args.wlanSSID)
+
+
     if (args.action == "create_wlan" and ((args.wlanID is None) or (args.wlan is None) or (args.wlanSSID is None))):
         raise Exception("wlanID, wlan, wlanSSID are required an")
     if (args.action == "create_wlan"):
@@ -1309,7 +1354,7 @@ def main():
                         "no security wpa wpa2 ciphers aes"
                         "no security dot1x authentication-list",
                         "no security wpa akm dot1x",
-                            "no shutdown"]:
+                        "no shutdown"]:
                         egg.sendline(command)
                         sleep(1)
                         k = egg.expect_exact([CCP_CONFIG_WLAN, pexpect.TIMEOUT], timeout=timeout)

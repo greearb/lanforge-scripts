@@ -139,7 +139,7 @@ class create_controller_series_object:
                             "--user", self.user, "--passwd", self.passwd, "--ap", self.ap, "--band", self.band,
                             "--action", self.action, "--value", self.value, "--series", self.series, "--port", self.port, "--prompt", self.prompt]
 
-        elif self.action in ["disable_wlan", "delete_wlan", "enable_wlan", "create_wlan"]:
+        elif self.action in ["disable_wlan", "delete_wlan", "enable_wlan", "create_wlan", "create_wlan_wpa2"]:
 
             self.command = ["./wifi_ctl_9800_3504.py",
                             "--scheme", self.scheme, "--dest", self.dest,
@@ -170,7 +170,8 @@ class create_controller_series_object:
             logger.critical("action {action} not supported".format(action=self.action))
             raise ValueError("action {action} not supported".format(action=self.action))
 
-        logger.info(pformat(self.command))
+        # logger.info(pformat(self.command))
+        logger.info(self.command)
         # capture output needs to be read
         # advanced = subprocess.run(self.command, capture_output=False, check=True)
         advanced = subprocess.run(self.command, capture_output=True, check=True)
@@ -343,6 +344,13 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    # configure wpa2 wlan wpa2
+    def config_wlan_wpa2(self):
+        logger.info("config_wlan_wpa2 wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        self.action = "create_wlan_wpa2"
+        summary = self.send_command()
+        return summary
+
     # config wireless tag policy and policy_profile
     # this may need to be split up
     # WCL1 : RM204-TB1 , WLC2 : RM204-TB2
@@ -471,10 +479,11 @@ INCLUDE_IN_README
     # disable
     cs.show_ap_dot11_5gz_shutdown()
     # cs.show_ap_dot11_24gz_shutdown() not in txpower
+    # This needs to be here to disable and delete
+    cs.wlan = 'test wpa2'
+    cs.wlanID = '2'
+    cs.wlanSSID = 'hello123'
 
-    cs.wlan = 'open-wlan'
-    cs.wlanID = '1'
-    cs.wlanSSID = 'open-wlan'
     # disable_wlan
     cs.wlan_shutdown()
     # disable_network_5ghz
@@ -490,7 +499,7 @@ INCLUDE_IN_README
     cs.bandwidth = '20'
     # bandwidth (to set to 20 if channel change does not support)
     cs.config_dot11_5ghz_channel_width()
-    cs.channel = '100'
+    cs.channel = '36'
     # channel
     cs.config_dot11_5ghz_channel()
     cs.bandwidth = '40'
@@ -498,11 +507,37 @@ INCLUDE_IN_README
     cs.config_dot11_5ghz_channel_width()
     # show_wlan_summary
     cs.show_wlan_summary()
-    # delete_wlan (there were two in the logs)
+
+    # delete_wlan 
+    # TODO (there were two in tx_power the logs)
     # need to check if wlan present
+    cs.wlan = 'test wpa2'
+    cs.wlanID = '2'
+    cs.wlanSSID = 'hello123'
+
+    # delete wlan
     cs.config_no_wlan()
-    # create_wlan
-    cs.config_wlan_open()
+
+    # Create open
+    # cs.wlan = 'open-wlan_3'
+    # cs.wlanID = '3'
+    # cs.wlanSSID = 'open-wlan_3'
+
+
+    # create_wlan  open
+    # cs.wlan = 'open-wlan'
+    # cs.wlanID = '1'
+    # cs.wlanSSID = 'open-wlan'
+
+    # cs.config_wlan_open()
+
+    # Create wpa2
+    cs.wlan = 'wpa2_wlan_3'
+    cs.wlanID = '3'
+    cs.wlanSSID = 'wpa2_wlan_3'
+
+    # create_wlan_wpa2
+    cs.config_wlan_wpa2()
     # wireless_tag_policy
     cs.tag_policy = 'RM204-TB1'
     cs.policy_profile = 'default-policy-profile'
