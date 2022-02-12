@@ -38,7 +38,6 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../")))
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
-#
 
 
 class create_controller_series_object:
@@ -156,37 +155,33 @@ class create_controller_series_object:
                             "--user", self.user, "--passwd", self.passwd,
                             "--ap", self.ap, "--band", self.band,
                             "--action", self.action,
-                            "--tag_policy", self.tag_policy, "--policy_profile", self.profile_policy,
+                            "--tag_policy", self.tag_policy, "--policy_profile", self.policy_profile,
                             "--series", self.series, "--port", self.port, "--prompt", self.prompt]
 
         # possible need to look for exact command
         elif self.action in ["summary", "no_logging_console", "line_console_0", "show_wlan_summary",
-                             "advanced", "disable", "disable_nework_5ghz", "disable_network_24ghz",
-                             "mamual", "enable_network_5ghz", "enable_network_24ghz", "enable"]:
+                             "advanced", "disable", "disable_network_5ghz", "disable_network_24ghz",
+                             "manual", "enable_network_5ghz", "enable_network_24ghz", "enable"]:
 
             self.command = ["./wifi_ctl_9800_3504.py", "--scheme", self.scheme, "--dest", self.dest,
                             "--user", self.user, "--passwd", self.passwd, "--ap", self.ap, "--band", self.band,
                             "--action", self.action, "--series", self.series, "--port", self.port, "--prompt", self.prompt]
 
         else:
-            logger.Critical("action {action} not supported".format(action=self.action))
+            logger.critical("action {action} not supported".format(action=self.action))
+            raise ValueError("action {action} not supported".format(action=self.action))
 
-        logger.info(self.command)
+        logger.info(pformat(self.command))
         # capture output needs to be read
+        # advanced = subprocess.run(self.command, capture_output=False, check=True)
         advanced = subprocess.run(self.command, capture_output=True, check=True)
-        logger.info(advanced.stdout)
+        logger.info(advanced.stdout.decode('utf-8', 'ignore'))
         return advanced.stdout
 
     def show_ap_config_slots(self):
         logger.info("show ap config slots")
         self.action = "cmd"
         self.value = "show ap config slots"
-        summary = self.send_command()
-        return summary
-
-    def show_ap_summary(self):
-        logger.info("show ap summary")
-        self.action = "summary"
         summary = self.send_command()
         return summary
 
@@ -204,6 +199,12 @@ class create_controller_series_object:
     def line_console_0(self):
         logger.info("line_console_0")
         self.action = "line_console_0"
+        summary = self.send_command()
+        return summary
+
+    def show_ap_summary(self):
+        logger.info("show ap summary")
+        self.action = "summary"
         summary = self.send_command()
         return summary
 
@@ -260,14 +261,14 @@ class create_controller_series_object:
         return summary
 
     def ap_dot11_5ghz_radio_role_manual_client_serving(self):
-        logger.info("ap name {ap_name} dot11 5ghz radio role manual client-serving".format(ap_name=self.ap_name))
+        logger.info("ap name {ap_name} dot11 5ghz radio role manual client-serving".format(ap_name=self.ap))
         self.band = '5g'
         self.action = "manual"
         summary = self.send_command()
         return summary
 
     def ap_dot11_24ghz_radio_role_manual_client_serving(self):
-        logger.info("ap name {ap_name} dot11 24ghz radio role manual client-serving".format(ap_name=self.ap_name))
+        logger.info("ap name {ap_name} dot11 24ghz radio role manual client-serving".format(ap_name=self.ap))
         self.band = '24g'
         self.action = "manual"
         summary = self.send_command()
@@ -452,12 +453,96 @@ INCLUDE_IN_README
         band=args.band,
         timeout=args.timeout)
 
+
     # cs.show_ap_config_slots()
     # cs.show_ap_summary()
     # cs.no_logging_console()
     # cs.line_console_0()
+    # cs.show_wlan_summary()
+    # cs.show_ap_dot11_5gz_summary()
+
+    # series of commands to create a wlan , similiar to how tx_power works.
+    cs.ap = 'APA453.0E7B.CF9C'
+    cs.band = '5g'
+
+    # no_logging_console
+    cs.no_logging_console()
+    # line_console_0
+    cs.line_console_0()
+    # summary
+    cs.show_ap_summary()
+    # disable
+    cs.show_ap_dot11_5gz_shutdown()
+    # cs.show_ap_dot11_24gz_shutdown() not in txpower
+
+    cs.wlan = 'open-wlan'
+    cs.wlanID = '1'
+    cs.wlanSSID = 'open-wlan'
+    # disable_wlan
+    cs.wlan_shutdown()
+    # disable_network_5ghz
+    cs.ap_dot11_5ghz_shutdown()
+    # disable_network_24ghz
+    cs.ap_dot11_24ghz_shutdown()
+    # manual
+    cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+    # cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+    cs.tx_power = '1'
+    # txPower
+    cs.config_dot11_5ghz_tx_power()
+    cs.bandwidth = '20'
+    # bandwidth (to set to 20 if channel change does not support)
+    cs.config_dot11_5ghz_channel_width()
+    cs.channel = '100'
+    # channel
+    cs.config_dot11_5ghz_channel()
+    cs.bandwidth = '40'
+    # bandwidth
+    cs.config_dot11_5ghz_channel_width()
+    # show_wlan_summary
     cs.show_wlan_summary()
+    # delete_wlan (there were two in the logs)
+    # need to check if wlan present
+    cs.config_no_wlan()
+    # create_wlan
+    cs.config_wlan_open()
+    # wireless_tag_policy
+    cs.tag_policy = 'RM204-TB1'
+    cs.policy_profile = 'default-policy-profile'
+    cs.config_wireless_tag_policy_and_policy_profile()
+    # enable_wlan
+    cs.config_enable_wlan_send_no_shutdown()
+    # enable_network_5ghz
+    cs.config_no_ap_dot11_5ghz_shutdown()
+    # enable_network_24ghz
+    # cs.config_no_ap_dot11_5ghz_shutdown()
+    # enable 
+    cs.config_ap_no_dot11_5ghz_shutdown()
+    # config_ap_no_dot11_24ghz_shutdown
+    # advanced
     cs.show_ap_dot11_5gz_summary()
+    # cs.show_ap_dot11_24gz_summary()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+    
+
+
+
+
+
+
+    
+    
+
+
+
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
