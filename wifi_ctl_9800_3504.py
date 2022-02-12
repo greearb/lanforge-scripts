@@ -100,6 +100,7 @@ def usage():
 # see https://stackoverflow.com/a/13306095/11014343
 
 # Used by pexpect 
+# TODO need to change as all pexpect has line number of the write
 class FileAdapter(object):
     def __init__(self, logger):
         self.logger = logger
@@ -223,6 +224,7 @@ def main():
     CCP_CONFIG_WLAN = args.prompt + "(config-wlan)#"  # WLC(config- wlan)#
     CCP_POLICY_TAG = args.prompt + "(config-policy-tag)#"  # WLC(config-policy-tag)#
     CCP_CONFIG_LINE = args.prompt + "(config-line)#"  # WLC(config-line)#
+    CCP_FINGERPRINT = "you want to continue connecting (yes/no/[fingerprint])?"
 
     '''print("CCP {}".format(CCP))
    print("CCP_EN {}".format(CCP_EN))
@@ -271,7 +273,7 @@ def main():
                     # egg.sendline(CR)
                     # sleep(0.4)
                     try:
-                        i = egg.expect_exact(["Escape character is '^]'.", CCP, CCP_EN, "User:", "Password:", CCP_CONFIG, "Bad secrets", pexpect.TIMEOUT],
+                        i = egg.expect_exact(["Escape character is '^]'.", CCP, CCP_EN, "User:", "Password:", CCP_CONFIG, "Bad secrets",  CCP_FINGERPRINT, pexpect.TIMEOUT],
                                              timeout=timeout)
                     except Exception as e:
                         logg.info('connection failed. or refused Connection open by other process')
@@ -553,6 +555,10 @@ def main():
                         egg.sendline(CR)
                         sleep(0.2)
                     if i == 7:
+                        logg.info("9800 recieved Are you sure you want to continue connecting (yes/no/[fingerprint])? i: {} before {} after {}".format(i, egg.before, egg.after))
+                        egg.sendline('yes')
+                        sleep(0.2)
+                    if i == 8:
                         logg.info("9800 Timed out waiting for initial prompt send logout loop_count: {} i: {} before {} after {}".format(loop_count, i, egg.before, egg.after))
                         logg.info("9800  Closing the connection and try to re-establish, ")
                         egg.close(force=True)
