@@ -39,7 +39,6 @@ logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
-
 class create_controller_series_object:
     def __init__(self,
                  scheme=None,
@@ -423,8 +422,7 @@ INCLUDE_IN_README
             ''')
 
 # sample command
-# ./cc_module_9800_3504.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap APA453.0E7B.CF9C --series 9800 --prompt "WLC1" --timeout 10
-
+# ./cc_module_9800_3504.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap APA453.0E7B.CF9C --series 9800 --prompt "WLC1" --timeout 10 --band '5g'
     parser.add_argument("--dest", type=str, help="address of the cisco controller", required=True)
     parser.add_argument("--port", type=str, help="control port on the controller", required=True)
     parser.add_argument("--user", type=str, help="credential login/username", required=True)
@@ -452,7 +450,6 @@ INCLUDE_IN_README
         port=args.port,
         band=args.band,
         timeout=args.timeout)
-
 
     # cs.show_ap_config_slots()
     # cs.show_ap_summary()
@@ -516,7 +513,7 @@ INCLUDE_IN_README
     cs.config_no_ap_dot11_5ghz_shutdown()
     # enable_network_24ghz
     # cs.config_no_ap_dot11_5ghz_shutdown()
-    # enable 
+    # enable
     cs.config_ap_no_dot11_5ghz_shutdown()
     # config_ap_no_dot11_24ghz_shutdown
     # advanced
@@ -524,25 +521,6 @@ INCLUDE_IN_README
     # cs.show_ap_dot11_24gz_summary()
     # show_wlan_summary
     cs.show_wlan_summary()
-
-    
-
-
-
-
-
-
-    
-    
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":
