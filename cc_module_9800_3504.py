@@ -110,6 +110,7 @@ class create_controller_series_object:
         self.value = None
         self.command = []
         self.info = "Cisco 9800 Controller Series"
+        self.verbose = True
 
     # TODO update the wifi_ctl_9800_3504 to use 24g, 5g, 6g
 
@@ -172,13 +173,27 @@ class create_controller_series_object:
 
         # logger.info(pformat(self.command))
         logger.info(self.command)
-        # TODO change the subprocess.run to pOpen 
+        # TODO change the subprocess.run to pOpen
         # capture output needs to be read , also need to catch exceptions
         # advanced = subprocess.run(self.command, capture_output=False, check=True)
-        advanced = subprocess.run(self.command, capture_output=True, check=True)
-        logger.info(advanced.stdout.decode('utf-8', 'ignore'))
-        logger.info(advanced.stderr.decode('utf-8', 'ignore'))
-        return advanced.stdout
+        # So using capture_output=True is a no-go, because the output will be stored in a pipe
+        # for you to read after the call finishes.
+        # The simpler is for you to use subprocess.Popen
+        # advanced = subprocess.run(self.command, capture_output=True, check=True)
+        # logger.info(advanced.stdout.decode('utf-8', 'ignore'))
+        # logger.info(advanced.stderr.decode('utf-8', 'ignore'))
+        # return advanced.stdout
+        advanced_output = ''
+        advanced = subprocess.Popen(self.command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in iter(advanced.stdout.readline, ''):
+            if self.verbose:
+                logger.info(line)
+            advanced_output += line
+            # sys.stdout.flush() # please see comments regarding the necessity of this line
+        advanced.wait()
+        logger.info(advanced_output)  # .decode('utf-8', 'ignore'))
+        # logger.info(advanced.stderr.decode('utf-8', 'ignore'))
+        return advanced_output
 
     def show_ap_config_slots(self):
         logger.info("show ap config slots")
@@ -527,7 +542,7 @@ INCLUDE_IN_README
 
     args = parser.parse_args()
 
-    # set up logger
+    # set up logger , do not delete 
     logger_config = lf_logger_config.lf_logger_config()
 
     cs = create_controller_series_object(
@@ -549,6 +564,8 @@ INCLUDE_IN_README
     # cs.show_wlan_summary()
     # cs.show_ap_dot11_5gz_summary()
 
+    # set verbose to false
+    # cs.verbose = False
     # series of commands to create a wlan , similiar to how tx_power works.
     cs.ap = 'APA453.0E7B.CF9C'
     cs.band = '5g'
@@ -559,6 +576,7 @@ INCLUDE_IN_README
     cs.line_console_0()
     # summary
     cs.show_ap_summary()
+
     # disable
     cs.show_ap_dot11_5gz_shutdown()
     # cs.show_ap_dot11_24gz_shutdown() not in txpower
@@ -635,7 +653,7 @@ INCLUDE_IN_README
     cs.wlanID = '3'
     cs.wlanSSID = 'wpa2_wlan_3'
     cs.config_wlan_wpa2()
-    
+
     # # create_wlan_wpa3
     # cs.wlan = 'wpa3_wlan_4'
     # cs.wlanID = '4'
