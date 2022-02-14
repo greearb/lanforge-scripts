@@ -150,9 +150,8 @@ class create_controller_series_object:
                 self.secruity_key = '[BLANK]'
 
             self.command_extend = ["--action", self.action, "--wlan", self.wlan,
-                                "--wlanID", self.wlanID, "--wlanSSID", self.wlanSSID, "--security_key", self.security_key]
+                                   "--wlanID", self.wlanID, "--wlanSSID", self.wlanSSID, "--security_key", self.security_key]
             self.command.extend(self.command_extend)
-
 
         elif self.action in ["enable_wlan", "disable_wlan", "delete_wlan"]:
 
@@ -422,7 +421,7 @@ class create_controller_series_object:
     #        "no shutdown"]:
     # configure wpa2
     def config_wlan_wpa2(self):
-        logger.info("config_wlan_wpa2 wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID} security_key {security_key}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID,security_key=self.security_key))
+        logger.info("config_wlan_wpa2 wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID} security_key {security_key}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID, security_key=self.security_key))
         self.action = "create_wlan_wpa2"
         summary = self.send_command()
         return summary
@@ -500,6 +499,143 @@ class create_controller_series_object:
         return summary
 
 
+# This next section is to allow for tests to be created without
+# please do not delete
+# modifying existing tests.
+
+# This sample runs thought dumping status
+def sample_test_dump_status(cs):
+    cs.show_ap_config_slots()
+    cs.show_ap_summary()
+    cs.no_logging_console()
+    cs.line_console_0()
+    cs.show_wlan_summary()
+    cs.show_ap_dot11_5gz_summary()
+
+
+# This sample runs though the sequence of commands used
+# by tx_power script
+
+
+def sample_test_tx_power_sequence(cs):
+
+    # series of commands to create a wlan , similiar to how tx_power works.
+    # pass in the ap and band from the command line
+    # cs.ap = 'APA453.0E7B.CF9C'
+    # cs.band = '5g'
+
+    logger.info("sample_test_tx_power_sequence")
+
+    # no_logging_console
+    cs.no_logging_console()
+    # line_console_0
+    cs.line_console_0()
+    # summary
+    cs.show_ap_summary()
+
+    # disable
+    cs.show_ap_dot11_5gz_shutdown()
+    # cs.show_ap_dot11_24gz_shutdown() not in txpower
+    # This needs to be here to disable and delete
+    cs.wlan = 'wpa2_wlan_3'
+    cs.wlanID = '3'
+    cs.wlanSSID = 'wpa2_wlan_3'
+
+    # disable_wlan
+    cs.wlan_shutdown()
+    # disable_network_5ghz
+    cs.ap_dot11_5ghz_shutdown()
+    # disable_network_24ghz
+    cs.ap_dot11_24ghz_shutdown()
+    # manual
+    cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+    # cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+    cs.tx_power = '1'
+
+    # Configuration for 5g
+
+    # txPower
+    cs.config_dot11_5ghz_tx_power()
+    cs.bandwidth = '20'
+    # bandwidth (to set to 20 if channel change does not support)
+    cs.config_dot11_5ghz_channel_width()
+    cs.channel = '100'
+    # channel
+    cs.config_dot11_5ghz_channel()
+    cs.bandwidth = '40'
+    # bandwidth
+    cs.config_dot11_5ghz_channel_width()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+    # Configuration for 6g
+    # txPower
+    # cs.config_dot11_6ghz_tx_power()
+    # cs.bandwidth = '20'
+    # # bandwidth (to set to 20 if channel change does not support)
+    # cs.config_dot11_6ghz_channel_width()
+    # cs.channel = '36'
+    # # channel
+    # cs.config_dot11_6ghz_channel()
+    # cs.bandwidth = '40'
+    # # bandwidth
+    # cs.config_dot11_6ghz_channel_width()
+    # # show_wlan_summary
+    # cs.show_wlan_summary()
+
+    # delete_wlan
+    # TODO (there were two in tx_power the logs)
+    # need to check if wlan present
+    cs.wlan = 'wpa2_wlan_3'
+
+    # delete wlan
+    cs.config_no_wlan()
+
+    # Create open
+    # cs.wlan = 'open-wlan_3'
+    # cs.wlanID = '3'
+    # cs.wlanSSID = 'open-wlan_3'
+
+    # create_wlan  open
+    # cs.wlan = 'open-wlan'
+    # cs.wlanID = '1'
+    # cs.wlanSSID = 'open-wlan'
+    # cs.config_wlan_open()
+
+    # create_wlan_wpa2
+    cs.wlan = 'wpa2_wlan_3'
+    cs.wlanID = '3'
+    cs.wlanSSID = 'wpa2_wlan_3'
+    cs.security_key = 'hello123'
+    cs.config_wlan_wpa2()
+
+    # create_wlan_wpa3
+    # cs.wlan = 'wpa3_wlan_4'
+    # cs.wlanID = '4'
+    # cs.wlanSSID = 'wpa3_wlan_4'
+    # cs.security_key = 'hello123'
+    # cs.config_wlan_wpa3()
+
+    # wireless_tag_policy
+    cs.tag_policy = 'RM204-TB1'
+    cs.policy_profile = 'default-policy-profile'
+    cs.config_wireless_tag_policy_and_policy_profile()
+    # enable_wlan
+    cs.config_enable_wlan_send_no_shutdown()
+    # enable_network_5ghz
+    cs.config_no_ap_dot11_5ghz_shutdown()
+    # enable_network_24ghz
+    # cs.config_no_ap_dot11_5ghz_shutdown()
+    # enable
+    cs.config_ap_no_dot11_5ghz_shutdown()
+    # config_ap_no_dot11_24ghz_shutdown
+    # advanced
+    cs.show_ap_dot11_5gz_summary()
+    # cs.show_ap_dot11_24gz_summary()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+
 # unit test for 9800 3504 controller
 def main():
     # arguments
@@ -520,8 +656,7 @@ SETUP:
 None
 
 EXAMPLE:
-    There is a unit test included to try sample command scenarios
-
+./cc_module_9800_3504.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap APA453.0E7B.CF9C --series 9800 --prompt "WLC1" --timeout 10 --band '5g'
 
 COPYWRITE
     Copyright 2021 Candela Technologies Inc
@@ -562,11 +697,10 @@ INCLUDE_IN_README
         timeout=args.timeout)
 
     # cs.show_ap_config_slots()
-    # cs.show_ap_summary()
-    # cs.no_logging_console()
-    # cs.line_console_0()
-    # cs.show_wlan_summary()
-    # cs.show_ap_dot11_5gz_summary()
+
+    # test sequences defined above
+
+    sample_test_tx_power_sequence(cs=cs)
 
     # series of commands to create a wlan , similiar to how tx_power works.
     cs.ap = 'APA453.0E7B.CF9C'
