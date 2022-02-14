@@ -110,7 +110,6 @@ class create_controller_series_object:
         self.value = None
         self.command = []
         self.info = "Cisco 9800 Controller Series"
-        self.verbose = True
 
     # TODO update the wifi_ctl_9800_3504 to use 24g, 5g, 6g
 
@@ -186,8 +185,7 @@ class create_controller_series_object:
         advanced_output = ''
         advanced = subprocess.Popen(self.command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in iter(advanced.stdout.readline, ''):
-            if self.verbose:
-                logger.info(line)
+            logger.debug(line)
             advanced_output += line
             # sys.stdout.flush() # please see comments regarding the necessity of this line
         advanced.wait()
@@ -564,8 +562,6 @@ INCLUDE_IN_README
     # cs.show_wlan_summary()
     # cs.show_ap_dot11_5gz_summary()
 
-    # set verbose to false
-    # cs.verbose = False
     # series of commands to create a wlan , similiar to how tx_power works.
     cs.ap = 'APA453.0E7B.CF9C'
     cs.band = '5g'
