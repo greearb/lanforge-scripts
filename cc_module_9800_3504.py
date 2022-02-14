@@ -583,9 +583,9 @@ INCLUDE_IN_README
     cs.show_ap_dot11_5gz_shutdown()
     # cs.show_ap_dot11_24gz_shutdown() not in txpower
     # This needs to be here to disable and delete
-    cs.wlan = 'wpa2_wlan_4'
-    cs.wlanID = '4'
-    cs.wlanSSID = 'wpa2_wlan_4'
+    cs.wlan = 'wpa2_wlan_3'
+    cs.wlanID = '3'
+    cs.wlanSSID = 'wpa2_wlan_3'
 
     # disable_wlan
     cs.wlan_shutdown()
@@ -633,8 +633,6 @@ INCLUDE_IN_README
     # TODO (there were two in tx_power the logs)
     # need to check if wlan present
     cs.wlan = 'wpa2_wlan_3'
-    cs.wlanID = '3'
-    cs.wlanSSID = 'wpa2_wlan_3'
 
     # delete wlan
     cs.config_no_wlan()
@@ -657,10 +655,11 @@ INCLUDE_IN_README
     cs.security_key = 'hello123'
     cs.config_wlan_wpa2()
 
-    # # create_wlan_wpa3
+    # create_wlan_wpa3
     # cs.wlan = 'wpa3_wlan_4'
     # cs.wlanID = '4'
     # cs.wlanSSID = 'wpa3_wlan_4'
+    # cs.security_key = 'hello123'
     # cs.config_wlan_wpa3()
 
     # wireless_tag_policy

@@ -1320,7 +1320,7 @@ def main():
                         "radio policy dot11 5ghz",
                         "security wpa psk set-key ascii 0 {security_key}".format(security_key=args.security_key),
                         "no security wpa akm dot1x",
-                        "security wpa akm psk"
+                        "security wpa akm psk",
                         "no shutdown"]:
                         egg.sendline(command)
                         sleep(1)
