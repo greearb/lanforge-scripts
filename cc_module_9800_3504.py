@@ -139,12 +139,20 @@ class create_controller_series_object:
                             "--user", self.user, "--passwd", self.passwd, "--ap", self.ap, "--band", self.band,
                             "--action", self.action, "--value", self.value, "--series", self.series, "--port", self.port, "--prompt", self.prompt]
 
-        elif self.action in ["disable_wlan", "delete_wlan", "enable_wlan", "create_wlan", "create_wlan_wpa2", "create_wlan_wpa3"]:
+        elif self.action in ["enable_wlan", "create_wlan", "create_wlan_wpa2", "create_wlan_wpa3"]:
 
             self.command = ["./wifi_ctl_9800_3504.py",
                             "--scheme", self.scheme, "--dest", self.dest,
                             "--user", self.user, "--passwd", self.passwd, "--ap", self.ap, "--band", self.band,
                             "--action", self.action, "--wlan", self.wlan, "--wlanID", self.wlanID, "--wlanSSID", self.wlanSSID,
+                            "--series", self.series, "--port", self.port, "--prompt", self.prompt]
+
+        elif self.action in ["disable_wlan", "delete_wlan"]:
+
+            self.command = ["./wifi_ctl_9800_3504.py",
+                            "--scheme", self.scheme, "--dest", self.dest,
+                            "--user", self.user, "--passwd", self.passwd, "--ap", self.ap, "--band", self.band,
+                            "--action", self.action,
                             "--series", self.series, "--port", self.port, "--prompt", self.prompt]
 
         elif self.action in ["wireless_tag_policy"]:
