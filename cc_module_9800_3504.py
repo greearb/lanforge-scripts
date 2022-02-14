@@ -100,6 +100,7 @@ class create_controller_series_object:
         self.wlan = None
         self.wlanID = None
         self.wlanSSID = None
+        self.security_key = None
         self.wlanpw = None
         self.tag_policy = None
         self.policy_profile = None
@@ -109,6 +110,7 @@ class create_controller_series_object:
         self.action = None
         self.value = None
         self.command = []
+        self.command_extend = []
         self.info = "Cisco 9800 Controller Series"
 
     # TODO update the wifi_ctl_9800_3504 to use 24g, 5g, 6g
@@ -132,47 +134,43 @@ class create_controller_series_object:
         self.convert_band()
         logger.info("action {action}".format(action=self.action))
 
+        # Command base
+        self.command = ["./wifi_ctl_9800_3504.py", "--scheme", self.scheme, "--dest", self.dest,
+                        "--user", self.user, "--passwd", self.passwd, "--prompt", self.prompt,
+                        "--series", self.series, "--ap", self.ap, "--band", self.band, "--port", self.port]
         # Generate command
         if self.action in ['cmd', 'txPower', 'channel', 'bandwidth']:
 
-            self.command = ["./wifi_ctl_9800_3504.py", "--scheme", self.scheme, "--dest", self.dest,
-                            "--user", self.user, "--passwd", self.passwd, "--ap", self.ap, "--band", self.band,
-                            "--action", self.action, "--value", self.value, "--series", self.series, "--port", self.port, "--prompt", self.prompt]
+            self.command_extend = ["--action", self.action, "--value", self.value]
+            self.command.extend(self.command_extend)
 
-        elif self.action in ["enable_wlan", "create_wlan", "create_wlan_wpa2", "create_wlan_wpa3"]:
+        elif self.action in ["create_wlan", "create_wlan_wpa2", "create_wlan_wpa3"]:
 
-            self.command = ["./wifi_ctl_9800_3504.py",
-                            "--scheme", self.scheme, "--dest", self.dest,
-                            "--user", self.user, "--passwd", self.passwd, "--ap", self.ap, "--band", self.band,
-                            "--action", self.action, "--wlan", self.wlan, "--wlanID", self.wlanID, "--wlanSSID", self.wlanSSID,
-                            "--series", self.series, "--port", self.port, "--prompt", self.prompt]
+            if self.action in ["create_wlan"]:
+                self.secruity_key = '[BLANK]'
 
-        elif self.action in ["disable_wlan", "delete_wlan"]:
+            self.command_extend = ["--action", self.action, "--wlan", self.wlan,
+                                "--wlanID", self.wlanID, "--wlanSSID", self.wlanSSID, "--security_key", self.security_key]
+            self.command.extend(self.command_extend)
 
-            self.command = ["./wifi_ctl_9800_3504.py",
-                            "--scheme", self.scheme, "--dest", self.dest,
-                            "--user", self.user, "--passwd", self.passwd, "--ap", self.ap, "--band", self.band,
-                            "--action", self.action,
-                            "--series", self.series, "--port", self.port, "--prompt", self.prompt]
+
+        elif self.action in ["enable_wlan", "disable_wlan", "delete_wlan"]:
+
+            self.command_extend = ["--action", self.action, "--wlan", self.wlan]
+            self.command.extend(self.command_extend)
 
         elif self.action in ["wireless_tag_policy"]:
 
-            self.command = ["./wifi_ctl_9800_3504.py",
-                            "--scheme", self.scheme, "--dest", self.dest,
-                            "--user", self.user, "--passwd", self.passwd,
-                            "--ap", self.ap, "--band", self.band,
-                            "--action", self.action,
-                            "--tag_policy", self.tag_policy, "--policy_profile", self.policy_profile,
-                            "--series", self.series, "--port", self.port, "--prompt", self.prompt]
+            self.command_extend = ["--action", self.action, "--tag_policy", self.tag_policy, "--policy_profile", self.policy_profile]
+            self.command.extend(self.command_extend)
 
         # possible need to look for exact command
         elif self.action in ["summary", "no_logging_console", "line_console_0", "show_wlan_summary",
                              "advanced", "disable", "disable_network_5ghz", "disable_network_24ghz",
                              "manual", "enable_network_5ghz", "enable_network_24ghz", "enable"]:
 
-            self.command = ["./wifi_ctl_9800_3504.py", "--scheme", self.scheme, "--dest", self.dest,
-                            "--user", self.user, "--passwd", self.passwd, "--ap", self.ap, "--band", self.band,
-                            "--action", self.action, "--series", self.series, "--port", self.port, "--prompt", self.prompt]
+            self.command_extend = ["--action", self.action]
+            self.command.extend(self.command_extend)
 
         else:
             logger.critical("action {action} not supported".format(action=self.action))
@@ -424,7 +422,7 @@ class create_controller_series_object:
     #        "no shutdown"]:
     # configure wpa2
     def config_wlan_wpa2(self):
-        logger.info("config_wlan_wpa2 wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        logger.info("config_wlan_wpa2 wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID} security_key {security_key}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID,security_key=self.security_key))
         self.action = "create_wlan_wpa2"
         summary = self.send_command()
         return summary
@@ -548,7 +546,7 @@ INCLUDE_IN_README
 
     args = parser.parse_args()
 
-    # set up logger , do not delete 
+    # set up logger , do not delete
     logger_config = lf_logger_config.lf_logger_config()
 
     cs = create_controller_series_object(
@@ -656,6 +654,7 @@ INCLUDE_IN_README
     cs.wlan = 'wpa2_wlan_3'
     cs.wlanID = '3'
     cs.wlanSSID = 'wpa2_wlan_3'
+    cs.security_key = 'hello123'
     cs.config_wlan_wpa2()
 
     # # create_wlan_wpa3

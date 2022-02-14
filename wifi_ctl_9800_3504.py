@@ -130,6 +130,7 @@ def main():
     parser.add_argument("-w", "--wlan", "--wlan_name", type=str, dest="wlan",help="wlan open-wlan , wlan name", default="open-wlan1")
     parser.add_argument("-i", "--wlanID", type=str, help="wlan ID")
     parser.add_argument("--wlanSSID", type=str, help="wlan SSID")
+    parser.add_argument("--security_key", type=str, help="wlan security_key")
     parser.add_argument("-a", "--ap", type=str, help="select AP", default="APA453.0E7B.CF9C")
     parser.add_argument("-b", "--band", type=str, help="Select band (a | b | abgn | 6g | 5g | 24g)",
                         choices=["24g", "5g", "6g", "a", "b", "abgn"])
@@ -1291,7 +1292,7 @@ def main():
         print("command show wlan summary ")
         command = "show wlan summary"
 
-    if (args.action == "create_wlan_wpa2" and ((args.wlanID is None) or (args.wlan is None) or (args.wlanSSID is None))):
+    if (args.action == "create_wlan_wpa2" and ((args.wlanID is None) or (args.wlan is None) or (args.wlanSSID is None) or (args.security_key is None))):
         raise Exception("create_wlan_wpa2 wlanID, wlan, wlanSSID are required an")
     if (args.action == "create_wlan_wpa2"):
         logg.info("create_wlan_wpa2 wlan {} wlanID {} wlanSSID {}".format(args.wlan, args.wlanID, args.wlanSSID))
@@ -1317,7 +1318,7 @@ def main():
                         "bss-transition dual-list",
                         "radio policy dot11 24ghz",
                         "radio policy dot11 5ghz",
-                        "security wpa psk set-key ascii 0 hello123",
+                        "security wpa psk set-key ascii 0 {security_key}".format(security_key=args.security_key),
                         "no security wpa akm dot1x",
                         "security wpa akm psk"
                         "no shutdown"]:
@@ -1335,10 +1336,10 @@ def main():
         else:
             command = "config wlan create {} {} {}".format(args.wlanID, args.wlan, args.wlanSSID)
 
-    if (args.action == "create_wlan_wpa3" and ((args.wlanID is None) or (args.wlan is None) or (args.wlanSSID is None))):
+    if (args.action == "create_wlan_wpa3" and ((args.wlanID is None) or (args.wlan is None) or (args.wlanSSID is None) or (args.security_key is None))):
         raise Exception("create_wlan_wpa3 wlanID, wlan, wlanSSID are required an")
     if (args.action == "create_wlan_wpa3"):
-        logg.info("create_wlan_wpa3 wlan {} wlanID {} wlanSSID {}".format(args.wlan, args.wlanID, args.wlanSSID))
+        logg.info("create_wlan_wpa3 wlan {} wlanID {} wlanSSID {} security_key {}".format(args.wlan, args.wlanID, args.wlanSSID, args.security_key))
         if args.series == "9800":
             egg.sendline("config t")
             sleep(0.4)
@@ -1361,7 +1362,7 @@ def main():
                         "radio policy dot11 6ghz",
                         "no security ft adaptive",
                         "no security wpa wpa2",
-                        "security wpa psk set-key ascii 0 hello123",
+                        "security wpa psk set-key ascii 0 {security_key}".format(security_key=args.security_key),
                         "no security wpa akm dot1x",
                         "security wpa akm sae",
                         "security wpa akm sae pwe h2e",
