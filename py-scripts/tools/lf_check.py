@@ -1042,10 +1042,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                                     lanforge_server_version_full=self.lanforge_server_version_full[0]))
                             meta_data_fd.close()
                         except ValueError as err:
-                            logg.critical("unable to write meta {meta_data_path} : {msg}}".format(meta_data_path=meta_data_path,msg=err))
+                            self.logger.critical("unable to write meta {meta_data_path} : {msg})".format(meta_data_path=meta_data_path, msg=err))
                         except BaseException as err:
-                            logg.critical("BaseException unable to write meta {meta_data_path} : {msg}".format(meta_data_path=meta_data_path,msg=err))
-                        
+                            self.logger.critical("BaseException unable to write meta {meta_data_path} : {msg}".format(meta_data_path=meta_data_path, msg=err))
+
                     # Timeout needs to be reported and not overwriten
                     if self.test_result == "TIMEOUT":
                         self.logger.info(
