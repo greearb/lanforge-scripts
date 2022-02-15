@@ -50,7 +50,8 @@ class create_controller_series_object:
                  band=None,
                  ap=None,
                  port=None,
-                 timeout=None
+                 timeout=None,
+                 pwd=None
                  ):
         if scheme is None:
             raise ValueError('Controller scheme must be set: serial, ssh or telnet')
@@ -112,6 +113,7 @@ class create_controller_series_object:
         self.command = []
         self.command_extend = []
         self.info = "Cisco 9800 Controller Series"
+        self.pwd = pwd
 
     # TODO update the wifi_ctl_9800_3504 to use 24g, 5g, 6g
 
@@ -135,9 +137,14 @@ class create_controller_series_object:
         logger.info("action {action}".format(action=self.action))
 
         # Command base
-        self.command = ["./wifi_ctl_9800_3504.py", "--scheme", self.scheme, "--dest", self.dest,
+        if self.pwd is None:
+            self.command = ["./wifi_ctl_9800_3504.py", "--scheme", self.scheme, "--dest", self.dest,
                         "--user", self.user, "--passwd", self.passwd, "--prompt", self.prompt,
                         "--series", self.series, "--ap", self.ap, "--band", self.band, "--port", self.port]
+        else:
+            self.command = [str(str(self.pwd) + "/wifi_ctl_9800_3504.py"), "--scheme", self.scheme, "--dest", self.dest,
+                            "--user", self.user, "--passwd", self.passwd, "--prompt", self.prompt,
+                            "--series", self.series, "--ap", self.ap, "--band", self.band, "--port", self.port]
         # Generate command
         if self.action in ['cmd', 'txPower', 'channel', 'bandwidth']:
 
