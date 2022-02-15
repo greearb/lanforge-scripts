@@ -147,9 +147,10 @@ class create_controller_series_object:
         elif self.action in ["create_wlan", "create_wlan_wpa2", "create_wlan_wpa3"]:
 
             if self.action in ["create_wlan"]:
-                self.secruity_key = '[BLANK]'
-
-            self.command_extend = ["--action", self.action, "--wlan", self.wlan,
+                self.command_extend = ["--action", self.action, "--wlan", self.wlan,
+                                   "--wlanID", self.wlanID, "--wlanSSID", self.wlanSSID]
+            else:
+                self.command_extend = ["--action", self.action, "--wlan", self.wlan,
                                    "--wlanID", self.wlanID, "--wlanSSID", self.wlanSSID, "--security_key", self.security_key]
             self.command.extend(self.command_extend)
 
@@ -635,6 +636,83 @@ def sample_test_tx_power_sequence(cs):
     # show_wlan_summary
     cs.show_wlan_summary()
 
+def test_config_tx_power_open(cs):
+
+    logger.info("test_config_tx_power_open")
+
+    # no_logging_console
+    cs.no_logging_console()
+    # line_console_0
+    cs.line_console_0()
+    # summary
+    cs.show_ap_summary()
+
+    # disable
+    cs.show_ap_dot11_5gz_shutdown()
+    # cs.show_ap_dot11_24gz_shutdown() not in txpower
+
+    # This needs to be here to disable and delete
+    cs.wlan = 'open-wlan'
+
+    # disable_wlan only need wlan 
+    cs.wlan_shutdown()
+    # disable_network_5ghz
+    cs.ap_dot11_5ghz_shutdown()
+    # disable_network_24ghz
+    cs.ap_dot11_24ghz_shutdown()
+    # manual
+    cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+    # cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+    cs.tx_power = '1'
+
+    # Configuration for 5g
+
+    # txPower
+    cs.config_dot11_5ghz_tx_power()
+    cs.bandwidth = '20'
+    # bandwidth (to set to 20 if channel change does not support)
+    cs.config_dot11_5ghz_channel_width()
+    cs.channel = '100'
+    # channel
+    cs.config_dot11_5ghz_channel()
+    cs.bandwidth = '40'
+    # bandwidth
+    cs.config_dot11_5ghz_channel_width()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+    # delete_wlan
+    # TODO (there were two in tx_power the logs)
+    # need to check if wlan present
+    cs.wlan = 'open-wlan'
+
+    # delete wlan
+    cs.config_no_wlan()
+
+    # create_wlan  open
+    cs.wlan = 'open-wlan'
+    cs.wlanID = '1'
+    cs.wlanSSID = 'open-wlan'
+    cs.config_wlan_open()
+
+    # wireless_tag_policy
+    cs.tag_policy = 'RM204-TB1'
+    cs.policy_profile = 'default-policy-profile'
+    cs.config_wireless_tag_policy_and_policy_profile()
+    # enable_wlan
+    cs.config_enable_wlan_send_no_shutdown()
+    # enable_network_5ghz
+    cs.config_no_ap_dot11_5ghz_shutdown()
+    # enable_network_24ghz
+    # cs.config_no_ap_dot11_5ghz_shutdown()
+    # enable
+    cs.config_ap_no_dot11_5ghz_shutdown()
+    # config_ap_no_dot11_24ghz_shutdown
+    # advanced
+    cs.show_ap_dot11_5gz_summary()
+    # cs.show_ap_dot11_24gz_summary()
+    # show_wlan_summary
+    cs.show_wlan_summary()
 
 # unit test for 9800 3504 controller
 def main():
@@ -702,7 +780,9 @@ INCLUDE_IN_README
     sample_test_dump_status(cs=cs)
 
     # test sequences used by tx_power
-    sample_test_tx_power_sequence(cs=cs)
+    # sample_test_tx_power_sequence(cs=cs)
+
+    test_config_tx_power_open(cs=cs)
 
 
 if __name__ == "__main__":

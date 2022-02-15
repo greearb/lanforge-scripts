@@ -380,6 +380,7 @@ def main():
     # parser.add_argument("--tag_policy",     type=str, help="--tag_policy default-tag-policy", default="RM204-TB2")
     parser.add_argument("--policy_profile", type=str, help="--policy_profile default-policy-profile", default="default-policy-profile")
     parser.add_argument("--testbed_id", type=str, help="--testbed_id", default="")
+    parser.add_argument("--create_wlan", help="--create_wlan", action='store_true')
     parser.add_argument(
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
@@ -1119,6 +1120,8 @@ def main():
 
                     # only create the wlan the first time
                     if args.series == "9800":
+                        if args.create_wlan is False:
+                            wlan_created = True
                         if wlan_created:
                             logg.info("wlan already present, no need to create wlanID {} wlan {} wlanSSID {} port {}".format(args.wlanID, args.wlan, args.wlanSSID, args.port))
                             pass
