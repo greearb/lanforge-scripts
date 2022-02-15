@@ -714,6 +714,86 @@ def test_config_tx_power_open(cs):
     # show_wlan_summary
     cs.show_wlan_summary()
 
+
+def test_config_tx_power_wpa2(cs):
+
+    logger.info("sample_test_tx_power_sequence")
+
+    # no_logging_console
+    cs.no_logging_console()
+    # line_console_0
+    cs.line_console_0()
+    # summary
+    cs.show_ap_summary()
+
+    # disable
+    cs.show_ap_dot11_5gz_shutdown()
+    # cs.show_ap_dot11_24gz_shutdown() not in txpower
+    # This needs to be here to disable and delete
+    cs.wlan = 'wpa2_wlan_3'
+
+    # disable_wlan
+    cs.wlan_shutdown()
+    # disable_network_5ghz
+    cs.ap_dot11_5ghz_shutdown()
+    # disable_network_24ghz
+    cs.ap_dot11_24ghz_shutdown()
+    # manual
+    cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+    # cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+    cs.tx_power = '1'
+
+    # Configuration for 5g
+
+    # txPower
+    cs.config_dot11_5ghz_tx_power()
+    cs.bandwidth = '20'
+    # bandwidth (to set to 20 if channel change does not support)
+    cs.config_dot11_5ghz_channel_width()
+    cs.channel = '100'
+    # channel
+    cs.config_dot11_5ghz_channel()
+    cs.bandwidth = '40'
+    # bandwidth
+    cs.config_dot11_5ghz_channel_width()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+    # delete_wlan
+    # TODO (there were two in tx_power the logs)
+    # need to check if wlan present
+    cs.wlan = 'wpa2_wlan_3'
+
+    # delete wlan
+    cs.config_no_wlan()
+
+    # create_wlan_wpa2
+    cs.wlan = 'wpa2_wlan_3'
+    cs.wlanID = '3'
+    cs.wlanSSID = 'wpa2_wlan_3'
+    cs.security_key = 'hello123'
+    cs.config_wlan_wpa2()
+
+    # wireless_tag_policy
+    cs.tag_policy = 'RM204-TB1'
+    cs.policy_profile = 'default-policy-profile'
+    cs.config_wireless_tag_policy_and_policy_profile()
+    # enable_wlan
+    cs.config_enable_wlan_send_no_shutdown()
+    # enable_network_5ghz
+    cs.config_no_ap_dot11_5ghz_shutdown()
+    # enable_network_24ghz
+    # cs.config_no_ap_dot11_5ghz_shutdown()
+    # enable
+    cs.config_ap_no_dot11_5ghz_shutdown()
+    # config_ap_no_dot11_24ghz_shutdown
+    # advanced
+    cs.show_ap_dot11_5gz_summary()
+    # cs.show_ap_dot11_24gz_summary()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+
 # unit test for 9800 3504 controller
 def main():
     # arguments
@@ -777,12 +857,14 @@ INCLUDE_IN_README
     # cs.show_ap_config_slots()
 
     # sample to dump status
-    sample_test_dump_status(cs=cs)
+    # sample_test_dump_status(cs=cs)
 
     # test sequences used by tx_power
     # sample_test_tx_power_sequence(cs=cs)
 
-    test_config_tx_power_open(cs=cs)
+    # test_config_tx_power_open(cs=cs)
+
+    test_config_tx_power_wpa2(cs=cs)
 
 
 if __name__ == "__main__":
