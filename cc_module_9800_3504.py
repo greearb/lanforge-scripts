@@ -536,7 +536,7 @@ def sample_test_tx_power_sequence(cs):
 
     # disable
     cs.show_ap_dot11_5gz_shutdown()
-    # cs.show_ap_dot11_24gz_shutdown() not in txpower
+    cs.show_ap_dot11_24gz_shutdown() 
     # This needs to be here to disable and delete
     cs.wlan = 'wpa2_wlan_3'
     cs.wlanID = '3'
@@ -625,7 +625,7 @@ def sample_test_tx_power_sequence(cs):
     cs.config_enable_wlan_send_no_shutdown()
     # enable_network_5ghz
     cs.config_no_ap_dot11_5ghz_shutdown()
-    # enable_network_24ghz
+    # enable_network_24ghz 
     # cs.config_no_ap_dot11_5ghz_shutdown()
     # enable
     cs.config_ap_no_dot11_5ghz_shutdown()
@@ -649,7 +649,7 @@ def test_config_tx_power_open(cs):
 
     # disable
     cs.show_ap_dot11_5gz_shutdown()
-    # cs.show_ap_dot11_24gz_shutdown() not in txpower
+    cs.show_ap_dot11_24gz_shutdown()
 
     # This needs to be here to disable and delete
     cs.wlan = 'open-wlan'
@@ -728,7 +728,7 @@ def test_config_tx_power_wpa2(cs):
 
     # disable
     cs.show_ap_dot11_5gz_shutdown()
-    # cs.show_ap_dot11_24gz_shutdown() not in txpower
+    cs.show_ap_dot11_24gz_shutdown() 
     # This needs to be here to disable and delete
     cs.wlan = 'wpa2_wlan_3'
 
@@ -783,7 +783,7 @@ def test_config_tx_power_wpa2(cs):
     # enable_network_5ghz
     cs.config_no_ap_dot11_5ghz_shutdown()
     # enable_network_24ghz
-    # cs.config_no_ap_dot11_5ghz_shutdown()
+    # cs.config_no_ap_dot11_24ghz_shutdown()
     # enable
     cs.config_ap_no_dot11_5ghz_shutdown()
     # config_ap_no_dot11_24ghz_shutdown
@@ -862,7 +862,7 @@ INCLUDE_IN_README
     # test sequences used by tx_power
     # sample_test_tx_power_sequence(cs=cs)
 
-    # test_config_tx_power_open(cs=cs)
+    test_config_tx_power_open(cs=cs)
 
     test_config_tx_power_wpa2(cs=cs)
 
