@@ -128,16 +128,16 @@ def main():
     parser.add_argument("-t", "--tty", type=str, help="tty serial device")
     parser.add_argument("-l", "--log", type=str, help="logfile for messages, stdout means output to console", default="stdout")
     # parser.add_argument("-r", "--radio",   type=str, help="select radio")
-    parser.add_argument("-w", "--wlan", "--wlan_name", type=str, dest="wlan",help="wlan open-wlan , wlan name", default="open-wlan1")
+    parser.add_argument("-w", "--wlan", "--wlan_name", type=str, dest="wlan",help="wlan open-wlan , wlan name", default=None)
     parser.add_argument("-i", "--wlanID", type=str, help="wlan ID")
     parser.add_argument("--wlanSSID", type=str, help="wlan SSID")
     parser.add_argument("--security_key", type=str, help="wlan security_key")
     parser.add_argument("-a", "--ap", type=str, help="select AP", default="APA453.0E7B.CF9C")
     parser.add_argument("-b", "--band", type=str, help="Select band (a | b | abgn | 6g | 5g | 24g)",
                         choices=["24g", "5g", "6g", "a", "b", "abgn"])
-    parser.add_argument("--tag_policy", type=str, help="--tag_policy default-tag-policy", default="default-tag-policy")
+    parser.add_argument("--tag_policy", type=str, help="--tag_policy default-tag-policy")
     # parser.add_argument("--tag_policy",     type=str, help="--tag_policy default-tag-policy", default="RM204-TB2")
-    parser.add_argument("--policy_profile", type=str, help="--policy_profile default-policy-profile", default="default-policy-profile")
+    parser.add_argument("--policy_profile", type=str, help="--policy_profile default-policy-profile")
     # parser.add_argument("--wlan_name", type=str, help="--wlan_name open-wlan", default="open-wlan")
 
     parser.add_argument("--action", type=str, help="perform action",
@@ -1221,7 +1221,7 @@ def main():
         sleep(0.1)
         i = egg.expect_exact(["(config)#", pexpect.TIMEOUT], timeout=timeout)
         if i == 0:
-            for command in ["wireless tag policy default-policy-tag", "no wlan {} policy default-policy-profile".format(args.wlan)]:
+            for command in ["wireless tag policy {policy_tag}".format(policy_tag=args.tag_policy), "wlan {wlan_name} policy {policy_profile}".format(wlan_name=args.wlan,policy_profile=args.policy_profile)]:
                 egg.sendline(command)
                 sleep(1)
                 j = egg.expect_exact([CCP_POLICY_TAG, pexpect.TIMEOUT], timeout=timeout)
@@ -1232,6 +1232,8 @@ def main():
         if i == 1:
             logg.info("did not get the (config)# prompt")
 
+    if (args.action == "wireless_tag_policy" and (args.wlan is None)):
+        raise Exception("wlan is required")
     if (args.action == "wireless_tag_policy"):
         logg.info("send wireless tag policy")
         egg.sendline("config t")

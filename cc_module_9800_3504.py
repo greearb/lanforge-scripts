@@ -168,7 +168,7 @@ class create_controller_series_object:
 
         elif self.action in ["wireless_tag_policy"]:
 
-            self.command_extend = ["--action", self.action, "--tag_policy", self.tag_policy, "--policy_profile", self.policy_profile]
+            self.command_extend = ["--action", self.action, "--wlan", self.wlan, "--tag_policy", self.tag_policy, "--policy_profile", self.policy_profile]
             self.command.extend(self.command_extend)
 
         # possible need to look for exact command
@@ -653,6 +653,22 @@ def sample_test_tx_power_sequence(cs):
 def test_config_tx_power_open(cs):
 
     logger.info("test_config_tx_power_open")
+    # configure once at the top
+    cs.wlan = 'open-wlan-15'
+    cs.wlanID = '15'
+    cs.wlanSSID = 'open-wlan-15'
+    cs.config_wlan_open()
+
+    # wireless_tag_policy
+    cs.tag_policy = 'RM204-TB1'
+    cs.policy_profile = 'default-policy-profile'
+    cs.config_wireless_tag_policy_and_policy_profile()
+
+    cs.tx_power = '1'
+    cs.bandwidth = '20'
+    cs.channel = '100'
+    cs.bandwidth = '40'
+
 
     # no_logging_console
     cs.no_logging_console()
@@ -665,9 +681,6 @@ def test_config_tx_power_open(cs):
     cs.show_ap_dot11_5gz_shutdown()
     cs.show_ap_dot11_24gz_shutdown()
 
-    # This needs to be here to disable and delete
-    cs.wlan = 'open-wlan'
-
     # disable_wlan only need wlan
     cs.wlan_shutdown()
     # disable_network_5ghz
@@ -677,19 +690,15 @@ def test_config_tx_power_open(cs):
     # manual
     cs.ap_dot11_5ghz_radio_role_manual_client_serving()
     # cs.ap_dot11_24ghz_radio_role_manual_client_serving()
-    cs.tx_power = '1'
-
+   
     # Configuration for 5g
 
     # txPower
     cs.config_dot11_5ghz_tx_power()
-    cs.bandwidth = '20'
     # bandwidth (to set to 20 if channel change does not support)
     cs.config_dot11_5ghz_channel_width()
-    cs.channel = '100'
     # channel
     cs.config_dot11_5ghz_channel()
-    cs.bandwidth = '40'
     # bandwidth
     cs.config_dot11_5ghz_channel_width()
     # show_wlan_summary
@@ -698,21 +707,12 @@ def test_config_tx_power_open(cs):
     # delete_wlan
     # TODO (there were two in tx_power the logs)
     # need to check if wlan present
-    cs.wlan = 'open-wlan'
-
     # delete wlan
-    cs.config_no_wlan()
+    # cs.config_no_wlan()
 
     # create_wlan  open
-    cs.wlan = 'open-wlan'
-    cs.wlanID = '1'
-    cs.wlanSSID = 'open-wlan'
-    cs.config_wlan_open()
 
-    # wireless_tag_policy
-    cs.tag_policy = 'RM204-TB1'
-    cs.policy_profile = 'default-policy-profile'
-    cs.config_wireless_tag_policy_and_policy_profile()
+    
     # enable_wlan
     cs.config_enable_wlan_send_no_shutdown()
     # enable_network_5ghz
