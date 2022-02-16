@@ -186,25 +186,16 @@ class create_controller_series_object:
         # logger.info(pformat(self.command))
         logger.info(self.command)
         # TODO change the subprocess.run to pOpen
-        # capture output needs to be read , also need to catch exceptions
-        # advanced = subprocess.run(self.command, capture_output=False, check=True)
-        # So using capture_output=True is a no-go, because the output will be stored in a pipe
-        # for you to read after the call finishes.
-        # The simpler is for you to use subprocess.Popen
-        # advanced = subprocess.run(self.command, capture_output=True, check=True)
-        # logger.info(advanced.stdout.decode('utf-8', 'ignore'))
-        # logger.info(advanced.stderr.decode('utf-8', 'ignore'))
-        # return advanced.stdout
-        advanced_output = ''
-        advanced = subprocess.Popen(self.command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        for line in iter(advanced.stdout.readline, ''):
+        summary_output = ''
+        summary = subprocess.Popen(self.command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for line in iter(summary.stdout.readline, ''):
             logger.debug(line)
-            advanced_output += line
+            summary_output += line
             # sys.stdout.flush() # please see comments regarding the necessity of this line
-        advanced.wait()
-        logger.info(advanced_output)  # .decode('utf-8', 'ignore'))
+        summary.wait()
+        logger.info(summary_output)  # .decode('utf-8', 'ignore'))
         # logger.info(advanced.stderr.decode('utf-8', 'ignore'))
-        return advanced_output
+        return summary_output
 
     def show_ap_config_slots(self):
         logger.info("show ap config slots")
@@ -877,6 +868,7 @@ INCLUDE_IN_README
         band=args.band,
         timeout=args.timeout)
 
+    # TODO add ability to select tests
     # cs.show_ap_config_slots()
 
     # sample to dump status
