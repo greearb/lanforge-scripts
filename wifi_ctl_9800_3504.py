@@ -58,7 +58,7 @@ import os
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../")))
 
-# TODO change the name from logg to logger 
+# TODO change the name from logg to logger
 # to match consistency with other files.
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -99,8 +99,10 @@ def usage():
 
 # see https://stackoverflow.com/a/13306095/11014343
 
-# Used by pexpect 
+# Used by pexpect
 # TODO need to change as all pexpect has line number of the write
+
+
 class FileAdapter(object):
     def __init__(self, logger):
         self.logger = logger
@@ -128,7 +130,7 @@ def main():
     parser.add_argument("-t", "--tty", type=str, help="tty serial device")
     parser.add_argument("-l", "--log", type=str, help="logfile for messages, stdout means output to console", default="stdout")
     # parser.add_argument("-r", "--radio",   type=str, help="select radio")
-    parser.add_argument("-w", "--wlan", "--wlan_name", type=str, dest="wlan",help="wlan open-wlan , wlan name", default=None)
+    parser.add_argument("-w", "--wlan", "--wlan_name", type=str, dest="wlan", help="wlan open-wlan , wlan name", default=None)
     parser.add_argument("-i", "--wlanID", type=str, help="wlan ID")
     parser.add_argument("--wlanSSID", type=str, help="wlan SSID")
     parser.add_argument("--security_key", type=str, help="wlan security_key")
@@ -151,7 +153,6 @@ def main():
     parser.add_argument(
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
-
 
     args = None
     try:
@@ -180,7 +181,6 @@ def main():
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-
     if args.series == "9800":
         SEND_MORE = ' '
     else:
@@ -193,17 +193,17 @@ def main():
     # TODO Refactor for script to work must have output go to console_handler
     # This does work since it is a subordinate to the root logger
     # logg.setLevel(logging.DEBUG)
-    # WARNING : pexpect uses the expect uses the fileadapter 
+    # WARNING : pexpect uses the expect uses the fileadapter
     # TODO refactor pexpect
     file_handler = None
     if (logfile is not None):
-       if (logfile != "stdout"):
-           file_handler = logging.FileHandler(logfile, "w")
-           file_handler.setLevel(logging.DEBUG)
-           file_handler.setFormatter(formatter)
-           logg.addHandler(file_handler)
-           logging.basicConfig(format=FORMAT, handlers=[file_handler])
-       else:
+        if (logfile != "stdout"):
+            file_handler = logging.FileHandler(logfile, "w")
+            file_handler.setLevel(logging.DEBUG)
+            file_handler.setFormatter(formatter)
+            logg.addHandler(file_handler)
+            logging.basicConfig(format=FORMAT, handlers=[file_handler])
+        else:
             # stdout logging
             logging.basicConfig(format=FORMAT, handlers=[console_handler])
 
@@ -273,7 +273,7 @@ def main():
                     # egg.sendline(CR)
                     # sleep(0.4)
                     try:
-                        i = egg.expect_exact(["Escape character is '^]'.", CCP, CCP_EN, "User:", "Password:", CCP_CONFIG, "Bad secrets",  CCP_FINGERPRINT, pexpect.TIMEOUT],
+                        i = egg.expect_exact(["Escape character is '^]'.", CCP, CCP_EN, "User:", "Password:", CCP_CONFIG, "Bad secrets", CCP_FINGERPRINT, pexpect.TIMEOUT],
                                              timeout=timeout)
                     except Exception as e:
                         logg.info('connection failed. or refused Connection open by other process')
@@ -1090,6 +1090,10 @@ def main():
                     sleep(0.5)
             if i == 1:
                 logg.info("timed out on (config)# disable_network_5ghz")
+        # 3504
+        else:
+            logg.info("3504 disable_network_5ghz")
+            command = 'config 802.11a disable network'
 
     if (args.action == "disable_network_24ghz"):
         if args.series == "9800":
@@ -1110,6 +1114,10 @@ def main():
                     sleep(0.5)
             if i == 1:
                 logg.info("timed out on (config)# disable_network_24ghz")
+        # 3504
+        else:
+            logg.info("3504 disable_network_24ghz")
+            command = 'config 802.11a disable network'
 
     if (args.action == "enable_network_5ghz"):
         if args.series == "9800":
@@ -1121,6 +1129,9 @@ def main():
                 sleep(0.1)
             if i == 1:
                 logg.info("timed out on (config) prompt")
+        else:
+            logg.info("3504 enable_network_5ghz")
+            command = "config 802.11a enable network"
 
     if (args.action == "enable_network_24ghz"):
         if args.series == "9800":
@@ -1132,6 +1143,9 @@ def main():
                 sleep(0.1)
             if i == 1:
                 logg.info("timed out on (config) prompt")
+        else:
+            logg.info("3504 enable_network_24ghz")
+            command = "config 802.11b enable network"
 
     if (args.action == "enable" and (args.ap is None)):
         raise Exception("action requires AP name")
@@ -1177,7 +1191,7 @@ def main():
         if args.series == "9800":
             if band == "6g":
                 command = "ap name %s dot11 6ghz channel width %s" % (args.ap, args.value)
-            elif band == "5g" or band== "a":
+            elif band == "5g" or band == "a":
                 command = "ap name %s dot11 5ghz channel width %s" % (args.ap, args.value)
             elif band == "24g" or band == "b":
                 command = "ap name %s dot11 24ghz channel width %s" % (args.ap, args.value)
@@ -1221,7 +1235,7 @@ def main():
         sleep(0.1)
         i = egg.expect_exact(["(config)#", pexpect.TIMEOUT], timeout=timeout)
         if i == 0:
-            for command in ["wireless tag policy {policy_tag}".format(policy_tag=args.tag_policy), "wlan {wlan_name} policy {policy_profile}".format(wlan_name=args.wlan,policy_profile=args.policy_profile)]:
+            for command in ["wireless tag policy {policy_tag}".format(policy_tag=args.tag_policy), "wlan {wlan_name} policy {policy_profile}".format(wlan_name=args.wlan, policy_profile=args.policy_profile)]:
                 egg.sendline(command)
                 sleep(1)
                 j = egg.expect_exact([CCP_POLICY_TAG, pexpect.TIMEOUT], timeout=timeout)
@@ -1242,7 +1256,7 @@ def main():
         if i == 0:
             # RM204-TB2
             # for command in ["wireless tag policy default-policy-tag","wlan open-wlan policy default-policy-profile"]:
-            for command in ["wireless tag policy {policy_tag}".format(policy_tag=args.tag_policy), "wlan {wlan_name} policy {policy_profile}".format(wlan_name=args.wlan,policy_profile=args.policy_profile)]:
+            for command in ["wireless tag policy {policy_tag}".format(policy_tag=args.tag_policy), "wlan {wlan_name} policy {policy_profile}".format(wlan_name=args.wlan, policy_profile=args.policy_profile)]:
                 egg.sendline(command)
                 sleep(1)
                 j = egg.expect_exact([CCP_POLICY_TAG, pexpect.TIMEOUT], timeout=timeout)
@@ -1329,7 +1343,7 @@ def main():
                         "security wpa psk set-key ascii 0 {security_key}".format(security_key=args.security_key),
                         "no security wpa akm dot1x",
                         "security wpa akm psk",
-                        "no shutdown"]:
+                            "no shutdown"]:
                         egg.sendline(command)
                         sleep(1)
                         k = egg.expect_exact([CCP_CONFIG_WLAN, pexpect.TIMEOUT], timeout=timeout)
@@ -1376,7 +1390,7 @@ def main():
                         "security wpa akm sae pwe h2e",
                         "security wpa wpa3",
                         "security pmf mandatory",
-                        "no shutdown"]:
+                            "no shutdown"]:
                         egg.sendline(command)
                         sleep(1)
                         k = egg.expect_exact([CCP_CONFIG_WLAN, pexpect.TIMEOUT], timeout=timeout)
@@ -1390,7 +1404,6 @@ def main():
                 logg.info("did not get the (config)# prompt")
         else:
             command = "config wlan create {} {} {}".format(args.wlanID, args.wlan, args.wlanSSID)
-
 
     if (args.action == "create_wlan" and ((args.wlanID is None) or (args.wlan is None) or (args.wlanSSID is None))):
         raise Exception("wlanID, wlan, wlanSSID are required an")
@@ -1423,7 +1436,7 @@ def main():
                         "no security wpa wpa2 ciphers aes"
                         "no security dot1x authentication-list",
                         "no security wpa akm dot1x",
-                        "no shutdown"]:
+                            "no shutdown"]:
                         egg.sendline(command)
                         sleep(1)
                         k = egg.expect_exact([CCP_CONFIG_WLAN, pexpect.TIMEOUT], timeout=timeout)
