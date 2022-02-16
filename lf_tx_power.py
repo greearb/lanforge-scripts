@@ -359,7 +359,7 @@ def main():
     parser.add_argument("--radio", type=str, help="radio to create LANforge station on at the beginning of the test")
     parser.add_argument("--ssid", type=str, help="ssid, this must patch the wlan", required=True)
     parser.add_argument("--ssidpw", "--security_key", dest='ssidpw', type=str, help="ssidpw", required=True)
-    parser.add_argument("--security", type=str, help="security", required=True)
+    parser.add_argument("--security", type=str, help="security type open wpa wpa2 wpa3", required=True)
     parser.add_argument("--cleanup", action='store_true', help="--cleanup , Clean up stations after test completes ")
     parser.add_argument("--vht160", action='store_true', help="--vht160 , Enable VHT160 in lanforge ")
     parser.add_argument('--verbose', action='store_true', help='--verbose , switch the cisco controller output will be captured')
