@@ -169,7 +169,7 @@ class IPVariableTime(Realm):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
-            self.exit_fail()
+            #self.exit_fail()
         self.cx_profile.start_cx()
 
     def stop(self):
