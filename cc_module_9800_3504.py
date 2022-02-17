@@ -172,9 +172,9 @@ class create_controller_series_object:
             self.command.extend(self.command_extend)
 
         # possible need to look for exact command
-        elif self.action in ["summary", "no_logging_console", "line_console_0", "show_wlan_summary",
+        elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_wlan_summary",
                              "advanced", "disable", "disable_network_5ghz", "disable_network_24ghz",
-                             "manual", "enable_network_5ghz", "enable_network_24ghz", "enable"]:
+                             "manual", "auto", "enable_network_5ghz", "enable_network_24ghz", "enable"]:
 
             self.command_extend = ["--action", self.action]
             self.command.extend(self.command_extend)
@@ -218,6 +218,12 @@ class create_controller_series_object:
     def line_console_0(self):
         logger.info("line_console_0")
         self.action = "line_console_0"
+        summary = self.send_command()
+        return summary
+
+    def show_controllers_dot11Radio_0(self):
+        logger.info("show radio")
+        self.action = "show_radio"
         summary = self.send_command()
         return summary
 
@@ -484,21 +490,21 @@ class create_controller_series_object:
 
     # enable_network_5ghz
     def config_no_ap_dot11_5ghz_shutdown(self):
-        logger.info("config_no_ap_dot11_5ghz_shutdown: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        logger.info("config_no_ap_dot11_5ghz_shutdown (enable network 5ghz): Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
         self.action = "enable_network_5ghz"
         summary = self.send_command()
         return summary
 
     # enable_network_24ghz
     def config_no_ap_dot11_24ghz_shutdown(self):
-        logger.info("config_no_ap_dot11_24ghz_shutdown: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        logger.info("config_no_ap_dot11_24ghz_shutdown (enable network 24ghz): Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
         self.action = "enable_network_24ghz"
         summary = self.send_command()
         return summary
 
     # enable ap 5ghz
     def config_ap_no_dot11_5ghz_shutdown(self):
-        logger.info("ap name %s dot11 5ghz shutdown {ap}".format(ap=self.ap))
+        logger.info("ap name %s dot11 5ghz shutdown {ap}  (enable ap)".format(ap=self.ap))
         self.band = '5g'
         self.action = "enable"
         summary = self.send_command()
@@ -506,7 +512,7 @@ class create_controller_series_object:
 
     # enable ap 24ghz
     def config_ap_no_dot11_24ghz_shutdown(self):
-        logger.info("ap name %s dot11 5ghz shutdown {ap}".format(ap=self.ap))
+        logger.info("ap name %s dot11 24ghz shutdown {ap} (enable ap)".format(ap=self.ap))
         self.band = '24g'
         self.action = "enable"
         summary = self.send_command()
@@ -539,6 +545,15 @@ def sample_test_tx_power_sequence(cs):
     # cs.band = '5g'
 
     logger.info("sample_test_tx_power_sequence")
+    # This needs to be here to disable and delete
+    cs.wlan = 'wpa2_wlan_3'
+    cs.wlanID = '3'
+    cs.wlanSSID = 'wpa2_wlan_3'
+    cs.tx_power = '1'
+
+    cs.tag_policy = 'RM204-TB1'
+    cs.policy_profile = 'default-policy-profile'
+
 
     # no_logging_console
     cs.no_logging_console()
@@ -550,10 +565,6 @@ def sample_test_tx_power_sequence(cs):
     # disable
     cs.show_ap_dot11_5gz_shutdown()
     cs.show_ap_dot11_24gz_shutdown()
-    # This needs to be here to disable and delete
-    cs.wlan = 'wpa2_wlan_3'
-    cs.wlanID = '3'
-    cs.wlanSSID = 'wpa2_wlan_3'
 
     # disable_wlan
     cs.wlan_shutdown()
@@ -563,8 +574,7 @@ def sample_test_tx_power_sequence(cs):
     cs.ap_dot11_24ghz_shutdown()
     # manual
     cs.ap_dot11_5ghz_radio_role_manual_client_serving()
-    # cs.ap_dot11_24ghz_radio_role_manual_client_serving()
-    cs.tx_power = '1'
+    cs.ap_dot11_24ghz_radio_role_manual_client_serving()
 
     # Configuration for 5g
 
@@ -600,8 +610,6 @@ def sample_test_tx_power_sequence(cs):
     # delete_wlan
     # TODO (there were two in tx_power the logs)
     # need to check if wlan present
-    cs.wlan = 'wpa2_wlan_3'
-
     # delete wlan
     cs.config_no_wlan()
 
@@ -617,10 +625,6 @@ def sample_test_tx_power_sequence(cs):
     # cs.config_wlan_open()
 
     # create_wlan_wpa2
-    cs.wlan = 'wpa2_wlan_3'
-    cs.wlanID = '3'
-    cs.wlanSSID = 'wpa2_wlan_3'
-    cs.security_key = 'hello123'
     cs.config_wlan_wpa2()
 
     # create_wlan_wpa3
@@ -631,8 +635,6 @@ def sample_test_tx_power_sequence(cs):
     # cs.config_wlan_wpa3()
 
     # wireless_tag_policy
-    cs.tag_policy = 'RM204-TB1'
-    cs.policy_profile = 'default-policy-profile'
     cs.config_wireless_tag_policy_and_policy_profile()
     # enable_wlan
     cs.config_enable_wlan_send_no_shutdown()
@@ -650,7 +652,7 @@ def sample_test_tx_power_sequence(cs):
     cs.show_wlan_summary()
 
 
-def test_config_tx_power_open(cs):
+def test_config_tx_power_5g_open(cs):
 
     logger.info("test_config_tx_power_open")
     # configure once at the top
@@ -665,7 +667,6 @@ def test_config_tx_power_open(cs):
     cs.config_wireless_tag_policy_and_policy_profile()
 
     cs.tx_power = '1'
-    cs.bandwidth = '20'
     cs.channel = '100'
     cs.bandwidth = '40'
 
@@ -689,17 +690,19 @@ def test_config_tx_power_open(cs):
     cs.ap_dot11_24ghz_shutdown()
     # manual
     cs.ap_dot11_5ghz_radio_role_manual_client_serving()
-    # cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+    cs.ap_dot11_24ghz_radio_role_manual_client_serving()
    
     # Configuration for 5g
 
     # txPower
     cs.config_dot11_5ghz_tx_power()
     # bandwidth (to set to 20 if channel change does not support)
+    cs.bandwidth = '20'
     cs.config_dot11_5ghz_channel_width()
     # channel
     cs.config_dot11_5ghz_channel()
     # bandwidth
+    cs.bandwidth = '40'
     cs.config_dot11_5ghz_channel_width()
     # show_wlan_summary
     cs.show_wlan_summary()
@@ -718,13 +721,14 @@ def test_config_tx_power_open(cs):
     # enable_network_5ghz
     cs.config_no_ap_dot11_5ghz_shutdown()
     # enable_network_24ghz
-    # cs.config_no_ap_dot11_5ghz_shutdown()
+    cs.config_no_ap_dot11_24ghz_shutdown()
     # enable
     cs.config_ap_no_dot11_5ghz_shutdown()
+    cs.config_ap_no_dot11_24ghz_shutdown()
     # config_ap_no_dot11_24ghz_shutdown
     # advanced
     cs.show_ap_dot11_5gz_summary()
-    # cs.show_ap_dot11_24gz_summary()
+    cs.show_ap_dot11_24gz_summary()
     # show_wlan_summary
     cs.show_wlan_summary()
 
@@ -869,7 +873,7 @@ INCLUDE_IN_README
         timeout=args.timeout)
 
     # TODO add ability to select tests
-    # cs.show_ap_config_slots()
+    # cs.show_controllers_dot11Radio_0()
 
     # sample to dump status
     # sample_test_dump_status(cs=cs)
@@ -877,7 +881,7 @@ INCLUDE_IN_README
     # test sequences used by tx_power
     # sample_test_tx_power_sequence(cs=cs)
 
-    test_config_tx_power_open(cs=cs)
+    test_config_tx_power_5g_open(cs=cs)
 
     # test_config_tx_power_wpa2(cs=cs)
 

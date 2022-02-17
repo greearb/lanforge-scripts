@@ -241,7 +241,7 @@ def usage():
     print("-t|--tty tty serial device")
     print("-l|--log <store true> log has same namelog messages here ,stdout means output to console, default stdout")
     print("-a|--ap select AP")
-    print("-b|--bandwidth: List of bandwidths to test: 20 40 80 160, NA means no change, 160 can only do 2x2 spatial streams due to radio limitations")
+    print("-b|--bandwidth: List of bandwidths to test: 20 40 80 160, NA means no change, 160 can only do 2x2 spatial streams in Intel due to radio limitations")
     print("-c|--channel: List of channels, with optional path-loss to test: 36:64 100:60 , NA means no change")
     print("-n|--nss: List of spatial streams to test: 1x1 2x2 3x3 4x4, NA means no change")
     print("-T|--txpower: List of TX power values to test: 1 2 3 4 5 6 7 8, NA means no change, 1 is highest power, the power is halved for each subsquent setting")
@@ -318,15 +318,13 @@ def main():
     global pf_ignore_offset
     global failed_low_threshold
 
-    scheme = "ssh"
-
     parser = argparse.ArgumentParser(description="Cisco TX Power report Script", epilog=EPILOG,
                                      formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("-d", "--dest", type=str, help="address of the cisco controller", required=True)
     parser.add_argument("-o", "--port", type=str, help="control port on the controller", required=True)
     parser.add_argument("-u", "--user", type=str, help="credential login/username", required=True)
     parser.add_argument("-p", "--passwd", type=str, help="credential password", required=True)
-    parser.add_argument("-s", "--scheme", type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
+    parser.add_argument("-s", "--scheme", type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet", required=True)
     parser.add_argument("-t", "--tty", type=str, help="tty serial device")
     parser.add_argument("-l", "--log", action='store_true', help="create logfile for messages, default stdout")
     parser.add_argument("-a", "--ap", type=str, help="select AP")
@@ -394,8 +392,6 @@ def main():
     try:
         # Parcing the input parameters and assignment
         args = parser.parse_args()
-        if (args.scheme is not None):
-            scheme = args.scheme
         # logfile = args.log
         if (args.station is not None):
             lfstation = args.station
@@ -415,10 +411,6 @@ def main():
             outfile = args.outfile
             full_outfile = "full-%s" % (outfile)
             outfile_xlsx = "%s.xlsx" % (outfile)
-        if (args.band is not None):
-            band = args.band
-        else:
-            band = "a"
         if (args.pf_dbm is not None):
             pf_dbm = int(args.pf_dbm)
         if (args.pf_ignore_offset is not None):
@@ -889,6 +881,7 @@ def main():
                     # Down station
                     port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
                                                  "--set_ifstate", "down"])
+                    cs.show_ap_summary()
 
                     # Disable AP, apply settings, enable AP
                     cs.show_ap_dot11_5gz_shutdown()
@@ -900,11 +893,13 @@ def main():
                         cs.wlan_shutdown()
                         cs.ap_dot11_5ghz_shutdown()
                         cs.ap_dot11_24ghz_shutdown()
+                        # manual
                         cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+                        cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+
                     else:
                         cs.ap_dot11_5ghz_shutdown()
                         cs.ap_dot11_24ghz_shutdown()
-
 
                     logg.info("9800/3504 test_parameters_summary: set : tx: {tx_power} ch: {channel} bw: {bandwidth}".format(
                         tx_power=tx, channel=ch, bandwidth=bw))
@@ -912,31 +907,46 @@ def main():
                         logg.info("9800/3504 test_parameters: set txPower: {tx_power}".format(tx_power=tx))
                         cs.tx_power = tx
                         # TODO add 24ghz and 6ghz
-                        cs.config_dot11_5ghz_tx_power()
+                        if args.band == 'a':
+                            cs.config_dot11_5ghz_tx_power()
+                        elif args.band == 'b':
+                            cs.config_dot11_5ghz_tx_power()
+                            
                         # TODO add 24ghz and 6ghz
 
                     if (bw != "NA"):
                         logg.info("bandwidth 20 prior to setting channel, some channels only support 20")
                         cs.bandwidth = '20'
                         cs.config_dot11_5ghz_channel_width()
+                        cs.config_dot11_24ghz_channel_width()
                         # TODO add 24ghz , 6ghz
 
                     # NSS is set on the station earlier...
                     if (ch != "NA"):
                         logg.info("9800/3504 test_parameters set channel: {}".format(ch))
                         cs.channel = ch
-                        cs.config_dot11_5ghz_channel()
+                        if args.band == 'a':
+                            cs.config_dot11_5ghz_channel()
+                        elif args.band == 'b':                            
+                            cs.config_dot11_24ghz_channel()
 
                     if (bw != "NA"):
                         logg.info("9800/3504 test_parameters bandwidth: set : {}".format(bw))
                         cs.bandwidth = bw
-                        cs.config_dot11_5ghz_channel_width()
+                        if args.band == 'a':
+                            cs.config_dot11_5ghz_channel_width()
+                        elif args.band == 'b':
+                            if bw != '20':
+                                logg.info(" 24ghz channel bw should be 20")
+                            cs.config_dot11_24ghz_channel_width()
 
                     # only create the wlan the first time
                     if args.series == "9800":
                         if args.create_wlan is False:
                             wlan_created = True
                         if wlan_created:
+                            pss = cs.show_wlan_summary()
+                            logg.info(pss)
                             logg.info("wlan already present, no need to create wlanID {} wlan {} wlanSSID {} port {}".format(args.wlanID, args.wlan, args.wlanSSID, args.port))
                             pass
                         else:
@@ -969,6 +979,7 @@ def main():
                             logg.info("create wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port))
                             # TODO be able to do for WPA2 , WPA3
                             # TODO check for failure to close cookbook
+                            # this needs to be configurable
                             cs.config_wlan_open()
 
                             cs.config_wireless_tag_policy_and_policy_profile()
@@ -977,22 +988,21 @@ def main():
                         cs.config_enable_wlan_send_no_shutdown()
 
                     # enable transmission for the entier 802.11z network
-                    if args.series == "9800":
-                        # enable_network_5ghz
+                    # enable_network_5ghz
+                    if args.band == 'a':
+                        # enable 5g wlan
                         pss = cs.config_no_ap_dot11_5ghz_shutdown()
                         logg.info(pss)
+                        # enable 5g
+                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+                        logg.info(pss)
 
+                    elif args.band == 'b':
+                        # enable wlan
                         pss = cs.config_no_ap_dot11_24ghz_shutdown()
                         logg.info(pss)
-                    else:
-                        pss = cs.config_no_ap_dot11_5ghz_shutdown()
-                        logg.info(pss)
-
-                        pss = cs.config_no_ap_dot11_24ghz_shutdown()
-                        logg.info(pss)
-
-                    # TODO enable 24g and 6g
-                    pss = cs.config_ap_no_dot11_5ghz_shutdown()
+                        # enable 2ghz 
+                        cs.config_ap_no_dot11_24ghz_shutdown()
 
                     # Wait a bit for AP to come back up
                     time.sleep(3)
@@ -1004,8 +1014,13 @@ def main():
                             loop_count += 1
                             time.sleep(1)
                             # TODO configuration for 24g, 6g
-                            pss = cs.show_ap_dot11_5gz_summary()
-                            logg.info(pss)
+                            if args.band == 'a':
+                                pss = cs.show_ap_dot11_5gz_summary()
+                                logg.info(pss)
+                            else:
+                                pss = cs.show_ap_dot11_24gz_summary()
+                                logg.info(pss)
+
 
                             searchap = False
                             cc_mac = ""
@@ -1063,6 +1078,12 @@ def main():
                     else:
                         # TODO configuration for 24g, 6g
                         pss = cs.show_ap_dot11_5gz_summary()
+                        logg.info(pss)
+                        pss = cs.show_ap_dot11_24gz_summary()
+                        logg.info(pss)
+                        pss = cs.show_wlan_summary()
+                        logg.info(pss)
+
 
                         searchap = False
                         cc_mac = ""
@@ -1822,6 +1843,8 @@ def main():
         logg.info("9800/3504 flag --keep_state set thus keeping state")
         pss = cs.show_ap_dot11_5gz_summary()
         logg.info(pss)
+        pss = cs.show_ap_dot11_24gz_summary()
+        logg.info(pss)
         pss = cs.show_ap_summary()
         logg.info(pss)
 
@@ -1835,8 +1858,6 @@ def main():
 
         # Disable AP, apply settings, enable AP
         # TODO disable 24gz
-        cs.show_ap_dot11_5gz_shutdown()
-
         if args.series == "9800":
             pss = cs.config_no_wlan()
             logg.info(pss)
