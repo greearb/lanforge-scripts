@@ -14,6 +14,7 @@ import time
 import logging
 import re
 import sys
+import datetime
 
 import importlib
 import os
@@ -732,6 +733,9 @@ def main():
     worksheet.set_column(col, col, 24)  # Set width
     worksheet.write(row, col, 'Time Stamp\n', dgreen_bold)
     col += 1
+    worksheet.set_column(col, col, 24)  # Set width
+    worksheet.write(row, col, 'Run Time\n', dgreen_bold)
+    col += 1
     worksheet.set_column(col, col, 100)  # Set width
     worksheet.write(row, col, 'Information, Warnings, Errors', dgreen_bold_left)
     col += 1
@@ -823,6 +827,9 @@ def main():
     # The is the main loop of loops:   Channels, spatial streams (nss), bandwidth (bw), txpowers (tx)
     # Note: supports 9800 and 3504 controllers
     wlan_created = False
+    run_start_time = datetime.datetime.now()
+    run_start_time_str = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':', '-')
+    logger.info("run_start_time : {run_start_time}".format(run_start_time=run_start_time_str))
     for ch in channels:
         pathloss = args.pathloss
         antenna_gain = args.antenna_gain
@@ -911,7 +918,7 @@ def main():
                             cs.config_dot11_5ghz_tx_power()
                         elif args.band == 'b':
                             cs.config_dot11_5ghz_tx_power()
-                            
+
                         # TODO add 24ghz and 6ghz
 
                     if (bw != "NA"):
@@ -927,7 +934,7 @@ def main():
                         cs.channel = ch
                         if args.band == 'a':
                             cs.config_dot11_5ghz_channel()
-                        elif args.band == 'b':                            
+                        elif args.band == 'b':
                             cs.config_dot11_24ghz_channel()
 
                     if (bw != "NA"):
@@ -1001,7 +1008,7 @@ def main():
                         # enable wlan
                         pss = cs.config_no_ap_dot11_24ghz_shutdown()
                         logg.info(pss)
-                        # enable 2ghz 
+                        # enable 2ghz
                         cs.config_ap_no_dot11_24ghz_shutdown()
 
                     # Wait a bit for AP to come back up
@@ -1020,7 +1027,6 @@ def main():
                             else:
                                 pss = cs.show_ap_dot11_24gz_summary()
                                 logg.info(pss)
-
 
                             searchap = False
                             cc_mac = ""
@@ -1083,7 +1089,6 @@ def main():
                         logg.info(pss)
                         pss = cs.show_wlan_summary()
                         logg.info(pss)
-
 
                         searchap = False
                         cc_mac = ""
@@ -1627,25 +1632,36 @@ def main():
 
                     if (pf == 0 or e_tot != ""):
                         pfs = "FAIL"
+                    run_end_time = datetime.datetime.now()
+                    run_end_time_str = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':', '-')
+                    logger.info("run_end_time : {run_end_time}".format(run_end_time=run_end_time_str))
+
+                    run_time_delta = run_end_time - run_start_time
+                    minutes, seconds = divmod(run_time_delta.seconds, 60)
+                    hours, minutes = divmod(minutes, 60)
+                    run_duration = "{day}d {hours}h {minutes}m {seconds}s {msec} ms".format(
+                        day=run_time_delta.days, hours=hours, minutes=minutes, seconds=seconds, msec=run_time_delta.microseconds)
+                    logger.info("Run Duration:  {run_duration}".format(run_duration=run_duration))
+                    run_start_time = run_end_time
 
                     time_stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]
-                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
+                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
                         myrd, pathloss, antenna_gain, ch, n, bw, tx, beacon_sig, sig,
                         antstr, _ap, _bw, _ch, _mode, _nss, _noise, _rxrate,
                         cc_mac, cc_ch, cc_power, cc_dbm,
                         calc_dbm, diff_dbm, calc_ant1, calc_ant2, calc_ant3, calc_ant4,
-                        diff_a1, diff_a2, diff_a3, diff_a4, pfs, time_stamp
+                        diff_a1, diff_a2, diff_a3, diff_a4, pfs, time_stamp, run_duration
                     )
 
                     # logg.info("RESULT: %s"%(ln))
                     csv.write(ln)
                     csv.write("\t")
 
-                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
+                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
                         myrd, pathloss, antenna_gain, _ch, _nss, _bw, tx, allowed_per_path,
                         antstr,
                         calc_ant1, calc_ant2, calc_ant3, calc_ant4,
-                        diff_a1, diff_a2, diff_a3, diff_a4, pfs, time_stamp
+                        diff_a1, diff_a2, diff_a3, diff_a4, pfs, time_stamp, run_duration
                     )
                     csvs.write(ln)
                     csvs.write("\t")
@@ -1743,6 +1759,9 @@ def main():
                         col += 1
                     worksheet.write(row, col, time_stamp, green)
                     col += 1
+                    worksheet.write(row, col, run_duration, green)
+                    col += 1
+
                     if (_bw != bw):
                         err = "ERROR:  Requested bandwidth: %s != station's reported bandwidth: %s.  " % (bw, _bw)
                         e_tot += err
