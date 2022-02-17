@@ -185,7 +185,7 @@ class create_controller_series_object:
             self.command.extend(self.command_extend)
 
         # possible need to look for exact command
-        elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_ap_wlan_summary", "show_wlan_summary",
+        elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_ap_wlan_summary", "show_wlan_summary", "show_wlan_id",
                              "advanced", "disable", "disable_network_5ghz", "disable_network_24ghz",
                              "manual", "auto", "enable_network_5ghz", "enable_network_24ghz", "enable"]:
 
@@ -215,6 +215,14 @@ class create_controller_series_object:
         logger.info("show ap config slots")
         self.action = "cmd"
         self.value = "show ap config slots"
+        summary = self.send_command()
+        return summary
+
+    # show wlan id <wlan ID>
+    def show_wlan_id(self):
+        logger.info("show ap config slots")
+        self.action = "cmd"
+        self.value = "show wlan id {wlanID}".format(wlanID=self.wlanID)
         summary = self.send_command()
         return summary
 
@@ -580,7 +588,7 @@ def sample_test_dump_status(cs):
 def sample_test_setting_dtim(cs):
     logger.info("sample_test_setting_dtim")
     # This needs to be here to disable and delete
-    cs.dtim = '100'
+    cs.dtim = '1'
 
     cs.wlan = 'wpa2_wlan_7'
     cs.wlanID = '7'
@@ -1010,11 +1018,17 @@ INCLUDE_IN_README
     # sample_test_tx_power_sequence(cs=cs)
 
     # test dtim
-    sample_test_setting_dtim(cs=cs)
+    # sample_test_setting_dtim(cs=cs)
+    cs.wlanID = 7
+    summary = cs.show_wlan_id()
 
     # test_config_tx_power_5g_open(cs=cs)
 
     # test_config_tx_power_wpa2(cs=cs)
+    # summary = cs.show_ap_wlan_summary()
+    # logger.info(summary)
+
+    # cs.show_wlan_summary()
 
 
 if __name__ == "__main__":
