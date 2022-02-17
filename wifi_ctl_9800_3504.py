@@ -144,7 +144,7 @@ def main():
 
     parser.add_argument("--action", type=str, help="perform action",
                         choices=["config", "debug_disable_all", "no_logging_console", "line_console_0", "country", "ap_country", "enable", "disable", "summary", "advanced",
-                                 "cmd", "txPower", "bandwidth", "manual", "auto", "no_wlan", "show_wlan_summary", "show_radio",
+                                 "cmd", "txPower", "bandwidth", "manual", "auto", "no_wlan", "show_ap_wlan_summary", "show_wlan_summary", "show_radio",
                                  "ap_channel", "auto_rf", "channel", "show", "create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "enable_wlan", "disable_wlan", "wlan_qos",
                                  "disable_network_5ghz", "disable_network_24ghz", "enable_network_5ghz", "enable_network_24ghz",
                                  "wireless_tag_policy", "no_wlan_wireless_tag_policy", "delete_wlan"])
@@ -1007,6 +1007,13 @@ def main():
     # show controllers dot11Radio 0 wlan
     if (args.action == "show_radio"):
         command = "show controllers dot11Radio 0 wlan"
+
+    if (args.action == "show_ap_wlan_summary"):
+        if args.series == "9800":
+            command = "show ap wlan summary"
+        else:
+            # untested on 3504
+            command = "show ap wlan summary"
 
     if (args.action == "summary"):
         if args.series == "9800":

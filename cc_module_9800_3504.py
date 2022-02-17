@@ -172,7 +172,7 @@ class create_controller_series_object:
             self.command.extend(self.command_extend)
 
         # possible need to look for exact command
-        elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_wlan_summary",
+        elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_ap_wlan_summary", "show_wlan_summary",
                              "advanced", "disable", "disable_network_5ghz", "disable_network_24ghz",
                              "manual", "auto", "enable_network_5ghz", "enable_network_24ghz", "enable"]:
 
@@ -230,6 +230,12 @@ class create_controller_series_object:
     def show_ap_summary(self):
         logger.info("show ap summary")
         self.action = "summary"
+        summary = self.send_command()
+        return summary
+
+    def show_ap_wlan_summary(self):
+        logger.info("show ap wlan summary")
+        self.action = "show_ap_wlan_summary"
         summary = self.send_command()
         return summary
 
@@ -554,7 +560,6 @@ def sample_test_tx_power_sequence(cs):
     cs.tag_policy = 'RM204-TB1'
     cs.policy_profile = 'default-policy-profile'
 
-
     # no_logging_console
     cs.no_logging_console()
     # line_console_0
@@ -670,7 +675,6 @@ def test_config_tx_power_5g_open(cs):
     cs.channel = '100'
     cs.bandwidth = '40'
 
-
     # no_logging_console
     cs.no_logging_console()
     # line_console_0
@@ -691,7 +695,7 @@ def test_config_tx_power_5g_open(cs):
     # manual
     cs.ap_dot11_5ghz_radio_role_manual_client_serving()
     cs.ap_dot11_24ghz_radio_role_manual_client_serving()
-   
+
     # Configuration for 5g
 
     # txPower
@@ -715,7 +719,6 @@ def test_config_tx_power_5g_open(cs):
 
     # create_wlan  open
 
-    
     # enable_wlan
     cs.config_enable_wlan_send_no_shutdown()
     # enable_network_5ghz
@@ -873,7 +876,9 @@ INCLUDE_IN_README
         timeout=args.timeout)
 
     # TODO add ability to select tests
-    # cs.show_controllers_dot11Radio_0()
+    # cs.show_ap_summary()
+    summary = cs.show_ap_wlan_summary()
+    logger.info(summary)
 
     # sample to dump status
     # sample_test_dump_status(cs=cs)
@@ -881,7 +886,7 @@ INCLUDE_IN_README
     # test sequences used by tx_power
     # sample_test_tx_power_sequence(cs=cs)
 
-    test_config_tx_power_5g_open(cs=cs)
+    # test_config_tx_power_5g_open(cs=cs)
 
     # test_config_tx_power_wpa2(cs=cs)
 
