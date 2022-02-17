@@ -556,6 +556,7 @@ def sample_test_tx_power_sequence(cs):
     cs.wlanID = '3'
     cs.wlanSSID = 'wpa2_wlan_3'
     cs.tx_power = '1'
+    cs.security_key = 'wpa2_wlan_3'
 
     cs.tag_policy = 'RM204-TB1'
     cs.policy_profile = 'default-policy-profile'
@@ -884,7 +885,7 @@ INCLUDE_IN_README
     # sample_test_dump_status(cs=cs)
 
     # test sequences used by tx_power
-    # sample_test_tx_power_sequence(cs=cs)
+    sample_test_tx_power_sequence(cs=cs)
 
     # test_config_tx_power_5g_open(cs=cs)
 
