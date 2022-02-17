@@ -279,7 +279,10 @@ def usage():
     print('-ccp', '--prompt', "--prompt controller prompt default WLC")
     print('--beacon_dbm_diff', "--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured")
     print('--show_lf_portmod', "<store_true> show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
-    print('-api', '--ap_info', "--ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
+    print(
+        '-api',
+        '--ap_info',
+        "--ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
 
     print("-h|--help")
 
@@ -333,8 +336,14 @@ def main():
     parser.add_argument("-c", "--channel", type=str, help="List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
     parser.add_argument("-n", "--nss", type=str, help="List of spatial streams to test.  NA means no change")
     parser.add_argument("-T", "--txpower", type=str, help="List of txpowers to test.  NA means no change")
-    parser.add_argument("-k", "--keep_state", "--no_cleanup", dest="keep_state", action="store_true", help="keep the state, no configuration change at the end of the test")
-    parser.add_argument('-D', '--duration', type=str, help='--traffic <how long to run in seconds>  example -t 20 (seconds) default: 20 ', default='20')
+    parser.add_argument("-k", "--keep_state", "--no_cleanup", dest="keep_state", action="store_true",
+                        help="keep the state, no configuration change at the end of the test")
+    parser.add_argument(
+        '-D',
+        '--duration',
+        type=str,
+        help='--traffic <how long to run in seconds>  example -t 20 (seconds) default: 20 ',
+        default='20')
     parser.add_argument("--station", type=str, help="LANforge station to use (sta0000, etc) use if station present and --create_station not used")
     parser.add_argument("--upstream_port", type=str, help="LANforge upsteram-port to use (eth1, etc)")
     parser.add_argument("--lfmgr", type=str, help="LANforge Manager IP address")
@@ -346,9 +355,19 @@ def main():
     parser.add_argument("--band", type=str, help="6g, Select band a, 5g, b, 24g",
                         choices=["a", "5g", "24g", "b", "abgn", "6g"])
     parser.add_argument("--pf_dbm", type=str, help="Pass/Fail threshold.  Default is 6", default="6")
-    parser.add_argument("--pf_ignore_offset", type=str, help="Allow a chain to have lower tx-power and still pass. default 0 so disabled", default="0")
-    parser.add_argument("--wait_forever", action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
-    parser.add_argument("--adjust_nf", action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
+    parser.add_argument(
+        "--pf_ignore_offset",
+        type=str,
+        help="Allow a chain to have lower tx-power and still pass. default 0 so disabled",
+        default="0")
+    parser.add_argument(
+        "--wait_forever",
+        action='store_true',
+        help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
+    parser.add_argument(
+        "--adjust_nf",
+        action='store_true',
+        help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
     parser.add_argument("--wlan", type=str, help="--wlan  9800, wlan identifier", required=True)
     parser.add_argument("--wlanID", type=str, help="--wlanID  9800 , defaults to 1", default="1", required=True)
     parser.add_argument("--wlanSSID", type=str, help="--wlan  9800, wlan SSID, this must match the -ssid , ssid for station", required=True)
@@ -364,10 +383,23 @@ def main():
     parser.add_argument('--verbose', action='store_true', help='--verbose , switch the cisco controller output will be captured')
     parser.add_argument("--exit_on_fail", action='store_true', help="--exit_on_fail,  exit on test failure")
     parser.add_argument("--exit_on_error", action='store_true', help="--exit_on_error, exit on test error, test mechanics failed")
-    parser.add_argument('-e', '--email', action='append', nargs=1, type=str, help="--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
+    parser.add_argument(
+        '-e',
+        '--email',
+        action='append',
+        nargs=1,
+        type=str,
+        help="--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
     parser.add_argument('-ccp', '--prompt', type=str, help="controller prompt", required=True)
-    parser.add_argument('--beacon_dbm_diff', type=str, help="--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured", default="7")
-    parser.add_argument('--show_lf_portmod', action='store_true', help="--show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
+    parser.add_argument(
+        '--beacon_dbm_diff',
+        type=str,
+        help="--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured",
+        default="7")
+    parser.add_argument(
+        '--show_lf_portmod',
+        action='store_true',
+        help="--show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
     parser.add_argument(
         '-api',
         '--ap_info',
@@ -399,7 +431,11 @@ def main():
         if (args.create_station is not None):
             lfstation = args.create_station
             if (args.station is not None):
-                print("NOTE: both station: {} and create_station: {} on command line, test will use create_station {} ".format(args.station, args.create_station, args.create_station))
+                print(
+                    "NOTE: both station: {} and create_station: {} on command line, test will use create_station {} ".format(
+                        args.station,
+                        args.create_station,
+                        args.create_station))
         if (args.upstream_port is not None):
             upstream_port = args.upstream_port
         if (args.lfmgr is not None):
@@ -734,7 +770,10 @@ def main():
     worksheet.write(row, col, 'Time Stamp\n', dgreen_bold)
     col += 1
     worksheet.set_column(col, col, 24)  # Set width
-    worksheet.write(row, col, 'Run Time\n', dgreen_bold)
+    worksheet.write(row, col, 'Run Time Single Test\n', dgreen_bold)
+    col += 1
+    worksheet.set_column(col, col, 24)  # Set width
+    worksheet.write(row, col, 'Total Run Time\n', dgreen_bold)
     col += 1
     worksheet.set_column(col, col, 100)  # Set width
     worksheet.write(row, col, 'Information, Warnings, Errors', dgreen_bold_left)
@@ -827,6 +866,8 @@ def main():
     # The is the main loop of loops:   Channels, spatial streams (nss), bandwidth (bw), txpowers (tx)
     # Note: supports 9800 and 3504 controllers
     wlan_created = False
+    # create blank time stamp
+    total_run_duration = datetime.timedelta(0)
     run_start_time = datetime.datetime.now()
     run_start_time_str = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':', '-')
     logger.info("run_start_time : {run_start_time}".format(run_start_time=run_start_time_str))
@@ -925,7 +966,8 @@ def main():
                         logg.info("bandwidth 20 prior to setting channel, some channels only support 20")
                         cs.bandwidth = '20'
                         cs.config_dot11_5ghz_channel_width()
-                        cs.config_dot11_24ghz_channel_width()
+                        # setting channel to 20 is invalid for 20 Mhz
+                        # cs.config_dot11_24ghz_channel_width()
                         # TODO add 24ghz , 6ghz
 
                     # NSS is set on the station earlier...
@@ -954,7 +996,9 @@ def main():
                         if wlan_created:
                             pss = cs.show_wlan_summary()
                             logg.info(pss)
-                            logg.info("wlan already present, no need to create wlanID {} wlan {} wlanSSID {} port {}".format(args.wlanID, args.wlan, args.wlanSSID, args.port))
+                            logg.info(
+                                "wlan already present, no need to create wlanID {} wlan {} wlanSSID {} port {}".format(
+                                    args.wlanID, args.wlan, args.wlanSSID, args.port))
                             pass
                         else:
                             # Verify that a wlan does not exist on wlanID
@@ -1054,7 +1098,9 @@ def main():
 
                                             cc_ch_count = cc_ch.count(",") + 1
                                             cc_bw = m.group(3)
-                                            logg.info("group 1: {} 2: {} 3: {} 4: {} 5: {} 6: {}".format(m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6)))
+                                            logg.info(
+                                                "group 1: {} 2: {} 3: {} 4: {} 5: {} 6: {}".format(
+                                                    m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6)))
                                             logg.info("9800 test_parameters_summary:  read: tx: {} ch: {} bw: {}".format(tx, ch, bw))
 
                                             logg.info("9800 test_parameters cc_mac: read : {}".format(cc_mac))
@@ -1210,7 +1256,8 @@ def main():
                         pss = port_stats.stdout.decode('utf-8', 'ignore')
                         # for debug: print the output of lf_portmod.pl and the command used
                         if (args.show_lf_portmod):
-                            logg.info("./lf_portmod.pl --manager {} --card {} --port_name {} --cli_cmd probe_port 1 {} {}".format(lfmgr, lfresource, lfstation, lfresource, lfstation))
+                            logg.info("./lf_portmod.pl --manager {} --card {} --port_name {} --cli_cmd probe_port 1 {} {}".format(lfmgr,
+                                      lfresource, lfstation, lfresource, lfstation))
                             logg.info(pss)
 
                         foundit = False
@@ -1259,7 +1306,8 @@ def main():
                     # logg.info(pss)
 
                     for line in pss.splitlines():
-                        # logg.info("probe-line: %s"%(line))From Lanforge probe, command ./lf_portmod.pl with cli parameter probe_port 1 (about line 1150)
+                        # logg.info("probe-line: %s"%(line))From Lanforge probe, command
+                        # ./lf_portmod.pl with cli parameter probe_port 1 (about line 1150)
                         m = re.search('Rx Bytes:\\s+(\\d+)', line)
                         if (m is not None):
                             logg.info("Rx Bytes: result {}".format(m))
@@ -1399,7 +1447,8 @@ def main():
                     logg.info("diff_dbm_beacon {} calc_dbm_beacon {} - cc_dbmi {}".format(diff_dbm_beacon, calc_dbm_beacon, cc_dbmi))
 
                     if(int(abs(diff_dbm_beacon)) > int(args.beacon_dbm_diff)):
-                        w_tot = "WARNING: Controller dBm and Calculated dBm Beacon power different by greater than +/- {} dBm".format(args.beacon_dbm_diff)
+                        w_tot = "WARNING: Controller dBm and Calculated dBm Beacon power different by greater than +/- {} dBm".format(
+                            args.beacon_dbm_diff)
 
                     pfs = "PASS"
                     pfrange = pf_dbm
@@ -1527,7 +1576,9 @@ def main():
                                 logg.info("####################################################################################################")
 
                                 logg.info("####################################################################################################")
-                                logg.info("# Unable to commicate to AP error code: {} output {}".format(process_error.returncode, process_error.output))
+                                logg.info(
+                                    "# Unable to commicate to AP error code: {} output {}".format(
+                                        process_error.returncode, process_error.output))
                                 logg.info("####################################################################################################")
                                 # exit_test(workbook)
                                 pss = "empty_process_error"
@@ -1584,7 +1635,9 @@ def main():
                             pf = 0
 
                         if(pf_ignore_offset != 0):
-                            logg.info("diff_a1: {} diff_a2: {} diff_a3: {} diff_a4: {} pfrange: {} pf_ignore_offset: {}".format(diff_a1, diff_a2, diff_a3, diff_a4, pfrange, pf_ignore_offset))
+                            logg.info(
+                                "diff_a1: {} diff_a2: {} diff_a3: {} diff_a4: {} pfrange: {} pf_ignore_offset: {}".format(
+                                    diff_a1, diff_a2, diff_a3, diff_a4, pfrange, pf_ignore_offset))
                             if (diff_a1 < -pfrange):
                                 if(diff_a1 < (-pfrange - pf_ignore_offset)):
                                     logg.info("diff_a1: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a1, pfrange, pf_ignore_offset))
@@ -1642,26 +1695,34 @@ def main():
                     run_duration = "{day}d {hours}h {minutes}m {seconds}s {msec} ms".format(
                         day=run_time_delta.days, hours=hours, minutes=minutes, seconds=seconds, msec=run_time_delta.microseconds)
                     logger.info("Run Duration:  {run_duration}".format(run_duration=run_duration))
+
+                    total_run_duration += run_time_delta
+                    minutes, seconds = divmod(total_run_duration.seconds, 60)
+                    hours, minutes = divmod(minutes, 60)
+                    total_run_duration_str = "{day}d {hours}h {minutes}m {seconds}s {msec} ms".format(
+                        day=total_run_duration.days, hours=hours, minutes=minutes, seconds=seconds, msec=total_run_duration.microseconds)
+                    logger.info("Total Run Duration:  {total_run_duration}".format(total_run_duration=total_run_duration))
+
                     run_start_time = run_end_time
 
                     time_stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]
-                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
+                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
                         myrd, pathloss, antenna_gain, ch, n, bw, tx, beacon_sig, sig,
                         antstr, _ap, _bw, _ch, _mode, _nss, _noise, _rxrate,
                         cc_mac, cc_ch, cc_power, cc_dbm,
                         calc_dbm, diff_dbm, calc_ant1, calc_ant2, calc_ant3, calc_ant4,
-                        diff_a1, diff_a2, diff_a3, diff_a4, pfs, time_stamp, run_duration
+                        diff_a1, diff_a2, diff_a3, diff_a4, pfs, time_stamp, run_duration, total_run_duration_str
                     )
 
                     # logg.info("RESULT: %s"%(ln))
                     csv.write(ln)
                     csv.write("\t")
 
-                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
+                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
                         myrd, pathloss, antenna_gain, _ch, _nss, _bw, tx, allowed_per_path,
                         antstr,
                         calc_ant1, calc_ant2, calc_ant3, calc_ant4,
-                        diff_a1, diff_a2, diff_a3, diff_a4, pfs, time_stamp, run_duration
+                        diff_a1, diff_a2, diff_a3, diff_a4, pfs, time_stamp, run_duration, total_run_duration_str
                     )
                     csvs.write(ln)
                     csvs.write("\t")
@@ -1761,6 +1822,8 @@ def main():
                     col += 1
                     worksheet.write(row, col, run_duration, green)
                     col += 1
+                    worksheet.write(row, col, total_run_duration_str, green)
+                    col += 1
 
                     if (_bw != bw):
                         err = "ERROR:  Requested bandwidth: %s != station's reported bandwidth: %s.  " % (bw, _bw)
@@ -1852,7 +1915,8 @@ def main():
                     pss = email_out.stdout.decode('utf-8', 'ignore')
                     logg.info(pss)
             except subprocess.CalledProcessError as process_error:
-                logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(email_dict['smtp'], email_dict['port'], process_error.returncode, process_error.output))
+                logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(
+                    email_dict['smtp'], email_dict['port'], process_error.returncode, process_error.output))
 
     workbook.close()
 

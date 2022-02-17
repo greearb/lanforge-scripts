@@ -114,6 +114,7 @@ class create_controller_series_object:
         self.command_extend = []
         self.info = "Cisco 9800 Controller Series"
         self.pwd = pwd
+        self.dtim = None
 
     # TODO update the wifi_ctl_9800_3504 to use 24g, 5g, 6g
 
@@ -145,20 +146,24 @@ class create_controller_series_object:
             self.command = [str(str(self.pwd) + "/wifi_ctl_9800_3504.py"), "--scheme", self.scheme, "--dest", self.dest,
                             "--user", self.user, "--passwd", self.passwd, "--prompt", self.prompt,
                             "--series", self.series, "--ap", self.ap, "--band", self.band, "--port", self.port]
+
         # Generate command
         if self.action in ['cmd', 'txPower', 'channel', 'bandwidth']:
 
             self.command_extend = ["--action", self.action, "--value", self.value]
             self.command.extend(self.command_extend)
 
-        elif self.action in ["create_wlan", "create_wlan_wpa2", "create_wlan_wpa3"]:
+        elif self.action in ["create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "dtim"]:
 
             if self.action in ["create_wlan"]:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan,
                                        "--wlanID", self.wlanID, "--wlanSSID", self.wlanSSID]
-            else:
+            elif self.action in ["create_wlan_wpa2", "create_wlan_wpa3"]:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan,
                                        "--wlanID", self.wlanID, "--wlanSSID", self.wlanSSID, "--security_key", self.security_key]
+            elif self.action in ["dtim"]:
+                self.command_extend = ["--action", self.action, "--wlan", self.wlan, "--value", self.value]
+
             self.command.extend(self.command_extend)
 
         elif self.action in ["enable_wlan", "disable_wlan", "delete_wlan"]:
@@ -168,7 +173,15 @@ class create_controller_series_object:
 
         elif self.action in ["wireless_tag_policy"]:
 
-            self.command_extend = ["--action", self.action, "--wlan", self.wlan, "--tag_policy", self.tag_policy, "--policy_profile", self.policy_profile]
+            self.command_extend = [
+                "--action",
+                self.action,
+                "--wlan",
+                self.wlan,
+                "--tag_policy",
+                self.tag_policy,
+                "--policy_profile",
+                self.policy_profile]
             self.command.extend(self.command_extend)
 
         # possible need to look for exact command
@@ -197,10 +210,19 @@ class create_controller_series_object:
         # logger.info(advanced.stderr.decode('utf-8', 'ignore'))
         return summary_output
 
+    # use to get the BSSID for wlan
     def show_ap_config_slots(self):
         logger.info("show ap config slots")
         self.action = "cmd"
         self.value = "show ap config slots"
+        summary = self.send_command()
+        return summary
+
+    # DTIM Delivery Traffic Indication Message
+    def config_dtim_dot11_5ghz(self):
+        logger.info("dtim dot11 5ghz")
+        self.action = "dtim"
+        self.value = self.dtim
         summary = self.send_command()
         return summary
 
@@ -429,7 +451,8 @@ class create_controller_series_object:
     #        "no shutdown"]:
 
     def config_wlan_open(self):
-        logger.info("config_wlan wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        logger.info("config_wlan wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(
+            wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
         self.action = "create_wlan"
         summary = self.send_command()
         return summary
@@ -447,7 +470,8 @@ class create_controller_series_object:
     #        "no shutdown"]:
     # configure wpa2
     def config_wlan_wpa2(self):
-        logger.info("config_wlan_wpa2 wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID} security_key {security_key}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID, security_key=self.security_key))
+        logger.info("config_wlan_wpa2 wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID} security_key {security_key}".format(
+            wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID, security_key=self.security_key))
         self.action = "create_wlan_wpa2"
         summary = self.send_command()
         return summary
@@ -470,7 +494,8 @@ class create_controller_series_object:
     # TODO pass in
 
     def config_wlan_wpa3(self):
-        logger.info("config_wlan_wpa3 wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        logger.info("config_wlan_wpa3 wlan: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(
+            wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
         self.action = "create_wlan_wpa3"
         summary = self.send_command()
         return summary
@@ -489,21 +514,33 @@ class create_controller_series_object:
 
     # enable_wlan
     def config_enable_wlan_send_no_shutdown(self):
-        logger.info("config_enable_wlan_send_no_shutdown: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        logger.info(
+            "config_enable_wlan_send_no_shutdown: Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(
+                wlan=self.wlan,
+                wlanID=self.wlanID,
+                wlanSSID=self.wlanSSID))
         self.action = "enable_wlan"
         summary = self.send_command()
         return summary
 
     # enable_network_5ghz
     def config_no_ap_dot11_5ghz_shutdown(self):
-        logger.info("config_no_ap_dot11_5ghz_shutdown (enable network 5ghz): Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        logger.info(
+            "config_no_ap_dot11_5ghz_shutdown (enable network 5ghz): Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(
+                wlan=self.wlan,
+                wlanID=self.wlanID,
+                wlanSSID=self.wlanSSID))
         self.action = "enable_network_5ghz"
         summary = self.send_command()
         return summary
 
     # enable_network_24ghz
     def config_no_ap_dot11_24ghz_shutdown(self):
-        logger.info("config_no_ap_dot11_24ghz_shutdown (enable network 24ghz): Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(wlan=self.wlan, wlanID=self.wlanID, wlanSSID=self.wlanSSID))
+        logger.info(
+            "config_no_ap_dot11_24ghz_shutdown (enable network 24ghz): Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(
+                wlan=self.wlan,
+                wlanID=self.wlanID,
+                wlanSSID=self.wlanSSID))
         self.action = "enable_network_24ghz"
         summary = self.send_command()
         return summary
@@ -537,6 +574,91 @@ def sample_test_dump_status(cs):
     cs.line_console_0()
     cs.show_wlan_summary()
     cs.show_ap_dot11_5gz_summary()
+
+
+# sample setting dtim dot11 5ghz : delivery traffic indication message
+def sample_test_setting_dtim(cs):
+    logger.info("sample_test_setting_dtim")
+    # This needs to be here to disable and delete
+    cs.dtim = '100'
+
+    cs.wlan = 'wpa2_wlan_7'
+    cs.wlanID = '7'
+    cs.wlanSSID = 'wpa2_wlan_7'
+    cs.tx_power = '1'
+    cs.security_key = 'wpa2_wlan_7'
+
+    cs.tag_policy = 'RM204-TB1'
+    cs.policy_profile = 'default-policy-profile'
+    # summary
+    cs.show_ap_summary()
+
+    # disable
+    cs.show_ap_dot11_5gz_shutdown()
+    cs.show_ap_dot11_24gz_shutdown()
+
+    # disable_wlan
+    cs.wlan_shutdown()
+    # disable_network_5ghz
+    cs.ap_dot11_5ghz_shutdown()
+    # disable_network_24ghz
+    cs.ap_dot11_24ghz_shutdown()
+    # manual
+    cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+    cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+
+    # Configuration for 5g
+
+    # txPower
+    cs.config_dot11_5ghz_tx_power()
+    cs.bandwidth = '20'
+    # bandwidth (to set to 20 if channel change does not support)
+    cs.config_dot11_5ghz_channel_width()
+    cs.channel = '100'
+    # channel
+    cs.config_dot11_5ghz_channel()
+    cs.bandwidth = '40'
+    # bandwidth
+    cs.config_dot11_5ghz_channel_width()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+    # delete wlan
+    cs.config_no_wlan()
+
+    # create_wlan_wpa2
+    cs.config_wlan_wpa2()
+
+    # wireless_tag_policy
+    cs.config_wireless_tag_policy_and_policy_profile()
+
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+    # somehow during the configure the WLAN gets enabled
+    # disable_wlan
+    cs.wlan_shutdown()
+
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+    # % WLAN needs to be disabled before performing this operation.
+    cs.config_dtim_dot11_5ghz()
+
+    # enable_wlan
+    cs.config_enable_wlan_send_no_shutdown()
+    # enable_network_5ghz
+    cs.config_no_ap_dot11_5ghz_shutdown()
+    # enable_network_24ghz
+    # cs.config_no_ap_dot11_5ghz_shutdown()
+    # enable
+    cs.config_ap_no_dot11_5ghz_shutdown()
+    # config_ap_no_dot11_24ghz_shutdown
+    # advanced
+    cs.show_ap_dot11_5gz_summary()
+    # cs.show_ap_dot11_24gz_summary()
+    # show_wlan_summary
+    cs.show_wlan_summary()
 
 
 # This sample runs though the sequence of commands used
@@ -885,7 +1007,10 @@ INCLUDE_IN_README
     # sample_test_dump_status(cs=cs)
 
     # test sequences used by tx_power
-    sample_test_tx_power_sequence(cs=cs)
+    # sample_test_tx_power_sequence(cs=cs)
+
+    # test dtim
+    sample_test_setting_dtim(cs=cs)
 
     # test_config_tx_power_5g_open(cs=cs)
 

@@ -143,7 +143,7 @@ def main():
     # parser.add_argument("--wlan_name", type=str, help="--wlan_name open-wlan", default="open-wlan")
 
     parser.add_argument("--action", type=str, help="perform action",
-                        choices=["config", "debug_disable_all", "no_logging_console", "line_console_0", "country", "ap_country", "enable", "disable", "summary", "advanced",
+                        choices=["config", "dtim", "debug_disable_all", "no_logging_console", "line_console_0", "country", "ap_country", "enable", "disable", "summary", "advanced",
                                  "cmd", "txPower", "bandwidth", "manual", "auto", "no_wlan", "show_ap_wlan_summary", "show_wlan_summary", "show_radio",
                                  "ap_channel", "auto_rf", "channel", "show", "create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "enable_wlan", "disable_wlan", "wlan_qos",
                                  "disable_network_5ghz", "disable_network_24ghz", "enable_network_5ghz", "enable_network_24ghz",
@@ -232,6 +232,10 @@ def main():
    print("CCP_CONFIG_WLAN {}".format(CCP_CONFIG_WLAN))
    print("CCP_POLICY_TAG {}".format(CCP_POLICY_TAG))
    print("CCP_CONFIG_LINE {}".format(CCP_CONFIG_LINE))'''
+
+    # DTIM , dtim, Delivery Traffic Indication Message
+    # dtim dot11 5ghz
+    # (config-wlan)#dtim dot11 5ghz ? <DTIM> Period
 
     try:
         if (scheme == "serial"):
@@ -1326,6 +1330,45 @@ def main():
     if (args.action == "show_wlan_summary"):
         print("command show wlan summary ")
         command = "show wlan summary"
+
+    # need the wlan name to elevate the prompt
+    # WLC1#config t
+    # Enter configuration commands, one per line.  End with CNTL/Z.
+    # WLC1(config)#wlan open-wlan-15
+    # WLC1(config-wlan)#
+    # WLC1(config-wlan)#dtim dot11 5ghz ?
+    #  <1-255>  DTIM Period
+    # WLC1(config-wlan)#dtim dot11 5ghz 3
+    # % WLAN needs to be disabled before performing this operation.
+
+    if (args.action == "dtim" and ((args.value is None) or (args.wlan is None))):
+        raise Exception("dtim a value 1 - 255 required")
+    if (args.action == "dtim"):
+        logg.info("(config-wlan)# dtim dot11 5ghz  {value} ".format(value=args.value))
+        if args.series == "9800":
+            egg.sendline("config t")
+            sleep(0.4)
+            i = egg.expect_exact(["(config)#", pexpect.TIMEOUT], timeout=timeout)
+            if i == 0:
+                logg.info("elevated to (config)#")
+
+                logg.info("elevated to (config)#")
+                # for create wlan <name> <ID> <ssid>
+                command = "wlan {}".format(args.wlan)
+                egg.sendline(command)
+                sleep(0.4)
+                j = egg.expect_exact([CCP_CONFIG_WLAN, pexpect.TIMEOUT], timeout=timeout)
+                if j == 0:
+                    command = "dtim dot11 5ghz {value}".format(value=args.value)
+                    logg.info("dtim command:  {command}".format(command=command))
+                    egg.sendline(command)
+                    sleep(0.4)
+                if j == 1:
+                    logg.info("did not get the (config-wlan)# prompt")
+            if i == 0:
+                logg.info("did not get the (config)# prompt")
+        else:
+            command = "dtim {value}".format(args.value)
 
     if (args.action == "create_wlan_wpa2" and ((args.wlanID is None) or (args.wlan is None) or (args.wlanSSID is None) or (args.security_key is None))):
         raise Exception("create_wlan_wpa2 wlanID, wlan, wlanSSID are required an")
