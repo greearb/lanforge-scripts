@@ -82,13 +82,6 @@ class FileIOTest(Realm):
                  connections_per_port=1,
                  mode="both",
                  update_group_args=None,
-                 test_rig=None,
-                 test_tag=None,
-                 dut_hw_version=None,
-                 dut_sw_version=None,
-                 dut_model_num=None,
-                 dut_serial_num=None,
-                 test_id=None,
                  _debug_on=False,
                  _exit_on_error=False,
                  _exit_on_fail=False):
@@ -241,20 +234,7 @@ class FileIOTest(Realm):
                     if len(self.ro_tg_profile.list_cxs()) > 0:
                         self.ro_tg_cx_exists = True
 
-        self.report = lf_report.lf_report(_results_dir_name="test_l4", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf")
-
-        kpi_path = self.report.get_report_path()
-        self.kpi_csv = lf_kpi_csv.lf_kpi_csv(
-            _kpi_path=kpi_path,
-            _kpi_test_rig=test_rig,
-            _kpi_test_tag=test_tag,
-            _kpi_dut_hw_version=dut_hw_version,
-            _kpi_dut_sw_version=dut_sw_version,
-            _kpi_dut_model_num=dut_model_num,
-            _kpi_dut_serial_num=dut_serial_num,
-            _kpi_test_id=test_id)
-
-    def __compare_vals(self, val_list):
+    def compare_vals(self, val_list):
         passes = 0
         expected_passes = 0
         for item in val_list:
@@ -287,7 +267,7 @@ class FileIOTest(Realm):
                 print(self.wo_profile.min_write_rate_bps)
             return False
 
-    def __get_values(self):
+    def get_values(self):
         time.sleep(3)
         if self.mode == "write":
             cx_list = self.json_get("fileio/%s?fields=write-bps" % (
@@ -479,9 +459,7 @@ class FileIOTest(Realm):
             self._pass("All ports got IPs", print_pass)
         else:
             self._fail("Ports failed to get IPs", print_fail)
-        cur_time = datetime.datetime.now()
-        # print("Got Values")
-        end_time = self.parse_time(self.test_duration) + cur_time
+
         if self.use_test_groups:
             if self.mode == "write":
                 self.wo_tg_profile.start_group()
@@ -500,50 +478,6 @@ class FileIOTest(Realm):
                 self.wo_profile.start_cx()
                 time.sleep(2)
                 self.ro_profile.start_cx()
-
-        passes = 0
-        expected_passes = 0
-        print("Starting Test...")
-        write_bps = 0
-        read_bps = 0
-        while cur_time < end_time:
-            write_bps = 0
-            read_bps = 0
-            interval_time = cur_time + datetime.timedelta(seconds=1)
-            while cur_time < interval_time:
-                cur_time = datetime.datetime.now()
-                time.sleep(1)
-            new_rx_values = self.__get_values()
-            for key, value in new_rx_values.items():
-                write_bps += value['write-bps']
-                read_bps += value['read-bps']
-
-            expected_passes += 1
-            if self.__compare_vals(new_rx_values):
-                passes += 1
-            else:
-                self._fail("FAIL: Not all stations increased traffic", print_fail)
-                # break
-            # old_rx_values = new_rx_values
-            cur_time = datetime.datetime.now()
-
-
-        self.kpi_csv.kpi_csv_get_dict_update_time()
-        self.kpi_csv.kpi_dict['Graph-Group'] = 'Total write BPS'
-        self.kpi_csv.kpi_dict['short-description'] = "write-bps %s" % self.wo_profile.fs_type
-        self.kpi_csv.kpi_dict['numeric-score'] = write_bps
-        self.kpi_csv.kpi_dict['Units'] = "bps"
-        self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-
-        self.kpi_csv.kpi_csv_get_dict_update_time()
-        self.kpi_csv.kpi_dict['Graph-Group'] = 'Total read BPS'
-        self.kpi_csv.kpi_dict['short-description'] = "read-bps %s" % self.wo_profile.fs_type
-        self.kpi_csv.kpi_dict['numeric-score'] = read_bps
-        self.kpi_csv.kpi_dict['Units'] = "bps"
-        self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-
-        if passes == expected_passes:
-            self._pass("PASS: All tests passes", print_pass)
 
     def stop(self):
         if self.use_test_groups:
@@ -718,6 +652,10 @@ Generic command layout:
         '--csv_outfile',
         help="--csv_outfile <Output file for csv data>",
         default="")
+    parser.add_argument(
+        "--test_id",
+        default="test_fileio",
+        help="test-id for kpi.csv,  script or test name")
     tg_group = parser.add_mutually_exclusive_group()
     tg_group.add_argument('--add_to_group', help='name of test group to add cxs to', default=None)
     tg_group.add_argument('--del_from_group', help='name of test group to delete cxs from', default=None)
@@ -796,13 +734,14 @@ Generic command layout:
             dhcp = False
     else:
         dhcp = True
-    if 'nfs' in args.fs_type:
-        if len(os.popen('mount -l | grep nfs').read()) > 0:
-            print('Success')
-        else:
-            raise ValueError("No nfs share is mounted")
-    else:
-        exit(1)
+
+    # if 'nfs' in args.fs_type:
+    #     if len(os.popen('mount -l | grep nfs').read()) > 0:
+    #         print('Success')
+    #     else:
+    #         raise ValueError("No nfs share is mounted")
+    # else:
+    #     exit(1)
 
     ip_test = FileIOTest(args.mgr,
                          args.mgr_port,
@@ -848,6 +787,67 @@ Generic command layout:
     if not ip_test.passes():
         print(ip_test.get_fail_message())
     ip_test.start(False, False)
+
+    ip_test.report = lf_report.lf_report(_results_dir_name="test_l4", _output_html="ftp_test.html",
+                                         _output_pdf="ftp_test.pdf")
+
+    kpi_path = ip_test.report.get_report_path()
+    ip_test.kpi_csv = lf_kpi_csv.lf_kpi_csv(
+        _kpi_path=kpi_path,
+        _kpi_test_rig=args.test_rig,
+        _kpi_test_tag=args.test_tag,
+        _kpi_dut_hw_version=args.dut_hw_version,
+        _kpi_dut_sw_version=args.dut_sw_version,
+        _kpi_dut_model_num=args.dut_model_num,
+        _kpi_dut_serial_num=args.dut_serial_num,
+        _kpi_test_id=args.test_id)
+    passes = 0
+    expected_passes = 0
+    print("Starting Test...")
+    write_bps = 0
+    read_bps = 0
+    cur_time = datetime.datetime.now()
+    # print("Got Values")
+    end_time = ip_test.parse_time(ip_test.test_duration) + cur_time
+    while cur_time < end_time:
+        write_bps = 0
+        read_bps = 0
+        interval_time = cur_time + datetime.timedelta(seconds=1)
+        while cur_time < interval_time:
+            cur_time = datetime.datetime.now()
+            time.sleep(1)
+        new_rx_values = ip_test.get_values()
+        for key, value in new_rx_values.items():
+            write_bps += value['write-bps']
+            read_bps += value['read-bps']
+
+        expected_passes += 1
+        if ip_test.compare_vals(new_rx_values):
+            passes += 1
+        else:
+            ip_test._fail("FAIL: Not all stations increased traffic")#, print_fail)
+            # break
+        # old_rx_values = new_rx_values
+        cur_time = datetime.datetime.now()
+
+    ip_test.kpi_csv.kpi_csv_get_dict_update_time()
+    ip_test.kpi_csv.kpi_dict['Graph-Group'] = 'Total write bps'
+    ip_test.kpi_csv.kpi_dict['short-description'] = "write-bps %s" % ip_test.wo_profile.fs_type
+    ip_test.kpi_csv.kpi_dict['numeric-score'] = write_bps
+    ip_test.kpi_csv.kpi_dict['Units'] = "bps"
+    ip_test.kpi_csv.kpi_csv_write_dict(ip_test.kpi_csv.kpi_dict)
+
+    ip_test.kpi_csv.kpi_csv_get_dict_update_time()
+    ip_test.kpi_csv.kpi_dict['Graph-Group'] = 'Total read bps'
+    ip_test.kpi_csv.kpi_dict['short-description'] = "read-bps %s" % ip_test.wo_profile.fs_type
+    ip_test.kpi_csv.kpi_dict['numeric-score'] = read_bps
+    ip_test.kpi_csv.kpi_dict['Units'] = "bps"
+    ip_test.kpi_csv.kpi_csv_write_dict(ip_test.kpi_csv.kpi_dict)
+
+    if passes == expected_passes:
+        ip_test._pass("PASS: All tests passes")#, print_pass)
+
+
     ip_test.stop()
     if not ip_test.passes():
         print(ip_test.get_fail_message())
