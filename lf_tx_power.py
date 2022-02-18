@@ -201,6 +201,18 @@ outfile_xlsx = "cisco_power_results.xlsx"
 upstream_port = "eth1"
 pf_dbm = 6
 
+# kpi notes
+# Maybe subtest pass/failed is interesting,
+# and for KPI, could do min/max/avg of the beacon power offset
+# from expected, and same for data power offset from expected?
+
+# Channel notes
+# setting channel' typically means setting the bandwidth range,
+# and also setting the control channel.
+# So, running on ctrl channel 36 at HT40 and ch 40 at HT40 uses same total bandwdith range,
+# but in second case, the beacons and control frames should be on ch 40.
+# At least that is normally how things are implemented.
+
 # Allow one chain to have a lower signal, since customer's DUT has
 # lower tx-power on one chain when doing high MCS at 4x4.
 pf_ignore_offset = 0
@@ -358,8 +370,8 @@ def main():
     parser.add_argument("--wlan", type=str, help="--wlan  9800, wlan identifier", required=True)
     parser.add_argument("--wlanID", type=str, help="--wlanID  9800 , defaults to 1", default="1", required=True)
     parser.add_argument("--wlanSSID", type=str, help="--wlan  9800, wlan SSID, this must match the -ssid , ssid for station", required=True)
-    parser.add_argument("--series", type=str, help="--series  9800 or 3504, defaults to 9800", default="9800")
-    parser.add_argument("--slot", type=str, help="--slot 1 , 9800 AP slot defaults to 1", default="1")
+    parser.add_argument("--series", type=str, help="--series  9800 or 3504, defaults to 9800", required=True)
+    parser.add_argument("--slot", type=str, help="--slot 1 , 9800 AP slot , use show ap dot11 24ghz summary or 5ghz", required=True)
     parser.add_argument("--create_station", type=str, help="create LANforge station at the beginning of the test")
     parser.add_argument("--radio", type=str, help="radio to create LANforge station on at the beginning of the test")
     parser.add_argument("--ssid", type=str, help="ssid, this must patch the wlan", required=True)
@@ -508,21 +520,22 @@ def main():
     logg = logging.getLogger(__name__)
     # logg.setLevel(logging.DEBUG)
 
-    file_handler = None
+    # Us the logger module
+    # file_handler = None
     # Setting up log file if specified
-    if args.log:
-        file_handler = logging.FileHandler(outfile_log, "w")
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(formatter)
-        logg.addHandler(file_handler)
-        logg.addHandler(logging.StreamHandler(sys.stdout))  # allows to logging to file and stderr
-        # logging.basicConfig(format=FORMAT, handlers=[console_handler])
-
-    else:
-        # pass
-        # stdout logging
-        logging.basicConfig(format=FORMAT, handlers=[console_handler])
-        # logg.addHandler(logging.StreamHandler()) # allows to logging to file and stderr
+    # if args.log:
+    #     file_handler = logging.FileHandler(outfile_log, "w")
+    #     file_handler.setLevel(logging.DEBUG)
+    #     file_handler.setFormatter(formatter)
+    #     logg.addHandler(file_handler)
+    #     logg.addHandler(logging.StreamHandler(sys.stdout))  # allows to logging to file and stderr
+    #     # logging.basicConfig(format=FORMAT, handlers=[console_handler])
+#
+    # else:
+    #     # pass
+    #     # stdout logging
+    #     logging.basicConfig(format=FORMAT, handlers=[console_handler])
+    #     # logg.addHandler(logging.StreamHandler()) # allows to logging to file and stderr
 
     # dynamic import of the controller module
     series = importlib.import_module(args.module)
@@ -952,7 +965,8 @@ def main():
                     if (bw != "NA"):
                         logg.info("bandwidth 20 prior to setting channel, some channels only support 20")
                         cs.bandwidth = '20'
-                        cs.config_dot11_5ghz_channel_width()
+                        if args.band == 'a':
+                            cs.config_dot11_5ghz_channel_width()
                         # setting channel to 20 is invalid for 20 Mhz
                         # cs.config_dot11_24ghz_channel_width()
                         # TODO add 24ghz , 6ghz
@@ -965,6 +979,7 @@ def main():
                             cs.config_dot11_5ghz_channel()
                         elif args.band == 'b':
                             cs.config_dot11_24ghz_channel()
+                        # exit(1)
 
                     if (bw != "NA"):
                         logg.info("9800/3504 test_parameters bandwidth: set : {}".format(bw))
@@ -1104,9 +1119,9 @@ def main():
                                     # Could not talk to controller? Not this may not be a reason to exit
                                     # Some of the tests run for 32 plus hours ,  do not kill the whole test unless trying to
                                     # debug an issue with the test.  Sometimes the controller is taking time to configure.
-                                    err = "ERROR:  Could not query dBm from controller, maybe controller died?"
+                                    err = "ERROR: cc_dmp not found from query of controller:  is the AP --slot set correctly?"
                                     logg.info(err)
-                                    logg.info("Check controller and AP , Command on AP to erase the config: capwap ap erase all")
+                                    logg.info("run show ap dot11 5ghz summary or show ap dot11 24ghz summary to verify the slot")
                                     e_tot += err
                                     e_tot += "  "
                                 else:
@@ -1152,7 +1167,7 @@ def main():
 
                         if (cc_dbm == ""):
                             # Could not talk to controller?
-                            err = "ERROR:  Could not query dBm from controller, maybe controller died?"
+                            err = "Warning : Could not query dBm from controller"
                             logg.info(err)
                             e_tot += err
                             e_tot += "  "
@@ -1244,7 +1259,7 @@ def main():
                         # for debug: print the output of lf_portmod.pl and the command used
                         if (args.show_lf_portmod):
                             logg.info("./lf_portmod.pl --manager {} --card {} --port_name {} --cli_cmd probe_port 1 {} {}".format(lfmgr,
-                                      lfresource, lfstation, lfresource, lfstation))
+                                                                                                                                  lfresource, lfstation, lfresource, lfstation))
                             logg.info(pss)
 
                         foundit = False
@@ -1434,7 +1449,7 @@ def main():
                     logg.info("diff_dbm_beacon {} calc_dbm_beacon {} - cc_dbmi {}".format(diff_dbm_beacon, calc_dbm_beacon, cc_dbmi))
 
                     if(int(abs(diff_dbm_beacon)) > int(args.beacon_dbm_diff)):
-                        w_tot = "WARNING: Controller dBm and Calculated dBm Beacon power different by greater than +/- {} dBm".format(
+                        w_tot = "ERROR: Controller dBm and Calculated dBm Beacon power different by greater than +/- {} dBm".format(
                             args.beacon_dbm_diff)
 
                     pfs = "PASS"
@@ -1550,7 +1565,7 @@ def main():
                             try:
                                 logg.info("ap_ctl.py: read AP power information")
                                 ap_info = subprocess.run(["./ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'], "--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                         "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'], "--action", "powercfg"], stdout=subprocess.PIPE)
+                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'], "--action", "powercfg"], stdout=subprocess.PIPE)
                                 try:
                                     pss = ap_info.stdout.decode('utf-8', 'ignore')
                                 except BaseException:
@@ -1880,7 +1895,7 @@ def main():
                                         body = "Lanforge: Failure Found:  AP: {} Channel: {} NSS: {} BW: {} TX-Power {}, pfs: {} time_stamp: {} {}".format(
                                             args.ap, ch, n, bw, tx, pfs, time_stamp, outfile_xlsx)
                                         email_out = subprocess.run(["./lf_mail.py", "--user", email_dict['user'], "--passwd", email_dict['passwd'], "--to", email_dict['to'],
-                                                                   "--subject", subject, "--body", body, "--smtp", email_dict['smtp'], "--port", email_dict['port']], capture_output=cap_ctl_out, check=True)
+                                                                    "--subject", subject, "--body", body, "--smtp", email_dict['smtp'], "--port", email_dict['port']], capture_output=cap_ctl_out, check=True)
                                         if cap_ctl_out:
                                             pss = email_out.stdout.decode('utf-8', 'ignore')
                                             logg.info(pss)

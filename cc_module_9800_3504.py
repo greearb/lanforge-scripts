@@ -408,6 +408,7 @@ class create_controller_series_object:
 
     def config_dot11_24ghz_channel(self):
         logger.info("config_dot11_24ghz_channel {channel}".format(channel=self.channel))
+        self.band = '24g'
         self.action = "channel"
         self.value = "{channel}".format(channel=self.channel)
         summary = self.send_command()
@@ -583,6 +584,7 @@ def sample_test_dump_status(cs):
     cs.line_console_0()
     cs.show_wlan_summary()
     cs.show_ap_dot11_5gz_summary()
+    cs.show_ap_dot11_24gz_summary()
 
 
 # sample setting dtim dot11 5ghz : delivery traffic indication message
@@ -1013,7 +1015,7 @@ INCLUDE_IN_README
     logger.info(summary)
 
     # sample to dump status
-    # sample_test_dump_status(cs=cs)
+    sample_test_dump_status(cs=cs)
 
     # test sequences used by tx_power
     # sample_test_tx_power_sequence(cs=cs)
