@@ -146,7 +146,8 @@ def main():
                         choices=["config", "dtim", "debug_disable_all", "no_logging_console", "line_console_0", "country", "ap_country", "enable", "disable", "summary", "advanced",
                                  "cmd", "txPower", "bandwidth", "manual", "auto", "no_wlan", "show_ap_wlan_summary", "show_wlan_summary", "show_radio",
                                  "ap_channel", "auto_rf", "channel", "show", "create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "enable_wlan", "disable_wlan", "wlan_qos",
-                                 "disable_network_5ghz", "disable_network_24ghz", "enable_network_5ghz", "enable_network_24ghz",
+                                 "disable_network_6ghz","disable_network_5ghz", "disable_network_24ghz", 
+                                 "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
                                  "wireless_tag_policy", "no_wlan_wireless_tag_policy", "delete_wlan"])
     parser.add_argument("--value", type=str, help="set value")
     # logging configuration
@@ -1074,7 +1075,9 @@ def main():
         raise Exception("action requires AP name")
     if (args.action == "manual"):
         if args.series == "9800":
-            if band == "a":
+            if band == "6g":
+                command = "ap name %s dot11 6ghz radio role manual client-serving" % (args.ap)
+            elif band == "a":
                 command = "ap name %s dot11 5ghz radio role manual client-serving" % (args.ap)
             else:
                 command = "ap name %s dot11 24ghz radio role manual client-serving" % (args.ap)
@@ -1087,6 +1090,27 @@ def main():
                 command = "ap name %s dot11 5ghz radio role auto" % (args.ap)
             else:
                 command = "ap name %s dot11 24ghz radio role auto" % (args.ap)
+
+    if (args.action == "disable_network_6ghz"):
+        if args.series == "9800":
+            egg.sendline("config t")
+            sleep(0.1)
+            i = egg.expect_exact(["(config)#", pexpect.TIMEOUT], timeout=timeout)
+            if i == 0:
+                egg.sendline("ap dot11 6ghz shutdown")
+                sleep(0.1)
+                i = egg.expect_exact(["Are you sure you want to continue? (y/n)[y]:", pexpect.TIMEOUT], timeout=timeout)
+                if j == 0:
+                    logg.info("did get Are you sure you want to continue? (y/n)[y]:")
+                    egg.sendline("y")
+                    sleep(0.5)
+                if j == 1:
+                    logg.info("did not get Are you sure you want to continue? (y/n)[y]:")
+                    egg.sendline("y")
+                    sleep(0.5)
+            if i == 1:
+                logg.info("timed out on (config)# disable_network_6ghz")
+
 
     if (args.action == "disable_network_5ghz"):
         if args.series == "9800":
@@ -1136,6 +1160,17 @@ def main():
             logg.info("3504 disable_network_24ghz")
             command = 'config 802.11a disable network'
 
+    if (args.action == "enable_network_6ghz"):
+        if args.series == "9800":
+            egg.sendline("config t")
+            sleep(0.1)
+            i = egg.expect_exact(["(config)#", pexpect.TIMEOUT], timeout=timeout)
+            if i == 0:
+                egg.sendline("no ap dot11 6ghz shutdown")
+                sleep(0.1)
+            if i == 1:
+                logg.info("timed out on (config) prompt")
+
     if (args.action == "enable_network_5ghz"):
         if args.series == "9800":
             egg.sendline("config t")
@@ -1179,7 +1214,10 @@ def main():
         raise Exception("action requires AP name")
     if (args.action == "disable"):
         if args.series == "9800":
-            if band == "a":
+            # TODO use the 24g 5g 6g notation, also support abgn (dual band?)
+            if band == '6g':
+                command = "ap name %s dot11 6ghz shutdown" % (args.ap)
+            elif band == "a":
                 command = "ap name %s dot11 5ghz shutdown" % (args.ap)
             else:
                 command = "ap name %s dot11 24ghz shutdown" % (args.ap)

@@ -187,8 +187,8 @@ class create_controller_series_object:
 
         # possible need to look for exact command
         elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_ap_wlan_summary", "show_wlan_summary", "show_wlan_id",
-                             "advanced", "disable", "disable_network_5ghz", "disable_network_24ghz",
-                             "manual", "auto", "enable_network_5ghz", "enable_network_24ghz", "enable"]:
+                             "advanced", "disable", "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
+                             "manual", "auto", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz", "enable"]:
 
             self.command_extend = ["--action", self.action]
             self.command.extend(self.command_extend)
@@ -276,6 +276,13 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    def show_ap_dot11_6gz_summary(self):
+        logger.info("show_ap_dot11_6gz_summary")
+        self.band = '6g'
+        self.action = "advanced"
+        summary = self.send_command()
+        return summary
+
     def show_ap_dot11_5gz_summary(self):
         logger.info("show_ap_dot11_5gz_summary")
         self.band = '5g'
@@ -297,6 +304,13 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    def show_ap_dot11_6gz_shutdown(self):
+        logger.info("ap name {name} dot11 6ghz shutdown")
+        self.band = '6g'
+        self.action = "disable"
+        summary = self.send_command()
+        return summary
+
     def show_ap_dot11_24gz_shutdown(self):
         logger.info("ap name {name} dot11 24ghz shutdown")
         self.band = '24g'
@@ -310,6 +324,14 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    # TODO May need to check if 6g supported on AP ,
+    # or just send command and let controller show not supported.
+    def ap_dot11_6ghz_shutdown(self):
+        logger.info("ap dot11 6ghz shutdown")
+        self.action = "disable_network_6ghz"
+        summary = self.send_command()
+        return summary
+
     def ap_dot11_5ghz_shutdown(self):
         logger.info("ap dot11 5ghz shutdown")
         self.action = "disable_network_5ghz"
@@ -319,6 +341,13 @@ class create_controller_series_object:
     def ap_dot11_24ghz_shutdown(self):
         logger.info("wlan {wlan} shutdown".format(wlan=self.wlan))
         self.action = "disable_network_24ghz"
+        summary = self.send_command()
+        return summary
+
+    def ap_dot11_6ghz_radio_role_manual_client_serving(self):
+        logger.info("ap name {ap_name} dot11 6ghz radio role manual client-serving".format(ap_name=self.ap))
+        self.band = '6g'
+        self.action = "manual"
         summary = self.send_command()
         return summary
 
@@ -534,6 +563,17 @@ class create_controller_series_object:
         return summary
 
     # enable_network_5ghz
+    def config_no_ap_dot11_6ghz_shutdown(self):
+        logger.info(
+            "config_no_ap_dot11_6ghz_shutdown (enable network 5ghz): Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(
+                wlan=self.wlan,
+                wlanID=self.wlanID,
+                wlanSSID=self.wlanSSID))
+        self.action = "enable_network_6ghz"
+        summary = self.send_command()
+        return summary
+
+    # enable_network_5ghz
     def config_no_ap_dot11_5ghz_shutdown(self):
         logger.info(
             "config_no_ap_dot11_5ghz_shutdown (enable network 5ghz): Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(
@@ -552,6 +592,14 @@ class create_controller_series_object:
                 wlanID=self.wlanID,
                 wlanSSID=self.wlanSSID))
         self.action = "enable_network_24ghz"
+        summary = self.send_command()
+        return summary
+
+    # enable ap 6ghz
+    def config_ap_no_dot11_6ghz_shutdown(self):
+        logger.info("ap name %s dot11 5ghz shutdown {ap}  (enable ap)".format(ap=self.ap))
+        self.band = '6g'
+        self.action = "enable"
         summary = self.send_command()
         return summary
 
@@ -583,8 +631,8 @@ def sample_test_dump_status(cs):
     cs.no_logging_console()
     cs.line_console_0()
     cs.show_wlan_summary()
-    cs.show_ap_dot11_5gz_summary()
-    cs.show_ap_dot11_24gz_summary()
+    # cs.show_ap_dot11_5gz_summary()
+    # cs.show_ap_dot11_24gz_summary()
 
 
 # sample setting dtim dot11 5ghz : delivery traffic indication message
@@ -787,6 +835,104 @@ def sample_test_tx_power_sequence(cs):
     # advanced
     cs.show_ap_dot11_5gz_summary()
     # cs.show_ap_dot11_24gz_summary()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+
+# TODO unit test for 6g wlan, 5g wlan, 2g wlan, and all three
+def test_config_tx_power_6g_wpa3(cs):
+    # TODO : leave for now for reference
+    # WLC1#show ap summary
+    # Number of APs: 3
+    #
+    # AP Name                            Slots    AP Model              Ethernet MAC    Radio MAC       Location
+    # -------------------------------------------------------------------------------------------------------------------------
+    # APCC9C.3EF4.DDE0                     3      CW9166I-B             cc9c.3ef4.dde0  10f9.20fd.e200  default location
+    # APCC9C.3EF1.1140                     3      CW9164I-B             cc9c.3ef1.1140  10f9.20fd.fa60  default location
+    # APA453.0E7B.CF9C                     2      C9120AXE-B            a453.0e7b.cf9c  d4ad.bda2.2ce0  default location
+
+    # series of commands to create a wlan , similiar to how tx_power works.
+    # pass in the ap and band from the command line
+    # cs.ap = 'APA453.0E7B.CF9C'
+    # cs.band = '5g'
+
+    logger.info("test_config_tx_power_6g_wpa3")
+    # This needs to be here to disable and delete
+    cs.wlan = 'wpa3_wlan_4_6g'
+    cs.wlanID = '4'
+    cs.wlanSSID = 'wpa3_wlan_6g_4'
+    cs.tx_power = '1'
+    # cs.security_key = 'wpa3_wlan_4_6g'
+    cs.security_key = 'hello123'
+
+    cs.tag_policy = 'RM204-TB1'
+    cs.policy_profile = 'default-policy-profile'
+
+    # no_logging_console
+    cs.no_logging_console()
+    # line_console_0
+    cs.line_console_0()
+    # summary
+    cs.show_ap_summary()
+
+    # disable
+    cs.show_ap_dot11_6gz_shutdown()
+    cs.show_ap_dot11_5gz_shutdown()
+    cs.show_ap_dot11_24gz_shutdown()
+
+    # disable_wlan
+    cs.wlan_shutdown()
+    # disable_network_6ghz
+    cs.ap_dot11_6ghz_shutdown()
+    # disable_network_5ghz
+    cs.ap_dot11_5ghz_shutdown()
+    # disable_network_24ghz
+    cs.ap_dot11_24ghz_shutdown()
+    # manual
+    cs.ap_dot11_6ghz_radio_role_manual_client_serving()
+    cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+    cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+
+    # Configuration for 6g
+
+    # Configuration for 6g
+    # txPower
+    # TODO is this still needed
+    cs.config_dot11_6ghz_tx_power()
+    cs.bandwidth = '20'
+    # bandwidth (to set to 20 if channel change does not support)
+    cs.config_dot11_6ghz_channel_width()
+    cs.channel = '1'
+    # channel
+    cs.config_dot11_6ghz_channel()
+    cs.bandwidth = '40'
+    # bandwidth
+    cs.config_dot11_6ghz_channel_width()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+    # delete_wlan
+    # TODO (there were two in tx_power the logs)
+    # need to check if wlan present
+    # delete wlan
+    cs.config_no_wlan()
+
+    # create_wlan_wpa3
+    cs.config_wlan_wpa3()
+
+    # wireless_tag_policy
+    cs.config_wireless_tag_policy_and_policy_profile()
+    # enable_wlan
+    cs.config_enable_wlan_send_no_shutdown()
+    # enable_network_5ghz
+    cs.config_no_ap_dot11_6ghz_shutdown()
+    # enable_network_24ghz
+    # cs.config_no_ap_dot11_5ghz_shutdown()
+    # enable
+    cs.config_ap_no_dot11_6ghz_shutdown()
+    # config_ap_no_dot11_24ghz_shutdown
+    # advanced
+    cs.show_ap_dot11_6gz_summary()
     # show_wlan_summary
     cs.show_wlan_summary()
 
@@ -1010,20 +1156,23 @@ INCLUDE_IN_README
         timeout=args.timeout)
 
     # TODO add ability to select tests
-    # cs.show_ap_summary()
-    summary = cs.show_ap_wlan_summary()
-    logger.info(summary)
+    cs.show_ap_summary()
+    # summary = cs.show_ap_wlan_summary()
+    # logger.info(summary)
 
     # sample to dump status
-    sample_test_dump_status(cs=cs)
+    # sample_test_dump_status(cs=cs)
 
     # test sequences used by tx_power
     # sample_test_tx_power_sequence(cs=cs)
 
+    #
+    test_config_tx_power_6g_wpa3(cs=cs)
+
     # test dtim
     # sample_test_setting_dtim(cs=cs)
-    cs.wlanID = 7
-    summary = cs.show_wlan_id()
+    # cs.wlanID = 7
+    # summary = cs.show_wlan_id()
 
     # test_config_tx_power_5g_open(cs=cs)
 
