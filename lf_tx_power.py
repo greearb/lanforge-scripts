@@ -52,6 +52,10 @@ You might need to install pexpect-serial using pip:
 $ pip3 install pexpect-serial
 $ pip3 install XlsxWriter
 
+You might need to install perl
+Fedora : dnf install perl-Net-Telnet
+Ubunto : sudo apt install libnet-telnet-perl 
+
 This script will automatically create and start a layer-3 UDP connection between the
 configured upstream port and station.
 
