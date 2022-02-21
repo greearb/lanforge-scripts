@@ -328,7 +328,6 @@ def main():
     try:
         # Parcing the input parameters and assignment
         args = parser.parse_args()
-        # logfile = args.log
         if (args.station is not None):
             lfstation = args.station
         if (args.create_station is not None):
@@ -433,9 +432,6 @@ def main():
         logg.info("output file: {}".format(outfile))
         logg.info("output file full: {}".format(full_outfile))
         logg.info("output file xlsx: {}".format(outfile_xlsx))
-
-    if args.log:
-        logg.info("output file log: {}".format(outfile_log))
 
     if (args.bandwidth is None):
         usage()
