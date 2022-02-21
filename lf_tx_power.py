@@ -368,9 +368,6 @@ def main():
         print("output file: {}".format(outfile))
         print("output file full: {}".format(full_outfile))
         print("output file xlsx: {}".format(outfile_xlsx))
-        if args.log:
-            outfile_log = "{}_{}_output_log.log".format(args.outfile, current_time)
-            print("output file log: {}".format(outfile_log))
 
         ap_dict = []
         if args.ap_info:
@@ -403,23 +400,6 @@ def main():
     # TODO refactor to be logger for consistency
     logg = logging.getLogger(__name__)
     # logg.setLevel(logging.DEBUG)
-
-    # Us the logger module
-    # file_handler = None
-    # Setting up log file if specified
-    # if args.log:
-    #     file_handler = logging.FileHandler(outfile_log, "w")
-    #     file_handler.setLevel(logging.DEBUG)
-    #     file_handler.setFormatter(formatter)
-    #     logg.addHandler(file_handler)
-    #     logg.addHandler(logging.StreamHandler(sys.stdout))  # allows to logging to file and stderr
-    #     # logging.basicConfig(format=FORMAT, handlers=[console_handler])
-#
-    # else:
-    #     # pass
-    #     # stdout logging
-    #     logging.basicConfig(format=FORMAT, handlers=[console_handler])
-    #     # logg.addHandler(logging.StreamHandler()) # allows to logging to file and stderr
 
     # dynamic import of the controller module
     series = importlib.import_module(args.module)
