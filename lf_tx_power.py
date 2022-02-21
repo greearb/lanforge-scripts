@@ -250,75 +250,75 @@ def main():
                                      formatter_class=argparse.RawTextHelpFormatter)
 
     # controller configuration
-    parser.add_argument("-d", "--dest", type=str, help="address of the cisco controller", required=True)
-    parser.add_argument("-o", "--port", type=str, help="control port on the controller", required=True)
-    parser.add_argument("-u", "--user", type=str, help="credential login/username", required=True)
-    parser.add_argument("-p", "--passwd", type=str, help="credential password", required=True)
-    parser.add_argument("-s", "--scheme", type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet", required=True)
+    parser.add_argument("-d", "--dest", type=str, help="[controller configuration] address of the cisco controller", required=True)
+    parser.add_argument("-o", "--port", type=str, help="[controller configuration] control port on the controller", required=True)
+    parser.add_argument("-u", "--user", type=str, help="[controller configuration] credential login/username", required=True)
+    parser.add_argument("-p", "--passwd", type=str, help="[controller configuration] credential password", required=True)
+    parser.add_argument("-s", "--scheme", type=str, choices=["serial", "ssh", "telnet"], help="[controller configuration] Connect via serial, ssh or telnet", required=True)
     parser.add_argument("-a", "--ap", type=str, help="select AP")
-    parser.add_argument('-ccp', '--prompt', type=str, help="controller prompt", required=True)
+    parser.add_argument('-ccp', '--prompt', type=str, help="[controller configuration] controller prompt", required=True)
     parser.add_argument("--band", type=str, help="6g, Select band a, 5g, b, 24g", choices=["a", "5g", "24g", "b", "abgn", "6g"])
-    parser.add_argument("--series", type=str, help="--series  9800 or 3504, defaults to 9800", required=True)
-    parser.add_argument("--module", type=str, help="series module", required=True)
-    parser.add_argument("--timeout", type=str, help="timeout value", default=3)
+    parser.add_argument("--series", type=str, help="[controller configuration] --series  9800 or 3504, defaults to 9800", required=True)
+    parser.add_argument("--module", type=str, help="[controller configuration] series module (cc_module_9800_3504.py) ", required=True)
+    parser.add_argument("--timeout", type=str, help="[controller configuration] command timeout value ", default=3)
 
     # wlan creation
-    parser.add_argument("--create_wlan", help="--create_wlan", action='store_true')
-    parser.add_argument("--wlan", type=str, help="--wlan  9800, wlan identifier", required=True)
-    parser.add_argument("--wlanID", type=str, help="--wlanID  9800 , defaults to 1", default="1", required=True)
-    parser.add_argument("--wlanSSID", type=str, help="--wlan  9800, wlan SSID, this must match the -ssid , ssid for station", required=True)
-    parser.add_argument("--slot", type=str, help="--slot 1 , 9800 AP slot , use show ap dot11 24ghz summary or 5ghz", required=True)
-    parser.add_argument("--tag_policy", type=str, help="--tag_policy default-tag-policy", default="RM204-TB1")
-    parser.add_argument("--policy_profile", type=str, help="--policy_profile default-policy-profile", default="default-policy-profile")
-    # parser.add_argument("--tag_policy", type=str, help="--tag_policy default-tag-policy", default="default-tag-policy")
+    parser.add_argument("--create_wlan", help="[wlan creation] --create_wlan", action='store_true')
+    parser.add_argument("--wlan", type=str, help="[wlan creation] --wlan  9800, wlan identifier", required=True)
+    parser.add_argument("--wlanID", type=str, help="[wlan creation] --wlanID  9800 , defaults to 1", default="1", required=True)
+    parser.add_argument("--wlanSSID", type=str, help="[wlan creation] --wlan  9800, wlan SSID, this must match the -ssid , ssid for station", required=True)
+    parser.add_argument("--slot", type=str, help="[wlan creation] --slot 1 , 9800 AP slot , use show ap dot11 24ghz summary or 5ghz", required=True)
+    parser.add_argument("--tag_policy", type=str, help="[wlan creation] --tag_policy RM204-TB1", required=True)
+    parser.add_argument("--policy_profile", type=str, help="[wlan creation] --policy_profile default-policy-profile", required=True)
 
     # ap configuration
-    parser.add_argument('-api', '--ap_info', action='append', nargs=1, type=str, help="--ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
+    parser.add_argument('-api', '--ap_info', action='append', nargs=1, type=str, help="[ap configuration] --ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
 
     # tx power adjustments
-    parser.add_argument("--pathloss", type=str, help="Calculated pathloss between LANforge Station and AP")
-    parser.add_argument("--antenna_gain", type=str, help="Antenna gain,  take into account the gain due to the antenna", default="0")
-    parser.add_argument("--pf_dbm", type=str, help="Pass/Fail threshold.  Default is 6", default="6")
-    parser.add_argument("--pf_ignore_offset", type=str, help="Allow a chain to have lower tx-power and still pass. default 0 so disabled", default="0")
-    parser.add_argument("--adjust_nf", action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
-    parser.add_argument('--beacon_dbm_diff', type=str, help="--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured", default="7")
+    parser.add_argument("--pathloss", type=str, help="[tx power adjustments] Calculated pathloss between LANforge Station and AP")
+    parser.add_argument("--antenna_gain", type=str, help="[tx power adjustments] Antenna gain,  take into account the gain due to the antenna", default="0")
+    parser.add_argument("--pf_dbm", type=str, help="[tx power adjustments] Pass/Fail threshold.  Default is 6", default="6")
+    parser.add_argument("--pf_ignore_offset", type=str, help="[tx power adjustments] Allow a chain to have lower tx-power and still pass. default 0 so disabled", default="0")
+    parser.add_argument("--adjust_nf", action='store_true', help="[tx power adjustments] Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
+    parser.add_argument('--beacon_dbm_diff', type=str, help="[tx power adjustments] --beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured", default="7")
 
     # traffic generation configuration (LANforge)
-    parser.add_argument("--station", type=str, help="LANforge station to use (sta0000, etc) use if station present and --create_station not used")
-    parser.add_argument("--upstream_port", type=str, help="LANforge upsteram-port to use (eth1, etc)")
-    parser.add_argument("--lfmgr", type=str, help="LANforge Manager IP address")
-    parser.add_argument("--lfresource", type=str, help="LANforge resource ID for the station")
-    parser.add_argument("--lfresource2", type=str, help="LANforge resource ID for the upstream port system")
+    parser.add_argument("--upstream_port", type=str, help="[traffic generation] LANforge upsteram-port to use (eth1, etc)")
+    parser.add_argument("--lfmgr", type=str, help="[traffic generation] LANforge Manager IP address")
+    parser.add_argument("--lfresource", type=str, help="[traffic generation] LANforge resource ID for the station")
+    parser.add_argument("--lfresource2", type=str, help="[traffic generation] LANforge resource ID for the upstream port system")
 
     # station creation
-    parser.add_argument("--create_station", type=str, help="create LANforge station at the beginning of the test")
-    parser.add_argument("--radio", type=str, help="radio to create LANforge station on at the beginning of the test")
-    parser.add_argument("--ssid", type=str, help="ssid, this must match the wlan", required=True)
-    parser.add_argument("--ssidpw", "--security_key", dest='ssidpw', type=str, help="ssidpw", required=True)
-    parser.add_argument("--security", type=str, help="security type open wpa wpa2 wpa3", required=True)
-    parser.add_argument("--vht160", action='store_true', help="--vht160 , Enable VHT160 in lanforge ")
+    parser.add_argument("--station", type=str, help="[station creation] Use already created LANforge station, use --no_cleanup also")
+    parser.add_argument("--create_station", type=str, help="[station creation] create LANforge station at the beginning of the test")
+    parser.add_argument("--radio", type=str, help="[station creation] radio to create LANforge station on at the beginning of the test")
+    parser.add_argument("--ssid", type=str, help="[station creation] station ssid, ssid of station must match the wlan created", required=True)
+    parser.add_argument("--ssidpw", "--security_key", dest='ssidpw', type=str, help="[station creation]  station security key", required=True)
+    parser.add_argument("--security", type=str, help="[station creation] security type open wpa wpa2 wpa3", required=True)
+    parser.add_argument("--vht160", action='store_true', help="[station creation] --vht160 , Enable VHT160 in lanforge ")
 
     # test configuration
-    parser.add_argument("-b", "--bandwidth", type=str, help="List of bandwidths to test. NA means no change")
-    parser.add_argument("-c", "--channel", type=str, help="List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
-    parser.add_argument("-n", "--nss", type=str, help="List of spatial streams to test.  NA means no change")
-    parser.add_argument("-T", "--txpower", type=str, help="List of txpowers to test.  NA means no change")
-    parser.add_argument("-k", "--keep_state", "--no_cleanup", dest="keep_state", action="store_true", help="keep the state, no configuration change at the end of the test")
-    parser.add_argument('-D', '--duration', type=str, help='--traffic <how long to run in seconds>  example -t 20 (seconds) default: 20 ', default='20')
-    parser.add_argument("--wait_forever", action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
-    parser.add_argument("--outfile", type=str, help="Output file for csv data", default="cisco_power_results")
+    parser.add_argument("-b", "--bandwidth", type=str, help="[test configuration] List of bandwidths to test. NA means no change")
+    parser.add_argument("-c", "--channel", type=str, help="[test configuration] List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
+    parser.add_argument("-n", "--nss", type=str, help="[test configuration] List of spatial streams to test.  NA means no change")
+    parser.add_argument("-T", "--txpower", type=str, help="[test configuration] List of txpowers to test.  NA means no change")
+    parser.add_argument('-D', '--duration', type=str, help='[test configuration] --traffic <how long to run in seconds>  example -t 20 (seconds) default: 20 ', default='20')
+    parser.add_argument("--outfile", type=str, help="[test configuration] Output file for csv data", default="cisco_power_results")
 
     # testbed configuration
-    parser.add_argument("--testbed_id", type=str, help="--testbed_id", default="")
+    parser.add_argument("--testbed_id", type=str, help="[testbed configuration] --testbed_id", default="")
 
     # TODO ADD KPI configuration
 
     # debug configuration
-    parser.add_argument('--show_lf_portmod', action='store_true', help="--show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
-    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
-    parser.add_argument("--exit_on_fail", action='store_true', help="--exit_on_fail,  exit on test failure")
-    parser.add_argument("--exit_on_error", action='store_true', help="--exit_on_error, exit on test error, test mechanics failed")
-    parser.add_argument("--cleanup", action='store_true', help="--cleanup , Clean up stations after test completes ")
+    parser.add_argument("--wait_forever", action='store_true', help="[debug configuration] Wait forever for station to associate, may aid debugging if STA cannot associate properly")
+    parser.add_argument("-k", "--keep_state", "--no_cleanup", dest="keep_state", action="store_true", help="[debug configuration] --no_cleanup, keep the state, no configuration change at the end of the test")
+    # TODO remove the cleanup flag
+    parser.add_argument("--cleanup", action='store_true', help="[debug configuration] --cleanup , Clean up stations after test completes ")
+    parser.add_argument('--show_lf_portmod', action='store_true', help="[debug configuration] --show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
+    parser.add_argument("--lf_logger_config_json", help="[debug configuration] --lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument("--exit_on_fail", action='store_true', help="[debug configuration] --exit_on_fail,  exit on test failure")
+    parser.add_argument("--exit_on_error", action='store_true', help="[debug configuration] --exit_on_error, exit on test error, test mechanics failed")
 
     # current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]
     # print(current_time)
@@ -333,10 +333,9 @@ def main():
         if (args.create_station is not None):
             lfstation = args.create_station
             if (args.station is not None):
-                print(
-                    "NOTE: both station: {} and create_station: {} on command line, test will use create_station {} ".format(
+                print(("NOTE: both station: {} and create_station: {} on command line, --station is for existing station",
+                " --create_station is for creating a station, only one may be used").format(
                         args.station,
-                        args.create_station,
                         args.create_station))
         if (args.upstream_port is not None):
             upstream_port = args.upstream_port
