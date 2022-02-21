@@ -54,7 +54,7 @@ $ pip3 install XlsxWriter
 
 You might need to install perl
 Fedora : dnf install perl-Net-Telnet
-Ubunto : sudo apt install libnet-telnet-perl 
+Ubunto : sudo apt install libnet-telnet-perl
 
 This script will automatically create and start a layer-3 UDP connection between the
 configured upstream port and station.
@@ -236,59 +236,60 @@ nf_at_calibration = -105
 
 
 def usage():
-    print("############  USAGE ############")
-    print("-d|--dest:  destination host, address of the controller")
-    print("-o|--port:  destination port, default = 23")
-    print("-u|--user:  login name or username")
-    print("-p|--passwd:  password")
-    print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
-    print("-t|--tty tty serial device")
-    print("-l|--log <store true> log has same namelog messages here ,stdout means output to console, default stdout")
-    print("-a|--ap select AP")
-    print("-b|--bandwidth: List of bandwidths to test: 20 40 80 160, NA means no change, 160 can only do 2x2 spatial streams in Intel due to radio limitations")
-    print("-c|--channel: List of channels, with optional path-loss to test: 36:64 100:60 , NA means no change")
-    print("-n|--nss: List of spatial streams to test: 1x1 2x2 3x3 4x4, NA means no change")
-    print("-T|--txpower: List of TX power values to test: 1 2 3 4 5 6 7 8, NA means no change, 1 is highest power, the power is halved for each subsquent setting")
-    print("-k|--keep_state <store true>  keep the state, no configuration change at the end of the test, store true flage present ")
-    print("--station: LANforge station name for test(sta0000), use if station present and --create_station not used")
-    print("--upstream_port: LANforge upstream port name (eth1)")
-    print("--lfmgr: LANforge manager IP address")
-    print("--lfresource: LANforge resource ID for station")
-    print("--lfresource2: LANforge resource ID for upstream port")
-    print("--outfile: Output file for txt and xlsx data, default cisco_power_results")
-    print("--pathloss:  Calculated path-loss between LANforge station and AP")
-    print("--antenna_gain: Antenna gain for AP, if no Antenna attached then antenna gain needs to be taken into account, default 0")
-    print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP, default a")
-    print("--pf_dbm: Pass/Fail range, default is 6")
-    print("--pf_ignore_offset: Allow one chain to use lower tx-power and still pass when doing 4x4, default 100. so disabled")
-    print("--wait_forever: <store true> Wait forever for station to associate, may aid debugging if STA cannot associate properly")
-    print("--adjust_nf: <store true> Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
-    print("--wlan: for 9800, wlan identifier ")
-    print("--wlanID: wlanID  for 9800 , defaults to 1")
-    print("--wlanSSID: wlanSSID  for 9800")
-    print("--series: controller series  9800 , defaults to 3504")
-    print("--slot: 9800 AP slot defaults to 1")
-    print("--create_station", "create LANforge station at the beginning of the test")
-    print("--radio", "radio to create LANforge station on at the beginning of the test")
-    print("--ssid", "ssid default open-wlan")
-    print("--ssidpw", "ssidpw default [BLANK]")
-    print("--security", "security default open")
-    print("--cleanup", "<store true> Clean up all stations after test completes, only need switch for True, Defaults False")
-    print("--vht160", "<store true> Enables VHT160 in lanforge, only need switch for True, Defaults False")
-    print("--verbose", "<store ture> switch the cisco controller output will be captured")
-    print("--exit_on_fail", "--exit_on_fail,  exit on test failure")
-    print("--exit_on_error", "--exit_on_error, exit on test error, test mechanics failed")
-    print('-e', '--email', "--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
-    print('-ccp', '--prompt', "--prompt controller prompt default WLC")
-    print('--beacon_dbm_diff', "--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured")
-    print('--show_lf_portmod', "<store_true> show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
-    print(
-        '-api',
-        '--ap_info',
-        "--ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
-
-    print("-h|--help")
-
+    print("Incorrect inputs:  ./lf_tx_power.py --help to show usage ")
+    # print("############  USAGE ############")
+    # print("-d|--dest:  destination host, address of the controller")
+    # print("-o|--port:  destination port, default = 23")
+    # print("-u|--user:  login name or username")
+    # print("-p|--passwd:  password")
+    # print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
+    # print("-t|--tty tty serial device")
+    # print("-l|--log <store true> log has same namelog messages here ,stdout means output to console, default stdout")
+    # print("-a|--ap select AP")
+    # print("-b|--bandwidth: List of bandwidths to test: 20 40 80 160, NA means no change, 160 can only do 2x2 spatial streams in Intel due to radio limitations")
+    # print("-c|--channel: List of channels, with optional path-loss to test: 36:64 100:60 , NA means no change")
+    # print("-n|--nss: List of spatial streams to test: 1x1 2x2 3x3 4x4, NA means no change")
+    # print("-T|--txpower: List of TX power values to test: 1 2 3 4 5 6 7 8, NA means no change, 1 is highest power, the power is halved for each subsquent setting")
+    # print("-k|--keep_state <store true>  keep the state, no configuration change at the end of the test, store true flage present ")
+    # print("--station: LANforge station name for test(sta0000), use if station present and --create_station not used")
+    # print("--upstream_port: LANforge upstream port name (eth1)")
+    # print("--lfmgr: LANforge manager IP address")
+    # print("--lfresource: LANforge resource ID for station")
+    # print("--lfresource2: LANforge resource ID for upstream port")
+    # print("--outfile: Output file for txt and xlsx data, default cisco_power_results")
+    # print("--pathloss:  Calculated path-loss between LANforge station and AP")
+    # print("--antenna_gain: Antenna gain for AP, if no Antenna attached then antenna gain needs to be taken into account, default 0")
+    # print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP, default a")
+    # print("--pf_dbm: Pass/Fail range, default is 6")
+    # print("--pf_ignore_offset: Allow one chain to use lower tx-power and still pass when doing 4x4, default 100. so disabled")
+    # print("--wait_forever: <store true> Wait forever for station to associate, may aid debugging if STA cannot associate properly")
+    # print("--adjust_nf: <store true> Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
+    # print("--wlan: for 9800, wlan identifier ")
+    # print("--wlanID: wlanID  for 9800 , defaults to 1")
+    # print("--wlanSSID: wlanSSID  for 9800")
+    # print("--series: controller series  9800 , defaults to 3504")
+    # print("--slot: 9800 AP slot defaults to 1")
+    # print("--create_station", "create LANforge station at the beginning of the test")
+    # print("--radio", "radio to create LANforge station on at the beginning of the test")
+    # print("--ssid", "ssid default open-wlan")
+    # print("--ssidpw", "ssidpw default [BLANK]")
+    # print("--security", "security default open")
+    # print("--cleanup", "<store true> Clean up all stations after test completes, only need switch for True, Defaults False")
+    # print("--vht160", "<store true> Enables VHT160 in lanforge, only need switch for True, Defaults False")
+    # print("--verbose", "<store ture> switch the cisco controller output will be captured")
+    # print("--exit_on_fail", "--exit_on_fail,  exit on test failure")
+    # print("--exit_on_error", "--exit_on_error, exit on test error, test mechanics failed")
+    # print('-e', '--email', "--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
+    # print('-ccp', '--prompt', "--prompt controller prompt default WLC")
+    # print('--beacon_dbm_diff', "--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured")
+    # print('--show_lf_portmod', "<store_true> show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
+    # print(
+    #     '-api',
+    #     '--ap_info',
+    #     "--ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
+#
+    # print("-h|--help")
+#
 # see https://stackoverflow.com/a/13306095/11014343
 
 
@@ -327,98 +328,84 @@ def main():
 
     parser = argparse.ArgumentParser(description="Cisco TX Power report Script", epilog=EPILOG,
                                      formatter_class=argparse.RawTextHelpFormatter)
+
+    # controller configuration
     parser.add_argument("-d", "--dest", type=str, help="address of the cisco controller", required=True)
     parser.add_argument("-o", "--port", type=str, help="control port on the controller", required=True)
     parser.add_argument("-u", "--user", type=str, help="credential login/username", required=True)
     parser.add_argument("-p", "--passwd", type=str, help="credential password", required=True)
     parser.add_argument("-s", "--scheme", type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet", required=True)
-    parser.add_argument("-t", "--tty", type=str, help="tty serial device")
-    parser.add_argument("-l", "--log", action='store_true', help="create logfile for messages, default stdout")
     parser.add_argument("-a", "--ap", type=str, help="select AP")
-    parser.add_argument("-b", "--bandwidth", type=str, help="List of bandwidths to test. NA means no change")
-    parser.add_argument("-c", "--channel", type=str, help="List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
-    parser.add_argument("-n", "--nss", type=str, help="List of spatial streams to test.  NA means no change")
-    parser.add_argument("-T", "--txpower", type=str, help="List of txpowers to test.  NA means no change")
-    parser.add_argument("-k", "--keep_state", "--no_cleanup", dest="keep_state", action="store_true",
-                        help="keep the state, no configuration change at the end of the test")
-    parser.add_argument(
-        '-D',
-        '--duration',
-        type=str,
-        help='--traffic <how long to run in seconds>  example -t 20 (seconds) default: 20 ',
-        default='20')
+    parser.add_argument('-ccp', '--prompt', type=str, help="controller prompt", required=True)
+    parser.add_argument("--band", type=str, help="6g, Select band a, 5g, b, 24g", choices=["a", "5g", "24g", "b", "abgn", "6g"])
+    parser.add_argument("--series", type=str, help="--series  9800 or 3504, defaults to 9800", required=True)
+    parser.add_argument("--module", type=str, help="series module", required=True)
+    parser.add_argument("--timeout", type=str, help="timeout value", default=3)
+
+    # wlan creation
+    parser.add_argument("--create_wlan", help="--create_wlan", action='store_true')
+    parser.add_argument("--wlan", type=str, help="--wlan  9800, wlan identifier", required=True)
+    parser.add_argument("--wlanID", type=str, help="--wlanID  9800 , defaults to 1", default="1", required=True)
+    parser.add_argument("--wlanSSID", type=str, help="--wlan  9800, wlan SSID, this must match the -ssid , ssid for station", required=True)
+    parser.add_argument("--slot", type=str, help="--slot 1 , 9800 AP slot , use show ap dot11 24ghz summary or 5ghz", required=True)
+    parser.add_argument("--tag_policy", type=str, help="--tag_policy default-tag-policy", default="RM204-TB1")
+    parser.add_argument("--policy_profile", type=str, help="--policy_profile default-policy-profile", default="default-policy-profile")
+    # parser.add_argument("--tag_policy", type=str, help="--tag_policy default-tag-policy", default="default-tag-policy")
+
+    # ap configuration
+    parser.add_argument('-api', '--ap_info', action='append', nargs=1, type=str, help="--ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
+
+    # tx power adjustments
+    parser.add_argument("--pathloss", type=str, help="Calculated pathloss between LANforge Station and AP")
+    parser.add_argument("--antenna_gain", type=str, help="Antenna gain,  take into account the gain due to the antenna", default="0")
+    parser.add_argument("--pf_dbm", type=str, help="Pass/Fail threshold.  Default is 6", default="6")
+    parser.add_argument("--pf_ignore_offset", type=str, help="Allow a chain to have lower tx-power and still pass. default 0 so disabled", default="0")
+    parser.add_argument("--adjust_nf", action='store_true', help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
+    parser.add_argument('--beacon_dbm_diff', type=str, help="--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured", default="7")
+
+    # traffic generation configuration (LANforge)
     parser.add_argument("--station", type=str, help="LANforge station to use (sta0000, etc) use if station present and --create_station not used")
     parser.add_argument("--upstream_port", type=str, help="LANforge upsteram-port to use (eth1, etc)")
     parser.add_argument("--lfmgr", type=str, help="LANforge Manager IP address")
     parser.add_argument("--lfresource", type=str, help="LANforge resource ID for the station")
     parser.add_argument("--lfresource2", type=str, help="LANforge resource ID for the upstream port system")
-    parser.add_argument("--outfile", type=str, help="Output file for csv data", default="cisco_power_results")
-    parser.add_argument("--pathloss", type=str, help="Calculated pathloss between LANforge Station and AP")
-    parser.add_argument("--antenna_gain", type=str, help="Antenna gain,  take into account the gain due to the antenna", default="0")
-    parser.add_argument("--band", type=str, help="6g, Select band a, 5g, b, 24g",
-                        choices=["a", "5g", "24g", "b", "abgn", "6g"])
-    parser.add_argument("--pf_dbm", type=str, help="Pass/Fail threshold.  Default is 6", default="6")
-    parser.add_argument(
-        "--pf_ignore_offset",
-        type=str,
-        help="Allow a chain to have lower tx-power and still pass. default 0 so disabled",
-        default="0")
-    parser.add_argument(
-        "--wait_forever",
-        action='store_true',
-        help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
-    parser.add_argument(
-        "--adjust_nf",
-        action='store_true',
-        help="Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
-    parser.add_argument("--wlan", type=str, help="--wlan  9800, wlan identifier", required=True)
-    parser.add_argument("--wlanID", type=str, help="--wlanID  9800 , defaults to 1", default="1", required=True)
-    parser.add_argument("--wlanSSID", type=str, help="--wlan  9800, wlan SSID, this must match the -ssid , ssid for station", required=True)
-    parser.add_argument("--series", type=str, help="--series  9800 or 3504, defaults to 9800", required=True)
-    parser.add_argument("--slot", type=str, help="--slot 1 , 9800 AP slot , use show ap dot11 24ghz summary or 5ghz", required=True)
+
+    # station creation
     parser.add_argument("--create_station", type=str, help="create LANforge station at the beginning of the test")
     parser.add_argument("--radio", type=str, help="radio to create LANforge station on at the beginning of the test")
-    parser.add_argument("--ssid", type=str, help="ssid, this must patch the wlan", required=True)
+    parser.add_argument("--ssid", type=str, help="ssid, this must match the wlan", required=True)
     parser.add_argument("--ssidpw", "--security_key", dest='ssidpw', type=str, help="ssidpw", required=True)
     parser.add_argument("--security", type=str, help="security type open wpa wpa2 wpa3", required=True)
-    parser.add_argument("--cleanup", action='store_true', help="--cleanup , Clean up stations after test completes ")
     parser.add_argument("--vht160", action='store_true', help="--vht160 , Enable VHT160 in lanforge ")
-    parser.add_argument('--verbose', action='store_true', help='--verbose , switch the cisco controller output will be captured')
-    parser.add_argument("--exit_on_fail", action='store_true', help="--exit_on_fail,  exit on test failure")
-    parser.add_argument("--exit_on_error", action='store_true', help="--exit_on_error, exit on test error, test mechanics failed")
-    parser.add_argument(
-        '-e',
-        '--email',
-        action='append',
-        nargs=1,
-        type=str,
-        help="--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
-    parser.add_argument('-ccp', '--prompt', type=str, help="controller prompt", required=True)
-    parser.add_argument(
-        '--beacon_dbm_diff',
-        type=str,
-        help="--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured",
-        default="7")
-    parser.add_argument(
-        '--show_lf_portmod',
-        action='store_true',
-        help="--show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
-    parser.add_argument(
-        '-api',
-        '--ap_info',
-        action='append',
-        nargs=1,
-        type=str,
-        help="--ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
-    # parser.add_argument("--tag_policy", type=str, help="--tag_policy default-tag-policy", default="default-tag-policy")
-    # TODO remove required
-    parser.add_argument("--tag_policy", type=str, help="--tag_policy default-tag-policy", default="RM204-TB1")
-    parser.add_argument("--policy_profile", type=str, help="--policy_profile default-policy-profile", default="default-policy-profile")
+
+    # test configuration
+    parser.add_argument("-b", "--bandwidth", type=str, help="List of bandwidths to test. NA means no change")
+    parser.add_argument("-c", "--channel", type=str, help="List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
+    parser.add_argument("-n", "--nss", type=str, help="List of spatial streams to test.  NA means no change")
+    parser.add_argument("-T", "--txpower", type=str, help="List of txpowers to test.  NA means no change")
+    parser.add_argument("-k", "--keep_state", "--no_cleanup", dest="keep_state", action="store_true", help="keep the state, no configuration change at the end of the test")
+    parser.add_argument('-D', '--duration', type=str, help='--traffic <how long to run in seconds>  example -t 20 (seconds) default: 20 ', default='20')
+    parser.add_argument("--wait_forever", action='store_true', help="Wait forever for station to associate, may aid debugging if STA cannot associate properly")
+    parser.add_argument("--outfile", type=str, help="Output file for csv data", default="cisco_power_results")
+
+    # testbed configuration
     parser.add_argument("--testbed_id", type=str, help="--testbed_id", default="")
-    parser.add_argument("--create_wlan", help="--create_wlan", action='store_true')
+
+    # TODO ADD KPI configuration
+
+    # debug configuration
+    parser.add_argument('--show_lf_portmod', action='store_true', help="--show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
-    parser.add_argument("--module", type=str, help="series module", required=True)
-    parser.add_argument("--timeout", type=str, help="timeout value", default=3)
+
+    # deprecated functionality
+    # TODO delete on next commit.
+    parser.add_argument("-t", "--tty", type=str, help="tty serial device ")  # deprecated
+    parser.add_argument("-l", "--log", action='store_true', help="create logfile for messages, default stdout : deprecated use logger capabilities ")  # deprecated use logger
+    parser.add_argument("--cleanup", action='store_true', help="--cleanup , Clean up stations after test completes ")  # deprecated use --no_cleanup
+    parser.add_argument('--verbose', action='store_true', help='--verbose , switch the cisco controller output will be captured')  # deprecated use logger
+    parser.add_argument("--exit_on_fail", action='store_true', help="--exit_on_fail,  exit on test failure")  # deprecated - not functioning properly
+    parser.add_argument("--exit_on_error", action='store_true', help="--exit_on_error, exit on test error, test mechanics failed")  # deprecated
+    parser.add_argument('-e', '--email', action='append', nargs=1, type=str, help="--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")  # deprecated use lf_check.py
 
     # current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]
     # print(current_time)
