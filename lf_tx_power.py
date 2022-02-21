@@ -74,22 +74,9 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 ./lf_tx_power.py -d 172.19.27.55 -u admin -p Wnbulab@123 --port 2013 --scheme telnet \
     --ap 9120_Candela --bandwidth "20" --channel "149" --nss 4 --txpower "1" \
     --pathloss 56 --band a --upstream_port eth2 --series 9800 --radio wiphy5 --slot 1 --ssid open-wlan \
-    --prompt "katar_candela" --create_station sta0001 --ssidpw [BLANK] --security open --verbose \
+    --prompt "katar_candela" --create_station sta0001 --ssidpw [BLANK] --security open  \
     --antenna_gain "6" --wlanID 1 --wlan open-wlan --wlanSSID open-wlan\
     --ap_info "ap_scheme==telnet ap_prompt==9120_Candela ap_ip==172.19.27.55 ap_port==2008 ap_user==admin ap_pw==Wnbulab@123"
-
-
-##############################################################################################
-# send email and or text on --exit_on_fail
-##############################################################################################
-
-./lf_tx_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a APA453.0E7B.CF9C --lfmgr 192.168.100.178 \
-    --bandwidth "80" --channel "144" --nss 4 --txpower "1" --pathloss 51 --antenna_gain 10 --lfmgr 192.168.100.178 --band a \
-    --upstream_port eth3 --outfile cisco_power_results --create_station sta0001 --radio wiphy1 --ssid test_candela --ssidpw [BLANK] \
-    --security open -l out_file2  -D 14 --exit_on_fail \
-    --email "user==lanforgetest@gmail.com passwd==lanforge123 to==2082868321@vtext.com smtp==smtp.gmail.com port==465"\
-    --email "user==lanforgetest@gmail.com passwd==lanforge123 to==lanforgetest@gmail.com  smtp==smtp.gmail.com port==465"\
-    --series "3504" --prompt "(Cisco Controler)"
 
 ##############################################################################################
 # Long duration test -- need to create the ---wlanID 1 --wlan open-wlan --wlanSSID open-wlan
@@ -99,7 +86,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
     --bandwidth "20 40 80" --channel "36 40 44 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165" \
     --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a --upstream_port eth2 --series 9800  \
     --wlanID 1 --wlan open-wlan --wlanSSID open-wlan --create_station sta0001 --radio wiphy1 --ssid  open-wlan --ssidpw [BLANK] --security open \
-    --outfile cisco_power_results_60_chan_ALL  --cleanup --slot 1 --verbose
+    --outfile cisco_power_results_60_chan_ALL  --cleanup --slot 1
 
 
 ##############################################################################################
@@ -108,7 +95,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 
 ./lf_tx_power.py -d 192.168.100.112 -u admin -p Cisco123 -s ssh --port 22 -a VC --lfmgr 192.168.100.178 \
   --station sta00000 --bandwidth "20 40 80 160" --channel "36:64 149:60" --antenna_gain 5 --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 \
-  --band a --upstream_port eth2 --lfresource2 2 --verbose
+  --band a --upstream_port eth2 --lfresource2 2
 
 ##############################################################################################
 # To create a station run test against station create open-wlan
@@ -117,7 +104,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 ./lf_tx_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
 --station sta2222 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a \
 --upstream_port eth2 --series 9800 --wlanID 1 --wlan open-wlan --wlanSSID open-wlan --create_station sta2222 --radio wiphy1 --ssid open-wlan \
---ssidpw [BLANK] --security open --verbose
+--ssidpw [BLANK] --security open
 
 ##############################################################################################
 # station already present
@@ -125,7 +112,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 
 ./lf_tx_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
 --station sta0000 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 64 --antenna_gain 5 --band a \
---upstream_port eth2 --series 9800 --wlanID 1 --wlan open-wlan --wlanSSID open-wlan --verbose
+--upstream_port eth2 --series 9800 --wlanID 1 --wlan open-wlan --wlanSSID open-wlan
 
 
 ##############################################################################################
@@ -137,21 +124,6 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 
 Changing regulatory domain should happen outside of this script.
 
-##############################################################################################
-# If wish to send Text after test completion follow the email format based on carrier
-##############################################################################################
-Text message via email:
-
-T-Mobile – number@tmomail.net
-Virgin Mobile – number@vmobl.com
-AT&T – number@txt.att.net
-Sprint – number@messaging.sprintpcs.com
-Verizon – number@vtext.com
-Tracfone – number@mmst5.tracfone.com
-Ting – number@message.ting.com
-Boost Mobile – number@myboostmobile.com
-U.S. Cellular – number@email.uscc.net
-Metro PCS – number@mymetropcs.com
 
 ##############################################################################################
 # OUTPUT in XLSX file - Spread sheet how values determined
@@ -237,58 +209,6 @@ nf_at_calibration = -105
 
 def usage():
     print("Incorrect inputs:  ./lf_tx_power.py --help to show usage ")
-    # print("############  USAGE ############")
-    # print("-d|--dest:  destination host, address of the controller")
-    # print("-o|--port:  destination port, default = 23")
-    # print("-u|--user:  login name or username")
-    # print("-p|--passwd:  password")
-    # print("-s|--scheme (serial|telnet|ssh): connect via serial, ssh or telnet")
-    # print("-t|--tty tty serial device")
-    # print("-l|--log <store true> log has same namelog messages here ,stdout means output to console, default stdout")
-    # print("-a|--ap select AP")
-    # print("-b|--bandwidth: List of bandwidths to test: 20 40 80 160, NA means no change, 160 can only do 2x2 spatial streams in Intel due to radio limitations")
-    # print("-c|--channel: List of channels, with optional path-loss to test: 36:64 100:60 , NA means no change")
-    # print("-n|--nss: List of spatial streams to test: 1x1 2x2 3x3 4x4, NA means no change")
-    # print("-T|--txpower: List of TX power values to test: 1 2 3 4 5 6 7 8, NA means no change, 1 is highest power, the power is halved for each subsquent setting")
-    # print("-k|--keep_state <store true>  keep the state, no configuration change at the end of the test, store true flage present ")
-    # print("--station: LANforge station name for test(sta0000), use if station present and --create_station not used")
-    # print("--upstream_port: LANforge upstream port name (eth1)")
-    # print("--lfmgr: LANforge manager IP address")
-    # print("--lfresource: LANforge resource ID for station")
-    # print("--lfresource2: LANforge resource ID for upstream port")
-    # print("--outfile: Output file for txt and xlsx data, default cisco_power_results")
-    # print("--pathloss:  Calculated path-loss between LANforge station and AP")
-    # print("--antenna_gain: Antenna gain for AP, if no Antenna attached then antenna gain needs to be taken into account, default 0")
-    # print("--band:  Select band (a | b | abgn), a means 5Ghz, b means 2.4, abgn means 2.4 on dual-band AP, default a")
-    # print("--pf_dbm: Pass/Fail range, default is 6")
-    # print("--pf_ignore_offset: Allow one chain to use lower tx-power and still pass when doing 4x4, default 100. so disabled")
-    # print("--wait_forever: <store true> Wait forever for station to associate, may aid debugging if STA cannot associate properly")
-    # print("--adjust_nf: <store true> Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
-    # print("--wlan: for 9800, wlan identifier ")
-    # print("--wlanID: wlanID  for 9800 , defaults to 1")
-    # print("--wlanSSID: wlanSSID  for 9800")
-    # print("--series: controller series  9800 , defaults to 3504")
-    # print("--slot: 9800 AP slot defaults to 1")
-    # print("--create_station", "create LANforge station at the beginning of the test")
-    # print("--radio", "radio to create LANforge station on at the beginning of the test")
-    # print("--ssid", "ssid default open-wlan")
-    # print("--ssidpw", "ssidpw default [BLANK]")
-    # print("--security", "security default open")
-    # print("--cleanup", "<store true> Clean up all stations after test completes, only need switch for True, Defaults False")
-    # print("--vht160", "<store true> Enables VHT160 in lanforge, only need switch for True, Defaults False")
-    # print("--verbose", "<store ture> switch the cisco controller output will be captured")
-    # print("--exit_on_fail", "--exit_on_fail,  exit on test failure")
-    # print("--exit_on_error", "--exit_on_error, exit on test error, test mechanics failed")
-    # print('-e', '--email', "--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")
-    # print('-ccp', '--prompt', "--prompt controller prompt default WLC")
-    # print('--beacon_dbm_diff', "--beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured")
-    # print('--show_lf_portmod', "<store_true> show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
-    # print(
-    #     '-api',
-    #     '--ap_info',
-    #     "--ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
-#
-    # print("-h|--help")
 #
 # see https://stackoverflow.com/a/13306095/11014343
 
@@ -396,16 +316,9 @@ def main():
     # debug configuration
     parser.add_argument('--show_lf_portmod', action='store_true', help="--show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
-
-    # deprecated functionality
-    # TODO delete on next commit.
-    parser.add_argument("-t", "--tty", type=str, help="tty serial device ")  # deprecated
-    parser.add_argument("-l", "--log", action='store_true', help="create logfile for messages, default stdout : deprecated use logger capabilities ")  # deprecated use logger
-    parser.add_argument("--cleanup", action='store_true', help="--cleanup , Clean up stations after test completes ")  # deprecated use --no_cleanup
-    parser.add_argument('--verbose', action='store_true', help='--verbose , switch the cisco controller output will be captured')  # deprecated use logger
-    parser.add_argument("--exit_on_fail", action='store_true', help="--exit_on_fail,  exit on test failure")  # deprecated - not functioning properly
-    parser.add_argument("--exit_on_error", action='store_true', help="--exit_on_error, exit on test error, test mechanics failed")  # deprecated
-    parser.add_argument('-e', '--email', action='append', nargs=1, type=str, help="--email user==<from email> passwd==<email password> to==<to email> smtp==<smtp server> port==<smtp port> 465 (SSL)")  # deprecated use lf_check.py
+    parser.add_argument("--exit_on_fail", action='store_true', help="--exit_on_fail,  exit on test failure")
+    parser.add_argument("--exit_on_error", action='store_true', help="--exit_on_error, exit on test error, test mechanics failed")
+    parser.add_argument("--cleanup", action='store_true', help="--cleanup , Clean up stations after test completes ")
 
     # current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]
     # print(current_time)
@@ -442,11 +355,6 @@ def main():
             pf_dbm = int(args.pf_dbm)
         if (args.pf_ignore_offset is not None):
             pf_ignore_offset = int(args.pf_ignore_offset)
-        if (args.verbose):
-            # capture the controller output , thus won't go to stdout some output always present
-            cap_ctl_out = False
-        else:
-            cap_ctl_out = True
         if (args.wlanSSID != args.ssid):
             print("####### ERROR ################################")
             print("wlanSSID: {} must equial the station ssid: {}".format(args.wlanSSID, args.ssid))
@@ -476,21 +384,6 @@ def main():
                         print("missing ap config, for the {}, all these need to be set {} ".format(key, ap_keys))
                         exit(1)
                 print("ap_dict: {}".format(ap_dict))
-
-        email_dicts = []
-        if args.email:
-            emails = args.email
-            for _email in emails:
-                # print("email {}".format(_email))
-                email_keys = ['user', 'passwd', 'to', 'smtp', 'port']
-                _email_dict = dict(map(lambda x: x.split('=='), str(_email).replace('[', '').replace(']', '').replace("'", "").split()))
-                # print("email_dict {}".format(_email_dict))
-                for key in email_keys:
-                    if key not in _email_dict:
-                        print("missing config, for the {}, all of the following need to be present {} ".format(key, email_keys))
-                        exit(1)
-                email_dicts.append(_email_dict)
-                print("email_dicts: {}".format(email_dicts))
 
     except Exception as e:
         logging.exception(e)
@@ -555,9 +448,6 @@ def main():
 
     if bool(ap_dict):
         logg.info("ap_dict {}".format(ap_dict))
-
-    if bool(email_dicts):
-        logg.info("email_dicts {}".format(email_dicts))
 
     if args.outfile is not None:
         logg.info("output file: {}".format(outfile))
@@ -1855,20 +1745,6 @@ def main():
                     if (e_tot != ""):
                         if(args.exit_on_error):
                             logg.info("EXITING ON ERROR, exit_on_error err: {} ".format(e_tot))
-                            if bool(email_dicts):
-                                for email_dict in email_dicts:
-                                    try:
-                                        logg.info("Sending Email ")
-                                        subject = "Lanforge: Error {}".format(outfile_xlsx)
-                                        body = "Lanforeg: Error: AP: {} Channel: {} NSS: {} BW: {} TX-Power {}, pfs: {} time_stamp: {}  {}".format(
-                                            args.ap, ch, n, bw, tx, pfs, time_stamp, outfile_xlsx)
-                                        email_out = subprocess.run(["./lf_mail.py", "--user", email_dict['user'], "--passwd", email_dict['passwd'], "--to", email_dict['to'],
-                                                                    "--subject", subject, "--body", body, "--smtp", email_dict['smtp'], "--port", email_dict['port']], capture_output=cap_ctl_out, check=True)
-                                        pss = email_out.stdout.decode('utf-8', 'ignore')
-                                        logg.info(pss)
-                                    except subprocess.CalledProcessError as process_error:
-                                        logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(
-                                            email_dict['smtp'], email_dict['port'], process_error.returncode, process_error.output))
                             exit_test(workbook)
 
                     # write out the data and exit on failure
@@ -1878,38 +1754,7 @@ def main():
                                 logg.info("EXITING ON FAILURE as a result of  err {}".format(e_tot))
                             else:
                                 logg.info("EXITING ON FAILURE, exit_on_fail set there was no err ")
-                            if bool(email_dicts):
-                                for email_dict in email_dicts:
-                                    try:
-                                        logg.info("Sending Email ")
-                                        subject = "Lanforge: Failure Found {}".format(outfile_xlsx)
-                                        body = "Lanforge: Failure Found:  AP: {} Channel: {} NSS: {} BW: {} TX-Power {}, pfs: {} time_stamp: {} {}".format(
-                                            args.ap, ch, n, bw, tx, pfs, time_stamp, outfile_xlsx)
-                                        email_out = subprocess.run(["./lf_mail.py", "--user", email_dict['user'], "--passwd", email_dict['passwd'], "--to", email_dict['to'],
-                                                                    "--subject", subject, "--body", body, "--smtp", email_dict['smtp'], "--port", email_dict['port']], capture_output=cap_ctl_out, check=True)
-                                        if cap_ctl_out:
-                                            pss = email_out.stdout.decode('utf-8', 'ignore')
-                                            logg.info(pss)
-                                    except subprocess.CalledProcessError as process_error:
-                                        logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(
-                                            email_dict['smtp'], email_dict['port'], process_error.returncode, process_error.output))
-
                             exit_test(workbook)
-
-    if bool(email_dicts):
-        for email_dict in email_dicts:
-            try:
-                logg.info("Sending Email ")
-                subject = "Lanforge Test Compete {}".format(outfile_xlsx)
-                body = "Lanforeg Test Complete : AP: {} time_stamp: {}  {}".format(args.ap, time_stamp, outfile_xlsx)
-                email_out = subprocess.run(["./lf_mail.py", "--user", email_dict['user'], "--passwd", email_dict['passwd'], "--to", email_dict['to'],
-                                            "--subject", subject, "--body", body, "--smtp", email_dict['smtp'], "--port", email_dict['port']], capture_output=cap_ctl_out, check=True)
-                if cap_ctl_out:
-                    pss = email_out.stdout.decode('utf-8', 'ignore')
-                    logg.info(pss)
-            except subprocess.CalledProcessError as process_error:
-                logg.info("Unable to send email smtp {} port {} error code: {} output {}".format(
-                    email_dict['smtp'], email_dict['port'], process_error.returncode, process_error.output))
 
     workbook.close()
 
