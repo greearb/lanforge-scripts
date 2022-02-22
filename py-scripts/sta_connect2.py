@@ -4,9 +4,20 @@ This will create a station, create TCP and UDP traffic, run it a short amount of
  was sent and received.  It also verifies the station connected to the requested BSSID if bssid is specified
  as an argument. The script will clean up the station and connections at the end of the test.
 
-cli example:
-./sta_connect2.py --dest localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2
+CLI Example:
+./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2
 --upstream_port eth1 --radio wiphy1
+
+CLI Example for kpi.csv report output:
+./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2
+--upstream_port eth2  --csv_outfile sta_connect2.csv --test_rig LF-Lab --test_tag L3 --dut_hw_version Linux
+--dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234
+
+CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
+./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2
+--upstream_port eth2  --download_bps 768000 --upload_bps 256000 --side_a_pdu 300 --side_b_pdu 750
+--csv_outfile sta_connect2.csv --test_rig LF-Lab --test_tag L3 --dut_hw_version Linux --dut_model_num 1
+--dut_sw_version 5.4.5 --dut_serial_num 1234
 
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
@@ -57,7 +68,7 @@ class StaConnect2(Realm):
                  _resource=1, _upstream_resource=1, _upstream_port="eth1",
                  _sta_name=None, _sta_prefix='sta', _bringup_time_sec=300,
                  debug_=False, _dut_security=OPEN, _exit_on_error=False,
-                 _cleanup_on_exit=True, _clean_all_sta=False, _runtime_sec=20, kpi_csv=None, outfile=None,
+                 _cleanup_on_exit=True, _clean_all_sta=False, _runtime_sec=None, kpi_csv=None, outfile=None,
                  download_bps=None, upload_bps=None, side_a_pdu=None, side_b_pdu=None, _exit_on_fail=False):
         # do not use `super(LFCLiBase,self).__init__(self, host, port, _debugOn)
         # that is py2 era syntax and will force self into the host variable, making you
@@ -128,81 +139,6 @@ class StaConnect2(Realm):
         logger.info("self.csv_results_file {}".format(self.csv_results_file.name))
         return self.csv_results_file.name
 
-    def get_endp_stats_for_port(self, eid_name, endps):
-        lat = 0
-        jit = 0
-        total_dl_rate = 0
-        total_dl_rate_ll = 0
-        total_dl_pkts_ll = 0
-        total_ul_rate = 0
-        total_ul_rate_ll = 0
-        total_ul_pkts_ll = 0
-        count = 0
-        sta_name = 'no_station'
-
-        # logger.info("endp-stats-for-port, port-eid: {}".format(eid_name))
-        eid = self.name_to_eid(eid_name)
-        logger.debug(
-            "eid_name: {eid_name} eid: {eid}".format(
-                eid_name=eid_name,
-                eid=eid))
-
-        # Convert all eid elements to strings
-        eid[0] = str(eid[0])
-        eid[1] = str(eid[1])
-        eid[2] = str(eid[2])
-
-        for endp in endps:
-            # pprint(endp)
-            logger.info(endp)
-            eid_endp = endp["eid"].split(".")
-            logger.debug(
-                "Comparing eid:{eid} to endp-id {eid_endp}".format(eid=eid, eid_endp=eid_endp))
-            # Look through all the endpoints (endps), to find the port the eid_name is using.
-            # The eid_name that has the same Shelf, Resource, and Port as the eid_endp (looking at all the endps)
-            # Then read the eid_endp to get the delay, jitter and rx rate
-            # Note: the endp eid is shelf.resource.port.endp-id, the eid can be treated somewhat as
-            # child class of port-eid , and look up the port the eid is using.
-            if eid[0] == eid_endp[0] and eid[1] == eid_endp[1] and eid[2] == eid_endp[2]:
-                lat += int(endp["delay"])
-                jit += int(endp["jitter"])
-                name = endp["name"]
-                logger.debug("endp name {name}".format(name=name))
-                sta_name = name.replace('-A', '')
-                # only the -A endpoint will be found so need to look
-
-                count += 1
-                logger.debug(
-                    "Matched: name: {name} eid:{eid} to endp-id {eid_endp}".format(
-                        name=name, eid=eid, eid_endp=eid_endp))
-            else:
-                name = endp["name"]
-                logger.debug(
-                    "No Match: name: {name} eid:{eid} to endp-id {eid_endp}".format(
-                        name=name, eid=eid, eid_endp=eid_endp))
-
-        if count > 1:
-            lat = int(lat / count)
-            jit = int(jit / count)
-
-        # need to loop though again to find the upload and download per station
-        # if the name matched
-        for endp in endps:
-            if sta_name in endp["name"]:
-                name = endp["name"]
-                if name.endswith("-A"):
-                    logger.info("name has -A")
-                    total_dl_rate += int(endp["rx rate"])
-                    total_dl_rate_ll += int(endp["rx rate ll"])
-                    total_dl_pkts_ll += int(endp["rx pkts ll"])
-                # -B upload side
-                else:
-                    total_ul_rate += int(endp["ul rate"])
-                    total_ul_rate_ll += int(endp["ul rate ll"])
-                    total_ul_pkts_ll += int(endp["ul pkts ll"])
-
-        return lat, jit, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll
-
     # Query all endpoints to generate rx and other stats, returned
     # as an array of objects.
     def get_rx_values(self):
@@ -263,6 +199,7 @@ class StaConnect2(Realm):
                                 elif item.startswith("tcp") and item.endswith("-A"):
                                     tcp_ul += int(value)
                                     # logger.info(tcp_dl)
+
                                 # info for upload test data
                                 if item.startswith("udp") and item.endswith("-B"):
                                     udp_dl += int(value)
@@ -286,9 +223,6 @@ class StaConnect2(Realm):
 
         # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endp_rx_drop_map, endps, udp_dl, tcp_dl, udp_ul, tcp_ul, total_dl, total_ul, total_dl_ll, total_ul_ll
-    # This script supports resetting ports, allowing one to test AP/controller under data load
-    # while bouncing wifi stations.  Check here to see if we should reset
-    # ports.
 
     # Common code to generate timestamp for CSV files.
     def time_stamp(self):
@@ -315,10 +249,10 @@ class StaConnect2(Realm):
         # logger.info(name)
         # logger.info(postVal)
         if post_val > 0:
-            pass_msg = str(post_val) + " bytes"
+            pass_msg = str(post_val) + " bps"
             self._pass("%s %s" % (name, pass_msg), print_pass)
         else:
-            fail_msg = str(post_val) + " bytes"
+            fail_msg = str(post_val) + " bps"
             self._fail("%s did not report traffic: %s" % (name, fail_msg), print_fail)
 
     def remove_stations(self):
@@ -773,13 +707,13 @@ class StaConnect2(Realm):
             'DL-Min-PDU',
             'DL-Max-PDU',
             # 'Attenuation',
-            'UDP-Upload-Bps',
-            'TCP-Upload-Bps',
-            'UDP-Download-Bps',
-            'TCP-Download-Bps',
-            'Total-UDP/TCP-Upload-Bps',
-            'Total-UDP/TCP-Download-Bps',
-            'Total-UDP/TCP-UL/DL-Bps']
+            'UDP-Upload-bps',
+            'TCP-Upload-bps',
+            'UDP-Download-bps',
+            'TCP-Download-bps',
+            'Total-UDP/TCP-Upload-bps',
+            'Total-UDP/TCP-Download-bps',
+            'Total-UDP/TCP-UL/DL-bps']
 
         return csv_rx_headers
 
@@ -813,16 +747,23 @@ was sent and received.  It also verifies the station connected to the requested 
 as an argument. The script will clean up the station and connections at the end of the test.
 ---------------------------
 CLI Example: 
-./sta_connect2.py --dest localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2 
+./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2 
 --upstream_port eth1 --radio wiphy1
 
 CLI Example for kpi.csv report output:
-./smw_sta_connect2.py --dest localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2 
+./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2 
 --upstream_port eth2  --csv_outfile sta_connect2.csv --test_rig LF-Lab --test_tag L3 --dut_hw_version Linux 
 --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234
+
+CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
+./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2 
+--upstream_port eth2  --download_bps 768000 --upload_bps 256000 --side_a_pdu 300 --side_b_pdu 750 
+--csv_outfile sta_connect2.csv --test_rig LF-Lab --test_tag L3 --dut_hw_version Linux --dut_model_num 1 
+--dut_sw_version 5.4.5 --dut_serial_num 1234
+
 --------------------------- 
 """)
-    parser.add_argument("-d", "--dest", type=str, help="address of the LANforge GUI machine (localhost is default)",
+    parser.add_argument("-m", "--mgr", type=str, help="address of the LANforge GUI machine (localhost is default)",
                         default='localhost')
     parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)",
                         default=8080)
@@ -845,6 +786,7 @@ CLI Example for kpi.csv report output:
     parser.add_argument("--upload_bps", type=int, help="Set the minimum bps value on test endpoint B. Default: 128000", default=128000)
     parser.add_argument("--side_a_pdu", type=int, help="Set the minimum pdu value on test endpoint A. Default: 1200", default=1200)
     parser.add_argument("--side_b_pdu", type=int, help="Set the minimum pdu value on test endpoint B. Default: 1500", default=1500)
+    parser.add_argument("--runtime_sec", type=int, help="Set test duration time. Default: 60 seconds", default=60)
     parser.add_argument("--debug", help="enable debugging", action="store_true")
     parser.add_argument("--prefix", type=str, help="Station prefix. Default: 'sta'", default='sta')
     parser.add_argument("--bringup_time", type=int,
@@ -858,6 +800,8 @@ CLI Example for kpi.csv report output:
     parser.add_argument('--monitor_interval', help='How frequently you want to append to your database', default='5s')
     parser.add_argument('--debug_log', default=None, help="Specify a file to send debug output to")
     parser.add_argument('--no_cleanup', help='Do not cleanup before exit', action='store_true')
+    parser.add_argument('--local_lf_report_dir', help='--local_lf_report_dir override the report path, primary use when running test in test suite', default="")
+
     # kpi_csv arguments:
     parser.add_argument(
         "--test_rig",
@@ -909,6 +853,7 @@ CLI Example for kpi.csv report output:
         logger_config.load_lf_logger_config()
 
     # for kpi.csv generation
+    local_lf_report_dir = args.local_lf_report_dir
     test_rig = args.test_rig
     test_tag = args.test_tag
     dut_hw_version = args.dut_hw_version
@@ -918,10 +863,17 @@ CLI Example for kpi.csv report output:
     # test_priority = args.test_priority  # this may need to be set per test
     test_id = args.test_id
 
-    report = lf_report.lf_report(
-        _results_dir_name="sta_connect2",
-        _output_html="sta_connect2.html",
-        _output_pdf="sta_connect2.pdf")
+    if local_lf_report_dir != "":
+        report = lf_report.lf_report(
+            _path=local_lf_report_dir,
+            _results_dir_name="sta_connect2",
+            _output_html="sta_connect2.html",
+            _output_pdf="sta_connect2.pdf")
+    else:
+        report = lf_report.lf_report(
+            _results_dir_name="sta_connect2",
+            _output_html="sta_connect2.html",
+            _output_pdf="sta_connect2.pdf")
 
     kpi_path = report.get_report_path()
     # kpi_filename = "kpi.csv"
@@ -950,7 +902,7 @@ CLI Example for kpi.csv report output:
     else:
         upstream_resource = upstream_port[1]
 
-    staConnect = StaConnect2(args.dest, args.port,
+    staConnect = StaConnect2(args.mgr, args.port,
                              _resource=args.resource,
                              _upstream_resource=upstream_resource,
                              _upstream_port=upstream_port[2],
@@ -967,6 +919,7 @@ CLI Example for kpi.csv report output:
                              upload_bps=args.upload_bps,
                              side_a_pdu=args.side_a_pdu,
                              side_b_pdu=args.side_b_pdu,
+                             _runtime_sec=args.runtime_sec,
                              _exit_on_fail=True,
                              _exit_on_error=False)
 
