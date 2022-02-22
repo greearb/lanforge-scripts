@@ -1015,6 +1015,164 @@ def test_config_tx_power_5g_open(cs):
     # show_wlan_summary
     cs.show_wlan_summary()
 
+# tb2
+def test_config_tx_power_5g_open_tb2_AP2(cs):
+
+    logger.info("test_config_tx_power_open")
+    # configure once at the top
+    cs.wlan = 'open-wlan-14'
+    cs.wlanID = '14'
+    cs.wlanSSID = 'open-wlan-14'
+    cs.config_wlan_open()
+
+    # wireless_tag_policy
+    cs.tag_policy = 'RM204-TB2-AP1'
+    cs.policy_profile = 'default-policy-profile'
+    cs.config_wireless_tag_policy_and_policy_profile()
+
+    cs.tx_power = '1'
+    cs.channel = '36'
+    cs.bandwidth = '40'
+
+    # no_logging_console
+    cs.no_logging_console()
+    # line_console_0
+    cs.line_console_0()
+    # summary
+    cs.show_ap_summary()
+
+    # disable
+    cs.show_ap_dot11_5gz_shutdown()
+    cs.show_ap_dot11_24gz_shutdown()
+
+    # disable_wlan only need wlan
+    cs.wlan_shutdown()
+    # disable_network_5ghz
+    cs.ap_dot11_5ghz_shutdown()
+    # disable_network_24ghz
+    cs.ap_dot11_24ghz_shutdown()
+    # manual
+    cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+    cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+
+    # Configuration for 5g
+
+    # txPower
+    cs.config_dot11_5ghz_tx_power()
+    # bandwidth (to set to 20 if channel change does not support)
+    cs.bandwidth = '20'
+    cs.config_dot11_5ghz_channel_width()
+    # channel
+    cs.config_dot11_5ghz_channel()
+    # bandwidth
+    cs.bandwidth = '40'
+    cs.config_dot11_5ghz_channel_width()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+    # delete_wlan
+    # TODO (there were two in tx_power the logs)
+    # need to check if wlan present
+    # delete wlan
+    # cs.config_no_wlan()
+
+    # create_wlan  open
+
+    # enable_wlan
+    cs.config_enable_wlan_send_no_shutdown()
+    # enable_network_5ghz
+    cs.config_no_ap_dot11_5ghz_shutdown()
+    # enable_network_24ghz
+    cs.config_no_ap_dot11_24ghz_shutdown()
+    # enable
+    cs.config_ap_no_dot11_5ghz_shutdown()
+    cs.config_ap_no_dot11_24ghz_shutdown()
+    # config_ap_no_dot11_24ghz_shutdown
+    # advanced
+    cs.show_ap_dot11_5gz_summary()
+    cs.show_ap_dot11_24gz_summary()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+def test_config_tx_power_5g_open_tb2_AP1(cs):
+
+    logger.info("test_config_tx_power_open")
+    # configure once at the top
+    cs.wlan = 'open-wlan-13'
+    cs.wlanID = '13'
+    cs.wlanSSID = 'open-wlan-13'
+    cs.config_wlan_open()
+
+    # wireless_tag_policy
+    cs.tag_policy = 'RM204-TB2-AP1'
+    cs.policy_profile = 'default-policy-profile'
+    cs.config_wireless_tag_policy_and_policy_profile()
+
+    cs.tx_power = '1'
+    cs.channel = '100'
+    cs.bandwidth = '40'
+
+    # no_logging_console
+    cs.no_logging_console()
+    # line_console_0
+    cs.line_console_0()
+    # summary
+    cs.show_ap_summary()
+
+    # disable
+    cs.show_ap_dot11_5gz_shutdown()
+    cs.show_ap_dot11_24gz_shutdown()
+
+    # disable_wlan only need wlan
+    cs.wlan_shutdown()
+    # disable_network_5ghz
+    cs.ap_dot11_5ghz_shutdown()
+    # disable_network_24ghz
+    cs.ap_dot11_24ghz_shutdown()
+    # manual
+    cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+    cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+
+    # Configuration for 5g
+
+    # txPower
+    cs.config_dot11_5ghz_tx_power()
+    # bandwidth (to set to 20 if channel change does not support)
+    cs.bandwidth = '20'
+    cs.config_dot11_5ghz_channel_width()
+    # channel
+    cs.config_dot11_5ghz_channel()
+    # bandwidth
+    cs.bandwidth = '40'
+    cs.config_dot11_5ghz_channel_width()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+    # delete_wlan
+    # TODO (there were two in tx_power the logs)
+    # need to check if wlan present
+    # delete wlan
+    # cs.config_no_wlan()
+
+    # create_wlan  open
+
+    # enable_wlan
+    cs.config_enable_wlan_send_no_shutdown()
+    # enable_network_5ghz
+    cs.config_no_ap_dot11_5ghz_shutdown()
+    # enable_network_24ghz
+    cs.config_no_ap_dot11_24ghz_shutdown()
+    # enable
+    cs.config_ap_no_dot11_5ghz_shutdown()
+    cs.config_ap_no_dot11_24ghz_shutdown()
+    # config_ap_no_dot11_24ghz_shutdown
+    # advanced
+    cs.show_ap_dot11_5gz_summary()
+    cs.show_ap_dot11_24gz_summary()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+
 
 def test_config_tx_power_wpa2(cs):
 
@@ -1260,11 +1418,13 @@ INCLUDE_IN_README
     # sample_test_setting_dtim(cs=cs)
     # cs.wlanID = 7
     # summary = cs.show_wlan_id()
+    test_config_tx_power_5g_open_tb2_AP1(cs=cs)
+    test_config_tx_power_5g_open_tb2_AP2(cs=cs)
 
-    test_config_tx_power_wpa2_IDIC(cs=cs)
+    # test_config_tx_power_wpa2_IDIC(cs=cs)
 
     # test_config_tx_power_wpa2(cs=cs)
-    summary = cs.show_ap_wlan_summary()
+    # summary = cs.show_ap_wlan_summary()
     logger.info(summary)
 
     # cs.show_wlan_summary()
