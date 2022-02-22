@@ -296,6 +296,7 @@ def main():
     parser.add_argument("--ssidpw", "--security_key", dest='ssidpw', type=str, help="[station configuration]  station security key", required=True)
     parser.add_argument("--security", type=str, help="[station configuration] security type open wpa wpa2 wpa3", required=True)
     parser.add_argument("--vht160", action='store_true', help="[station configuration] --vht160 , Enable VHT160 in lanforge ")
+    parser.add_argument("--no_cleanup_station", action='store_true', help="[station configuration] --no_cleanup_station , do not clean up station after test completes ")
 
     # test configuration
     parser.add_argument("-b", "--bandwidth", type=str, help="[test configuration] List of bandwidths to test. NA means no change")
@@ -314,7 +315,6 @@ def main():
     parser.add_argument("--wait_forever", action='store_true', help="[debug configuration] Wait forever for station to associate, may aid debugging if STA cannot associate properly")
     parser.add_argument("-k", "--keep_state", "--no_cleanup", dest="keep_state", action="store_true", help="[debug configuration] --no_cleanup, keep the state, no configuration change at the end of the test")
     # TODO remove the cleanup flag
-    parser.add_argument("--cleanup", action='store_true', help="[debug configuration] --cleanup , Clean up stations after test completes ")
     parser.add_argument('--show_lf_portmod', action='store_true', help="[debug configuration] --show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
     parser.add_argument("--lf_logger_config_json", help="[debug configuration] --lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument("--exit_on_fail", action='store_true', help="[debug configuration] --exit_on_fail,  exit on test failure")
@@ -1747,9 +1747,9 @@ def main():
         exit_test(workbook)
     else:
         # Set things back to defaults
-        # remove the station
-        if(args.cleanup):
-            logg.info("--cleanup set Deleting all stations on radio {}".format(args.radio))
+        # if no_cleanup_station is False then clean up station
+        if(args.no_cleanup_station is False):
+            logg.info("--no_cleanup_station set False,  Deleting all stations on radio {}".format(args.radio))
             subprocess.run(["./lf_associate_ap.pl", "--action", "del_all_phy", "--port_del", args.radio], timeout=20, capture_output=True)
 
         # Disable AP, apply settings, enable AP
