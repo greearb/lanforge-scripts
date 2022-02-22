@@ -74,7 +74,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 ./lf_tx_power.py -d 172.19.27.55 -u admin -p Wnbulab@123 --port 2013 --scheme telnet \
     --ap 9120_Candela --bandwidth "20" --channel "149" --nss 4 --txpower "1" \
     --pathloss 56 --band a --upstream_port eth2 --series 9800 --radio wiphy5 --slot 1 --ssid open-wlan \
-    --prompt "katar_candela" --create_station sta0001 --ssidpw [BLANK] --security open  \
+    --prompt "katar_candela" --create_station --station sta0001 --ssidpw [BLANK] --security open  \
     --antenna_gain "6" --wlanID 1 --wlan open-wlan --wlanSSID open-wlan\
     --ap_info "ap_scheme==telnet ap_prompt==9120_Candela ap_ip==172.19.27.55 ap_port==2008 ap_user==admin ap_pw==Wnbulab@123"
 
@@ -85,7 +85,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 ./lf_tx_power.py -d 172.19.36.168 -u admin -p Wnbulab@123 --port 23 --scheme telnet --ap "APA453.0E7B.CF60" \
     --bandwidth "20 40 80" --channel "36 40 44 48 52 56 60 64 100 104 108 112 116 120 124 128 132 136 140 144 149 153 157 161 165" \
     --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a --upstream_port eth2 --series 9800  \
-    --wlanID 1 --wlan open-wlan --wlanSSID open-wlan --create_station sta0001 --radio wiphy1 --ssid  open-wlan --ssidpw [BLANK] --security open \
+    --wlanID 1 --wlan open-wlan --wlanSSID open-wlan --create_station --station sta0001 --radio wiphy1 --ssid  open-wlan --ssidpw [BLANK] --security open \
     --outfile cisco_power_results_60_chan_ALL  --cleanup --slot 1
 
 
@@ -103,7 +103,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 
 ./lf_tx_power.py -d <router IP> -u admin -p Cisco123 -port 23 --scheme telnet --ap AP6C71.0DE6.45D0 \
 --station sta2222 --bandwidth "20" --channel "36" --nss 4 --txpower "1 2 3 4 5 6 7 8" --pathloss 54 --antenna_gain 6 --band a \
---upstream_port eth2 --series 9800 --wlanID 1 --wlan open-wlan --wlanSSID open-wlan --create_station sta2222 --radio wiphy1 --ssid open-wlan \
+--upstream_port eth2 --series 9800 --wlanID 1 --wlan open-wlan --wlanSSID open-wlan --create_station --station sta2222 --radio wiphy1 --ssid open-wlan \
 --ssidpw [BLANK] --security open
 
 ##############################################################################################
@@ -262,40 +262,40 @@ def main():
     parser.add_argument("--module", type=str, help="[controller configuration] series module (cc_module_9800_3504.py) ", required=True)
     parser.add_argument("--timeout", type=str, help="[controller configuration] command timeout value ", default=3)
 
-    # wlan creation
-    parser.add_argument("--create_wlan", help="[wlan creation] --create_wlan", action='store_true')
-    parser.add_argument("--wlan", type=str, help="[wlan creation] --wlan  9800, wlan identifier", required=True)
-    parser.add_argument("--wlanID", type=str, help="[wlan creation] --wlanID  9800 , defaults to 1", default="1", required=True)
-    parser.add_argument("--wlanSSID", type=str, help="[wlan creation] --wlan  9800, wlan SSID, this must match the -ssid , ssid for station", required=True)
-    parser.add_argument("--slot", type=str, help="[wlan creation] --slot 1 , 9800 AP slot , use show ap dot11 24ghz summary or 5ghz", required=True)
-    parser.add_argument("--tag_policy", type=str, help="[wlan creation] --tag_policy RM204-TB1", required=True)
-    parser.add_argument("--policy_profile", type=str, help="[wlan creation] --policy_profile default-policy-profile", required=True)
+    # wlan configuration
+    parser.add_argument("--create_wlan", help="[wlan configuration] --create_wlan", action='store_true')
+    parser.add_argument("--wlan", type=str, help="[wlan configuration] --wlan  9800, wlan identifier", required=True)
+    parser.add_argument("--wlan_id", "--wlanID", dest="wlanID", type=str, help="[wlan configuration] --wlan_id  9800 , defaults to 1", default="1", required=True)
+    parser.add_argument("--wlan_ssid", "--wlanSSID", dest="wlanSSID", type=str, help="[wlan configuration] --wlan_ssid  9800, wlan SSID, this must match the -ssid , ssid for station", required=True)
+    parser.add_argument("--slot", type=str, help="[wlan configuration] --slot 1 , 9800 AP slot , use show ap dot11 24ghz summary or 5ghz", required=True)
+    parser.add_argument("--tag_policy", type=str, help="[wlan configuration] --tag_policy RM204-TB1")
+    parser.add_argument("--policy_profile", type=str, help="[wlan configuration] --policy_profile default-policy-profile")
 
-    # ap configuration
+    # ap interface configuration
     parser.add_argument('-api', '--ap_info', action='append', nargs=1, type=str, help="[ap configuration] --ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
 
-    # tx power adjustments
-    parser.add_argument("--pathloss", type=str, help="[tx power adjustments] Calculated pathloss between LANforge Station and AP", required=True)
-    parser.add_argument("--antenna_gain", type=str, help="[tx power adjustments] Antenna gain,  take into account the gain due to the antenna", required=True)
-    parser.add_argument("--pf_dbm", type=str, help="[tx power adjustments] Pass/Fail threshold.  Default is 6", default="6")
-    parser.add_argument("--pf_ignore_offset", type=str, help="[tx power adjustments] Allow a chain to have lower tx-power and still pass. default 0 so disabled", default="0")
-    parser.add_argument("--adjust_nf", action='store_true', help="[tx power adjustments] Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
-    parser.add_argument('--beacon_dbm_diff', type=str, help="[tx power adjustments] --beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured", default="7")
+    # tx power configuration
+    parser.add_argument("--pathloss", type=str, help="[tx power configuration] Calculated pathloss between LANforge Station and AP", required=True)
+    parser.add_argument("--antenna_gain", type=str, help="[tx power configuration] Antenna gain,  take into account the gain due to the antenna", required=True)
+    parser.add_argument("--pf_dbm", type=str, help="[tx power configuration] Pass/Fail threshold.  Default is 6", default="6")
+    parser.add_argument("--pf_ignore_offset", type=str, help="[tx power configuration] Allow a chain to have lower tx-power and still pass. default 0 so disabled", default="0")
+    parser.add_argument("--adjust_nf", action='store_true', help="[tx power configuration] Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
+    parser.add_argument('--beacon_dbm_diff', type=str, help="[tx power configuration] --beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured", default="7")
 
     # traffic generation configuration (LANforge)
-    parser.add_argument("--upstream_port", type=str, help="[traffic generation] LANforge upsteram-port to use (eth1, etc)", required=True)
-    parser.add_argument("--lfmgr", type=str, help="[traffic generation] LANforge Manager IP address", required=True)
-    parser.add_argument("--lfresource", type=str, help="[traffic generation] LANforge resource ID for the station")
-    parser.add_argument("--lfresource2", type=str, help="[traffic generation] LANforge resource ID for the upstream port system")
+    parser.add_argument("--lfmgr", type=str, help="[traffic generation configuration (LANforge)] LANforge Manager IP address", required=True)
+    parser.add_argument("--upstream_port", type=str, help="[traffic generation configuration (LANforge)] LANforge upsteram-port to use (eth1, etc)", required=True)
+    parser.add_argument("--lfresource", type=str, help="[traffic generation configuration (LANforge)] LANforge resource ID for the station")
+    parser.add_argument("--lfresource2", type=str, help="[traffic generation configuration (LANforge)] LANforge resource ID for the upstream port system")
 
-    # station creation
-    parser.add_argument("--station", type=str, help="[station creation] Use already created LANforge station, use --no_cleanup also")
-    parser.add_argument("--create_station", type=str, help="[station creation] create LANforge station at the beginning of the test")
-    parser.add_argument("--radio", type=str, help="[station creation] radio to create LANforge station on at the beginning of the test")
-    parser.add_argument("--ssid", type=str, help="[station creation] station ssid, ssid of station must match the wlan created", required=True)
-    parser.add_argument("--ssidpw", "--security_key", dest='ssidpw', type=str, help="[station creation]  station security key", required=True)
-    parser.add_argument("--security", type=str, help="[station creation] security type open wpa wpa2 wpa3", required=True)
-    parser.add_argument("--vht160", action='store_true', help="[station creation] --vht160 , Enable VHT160 in lanforge ")
+    # station configuration
+    parser.add_argument("--create_station", help="[station configuration] create LANforge station at the beginning of the test", action='store_true')
+    parser.add_argument("--station", type=str, help="[station configuration] Use already created LANforge station, use --no_cleanup also", required=True)
+    parser.add_argument("--radio", type=str, help="[station configuration] radio to create LANforge station on at the beginning of the test")
+    parser.add_argument("--ssid", type=str, help="[station configuration] station ssid, ssid of station must match the wlan created", required=True)
+    parser.add_argument("--ssidpw", "--security_key", dest='ssidpw', type=str, help="[station configuration]  station security key", required=True)
+    parser.add_argument("--security", type=str, help="[station configuration] security type open wpa wpa2 wpa3", required=True)
+    parser.add_argument("--vht160", action='store_true', help="[station configuration] --vht160 , Enable VHT160 in lanforge ")
 
     # test configuration
     parser.add_argument("-b", "--bandwidth", type=str, help="[test configuration] List of bandwidths to test. NA means no change")
@@ -328,15 +328,7 @@ def main():
     try:
         # Parcing the input parameters and assignment
         args = parser.parse_args()
-        if (args.station is not None):
-            lfstation = args.station
-        if (args.create_station is not None):
-            lfstation = args.create_station
-            if (args.station is not None):
-                print(("NOTE: both station: {} and create_station: {} on command line, --station is for existing station",
-                       " --create_station is for creating a station, only one may be used").format(
-                    args.station,
-                    args.create_station))
+        lfstation = args.station
         upstream_port = args.upstream_port
         lfmgr = args.lfmgr
         # TODO
@@ -362,6 +354,13 @@ def main():
             print("wlanSSID: {} must equial the station ssid: {}".format(args.wlanSSID, args.ssid))
             print("####### ERROR ################################")
             exit(1)
+        if (args.create_wlan):
+            if(args.tag_policy is None or args.policy_profile is None):
+                print("####### ERROR ######################################################")
+                print(" For create_wlan both tag_policy and policy_profile must be entered")
+                print("####### ERROR #######################################################")
+                exit(1)
+
         # note: there would always be an args.outfile due to the default
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
         outfile = "{}_{}.txt".format(args.outfile, current_time)
@@ -395,9 +394,6 @@ def main():
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
-
-    console_handler = logging.StreamHandler()
-    formatter = logging.Formatter(FORMAT)
 
     # TODO refactor to be logger for consistency
     logg = logging.getLogger(__name__)
@@ -646,22 +642,22 @@ def main():
     txpowers = args.txpower.split()
 
     # The script has the ability to create a station if one does not exist
-    if (args.create_station is not None):
+    if (args.create_station):
         if (args.radio is None):
             logg.info("WARNING --create needs a radio")
             exit_test(workbook)
         elif (args.vht160):
-            logg.info("creating station with VHT160 set: {} on radio {}".format(args.create_station, args.radio))
+            logg.info("creating station with VHT160 set: {} on radio {}".format(args.station, args.radio))
             print()
             subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
                             "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
-                            "--first_sta", args.create_station, "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=True)
+                            "--first_sta", args.station, "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=True)
             sleep(3)
         else:
-            logg.info("creating station: {} on radio {}".format(args.create_station, args.radio))
+            logg.info("creating station: {} on radio {}".format(args.station, args.radio))
             subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
                             "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
-                            "--first_sta", args.create_station, "--action", "add"], timeout=20, capture_output=True)
+                            "--first_sta", args.station, "--action", "add"], timeout=20, capture_output=True)
             sleep(3)
 
     # Find LANforge station parent radio
