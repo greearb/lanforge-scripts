@@ -788,8 +788,8 @@ Generic command layout:
         print(ip_test.get_fail_message())
     ip_test.start(False, False)
 
-    ip_test.report = lf_report.lf_report(_results_dir_name="test_l4", _output_html="ftp_test.html",
-                                         _output_pdf="ftp_test.pdf")
+    ip_test.report = lf_report.lf_report(_results_dir_name="test_fileio", _output_html="fileio_test.html",
+                                         _output_pdf="fileio_test.pdf")
 
     kpi_path = ip_test.report.get_report_path()
     ip_test.kpi_csv = lf_kpi_csv.lf_kpi_csv(
