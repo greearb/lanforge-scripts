@@ -250,15 +250,15 @@ def main():
                                      formatter_class=argparse.RawTextHelpFormatter)
 
     # controller configuration
+    parser.add_argument("-s", "--scheme", type=str, choices=["serial", "ssh", "telnet"], help="[controller configuration] Connect via serial, ssh or telnet", required=True)
     parser.add_argument("-d", "--dest", type=str, help="[controller configuration] address of the cisco controller", required=True)
     parser.add_argument("-o", "--port", type=str, help="[controller configuration] control port on the controller", required=True)
     parser.add_argument("-u", "--user", type=str, help="[controller configuration] credential login/username", required=True)
     parser.add_argument("-p", "--passwd", type=str, help="[controller configuration] credential password", required=True)
-    parser.add_argument("-s", "--scheme", type=str, choices=["serial", "ssh", "telnet"], help="[controller configuration] Connect via serial, ssh or telnet", required=True)
-    parser.add_argument("-a", "--ap", type=str, help="select AP")
     parser.add_argument('-ccp', '--prompt', type=str, help="[controller configuration] controller prompt", required=True)
-    parser.add_argument("--band", type=str, help="6g, Select band a, 5g, b, 24g", choices=["a", "5g", "24g", "b", "abgn", "6g"])
     parser.add_argument("--series", type=str, help="[controller configuration] --series  9800 or 3504, defaults to 9800", required=True)
+    parser.add_argument("-a", "--ap", type=str, help="select AP", required=True)
+    parser.add_argument("--band", type=str, help="6g, Select band a, 5g, b, 24g", choices=["a", "5g", "24g", "b", "abgn", "6g"])
     parser.add_argument("--module", type=str, help="[controller configuration] series module (cc_module_9800_3504.py) ", required=True)
     parser.add_argument("--timeout", type=str, help="[controller configuration] command timeout value ", default=3)
 
@@ -275,16 +275,16 @@ def main():
     parser.add_argument('-api', '--ap_info', action='append', nargs=1, type=str, help="[ap configuration] --ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
 
     # tx power adjustments
-    parser.add_argument("--pathloss", type=str, help="[tx power adjustments] Calculated pathloss between LANforge Station and AP")
-    parser.add_argument("--antenna_gain", type=str, help="[tx power adjustments] Antenna gain,  take into account the gain due to the antenna", default="0")
+    parser.add_argument("--pathloss", type=str, help="[tx power adjustments] Calculated pathloss between LANforge Station and AP", required=True)
+    parser.add_argument("--antenna_gain", type=str, help="[tx power adjustments] Antenna gain,  take into account the gain due to the antenna", required=True)
     parser.add_argument("--pf_dbm", type=str, help="[tx power adjustments] Pass/Fail threshold.  Default is 6", default="6")
     parser.add_argument("--pf_ignore_offset", type=str, help="[tx power adjustments] Allow a chain to have lower tx-power and still pass. default 0 so disabled", default="0")
     parser.add_argument("--adjust_nf", action='store_true', help="[tx power adjustments] Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
     parser.add_argument('--beacon_dbm_diff', type=str, help="[tx power adjustments] --beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured", default="7")
 
     # traffic generation configuration (LANforge)
-    parser.add_argument("--upstream_port", type=str, help="[traffic generation] LANforge upsteram-port to use (eth1, etc)")
-    parser.add_argument("--lfmgr", type=str, help="[traffic generation] LANforge Manager IP address")
+    parser.add_argument("--upstream_port", type=str, help="[traffic generation] LANforge upsteram-port to use (eth1, etc)", required=True)
+    parser.add_argument("--lfmgr", type=str, help="[traffic generation] LANforge Manager IP address", required=True)
     parser.add_argument("--lfresource", type=str, help="[traffic generation] LANforge resource ID for the station")
     parser.add_argument("--lfresource2", type=str, help="[traffic generation] LANforge resource ID for the upstream port system")
 
@@ -303,7 +303,7 @@ def main():
     parser.add_argument("-n", "--nss", type=str, help="[test configuration] List of spatial streams to test.  NA means no change")
     parser.add_argument("-T", "--txpower", type=str, help="[test configuration] List of txpowers to test.  NA means no change")
     parser.add_argument('-D', '--duration', type=str, help='[test configuration] --traffic <how long to run in seconds>  example -t 20 (seconds) default: 20 ', default='20')
-    parser.add_argument("--outfile", type=str, help="[test configuration] Output file for csv data", default="cisco_power_results")
+    parser.add_argument("--outfile", type=str, help="[test configuration] Output file for csv data")
 
     # testbed configuration
     parser.add_argument("--testbed_id", type=str, help="[testbed configuration] --testbed_id", default="")
@@ -334,13 +334,12 @@ def main():
             lfstation = args.create_station
             if (args.station is not None):
                 print(("NOTE: both station: {} and create_station: {} on command line, --station is for existing station",
-                " --create_station is for creating a station, only one may be used").format(
-                        args.station,
-                        args.create_station))
-        if (args.upstream_port is not None):
-            upstream_port = args.upstream_port
-        if (args.lfmgr is not None):
-            lfmgr = args.lfmgr
+                       " --create_station is for creating a station, only one may be used").format(
+                    args.station,
+                    args.create_station))
+        upstream_port = args.upstream_port
+        lfmgr = args.lfmgr
+        # TODO
         if (args.lfresource is not None):
             lfresource = args.lfresource
         if (args.lfresource2 is not None):
@@ -349,6 +348,11 @@ def main():
             outfile = args.outfile
             full_outfile = "full-%s" % (outfile)
             outfile_xlsx = "%s.xlsx" % (outfile)
+        else:
+            outfile = 'tx_power'
+            full_outfile = "full-%s" % (outfile)
+            outfile_xlsx = "%s.xlsx" % (outfile)
+
         if (args.pf_dbm is not None):
             pf_dbm = int(args.pf_dbm)
         if (args.pf_ignore_offset is not None):
