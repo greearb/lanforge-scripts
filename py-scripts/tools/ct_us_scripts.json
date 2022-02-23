@@ -708,7 +708,7 @@
             "sta_connect2": {
                 "enabled": "TRUE",
                 "load_db": "skip",
-                "command": "smw_sta_connect2.py",
+                "command": "sta_connect2.py",
                 "args": "",
                 "args_list": ["--mgr LF_MGR_IP --upstream_port UPSTREAM_PORT --local_lf_report_dir REPORT_PATH",
                     " use_ssid_idx=1 --dut_ssid SSID_USED --dut_security SECURITY_USED --dut_passwd SSID_PW_USED",
