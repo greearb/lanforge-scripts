@@ -148,7 +148,7 @@ def main():
                                  "ap_channel", "auto_rf", "channel", "show", "create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "enable_wlan", "disable_wlan", "wlan_qos",
                                  "disable_network_6ghz","disable_network_5ghz", "disable_network_24ghz", 
                                  "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
-                                 "wireless_tag_policy", "no_wlan_wireless_tag_policy", "delete_wlan"])
+                                 "wireless_tag_policy", "no_wlan_wireless_tag_policy", "delete_wlan", "show_ap_bssid_24g", "show_ap_bssid_5g"])
     parser.add_argument("--value", type=str, help="set value")
     # logging configuration
     parser.add_argument(
@@ -1037,6 +1037,20 @@ def main():
                 command = "show ap dot11 24ghz summary"
         else:
             command = "show advanced 802.11%s summary" % (band)
+
+    if (args.action == "show_ap_bssid_24g"):
+        if args.series == "9800":
+            if band == "a":
+                command = "show ap name %s wlan dot11 24ghz" % (args.ap)
+            else:
+                command = "show ap name %s wlan dot11 24ghz" % (args.ap)
+
+    if (args.action == "show_ap_bssid_5g"):
+        if args.series == "9800":
+            if band == "a":
+                command = "show ap name %s wlan dot11 5ghz" % (args.ap)
+            else:
+                command = "show ap name %s wlan dot11 5ghz" % (args.ap)
 
     if ((args.action == "auto_rf") and ((args.ap is None))):
         raise Exception("auto_rf requires AP name")
