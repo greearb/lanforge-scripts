@@ -13,6 +13,8 @@ None
 EXAMPLE:
     There is a unit test included to try sample command scenarios
     ./cc_module_9800_3504.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap APA453.0E7B.CF9C --series 9800 --prompt "WLC1" --timeout 10 --band '5g'
+    ./cc_module_9800_3504.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap APA453.0E7B.CF9C --series 9800 --prompt "WLC1" --timeout 10 --band '24g'
+
     ./cc_module_9800_3504.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap APCC9C.3EF1.1140 --series 9800 --prompt "WLC1" --timeout 10 --band '5g'
 
 
@@ -189,7 +191,7 @@ class create_controller_series_object:
         # possible need to look for exact command
         elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_ap_wlan_summary", "show_wlan_summary", "show_wlan_id",
                              "advanced", "disable", "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
-                             "manual", "auto", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz", "enable", "show_ap_bssid_24g", "show_ap_bssid_5g"]:
+                             "manual", "auto", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz", "enable"]:
 
             self.command_extend = ["--action", self.action]
             self.command.extend(self.command_extend)
@@ -262,18 +264,6 @@ class create_controller_series_object:
     def show_ap_summary(self):
         logger.info("show ap summary")
         self.action = "summary"
-        summary = self.send_command()
-        return summary
-
-    def show_ap_bssid_24ghz(self):
-        logger.info("show ap name  wlan dot11 24ghz")
-        self.action = "show_ap_bssid_24g"
-        summary = self.send_command()
-        return summary
-
-    def show_ap_bssid_5ghz(self):
-        logger.info("show ap name  wlan dot11 5ghz")
-        self.action = "show_ap_bssid_5g"
         summary = self.send_command()
         return summary
 
@@ -1028,6 +1018,90 @@ def test_config_tx_power_5g_open(cs):
     # show_wlan_summary
     cs.show_wlan_summary()
 
+
+# 2g test
+def test_config_tx_power_2g_open(cs):
+
+    logger.info("test_config_tx_power_open_2g")
+    # configure once at the top
+    cs.wlan = 'open-wlan-2-2g'
+    cs.wlanID = '2'
+    cs.wlanSSID = 'open-wlan-2-2g'
+    cs.config_wlan_open()
+
+    # wireless_tag_policy
+    cs.tag_policy = 'RM204-TB1-AP2'
+    cs.policy_profile = 'default-policy-profile'
+    cs.config_wireless_tag_policy_and_policy_profile()
+
+    cs.tx_power = '5'
+    cs.channel = '1'
+    cs.bandwidth = '20'
+
+    # no_logging_console
+    cs.no_logging_console()
+    # line_console_0
+    cs.line_console_0()
+    # summary
+    cs.show_ap_summary()
+
+    # disable
+    cs.show_ap_dot11_5gz_shutdown()
+    cs.show_ap_dot11_24gz_shutdown()
+
+    # disable_wlan only need wlan
+    cs.wlan_shutdown()
+    # disable_network_5ghz
+    cs.ap_dot11_5ghz_shutdown()
+    # disable_network_24ghz
+    cs.ap_dot11_24ghz_shutdown()
+    # manual
+    # cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+    cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+
+    # Configuration for 5g
+
+    # txPower
+    cs.config_dot11_24ghz_tx_power()
+    # bandwidth (to set to 20 if channel change does not support)
+    cs.bandwidth = '20'
+    # cs.config_dot11_24ghz_channel_width()
+    # channel
+    cs.config_dot11_24ghz_channel()
+    # bandwidth
+    cs.bandwidth = '20'
+    # cs.config_dot11_24ghz_channel_width()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+    # delete_wlan
+    # TODO (there were two in tx_power the logs)
+    # need to check if wlan present
+    # delete wlan
+    cs.config_no_wlan()
+
+    # create_wlan  open
+
+    # enable_wlan
+    cs.config_enable_wlan_send_no_shutdown()
+    # enable_network_5ghz
+    # cs.config_no_ap_dot11_5ghz_shutdown()
+    # enable_network_24ghz
+    cs.config_no_ap_dot11_24ghz_shutdown()
+    # enable
+    # cs.config_ap_no_dot11_5ghz_shutdown()
+    cs.config_ap_no_dot11_24ghz_shutdown()
+    # config_ap_no_dot11_24ghz_shutdown
+    # advanced
+    # cs.show_ap_dot11_5gz_summary()
+    cs.show_ap_dot11_24gz_summary()
+    # show_wlan_summary
+    cs.show_wlan_summary()
+
+    cs.show_ap_dot11_24gz_summary()
+    cs.show_ap_bssid_24g()
+
+
 # tb2
 def test_config_tx_power_5g_open_tb2_AP2(cs):
 
@@ -1412,8 +1486,6 @@ INCLUDE_IN_README
         band=args.band,
         timeout=args.timeout)
 
-    # cs.show_ap_bssid_24ghz()
-
     # TODO add ability to select tests
     cs.show_ap_summary()
     summary = cs.show_ap_wlan_summary()
@@ -1433,8 +1505,8 @@ INCLUDE_IN_README
     # sample_test_setting_dtim(cs=cs)
     # cs.wlanID = 7
     # summary = cs.show_wlan_id()
-    test_config_tx_power_5g_open_tb2_AP1(cs=cs)
-    test_config_tx_power_5g_open_tb2_AP2(cs=cs)
+    # test_config_tx_power_5g_open_tb2_AP1(cs=cs)
+    test_config_tx_power_2g_open(cs=cs)
 
     # test_config_tx_power_wpa2_IDIC(cs=cs)
 
