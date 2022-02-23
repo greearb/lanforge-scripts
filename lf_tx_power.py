@@ -338,12 +338,8 @@ def main():
             lfresource2 = args.lfresource2
         if (args.outfile):
             outfile = args.outfile
-            full_outfile = "full-%s" % (outfile)
-            outfile_xlsx = "%s" % (outfile)
         else:
             outfile = 'tx_power'
-            full_outfile = "full-%s" % (outfile)
-            outfile_xlsx = "%s" % (outfile)
 
         print("outfile {}".format(outfile))
 
@@ -366,8 +362,8 @@ def main():
         # note: there would always be an args.outfile due to the default
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
         outfile = "{}_{}.txt".format(outfile, current_time)
-        full_outfile = "{}_full_{}.txt".format(full_outfile, current_time)
-        outfile_xlsx = "{}_{}.xlsx".format(outfile_xlsx, current_time)
+        full_outfile = "{}_full_{}.txt".format(outfile, current_time)
+        outfile_xlsx = "{}_{}.xlsx".format(outfile, current_time)
         print("output file: {}".format(outfile))
         print("output file full: {}".format(full_outfile))
         print("output file xlsx: {}".format(outfile_xlsx))
