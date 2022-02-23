@@ -188,7 +188,7 @@ class create_controller_series_object:
         # possible need to look for exact command
         elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_ap_wlan_summary", "show_wlan_summary", "show_wlan_id",
                              "advanced", "disable", "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
-                             "manual", "auto", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz", "enable"]:
+                             "manual", "auto", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz", "enable", "show_ap_bssid_24g", "show_ap_bssid_5g"]:
 
             self.command_extend = ["--action", self.action]
             self.command.extend(self.command_extend)
@@ -261,6 +261,18 @@ class create_controller_series_object:
     def show_ap_summary(self):
         logger.info("show ap summary")
         self.action = "summary"
+        summary = self.send_command()
+        return summary
+
+    def show_ap_bssid_24ghz(self):
+        logger.info("show ap name  wlan dot11 24ghz")
+        self.action = "show_ap_bssid_24g"
+        summary = self.send_command()
+        return summary
+
+    def show_ap_bssid_5ghz(self):
+        logger.info("show ap name  wlan dot11 5ghz")
+        self.action = "show_ap_bssid_5g"
         summary = self.send_command()
         return summary
 
@@ -1398,6 +1410,8 @@ INCLUDE_IN_README
         port=args.port,
         band=args.band,
         timeout=args.timeout)
+
+    # cs.show_ap_bssid_24ghz()
 
     # TODO add ability to select tests
     cs.show_ap_summary()
