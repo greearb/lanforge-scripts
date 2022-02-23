@@ -711,7 +711,7 @@
                 "command": "sta_connect2.py",
                 "args": "",
                 "args_list": ["--mgr LF_MGR_IP --upstream_port UPSTREAM_PORT --local_lf_report_dir REPORT_PATH",
-                    " use_ssid_idx=1 --dut_ssid SSID_USED --dut_security SECURITY_USED --dut_passwd SSID_PW_USED",
+                    " use_ssid_idx=1 --radio 1.1.wiphy1 --dut_ssid SSID_USED --dut_security SECURITY_USED --dut_passwd SSID_PW_USED",
                     " --csv_outfile FTP_CSV.csv --test_rig TEST_RIG --test_tag LF_FTP --dut_hw_version DUT_HW",
                     " --dut_model_num USE_DUT_NAME --dut_sw_version DUT_SW --dut_serial_num DUT_SN"
                 ]
@@ -734,12 +734,13 @@
                 "command": "lf_ftp.py",
                 "args": "",
                 "args_list": ["--mgr LF_MGR_IP --upstream_port UPSTREAM_PORT --local_lf_report_dir REPORT_PATH",
-                    " use_ssid_idx=1 --dut_ssid SSID_USED --dut_security SECURITY_USED --dut_passwd SSID_PW_USED",
-                    " --bands 5G --fiveg_radio wiphy0 --directions Download Upload --csv_outfile FTP_CSV.csv --test_rig TEST_RIG",
+                    " use_ssid_idx=1 --ssid SSID_USED --security SECURITY_USED --passwd SSID_PW_USED",
+                    " --bands 5G --fiveg_radio wiphy1 --directions Download Upload --csv_outfile FTP_CSV.csv --test_rig TEST_RIG",
                     " --test_tag LF_FTP --dut_hw_version DUT_HW --dut_model_num USE_DUT_NAME --dut_sw_version DUT_SW --dut_serial_num DUT_SN"
                 ]
-            },
-            "lf_qa":{
+            }
+        },
+        "lf_qa":{
                 "enabled":"TRUE",
                 "timeout":"600",
                 "load_db":"skip",
