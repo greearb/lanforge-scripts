@@ -703,7 +703,53 @@
                     " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
             }
-        },            
+        },
+        "suite_sta_connect2": {
+            "sta_connect2": {
+                "enabled": "TRUE",
+                "load_db": "skip",
+                "command": "smw_sta_connect2.py",
+                "args": "",
+                "args_list": ["--mgr LF_MGR_IP --upstream_port UPSTREAM_PORT --local_lf_report_dir REPORT_PATH",
+                    " use_ssid_idx=1 --dut_ssid SSID_USED --dut_security SECURITY_USED --dut_passwd SSID_PW_USED",
+                    " --csv_outfile FTP_CSV.csv --test_rig TEST_RIG --test_tag LF_FTP --dut_hw_version DUT_HW",
+                    " --dut_model_num USE_DUT_NAME --dut_sw_version DUT_SW --dut_serial_num DUT_SN"
+                ]
+            },
+            "lf_qa":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+                ]
+            }
+        },
+        "suite_lf_ftp": {
+            "lf_ftp": {
+                "enabled": "TRUE",
+                "load_db": "skip",
+                "command": "lf_ftp.py",
+                "args": "",
+                "args_list": ["--mgr LF_MGR_IP --upstream_port UPSTREAM_PORT --local_lf_report_dir REPORT_PATH",
+                    " use_ssid_idx=1 --dut_ssid SSID_USED --dut_security SECURITY_USED --dut_passwd SSID_PW_USED",
+                    " --bands 5G --fiveg_radio wiphy0 --directions Download Upload --csv_outfile FTP_CSV.csv --test_rig TEST_RIG",
+                    " --test_tag LF_FTP --dut_hw_version DUT_HW --dut_model_num USE_DUT_NAME --dut_sw_version DUT_SW --dut_serial_num DUT_SN"
+                ]
+            },
+            "lf_qa":{
+                "enabled":"TRUE",
+                "timeout":"600",
+                "load_db":"skip",
+                "command":"./tools/lf_qa.py",
+                "args":"",
+                "args_list":[
+                    " --server TEST_SERVER --path REPORT_PATH --store --png --database DATABASE_SQLITE"
+                ]
+            }
+        },
         "suite_test":{
             "lf_cleanup":{
                 "enabled":"FALSE",
