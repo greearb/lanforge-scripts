@@ -725,7 +725,7 @@ class FtpTest(LFCliBase):
 
     def generate_report(self, ftp_data, date, test_setup_info, input_setup_info, test_rig, test_tag, dut_hw_version,
                         dut_sw_version, dut_model_num, dut_serial_num, test_id, bands,
-                        csv_outfile):
+                        csv_outfile, local_lf_report_dir):
         '''Method for generate the report'''
 
         self.report = lf_report.lf_report(_results_dir_name="ftp_test", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf")
@@ -839,8 +839,20 @@ class FtpTest(LFCliBase):
                 }
                 # print("upload_table_value:{upload_table_value}".format(upload_table_value=upload_table_value))
 
+        if local_lf_report_dir != "":
+            report = lf_report.lf_report(
+                _path=local_lf_report_dir,
+                _results_dir_name="lf_ftp",
+                _output_html="lf_ftp.html",
+                _output_pdf="lf_ftp.pdf")
+        else:
+            report = lf_report.lf_report(
+                _results_dir_name="lf_ftp",
+                _output_html="lf_ftp.html",
+                _output_pdf="lf_ftp.pdf")
+
         # Get the report path to create the kpi.csv path
-        kpi_path = self.report.get_report_path()
+        kpi_path = report.get_report_path()
         # print("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
 
         self.kpi_csv = lf_kpi_csv.lf_kpi_csv(
@@ -966,6 +978,7 @@ CLI Example:
                     ''')
     parser.add_argument('--mgr', help='hostname for where LANforge GUI is running [default = localhost]', default='localhost')
     parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on [default = 8080]', default=8080)
+    parser.add_argument('--local_lf_report_dir', help='--local_lf_report_dir override the report path, primary use when running test in test suite', default="")
     parser.add_argument('--upstream_port', help='non-station port that generates traffic: eg: eth1 [default = eth1]', default='eth1')
     parser.add_argument('--ssid', type=str, help='--ssid')
     parser.add_argument('--passwd', type=str, help='--passwd')
@@ -1164,7 +1177,7 @@ CLI Example:
                         test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
                         dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
                         dut_serial_num=args.dut_serial_num, test_id=args.test_id,
-                        bands=args.bands, csv_outfile=args.csv_outfile)
+                        bands=args.bands, csv_outfile=args.csv_outfile, local_lf_report_dir=args.local_lf_report_dir)
 
 
 if __name__ == '__main__':
