@@ -339,11 +339,11 @@ def main():
         if (args.outfile):
             outfile = args.outfile
             full_outfile = "full-%s" % (outfile)
-            outfile_xlsx = "%s.xlsx" % (outfile)
+            outfile_xlsx = "%s" % (outfile)
         else:
             outfile = 'tx_power'
             full_outfile = "full-%s" % (outfile)
-            outfile_xlsx = "%s.xlsx" % (outfile)
+            outfile_xlsx = "%s" % (outfile)
 
         print("outfile {}".format(outfile))
 
