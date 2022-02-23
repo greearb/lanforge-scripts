@@ -304,7 +304,7 @@ def main():
     parser.add_argument("-n", "--nss", type=str, help="[test configuration] List of spatial streams to test.  NA means no change")
     parser.add_argument("-T", "--txpower", type=str, help="[test configuration] List of txpowers to test.  NA means no change")
     parser.add_argument('-D', '--duration', type=str, help='[test configuration] --traffic <how long to run in seconds>  example -t 20 (seconds) default: 20 ', default='20')
-    parser.add_argument("--outfile", type=str, help="[test configuration] Output file for csv data")
+    parser.add_argument("--outfile", help="[test configuration] Output file for csv data")
 
     # testbed configuration
     parser.add_argument("--testbed_id", type=str, help="[testbed configuration] --testbed_id", default="")
@@ -336,7 +336,7 @@ def main():
             lfresource = args.lfresource
         if (args.lfresource2 is not None):
             lfresource2 = args.lfresource2
-        if (args.outfile is not None):
+        if (args.outfile):
             outfile = args.outfile
             full_outfile = "full-%s" % (outfile)
             outfile_xlsx = "%s.xlsx" % (outfile)
@@ -344,6 +344,8 @@ def main():
             outfile = 'tx_power'
             full_outfile = "full-%s" % (outfile)
             outfile_xlsx = "%s.xlsx" % (outfile)
+
+        print("outfile {}".format(outfile))
 
         if (args.pf_dbm is not None):
             pf_dbm = int(args.pf_dbm)
@@ -363,9 +365,9 @@ def main():
 
         # note: there would always be an args.outfile due to the default
         current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
-        outfile = "{}_{}.txt".format(args.outfile, current_time)
-        full_outfile = "{}_full_{}.txt".format(args.outfile, current_time)
-        outfile_xlsx = "{}_{}.xlsx".format(args.outfile, current_time)
+        outfile = "{}_{}.txt".format(outfile, current_time)
+        full_outfile = "{}_full_{}.txt".format(full_outfile, current_time)
+        outfile_xlsx = "{}_{}.xlsx".format(outfile_xlsx, current_time)
         print("output file: {}".format(outfile))
         print("output file full: {}".format(full_outfile))
         print("output file xlsx: {}".format(outfile_xlsx))
@@ -1735,6 +1737,11 @@ def main():
 
     # check if keeping the existing state
     # TODO add --no_cleanup
+
+    if(args.no_cleanup_station is False):
+        logg.info("--no_cleanup_station set False,  Deleting all stations on radio {}".format(args.radio))
+        subprocess.run(["./lf_associate_ap.pl", "--action", "del_all_phy", "--port_del", args.radio], timeout=20, capture_output=True)
+
     if(args.keep_state):
         logg.info("9800/3504 flag --keep_state set thus keeping state")
         pss = cs.show_ap_dot11_5gz_summary()
@@ -1748,9 +1755,6 @@ def main():
     else:
         # Set things back to defaults
         # if no_cleanup_station is False then clean up station
-        if(args.no_cleanup_station is False):
-            logg.info("--no_cleanup_station set False,  Deleting all stations on radio {}".format(args.radio))
-            subprocess.run(["./lf_associate_ap.pl", "--action", "del_all_phy", "--port_del", args.radio], timeout=20, capture_output=True)
 
         # Disable AP, apply settings, enable AP
         # TODO disable 24gz
