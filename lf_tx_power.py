@@ -303,7 +303,7 @@ def main():
     parser.add_argument("-c", "--channel", type=str, help="[test configuration] List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
     parser.add_argument("-n", "--nss", type=str, help="[test configuration] List of spatial streams to test.  NA means no change")
     parser.add_argument("-T", "--txpower", type=str, help="[test configuration] List of txpowers to test.  NA means no change")
-    parser.add_argument('-D', '--duration', type=str, help='[test configuration] --traffic <how long to run in seconds>  example -t 20 (seconds) default: 20 ', default='20')
+    parser.add_argument('-D', '--duration', type=str, help='[test configuration] --traffic <how long to run in seconds>  example -D 30 (seconds) default: 30 ', default='20')
     parser.add_argument("--outfile", help="[test configuration] Output file for csv data")
 
     # testbed configuration
@@ -863,6 +863,7 @@ def main():
                             logg.info(pss)
 
                             #  "number of WLANs:\s+(\S+)"
+                            # https://regex101.com/
                             search_wlan = False
                             for line in pss.splitlines():
                                 logg.info(line)
@@ -1074,7 +1075,7 @@ def main():
 
                         i += 1
                         # We wait a fairly long time since AP will take a long time to start on a CAC channel.
-                        if (i > 180):
+                        if (i > 180):  # TODO make configurable
                             err = "ERROR:  Station did not connect within 180 seconds."
                             logg.info(err)
                             e_tot += err
@@ -1111,6 +1112,11 @@ def main():
                                                      "--cli_cmd", "probe_port 1 %s %s" % (lfresource, lfstation)], capture_output=True, check=True)
                         pss = port_stats.stdout.decode('utf-8', 'ignore')
                         # for debug: print the output of lf_portmod.pl and the command used
+                        logg.info("######## lf_portmod ######### ")
+                        logg.info(pss)
+                        logg.info("######## lf_portmod  END ######### ")
+
+
                         if (args.show_lf_portmod):
                             logg.info("./lf_portmod.pl --manager {} --card {} --port_name {} --cli_cmd probe_port 1 {} {}".format(lfmgr,
                                                                                                                                   lfresource, lfstation, lfresource, lfstation))
@@ -1119,9 +1125,11 @@ def main():
                         foundit = False
                         for line in pss.splitlines():
                             # logg.info("probe-line: %s"%(line))
-                            m = re.search('signal avg:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
+                            m = re.search('signal:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
+                            # if (m is None):
+                            #    m = re.search('signal:\\s+(\\S+)\\s+dBm', line)
                             if (m is not None):
-                                logg.info("search: signal ave: resulted in m = {}".format(m))
+                                logg.info("search: signal: resulted in m = {}".format(m))
                                 sig = m.group(1)
                                 ants = m.group(2).split()
                                 q = 0
@@ -1135,7 +1143,6 @@ def main():
                                     foundit = True
                                 else:
                                     logg.info("Looking for %s spatial streams, signal avg reported fewer: %s" % (n, m.group(1)))
-
                             m = re.search('beacon signal avg:\\s+(\\S+)\\s+dBm', line)
                             if (m is not None):
                                 logg.info("search: beacon signal avg: resulted in m = {}".format(m))
@@ -1189,6 +1196,7 @@ def main():
                     port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
                                                  "--show_port", "AP,IP,Mode,NSS,Bandwidth,Channel,Signal,Noise,Status,RX-Rate"], capture_output=True, check=True)
                     pss = port_stats.stdout.decode('utf-8', 'ignore')
+                    logg.info(pss)
 
                     _ap = None
                     _bw = None

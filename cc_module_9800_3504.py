@@ -190,7 +190,7 @@ class create_controller_series_object:
 
         # possible need to look for exact command
         elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_ap_wlan_summary", "show_wlan_summary", "show_wlan_id",
-                             "advanced", "disable", "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
+                             "advanced", "disable", "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz", "show_ap_bssid_24g", "show_ap_bssid_5g",
                              "manual", "auto", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz", "enable"]:
 
             self.command_extend = ["--action", self.action]
@@ -266,6 +266,18 @@ class create_controller_series_object:
         self.action = "summary"
         summary = self.send_command()
         return summary
+
+    def show_ap_bssid_24ghz(self):
+        logger.info("show ap name  wlan dot11 24ghz")
+        self.action = "show_ap_bssid_24g"
+        summary = self.send_command()
+        return summary
+
+    def show_ap_bssid_5ghz(self):
+        logger.info("show ap name  wlan dot11 5ghz")
+        self.action = "show_ap_bssid_5g"
+        summary = self.send_command()
+        return summary        
 
     def show_ap_wlan_summary(self):
         logger.info("show ap wlan summary")
@@ -944,18 +956,18 @@ def test_config_tx_power_5g_open(cs):
 
     logger.info("test_config_tx_power_open")
     # configure once at the top
-    cs.wlan = 'open-wlan-16_'
-    cs.wlanID = '15'
-    cs.wlanSSID = 'open-wlan-16'
+    cs.wlan = 'open-wlan-14'
+    cs.wlanID = '14'
+    cs.wlanSSID = 'open-wlan-14'
     cs.config_wlan_open()
 
     # wireless_tag_policy
-    cs.tag_policy = 'RM204-TB1'
+    cs.tag_policy = 'RM204-TB1-AP2'
     cs.policy_profile = 'default-policy-profile'
     cs.config_wireless_tag_policy_and_policy_profile()
 
     cs.tx_power = '1'
-    cs.channel = '100'
+    cs.channel = '149'
     cs.bandwidth = '40'
 
     # no_logging_console
@@ -987,7 +999,10 @@ def test_config_tx_power_5g_open(cs):
     cs.bandwidth = '20'
     cs.config_dot11_5ghz_channel_width()
     # channel
+    cs.channel = '100'
     cs.config_dot11_5ghz_channel()
+    cs.channel = '5'
+    cs.config_dot11_24ghz_channel()
     # bandwidth
     cs.bandwidth = '40'
     cs.config_dot11_5ghz_channel_width()
@@ -1018,6 +1033,10 @@ def test_config_tx_power_5g_open(cs):
     # show_wlan_summary
     cs.show_wlan_summary()
 
+    cs.show_ap_dot11_5gz_summary()
+    cs.show_ap_bssid_5ghz()
+
+
 
 # 2g test
 def test_config_tx_power_2g_open(cs):
@@ -1035,7 +1054,7 @@ def test_config_tx_power_2g_open(cs):
     cs.config_wireless_tag_policy_and_policy_profile()
 
     cs.tx_power = '5'
-    cs.channel = '1'
+    cs.channel = '2'
     cs.bandwidth = '20'
 
     # no_logging_console
@@ -1056,8 +1075,8 @@ def test_config_tx_power_2g_open(cs):
     # disable_network_24ghz
     cs.ap_dot11_24ghz_shutdown()
     # manual
-    # cs.ap_dot11_5ghz_radio_role_manual_client_serving()
-    cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+    cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+    # cs.ap_dot11_24ghz_radio_role_manual_client_serving()
 
     # Configuration for 5g
 
@@ -1099,7 +1118,7 @@ def test_config_tx_power_2g_open(cs):
     cs.show_wlan_summary()
 
     cs.show_ap_dot11_24gz_summary()
-    cs.show_ap_bssid_24g()
+    cs.show_ap_bssid_24ghz()
 
 
 # tb2
@@ -1506,7 +1525,8 @@ INCLUDE_IN_README
     # cs.wlanID = 7
     # summary = cs.show_wlan_id()
     # test_config_tx_power_5g_open_tb2_AP1(cs=cs)
-    test_config_tx_power_2g_open(cs=cs)
+    test_config_tx_power_5g_open(cs=cs)
+    # test_config_tx_power_2g_open(cs=cs)
 
     # test_config_tx_power_wpa2_IDIC(cs=cs)
 
