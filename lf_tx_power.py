@@ -1125,9 +1125,12 @@ def main():
                         foundit = False
                         for line in pss.splitlines():
                             # logg.info("probe-line: %s"%(line))
-                            m = re.search('signal:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
-                            # if (m is None):
-                            #    m = re.search('signal:\\s+(\\S+)\\s+dBm', line)
+                            m = re.search('signal avg:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
+                            # print("m singal avg : {}".format(m))
+                            # AX210 needs to look at signal
+                            if (m is None):
+                                m = re.search('signal:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
+                                # print("m signal: {}".format(m))
                             if (m is not None):
                                 logg.info("search: signal: resulted in m = {}".format(m))
                                 sig = m.group(1)
