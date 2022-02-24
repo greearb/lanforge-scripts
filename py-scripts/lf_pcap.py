@@ -18,9 +18,16 @@ INCLUDE_IN_README
 """
 import argparse
 import pyshark as ps
+import importlib
+from datetime import datetime
+
+wifi_monitor = importlib.import_module("py-json.wifi_monitor_profile")
+WiFiMonitor = wifi_monitor.WifiMonitor
+lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
+LFCliBase = lfcli_base.LFCliBase
 
 
-class LfPcap:
+class LfPcap(WiFiMonitor):
     def __init__(self,
                  _read_pcap_file=None,
                  _apply_filter=None,
@@ -30,6 +37,7 @@ class LfPcap:
                  _live_remote_cap_host=None,
                  _live_remote_cap_interface=None
                  ):
+        super().__init__(self, lfclient_url=LFCliBase.lfclient_url, local_realm=self, up=True, debug_=False, resource_=1)
         self.pcap = None
         self.live_pcap = None
         self.remote_pcap = None
@@ -140,6 +148,12 @@ class LfPcap:
                     return False
         except ValueError:
             raise "pcap file is required."
+
+    def sniff_packets(self, interface_name="Wiphy0", test_name="mu-mimo", sniff_duration=180):
+        pcap_name = test_name + str(datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':', '-') + ".pcap"
+        self.create(resource_=1, channel=None, mode="AUTO", radio_=interface_name, name_="moni0")
+        self.start_sniff(capname=pcap_name, duration_sec=sniff_duration)
+        self.cleanup()
 
 
 def main():
