@@ -2,6 +2,8 @@
 '''
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
 Usage: lf_qa.py --store --png --show --path <path to directories to traverse> --database <name of database>
+
+TODO :  Add to help how to run or which parameters needed to run: on lanforge, a server that is not lanforge, At a desktop
 '''
 import sys
 import os
@@ -12,11 +14,14 @@ import sqlite3
 import argparse
 from pathlib import Path
 import time
+import logging
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_report = lf_report.lf_report
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 # Any style components can be used
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -67,7 +72,7 @@ class csv_sql:
 
     def get_dut_info(self):
         # try:
-        print(
+        logger.info(
             "get_dut_info DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}" .format(
                 DUT=self.dut_model_num,
                 SW=self.dut_sw_version,
@@ -80,9 +85,9 @@ class csv_sql:
             'HW version': [self.dut_hw_version],
             'SN': [self.dut_serial_num]
         }
-        print('DUT dict: {dict}'.format(dict=dut_dict))
+        logger.info('DUT dict: {dict}'.format(dict=dut_dict))
         dut_info_df = pd.DataFrame(dut_dict)
-        print("DUT df from dict: {df}".format(df=dut_info_df))
+        logger.info("DUT df from dict: {df}".format(df=dut_info_df))
 
         return dut_info_df
 
@@ -100,7 +105,7 @@ class csv_sql:
             test_id = list(set(test_id_list))
             test_id = test_id[-1]  # done to get element of list
         except BaseException:
-            print(
+            logger.info(
                 "exception reading test_id in csv _kpi_path {kpi_path}".format(
                     kpi_path=_kpi_path))
         try:
@@ -108,7 +113,7 @@ class csv_sql:
             test_tag = list(set(test_tag_list))
             test_tag = test_tag[-1]  # done to get element of list
         except BaseException:
-            print(
+            logger.info(
                 "exception reading test-tag in csv _kpi_path {kpi_path}, try meta.txt".format(
                     kpi_path=_kpi_path))
 
@@ -119,16 +124,16 @@ class csv_sql:
                 use_meta_test_tag, test_tag = self.get_test_tag_from_meta(
                     _kpi_path)
         except BaseException:
-            print("exception reading meta.txt _kpi_path: {kpi_path}".format(
+            logger.info("exception reading meta.txt _kpi_path: {kpi_path}".format(
                 kpi_path=_kpi_path))
         if use_meta_test_tag:
-            print("test_tag from meta.txt _kpi_path: {kpi_path}".format(
+            logger.info("test_tag from meta.txt _kpi_path: {kpi_path}".format(
                 kpi_path=_kpi_path))
         return test_id, test_tag
 
     def get_test_run_from_meta(self, _kpi_path):
         test_run = "NA"
-        print("read meta path {_kpi_path}".format(_kpi_path=_kpi_path))
+        logger.info("read meta path {_kpi_path}".format(_kpi_path=_kpi_path))
         try:
             meta_data_path = _kpi_path + '/' + '/meta.txt'
             meta_data_fd = open(meta_data_path, 'r')
@@ -136,27 +141,27 @@ class csv_sql:
                 if "test_run" in line:
                     test_run = line.replace("test_run", "")
                     test_run = test_run.strip()
-                    print("meta_data_path: {meta_data_path} test_run: {test_run}".format(
+                    logger.info("meta_data_path: {meta_data_path} test_run: {test_run}".format(
                         meta_data_path=meta_data_path, test_run=test_run))
             meta_data_fd.close()
         except BaseException:
-            print("exception reading test_run from {_kpi_path}".format(
+            logger.info("exception reading test_run from {_kpi_path}".format(
                 _kpi_path=_kpi_path))
 
         if test_run == "NA":
             try:
                 test_run = _kpi_path.rsplit('/', 2)[0]
-                print("try harder test_run {test_run}".format(test_run=test_run))
+                logger.info("try harder test_run {test_run}".format(test_run=test_run))
             except BaseException:
-                print("exception getting test_run from kpi_path")
-            print("Try harder test_run: {test_run} _kpi_path: {_kpi_path}".format(test_run=test_run, _kpi_path=_kpi_path))
+                logger.info("exception getting test_run from kpi_path")
+            logger.info("Try harder test_run: {test_run} _kpi_path: {_kpi_path}".format(test_run=test_run, _kpi_path=_kpi_path))
         return test_run
 
     def get_test_tag_from_meta(self, _kpi_path):
         test_tag = "NA"
         use_meta_test_tag = False
         gui_version_5_4_3 = False
-        print("read meta path {_kpi_path}".format(_kpi_path=_kpi_path))
+        logger.info("read meta path {_kpi_path}".format(_kpi_path=_kpi_path))
         try:
             meta_data_path = _kpi_path + '/' + 'meta.txt'
             meta_data_fd = open(meta_data_path, 'r')
@@ -167,7 +172,7 @@ class csv_sql:
                     if gui_version == '5.4.3':
                         gui_version_5_4_3 = True
                         use_meta_test_tag = True
-                    print("meta_data_path: {meta_data_path} lanforge_gui_version: {gui_version} 5.4.3: {gui_version_5_4_3}".format(
+                    logger.info("meta_data_path: {meta_data_path} lanforge_gui_version: {gui_version} 5.4.3: {gui_version_5_4_3}".format(
                         meta_data_path=meta_data_path, gui_version=gui_version, gui_version_5_4_3=gui_version_5_4_3))
             meta_data_fd.close()
             if gui_version_5_4_3:
@@ -177,13 +182,13 @@ class csv_sql:
                     if "test_tag" in line:
                         test_tag = line.replace("test_tag", "")
                         test_tag = test_tag.strip()
-                        print(
+                        logger.info(
                             "meta_data_path {meta_data_path} test_tag {test_tag}".format(
                                 meta_data_path=meta_data_path,
                                 test_tag=test_tag))
                 meta_data_fd.close()
         except BaseException:
-            print("exception reading test_tag from {_kpi_path}".format(
+            logger.info("exception reading test_tag from {_kpi_path}".format(
                 _kpi_path=_kpi_path))
 
         return use_meta_test_tag, test_tag
@@ -203,7 +208,7 @@ class csv_sql:
 
         path = Path(self.path)
         pdf_info_list = list(path.glob('**/*.pdf'))  # Hard code for now
-        print("pdf_info_list {}".format(pdf_info_list))
+        logger.info("pdf_info_list {}".format(pdf_info_list))
         for pdf_info in pdf_info_list:
             if "lf_qa" in str(pdf_info):
                 pass
@@ -277,12 +282,12 @@ class csv_sql:
     # Ubuntu sudo apt-get install sqlite3
     #
     def store(self):
-        print("reading kpi and storing in db {}".format(self.database))
+        logger.info("reading kpi and storing in db {}".format(self.database))
         path = Path(self.path)
         self.kpi_list = list(path.glob('**/kpi.csv'))  # Hard code for now
 
         if not self.kpi_list:
-            print("WARNING: used --store , no new kpi.csv found, check input path or remove --store from command line")
+            logger.info("WARNING: used --store , no new kpi.csv found, check input path or remove --store from command line")
 
         for kpi in self.kpi_list:  # TODO note empty kpi.csv failed test
             df_kpi_tmp = pd.read_csv(kpi, sep='\t')
@@ -301,7 +306,7 @@ class csv_sql:
         try:
             self.df.to_sql(self.table, self.conn, if_exists='append')
         except BaseException:
-            print("attempt to append to database with different column layout,\
+            logger.info("attempt to append to database with different column layout,\
                  caused an exception, input new name --database <new name>")
             print(
                 "Error attempt to append to database with different column layout,\
@@ -316,7 +321,7 @@ class csv_sql:
         # for testing
         png_server_img = ''
         # generate the png files
-        print("generate png and kpi images from kpi kpi_path:{}".format(
+        logger.info("generate png and kpi images from kpi kpi_path:{}".format(
             df_tmp['kpi_path']))
         # generate png img path
         png_path = os.path.join(
@@ -333,11 +338,11 @@ class csv_sql:
         try:
             kpi_fig.write_image(png_path, scale=1, width=1200, height=300)
         except ValueError as err:
-            print("ValueError kpi_fig.write_image {msg}".format(msg=err))
+            logger.info("ValueError kpi_fig.write_image {msg}".format(msg=err))
             png_present = False
             # exit(1)
         except BaseException as err:
-            print("BaseException kpi_fig.write_image{msg}".format(msg=err))
+            logger.info("BaseException kpi_fig.write_image{msg}".format(msg=err))
             png_present = False
             # exit(1)
         # generate html image (interactive)
@@ -372,7 +377,7 @@ class csv_sql:
     # query the db for  all pass and fail or last run
     # put in table
     def sub_test_information(self):
-        print("generate table and graph from subtest data per run: {}".format(
+        logger.info("generate table and graph from subtest data per run: {}".format(
             time.time()))
         # https://datacarpentry.org/python-ecology-lesson/09-working-with-sql/index.html-
         self.conn = sqlite3.connect(self.database)
@@ -383,7 +388,7 @@ class csv_sql:
         try:
             df3 = df3.sort_values(by='Date')
         except BaseException:
-            print(("Database empty reading subtest: "
+            logger.info(("Database empty reading subtest: "
                    "KeyError(key) when sorting by Date for db: {db},"
                    " check Database name, path to kpi, typo in path, exiting".format(db=self.database)))
             exit(1)
@@ -392,8 +397,8 @@ class csv_sql:
         # test_run are used for detemining the subtest-pass, subtest-fail
         # the tests are sorted by date above.
         test_run_list = list(df3['test_run'])
-        print("test_run_list first [0] {}".format(test_run_list[0]))
-        print("test_run_list last [-1] {}".format(test_run_list[-1]))
+        logger.info("test_run_list first [0] {}".format(test_run_list[0]))
+        logger.info("test_run_list last [-1] {}".format(test_run_list[-1]))
 
         self.test_run = test_run_list[-1]
         # collect this runs subtest totals
@@ -408,13 +413,16 @@ class csv_sql:
         except BaseException:
             warning_msg = ("WARNING subtest values need to be filtered or"
                            " Test is not behaving in filling out subtest values")
-            print("{warn}".format(warn=warning_msg), file=sys.stderr)
-            print("{warn}".format(warn=warning_msg), file=sys.stdout)
+            logger.WARNING("{warn}".format(warn=warning_msg))
+            logger.DEBUG("stderr : {file}".format(file=sys.stderr))
+            logger.WARNING("{warn}".format(warn=warning_msg))
+            logger.DEBUG("stdout : {file}".format(file=sys.stdout))
+
             self.subtest_passed = 0
             self.subtest_failed = 0
             self.subtest_total = 0
 
-        print("{run} subtest Total:{total} Pass:{passed} Fail:{failed}".format(
+        logger.info("{run} subtest Total:{total} Pass:{passed} Fail:{failed}".format(
             run=self.test_run, total=self.subtest_total, passed=self.subtest_passed, failed=self.subtest_failed
         ))
 
@@ -439,7 +447,7 @@ class csv_sql:
         if self.dut_serial_num_list:
             self.dut_serial_num = self.dut_serial_num_list[-1]
 
-        print(
+        logger.info(
             "In png DUT: {DUT} SW:{SW} HW:{HW} SN:{SN}" .format(
                 DUT=self.dut_model_num,
                 SW=self.dut_sw_version,
@@ -447,7 +455,7 @@ class csv_sql:
                 SN=self.dut_serial_num))
 
     def generate_graph_png(self):
-        print(
+        logger.info(
             "generate png and html to display, generate time: {}".format(
                 time.time()))
 
@@ -460,7 +468,7 @@ class csv_sql:
         try:
             df3 = df3.sort_values(by='Date')
         except BaseException:
-            print("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
+            logger.info("Database empty: KeyError(key) when sorting by Date, check Database name, path to kpi, typo in path, exiting")
             exit(1)
         self.conn.close()
 
@@ -469,21 +477,21 @@ class csv_sql:
         graph_group_list = list(df3['Graph-Group'])
         graph_group_list = [x for x in graph_group_list if x is not None]
         graph_group_list = list(set(graph_group_list))
-        print("graph_group_list: {}".format(graph_group_list))
+        logger.info("graph_group_list: {}".format(graph_group_list))
 
         # prior to 5.4.3 there was not test-tag, the test tag is in the meta data
-        # print("dataframe df3 {df3}".format(df3=df3))
+        # logger.info("dataframe df3 {df3}".format(df3=df3))
 
         test_tag_list = list(df3['test-tag'])
         test_tag_list = [x for x in test_tag_list if x is not None]
         test_tag_list = list(sorted(set(test_tag_list)))
-        # print("test_tag_list: {}".format(test_tag_list) )
+        # logger.info("test_tag_list: {}".format(test_tag_list) )
 
         test_rig_list = list(df3['test-rig'])
         test_rig_list = [x for x in test_rig_list if x is not None]
         test_rig_list = list(sorted(set(test_rig_list)))
         self.test_rig_list = test_rig_list
-        print("test_rig_list: {}".format(test_rig_list))
+        logger.info("test_rig_list: {}".format(test_rig_list))
 
         # create the rest of the graphs
         for test_rig in test_rig_list:
@@ -507,7 +515,7 @@ class csv_sql:
                         # regernation of graphs from db
 
                         units_list = list(df_tmp['Units'])
-                        print(
+                        logger.info(
                             "GRAPHING::: test-rig {} test-tag {}  Graph-Group {}".format(test_rig, test_tag, group))
                         # group of Score will have subtest
                         if group == 'Score':
@@ -630,8 +638,18 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         '--dir',
         help="--dir <results directory> default lf_qa",
         default="lf_qa")
+    # logging configuration:
+    parser.add_argument("--lf_logger_config_json",
+                        help="--lf_logger_config_json <json file> , json configuration of logger")
 
     args = parser.parse_args()
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
 
     __path = args.path
     __file = args.file
@@ -642,7 +660,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
     __dir = args.dir
     __cut = args.cut
 
-    print("config:\
+    logger.info("config:\
             path:{path} file:{file}\
             database:{database} table:{table} \
             server:{server} store:{store} png:{png}" .format(
@@ -651,13 +669,13 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         server=__server, store=args.store, png=args.png))
 
     if __path == '' and args.store:
-        print("--path <path of kpi.csv> must be entered if --store ,  exiting")
+        logger.info("--path <path of kpi.csv> must be entered if --store ,  exiting")
         exit(1)
     elif not args.store:
         if args.png:
-            print("if --png set to create png files from database")
+            logger.info("if --png set to create png files from database")
         elif not args.png:
-            print("Need to enter an action of --store --png ")
+            logger.info("Need to enter an action of --store --png ")
             exit(1)
 
     # create report class for reporting
@@ -691,7 +709,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         report.set_table_title("Device Under Test")
         report.build_table_title()
         dut_info_df = csv_dash.get_dut_info()
-        print("DUT Results: {}".format(dut_info_df))
+        logger.info("DUT Results: {}".format(dut_info_df))
         report.set_table_dataframe(dut_info_df)
         report.build_table()
 
@@ -717,7 +735,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         report.set_table_title("Test Suite")
         report.build_table_title()
         suite_html = csv_dash.get_suite_html()
-        print("suite_html {}".format(suite_html))
+        logger.info("suite_html {}".format(suite_html))
         report.set_custom_html(suite_html)
         report.build_custom()
 
@@ -748,11 +766,12 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         report.build_custom()
         report.build_footer()
         html_report = report.write_html_with_timestamp()
+        # logger.info("html report: {}".format(html_report))
         print("html report: {}".format(html_report))
         try:
             report.write_pdf_with_timestamp()
         except BaseException:
-            print("exception write_pdf_with_timestamp()")
+            logger.info("exception write_pdf_with_timestamp()")
 
 
 if __name__ == '__main__':
