@@ -955,25 +955,6 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
     staConnect.record_kpi_csv(len(temp_stations_list), udp_dl, tcp_dl, udp_ul, tcp_ul, total_dl, total_ul)
     staConnect.record_results(len(temp_stations_list), udp_dl, tcp_dl, udp_ul, tcp_ul, total_dl, total_ul)
 
-    staConnect.stop()
-    # exit(1)
-
-    # py-json/lanforge/lfcli_base.py - get_result_list():
-    staConnect.get_result_list()
-    # logger.info("staConnect.get_results_list: %s", staConnect.get_result_list())
-    is_passing = staConnect.passes()
-
-    # TODO clean up pass fail  to use realm
-    if not is_passing:
-        logger.info("FAIL:  Some tests failed")
-    else:
-        logger.info("PASS:  All tests pass")
-
-    # logger.info(staConnect.get_all_message())
-    # py-json/lanforge/lfcli_base.py - get_all_message():
-    message = staConnect.get_all_message()
-    logger.info(message)
-
     # Reporting Results (.pdf & .html)
     csv_results_file = staConnect.get_csv_name()
     logger.info("csv_results_file: %s", csv_results_file)
@@ -990,11 +971,27 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
     report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
-    if args.no_cleanup:
-        exit(0)
-    else:
-        staConnect.pre_cleanup()
+    staConnect.stop()
+    # exit(1)
 
+    # py-json/lanforge/lfcli_base.py - get_result_list():
+    staConnect.get_result_list()
+    # logger.info("staConnect.get_results_list: %s", staConnect.get_result_list())
+    is_passing = staConnect.passes()
+    # logger.info("is_passing: %s", is_passing)
+
+    # py-json/lanforge/lfcli_base.py - get_all_message():
+    logger.info(staConnect.get_all_message())
+
+    # TODO clean up pass fail  to use realm
+    if not is_passing:
+        logger.info("FAIL:  Some tests failed")
+    else:
+        logger.info("PASS:  All tests pass")
+
+    # cleanup stations
+    if not args.no_cleanup:
+        staConnect.pre_cleanup()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
