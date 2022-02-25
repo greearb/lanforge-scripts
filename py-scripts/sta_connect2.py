@@ -990,7 +990,10 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
     report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
-    # staConnect.pre_cleanup()
+    if args.no_cleanup:
+        exit(0)
+    else:
+        staConnect.pre_cleanup()
 
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
