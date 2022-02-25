@@ -56,6 +56,7 @@ import importlib
 import time
 import argparse
 import datetime
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -71,6 +72,8 @@ port_utils = importlib.import_module("py-json.port_utils")
 PortUtils = port_utils.PortUtils
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 lf_report = importlib.import_module("py-scripts.lf_report")
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class IPV4L4(Realm):
@@ -153,7 +156,7 @@ class IPV4L4(Realm):
 
         self.ftp = ftp
         if self.ftp and 'ftp://' not in self.url:
-            print("WARNING! FTP test chosen, but ftp:// not present in url!")
+            logger.info("WARNING! FTP test chosen, but ftp:// not present in url!")
 
         test_types = {'urls', 'bytes-wr', 'bytes-rd'}
         if self.test_type not in test_types:
@@ -176,7 +179,7 @@ class IPV4L4(Realm):
     def build(self):
         # Build stations
         self.station_profile.use_security(self.security, self.ssid, self.password)
-        print("Creating stations")
+        logger.info("Creating stations")
         self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param("set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
@@ -217,7 +220,7 @@ class IPV4L4(Realm):
             exit(1)
 
         self.cx_profile.start_cx()
-        print("Starting test")
+        logger.info("Starting test")
 
     def stop(self):
         cx_list = self.json_get('layer4/sta0000_l4,sta0001_l4?urls%2Fs,rx-bps')['endpoint']
@@ -226,7 +229,7 @@ class IPV4L4(Realm):
                 for key in sub:
                     cx_map[key] = sub[key]
                 cx_map[key].pop('name')
-        print(cx_map)
+        logger.info(cx_map)
         urls = 0
         rx_bps = 0
 
@@ -302,6 +305,7 @@ Generic command example:
                         default='bytes-rd')
     parser.add_argument('--ftp_user', help='--ftp_user sets the username to be used for ftp', default=None)
     parser.add_argument('--ftp_passwd', help='--ftp_user sets the password to be used for ftp', default=None)
+    parser.add_argument('--no_cleanup', help='Do not cleanup before exit', action='store_true')
     parser.add_argument('--dest',
                         help='--dest specifies the destination for the file, should be used when downloading',
                         default="/dev/null")
@@ -342,7 +346,15 @@ Generic command example:
         help="--csv_outfile <Output file for csv data>",
         default="")
 
+
     args = parser.parse_args()
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
@@ -353,7 +365,7 @@ Generic command example:
                                   'xlsx']:
             output_form = args.output_format.lower()
         else:
-            print("Defaulting data file output type to Excel")
+            logger.info("Defaulting data file output type to Excel")
             output_form = 'xlsx'
 
     else:
@@ -370,12 +382,12 @@ Generic command example:
             os.mkdir(path)
         else:
             path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            print('Saving file to local directory')
+            logger.info('Saving file to local directory')
         if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
                                   'xlsx']:
             rpt_file = path + '/data.' + args.output_format
         else:
-            print('Defaulting data file output type to Excel')
+            logger.info('Defaulting data file output type to Excel')
             rpt_file = path + '/data.xlsx'
     else:
         rpt_file = args.report_file
@@ -419,12 +431,18 @@ Generic command example:
                                debug=args.debug)
     ip_test.stop()
     if not ip_test.passes():
-        print(ip_test.get_fail_message())
+        logger.info(ip_test.get_fail_message())
         exit(1)
     time.sleep(30)
-    ip_test.cleanup(station_list)
+    #cleanup stations
+    if args.no_cleanup:
+        if ip_test.passes():
+            logger.info("Full test passed")
+        exit(0)
+    else:
+        ip_test.cleanup(station_list)
     if ip_test.passes():
-        print("Full test passed")
+        logger.info("Full test passed")
 
 
 if __name__ == "__main__":
