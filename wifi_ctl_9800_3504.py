@@ -146,9 +146,10 @@ def main():
                         choices=["config", "dtim", "debug_disable_all", "no_logging_console", "line_console_0", "country", "ap_country", "enable", "disable", "summary", "advanced",
                                  "cmd", "txPower", "bandwidth", "manual", "auto", "no_wlan", "show_ap_wlan_summary", "show_wlan_summary", "show_radio",
                                  "ap_channel", "auto_rf", "channel", "show", "create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "enable_wlan", "disable_wlan", "wlan_qos",
-                                 "disable_network_6ghz","disable_network_5ghz", "disable_network_24ghz", 
+                                 "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
                                  "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
-                                 "wireless_tag_policy", "no_wlan_wireless_tag_policy", "delete_wlan", "show_ap_bssid_24g", "show_ap_bssid_5g"])
+                                 "wireless_tag_policy", "no_wlan_wireless_tag_policy", "delete_wlan",
+                                 "show_ap_bssid_24g", "show_ap_bssid_5g", "show_ap_bssid_6g_dual_band", "shwo_ap_bssid_6g"])
     parser.add_argument("--value", type=str, help="set value")
     # logging configuration
     parser.add_argument(
@@ -1031,7 +1032,9 @@ def main():
 
     if (args.action == "advanced"):
         if args.series == "9800":
-            if band == "a":
+            if band == '6g':
+                command = "show ap dot11 6ghz summary"
+            elif band == "a":
                 command = "show ap dot11 5ghz summary"
             else:
                 command = "show ap dot11 24ghz summary"
@@ -1040,17 +1043,19 @@ def main():
 
     if (args.action == "show_ap_bssid_24g"):
         if args.series == "9800":
-            if band == "a":
-                command = "show ap name %s wlan dot11 24ghz" % (args.ap)
-            else:
-                command = "show ap name %s wlan dot11 24ghz" % (args.ap)
+            command = "show ap name %s wlan dot11 24ghz" % (args.ap)
 
     if (args.action == "show_ap_bssid_5g"):
         if args.series == "9800":
-            if band == "a":
-                command = "show ap name %s wlan dot11 5ghz" % (args.ap)
-            else:
-                command = "show ap name %s wlan dot11 5ghz" % (args.ap)
+            command = "show ap name %s wlan dot11 5ghz" % (args.ap)
+
+    if (args.action == "show_ap_bssid_6g_dual_band"):
+        if args.series == "9800":
+            command = "show ap name %s wlan dot11 dual-band" % (args.ap)
+
+    if (args.action == "show_ap_bssid_6g"):
+        if args.series == "9800":
+            command = "show ap name %s wlan dot11 dual-band" % (args.ap)
 
     if ((args.action == "auto_rf") and ((args.ap is None))):
         raise Exception("auto_rf requires AP name")
@@ -1124,7 +1129,6 @@ def main():
                     sleep(0.5)
             if i == 1:
                 logg.info("timed out on (config)# disable_network_6ghz")
-
 
     if (args.action == "disable_network_5ghz"):
         if args.series == "9800":
