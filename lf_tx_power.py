@@ -32,6 +32,29 @@ EPILOG = '''\
 ##############################################################################################
 # Support History
 ##############################################################################################
+2/25/2022 - adding 6E support
+formula:
+5GHz channel = (freq_mhz - 5180) / 5 + 36
+6GHz channel = (freq_mhz - 5955) / 5 + 1
+
+6E has the concept of slot
+WLC1#ap name APCCC9C.3EF4.DDE0 dot11 6ghz ?
+  cleanair  Enable 802.11 6Ghz cleanair management
+  slot      Set slot number
+
+WLC1#ap name APCCC9C.3EF4.DDE0 dot11 6ghz slot ?
+  <2-3>  Enter Slot Id
+
+WLC1#ap name APCCC9C.3EF4.DDE0 dot11 6ghz slot 3 ?
+  antenna   Configures the 802.11 6Ghz antenna
+  channel   Configure advanced 802.11 6Ghz channel assignment parameters for Cisco AP
+  dot11ax   Configure 802.11ax-6GHz parameters
+  radio     Configures the 802.11 6Ghz radio
+  rrm       Radio resource management
+  shutdown  Disable 802.11 Ghz radio on Cisco AP
+  txpower   Configures the 802.11 6Ghz Tx Power Level
+
+
 
 # Verified 2/7/2022 : Run against already created station "--station sta0001"
 ./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8888 --scheme ssh --ap AP687D.B45C.1D1C --bandwidth "160" --channel "36" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy1 --slot 1 --ssid open-wlan --prompt "WLC2" --station sta0001 --ssidpw [BLANK] --security open   --wlan open-wlan --wlanID 1 --wlanSSID open-wlan --lfmgr 192.168.100.131 --lfresource 1 --vht160  --tag_policy "RM204-TB2"
@@ -39,7 +62,8 @@ EPILOG = '''\
 # Verified 2/17/2022 : create station and create open wlan on controller on testbed WLC1
  ./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8887 --scheme ssh --ap APA453.0E7B.CF9C --bandwidth "40" --channel "100" --nss 4 --txpower "1 3" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy4 --slot 1 --ssid open-wlan-14 --prompt "WLC1" --create_station  'sta0002' --lfmgr '192.168.100.178' --ssidpw '[BLANK]' --security open   --wlan open-wlan-14  --wlanID 14 --wlanSSID open-wlan-14 --lfresource 1 --vht160  --tag_policy "RM204-TB1" --policy_profile "default-policy-profile" --testbed_id 'Cisco-WLC1' --module 'cc_module_9800_3504'  --create_wlan
 
-
+# fails 2/24/2022
+./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8887 --scheme ssh --ap APCC9C.3EF11.1140  --bandwidth "20" --channel "191" --nss 1 --txpower "1" --pathloss 59 --antenna_gain 6 --band 6g --upstream_port eth2 --series 9800 --radio wiphy2 --slot 1 --ssid 6G-wpa3-AP3 --prompt "WLC1"  --station 'ax210a' --lfmgr '192.168.100.178' --ssidpw hello123 --security wpa3   --wlan 6G-wpa3-AP3 --wlanID 16 --wlanSSID 6G-wpa3-AP3 --lfresource 1  --tag_policy "RM204-TB1-AP2" --policy_profile "default-policy-profile" --testbed_id 'Cisco-WLC1-AP2' --module 'cc_module_9800_3504' --no_cleanup --outfile 'tx_power_AX210_1x1_6E' --duration 25  2>&1 |tee tx_output_AX210_1x1_6E.txt
 
 ##############################################################################################
 ##############################################################################################
@@ -786,6 +810,7 @@ def main():
                     cs.show_ap_summary()
 
                     # Disable AP, apply settings, enable AP
+                    cs.show_ap_dot11_6gz_shutdown()
                     cs.show_ap_dot11_5gz_shutdown()
                     cs.show_ap_dot11_24gz_shutdown()
 
@@ -793,9 +818,11 @@ def main():
                         # 9800 series need to  "Configure radio for manual channel assignment"
                         logg.info("9800 Configure radio for manual channel assignment")
                         cs.wlan_shutdown()
+                        cs.ap_dot11_6ghz_shutdown()
                         cs.ap_dot11_5ghz_shutdown()
                         cs.ap_dot11_24ghz_shutdown()
                         # manual
+                        cs.ap_dot11_6ghz_radio_role_manual_client_serving()
                         cs.ap_dot11_5ghz_radio_role_manual_client_serving()
                         cs.ap_dot11_24ghz_radio_role_manual_client_serving()
 
@@ -809,17 +836,21 @@ def main():
                         logg.info("9800/3504 test_parameters: set txPower: {tx_power}".format(tx_power=tx))
                         cs.tx_power = tx
                         # TODO add 24ghz and 6ghz
-                        if args.band == 'a':
+                        if args.band == '6g':
+                            cs.config_dot11_6ghz_tx_power()
+                        elif args.band == 'a':
                             cs.config_dot11_5ghz_tx_power()
                         elif args.band == 'b':
-                            cs.config_dot11_5ghz_tx_power()
+                            cs.config_dot11_24ghz_tx_power()
 
                         # TODO add 24ghz and 6ghz
 
                     if (bw != "NA"):
                         logg.info("bandwidth 20 prior to setting channel, some channels only support 20")
                         cs.bandwidth = '20'
-                        if args.band == 'a':
+                        if args.band == '6g':
+                            cs.config_dot11_6ghz_channel_width()
+                        elif args.band == 'a':
                             cs.config_dot11_5ghz_channel_width()
                         # setting channel to 20 is invalid for 20 Mhz
                         # cs.config_dot11_24ghz_channel_width()
@@ -829,7 +860,9 @@ def main():
                     if (ch != "NA"):
                         logg.info("9800/3504 test_parameters set channel: {}".format(ch))
                         cs.channel = ch
-                        if args.band == 'a':
+                        if args.band == '6g':
+                            cs.config_dot11_6ghz_channel()
+                        elif args.band == 'a':
                             cs.config_dot11_5ghz_channel()
                         elif args.band == 'b':
                             cs.config_dot11_24ghz_channel()
@@ -838,7 +871,9 @@ def main():
                     if (bw != "NA"):
                         logg.info("9800/3504 test_parameters bandwidth: set : {}".format(bw))
                         cs.bandwidth = bw
-                        if args.band == 'a':
+                        if args.band == '6g':
+                            cs.config_dot11_6ghz_channel_width()
+                        elif args.band == 'a':
                             cs.config_dot11_5ghz_channel_width()
                         elif args.band == 'b':
                             if bw != '20':
@@ -897,14 +932,20 @@ def main():
 
                     # enable transmission for the entier 802.11z network
                     # enable_network_5ghz
-                    if args.band == 'a':
+                    if args.band == '6g':
+                        # enable 5g wlan
+                        pss = cs.config_no_ap_dot11_6ghz_shutdown()
+                        logg.info(pss)
+                        # enable 5g
+                        pss = cs.config_ap_no_dot11_6ghz_shutdown()
+                        logg.info(pss)
+                    elif args.band == 'a':
                         # enable 5g wlan
                         pss = cs.config_no_ap_dot11_5ghz_shutdown()
                         logg.info(pss)
                         # enable 5g
                         pss = cs.config_ap_no_dot11_5ghz_shutdown()
                         logg.info(pss)
-
                     elif args.band == 'b':
                         # enable wlan
                         pss = cs.config_no_ap_dot11_24ghz_shutdown()
@@ -922,7 +963,10 @@ def main():
                             loop_count += 1
                             time.sleep(1)
                             # TODO configuration for 24g, 6g
-                            if args.band == 'a':
+                            if args.band == '6g':
+                                pss = cs.show_ap_dot11_6gz_summary()
+                                logg.info(pss)
+                            elif args.band == 'a':
                                 pss = cs.show_ap_dot11_5gz_summary()
                                 logg.info(pss)
                             else:
@@ -985,7 +1029,6 @@ def main():
                                 cc_dbm_rcv = True
                         cs.show_wlan_summary()
                     else:
-                        # TODO configuration for 24g, 6g
                         pss = cs.show_ap_dot11_5gz_summary()
                         logg.info(pss)
                         pss = cs.show_ap_dot11_24gz_summary()
@@ -1081,7 +1124,13 @@ def main():
                             e_tot += err
                             e_tot += "  "
                             if args.series == "9800":
-                                pss = cs.show_ap_dot11_5gz_summary()
+                                if args.band == '6g':
+                                    pss = cs.show_ap_dot11_6gz_summary()
+                                elif args.band == '5g':
+                                    pss = cs.show_ap_dot11_5gz_summary()
+                                elif args.band == '24g':
+                                    pss = cs.show_ap_dot11_24gz_summary()
+
                                 logg.info(pss)
 
                             if (args.wait_forever):
@@ -1115,7 +1164,6 @@ def main():
                         logg.info("######## lf_portmod ######### ")
                         logg.info(pss)
                         logg.info("######## lf_portmod  END ######### ")
-
 
                         if (args.show_lf_portmod):
                             logg.info("./lf_portmod.pl --manager {} --card {} --port_name {} --cli_cmd probe_port 1 {} {}".format(lfmgr,
@@ -1751,6 +1799,8 @@ def main():
 
     if(args.keep_state):
         logg.info("9800/3504 flag --keep_state set thus keeping state")
+        pss = cs.show_ap_dot11_6gz_summary()
+        logg.info(pss)
         pss = cs.show_ap_dot11_5gz_summary()
         logg.info(pss)
         pss = cs.show_ap_dot11_24gz_summary()
@@ -1769,27 +1819,41 @@ def main():
             pss = cs.config_no_wlan()
             logg.info(pss)
 
+        pss = cs.ap_dot11_6ghz_shutdown()
+        logg.info(pss)
         pss = cs.ap_dot11_5ghz_shutdown()
         logg.info(pss)
-
         pss = cs.ap_dot11_24ghz_shutdown()
         logg.info(pss)
-
+        pss = cs.config_dot11_6ghz_tx_power()
+        logg.info(pss)
         pss = cs.config_dot11_5ghz_tx_power()
         logg.info(pss)
 
         # NSS is set on the station earlier...
         if (ch != "NA"):
-            pss = cs.config_dot11_5ghz_channel()
+            if args.band == '6g':
+                pss = cs.config_dot11_6ghz_channel()
+            elif args.band == 'a':
+                pss = cs.config_dot11_5ghz_channel()
+            elif args.band == 'b':
+                pss = cs.config_dot11_24ghz_channel()
 
         if (bw != "NA"):
-            pss = cs.config_dot11_5ghz_channel_width()
+            if args.band == '6g':
+                pss = cs.config_dot11_6ghz_channel_width()
+            elif args.band == 'a':
+                pss = cs.config_dot11_5ghz_channel_width()
             logg.info(pss)
 
         if args.series == "9800":
+            pss = cs.config_no_ap_dot11_6ghz_shutdown()
+            logg.info(pss)
             pss = cs.config_no_ap_dot11_5ghz_shutdown()
             logg.info(pss)
             pss = cs.config_no_ap_dot11_24ghz_shutdown()
+            logg.info(pss)
+            pss = cs.ap_dot11_6ghz_radio_role_auto()
             logg.info(pss)
             pss = cs.ap_dot11_5ghz_radio_role_auto()
             logg.info(pss)
@@ -1800,8 +1864,15 @@ def main():
             pss = cs.config_no_ap_dot11_24ghz_shutdown()
             logg.info(pss)
 
-        pss = cs.config_no_ap_dot11_5ghz_shutdown()  # enable_network 5ghz
-        logg.info(pss)
+        if args.band == '6g':
+            pss = cs.config_no_ap_dot11_6ghz_shutdown()  # enable_network 5ghz
+            logg.info(pss)
+        if args.band == '5g':
+            pss = cs.config_no_ap_dot11_5ghz_shutdown()  # enable_network 5ghz
+            logg.info(pss)
+        if args.band == '24g':
+            pss = cs.config_no_ap_dot11_24ghz_shutdown()  # enable_network 5ghz
+            logg.info(pss)
 
         # Remove LANforge traffic connection
         subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
@@ -1812,7 +1883,10 @@ def main():
                         "--cmd", "rm_endp c-udp-power-B"], capture_output=True)
 
         # Show controller status
+        # TODO show valid / short status
+        pss = cs.show_ap_dot11_6gz_summary()
         pss = cs.show_ap_dot11_5gz_summary()
+        pss = cs.show_ap_dot11_24gz_summary()
         logg.info(pss)
 
 

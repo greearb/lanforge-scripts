@@ -277,7 +277,7 @@ class create_controller_series_object:
         logger.info("show ap name  wlan dot11 5ghz")
         self.action = "show_ap_bssid_5g"
         summary = self.send_command()
-        return summary        
+        return summary
 
     def show_ap_wlan_summary(self):
         logger.info("show ap wlan summary")
@@ -1037,7 +1037,6 @@ def test_config_tx_power_5g_open(cs):
     cs.show_ap_bssid_5ghz()
 
 
-
 # 2g test
 def test_config_tx_power_2g_open(cs):
 
@@ -1200,6 +1199,7 @@ def test_config_tx_power_5g_open_tb2_AP2(cs):
     # show_wlan_summary
     cs.show_wlan_summary()
 
+
 def test_config_tx_power_5g_open_tb2_AP1(cs):
 
     logger.info("test_config_tx_power_open")
@@ -1279,7 +1279,6 @@ def test_config_tx_power_5g_open_tb2_AP1(cs):
     cs.show_wlan_summary()
 
 
-
 def test_config_tx_power_wpa2(cs):
 
     logger.info("sample_test_tx_power_sequence")
@@ -1357,6 +1356,7 @@ def test_config_tx_power_wpa2(cs):
     # cs.show_ap_dot11_24gz_summary()
     # show_wlan_summary
     cs.show_wlan_summary()
+
 
 def test_config_tx_power_wpa2_IDIC(cs):
 
@@ -1440,8 +1440,6 @@ def test_config_tx_power_wpa2_IDIC(cs):
     logger.info(summary)
 
 
-
-
 # unit test for 9800 3504 controller
 def main():
     # arguments
@@ -1509,7 +1507,6 @@ INCLUDE_IN_README
     cs.show_ap_summary()
     summary = cs.show_ap_wlan_summary()
     logger.info(summary)
-    
 
     # sample to dump status
     sample_test_dump_status(cs=cs)
@@ -1525,7 +1522,7 @@ INCLUDE_IN_README
     # cs.wlanID = 7
     # summary = cs.show_wlan_id()
     # test_config_tx_power_5g_open_tb2_AP1(cs=cs)
-    test_config_tx_power_5g_open(cs=cs)
+    # test_config_tx_power_5g_open(cs=cs)
     # test_config_tx_power_2g_open(cs=cs)
 
     # test_config_tx_power_wpa2_IDIC(cs=cs)
