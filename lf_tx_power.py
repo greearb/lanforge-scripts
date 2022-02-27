@@ -5,6 +5,30 @@ Controller at 192.168.100.112 admin/Cisco123
 Controller is 192.1.0.10
 AP is 192.1.0.2'''
 
+"""
+NAME: lf_tx_power
+
+CLASSIFICATION: lanforge test
+
+PURPOSE:
+Perform tx power testing
+
+SETUP:
+TODO : describe
+
+EXAMPLE:
+TODO : add sample command
+
+RESULTS:  csv xlsx
+
+COPYWRITE
+    Copyright 2021 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
+
+INCLUDE_IN_README
+"""
+
+
 import math
 import xlsxwriter
 import subprocess
@@ -15,10 +39,8 @@ import logging
 import re
 import sys
 import datetime
-
 import importlib
 import os
-
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../")))
 
 # TODO change the name from logg to logger
@@ -433,6 +455,7 @@ def main():
         prompt=args.prompt,
         series=args.series,
         ap=args.ap,
+        ap_slot=args.slot,
         port=args.port,
         band=args.band,
         timeout=args.timeout)
@@ -441,6 +464,7 @@ def main():
     cs.wlanSSID = args.wlanSSID
     # TODO change to use args.security_key
     cs.security_key = args.ssidpw
+    cs.ap_slot = args.slot
 
     if args.create_wlan:
         cs.tag_policy = args.tag_policy
@@ -923,7 +947,12 @@ def main():
                             # TODO be able to do for WPA2 , WPA3
                             # TODO check for failure to close cookbook
                             # this needs to be configurable
-                            cs.config_wlan_open()
+                            if args.security == 'open':
+                                cs.config_wlan_open()
+                            elif args.security == 'wpa2':
+                                cs.config_wlan_wpa2()
+                            elif args.security == 'wpa3':
+                                cs.config_wlan_wpa3()
 
                             cs.config_wireless_tag_policy_and_policy_profile()
 

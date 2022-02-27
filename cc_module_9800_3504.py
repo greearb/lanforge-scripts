@@ -3,6 +3,8 @@
 """
 NAME: cc_module_9800_3504.py
 
+CLASSIFICATION: module
+
 PURPOSE:
 controller module for communicating to a cisco 9800 or 3504 controller
 This module can be dynamically imported
@@ -16,6 +18,13 @@ EXAMPLE:
     ./cc_module_9800_3504.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap APA453.0E7B.CF9C --series 9800 --prompt "WLC1" --timeout 10 --band '24g'
 
     ./cc_module_9800_3504.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap APCC9C.3EF1.1140 --series 9800 --prompt "WLC1" --timeout 10 --band '5g'
+
+SUPPORT HISTORY:
+
+2/25/2022 - adding 6E support
+formula:
+5GHz channel = (freq_mhz - 5180) / 5 + 36
+6GHz channel = (freq_mhz - 5955) / 5 + 1
 
 
 COPYWRITE
@@ -53,6 +62,7 @@ class create_controller_series_object:
                  series=None,
                  band=None,
                  ap=None,
+                 ap_slot=None,
                  port=None,
                  timeout=None,
                  pwd=None
@@ -86,6 +96,7 @@ class create_controller_series_object:
             raise ValueError('Controller AP  must be set')
         else:
             self.ap = ap
+
         if band is None:
             raise ValueError('Controller band  must be set')
         else:
@@ -109,6 +120,7 @@ class create_controller_series_object:
         self.wlanpw = None
         self.tag_policy = None
         self.policy_profile = None
+        self.ap_slot = None
         self.tx_power = None
         self.channel = None
         self.bandwidth = None
@@ -135,21 +147,39 @@ class create_controller_series_object:
             logger.critical("band needs to be set 24g 5g or 6g")
             raise ValueError("band needs to be set 24g 5g or 6g")
 
+    # TODO need to configure the slot
+    def set_ap_slot(self):
+        if self.band == 'b':
+            self.ap_slot = '0'
+        elif self.band == 'a':
+            self.ap_slot = '1'
+        # TODO need to support configuration
+        elif self.band == '6g':
+            self.ap_slot = '2'  # TODO need to read slot
+            # if self.ap_slot is None:
+            #    logger.critical("ap_slot_6g needs to be set to 2 or 3")
+            #    raise ValueError("ap_slot_6g needs to be set to 2 or 3")
+#
     # TODO consolidate the command formats
+
     def send_command(self):
         # for backward compatibility wifi_ctl_9800_3504 expects 'a' for 5g and 'b' for 24b
         self.convert_band()
+        self.set_ap_slot()
+
         logger.info("action {action}".format(action=self.action))
+
+        # set the ap_slot 24g = ap_slot 0 , 5g ap_slot = 1, 6g - ap_slot 2 / 3 so needs to be passed in
 
         # Command base
         if self.pwd is None:
             self.command = ["./wifi_ctl_9800_3504.py", "--scheme", self.scheme, "--dest", self.dest,
                             "--user", self.user, "--passwd", self.passwd, "--prompt", self.prompt,
-                            "--series", self.series, "--ap", self.ap, "--band", self.band, "--port", self.port]
+                            "--series", self.series, "--ap", self.ap, "--ap_slot", self.ap_slot, "--band", self.band, "--port", self.port]
         else:
             self.command = [str(str(self.pwd) + "/wifi_ctl_9800_3504.py"), "--scheme", self.scheme, "--dest", self.dest,
                             "--user", self.user, "--passwd", self.passwd, "--prompt", self.prompt,
-                            "--series", self.series, "--ap", self.ap, "--band", self.band, "--port", self.port]
+                            "--series", self.series, "--ap", self.ap, "--ap_slot", self.ap_slot, "--band", self.band, "--port", self.port]
 
         # Generate command
         if self.action in ['cmd', 'txPower', 'channel', 'bandwidth']:
@@ -361,18 +391,21 @@ class create_controller_series_object:
     # or just send command and let controller show not supported.
     def ap_dot11_6ghz_shutdown(self):
         logger.info("ap dot11 6ghz shutdown")
+        self.band = '6g'
         self.action = "disable_network_6ghz"
         summary = self.send_command()
         return summary
 
     def ap_dot11_5ghz_shutdown(self):
         logger.info("ap dot11 5ghz shutdown")
+        self.band = '5g'
         self.action = "disable_network_5ghz"
         summary = self.send_command()
         return summary
 
     def ap_dot11_24ghz_shutdown(self):
         logger.info("wlan {wlan} shutdown".format(wlan=self.wlan))
+        self.band = '24g'
         self.action = "disable_network_24ghz"
         summary = self.send_command()
         return summary
@@ -595,10 +628,10 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
-    # enable_network_5ghz
+    # enable_network_6ghz
     def config_no_ap_dot11_6ghz_shutdown(self):
         logger.info(
-            "config_no_ap_dot11_6ghz_shutdown (enable network 5ghz): Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(
+            "config_no_ap_dot11_6ghz_shutdown (enable network 6ghz): Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(
                 wlan=self.wlan,
                 wlanID=self.wlanID,
                 wlanSSID=self.wlanSSID))
@@ -630,7 +663,7 @@ class create_controller_series_object:
 
     # enable ap 6ghz
     def config_ap_no_dot11_6ghz_shutdown(self):
-        logger.info("ap name %s dot11 5ghz shutdown {ap}  (enable ap)".format(ap=self.ap))
+        logger.info("ap name %s dot11 6ghz shutdown {ap}  (enable ap)".format(ap=self.ap))
         self.band = '6g'
         self.action = "enable"
         summary = self.send_command()
@@ -712,6 +745,7 @@ INCLUDE_IN_README
     parser.add_argument("--user", type=str, help="credential login/username", required=True)
     parser.add_argument("--passwd", type=str, help="credential password", required=True)
     parser.add_argument("--ap", type=str, help="ap name APA453.0E7B.CF9C", required=True)
+    parser.add_argument("--ap_slot", type=str, help="ap slot")
     parser.add_argument("--prompt", type=str, help="controller prompt", required=True)
     parser.add_argument("--band", type=str, help="band to test 24g, 5g, 6g", required=True)
     parser.add_argument("--series", type=str, help="controller series", choices=["9800", "3504"], required=True)

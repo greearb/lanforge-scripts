@@ -3,6 +3,9 @@
 """
 NAME: cc_module_test.py
 
+CLASSIFICATION:
+module unit test
+
 PURPOSE:
 to test the dynamic import of a controller module
 
@@ -11,14 +14,17 @@ None
 
 EXAMPLE:
     There is a unit test included to try sample command scenarios
-     ./cc_module_test.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap APCC9C.3EF11.1140 --series 9800 --prompt "WLC1" --timeout 10 --band '6g' --module 'cc_module_9800_3504'
-
+      ./cc_module_test.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap APCC9C.3EF1.1140 --series 9800 --prompt "WLC1" --timeout 10 --band '6g' --module 'cc_module_9800_3504' 2>&1 | tee cc_tx_output_6g.txt
 
 COPYWRITE
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README
+
+RELEASE STATUS:  in development
+
+RELEASE NOTES:
 """
 
 import sys
@@ -339,7 +345,106 @@ class create_module_test_object:
         # TODO (there were two in tx_power the logs)
         # need to check if wlan present
         # delete wlan
-        # self.cs.config_no_wlan()
+        self.cs.config_no_wlan()
+
+        # create_wlan_wpa3
+        self.cs.config_wlan_wpa3()
+
+        # wireless_tag_policy
+        self.cs.config_wireless_tag_policy_and_policy_profile()
+        # enable_wlan
+        self.cs.config_enable_wlan_send_no_shutdown()
+        # enable_network_5ghz
+        self.cs.config_no_ap_dot11_6ghz_shutdown()
+        # enable_network_24ghz
+        # self.cs.config_no_ap_dot11_5ghz_shutdown()
+        # enable
+        self.cs.config_ap_no_dot11_6ghz_shutdown()
+        # config_ap_no_dot11_24ghz_shutdown
+        # advanced
+        self.cs.show_ap_dot11_6gz_summary()
+        # show_wlan_summary
+        self.cs.show_wlan_summary()
+
+    def test_config_tx_power_6g_wpa3_attempt2(self):
+        # TODO : leave for now for reference
+        # WLC1#show ap summary
+        # Number of APs: 3
+        #
+        # AP Name                            Slots    AP Model              Ethernet MAC    Radio MAC       Location
+        # -------------------------------------------------------------------------------------------------------------------------
+        # OTA
+        # APCC9C.3EF4.DDE0                     3      CW9166I-B             cc9c.3ef4.dde0  10f9.20fd.e200  default location
+
+        # Cabled together
+        # APCC9C.3EF1.1140                     3      CW9164I-B             cc9c.3ef1.1140  10f9.20fd.fa60  default location
+        # APA453.0E7B.CF9C                     2      C9120AXE-B            a453.0e7b.cf9c  d4ad.bda2.2ce0  default location
+
+        # series of commands to create a wlan , similiar to how tx_power works.
+        # pass in the ap and band from the command line
+        # self.cs.ap = 'APA453.0E7B.CF9C'
+        # self.cs.band = '5g'
+
+        logger.info("test_config_tx_power_6g_wpa3")
+        # This needs to be here to disable and delete
+        self.cs.wlan = '6G-wpa3-AP3'
+        self.cs.wlanID = '15'
+        self.cs.wlanSSID = '6G-wpa3-AP3'
+        self.cs.tx_power = '1'
+        # self.cs.security_key = 'wpa3_wlan_4_6g'
+        self.cs.security_key = 'hello123'
+
+        self.cs.tag_policy = 'RM204-TB1-AP3'
+        self.cs.policy_profile = 'default-policy-profile'
+
+        # no_logging_console
+        self.cs.no_logging_console()
+        # line_console_0
+        self.cs.line_console_0()
+        # summary
+        self.cs.show_ap_summary()
+
+        # disable
+        self.cs.show_ap_dot11_6gz_shutdown()
+        self.cs.show_ap_dot11_5gz_shutdown()
+        self.cs.show_ap_dot11_24gz_shutdown()
+
+        # disable_wlan
+        self.cs.wlan_shutdown()
+        # disable_network_6ghz
+        self.cs.ap_dot11_6ghz_shutdown()
+        # disable_network_5ghz
+        self.cs.ap_dot11_5ghz_shutdown()
+        # disable_network_24ghz
+        self.cs.ap_dot11_24ghz_shutdown()
+        # manual
+        self.cs.ap_dot11_6ghz_radio_role_manual_client_serving()
+        self.cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+        self.cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+
+        # Configuration for 6g
+
+        # Configuration for 6g
+        # txPower
+        # TODO is this still needed
+        self.cs.config_dot11_6ghz_tx_power()
+        self.cs.bandwidth = '20'
+        # bandwidth (to set to 20 if channel change does not support)
+        self.cs.config_dot11_6ghz_channel_width()
+        self.cs.channel = '59'
+        # channel
+        self.cs.config_dot11_6ghz_channel()
+        self.cs.bandwidth = '20'
+        # bandwidth
+        self.cs.config_dot11_6ghz_channel_width()
+        # show_wlan_summary
+        self.cs.show_wlan_summary()
+
+        # delete_wlan
+        # TODO (there were two in tx_power the logs)
+        # need to check if wlan present
+        # delete wlan
+        self.cs.config_no_wlan()
 
         # create_wlan_wpa3
         self.cs.config_wlan_wpa3()
@@ -916,9 +1021,11 @@ INCLUDE_IN_README
 
     mt = create_module_test_object(cs=cc)
 
-    mt.sample_test_dump_status()
+    # mt.sample_test_dump_status()
 
     mt.test_config_tx_power_6g_wpa3()
+
+    # mt.test_config_tx_power_6g_wpa3_attempt2()
 
     # cc.show_ap_summary()
     # cc.no_logging_console()
