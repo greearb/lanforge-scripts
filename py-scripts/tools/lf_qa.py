@@ -413,10 +413,11 @@ class csv_sql:
         except BaseException:
             warning_msg = ("WARNING subtest values need to be filtered or"
                            " Test is not behaving in filling out subtest values")
-            logger.WARNING("{warn}".format(warn=warning_msg))
-            logger.DEBUG("stderr : {file}".format(file=sys.stderr))
-            logger.WARNING("{warn}".format(warn=warning_msg))
-            logger.DEBUG("stdout : {file}".format(file=sys.stdout))
+            logger.warning(warning_msg)
+            logger.warning("{warn}".format(warn=warning_msg))
+            logger.debug("stderr : {file}".format(file=sys.stderr))
+            logger.warning("{warn}".format(warn=warning_msg))
+            logger.debug("stdout : {file}".format(file=sys.stdout))
 
             self.subtest_passed = 0
             self.subtest_failed = 0
