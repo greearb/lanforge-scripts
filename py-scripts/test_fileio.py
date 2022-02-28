@@ -14,6 +14,9 @@ this script will depend on the mode used, a read-only test will check the read-b
 and both will check both attributes. If the relevant attributes increase over the duration of the test it will pass,
 otherwise it will fail.
 
+SETUP:
+https://candelatech.atlassian.net/wiki/spaces/~261521142/pages/979435521/Lanforge+File-IO+Test+Notes
+
 EXAMPLE:
 ./test_fileio.py --macvlan_parent <port> --num_ports <num ports> --use_macvlans 
                  --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
@@ -21,6 +24,7 @@ EXAMPLE:
 ./test_fileio.py --macvlan_parent eth2 --num_ports 3 --use_macvlans --first_mvlan_ip 192.168.92.13 
                  --netmask 255.255.255.0 --gateway 192.168.92.1
 
+TODO: Create external document
 
 Use './test_fileio.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
