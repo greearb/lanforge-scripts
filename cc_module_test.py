@@ -634,85 +634,8 @@ class create_module_test_object:
 
     # tb2
 
-    def test_config_tx_power_5g_open_tb2_AP2(self):
 
-        logger.info("test_config_tx_power_open")
-        # configure once at the top
-        self.cs.wlan = 'open-wlan-14'
-        self.cs.wlanID = '14'
-        self.cs.wlanSSID = 'open-wlan-14'
-        self.cs.config_wlan_open()
-
-        # wireless_tag_policy
-        self.cs.tag_policy = 'RM204-TB2-AP1'
-        self.cs.policy_profile = 'default-policy-profile'
-        self.cs.config_wireless_tag_policy_and_policy_profile()
-
-        self.cs.tx_power = '1'
-        self.cs.channel = '36'
-        self.cs.bandwidth = '40'
-
-        # no_logging_console
-        self.cs.no_logging_console()
-        # line_console_0
-        self.cs.line_console_0()
-        # summary
-        self.cs.show_ap_summary()
-
-        # disable
-        self.cs.show_ap_dot11_5gz_shutdown()
-        self.cs.show_ap_dot11_24gz_shutdown()
-
-        # disable_wlan only need wlan
-        self.cs.wlan_shutdown()
-        # disable_network_5ghz
-        self.cs.ap_dot11_5ghz_shutdown()
-        # disable_network_24ghz
-        self.cs.ap_dot11_24ghz_shutdown()
-        # manual
-        self.cs.ap_dot11_5ghz_radio_role_manual_client_serving()
-        self.cs.ap_dot11_24ghz_radio_role_manual_client_serving()
-
-        # Configuration for 5g
-
-        # txPower
-        self.cs.config_dot11_5ghz_tx_power()
-        # bandwidth (to set to 20 if channel change does not support)
-        self.cs.bandwidth = '20'
-        self.cs.config_dot11_5ghz_channel_width()
-        # channel
-        self.cs.config_dot11_5ghz_channel()
-        # bandwidth
-        self.cs.bandwidth = '40'
-        self.cs.config_dot11_5ghz_channel_width()
-        # show_wlan_summary
-        self.cs.show_wlan_summary()
-
-        # delete_wlan
-        # TODO (there were two in tx_power the logs)
-        # need to check if wlan present
-        # delete wlan
-        # self.cs.config_no_wlan()
-
-        # create_wlan  open
-
-        # enable_wlan
-        self.cs.config_enable_wlan_send_no_shutdown()
-        # enable_network_5ghz
-        self.cs.config_no_ap_dot11_5ghz_shutdown()
-        # enable_network_24ghz
-        self.cs.config_no_ap_dot11_24ghz_shutdown()
-        # enable
-        self.cs.config_ap_no_dot11_5ghz_shutdown()
-        self.cs.config_ap_no_dot11_24ghz_shutdown()
-        # config_ap_no_dot11_24ghz_shutdown
-        # advanced
-        self.cs.show_ap_dot11_5gz_summary()
-        self.cs.show_ap_dot11_24gz_summary()
-        # show_wlan_summary
-        self.cs.show_wlan_summary()
-
-    def test_config_tx_power_5g_open_tb2_AP1(self):
+    def test_config_tx_power_5g_open_tb2_AP3(self):
 
         logger.info("test_config_tx_power_open")
         # configure once at the top
@@ -790,9 +713,9 @@ class create_module_test_object:
         # show_wlan_summary
         self.cs.show_wlan_summary()
 
-    def test_config_tx_power_wpa2(self):
+    def test_config_tx_power_5g_wpa2_AP3(self):
 
-        logger.info("sample_test_tx_power_sequence")
+        logger.info("sample_test_tx_power_sequence on AP")
 
         # no_logging_console
         self.cs.no_logging_console()
@@ -850,7 +773,7 @@ class create_module_test_object:
         self.cs.config_wlan_wpa2()
 
         # wireless_tag_policy
-        self.cs.tag_policy = 'RM204-TB1'
+        self.cs.tag_policy = 'RM204-TB1-AP3'
         self.cs.policy_profile = 'default-policy-profile'
         self.cs.config_wireless_tag_policy_and_policy_profile()
         # enable_wlan
@@ -868,6 +791,95 @@ class create_module_test_object:
         # show_wlan_summary
         self.cs.show_wlan_summary()
 
+
+    def test_config_tx_power_6g_wpa3_AP3(self):
+
+        logger.info("sample_test_tx_power_sequence for 6G AP3 on AP")
+
+        # no_logging_console
+        self.cs.no_logging_console()
+        # line_console_0
+        self.cs.line_console_0()
+        # summary
+        self.cs.show_ap_summary()
+
+        # disable
+        self.cs.show_ap_dot11_6gz_shutdown()
+        self.cs.show_ap_dot11_5gz_shutdown()
+        self.cs.show_ap_dot11_24gz_shutdown()
+        # This needs to be here to disable and delete
+        self.cs.wlan = 'wpa3_wlan_7'
+
+        # disable_wlan
+        self.cs.wlan_shutdown()
+        # disable_network_6ghz
+        self.cs.ap_dot11_6ghz_shutdown()
+
+        # disable_network_5ghz
+        self.cs.ap_dot11_5ghz_shutdown()
+        # disable_network_24ghz
+        self.cs.ap_dot11_24ghz_shutdown()
+        # manual
+        self.cs.ap_dot11_6ghz_radio_role_manual_client_serving()
+        # self.cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+
+        self.cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+        # self.cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+        self.cs.tx_power = '1'
+
+        # Configuration for 6g
+
+        # txPower
+        self.cs.config_dot11_6ghz_tx_power()
+        self.cs.bandwidth = '20'
+        # bandwidth (to set to 20 if channel change does not support)
+        self.cs.config_dot11_5ghz_channel_width()
+        self.cs.channel = '100'
+        # channel
+        self.cs.config_dot11_5ghz_channel()
+        self.cs.bandwidth = '40'
+        # bandwidth
+        self.cs.config_dot11_5ghz_channel_width()
+        # show_wlan_summary
+        self.cs.show_wlan_summary()
+
+        # delete_wlan
+        # TODO (there were two in tx_power the logs)
+        # need to check if wlan present
+        self.cs.wlan = 'wpa2_wlan_3'
+
+        # delete wlan
+        self.cs.config_no_wlan()
+
+        # create_wlan_wpa2
+        self.cs.wlan = 'wpa2_wlan_3'
+        self.cs.wlanID = '3'
+        self.cs.wlanSSID = 'wpa2_wlan_3'
+        self.cs.security_key = 'hello123'
+        self.cs.config_wlan_wpa2()
+
+        # wireless_tag_policy
+        self.cs.tag_policy = 'RM204-TB1-AP3'
+        self.cs.policy_profile = 'default-policy-profile'
+        self.cs.config_wireless_tag_policy_and_policy_profile()
+        # enable_wlan
+        self.cs.config_enable_wlan_send_no_shutdown()
+        # enable_network_5ghz
+        self.cs.config_no_ap_dot11_5ghz_shutdown()
+        # enable_network_24ghz
+        # self.cs.config_no_ap_dot11_24ghz_shutdown()
+        # enable
+        self.cs.config_ap_no_dot11_5ghz_shutdown()
+        # config_ap_no_dot11_24ghz_shutdown
+        # advanced
+        self.cs.show_ap_dot11_5gz_summary()
+        # self.cs.show_ap_dot11_24gz_summary()
+        # show_wlan_summary
+        self.cs.show_wlan_summary()
+
+
+
+    # Used before testbed change
     def test_config_tx_power_wpa2_IDIC(self):
 
         logger.info("sample_test_tx_power_sequence")
@@ -1023,7 +1035,12 @@ INCLUDE_IN_README
 
     # mt.sample_test_dump_status()
 
-    mt.test_config_tx_power_6g_wpa3()
+    # mt.test_config_tx_power_6g_wpa3()
+
+    mt.test_config_tx_power_5g_wpa2_AP3()
+
+    mt.test_config_tx_power_6g_wpa3_AP3()
+
 
     # mt.test_config_tx_power_6g_wpa3_attempt2()
 
