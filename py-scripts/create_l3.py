@@ -84,7 +84,7 @@ def main():
             Generate traffic between ports
             ''',
         description='''\
-        ./create_l3.py --ssid lanforge --password password --security wpa2 --radio 1.1.wiphy0 --endp_a wiphy0 --endp_b wiphy1 --noclean
+        ./create_l3.py --ssid lanforge --password password --security wpa2 --radio 1.1.wiphy0 --endp_a wiphy0 --endp_b wiphy1 --no_cleanup
         ''')
     parser.add_argument(
         '--min_rate_a',
@@ -141,10 +141,10 @@ def main():
 
     ip_var_test.build()
 
-    # TODO:  Delete the thing just created, unless --noclean option was added.
+    # TODO:  Delete the thing just created, unless --no_cleanup option was added.
     # Similar to how the create_bond.py does it.
 
-    if not args.noclean:
+    if not args.no_cleanup:
         ip_var_test.pre_cleanup()
 
     if ip_var_test.passes():

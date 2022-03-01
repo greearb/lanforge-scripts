@@ -223,7 +223,7 @@ Command example:
             create_vap._fail("VAP %s was not created." % (vap))
         create_vaps.append(create_vap)
 
-    # TODO:  Add logic to clean up vap, unless --noclean option is specified.
+    # TODO:  Add logic to clean up vap, unless --no_cleanup option is specified.
     # TODO:  Set radio back to previous channel.
 
     any_failed = False

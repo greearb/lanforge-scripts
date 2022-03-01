@@ -149,7 +149,7 @@ def main():
     ip_test.timeout = 60
     ip_test.build()
 
-    if not args.noclean:
+    if not args.no_cleanup:
         sleep(5)
         ip_test.cleanup(station_list)
 

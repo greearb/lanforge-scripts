@@ -134,7 +134,7 @@ Command example:
     create_bridge.build()
     logger.info('Created bridge: %s' % bridge_list[0])
 
-    if not args.noclean:
+    if not args.no_cleanup:
         sleep(5)
 
         create_bridge.cleanup()

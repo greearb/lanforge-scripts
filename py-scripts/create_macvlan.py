@@ -250,7 +250,7 @@ Generic command layout:
 
     ip_test.build()
 
-    # TODO:  Cleanup by default, add --noclean option to not do cleanup.
+    # TODO:  Cleanup by default, add --no_cleanup option to not do cleanup.
 
     if ip_test.passes():
         print('Created %s MacVlan connections' % args.num_ports)

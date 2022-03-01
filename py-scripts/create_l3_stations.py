@@ -280,7 +280,7 @@ def main():
         ip_var_test.pre_cleanup()
     ip_var_test.build()
 
-    # TODO:  Do cleanup by default, allow --noclean option to skip cleanup.
+    # TODO:  Do cleanup by default, allow --no_cleanup option to skip cleanup.
 
     if ip_var_test.passes():
         logger.info("Created %s stations and connections" % (num_sta))

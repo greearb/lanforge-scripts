@@ -222,7 +222,7 @@ def main():
                                debug=args.debug)
     create_qvlan.build()
 
-    # TODO:  Add code to clean up the stations built, unless --noclean is specified.
+    # TODO:  Add code to clean up the stations built, unless --no_cleanup is specified.
 
     if create_qvlan.passes():
         logging.info('Created %s QVLAN stations' % args.num_ports)

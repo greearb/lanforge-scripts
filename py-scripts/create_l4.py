@@ -239,7 +239,7 @@ python3 ./layer4.py
     ip_var_test.cleanup()
     ip_var_test.build()
 
-    # TODO:  Clean up by default, and add --noclean option to NOT do cleanup.
+    # TODO:  Clean up by default, and add --no_cleanup option to NOT do cleanup.
 
     if ip_var_test.passes():
         ip_var_test.exit_success()

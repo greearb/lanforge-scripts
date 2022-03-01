@@ -203,7 +203,7 @@ def main():
 
     create_station.build()
 
-    # TODO:  Add code to clean up the station, unless --noclean was specified.
+    # TODO:  Add code to clean up the station, unless --no_cleanup was specified.
 
     if create_station.passes():
         print('Created %s stations' % num_sta)

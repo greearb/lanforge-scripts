@@ -109,7 +109,7 @@ Command example:
 ./create_bond.py
     --bond_name bond0
     --network_dev_list eth0,eth1
-    --noclean
+    --no_cleanup
     --debug
             ''')
 
@@ -134,7 +134,7 @@ Command example:
                              )
     create_bond.build()
 
-    if not args.noclean:
+    if not args.no_cleanup:
         sleep(5)
 
         create_bond.cleanup()

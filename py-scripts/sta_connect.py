@@ -491,7 +491,6 @@ class StaConnect(Realm):
 def main():
     parser = Realm.create_basic_argparse(
         prog="sta_connect.py",
-        formatter_class=argparse.RawTextHelpFormatter,
         description="""LANforge Unit Test:  Connect Station to AP
 Example:
 ./sta_connect.py --mgr 192.168.100.209 --dut_ssid OpenWrt-2 --dut_bssid 24:F5:A2:08:21:6C
