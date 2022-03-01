@@ -1017,8 +1017,8 @@ def main():
     # TODO add
     # show controllers dot11Radio 0
     # show controllers dot11Radio 0 wlan
-    if (args.action == "show_radio"):
-        command = "show controllers dot11Radio 0 wlan"
+    # if (args.action == "show_radio"):
+    #    command = "show controllers dot11Radio 0 wlan"
 
     if (args.action == "show_ap_wlan_summary"):
         if args.series == "9800":
@@ -1112,7 +1112,9 @@ def main():
         raise Exception("action requires AP name")
     if (args.action == "auto"):
         if args.series == "9800":
-            if band == "a":  # TODO 6G
+            if band == "6g":
+                command = "ap name %s dot11 6ghz slot %s radio role auto" % (args.ap, args.ap_slot)
+            elif band == "a":
                 command = "ap name %s dot11 5ghz radio role auto" % (args.ap)
             else:
                 command = "ap name %s dot11 24ghz radio role auto" % (args.ap)
