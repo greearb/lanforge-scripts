@@ -431,6 +431,13 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    def ap_dot11_6ghz_radio_role_auto(self):
+        logger.info("ap name {ap_name} dot11 6ghz radio role auto".format(ap_name=self.ap))
+        self.band = '6g'
+        self.action = "auto"
+        summary = self.send_command()
+        return summary
+
     def ap_dot11_5ghz_radio_role_auto(self):
         logger.info("ap name {ap_name} dot11 5ghz radio role auto".format(ap_name=self.ap))
         self.band = '5g'

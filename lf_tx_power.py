@@ -77,15 +77,15 @@ WLC1#ap name APCCC9C.3EF4.DDE0 dot11 6ghz slot 3 ?
   txpower   Configures the 802.11 6Ghz Tx Power Level
 
 
+# 6G example : use existing station
 
-# Verified 2/7/2022 : Run against already created station "--station sta0001"
-./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8888 --scheme ssh --ap AP687D.B45C.1D1C --bandwidth "160" --channel "36" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy1 --slot 1 --ssid open-wlan --prompt "WLC2" --station sta0001 --ssidpw [BLANK] --security open   --wlan open-wlan --wlanID 1 --wlanSSID open-wlan --lfmgr 192.168.100.131 --lfresource 1 --vht160  --tag_policy "RM204-TB2"
 
-# Verified 2/17/2022 : create station and create open wlan on controller on testbed WLC1
- ./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8887 --scheme ssh --ap APA453.0E7B.CF9C --bandwidth "40" --channel "100" --nss 4 --txpower "1 3" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy4 --slot 1 --ssid open-wlan-14 --prompt "WLC1" --create_station  'sta0002' --lfmgr '192.168.100.178' --ssidpw '[BLANK]' --security open   --wlan open-wlan-14  --wlanID 14 --wlanSSID open-wlan-14 --lfresource 1 --vht160  --tag_policy "RM204-TB1" --policy_profile "default-policy-profile" --testbed_id 'Cisco-WLC1' --module 'cc_module_9800_3504'  --create_wlan
+# Verified 3/1/2022 : Run against already created station "--station sta0002"
+./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8887 --scheme ssh --ap APA453.0E7B.CF9C --bandwidth "40" --channel "100" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy4 --slot 1 --ssid 5G-wpa2-AP2 --prompt "WLC1"  --station sta0002 --lfmgr '192.168.100.178' --ssidpw 5G-wpa2-AP2 --security wpa2   --wlan 5G-wpa2-AP2  --wlanID 4 --wlanSSID 5G-wpa2-AP2 --lfresource 1 --vht160  --tag_policy "RM204-TB1-AP2" --policy_profile "default-policy-profile" --testbed_id 'Cisco-WLC1' --module 'cc_module_9800_3504' --no_cleanup
 
-# fails 2/24/2022
-./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8887 --scheme ssh --ap APCC9C.3EF11.1140  --bandwidth "20" --channel "191" --nss 1 --txpower "1" --pathloss 59 --antenna_gain 6 --band 6g --upstream_port eth2 --series 9800 --radio wiphy2 --slot 1 --ssid 6G-wpa3-AP3 --prompt "WLC1"  --station 'ax210a' --lfmgr '192.168.100.178' --ssidpw hello123 --security wpa3   --wlan 6G-wpa3-AP3 --wlanID 16 --wlanSSID 6G-wpa3-AP3 --lfresource 1  --tag_policy "RM204-TB1-AP2" --policy_profile "default-policy-profile" --testbed_id 'Cisco-WLC1-AP2' --module 'cc_module_9800_3504' --no_cleanup --outfile 'tx_power_AX210_1x1_6E' --duration 25  2>&1 |tee tx_output_AX210_1x1_6E.txt
+# Verified 3/1/2022 : create station and create open wlan on controller on testbed WLC1
+./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8887 --scheme ssh --ap APA453.0E7B.CF9C --bandwidth "40" --channel "100" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy4 --slot 1 --ssid 5G-wpa2-AP2 --prompt "WLC1" --create_station --station sta0002 --lfmgr '192.168.100.178' --ssidpw 5G-wpa2-AP2 --security wpa2   --wlan 5G-wpa2-AP2  --wlanID 4 --wlanSSID 5G-wpa2-AP2 --lfresource 1 --vht160  --tag_policy "RM204-TB1-AP2" --policy_profile "default-policy-profile" --testbed_id 'Cisco-WLC1' --module 'cc_module_9800_3504'  --create_wlan --no_cleanup
+
 
 ##############################################################################################
 ##############################################################################################
@@ -113,10 +113,10 @@ The user also has the option of setting up the station oustide of this script, h
 NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme defaults to ssh
 
 
+# Below
 ##############################################################################################
 # read AP for powercfg values using : show controllers dot11Radio 1 powercfg | g T1'
 ##############################################################################################
-
 ./lf_tx_power.py -d 172.19.27.55 -u admin -p Wnbulab@123 --port 2013 --scheme telnet \
     --ap 9120_Candela --bandwidth "20" --channel "149" --nss 4 --txpower "1" \
     --pathloss 56 --band a --upstream_port eth2 --series 9800 --radio wiphy5 --slot 1 --ssid open-wlan \
@@ -981,6 +981,7 @@ def main():
                         logg.info(pss)
                         # enable 2ghz
                         cs.config_ap_no_dot11_24ghz_shutdown()
+                        logg.info(pss)
 
                     # Wait a bit for AP to come back up
                     time.sleep(3)
