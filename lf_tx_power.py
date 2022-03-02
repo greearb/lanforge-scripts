@@ -78,17 +78,61 @@ WLC1#ap name APCCC9C.3EF4.DDE0 dot11 6ghz slot 3 ?
 
 
 # 6G example : use existing station
+./lf_ts_power.py
+[controller configuration ]
+--scheme ssh
+--dest localhost
+--port 8887
+--user admin
+--passwd Cisco123
+--prompt WLC1
+--series 9800
+--band 6g
+--module cc_module_9800_3504
+--timeout 3
 
+[AP Configuration]
+--ap AP687D.B45C.25EC
+--ap_slot 3
+--ap_band_slot_6g 3
 
-# Verified 3/1/2022 : Run against already created station "--station sta0002"
-./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8887 --scheme ssh --ap APA453.0E7B.CF9C --bandwidth "40" --channel "100" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy4 --slot 1 --ssid 5G-wpa2-AP2 --prompt "WLC1"  --station sta0002 --lfmgr '192.168.100.178' --ssidpw 5G-wpa2-AP2 --security wpa2   --wlan 5G-wpa2-AP2  --wlanID 4 --wlanSSID 5G-wpa2-AP2 --lfresource 1 --vht160  --tag_policy "RM204-TB1-AP2" --policy_profile "default-policy-profile" --testbed_id 'Cisco-WLC1' --module 'cc_module_9800_3504' --no_cleanup
+[wlan configuration]
+--wlan 6G-wpa3-AP3
+--wlan_id 15
+--wlan_ssid 6G-wpa3-AP3
+--tag_policy RM204-TB1-AP4
+--policy_profile default-policy-profile
 
-# Verified 3/1/2022 : create station and create open wlan on controller on testbed WLC1
-./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8887 --scheme ssh --ap APA453.0E7B.CF9C --bandwidth "40" --channel "100" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy4 --slot 1 --ssid 5G-wpa2-AP2 --prompt "WLC1" --create_station --station sta0002 --lfmgr '192.168.100.178' --ssidpw 5G-wpa2-AP2 --security wpa2   --wlan 5G-wpa2-AP2  --wlanID 4 --wlanSSID 5G-wpa2-AP2 --lfresource 1 --vht160  --tag_policy "RM204-TB1-AP2" --policy_profile "default-policy-profile" --testbed_id 'Cisco-WLC1' --module 'cc_module_9800_3504'  --create_wlan --no_cleanup
+[tx power configuration]
+--pathloss 59
+--antenna_gain 6
+
+[traffic generation configuration (LANforge)]
+--lfmgr 192.168.100.139
+--upstream_port eth2
+--lfresource 1
+--radio wiphy0
+--station wlan0
+--ssid 6G-wpa3-AP3
+--ssidpw hello123
+--no_cleanup_station
+
+[test configuration]
+--channel 1
+--bandwidth 160
+--vht160
+--nss 2
+--txpower 3
+--duration 25
+--outfile tx_power_AP4_AX210_2x2_6E
+--no_cleanup
+
+# Command on one line
+
+./lf_tx_power.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --prompt 'WLC1' --series 9800 --band 6g --module cc_module_9800_3504 --timeout 3 --ap AP687D.B45C.25EC  --ap_slot 3 --ap_band_slot_6g 3 --wlan '6G-wpa3-AP3' --wlan_id 15 --wlan_ssid '6G-wpa3-AP3' --tag_policy 'RM204-TB1-AP4' --policy_profile 'default-policy-profile' --pathloss 69 --antenna_gain 6 --lfmgr '192.168.100.139' --upstream_port eth2 --lfresource 1 --radio wiphy0 --station 'wlan0' --ssid '6G-wpa3-AP3' --ssidpw 'hello123' --security wpa3 --no_cleanup_station --channel 1 --bandwidth 160 --vht160 --nss 2 --txpower 3 --duration 25 --outfile 'tx_power_AP4_AX210_2x2_6E' --no_cleanup  2>&1 |tee tx_output_AP4_AX210_2x2_6E.txt
 
 # Verified 3/1/2022
-./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8887 --scheme ssh --ap AP687D.B45C.25EC  --bandwidth "40" --channel "137" --nss 2 --txpower "1" --pathloss 59 --antenna_gain 6 --band 6g --upstream_port eth2 --series 9800 --radio wiphy0 --slot 3 --ssid 6G-wpa3-AP3 --prompt "WLC1"  --station 'wlan0' --lfmgr '192.168.100.139' --ssidpw hello123 --security wpa3   --wlan 6G-wpa3-AP3 --wlanID 15 --wlanSSID 6G-wpa3-AP3 --lfresource 1  --tag_policy "RM204-TB1-AP4" --policy_profile "default-policy-profile" --testbed_id 'Cisco-WLC1-AP4' --module 'cc_module_9800_3504' --no_cleanup --outfile 'tx_power_AP4_AX210_2x2_6E' --duration 25  2>&1 |tee tx_output_AP4_AX210_2x2_6E.txt
-
+./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8887 --scheme ssh --ap AP687D.B45C.25EC  --bandwidth "160" --vht160  --channel "1" --nss 2 --txpower "2" --pathloss 59 --antenna_gain 6 --band 6g --upstream_port eth2 --series 9800 --radio wiphy0 --ap_slot 3 --ap_band_slot_6g 3 --ssid 6G-wpa3-AP3 --prompt "WLC1"  --station 'wlan0' --lfmgr '192.168.100.139' --ssidpw hello123 --security wpa3   --wlan 6G-wpa3-AP3 --wlanID 15 --wlanSSID 6G-wpa3-AP3 --lfresource 1  --tag_policy "RM204-TB1-AP4" --policy_profile "default-policy-profile" --testbed_id 'Cisco-WLC1-AP4' --module 'cc_module_9800_3504' --no_cleanup --outfile 'tx_power_AP4_AX210_2x2_6E' --duration 25  2>&1 |tee tx_output_AP4_AX210_2x2_6E.txt
 
 ##############################################################################################
 ##############################################################################################
@@ -299,65 +343,69 @@ def main():
                                      formatter_class=argparse.RawTextHelpFormatter)
 
     # controller configuration
-    parser.add_argument("-s", "--scheme", type=str, choices=["serial", "ssh", "telnet"], help="[controller configuration] Connect via serial, ssh or telnet", required=True)
-    parser.add_argument("-d", "--dest", type=str, help="[controller configuration] address of the cisco controller", required=True)
-    parser.add_argument("-o", "--port", type=str, help="[controller configuration] control port on the controller", required=True)
-    parser.add_argument("-u", "--user", type=str, help="[controller configuration] credential login/username", required=True)
-    parser.add_argument("-p", "--passwd", type=str, help="[controller configuration] credential password", required=True)
-    parser.add_argument('-ccp', '--prompt', type=str, help="[controller configuration] controller prompt", required=True)
-    parser.add_argument("--series", type=str, help="[controller configuration] --series  9800 or 3504, defaults to 9800", required=True)
-    parser.add_argument("-a", "--ap", type=str, help="select AP", required=True)
-    parser.add_argument("--band", type=str, help="6g, Select band a, 5g, b, 24g", choices=["a", "5g", "24g", "b", "abgn", "6g"])
-    parser.add_argument("--module", type=str, help="[controller configuration] series module (cc_module_9800_3504.py) ", required=True)
-    parser.add_argument("--timeout", type=str, help="[controller configuration] command timeout value ", default=3)
+    parser.add_argument("-s", "--scheme", type=str, choices=["serial", "ssh", "telnet"], help="[controller configuration] Connect via serial, ssh or telnet --scheme ssh", required=True)
+    parser.add_argument("-d", "--dest", type=str, help="[controller configuration] address of the controller --dest localhost", required=True)
+    parser.add_argument("-o", "--port", type=str, help="[controller configuration] controller port on the controller --port 8887", required=True)
+    parser.add_argument("-u", "--user", type=str, help="[controller configuration] controller login/username --user admin", required=True)
+    parser.add_argument("-p", "--passwd", type=str, help="[controller configuration] credential password --passwd Cisco123", required=True)
+    parser.add_argument('-ccp', '--prompt', type=str, help="[controller configuration] controller prompt --prompt WLC1", required=True)
+    parser.add_argument("--series", type=str, help="[controller configuration] controller series --series 9800", required=True)
+    parser.add_argument("--band", type=str, help="band testing --band 6g", choices=["a", "5g", "24g", "b", "abgn", "6g"])
+    parser.add_argument("--module", type=str, help="[controller configuration] series module (cc_module_9800_3504.py)  --module cc_module_9800_3504 ", required=True)
+    parser.add_argument("--timeout", type=str, help="[controller configuration] controller command timeout --timeout 3 ", default=3)
 
     # AP configuration 
-    parser.add_argument("--slot", "--ap_slot", type=str, dest="ap_slot", help="[AP configuration] --ap_slot 3 , 9800 AP slot , use show ap dot11 6ghz summary , 5ghz or 24ghz", required=True)
+    parser.add_argument("-a", "--ap", type=str, help="[AP configuration] select AP  ", required=True)
+    parser.add_argument("--ap_slot", type=str, dest="ap_slot", help="[AP configuration] --ap_slot 3 , 9800 AP slot , use show ap summary", required=True)
+    parser.add_argument("--ap_band_slot_6g", type=str, help="[AP configuration] --ap_band_slot_6g 3 , 9800 AP band slot , use show ap dot11 6ghz summary", default='2')
+    parser.add_argument("--ap_band_slot_5g", type=str, help="[AP configuration] --ap_band_slot_5g 1 , 9800 AP band slot , use show ap dot11 5ghz summary", default='1')
+    parser.add_argument("--ap_band_slot_24g", type=str, help="[AP configuration] --ap_band_slot_24g 0 , 9800 AP band slot , use show ap dot11 24ghz summary", default='0')
 
 
     # wlan configuration
     parser.add_argument("--create_wlan", help="[wlan configuration] --create_wlan", action='store_true')
-    parser.add_argument("--wlan", type=str, help="[wlan configuration] --wlan  9800, wlan identifier", required=True)
-    parser.add_argument("--wlan_id", "--wlanID", dest="wlanID", type=str, help="[wlan configuration] --wlan_id  9800 , defaults to 1", default="1", required=True)
-    parser.add_argument("--wlan_ssid", "--wlanSSID", dest="wlanSSID", type=str, help="[wlan configuration] --wlan_ssid  9800, wlan SSID, this must match the -ssid , ssid for station", required=True)
-    parser.add_argument("--tag_policy", type=str, help="[wlan configuration] --tag_policy RM204-TB1")
+    parser.add_argument("--wlan", type=str, help="[wlan configuration] controller wlan name --wlan 6G-wpa3-AP3 ", required=True)
+    parser.add_argument("--wlan_id", "--wlanID", dest="wlanID", type=str, help="[wlan configuration] controller wlan id  --wlan_id 15", required=True)
+    parser.add_argument("--wlan_ssid", "--wlanSSID", dest="wlanSSID", type=str, help="[wlan configuration] controller wlan ssid --wlan_ssid 6G-wpa3-AP3, wlan ssid must match station ssid", required=True)
+    parser.add_argument("--tag_policy", type=str, help="[wlan configuration] controller tag policy --tag_policy RM204-TB1-AP4")
     parser.add_argument("--policy_profile", type=str, help="[wlan configuration] --policy_profile default-policy-profile")
 
     # ap interface configuration
     parser.add_argument('-api', '--ap_info', action='append', nargs=1, type=str, help="[ap configuration] --ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
 
-    # tx power configuration
-    parser.add_argument("--pathloss", type=str, help="[tx power configuration] Calculated pathloss between LANforge Station and AP", required=True)
-    parser.add_argument("--antenna_gain", type=str, help="[tx power configuration] Antenna gain,  take into account the gain due to the antenna", required=True)
+    # tx power pathloss configuration
+    parser.add_argument("--pathloss", type=str, help="[tx power configuration] Calculated pathloss between LANforge Station and AP --pathloss 59", required=True)
+    parser.add_argument("--antenna_gain", type=str, help="[tx power configuration] Antenna gain,  take into account the gain due to the antenna --antenna_gain 6", required=True)
     parser.add_argument("--pf_dbm", type=str, help="[tx power configuration] Pass/Fail threshold.  Default is 6", default="6")
     parser.add_argument("--pf_ignore_offset", type=str, help="[tx power configuration] Allow a chain to have lower tx-power and still pass. default 0 so disabled", default="0")
     parser.add_argument("--adjust_nf", action='store_true', help="[tx power configuration] Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
     parser.add_argument('--beacon_dbm_diff', type=str, help="[tx power configuration] --beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured", default="7")
 
     # traffic generation configuration (LANforge)
-    parser.add_argument("--lfmgr", type=str, help="[traffic generation configuration (LANforge)] LANforge Manager IP address", required=True)
-    parser.add_argument("--upstream_port", type=str, help="[traffic generation configuration (LANforge)] LANforge upsteram-port to use (eth1, etc)", required=True)
-    parser.add_argument("--lfresource", type=str, help="[traffic generation configuration (LANforge)] LANforge resource ID for the station")
-    parser.add_argument("--lfresource2", type=str, help="[traffic generation configuration (LANforge)] LANforge resource ID for the upstream port system")
+    parser.add_argument("--lfmgr", type=str, help="[traffic generation configuration (LANforge)] LANforge Manager IP address --lfmgr 192.168.100.139", required=True)
+    parser.add_argument("--upstream_port", type=str, help="[traffic generation configuration (LANforge)] LANforge upsteram-port to use (eth1, etc)  --upstream_port eth2", required=True)
+    parser.add_argument("--lfresource", type=str, help="[traffic generation configuration (LANforge)] LANforge resource ID for the station --lfresource 1")
+    parser.add_argument("--lfresource2", type=str, help="[traffic generation configuration (LANforge)] LANforge resource ID for the upstream port system ")
 
-    # station configuration
-    parser.add_argument("--create_station", help="[station configuration] create LANforge station at the beginning of the test", action='store_true')
-    parser.add_argument("--station", type=str, help="[station configuration] Use already created LANforge station, use --no_cleanup also", required=True)
-    parser.add_argument("--radio", type=str, help="[station configuration] radio to create LANforge station on at the beginning of the test")
-    parser.add_argument("--ssid", type=str, help="[station configuration] station ssid, ssid of station must match the wlan created", required=True)
-    parser.add_argument("--ssidpw", "--security_key", dest='ssidpw', type=str, help="[station configuration]  station security key", required=True)
+    # LANforge station configuration
+    parser.add_argument("--radio", type=str, help="[LANforge station configuration] LANforge radio station created on --radio wiphy0")
+    parser.add_argument("--create_station", help="[LANforge station configuration] create LANforge station at the beginning of the test", action='store_true')
+    parser.add_argument("--station", type=str, help="[LANforge station configuration] Use already created LANforge station, use --no_cleanup also --station wlan0", required=True)
+    parser.add_argument("--ssid", type=str, help="[station configuration] station ssid, ssid of station must match the wlan created --ssid 6G-wpa3-AP3", required=True)
+    parser.add_argument("--ssidpw", "--security_key", dest='ssidpw', type=str, help="[station configuration]  station security key --ssidpw hello123", required=True)
     parser.add_argument("--security", type=str, help="[station configuration] security type open wpa wpa2 wpa3", required=True)
     parser.add_argument("--vht160", action='store_true', help="[station configuration] --vht160 , Enable VHT160 in lanforge ")
     parser.add_argument("--no_cleanup_station", action='store_true', help="[station configuration] --no_cleanup_station , do not clean up station after test completes ")
 
     # test configuration
-    parser.add_argument("-b", "--bandwidth", type=str, help="[test configuration] List of bandwidths to test. NA means no change")
-    parser.add_argument("-c", "--channel", type=str, help="[test configuration] List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
-    parser.add_argument("-n", "--nss", type=str, help="[test configuration] List of spatial streams to test.  NA means no change")
+    parser.add_argument("-c", "--channel", type=str, help="[test configuration] --channel '1 33' List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
+    parser.add_argument("-b", "--bandwidth", type=str, help="[test configuration] --bandwidth '20 40 80 160' List of bandwidths to test. NA means no change")
+    parser.add_argument("-n", "--nss", type=str, help="[test configuration] --nss '2' List of spatial streams to test.  NA means no change")
     parser.add_argument("-T", "--txpower", type=str, help="[test configuration] List of txpowers to test.  NA means no change")
     parser.add_argument('-D', '--duration', type=str, help='[test configuration] --traffic <how long to run in seconds>  example -D 30 (seconds) default: 30 ', default='20')
     parser.add_argument('--wait_time', type=str, help='[test configuration] --wait_time <how long to wait for station to connect seconds>  example --wait_time 180 (seconds) default: 180 ', default='180')
-    parser.add_argument("--outfile", help="[test configuration] Output file for csv data")
+    parser.add_argument("--outfile", help="[test configuration] Output file for csv data --outfile 'tx_power_AX210_2x2_6E")
+    parser.add_argument("-k", "--keep_state", "--no_cleanup", dest="keep_state", action="store_true", help="[test configuration] --no_cleanup, keep the state, no configuration change at the end of the test")
 
     # testbed configuration
     parser.add_argument("--testbed_id", type=str, help="[testbed configuration] --testbed_id", default="")
@@ -366,7 +414,6 @@ def main():
 
     # debug configuration
     parser.add_argument("--wait_forever", action='store_true', help="[debug configuration] Wait forever for station to associate, may aid debugging if STA cannot associate properly")
-    parser.add_argument("-k", "--keep_state", "--no_cleanup", dest="keep_state", action="store_true", help="[debug configuration] --no_cleanup, keep the state, no configuration change at the end of the test")
     # TODO remove the cleanup flag
     parser.add_argument('--show_lf_portmod', action='store_true', help="[debug configuration] --show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
     parser.add_argument("--lf_logger_config_json", help="[debug configuration] --lf_logger_config_json <json file> , json configuration of logger")
@@ -463,6 +510,7 @@ def main():
         series=args.series,
         ap=args.ap,
         ap_slot=args.ap_slot,
+        ap_band_slot_6g=args.ap_band_slot_6g,
         port=args.port,
         band=args.band,
         timeout=args.timeout)
@@ -797,6 +845,7 @@ def main():
                     else:
                         # Set nss on LANforge Station, not sure it can be done on AP
                         if (bw == "160"):
+                            # TODO automatically set vht160 is bw set to 160
                             # 9984 hardware needs 2 chains to do one NSS at 160Mhz
                             if (ni > 2):
                                 if(args.vht160):
@@ -876,17 +925,17 @@ def main():
 
                         # TODO add 24ghz and 6ghz
 
-                    if (bw != "NA"):
-                         logg.info("bandwidth 20 prior to setting channel, some channels only support 20")
-                         cs.bandwidth = '20'
-                         if args.band == '6g':
-                             cs.config_dot11_6ghz_channel_width()
-                         elif args.band == 'a':
-                            cs.config_dot11_5ghz_channel_width()
-                         #setting channel to 20 is invalid for 20 Mhz
-                         elif args.band == 'b':
-                            cs.config_dot11_24ghz_channel_width()
-                        # TODO add 24ghz , 6ghz
+                    # if (bw != "NA"):
+                    #      logg.info("bandwidth 20 prior to setting channel, some channels only support 20")
+                    #      cs.bandwidth = '20'
+                    #      if args.band == '6g':
+                    #          cs.config_dot11_6ghz_channel_width()
+                    #      elif args.band == 'a':
+                    #         cs.config_dot11_5ghz_channel_width()
+                    #      #setting channel to 20 is invalid for 20 Mhz
+                    #      elif args.band == 'b':
+                    #         cs.config_dot11_24ghz_channel_width()
+                    #     # TODO add 24ghz , 6ghz
 
                     # NSS is set on the station earlier...
                     if (ch != "NA"):
@@ -1849,10 +1898,6 @@ def main():
     # check if keeping the existing state
     # TODO add --no_cleanup
 
-    if(args.no_cleanup_station is False):
-        logg.info("--no_cleanup_station set False,  Deleting all stations on radio {}".format(args.radio))
-        subprocess.run(["./lf_associate_ap.pl", "--action", "del_all_phy", "--port_del", args.radio], timeout=20, capture_output=True)
-
     if(args.keep_state):
         logg.info("9800/3504 flag --keep_state set thus keeping state")
         pss = cs.show_ap_dot11_6gz_summary()
@@ -1868,6 +1913,11 @@ def main():
     else:
         # Set things back to defaults
         # if no_cleanup_station is False then clean up station
+        # TODO Have the station clean up be with 
+        # if(args.no_cleanup_station is False):
+        #    logg.info("--no_cleanup_station set False,  Deleting all stations on radio {}".format(args.radio))
+        #    subprocess.run(["./lf_associate_ap.pl", "--action", "del_all_phy", "--port_del", args.radio], timeout=20, capture_output=True)
+
 
         # Disable AP, apply settings, enable AP
         # TODO disable 24gz

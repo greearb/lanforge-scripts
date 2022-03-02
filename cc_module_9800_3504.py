@@ -62,7 +62,10 @@ class create_controller_series_object:
                  series=None,
                  band=None,
                  ap=None,
-                 ap_slot=None,
+                 ap_slot=None, # TODO deprecated , left in for backward compatibility,
+                 ap_band_slot_24g=None,
+                 ap_band_slot_5g=None,
+                 ap_band_slot_6g=None,
                  port=None,
                  timeout=None,
                  pwd=None
@@ -97,6 +100,27 @@ class create_controller_series_object:
         else:
             self.ap = ap
 
+        # for backward compatiblity if the ap_band_clot is not passed in set to common defaults
+        # Also some APs do not support all bands
+        # TODO put in a check if the slots are not found.
+        if ap_band_slot_24g is None:
+            logger.warning("ap_band_slot_24g not configured using value of '0'")
+            self.ap_band_slot_24g = '0'
+        else:
+            self.ap_band_slot_24g = ap_band_slot_24g
+
+        if ap_band_slot_5g is None:
+            logger.warning("ap_band_slot_5g not configured using value of '1'")
+            self.ap_band_slot_5g = '1'
+        else:
+            self.ap_band_slot_5g = ap_band_slot_5g
+
+        if ap_band_slot_6g is None:
+            logger.warning("ap_band_slot_6g not configured using value of '2'")
+            self.ap_band_slot_6g = '2'
+        else:
+            self.ap_band_slot_6g = ap_band_slot_6g
+
         if band is None:
             raise ValueError('Controller band  must be set')
         else:
@@ -120,7 +144,7 @@ class create_controller_series_object:
         self.wlanpw = None
         self.tag_policy = None
         self.policy_profile = None
-        self.ap_slot = None
+        self.ap_band_slot = None
         self.tx_power = None
         self.channel = None
         self.bandwidth = None
@@ -148,38 +172,38 @@ class create_controller_series_object:
             raise ValueError("band needs to be set 24g 5g or 6g")
 
     # TODO need to configure the slot
-    def set_ap_slot(self):
+    def set_ap_band_slot(self):
         if self.band == 'b':
-            self.ap_slot = '0'
+            self.ap_band_slot = self.ap_band_slot_24g
         elif self.band == 'a':
-            self.ap_slot = '1'
+            self.ap_band_slot = self.ap_band_slot_5g
         # TODO need to support configuration
         elif self.band == '6g':
-            self.ap_slot = '2'  # TODO need to read slot
-            # if self.ap_slot is None:
-            #    logger.critical("ap_slot_6g needs to be set to 2 or 3")
-            #    raise ValueError("ap_slot_6g needs to be set to 2 or 3")
+            self.ap_band_slot = self.ap_band_slot_6g  # TODO need to read slot
+            # if self.ap_band_slot is None:
+            #    logger.critical("ap_band_slot_6g needs to be set to 2 or 3")
+            #    raise ValueError("ap_band_slot_6g needs to be set to 2 or 3")
 #
     # TODO consolidate the command formats
 
     def send_command(self):
         # for backward compatibility wifi_ctl_9800_3504 expects 'a' for 5g and 'b' for 24b
         self.convert_band()
-        self.set_ap_slot()
+        self.set_ap_band_slot()
 
         logger.info("action {action}".format(action=self.action))
 
-        # set the ap_slot 24g = ap_slot 0 , 5g ap_slot = 1, 6g - ap_slot 2 / 3 so needs to be passed in
+        # set the ap_band_slot 24g = ap_band_slot 0 , 5g ap_band_slot = 1 / 2, 6g - ap_band_slot 2 / 3 so needs to be passed in
 
         # Command base
         if self.pwd is None:
             self.command = ["./wifi_ctl_9800_3504.py", "--scheme", self.scheme, "--dest", self.dest,
                             "--user", self.user, "--passwd", self.passwd, "--prompt", self.prompt,
-                            "--series", self.series, "--ap", self.ap, "--ap_slot", self.ap_slot, "--band", self.band, "--port", self.port]
+                            "--series", self.series, "--ap", self.ap, "--ap_band_slot", self.ap_band_slot, "--band", self.band, "--port", self.port]
         else:
             self.command = [str(str(self.pwd) + "/wifi_ctl_9800_3504.py"), "--scheme", self.scheme, "--dest", self.dest,
                             "--user", self.user, "--passwd", self.passwd, "--prompt", self.prompt,
-                            "--series", self.series, "--ap", self.ap, "--ap_slot", self.ap_slot, "--band", self.band, "--port", self.port]
+                            "--series", self.series, "--ap", self.ap, "--ap_band_slot", self.ap_band_slot, "--band", self.band, "--port", self.port]
 
         # Generate command
         if self.action in ['cmd', 'txPower', 'channel', 'bandwidth']:
@@ -752,7 +776,9 @@ INCLUDE_IN_README
     parser.add_argument("--user", type=str, help="credential login/username", required=True)
     parser.add_argument("--passwd", type=str, help="credential password", required=True)
     parser.add_argument("--ap", type=str, help="ap name APA453.0E7B.CF9C", required=True)
-    parser.add_argument("--ap_slot", type=str, help="ap slot")
+    parser.add_argument("--ap_band_slot_24g", type=str, help="ap_band_slot_24g", default='0')
+    parser.add_argument("--ap_band_slot_5g", type=str, help="ap_band_slot_5g", default='1')
+    parser.add_argument("--ap_band_slot_6g", type=str, help="ap_band_slot_6g", default='2')
     parser.add_argument("--prompt", type=str, help="controller prompt", required=True)
     parser.add_argument("--band", type=str, help="band to test 24g, 5g, 6g", required=True)
     parser.add_argument("--series", type=str, help="controller series", choices=["9800", "3504"], required=True)
