@@ -86,6 +86,9 @@ WLC1#ap name APCCC9C.3EF4.DDE0 dot11 6ghz slot 3 ?
 # Verified 3/1/2022 : create station and create open wlan on controller on testbed WLC1
 ./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8887 --scheme ssh --ap APA453.0E7B.CF9C --bandwidth "40" --channel "100" --nss 4 --txpower "1" --pathloss 56 --antenna_gain 6 --band a --upstream_port eth2 --series 9800 --radio wiphy4 --slot 1 --ssid 5G-wpa2-AP2 --prompt "WLC1" --create_station --station sta0002 --lfmgr '192.168.100.178' --ssidpw 5G-wpa2-AP2 --security wpa2   --wlan 5G-wpa2-AP2  --wlanID 4 --wlanSSID 5G-wpa2-AP2 --lfresource 1 --vht160  --tag_policy "RM204-TB1-AP2" --policy_profile "default-policy-profile" --testbed_id 'Cisco-WLC1' --module 'cc_module_9800_3504'  --create_wlan --no_cleanup
 
+# Verified 3/1/2022
+./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8887 --scheme ssh --ap AP687D.B45C.25EC  --bandwidth "40" --channel "137" --nss 2 --txpower "1" --pathloss 59 --antenna_gain 6 --band 6g --upstream_port eth2 --series 9800 --radio wiphy0 --slot 3 --ssid 6G-wpa3-AP3 --prompt "WLC1"  --station 'wlan0' --lfmgr '192.168.100.139' --ssidpw hello123 --security wpa3   --wlan 6G-wpa3-AP3 --wlanID 15 --wlanSSID 6G-wpa3-AP3 --lfresource 1  --tag_policy "RM204-TB1-AP4" --policy_profile "default-policy-profile" --testbed_id 'Cisco-WLC1-AP4' --module 'cc_module_9800_3504' --no_cleanup --outfile 'tx_power_AP4_AX210_2x2_6E' --duration 25  2>&1 |tee tx_output_AP4_AX210_2x2_6E.txt
+
 
 ##############################################################################################
 ##############################################################################################
@@ -308,12 +311,15 @@ def main():
     parser.add_argument("--module", type=str, help="[controller configuration] series module (cc_module_9800_3504.py) ", required=True)
     parser.add_argument("--timeout", type=str, help="[controller configuration] command timeout value ", default=3)
 
+    # AP configuration 
+    parser.add_argument("--slot", "--ap_slot", type=str, dest="ap_slot", help="[AP configuration] --ap_slot 3 , 9800 AP slot , use show ap dot11 6ghz summary , 5ghz or 24ghz", required=True)
+
+
     # wlan configuration
     parser.add_argument("--create_wlan", help="[wlan configuration] --create_wlan", action='store_true')
     parser.add_argument("--wlan", type=str, help="[wlan configuration] --wlan  9800, wlan identifier", required=True)
     parser.add_argument("--wlan_id", "--wlanID", dest="wlanID", type=str, help="[wlan configuration] --wlan_id  9800 , defaults to 1", default="1", required=True)
     parser.add_argument("--wlan_ssid", "--wlanSSID", dest="wlanSSID", type=str, help="[wlan configuration] --wlan_ssid  9800, wlan SSID, this must match the -ssid , ssid for station", required=True)
-    parser.add_argument("--slot", type=str, help="[wlan configuration] --slot 1 , 9800 AP slot , use show ap dot11 24ghz summary or 5ghz", required=True)
     parser.add_argument("--tag_policy", type=str, help="[wlan configuration] --tag_policy RM204-TB1")
     parser.add_argument("--policy_profile", type=str, help="[wlan configuration] --policy_profile default-policy-profile")
 
@@ -350,6 +356,7 @@ def main():
     parser.add_argument("-n", "--nss", type=str, help="[test configuration] List of spatial streams to test.  NA means no change")
     parser.add_argument("-T", "--txpower", type=str, help="[test configuration] List of txpowers to test.  NA means no change")
     parser.add_argument('-D', '--duration', type=str, help='[test configuration] --traffic <how long to run in seconds>  example -D 30 (seconds) default: 30 ', default='20')
+    parser.add_argument('--wait_time', type=str, help='[test configuration] --wait_time <how long to wait for station to connect seconds>  example --wait_time 180 (seconds) default: 180 ', default='180')
     parser.add_argument("--outfile", help="[test configuration] Output file for csv data")
 
     # testbed configuration
@@ -455,7 +462,7 @@ def main():
         prompt=args.prompt,
         series=args.series,
         ap=args.ap,
-        ap_slot=args.slot,
+        ap_slot=args.ap_slot,
         port=args.port,
         band=args.band,
         timeout=args.timeout)
@@ -464,7 +471,7 @@ def main():
     cs.wlanSSID = args.wlanSSID
     # TODO change to use args.security_key
     cs.security_key = args.ssidpw
-    cs.ap_slot = args.slot
+    # cs.ap_slot = args.slot
 
     if args.create_wlan:
         cs.tag_policy = args.tag_policy
@@ -870,14 +877,15 @@ def main():
                         # TODO add 24ghz and 6ghz
 
                     if (bw != "NA"):
-                        logg.info("bandwidth 20 prior to setting channel, some channels only support 20")
-                        cs.bandwidth = '20'
-                        if args.band == '6g':
-                            cs.config_dot11_6ghz_channel_width()
-                        elif args.band == 'a':
+                         logg.info("bandwidth 20 prior to setting channel, some channels only support 20")
+                         cs.bandwidth = '20'
+                         if args.band == '6g':
+                             cs.config_dot11_6ghz_channel_width()
+                         elif args.band == 'a':
                             cs.config_dot11_5ghz_channel_width()
-                        # setting channel to 20 is invalid for 20 Mhz
-                        # cs.config_dot11_24ghz_channel_width()
+                         #setting channel to 20 is invalid for 20 Mhz
+                         elif args.band == 'b':
+                            cs.config_dot11_24ghz_channel_width()
                         # TODO add 24ghz , 6ghz
 
                     # NSS is set on the station earlier...
@@ -900,8 +908,8 @@ def main():
                         elif args.band == 'a':
                             cs.config_dot11_5ghz_channel_width()
                         elif args.band == 'b':
-                            if bw != '20':
-                                logg.info(" 24ghz channel bw should be 20")
+                            # if bw != '20':
+                            #    logg.info(" 24ghz channel bw should be 20")
                             cs.config_dot11_24ghz_channel_width()
 
                     # only create the wlan the first time
@@ -920,6 +928,12 @@ def main():
                             # delete the wlan if already exists
                             pss = cs.show_wlan_summary()
                             logg.info(pss)
+                            if args.band == '6g':
+                                cs.show_ap_dot11_6gz_summary
+                            elif args.band == 'a':
+                                cs.show_ap_dot11_5gz_summary
+                            elif args.band == 'b':
+                                cs.show_ap_dot11_24gz_summary
 
                             #  "number of WLANs:\s+(\S+)"
                             # https://regex101.com/
@@ -995,6 +1009,8 @@ def main():
                             # TODO configuration for 24g, 6g
                             if args.band == '6g':
                                 pss = cs.show_ap_dot11_6gz_summary()
+                                logg.info("show ap dot11 6ghz summary")
+                                logg.info("ap: {ap} ap_slot: {slot} ".format(ap=args.ap,slot=args.ap_slot))
                                 logg.info(pss)
                             elif args.band == 'a':
                                 pss = cs.show_ap_dot11_5gz_summary()
@@ -1015,10 +1031,19 @@ def main():
                                     continue
                                 # if the pattern changes save the output of the advanced command and re parse https://regex101.com
                                 if (searchap):
-                                    pat = "%s\\s+(\\S+)\\s+(%s)\\s+\\S+\\s+\\S+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+dBm\\)+\\s+(\\S+)+\\s" % (args.ap, args.slot)
+                                    logg.info("##### line #####")
+                                    logg.info(line)
+                                    logg.info("ap : {ap} ap_slot: {ap_slot}".format(ap=args.ap, ap_slot=args.ap_slot))
+                                    # pat = "%s\\s+(\\S+)\\s+3\\s+\\S+\\s+\\S+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+dBm\\)+\\s+(\\S+)+\\s" % (args.ap)
+                                    # m = re.search(pat, line)
+                                    logg.info(m)
+                                    pat = "%s\\s+(\\S+)\\s+(\\S+)\\s+\\S+\\s+\\S+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+dBm\\)+\\s+(\\S+)+\\s" % (args.ap)
+                                    logg.info(pat)
                                     m = re.search(pat, line)
+                                    logg.info(m)
                                     if (m is not None):
-                                        if(m.group(2) == args.slot):
+                                        logg.info("checking of ap slot {ap_slot} present in the show ap dot11 6/5/24ghz summary".format(ap_slot=args.ap_slot))
+                                        if(m.group(2) == args.ap_slot):
                                             cc_mac = m.group(1)
                                             cc_slot = m.group(2)
                                             cc_ch = m.group(6)  # (132,136,140,144)
@@ -1026,6 +1051,8 @@ def main():
                                             cc_power = cc_power.replace("/", " of ")  # spread-sheets turn 1/8 into a date
                                             cc_dbm = m.group(5)
                                             cc_dbm = cc_dbm.replace("(", "")
+                                            
+                                            logg.info("ap slot {cc_slot} present in the show ap dot11 6/5/24ghz summary".format(cc_slot=cc_slot))
 
                                             cc_ch_count = cc_ch.count(",") + 1
                                             cc_bw = m.group(3)
@@ -1050,7 +1077,7 @@ def main():
                                     # debug an issue with the test.  Sometimes the controller is taking time to configure.
                                     err = "ERROR: cc_dmp not found from query of controller:  is the AP --slot set correctly?"
                                     logg.info(err)
-                                    logg.info("run show ap dot11 5ghz summary or show ap dot11 24ghz summary to verify the slot")
+                                    logg.info("run show ap dot11 6/5/24gghz summary ")
                                     e_tot += err
                                     e_tot += "  "
                                 else:
@@ -1131,7 +1158,7 @@ def main():
                             if (m is not None):
                                 _ip = m.group(1)
 
-                        # logg.info("IP %s  Status %s"%(_ip, _status))
+                        logg.info("IP %s  Status %s"%(_ip, _status))
 
                         if (_status == "Authorized"):
                             if ((_ip is not None) and (_ip != "0.0.0.0")):
@@ -1148,20 +1175,11 @@ def main():
 
                         i += 1
                         # We wait a fairly long time since AP will take a long time to start on a CAC channel.
-                        if (i > 180):  # TODO make configurable
+                        if (i > int(args.wait_time)):  # TODO make configurable
                             err = "ERROR:  Station did not connect within 180 seconds."
                             logg.info(err)
                             e_tot += err
                             e_tot += "  "
-                            if args.series == "9800":
-                                if args.band == '6g':
-                                    pss = cs.show_ap_dot11_6gz_summary()
-                                elif args.band == '5g':
-                                    pss = cs.show_ap_dot11_5gz_summary()
-                                elif args.band == '24g':
-                                    pss = cs.show_ap_dot11_24gz_summary()
-
-                                logg.info(pss)
 
                             if (args.wait_forever):
                                 logg.info("Will continue waiting, you may wish to debug the system...")
@@ -1171,6 +1189,14 @@ def main():
 
                         time.sleep(1)
 
+                    if args.series == "9800":
+                        if args.band == '6g':
+                            pss = cs.show_ap_dot11_6gz_summary()
+                        elif args.band == '5g':
+                            pss = cs.show_ap_dot11_5gz_summary()
+                        elif args.band == '24g':
+                            pss = cs.show_ap_dot11_24gz_summary()
+                        logg.info(pss)
                     # Start traffic
                     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
                                     "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=True)
@@ -1247,7 +1273,7 @@ def main():
                                                  "--cx_name", "c-udp-power"], capture_output=True, check=True)
 
                     pss = endp_stats.stdout.decode('utf-8', 'ignore')
-                    # logg.info(pss)
+                    logg.info(pss)
 
                     for line in pss.splitlines():
                         # logg.info("probe-line: %s"%(line))From Lanforge probe, command

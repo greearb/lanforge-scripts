@@ -340,21 +340,21 @@ class create_controller_series_object:
         return summary
 
     def show_ap_dot11_6gz_summary(self):
-        logger.info("show_ap_dot11_6gz_summary")
+        logger.info("show ap dot11 6gz summary")
         self.band = '6g'
         self.action = "advanced"
         summary = self.send_command()
         return summary
 
     def show_ap_dot11_5gz_summary(self):
-        logger.info("show_ap_dot11_5gz_summary")
+        logger.info("show ap dot11 5gz summary")
         self.band = '5g'
         self.action = "advanced"
         summary = self.send_command()
         return summary
 
     def show_ap_dot11_24gz_summary(self):
-        logger.info("show_ap_dot11_24gz_summary")
+        logger.info("show ap dot11 24gz summary")
         self.band = '24g'
         self.action = "advanced"
         summary = self.send_command()

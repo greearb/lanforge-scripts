@@ -792,7 +792,7 @@ class create_module_test_object:
         self.cs.show_wlan_summary()
 
 
-    def test_config_tx_power_6g_wpa3_AP3(self):
+    def test_config_tx_power_6g_wpa3_AP4(self):
 
         logger.info("sample_test_tx_power_sequence for 6G AP3 on AP")
 
@@ -808,7 +808,7 @@ class create_module_test_object:
         self.cs.show_ap_dot11_5gz_shutdown()
         self.cs.show_ap_dot11_24gz_shutdown()
         # This needs to be here to disable and delete
-        self.cs.wlan = 'wpa3_wlan_7'
+        self.cs.wlan = '6G-wpa3-AP4-2'
 
         # disable_wlan
         self.cs.wlan_shutdown()
@@ -833,11 +833,11 @@ class create_module_test_object:
         self.cs.config_dot11_6ghz_tx_power()
         self.cs.bandwidth = '20'
         # bandwidth (to set to 20 if channel change does not support)
-        self.cs.config_dot11_5ghz_channel_width()
-        self.cs.channel = '100'
+        self.cs.config_dot11_6ghz_channel_width()
+        self.cs.channel = '191'
         # channel
-        self.cs.config_dot11_5ghz_channel()
-        self.cs.bandwidth = '40'
+        self.cs.config_dot11_6ghz_channel()
+        self.cs.bandwidth = '20'
         # bandwidth
         self.cs.config_dot11_5ghz_channel_width()
         # show_wlan_summary
@@ -846,33 +846,33 @@ class create_module_test_object:
         # delete_wlan
         # TODO (there were two in tx_power the logs)
         # need to check if wlan present
-        self.cs.wlan = 'wpa2_wlan_3'
+        self.cs.wlan = '6G-wpa3-AP4-2'
 
         # delete wlan
         self.cs.config_no_wlan()
 
         # create_wlan_wpa2
-        self.cs.wlan = 'wpa2_wlan_3'
-        self.cs.wlanID = '3'
-        self.cs.wlanSSID = 'wpa2_wlan_3'
+        self.cs.wlan = '6G-wpa3-AP4-2'
+        self.cs.wlanID = '1'
+        self.cs.wlanSSID = '6G-wpa3-AP4-2'
         self.cs.security_key = 'hello123'
         self.cs.config_wlan_wpa2()
 
         # wireless_tag_policy
-        self.cs.tag_policy = 'RM204-TB1-AP3'
+        self.cs.tag_policy = 'RM204-TB1-AP4'
         self.cs.policy_profile = 'default-policy-profile'
         self.cs.config_wireless_tag_policy_and_policy_profile()
         # enable_wlan
         self.cs.config_enable_wlan_send_no_shutdown()
-        # enable_network_5ghz
-        self.cs.config_no_ap_dot11_5ghz_shutdown()
+        # enable_network_6ghz
+        self.cs.config_no_ap_dot11_6ghz_shutdown()
         # enable_network_24ghz
         # self.cs.config_no_ap_dot11_24ghz_shutdown()
         # enable
-        self.cs.config_ap_no_dot11_5ghz_shutdown()
+        self.cs.config_ap_no_dot11_6ghz_shutdown()
         # config_ap_no_dot11_24ghz_shutdown
         # advanced
-        self.cs.show_ap_dot11_5gz_summary()
+        self.cs.show_ap_dot11_6gz_summary()
         # self.cs.show_ap_dot11_24gz_summary()
         # show_wlan_summary
         self.cs.show_wlan_summary()
@@ -1037,9 +1037,9 @@ INCLUDE_IN_README
 
     # mt.test_config_tx_power_6g_wpa3()
 
-    mt.test_config_tx_power_5g_wpa2_AP3()
+    # mt.test_config_tx_power_5g_wpa2_AP3()
 
-    mt.test_config_tx_power_6g_wpa3_AP3()
+    mt.test_config_tx_power_6g_wpa3_AP4()
 
 
     # mt.test_config_tx_power_6g_wpa3_attempt2()
