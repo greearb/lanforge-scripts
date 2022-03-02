@@ -115,6 +115,7 @@ WLC1#ap name APCCC9C.3EF4.DDE0 dot11 6ghz slot 3 ?
 --station wlan0
 --ssid 6G-wpa3-AP3
 --ssidpw hello123
+--security wpa3
 --no_cleanup_station
 
 [test configuration]
@@ -126,6 +127,7 @@ WLC1#ap name APCCC9C.3EF4.DDE0 dot11 6ghz slot 3 ?
 --duration 25
 --outfile tx_power_AP4_AX210_2x2_6E
 --no_cleanup
+--testbed_id Cisco-WLC1-AP4
 
 # Command on one line
 
