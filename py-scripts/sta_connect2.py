@@ -264,7 +264,7 @@ class StaConnect2(Realm):
         # print("there are %d results" % len(self.station_results))
         fields = "_links,port,alias,ip,ap,port+type"
         self.station_results = self.find_ports_like("%s*" % self.sta_prefix, fields, debug_=False)
-        logger.info("num_associated() - self.station_results: %s", self.station_results)
+        logger.info("num_associated() - self.station_results: {}".format(self.station_results))
         if (self.station_results is None) or (len(self.station_results) < 1):
             self.get_failed_result_list()
         for eid, record in self.station_results.items():
@@ -354,6 +354,8 @@ class StaConnect2(Realm):
         '''
         self.l3_tcp_profile.side_a_min_bps = self.download_bps
         self.l3_tcp_profile.side_b_min_bps = self.upload_bps
+        self.l3_tcp_profile.side_a_min_pdu = self.side_a_pdu
+        self.l3_tcp_profile.side_b_min_pdu = self.side_b_pdu
         self.l3_tcp_profile.name_prefix = self.name_prefix
         self.l3_tcp_profile.report_timer = 1000
         self.l3_tcp_profile.create(endp_type="lf_tcp",
@@ -565,6 +567,8 @@ class StaConnect2(Realm):
     def record_kpi_csv(
             self,
             sta_list,
+            total_test,
+            total_pass,
             udp_dl,
             tcp_dl,
             udp_ul,
@@ -572,14 +576,6 @@ class StaConnect2(Realm):
             total_dl,
             total_ul):
         '''
-        logger.info("record_kpi_csv() - sta_list: %s", sta_list)
-        logger.info("record_kpi_csv() - total_ul: %s", total_ul)
-        logger.info("record_kpi_csv() - total_dl: %s", total_dl)
-        logger.info("record_kpi_csv() - udp_dl: %s", udp_dl)
-        logger.info("record_kpi_csv() - udp_ul: %s", udp_ul)
-        logger.info("record_kpi_csv() - tcp_dl: %s", tcp_dl)
-        logger.info("record_kpi_csv() - tcp_ul: %s", tcp_ul)
-
 
         logger.debug(
             "NOTE:  Adding kpi to kpi.csv, sta_count {sta_list}  total-download-bps:{total_dl}  upload: {total_ul}  bi-directional: {total}\n".format(
@@ -591,12 +587,44 @@ class StaConnect2(Realm):
                 sta_list=sta_list, total_dl_ll_bps=total_dl_ll_bps, total_ul_ll_bps=total_ul_ll_bps,
                 total_ll=(total_ul_ll_bps + total_dl_ll_bps)))
         '''
-        # the short description will all for more data to show up in one
-        # test-tag graph
+        # the short description will allow for more data to show up in one test-tag graph
+
+        # logic for Subtest-Pass & Subtest-Fail columns
+        subpass_udp_dl = 0
+        subpass_udp_ul = 0
+        subpass_tcp_dl = 0
+        subpass_tcp_ul = 0
+        subfail_udp_dl = 1
+        subfail_udp_ul = 1
+        subfail_tcp_dl = 1
+        subfail_tcp_ul = 1
+
+        if udp_dl > 0:
+            subpass_udp_dl = 1
+            subfail_udp_dl = 0
+        if udp_ul > 0:
+            subpass_udp_ul = 1
+            subfail_udp_ul = 0
+        if tcp_dl > 0:
+            subpass_tcp_dl = 1
+            subfail_tcp_dl = 0
+        if tcp_ul > 0:
+            subpass_tcp_ul = 1
+            subfail_tcp_ul = 0
+
+        # logic for pass/fail column
+        # total_test & total_pass values from lfcli_base.py
+        if total_test == total_pass:
+            pass_fail = "PASS"
+        else:
+            pass_fail = "FAIL"
 
         # kpi data for UDP download traffic
         results_dict = self.kpi_csv.kpi_csv_get_dict_update_time()
         results_dict['Graph-Group'] = "UDP Download Rate"
+        results_dict['pass/fail'] = pass_fail
+        results_dict['Subtest-Pass'] = subpass_udp_dl
+        results_dict['Subtest-Fail'] = subfail_udp_dl
         results_dict['short-description'] = "UDP-DL {download_bps} bps  pdu {side_a_pdu}  {sta_list} STA".format(
             download_bps=self.download_bps, side_a_pdu=self.side_a_pdu, sta_list=sta_list)
         results_dict['numeric-score'] = "{}".format(udp_dl)
@@ -605,6 +633,9 @@ class StaConnect2(Realm):
 
         # kpi data for UDP upload traffic
         results_dict['Graph-Group'] = "UDP Upload Rate"
+        results_dict['pass/fail'] = pass_fail
+        results_dict['Subtest-Pass'] = subpass_udp_ul
+        results_dict['Subtest-Fail'] = subfail_udp_ul
         results_dict['short-description'] = "UDP-UL {upload_bps} bps  pdu {side_b_pdu}  {sta_list} STA".format(
             upload_bps=self.upload_bps, side_b_pdu=self.side_b_pdu, sta_list=sta_list)
         results_dict['numeric-score'] = "{}".format(udp_ul)
@@ -614,20 +645,27 @@ class StaConnect2(Realm):
         # kpi data for TCP download traffic
         results_dict = self.kpi_csv.kpi_csv_get_dict_update_time()
         results_dict['Graph-Group'] = "TCP Download Rate"
-        results_dict['short-description'] = "TCP-DL {download_bps} bps  {sta_list} STA".format(
-            download_bps=self.download_bps, sta_list=sta_list)
+        results_dict['pass/fail'] = pass_fail
+        results_dict['Subtest-Pass'] = subpass_tcp_dl
+        results_dict['Subtest-Fail'] = subfail_tcp_dl
+        results_dict['short-description'] = "TCP-DL {download_bps} bps  pdu {side_a_pdu}  {sta_list} STA".format(
+            download_bps=self.download_bps, side_a_pdu=self.side_a_pdu, sta_list=sta_list)
         results_dict['numeric-score'] = "{}".format(tcp_dl)
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         # kpi data for TCP upload traffic
         results_dict['Graph-Group'] = "TCP Upload Rate"
-        results_dict['short-description'] = "TCP-UL {upload_bps} bps  {sta_list} STA".format(
-            upload_bps=self.upload_bps, sta_list=sta_list)
+        results_dict['pass/fail'] = pass_fail
+        results_dict['Subtest-Pass'] = subpass_tcp_ul
+        results_dict['Subtest-Fail'] = subfail_tcp_ul
+        results_dict['short-description'] = "TCP-UL {upload_bps} bps  pdu {side_b_pdu}  {sta_list} STA".format(
+            upload_bps=self.upload_bps, side_b_pdu=self.side_b_pdu, sta_list=sta_list)
         results_dict['numeric-score'] = "{}".format(tcp_ul)
         results_dict['Units'] = "bps"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
+    # record results for .html & .pdf reports
     def record_results(
             self,
             sta_count,
@@ -940,24 +978,24 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
 
     staConnect.station_names = ["%s0000" % args.prefix]
     staConnect.bringup_time_sec = args.bringup_time
-
     staConnect.setup()
     staConnect.start()
     logger.info("napping %f sec", staConnect.runtime_secs)
 
     time.sleep(staConnect.runtime_secs)
 
+    # fill out data kpi.csv and results reports
     temp_stations_list = []
     temp_stations_list.extend(staConnect.station_profile.station_names.copy())
-
+    total_test = len(staConnect.get_result_list())
+    total_pass = len(staConnect.get_passed_result_list())
     endp_rx_map, endp_rx_drop_map, endps, udp_dl, tcp_dl, udp_ul, tcp_ul, total_dl, total_ul, total_dl_ll, total_ul_ll = staConnect.get_rx_values()
-
-    staConnect.record_kpi_csv(len(temp_stations_list), udp_dl, tcp_dl, udp_ul, tcp_ul, total_dl, total_ul)
+    staConnect.record_kpi_csv(len(temp_stations_list), total_test, total_pass, udp_dl, tcp_dl, udp_ul, tcp_ul, total_dl, total_ul)
     staConnect.record_results(len(temp_stations_list), udp_dl, tcp_dl, udp_ul, tcp_ul, total_dl, total_ul)
 
     # Reporting Results (.pdf & .html)
     csv_results_file = staConnect.get_csv_name()
-    logger.info("csv_results_file: %s", csv_results_file)
+    logger.info("csv_results_file: {}".format(csv_results_file))
     # csv_results_file = kpi_path + "/" + kpi_filename
     report.set_title("L3 Station Connect 2")
     report.build_banner()
@@ -976,9 +1014,7 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
 
     # py-json/lanforge/lfcli_base.py - get_result_list():
     staConnect.get_result_list()
-    # logger.info("staConnect.get_results_list: %s", staConnect.get_result_list())
     is_passing = staConnect.passes()
-    # logger.info("is_passing: %s", is_passing)
 
     # py-json/lanforge/lfcli_base.py - get_all_message():
     logger.info(staConnect.get_all_message())
