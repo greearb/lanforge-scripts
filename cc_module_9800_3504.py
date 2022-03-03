@@ -566,6 +566,20 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    def ap_name_shutdown(self):
+        logger.info("ap name {ap} shutdown".format(ap=self.ap))
+        self.action = 'cmd'
+        self.value = "ap name {ap} shutdown".format(ap=self.ap)
+        summary = self.send_command()
+        return summary
+
+    def ap_name_no_shutdown(self):
+        logger.info("ap name {ap} no shutdown".format(ap=self.ap))
+        self.action = 'cmd'
+        self.value = "ap name {ap} no shutdown".format(ap=self.ap)
+        summary = self.send_command()
+        return summary
+
     # delete_wlan (may need to get the wlan from the summary)
 
     def config_no_wlan(self):

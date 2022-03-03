@@ -325,7 +325,7 @@ class FileAdapter(object):
 def exit_test(workbook):
     workbook.close()
     sleep(0.5)
-    exit(1)
+    # exit(0)
 
 
 def main():
@@ -1025,26 +1025,26 @@ def main():
                         cs.config_enable_wlan_send_no_shutdown()
 
                     # enable transmission for the entier 802.11z network
-                    # enable_network_5ghz
+                    # enable_network_6ghz or enable_network_5ghz or enable_network_24ghz
                     if args.band == '6g':
-                        # enable 5g wlan
+                        # enable 6g wlan
                         pss = cs.config_no_ap_dot11_6ghz_shutdown()
                         logg.info(pss)
-                        # enable 5g
+                        # enable 6g band
                         pss = cs.config_ap_no_dot11_6ghz_shutdown()
                         logg.info(pss)
                     elif args.band == 'a':
                         # enable 5g wlan
                         pss = cs.config_no_ap_dot11_5ghz_shutdown()
                         logg.info(pss)
-                        # enable 5g
+                        # enable 5g band
                         pss = cs.config_ap_no_dot11_5ghz_shutdown()
                         logg.info(pss)
                     elif args.band == 'b':
                         # enable wlan
                         pss = cs.config_no_ap_dot11_24ghz_shutdown()
                         logg.info(pss)
-                        # enable 2ghz
+                        # enable 2ghz band
                         cs.config_ap_no_dot11_24ghz_shutdown()
                         logg.info(pss)
 
@@ -1061,12 +1061,16 @@ def main():
                             if args.band == '6g':
                                 pss = cs.show_ap_dot11_6gz_summary()
                                 logg.info("show ap dot11 6ghz summary")
-                                logg.info("ap: {ap} ap_slot: {slot} ".format(ap=args.ap,slot=args.ap_slot))
+                                logg.info("ap: {ap} ap_band_slot_6g: {slot} ".format(ap=args.ap,slot=args.ap_band_slot_6g))
                                 logg.info(pss)
                             elif args.band == 'a':
+                                logg.info("show ap dot11 5ghz summary")
+                                logg.info("ap: {ap} ap_band_slot_5g: {slot} ".format(ap=args.ap,slot=args.ap_band_slot_5g))
                                 pss = cs.show_ap_dot11_5gz_summary()
                                 logg.info(pss)
                             else:
+                                logg.info("show ap dot11 24ghz summary")
+                                logg.info("ap: {ap} ap_band_slot_24g: {slot} ".format(ap=args.ap,slot=args.ap_band_slot_24g))
                                 pss = cs.show_ap_dot11_24gz_summary()
                                 logg.info(pss)
 
@@ -1084,17 +1088,34 @@ def main():
                                 if (searchap):
                                     logg.info("##### line #####")
                                     logg.info(line)
-                                    logg.info("ap : {ap} ap_slot: {ap_slot}".format(ap=args.ap, ap_slot=args.ap_slot))
-                                    # pat = "%s\\s+(\\S+)\\s+3\\s+\\S+\\s+\\S+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+dBm\\)+\\s+(\\S+)+\\s" % (args.ap)
-                                    # m = re.search(pat, line)
+                                    if args.band == '6g':
+                                        logg.info("ap : {ap} ap_band_slot_6g: {slot}".format(ap=args.ap, slot=args.ap_band_slot_6g))
+                                    elif args.band == '5g':
+                                        logg.info("ap : {ap} ap_band_slot_5g: {slot}".format(ap=args.ap, slot=args.ap_band_slot_5g))
+                                    elif args.band == '24g':
+                                        logg.info("ap : {ap} ap_band_slot_24g: {slot}".format(ap=args.ap, slot=args.ap_band_slot_24g))
+
                                     logg.info(m)
                                     pat = "%s\\s+(\\S+)\\s+(\\S+)\\s+\\S+\\s+\\S+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+dBm\\)+\\s+(\\S+)+\\s" % (args.ap)
                                     logg.info(pat)
                                     m = re.search(pat, line)
                                     logg.info(m)
+                                    band_slot = None
                                     if (m is not None):
-                                        logg.info("checking of ap slot {ap_slot} present in the show ap dot11 6/5/24ghz summary".format(ap_slot=args.ap_slot))
-                                        if(m.group(2) == args.ap_slot):
+                                        if args.band == '6g':
+                                            logg.info("checking of band slot 6g {band_slot} present in the show ap dot11 6ghz summary".format(band_slot=args.ap_band_slot_6g))
+                                            ap_band_slot = args.ap_band_slot_6g
+                                        elif args.band == '5g':
+                                            logg.info("checking of band slot 5g {band_slot} present in the show ap dot11 5ghz summary".format(band_slot=args.ap_band_slot_5g))
+                                            ap_band_slot = args.ap_band_slot_5g
+                                        elif args.band == '24g':
+                                            logg.info("checking of band slot 24g {band_slot} present in the show ap dot11 24ghz summary".format(band_slot=args.ap_band_slot_24g))
+                                            ap_band_slot = args.ap_band_slot_24g
+                                        else:
+                                            logg.warning("band_slot not set, results will be incomplete setting ap_band_slot to 1")
+                                            ap_band_slot = '1'
+
+                                        if(m.group(2) == ap_band_slot):
                                             cc_mac = m.group(1)
                                             cc_slot = m.group(2)
                                             cc_ch = m.group(6)  # (132,136,140,144)
@@ -1103,7 +1124,7 @@ def main():
                                             cc_dbm = m.group(5)
                                             cc_dbm = cc_dbm.replace("(", "")
                                             
-                                            logg.info("ap slot {cc_slot} present in the show ap dot11 6/5/24ghz summary".format(cc_slot=cc_slot))
+                                            logg.info("ap slot {cc_slot} present in the show ap dot11 {band}hz summary".format(cc_slot=cc_slot,band=args.band))
 
                                             cc_ch_count = cc_ch.count(",") + 1
                                             cc_bw = m.group(3)
@@ -1192,6 +1213,15 @@ def main():
                     i = 0
                     wait_ip_print = False
                     wait_assoc_print = False
+
+                    # Temporary Work around 
+                    # disable the AP
+                    cs.ap_name_shutdown()
+                    sleep(5)
+                    cs.ap_name_no_shutdown()
+                    # End Temporary Work around
+
+
                     # Wait untill LANforge station connects
                     while True:
                         port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
