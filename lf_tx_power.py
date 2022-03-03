@@ -920,9 +920,9 @@ def main():
                         # TODO add 24ghz and 6ghz
                         if args.band == '6g':
                             cs.config_dot11_6ghz_tx_power()
-                        elif args.band == 'a':
+                        elif args.band == '5g' or args.band == 'a':
                             cs.config_dot11_5ghz_tx_power()
-                        elif args.band == 'b':
+                        elif args.band == '24g' or args.band == 'a':
                             cs.config_dot11_24ghz_tx_power()
 
                         # TODO add 24ghz and 6ghz
@@ -932,10 +932,10 @@ def main():
                     #      cs.bandwidth = '20'
                     #      if args.band == '6g':
                     #          cs.config_dot11_6ghz_channel_width()
-                    #      elif args.band == 'a':
+                    #      elif args.band == '5g' or args.band == 'a':
                     #         cs.config_dot11_5ghz_channel_width()
                     #      #setting channel to 20 is invalid for 20 Mhz
-                    #      elif args.band == 'b':
+                    #      elif args.band == '24g' or args.band == 'a':
                     #         cs.config_dot11_24ghz_channel_width()
                     #     # TODO add 24ghz , 6ghz
 
@@ -945,9 +945,9 @@ def main():
                         cs.channel = ch
                         if args.band == '6g':
                             cs.config_dot11_6ghz_channel()
-                        elif args.band == 'a':
+                        elif args.band == '5g' or args.band == 'a':
                             cs.config_dot11_5ghz_channel()
-                        elif args.band == 'b':
+                        elif args.band == '24g' or args.band == 'b':
                             cs.config_dot11_24ghz_channel()
                         # exit(1)
 
@@ -956,12 +956,12 @@ def main():
                         cs.bandwidth = bw
                         if args.band == '6g':
                             cs.config_dot11_6ghz_channel_width()
-                        elif args.band == 'a':
+                        elif args.band == '5g' or args.band == 'a':
                             cs.config_dot11_5ghz_channel_width()
-                        elif args.band == 'b':
-                            # if bw != '20':
-                            #    logg.info(" 24ghz channel bw should be 20")
-                            cs.config_dot11_24ghz_channel_width()
+                        elif args.band == '24g' or args.band == 'b':
+                            # 24g can only be 20 Mhz
+                            # cs.config_dot11_24ghz_channel_width()
+                            pass
 
                     # only create the wlan the first time
                     if args.series == "9800":
@@ -981,9 +981,9 @@ def main():
                             logg.info(pss)
                             if args.band == '6g':
                                 cs.show_ap_dot11_6gz_summary
-                            elif args.band == 'a':
+                            elif args.band == '5g' or args.band == 'a':
                                 cs.show_ap_dot11_5gz_summary
-                            elif args.band == 'b':
+                            elif args.band == '24g' or args.band == 'a':
                                 cs.show_ap_dot11_24gz_summary
 
                             #  "number of WLANs:\s+(\S+)"
@@ -1033,14 +1033,14 @@ def main():
                         # enable 6g band
                         pss = cs.config_ap_no_dot11_6ghz_shutdown()
                         logg.info(pss)
-                    elif args.band == 'a':
+                    elif args.band == '5g' or args.band == 'a':
                         # enable 5g wlan
                         pss = cs.config_no_ap_dot11_5ghz_shutdown()
                         logg.info(pss)
                         # enable 5g band
                         pss = cs.config_ap_no_dot11_5ghz_shutdown()
                         logg.info(pss)
-                    elif args.band == 'b':
+                    elif args.band == '24g' or args.band == 'a':
                         # enable wlan
                         pss = cs.config_no_ap_dot11_24ghz_shutdown()
                         logg.info(pss)
@@ -1063,7 +1063,7 @@ def main():
                                 logg.info("show ap dot11 6ghz summary")
                                 logg.info("ap: {ap} ap_band_slot_6g: {slot} ".format(ap=args.ap,slot=args.ap_band_slot_6g))
                                 logg.info(pss)
-                            elif args.band == 'a':
+                            elif args.band == '5g' or args.band == 'a':
                                 logg.info("show ap dot11 5ghz summary")
                                 logg.info("ap: {ap} ap_band_slot_5g: {slot} ".format(ap=args.ap,slot=args.ap_band_slot_5g))
                                 pss = cs.show_ap_dot11_5gz_summary()
@@ -1215,7 +1215,8 @@ def main():
                     wait_assoc_print = False
 
                     # Temporary Work around 
-                    # disable the AP
+                    # disable the AP for 6G
+                    # if  args.band == '6g':
                     cs.ap_name_shutdown()
                     sleep(5)
                     cs.ap_name_no_shutdown()
@@ -1972,15 +1973,15 @@ def main():
         if (ch != "NA"):
             if args.band == '6g':
                 pss = cs.config_dot11_6ghz_channel()
-            elif args.band == 'a':
+            elif args.band == '5g' or args.band == 'a':
                 pss = cs.config_dot11_5ghz_channel()
-            elif args.band == 'b':
+            elif args.band == '24g' or args.band == 'a':
                 pss = cs.config_dot11_24ghz_channel()
 
         if (bw != "NA"):
             if args.band == '6g':
                 pss = cs.config_dot11_6ghz_channel_width()
-            elif args.band == 'a':
+            elif args.band == '5g' or args.band == 'a':
                 pss = cs.config_dot11_5ghz_channel_width()
             logg.info(pss)
 
