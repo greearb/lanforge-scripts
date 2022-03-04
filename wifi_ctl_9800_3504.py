@@ -1188,7 +1188,6 @@ def main():
             sleep(0.1)
             i = egg.expect_exact(["(config)#", pexpect.TIMEOUT], timeout=timeout)
             if i == 0:
-                command = "no ap dot11 6ghz %s shutdown" % (args.ap_band_slot)
                 egg.sendline("no ap dot11 6ghz shutdown")
                 sleep(0.1)
             if i == 1:

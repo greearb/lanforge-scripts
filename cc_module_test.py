@@ -14,7 +14,7 @@ None
 
 EXAMPLE:
     There is a unit test included to try sample command scenarios
-      ./cc_module_test.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap APCC9C.3EF1.1140 --series 9800 --prompt "WLC1" --timeout 10 --band '6g' --module 'cc_module_9800_3504' 2>&1 | tee cc_tx_output_6g.txt
+      ./cc_module_test.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap AP687D.B45C.2B24 --series 9800 --prompt "WLC1" --timeout 10 --band '6g' --module 'cc_module_9800_3504' 2>&1 | tee cc_tx_output_6g.txt
 
 COPYWRITE
     Copyright 2021 Candela Technologies Inc
@@ -69,54 +69,61 @@ class create_module_test_object:
     def sample_test_setting_dtim(self):
         logger.info("sample_test_setting_dtim")
         # This needs to be here to disable and delete
-        self.cs.dtim = '1'
+        self.cs.dtim = '2'
 
-        self.cs.wlan = 'wpa2_wlan_7'
+        self.cs.wlan = '6G-wpa3-AP3'
         self.cs.wlanID = '7'
-        self.cs.wlanSSID = 'wpa2_wlan_7'
+        self.cs.wlanSSID = '6g-wpa3-AP3'
         self.cs.tx_power = '1'
-        self.cs.security_key = 'wpa2_wlan_7'
+        self.cs.security_key = 'hello123'
 
-        self.cs.tag_policy = 'RM204-TB1'
+        self.cs.tag_policy = 'RM204-TB1-AP5'
         self.cs.policy_profile = 'default-policy-profile'
         # summary
         self.cs.show_ap_summary()
 
         # disable
+        self.cs.show_ap_dot11_6gz_shutdown()
         self.cs.show_ap_dot11_5gz_shutdown()
         self.cs.show_ap_dot11_24gz_shutdown()
 
         # disable_wlan
         self.cs.wlan_shutdown()
+        # disable_network_6ghz
+        self.cs.ap_dot11_6ghz_shutdown()
         # disable_network_5ghz
         self.cs.ap_dot11_5ghz_shutdown()
         # disable_network_24ghz
         self.cs.ap_dot11_24ghz_shutdown()
         # manual
+        self.cs.ap_dot11_6ghz_radio_role_manual_client_serving()
         self.cs.ap_dot11_5ghz_radio_role_manual_client_serving()
         self.cs.ap_dot11_24ghz_radio_role_manual_client_serving()
 
         # Configuration for 5g
 
         # txPower
+        self.cs.config_dot11_6ghz_tx_power()
         self.cs.config_dot11_5ghz_tx_power()
-        self.cs.bandwidth = '20'
+        # self.cs.bandwidth = '20'
         # bandwidth (to set to 20 if channel change does not support)
-        self.cs.config_dot11_5ghz_channel_width()
-        self.cs.channel = '100'
+        # self.cs.config_dot11_5ghz_channel_width()
+        self.cs.channel = '33'
+        
         # channel
-        self.cs.config_dot11_5ghz_channel()
+        self.cs.config_dot11_6ghz_channel()
+        # self.cs.config_dot11_5ghz_channel()
         self.cs.bandwidth = '40'
         # bandwidth
-        self.cs.config_dot11_5ghz_channel_width()
+        self.cs.config_dot11_6ghz_channel_width()
         # show_wlan_summary
         self.cs.show_wlan_summary()
 
         # delete wlan
-        self.cs.config_no_wlan()
+        # self.cs.config_no_wlan()
 
-        # create_wlan_wpa2
-        self.cs.config_wlan_wpa2()
+        # create_wlan_wpa3
+        self.cs.config_wlan_wpa3()
 
         # wireless_tag_policy
         self.cs.config_wireless_tag_policy_and_policy_profile()
@@ -132,19 +139,19 @@ class create_module_test_object:
         self.cs.show_wlan_summary()
 
         # % WLAN needs to be disabled before performing this operation.
-        self.cs.config_dtim_dot11_5ghz()
+        self.cs.config_dtim_dot11_6ghz()
 
         # enable_wlan
         self.cs.config_enable_wlan_send_no_shutdown()
-        # enable_network_5ghz
-        self.cs.config_no_ap_dot11_5ghz_shutdown()
+        # enable_network_6ghz
+        self.cs.config_no_ap_dot11_6ghz_shutdown()
         # enable_network_24ghz
         # self.cs.config_no_ap_dot11_5ghz_shutdown()
         # enable
-        self.cs.config_ap_no_dot11_5ghz_shutdown()
+        self.cs.config_ap_no_dot11_6ghz_shutdown()
         # config_ap_no_dot11_24ghz_shutdown
         # advanced
-        self.cs.show_ap_dot11_5gz_summary()
+        self.cs.show_ap_dot11_6gz_summary()
         # self.cs.show_ap_dot11_24gz_summary()
         # show_wlan_summary
         self.cs.show_wlan_summary()
