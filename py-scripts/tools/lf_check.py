@@ -960,8 +960,8 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             #
             for line in stdout_log_fd:
                 if "Report Location" in line:
-                    report_index += 1
-                    if iteration == report_index:
+                    self.report_index += 1
+                    if iteration == self.report_index:
                         meta_data_path = line.replace('"', '')
                         meta_data_path = meta_data_path.replace(
                             'Report Location:::', '')
