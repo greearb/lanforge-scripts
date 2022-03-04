@@ -738,6 +738,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # The network arguments need to be changed when in a list
         for index, args_list_element in enumerate(
                 self.test_dict[self.test]['args_list']):
+            # Note the elements used by ssid_idx need to be
             if 'ssid_idx=' in args_list_element:
                 # print("args_list_element {}".format(args_list_element))
                 # get ssid_idx used in the test as an index for the
@@ -1207,7 +1208,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     self.run_script()
 
             else:
-                self.logger.info(
+                self.logger.warning(
                     "enable value {} for test: {} ".format(self.test_dict[self.test]['enabled'], self.test))
 
         suite_end_time = datetime.datetime.now()

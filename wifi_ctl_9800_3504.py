@@ -1413,7 +1413,7 @@ def main():
     if (args.action == "dtim" and ((args.value is None) or (args.wlan is None))):
         raise Exception("dtim a value 1 - 255 required")
     if (args.action == "dtim"):
-        logg.info("(config-wlan)# dtim dot11 5ghz  {value} ".format(value=args.value))
+        logg.info("(config-wlan)# dtim dot11 {band}hz  {value} ".format(band=args.band,value=args.value))
         if args.series == "9800":
             egg.sendline("config t")
             sleep(0.4)
@@ -1423,7 +1423,7 @@ def main():
 
                 logg.info("elevated to (config)#")
                 # for create wlan <name> <ID> <ssid>
-                command = "wlan {}".format(args.wlan)
+                command = "wlan {wlan}".format(wlan=args.wlan)
                 egg.sendline(command)
                 sleep(0.4)
                 j = egg.expect_exact([CCP_CONFIG_WLAN, pexpect.TIMEOUT], timeout=timeout)

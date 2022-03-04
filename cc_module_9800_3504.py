@@ -286,12 +286,32 @@ class create_controller_series_object:
         return summary
 
     # DTIM Delivery Traffic Indication Message
-    def config_dtim_dot11_5ghz(self):
-        logger.info("dtim dot11 5ghz")
+    def config_dtim_dot11_24ghz(self):
+        logger.info("dtim dot11 24ghz")
+        self.band = '24g'
         self.action = "dtim"
         self.value = self.dtim
         summary = self.send_command()
         return summary
+
+
+    # DTIM Delivery Traffic Indication Message
+    def config_dtim_dot11_5ghz(self):
+        logger.info("dtim dot11 5ghz")
+        self.band = '5g'
+        self.action = "dtim"
+        self.value = self.dtim
+        summary = self.send_command()
+        return summary
+
+    def config_dtim_dot11_6ghz(self):
+        logger.info("dtim dot11 6ghz")
+        self.band = '6g'
+        self.action = "dtim"
+        self.value = self.dtim
+        summary = self.send_command()
+        return summary
+
 
     # NOTE: need to do _no_logging_console and line_console_0 at the beginning of every session
     # to avoid unexpected log messages showing up
