@@ -210,14 +210,13 @@ class lf_check():
         self.test_ip = ""
 
         # current test running
-        self.test = None    
+        self.test = None
         self.report_index = 0
         self.iteration = 0
         self.channel_list = []
         self.nss_list = []
         self.bandwidth_list = []
         self.tx_power_list = []
-
 
         # section DUT
         # dut selection
@@ -240,6 +239,7 @@ class lf_check():
         self.test_timeout = 120
         self.test_timeout_default = 120
         self.test_iterations_default = 1
+        self.iteration = 0
         self.use_blank_db = "FALSE"
         self.use_factory_default_db = "FALSE"
         self.use_custom_db = "FALSE"
@@ -775,8 +775,8 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # arguments
         if self.test_dict[self.test]['args'] == "":
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(self.test_dict[self.test]['args'],
-                                                                                ''.join(self.test_dict[self.test][
-                                                                                    'args_list']))
+                                                                                          ''.join(self.test_dict[self.test][
+                                                                                              'args_list']))
         if 'DATABASE_SQLITE' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'DATABASE_SQLITE', self.database_sqlite)
@@ -819,10 +819,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 'DUT_SN', self.dut_serial)
         if 'UPSTREAM_PORT' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace('UPSTREAM_PORT',
-                                                                                self.upstream_port)
+                                                                                          self.upstream_port)
         if 'UPSTREAM_ALIAS' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace('UPSTREAM_ALIAS',
-                                                                                self.upstream_alias)
+                                                                                          self.upstream_alias)
         # lf_dataplane_test.py and lf_wifi_capacity_test.py use a parameter --local_path for the location
         # of the reports when the reports are pulled.
         if 'REPORT_PATH' in self.test_dict[self.test]['args']:
@@ -833,15 +833,15 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 'TEST_SERVER', self.test_server)
         if 'DUT_SET_NAME' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace('DUT_SET_NAME',
-                                                                                self.dut_set_name)
+                                                                                          self.dut_set_name)
         if 'TEST_RIG' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'TEST_RIG', self.test_rig)
         # END of command line arg processing
         if self.test_dict[self.test]['args'] == "":
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(self.test_dict[self.test]['args'],
-                                                                                ''.join(self.test_dict[self.test][
-                                                                                    'args_list']))
+                                                                                          ''.join(self.test_dict[self.test][
+                                                                                              'args_list']))
         if 'timeout' in self.test_dict[self.test]:
             self.logger.info(
                 "timeout : {}".format(
@@ -961,7 +961,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             for line in stdout_log_fd:
                 if "Report Location" in line:
                     self.report_index += 1
-                    if iteration == self.report_index:
+                    if self.iteration == self.report_index:
                         meta_data_path = line.replace('"', '')
                         meta_data_path = meta_data_path.replace(
                             'Report Location:::', '')
@@ -1171,7 +1171,6 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # self.logger.info("row: {}".format(row))
         self.logger.info("test: {} executed".format(self.test))
 
-
     def run_script_test(self):
         self.start_html_results()
         self.start_csv_results()
@@ -1198,14 +1197,14 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 else:
                     self.test_iterations = self.test_iterations_default
 
-                iteration = 0
                 # log may contain multiple runs - this helps put the meta.txt
                 # in right directory
+                self.iteration = 0
                 self.report_index = 0
-                for iteration in range(self.test_iterations):
-                    iteration += 1
+                for self.iteration in range(self.test_iterations):
+                    self.iteration += 1
 
-                self.run_script()
+                    self.run_script()
 
             else:
                 self.logger.info(
