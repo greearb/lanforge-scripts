@@ -1216,10 +1216,10 @@ def main():
 
                     # Temporary Work around 
                     # disable the AP for 6G
-                    # if  args.band == '6g':
-                    cs.ap_name_shutdown()
-                    sleep(5)
-                    cs.ap_name_no_shutdown()
+                    if  args.band == '6g':
+                        cs.ap_name_shutdown()
+                        sleep(5)
+                        cs.ap_name_no_shutdown()
                     # End Temporary Work around
 
 
