@@ -196,6 +196,7 @@ our $default_mac_pat    = "xx:xx:xx:*:*:xx";
 our $mac_pattern        = $::default_mac_pat;
 our $gateway            = "NA";
 our %wifi_modes = (
+   "auto"   => "0",
    "a"      => "1",
    "b"      => "2",
    "g"      => "3",
