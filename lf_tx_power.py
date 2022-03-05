@@ -1921,9 +1921,25 @@ def main():
 
     # check if keeping the existing state
     # TODO add --no_cleanup
+    # Set things back to defaults
+    # if no_cleanup_station is False then clean up station
+    # TODO Have the station clean up be with
+    if(args.no_cleanup_station is False):
+        # Remove LANforge traffic connection
+        logg.info("Remove LANforge traffic connections")
+        subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
+                        "--cmd", "set_cx_state all c-udp-power DELETED"], capture_output=False)
+        subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
+                        "--cmd", "rm_endp c-udp-power-A"], capture_output=False)
+        subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
+                        "--cmd", "rm_endp c-udp-power-B"], capture_output=False) 
 
+        logg.info("--no_cleanup_station set False,  Deleting all stations on radio {}".format(args.radio))
+        subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--action", "del_all_phy", "--port_del", args.radio], timeout=20, capture_output=False)
+
+    # keep the state of the controller
     if(args.keep_state):
-        logg.info("9800/3504 flag --keep_state set thus keeping state")
+        logg.info("9800/3504 flag --keep_state True thus leaving controller is last test configuration")
         pss = cs.show_ap_dot11_6gz_summary()
         logg.info(pss)
         pss = cs.show_ap_dot11_5gz_summary()
@@ -1935,15 +1951,11 @@ def main():
 
         exit_test(workbook)
     else:
-        # Set things back to defaults
-        # if no_cleanup_station is False then clean up station
-        # TODO Have the station clean up be with
-        # if(args.no_cleanup_station is False):
-        #    logg.info("--no_cleanup_station set False,  Deleting all stations on radio {}".format(args.radio))
-        #    subprocess.run(["./lf_associate_ap.pl", "--action", "del_all_phy", "--port_del", args.radio], timeout=20, capture_output=True)
+        logg.info("9800/3504 flag --keep_state False thus setting controller to known state ")
+        # TODO what is the known state
 
-        # Disable AP, apply settings, enable AP
-        # TODO disable 24gz
+        # Disable AP, retrun AP to known settings , enable AP
+        # TODO Choose fault settings
         if args.series == "9800":
             pss = cs.config_no_wlan()
             logg.info(pss)
@@ -2003,13 +2015,6 @@ def main():
             pss = cs.config_no_ap_dot11_24ghz_shutdown()  # enable_network 5ghz
             logg.info(pss)
 
-        # Remove LANforge traffic connection
-        subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                        "--cmd", "set_cx_state all c-udp-power DELETED"], capture_output=True)
-        subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                        "--cmd", "rm_endp c-udp-power-A"], capture_output=True)
-        subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                        "--cmd", "rm_endp c-udp-power-B"], capture_output=True)
 
         # Show controller status
         # TODO show valid / short status
