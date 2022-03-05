@@ -1,11 +1,5 @@
 #!/usr/bin/python3
 '''
-LANforge 192.168.100.178
-Controller at 192.168.100.112 admin/Cisco123
-Controller is 192.1.0.10
-AP is 192.1.0.2'''
-
-"""
 NAME: lf_tx_power
 
 CLASSIFICATION: lanforge test
@@ -26,7 +20,7 @@ COPYWRITE
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README
-"""
+'''
 
 
 import math
@@ -1932,7 +1926,7 @@ def main():
         subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
                         "--cmd", "rm_endp c-udp-power-A"], capture_output=False)
         subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                        "--cmd", "rm_endp c-udp-power-B"], capture_output=False) 
+                        "--cmd", "rm_endp c-udp-power-B"], capture_output=False)
 
         logg.info("--no_cleanup_station set False,  Deleting all stations on radio {}".format(args.radio))
         subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--action", "del_all_phy", "--port_del", args.radio], timeout=20, capture_output=False)
@@ -2014,7 +2008,6 @@ def main():
         if args.band == '24g':
             pss = cs.config_no_ap_dot11_24ghz_shutdown()  # enable_network 5ghz
             logg.info(pss)
-
 
         # Show controller status
         # TODO show valid / short status
