@@ -395,7 +395,9 @@ def main():
     parser.add_argument("--ssid", type=str, help="[station configuration] station ssid, ssid of station must match the wlan created --ssid 6G-wpa3-AP3", required=True)
     parser.add_argument("--ssidpw", "--security_key", dest='ssidpw', type=str, help="[station configuration]  station security key --ssidpw hello123", required=True)
     parser.add_argument("--security", type=str, help="[station configuration] security type open wpa wpa2 wpa3", required=True)
+    parser.add_argument("--wifi_mode", type=str, help="[station configuration] --wifi_mode auto  types auto|a|abg|abgn|abgnAC|abgnAX|an|anAC|anAX|b|bg|bgn|bgnAC|bgnAX|g ", default='auto')
     parser.add_argument("--vht160", action='store_true', help="[station configuration] --vht160 , Enable VHT160 in lanforge ")
+    parser.add_argument("--ieee80211w", type=str, help="[station configuration] --ieee80211w Required needs to be set to Required for 6g and wpa3 default Optional ", default='Optional')
     parser.add_argument("--no_cleanup_station", action='store_true', help="[station configuration] --no_cleanup_station , do not clean up station after test completes ")
 
     # test configuration
@@ -754,13 +756,13 @@ def main():
                 print()
                 subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
                                 "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
-                                "--first_sta", args.station, "--ieee80211w", "required", "--wifi_mode", "abgnAX", "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=True)
+                                "--first_sta", args.station, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=True)
                 sleep(3)
             else:
                 logg.info("creating station: {} on radio {}".format(args.station, args.radio))
                 subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
                                 "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
-                                "--first_sta", args.station, "--ieee80211w", "required", "--wifi_mode", "abgnAX", "--action", "add"], timeout=20, capture_output=True)
+                                "--first_sta", args.station, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add"], timeout=20, capture_output=True)
 
         else:
             if (args.vht160):
@@ -768,13 +770,13 @@ def main():
                 print()
                 subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
                                 "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
-                                "--first_sta", args.station, "--wifi_mode", "abgnAX", "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=True)
+                                "--first_sta", args.station, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=True)
                 sleep(3)
             else:
                 logg.info("creating station: {} on radio {}".format(args.station, args.radio))
                 subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
                                 "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
-                                "--first_sta", args.station, "--wifi_mode", "abgnAX", "--action", "add"], timeout=20, capture_output=True)
+                                "--first_sta", args.station, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add"], timeout=20, capture_output=True)
         sleep(3)
 
     # Find LANforge station parent radio
@@ -939,20 +941,6 @@ def main():
                         elif args.band == '24g' or args.band == 'a':
                             cs.config_dot11_24ghz_tx_power()
 
-                        # TODO add 24ghz and 6ghz
-
-                    # if (bw != "NA"):
-                    #      logg.info("bandwidth 20 prior to setting channel, some channels only support 20")
-                    #      cs.bandwidth = '20'
-                    #      if args.band == '6g':
-                    #          cs.config_dot11_6ghz_channel_width()
-                    #      elif args.band == '5g' or args.band == 'a':
-                    #         cs.config_dot11_5ghz_channel_width()
-                    #      #setting channel to 20 is invalid for 20 Mhz
-                    #      elif args.band == '24g' or args.band == 'a':
-                    #         cs.config_dot11_24ghz_channel_width()
-                    #     # TODO add 24ghz , 6ghz
-
                     # NSS is set on the station earlier...
                     if (ch != "NA"):
                         logg.info("9800/3504 test_parameters set channel: {}".format(ch))
@@ -963,7 +951,6 @@ def main():
                             cs.config_dot11_5ghz_channel()
                         elif args.band == '24g' or args.band == 'b':
                             cs.config_dot11_24ghz_channel()
-                        # exit(1)
 
                     if (bw != "NA"):
                         logg.info("9800/3504 test_parameters bandwidth: set : {}".format(bw))
@@ -974,7 +961,6 @@ def main():
                             cs.config_dot11_5ghz_channel_width()
                         elif args.band == '24g' or args.band == 'b':
                             # 24g can only be 20 Mhz
-                            # cs.config_dot11_24ghz_channel_width()
                             pass
 
                     # only create the wlan the first time
@@ -1227,14 +1213,6 @@ def main():
                     i = 0
                     wait_ip_print = False
                     wait_assoc_print = False
-
-                    # Temporary Work around
-                    # disable the AP for 6G
-                    if args.band == '6g':
-                        cs.ap_name_shutdown()
-                        sleep(5)
-                        cs.ap_name_no_shutdown()
-                    # End Temporary Work around
 
                     # Wait untill LANforge station connects
                     while True:
