@@ -1207,6 +1207,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
                     self.run_script()
 
+                #TODO have the large test batched 
+                # radio_batch_list
+                # channel_batch_list 
+
             else:
                 self.logger.warning(
                     "enable value {} for test: {} ".format(self.test_dict[self.test]['enabled'], self.test))

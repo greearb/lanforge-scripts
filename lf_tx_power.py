@@ -356,13 +356,12 @@ def main():
     parser.add_argument("--module", type=str, help="[controller configuration] series module (cc_module_9800_3504.py)  --module cc_module_9800_3504 ", required=True)
     parser.add_argument("--timeout", type=str, help="[controller configuration] controller command timeout --timeout 3 ", default=3)
 
-    # AP configuration 
+    # AP configuration
     parser.add_argument("-a", "--ap", type=str, help="[AP configuration] select AP  ", required=True)
     parser.add_argument("--ap_slot", type=str, dest="ap_slot", help="[AP configuration] --ap_slot 3 , 9800 AP slot , use show ap summary", required=True)
     parser.add_argument("--ap_band_slot_6g", type=str, help="[AP configuration] --ap_band_slot_6g 3 , 9800 AP band slot , use show ap dot11 6ghz summary", default='2')
     parser.add_argument("--ap_band_slot_5g", type=str, help="[AP configuration] --ap_band_slot_5g 1 , 9800 AP band slot , use show ap dot11 5ghz summary", default='1')
     parser.add_argument("--ap_band_slot_24g", type=str, help="[AP configuration] --ap_band_slot_24g 0 , 9800 AP band slot , use show ap dot11 24ghz summary", default='0')
-
 
     # wlan configuration
     parser.add_argument("--create_wlan", help="[wlan configuration] --create_wlan", action='store_true')
@@ -749,19 +748,34 @@ def main():
         if (args.radio is None):
             logg.info("WARNING --create needs a radio")
             exit_test(workbook)
-        elif (args.vht160):
-            logg.info("creating station with VHT160 set: {} on radio {}".format(args.station, args.radio))
-            print()
-            subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
-                            "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
-                            "--first_sta", args.station, "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=True)
-            sleep(3)
+        if (args.band == '6g'):
+            if (args.vht160):
+                logg.info("creating station with VHT160 set: {} on radio {}".format(args.station, args.radio))
+                print()
+                subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
+                                "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
+                                "--first_sta", args.station, "--ieee80211w", "required", "--wifi_mode", "abgnAX", "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=True)
+                sleep(3)
+            else:
+                logg.info("creating station: {} on radio {}".format(args.station, args.radio))
+                subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
+                                "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
+                                "--first_sta", args.station, "--ieee80211w", "required", "--wifi_mode", "abgnAX", "--action", "add"], timeout=20, capture_output=True)
+
         else:
-            logg.info("creating station: {} on radio {}".format(args.station, args.radio))
-            subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
-                            "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
-                            "--first_sta", args.station, "--action", "add"], timeout=20, capture_output=True)
-            sleep(3)
+            if (args.vht160):
+                logg.info("creating station with VHT160 set: {} on radio {}".format(args.station, args.radio))
+                print()
+                subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
+                                "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
+                                "--first_sta", args.station, "--wifi_mode", "abgnAX", "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=True)
+                sleep(3)
+            else:
+                logg.info("creating station: {} on radio {}".format(args.station, args.radio))
+                subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
+                                "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
+                                "--first_sta", args.station, "--wifi_mode", "abgnAX", "--action", "add"], timeout=20, capture_output=True)
+        sleep(3)
 
     # Find LANforge station parent radio
     parent = None
@@ -1061,16 +1075,16 @@ def main():
                             if args.band == '6g':
                                 pss = cs.show_ap_dot11_6gz_summary()
                                 logg.info("show ap dot11 6ghz summary")
-                                logg.info("ap: {ap} ap_band_slot_6g: {slot} ".format(ap=args.ap,slot=args.ap_band_slot_6g))
+                                logg.info("ap: {ap} ap_band_slot_6g: {slot} ".format(ap=args.ap, slot=args.ap_band_slot_6g))
                                 logg.info(pss)
                             elif args.band == '5g' or args.band == 'a':
                                 logg.info("show ap dot11 5ghz summary")
-                                logg.info("ap: {ap} ap_band_slot_5g: {slot} ".format(ap=args.ap,slot=args.ap_band_slot_5g))
+                                logg.info("ap: {ap} ap_band_slot_5g: {slot} ".format(ap=args.ap, slot=args.ap_band_slot_5g))
                                 pss = cs.show_ap_dot11_5gz_summary()
                                 logg.info(pss)
                             else:
                                 logg.info("show ap dot11 24ghz summary")
-                                logg.info("ap: {ap} ap_band_slot_24g: {slot} ".format(ap=args.ap,slot=args.ap_band_slot_24g))
+                                logg.info("ap: {ap} ap_band_slot_24g: {slot} ".format(ap=args.ap, slot=args.ap_band_slot_24g))
                                 pss = cs.show_ap_dot11_24gz_summary()
                                 logg.info(pss)
 
@@ -1100,7 +1114,7 @@ def main():
                                     logg.info(pat)
                                     m = re.search(pat, line)
                                     logg.info(m)
-                                    band_slot = None
+                                    ap_band_slot = None
                                     if (m is not None):
                                         if args.band == '6g':
                                             logg.info("checking of band slot 6g {band_slot} present in the show ap dot11 6ghz summary".format(band_slot=args.ap_band_slot_6g))
@@ -1123,8 +1137,8 @@ def main():
                                             cc_power = cc_power.replace("/", " of ")  # spread-sheets turn 1/8 into a date
                                             cc_dbm = m.group(5)
                                             cc_dbm = cc_dbm.replace("(", "")
-                                            
-                                            logg.info("ap slot {cc_slot} present in the show ap dot11 {band}hz summary".format(cc_slot=cc_slot,band=args.band))
+
+                                            logg.info("ap slot {cc_slot} present in the show ap dot11 {band}hz summary".format(cc_slot=cc_slot, band=args.band))
 
                                             cc_ch_count = cc_ch.count(",") + 1
                                             cc_bw = m.group(3)
@@ -1133,13 +1147,13 @@ def main():
                                                     m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6)))
                                             logg.info("9800 test_parameters_summary:  read: tx: {} ch: {} bw: {}".format(tx, ch, bw))
 
-                                            logg.info("9800 test_parameters cc_mac: read : {}".format(cc_mac))
-                                            logg.info("9800 test_parameters cc_slot: read : {}".format(cc_slot))
+                                            logg.info("9800 test_parameters cc_mac:   read : {}".format(cc_mac))
+                                            logg.info("9800 test_parameters cc_slot:  read : {}".format(cc_slot))
                                             logg.info("9800 test_parameters cc_count: read : {}".format(cc_ch_count))
-                                            logg.info("9800 test_parameters cc_bw: read : {}".format(cc_bw))
+                                            logg.info("9800 test_parameters cc_bw:    read : {}".format(cc_bw))
                                             logg.info("9800 test_parameters cc_power: read : {}".format(cc_power))
-                                            logg.info("9800 test_parameters cc_dbm: read : {}".format(cc_dbm))
-                                            logg.info("9800 test_parameters cc_ch: read : {}".format(cc_ch))
+                                            logg.info("9800 test_parameters cc_dbm:   read : {}".format(cc_dbm))
+                                            logg.info("9800 test_parameters cc_ch:    read : {}".format(cc_ch))
                                             break
 
                             if (cc_dbm == ""):
@@ -1214,14 +1228,13 @@ def main():
                     wait_ip_print = False
                     wait_assoc_print = False
 
-                    # Temporary Work around 
+                    # Temporary Work around
                     # disable the AP for 6G
-                    if  args.band == '6g':
+                    if args.band == '6g':
                         cs.ap_name_shutdown()
                         sleep(5)
                         cs.ap_name_no_shutdown()
                     # End Temporary Work around
-
 
                     # Wait untill LANforge station connects
                     while True:
@@ -1240,7 +1253,7 @@ def main():
                             if (m is not None):
                                 _ip = m.group(1)
 
-                        logg.info("IP %s  Status %s"%(_ip, _status))
+                        logg.info("IP %s  Status %s" % (_ip, _status))
 
                         if (_status == "Authorized"):
                             if ((_ip is not None) and (_ip != "0.0.0.0")):
@@ -1946,11 +1959,10 @@ def main():
     else:
         # Set things back to defaults
         # if no_cleanup_station is False then clean up station
-        # TODO Have the station clean up be with 
+        # TODO Have the station clean up be with
         # if(args.no_cleanup_station is False):
         #    logg.info("--no_cleanup_station set False,  Deleting all stations on radio {}".format(args.radio))
         #    subprocess.run(["./lf_associate_ap.pl", "--action", "del_all_phy", "--port_del", args.radio], timeout=20, capture_output=True)
-
 
         # Disable AP, apply settings, enable AP
         # TODO disable 24gz
