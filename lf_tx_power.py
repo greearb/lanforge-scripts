@@ -377,7 +377,7 @@ def main():
     parser.add_argument('--beacon_dbm_diff', type=str, help="[tx power configuration] --beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured", default="7")
 
     # traffic generation configuration (LANforge)
-    parser.add_argument("--lfmgr", type=str, help="[traffic generation configuration (LANforge)] LANforge Manager IP address --lfmgr 192.168.100.139", required=True)
+    parser.add_argument("--lfmgr", type=str, help="[traffic generation configuration (LANforge)] LANforge Manager IP address --lfmgr 192.168.100.178", required=True)
     parser.add_argument("--upstream_port", type=str, help="[traffic generation configuration (LANforge)] LANforge upsteram-port to use (eth1, etc)  --upstream_port eth2", required=True)
     parser.add_argument("--lfresource", type=str, help="[traffic generation configuration (LANforge)] LANforge resource ID for the station --lfresource 1")
     parser.add_argument("--lfresource2", type=str, help="[traffic generation configuration (LANforge)] LANforge resource ID for the upstream port system ")
@@ -747,7 +747,7 @@ def main():
         if (args.band == '6g'):
             if (args.vht160):
                 logg.info("creating station with VHT160 set: {} on radio {}".format(args.station, args.radio))
-                print()
+                logg.info("cwd lf_associate_ap.pl: {dir}".format(dir=os.getcwd()))
                 subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
                                 "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
                                 "--first_sta", args.station, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=True)
