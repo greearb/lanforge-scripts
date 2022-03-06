@@ -219,9 +219,13 @@ class lf_check():
         self.report_index = 0
         self.iteration = 0
         self.channel_list = []
+        self.channel = 'NA'
         self.nss_list = []
+        self.nss = 'NA'
         self.bandwidth_list = []
+        self.bandwidth = 'NA'
         self.tx_power_list = []
+        self.tx_power = 'NA'
 
         # section DUT
         # dut selection
@@ -743,15 +747,15 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # The network arguments need to be changed when in a list
         for index, args_list_element in enumerate(
                 self.test_dict[self.test]['args_list']):
-            # Note the elements used by ssid_idx need to be
+
+            # Note the elements used by ssid_idx need to be on same line in json
             if 'ssid_idx=' in args_list_element:
                 # print("args_list_element {}".format(args_list_element))
                 # get ssid_idx used in the test as an index for the
                 # dictionary
                 ssid_idx_number = args_list_element.split(
                     'ssid_idx=')[-1].split()[0]
-                print(
-                    "ssid_idx_number: {}".format(ssid_idx_number))
+                print("ssid_idx_number: {}".format(ssid_idx_number))
                 # index into the DUT network index
                 idx = "ssid_idx={}".format(ssid_idx_number)
                 print("idx: {}".format(idx))
@@ -824,11 +828,9 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'DUT_SN', self.dut_serial)
         if 'UPSTREAM_PORT' in self.test_dict[self.test]['args']:
-            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace('UPSTREAM_PORT',
-                                                                                          self.upstream_port)
+            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace('UPSTREAM_PORT', self.upstream_port)
         if 'UPSTREAM_ALIAS' in self.test_dict[self.test]['args']:
-            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace('UPSTREAM_ALIAS',
-                                                                                          self.upstream_alias)
+            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace('UPSTREAM_ALIAS', self.upstream_alias)
         # lf_dataplane_test.py and lf_wifi_capacity_test.py use a parameter --local_path for the location
         # of the reports when the reports are pulled.
         if 'REPORT_PATH' in self.test_dict[self.test]['args']:
@@ -843,7 +845,28 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         if 'TEST_RIG' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'TEST_RIG', self.test_rig)
+
+        # batch parameters in the script
+        if 'USE_BATCH_CHANNEL' in self.test_dict[self.test]['args']:
+            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
+                'USE_BATCH_CHANNEL', self.channel)
+
+        if 'USE_BATCH_NSS' in self.test_dict[self.test]['args']:
+            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
+                'USE_BATCH_NSS', self.nss)
+
+        if 'USE_BATCH_BANDWIDTH' in self.test_dict[self.test]['args']:
+            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
+                'USE_BATCH_BANDWIDTH', self.bandwidth)
+
+        if 'USE_BATCH_TX_POWER' in self.test_dict[self.test]['args']:
+            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
+                'USE_BATCH_TX_POWER', self.tx_power)
+
+        print("self.test_dict[self.test]['args']: {}".format(self.test_dict[self.test]['args']))
+
         # END of command line arg processing
+
         if self.test_dict[self.test]['args'] == "":
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(self.test_dict[self.test]['args'],
                                                                                           ''.join(self.test_dict[self.test][
@@ -1187,26 +1210,72 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             elif self.test_dict[self.test]['enabled'] == "TRUE":
                 # TODO Place test interations here
                 if 'iterations' in self.test_dict[self.test]:
-                    self.logger.info(
-                        "iterations : {}".format(
-                            self.test_dict[self.test]['iterations']))
+                    self.logger.info("iterations : {}".format(self.test_dict[self.test]['iterations']))
                     self.test_iterations = int(
                         self.test_dict[self.test]['iterations'])
                 else:
                     self.test_iterations = self.test_iterations_default
 
-                # log may contain multiple runs - this helps put the meta.txt
-                # in right directory
-                self.iteration = 0
-                self.report_index = 0
-                for self.iteration in range(self.test_iterations):
-                    self.iteration += 1
+                if 'batch_channel' in self.test_dict[self.test]:
+                    self.logger.info("batch_channel : {batch_channel}".format(batch_channel=self.test_dict[self.test]['batch_channel']))
+                    self.channel_list = self.test_dict[self.test]['batch_channel'].split()
 
+                if 'batch_nss' in self.test_dict[self.test]:
+                    self.logger.info("batch_nss : {batch_nss}".format(batch_nss=self.test_dict[self.test]['batch_nss']))
+                    self.nss_list = self.test_dict[self.test]['batch_nss'].split()
+
+                if 'batch_bandwidth' in self.test_dict[self.test]:
+                    self.logger.info("batch_bandwidth : {batch_bandwidth}".format(batch_bandwidth=self.test_dict[self.test]['batch_bandwidth']))
+                    self.bandwidth_list = self.test_dict[self.test]['batch_bandwidth'].split()
+
+                if 'batch_tx_power' in self.test_dict[self.test]:
+                    self.logger.info("batch_tx_power : {batch_tx_power}".format(batch_tx_power=self.test_dict[self.test]['batch_tx_power']))
+                    self.tx_power_list = self.test_dict[self.test]['batch_tx_power'].split()
+
+
+                # TODO have addional methods
+                # in python an empty list returns false .  
+                # If channel_list and bandwidth_list are populated then 
+                if self.channel_list and self.nss_list and self.bandwidth_list and self.tx_power_list:
+                    for self.channel in self.channel_list:
+                        for self.nss in self.nss_list:
+                            for self.bandwidth in self.bandwidth_list:
+                                # tx_power is passed in as 
+                                for self.tx_power in self.tx_power_list:
+                                    # log may contain multiple runs - this helps put the meta.txt
+                                    # in right directory
+                                    self.iteration = 0
+                                    self.report_index = 0
+                                    for self.iteration in range(self.test_iterations):
+                                        self.iteration += 1 
+                                    # Runs the scripts 
+                                    self.run_script()
+                elif self.channel_list and self.nss_list and self.bandwidth_list and not self.tx_power_list:
+                    for self.channel in self.channel_list:
+                        for self.nss in self.nss_list:
+                            for self.bandwidth in self.bandwidth_list:
+                                # tx_power is passed in as 
+                                for self.tx_power in self.tx_power_list:
+                                    # log may contain multiple runs - this helps put the meta.txt
+                                    # in right directory
+                                    self.iteration = 0
+                                    self.report_index = 0
+                                    for self.iteration in range(self.test_iterations):
+                                        self.iteration += 1 
+                                    # Runs the scripts 
+                                    self.run_script()
+                else:
+
+                    # log may contain multiple runs - this helps put the meta.txt
+                    # in right directory
+                    self.iteration = 0
+                    self.report_index = 0
+                    for self.iteration in range(self.test_iterations):
+                        self.iteration += 1
+
+                    # Runs the scripts 
                     self.run_script()
 
-                #TODO have the large test batched 
-                # radio_batch_list
-                # channel_batch_list 
 
             else:
                 self.logger.warning(
