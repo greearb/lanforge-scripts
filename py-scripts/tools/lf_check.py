@@ -116,8 +116,10 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lf_report = importlib.import_module("lf_report")
+lf_kpi_csv = importlib.import_module("lf_kpi_csv")
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("lf_logger_config")
+
 
 
 # lf_report is from the parent of the current file
@@ -1380,6 +1382,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
+
 
 
     # load test config file information either <config>.json

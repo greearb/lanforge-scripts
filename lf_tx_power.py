@@ -41,6 +41,9 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../")))
 # to match consistency with other files.
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+lf_report = importlib.import_module("py-scripts.lf_report")
+lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
+
 
 
 EPILOG = '''\
@@ -121,7 +124,7 @@ WLC1#ap name APCCC9C.3EF4.DDE0 dot11 6ghz slot 3 ?
 --duration 25
 --outfile tx_power_AP4_AX210_2x2_6E
 --no_cleanup
---testbed_id Cisco-WLC1-AP4
+--test_rig Cisco-WLC1-AP4
 
 # Command on one line
 
@@ -301,7 +304,7 @@ def usage():
 #
 # see https://stackoverflow.com/a/13306095/11014343
 
-
+# TODO use common logger library
 class FileAdapter(object):
     def __init__(self, logger):
         self.logger = logger
@@ -404,8 +407,21 @@ def main():
     parser.add_argument("--outfile", help="[test configuration] Output file for csv data --outfile 'tx_power_AX210_2x2_6E")
     parser.add_argument("-k", "--keep_state", "--no_cleanup", dest="keep_state", action="store_true", help="[test configuration] --no_cleanup, keep the state, no configuration change at the end of the test")
 
-    # testbed configuration
-    parser.add_argument("--testbed_id", type=str, help="[testbed configuration] --testbed_id", default="")
+    # test configuration
+    parser.add_argument("--testbed_id", "--test_rig", dest='test_rig', type=str, help="[testbed configuration] --test_rig", default="")
+    # kpi_csv arguments:
+    parser.add_argument("--test_tag", default="", help="test tag for kpi.csv,  test specific information to differenciate the test")
+    parser.add_argument("--dut_hw_version", default="", help="dut hw version for kpi.csv, hardware version of the device under test")
+    parser.add_argument("--dut_sw_version", default="", help="dut sw version for kpi.csv, software version of the device under test")
+    parser.add_argument("--dut_model_num", default="", help="dut model for kpi.csv,  model number / name of the device under test")
+    parser.add_argument("--dut_serial_num", default="", help="dut serial for kpi.csv, serial number / serial number of the device under test")
+    parser.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
+    parser.add_argument("--test_id", default="TX power", help="test-id for kpi.csv,  script or test name")
+
+
+    parser.add_argument('--local_lf_report_dir', help='--local_lf_report_dir override the report path, primary use when running test in test suite', default="")
+
+
 
     # TODO ADD KPI configuration
 
@@ -422,66 +438,8 @@ def main():
     # usage()
     args = None
 
-    try:
-        # Parcing the input parameters and assignment
-        args = parser.parse_args()
-        lfstation = args.station
-        upstream_port = args.upstream_port
-        lfmgr = args.lfmgr
-        # TODO
-        if (args.lfresource is not None):
-            lfresource = args.lfresource
-        if (args.lfresource2 is not None):
-            lfresource2 = args.lfresource2
-        if (args.outfile):
-            outfile_tmp = args.outfile
-        else:
-            outfile_tmp = 'tx_power'
-
-        print("outfile {}".format(outfile))
-
-        if (args.pf_dbm is not None):
-            pf_dbm = int(args.pf_dbm)
-        if (args.pf_ignore_offset is not None):
-            pf_ignore_offset = int(args.pf_ignore_offset)
-        if (args.wlanSSID != args.ssid):
-            print("####### ERROR ################################")
-            print("wlanSSID: {} must equial the station ssid: {}".format(args.wlanSSID, args.ssid))
-            print("####### ERROR ################################")
-            exit(1)
-        if (args.create_wlan):
-            if(args.tag_policy is None or args.policy_profile is None):
-                print("####### ERROR ######################################################")
-                print(" For create_wlan both tag_policy and policy_profile must be entered")
-                print("####### ERROR #######################################################")
-                exit(1)
-
-        # note: there would always be an args.outfile due to the default
-        current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
-        full_outfile = "{}_full_{}.txt".format(outfile_tmp, current_time)
-        outfile_xlsx = "{}_{}.xlsx".format(outfile_tmp, current_time)
-        outfile = "{}_{}.txt".format(outfile_tmp, current_time)
-        print("output file: {}".format(outfile))
-        print("output file full: {}".format(full_outfile))
-        print("output file xlsx: {}".format(outfile_xlsx))
-
-        ap_dict = []
-        if args.ap_info:
-            ap_info = args.ap_info
-            for _ap_info in ap_info:
-                print("ap_info {}".format(_ap_info))
-                ap_keys = ['ap_scheme', 'ap_prompt', 'ap_ip', 'ap_port', 'ap_user', 'ap_pw']
-                ap_dict = dict(map(lambda x: x.split('=='), str(_ap_info).replace('[', '').replace(']', '').replace("'", "").split()))
-                for key in ap_keys:
-                    if key not in ap_dict:
-                        print("missing ap config, for the {}, all these need to be set {} ".format(key, ap_keys))
-                        exit(1)
-                print("ap_dict: {}".format(ap_dict))
-
-    except Exception as e:
-        logging.exception(e)
-        usage()
-        exit(2)
+    # Parcing the input parameters and assignment
+    args = parser.parse_args()
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
@@ -493,6 +451,117 @@ def main():
     # TODO refactor to be logger for consistency
     logg = logging.getLogger(__name__)
     # logg.setLevel(logging.DEBUG)
+
+    # for kpi.csv generation
+
+    local_lf_report_dir = args.local_lf_report_dir
+    test_rig = args.test_rig
+    test_tag = args.test_tag
+    dut_hw_version = args.dut_hw_version
+    dut_sw_version = args.dut_sw_version
+    dut_model_num = args.dut_model_num
+    dut_serial_num = args.dut_serial_num
+    # test_priority = args.test_priority  # this may need to be set per test
+    test_id = args.test_id
+
+    if local_lf_report_dir != "":
+        report = lf_report.lf_report(
+            _path=local_lf_report_dir,
+            _results_dir_name="tx_power",
+            _output_html="tx_power.html",
+            _output_pdf="tx_power.pdf")
+    else:
+        report = lf_report.lf_report(
+            _results_dir_name="tx_power",
+            _output_html="tx_power.html",
+            _output_pdf="tx_power.pdf")
+
+    kpi_path = report.get_report_path()
+    # kpi_filename = "kpi.csv"
+    logg.info("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
+
+    # create kpi_csv object and record the common data
+    kpi_csv = lf_kpi_csv.lf_kpi_csv(
+        _kpi_path=kpi_path,
+        _kpi_test_rig=test_rig,
+        _kpi_test_tag=test_tag,
+        _kpi_dut_hw_version=dut_hw_version,
+        _kpi_dut_sw_version=dut_sw_version,
+        _kpi_dut_model_num=dut_model_num,
+        _kpi_dut_serial_num=dut_serial_num,
+        _kpi_test_id=test_id)
+
+
+
+    lfstation = args.station
+    upstream_port = args.upstream_port
+    lfmgr = args.lfmgr
+    # TODO
+    if (args.lfresource is not None):
+        lfresource = args.lfresource
+    if (args.lfresource2 is not None):
+        lfresource2 = args.lfresource2
+
+    outfile_path = report.get_report_path()
+    current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
+    if (args.outfile):
+        outfile_tmp = (outfile_path + '/' + current_time + '_' + args.outfile)
+            # TODO - have the channel, nss, bw, txpower in outfile
+            #  + '_' + args.channel  
+            # + '_' + args.nss.replace(' ','_') + '_' + 
+            # + str(args.bandwidth).replace(' ','_') + '_' 
+            # + str(args.txpower).replace(' ','_'))
+    else:
+        outfile_tmp = (outfile_path + '/' + current_time + '_' + args.outfile)
+            # + '_' + args.outfile  + 'tx_power' + '_' + args.channel 
+            # + '_' + args.nss.replace(' ','_') + '_' +
+            # + str(args.bandwidth).replace(' ','_') + '_' 
+            # + str(args.tx_power).replace(' ','_'))
+    print("outfile_tmp {outfile_tmp}".format(outfile_tmp=outfile_tmp))
+
+
+    # note: there would always be an args.outfile due to the default
+    full_outfile = "{}_full.txt".format(outfile_tmp)
+    outfile_xlsx = "{}.xlsx".format(outfile_tmp)
+    outfile = "{}.txt".format(outfile_tmp)
+    print("output file: {}".format(outfile))
+    print("output file full: {}".format(full_outfile))
+    print("output file xlsx: {}".format(outfile_xlsx))
+
+    if (args.pf_dbm is not None):
+        pf_dbm = int(args.pf_dbm)
+    if (args.pf_ignore_offset is not None):
+        pf_ignore_offset = int(args.pf_ignore_offset)
+    if (args.wlanSSID != args.ssid):
+        print("####### ERROR ################################")
+        print("wlanSSID: {} must equial the station ssid: {}".format(args.wlanSSID, args.ssid))
+        print("####### ERROR ################################")
+        exit(1)
+    if (args.create_wlan):
+        if(args.tag_policy is None or args.policy_profile is None):
+            print("####### ERROR ######################################################")
+            print(" For create_wlan both tag_policy and policy_profile must be entered")
+            print("####### ERROR #######################################################")
+            exit(1)
+
+    ap_dict = []
+    if args.ap_info:
+        ap_info = args.ap_info
+        for _ap_info in ap_info:
+            print("ap_info {}".format(_ap_info))
+            ap_keys = ['ap_scheme', 'ap_prompt', 'ap_ip', 'ap_port', 'ap_user', 'ap_pw']
+            ap_dict = dict(map(lambda x: x.split('=='), str(_ap_info).replace('[', '').replace(']', '').replace("'", "").split()))
+            for key in ap_keys:
+                if key not in ap_dict:
+                    print("missing ap config, for the {}, all these need to be set {} ".format(key, ap_keys))
+                    exit(1)
+            print("ap_dict: {}".format(ap_dict))
+
+    # except Exception as e:
+    #    logging.exception(e)
+    #    usage()
+    #    exit(2)
+
 
     # dynamic import of the controller module
     series = importlib.import_module(args.module)
@@ -640,7 +709,7 @@ def main():
     worksheet.write(row, col, 'Regulatory\nDomain', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 16)  # Set width
-    worksheet.write(row, col, 'Controller\n{testbed_id}'.format(testbed_id=args.testbed_id), dblue_bold)
+    worksheet.write(row, col, 'Controller\n{test_rig}'.format(test_rig=args.test_rig), dblue_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
     worksheet.write(row, col, 'Controller\nChannel', dblue_bold)
