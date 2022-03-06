@@ -116,11 +116,16 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lf_report = importlib.import_module("lf_report")
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("lf_logger_config")
+
 
 # lf_report is from the parent of the current file
 dir_path = os.path.dirname(os.path.realpath(__file__))
 parent_dir_path = os.path.abspath(os.path.join(dir_path, os.pardir))
 sys.path.insert(0, parent_dir_path)
+
+
 
 # setup logging FORMAT
 FORMAT = '%(asctime)s %(name)s %(levelname)s: %(message)s'
@@ -1362,8 +1367,20 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         '--update_latest',
         help="--update_latest  copy latest results to top dir",
         action='store_true')
+    # logging configuration:
+    parser.add_argument("--lf_logger_config_json",
+                        help="--lf_logger_config_json <json file> , json configuration of logger")
+
 
     args = parser.parse_args()
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
 
     # load test config file information either <config>.json
     json_rig = ""
@@ -1453,14 +1470,6 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     logfile = "{}-{}.log".format(logfile, current_time)
     logfile = report.file_add_path(logfile)
     print("logfile {}".format(logfile))
-    formatter = logging.Formatter(FORMAT)
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
-    file_handler = logging.FileHandler(logfile, "w+")
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-    # allows to logging to file and stdout
-    logger.addHandler(logging.StreamHandler(sys.stdout))
 
     # read config and run tests
     check.read_json_rig()  # check.read_config
