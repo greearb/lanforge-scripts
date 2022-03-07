@@ -45,7 +45,6 @@ lf_report = importlib.import_module("py-scripts.lf_report")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 
 
-
 EPILOG = '''\
 
 ##############################################################################################
@@ -305,6 +304,8 @@ def usage():
 # see https://stackoverflow.com/a/13306095/11014343
 
 # TODO use common logger library
+
+
 class FileAdapter(object):
     def __init__(self, logger):
         self.logger = logger
@@ -418,10 +419,7 @@ def main():
     parser.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
     parser.add_argument("--test_id", default="TX power", help="test-id for kpi.csv,  script or test name")
 
-
     parser.add_argument('--local_lf_report_dir', help='--local_lf_report_dir override the report path, primary use when running test in test suite', default="")
-
-
 
     # TODO ADD KPI configuration
 
@@ -464,17 +462,24 @@ def main():
     # test_priority = args.test_priority  # this may need to be set per test
     test_id = args.test_id
 
+    # put in test information in title name
+    results_dir_name = ("tx_power"
+                        + '_ch_' + args.channel.replace(' ', '_')
+                        + '_nss_' + args.nss.replace(' ', '_')
+                        + '_bw_' + args.bandwidth.replace(' ', '_')
+                        + '_txpw_' + args.txpower.replace(' ', '_'))
+
     if local_lf_report_dir != "":
         report = lf_report.lf_report(
             _path=local_lf_report_dir,
-            _results_dir_name="tx_power",
-            _output_html="tx_power.html",
-            _output_pdf="tx_power.pdf")
+            _results_dir_name=results_dir_name,
+            _output_html="{results_dir}.html".format(results_dir=results_dir_name),
+            _output_pdf="{results_dir}.pdf".format(results_dir=results_dir_name))
     else:
         report = lf_report.lf_report(
-            _results_dir_name="tx_power",
-            _output_html="tx_power.html",
-            _output_pdf="tx_power.pdf")
+            _results_dir_name=results_dir_name,
+            _output_html="{results_dir}.html".format(results_dir=results_dir_name),
+            _output_pdf="{results_dir}.pdf".format(results_dir=results_dir_name))
 
     kpi_path = report.get_report_path()
     # kpi_filename = "kpi.csv"
@@ -491,8 +496,6 @@ def main():
         _kpi_dut_serial_num=dut_serial_num,
         _kpi_test_id=test_id)
 
-
-
     lfstation = args.station
     upstream_port = args.upstream_port
     lfmgr = args.lfmgr
@@ -505,20 +508,19 @@ def main():
     outfile_path = report.get_report_path()
     current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
     if (args.outfile):
-        outfile_tmp = (outfile_path + '/' + current_time + '_' + args.outfile)
-            # TODO - have the channel, nss, bw, txpower in outfile
-            #  + '_' + args.channel  
-            # + '_' + args.nss.replace(' ','_') + '_' + 
-            # + str(args.bandwidth).replace(' ','_') + '_' 
-            # + str(args.txpower).replace(' ','_'))
+        outfile_tmp = (outfile_path + '/' + current_time + '_' + args.outfile
+                       # TODO - have the channel, nss, bw, txpower in outfile
+                       + '_ch_' + args.channel.replace(' ', '_')
+                       + '_nss_' + args.nss.replace(' ', '_')
+                       + '_bw_' + args.bandwidth.replace(' ', '_')
+                       + '_tx_pw_' + args.txpower.replace(' ', '_'))
     else:
-        outfile_tmp = (outfile_path + '/' + current_time + '_' + args.outfile)
-            # + '_' + args.outfile  + 'tx_power' + '_' + args.channel 
-            # + '_' + args.nss.replace(' ','_') + '_' +
-            # + str(args.bandwidth).replace(' ','_') + '_' 
-            # + str(args.tx_power).replace(' ','_'))
+        outfile_tmp = (outfile_path + '/' + current_time + '_' + 'tx_power'
+                       + '_ch_' + args.channel.replace(' ', '_')
+                       + '_nss_' + args.nss.replace(' ', '_')
+                       + '_bw_' + args.bandwidth.replace(' ', '_')
+                       + '_tx_pw_' + args.txpower.replace(' ', '_'))
     print("outfile_tmp {outfile_tmp}".format(outfile_tmp=outfile_tmp))
-
 
     # note: there would always be an args.outfile due to the default
     full_outfile = "{}_full.txt".format(outfile_tmp)
@@ -561,7 +563,6 @@ def main():
     #    logging.exception(e)
     #    usage()
     #    exit(2)
-
 
     # dynamic import of the controller module
     series = importlib.import_module(args.module)

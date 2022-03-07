@@ -121,12 +121,10 @@ logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("lf_logger_config")
 
 
-
 # lf_report is from the parent of the current file
 dir_path = os.path.dirname(os.path.realpath(__file__))
 parent_dir_path = os.path.abspath(os.path.join(dir_path, os.pardir))
 sys.path.insert(0, parent_dir_path)
-
 
 
 # setup logging FORMAT
@@ -159,9 +157,11 @@ class lf_check():
         self.report_path = _report_path
         self.log_path = _log_path
         self.test_dict = {}
+        # This is needed for iterations and batch testing.
+        self.test_dict_original_json = {}
         path_parent = os.path.dirname(os.getcwd())
         os.chdir(path_parent)
-        # TODO have method to pass in other 
+        # TODO have method to pass in other
         # script directories , currently only top lanforge scripts directory and py-scripts
         self.scripts_wd = os.getcwd()
         self.lanforge_wd = os.path.dirname(os.getcwd())
@@ -200,7 +200,7 @@ class lf_check():
         # lanforge configuration
         self.lf_mgr_ip = "192.168.0.102"
         self.lf_mgr_port = "8080"
-        #TODO allow for json configuration
+        # TODO allow for json configuration
         self.lf_mgr_ssh_port = "22"
         self.lf_mgr_user = "lanforge"
         self.lf_mgr_pass = "lanforge"
@@ -586,6 +586,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             # self.logger.info("test_suites {}".format(self.json_test["test_suites"]))
             if self.test_suite in self.json_test["test_suites"]:
                 self.test_dict = self.json_test["test_suites"][self.test_suite]
+                self.test_dict_original_json = self.json_test["test_suites"][self.test_suite]
                 # self.logger.info("self.test_dict {}".format(self.test_dict))
             else:
                 self.logger.info(
@@ -602,7 +603,6 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             self.logger.info("EXITING ERROR test_suites not in json test")
             exit(1)
 
-    # TODO change code so if parameter is not present then implied to be false
     def read_test_rig_parameters(self):
         if "TEST_RIG" in self.json_rig["test_rig_parameters"]:
             self.test_rig = self.json_rig["test_rig_parameters"]["TEST_RIG"]
@@ -788,12 +788,12 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 print(
                     "self.test_dict[self.test]['args_list']: {}".format(
                         self.test_dict[self.test]['args_list']))
-        # Walk all the args in the args list then construct the
-        # arguments
-        if self.test_dict[self.test]['args'] == "":
-            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(self.test_dict[self.test]['args'],
-                                                                                          ''.join(self.test_dict[self.test][
-                                                                                              'args_list']))
+        # Walk all the args in the args list then construct the arguments
+
+        # since there may be multiple iterations or batches need original json syntax for replacements
+        self.test_dict[self.test]['args'] = self.test_dict_original_json[self.test]['args'].replace(self.test_dict[self.test]['args'],
+                                                                                                    ''.join(self.test_dict[self.test][
+                                                                                                        'args_list']))
         if 'DATABASE_SQLITE' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'DATABASE_SQLITE', self.database_sqlite)
@@ -873,11 +873,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         print("self.test_dict[self.test]['args']: {}".format(self.test_dict[self.test]['args']))
 
         # END of command line arg processing
-
-        if self.test_dict[self.test]['args'] == "":
-            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(self.test_dict[self.test]['args'],
-                                                                                          ''.join(self.test_dict[self.test][
-                                                                                              'args_list']))
+        # if self.test_dict[self.test]['args'] == "":
+        #     self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(self.test_dict[self.test]['args'],
+        #                                                                                  ''.join(self.test_dict[self.test][
+        #                                                                                      'args_list']))
         if 'timeout' in self.test_dict[self.test]:
             self.logger.info(
                 "timeout : {}".format(
@@ -901,19 +900,20 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         try:
             os.chdir(self.scripts_wd)
             self.logger.info("Current Working Directory {}".format(os.getcwd()))
-        
+
         except BaseException:
             self.logger.info(
                 "failed to change to {}".format(
                     self.scripts_wd))
         cmd_args = "{}".format(self.test_dict[self.test]['args'])
+        # TODO the the tx_power went back in the command
         command = "./{} {}".format(
             self.test_dict[self.test]['command'], cmd_args)
         self.logger.info("command: {}".format(command))
         self.logger.info("cmd_args {}".format(cmd_args))
 
         # TODO this code is always run since there is a default
-        # TODO change name to file obj to make more understandable 
+        # TODO change name to file obj to make more understandable
         if self.outfile_name is not None:
             stdout_log_txt = os.path.join(
                 self.log_path, "{}-{}-stdout.txt".format(self.outfile_name, self.test))
@@ -928,7 +928,9 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # need to take into account --raw_line parameters thus need to use shlex.split
         # need to preserve command to have correct command syntax
         # in command output
+        # TODO this is where the batch  needs to itterate
         command_to_run = command
+        self.logger.info("command : {command}".format(command=command))
         command_to_run = shlex.split(command_to_run)
 
         self.logger.info(
@@ -944,16 +946,16 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # have stderr go to stdout
         try:
             summary = subprocess.Popen(command_to_run, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                   universal_newlines=True)
+                                       universal_newlines=True)
 
         except FileNotFoundError:
             # TODO tx_power is one directory up from py-scripts
             self.logger.info("FileNotFoundError will try to execute from lanforge Top directory")
             os.chdir(self.lanforge_wd)
-            self.logger.info("Changed Current Working Directory to {}".format(os.getcwd()))            
+            self.logger.info("Changed Current Working Directory to {}".format(os.getcwd()))
             summary = subprocess.Popen(command_to_run, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                    universal_newlines=True)
-        
+                                       universal_newlines=True)
+
         except PermissionError:
             self.logger.info("PermissionError on execution of {command}".format(command=command_to_run))
 
@@ -1199,6 +1201,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # self.logger.info("row: {}".format(row))
         self.logger.info("test: {} executed".format(self.test))
 
+    # TODO the command needs to be updated for the batch iterations
     def run_script_test(self):
         self.start_html_results()
         self.start_csv_results()
@@ -1239,38 +1242,51 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     self.logger.info("batch_tx_power : {batch_tx_power}".format(batch_tx_power=self.test_dict[self.test]['batch_tx_power']))
                     self.tx_power_list = self.test_dict[self.test]['batch_tx_power'].split()
 
-
                 # TODO have addional methods
-                # in python an empty list returns false .  
-                # If channel_list and bandwidth_list are populated then 
+                # in python an empty list returns false .
+                # If channel_list and bandwidth_list are populated then
                 if self.channel_list and self.nss_list and self.bandwidth_list and self.tx_power_list:
                     for self.channel in self.channel_list:
                         for self.nss in self.nss_list:
                             for self.bandwidth in self.bandwidth_list:
-                                # tx_power is passed in as 
+                                # tx_power is passed in as
                                 for self.tx_power in self.tx_power_list:
                                     # log may contain multiple runs - this helps put the meta.txt
                                     # in right directory
                                     self.iteration = 0
                                     self.report_index = 0
                                     for self.iteration in range(self.test_iterations):
-                                        self.iteration += 1 
-                                    # Runs the scripts 
-                                    self.run_script()
+                                        self.iteration += 1
+                                        # Runs the scripts
+                                        self.run_script()
                 elif self.channel_list and self.nss_list and self.bandwidth_list and not self.tx_power_list:
                     for self.channel in self.channel_list:
                         for self.nss in self.nss_list:
                             for self.bandwidth in self.bandwidth_list:
-                                # tx_power is passed in as 
-                                for self.tx_power in self.tx_power_list:
-                                    # log may contain multiple runs - this helps put the meta.txt
-                                    # in right directory
-                                    self.iteration = 0
-                                    self.report_index = 0
-                                    for self.iteration in range(self.test_iterations):
-                                        self.iteration += 1 
-                                    # Runs the scripts 
+                                # tx_power is passed in so run will contain all tx powers from command line
+                                # log may contain multiple runs - this helps put the meta.txt
+                                # in right directory
+                                self.iteration = 0
+                                self.report_index = 0
+                                for self.iteration in range(self.test_iterations):
+                                    self.iteration += 1
+                                    # in batch mode need to set the VARIABLES back into the test
+                                    # Runs the scripts
                                     self.run_script()
+                elif self.channel_list and self.nss_list and not self.bandwidth_list and not self.tx_power_list:
+                    for self.channel in self.channel_list:
+                        for self.nss in self.nss_list:
+                            # use bandwidth tx_power is passed in from command line
+                            # one run will contain all the bandwiths and tx_power settings
+                            # log may contain multiple runs - this helps put the meta.txt
+                            # in right directory
+                            self.iteration = 0
+                            self.report_index = 0
+                            for self.iteration in range(self.test_iterations):
+                                self.iteration += 1
+                                # Runs the scripts
+                                self.run_script()
+
                 else:
 
                     # log may contain multiple runs - this helps put the meta.txt
@@ -1280,9 +1296,8 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     for self.iteration in range(self.test_iterations):
                         self.iteration += 1
 
-                    # Runs the scripts 
+                    # Runs the scripts
                     self.run_script()
-
 
             else:
                 self.logger.warning(
@@ -1373,7 +1388,6 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
 
-
     args = parser.parse_args()
 
     # set up logger
@@ -1382,8 +1396,6 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
-
-
 
     # load test config file information either <config>.json
     json_rig = ""
@@ -1431,7 +1443,6 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     server_override = args.server_override
     db_override = args.db_override
 
-    # TODO create config for --no_email
     if args.production:
         production = True
         print("Email to production list")
@@ -1664,8 +1675,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         print("exception write_pdf_with_timestamp()")
 
     print("lf_check_html_report: " + html_report)
-    if args.no_send_email:    
-        print("send email not set")        
+    if args.no_send_email:
+        print("send email not set")
     else:
         check.send_results_email(report_file=html_report)
     #
