@@ -16,28 +16,41 @@ COPYWRITE
 
 INCLUDE_IN_README
 """
+import os
+import sys
 import argparse
 import pyshark as ps
 import importlib
 from datetime import datetime
 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
 wifi_monitor = importlib.import_module("py-json.wifi_monitor_profile")
 WiFiMonitor = wifi_monitor.WifiMonitor
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
+cv_test_reports = importlib.import_module("py-json.cv_test_reports")
+lf_report = cv_test_reports.lanforge_reports
 
 
-class LfPcap(WiFiMonitor):
+class LfPcap(Realm):
     def __init__(self,
+                 host="localhost", port=8080,
                  _read_pcap_file=None,
                  _apply_filter=None,
                  _live_pcap_interface=None,
                  _live_cap_timeout=None,
                  _live_filter=None,
                  _live_remote_cap_host=None,
-                 _live_remote_cap_interface=None
+                 _live_remote_cap_interface=None,
+                 _debug_on=False
                  ):
-        super().__init__(self, lfclient_url=LFCliBase.lfclient_url, local_realm=self, up=True, debug_=False, resource_=1)
+        super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on)
+        self.host = host,
+        self.port = port
+        self.debug = _debug_on
         self.pcap = None
         self.live_pcap = None
         self.remote_pcap = None
@@ -48,6 +61,7 @@ class LfPcap(WiFiMonitor):
         self.live_cap_timeout = _live_cap_timeout
         self.remote_cap_host = _live_remote_cap_host
         self.remote_cap_interface = _live_remote_cap_interface
+        self.wifi_monitor = WiFiMonitor(self.lfclient_url, local_realm=self, debug_=self.debug)
 
     def read_pcap(self, pcap_file, apply_filter=None):
         self.pcap_file = pcap_file
@@ -149,11 +163,17 @@ class LfPcap(WiFiMonitor):
         except ValueError:
             raise "pcap file is required."
 
-    def sniff_packets(self, interface_name="Wiphy0", test_name="mu-mimo", sniff_duration=180):
-        pcap_name = test_name + str(datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':', '-') + ".pcap"
-        self.create(resource_=1, channel=None, mode="AUTO", radio_=interface_name, name_="moni0")
-        self.start_sniff(capname=pcap_name, duration_sec=sniff_duration)
-        self.cleanup()
+    def sniff_packets(self, interface_name="wiphy1", test_name="mu-mimo", channel=-1, sniff_duration=180):
+        pcap_name = test_name + str(datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':', '-') + ".pcap"
+        self.wifi_monitor.create(resource_=1, channel=channel, mode="AUTO", radio_=interface_name, name_="moni0")
+        self.wifi_monitor.start_sniff(capname=pcap_name, duration_sec=sniff_duration)
+        self.wifi_monitor.cleanup()
+        return pcap_name
+
+    def move_pcap(self, current_path, updated_path):
+        lf_report.pull_reports(hostname=self.host, port=22, username="lanforge", password="lanforge",
+                     report_location=current_path,
+                     report_dir=updated_path)
 
 
 def main():
