@@ -210,8 +210,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 # to create a station
 ##############################################################################################
 
-./lf_associate_ap.pl --radio wiphy1 --ssid open-wlan --passphrase [BLANK] ssecurity open --upstream eth1 \
---first_ip DHCP --first_sta sta0001 --duration 5 --cxtype udp
+./lf_associate_ap.pl --mgr 192.168.100.178 --radio wiphy2 --ssid 6G-wpa3-AP3 --passphrase hello123 ssecurity wpa3 --upstream 1.1.eth2 --first_ip DHCP --first_sta sta0000 --duration 25 --cxtype udp --bps_min 1000000000--ieee80211w 2 --wifi_mode abgnAX --action add
 
 Changing regulatory domain should happen outside of this script.
 
@@ -395,7 +394,7 @@ def main():
     parser.add_argument("--security", type=str, help="[station configuration] security type open wpa wpa2 wpa3", required=True)
     parser.add_argument("--wifi_mode", type=str, help="[station configuration] --wifi_mode auto  types auto|a|abg|abgn|abgnAC|abgnAX|an|anAC|anAX|b|bg|bgn|bgnAC|bgnAX|g ", default='auto')
     parser.add_argument("--vht160", action='store_true', help="[station configuration] --vht160 , Enable VHT160 in lanforge ")
-    parser.add_argument("--ieee80211w", type=str, help="[station configuration] --ieee80211w Required needs to be set to Required for 6g and wpa3 default Optional ", default='Optional')
+    parser.add_argument("--ieee80211w", type=str, help="[station configuration] --ieee80211w 0 (Disabled) 1 (Optional) 2 (Required) (Required needs to be set to Required for 6g and wpa3 default Optional ", default='1')
     parser.add_argument("--no_cleanup_station", action='store_true', help="[station configuration] --no_cleanup_station , do not clean up station after test completes ")
 
     # test configuration
@@ -834,13 +833,13 @@ def main():
                 print()
                 subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
                                 "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
-                                "--first_sta", args.station, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=True)
+                                "--first_sta", args.station, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=False)
                 sleep(3)
             else:
                 logg.info("creating station: {} on radio {}".format(args.station, args.radio))
                 subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
                                 "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
-                                "--first_sta", args.station, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add"], timeout=20, capture_output=True)
+                                "--first_sta", args.station, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add"], timeout=20, capture_output=False)
         sleep(3)
 
     # Find LANforge station parent radio
@@ -858,19 +857,33 @@ def main():
     # Create downstream connection
     # First, delete any old one
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                    "--cmd", "rm_cx all c-udp-power"], capture_output=True)
+                    "--cmd", "rm_cx all c-udp-power"], capture_output=False)
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                    "--cmd", "rm_endp c-udp-power-A"], capture_output=True)
+                    "--cmd", "rm_endp c-udp-power-A"], capture_output=False)
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "do_cmd",
-                    "--cmd", "rm_endp c-udp-power-B"], capture_output=True)
+                    "--cmd", "rm_endp c-udp-power-B"], capture_output=False)
 
     # Now, create the new connection
-    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
-                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"], capture_output=True)
+
+
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
-                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"], capture_output=True)
+                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"], capture_output=False)
+
+    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
+                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"], capture_output=False)
+
+
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
-                    "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"], capture_output=True)
+                    "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000", "--endp_type", "lf_udp", "--port_name", lfstation, "--speed", "1000000"], capture_output=False)
+
+    # Old
+    # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
+    #                "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"], capture_output=False)
+
+
+
+
+    # ./lf_firemod.pl --manager 192.168.100.178 --resource 1 --action create_cx --cx_name c-udp-power --cx_endps c-udp-power-A,c-udp-power-B --report_timer 1000 --endp_type udp --port_name sta0000 --speed 1000000
 
     myrd = ""
     # The script supports both the 9800 series controller and the 3504 series controller ,  the controllers have different interfaces
@@ -1336,7 +1349,7 @@ def main():
                         logg.info(pss)
                     # Start traffic
                     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                                    "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=True)
+                                    "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=False)
 
                     # Wait configured number of seconds more seconds
                     logg.info("Waiting {} seconds to let traffic run for a bit, Channel {} NSS {} BW {} TX-Power {}".format(args.duration, ch, n, bw, tx))

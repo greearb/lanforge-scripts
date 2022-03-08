@@ -365,7 +365,7 @@ class create_controller_series_object:
 
     # TB1 has a dual band radio
     def show_ap_bssid_6ghz(self):
-        logger.info("show ap name  wlan dot11 6ghz")
+        logger.info("show ap name <AP NAME> wlan dot11 6ghz")
         self.band = '6g'
         self.action = "show_ap_bssid_6g"
         summary = self.send_command()
