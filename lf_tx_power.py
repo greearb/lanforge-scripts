@@ -485,6 +485,7 @@ def main():
     logg.info("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
 
     # create kpi_csv object and record the common data
+    # TX power is not a class so access kpi directly in function
     kpi_csv = lf_kpi_csv.lf_kpi_csv(
         _kpi_path=kpi_path,
         _kpi_test_rig=test_rig,
@@ -865,13 +866,11 @@ def main():
 
     # Now, create the new connection
 
-
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
                     "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"], capture_output=False)
 
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
                     "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"], capture_output=False)
-
 
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
                     "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000", "--endp_type", "lf_udp", "--port_name", lfstation, "--speed", "1000000"], capture_output=False)
@@ -879,9 +878,6 @@ def main():
     # Old
     # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
     #                "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"], capture_output=False)
-
-
-
 
     # ./lf_firemod.pl --manager 192.168.100.178 --resource 1 --action create_cx --cx_name c-udp-power --cx_endps c-udp-power-A,c-udp-power-B --report_timer 1000 --endp_type udp --port_name sta0000 --speed 1000000
 
@@ -1838,6 +1834,79 @@ def main():
                     # logg.info("RESULT: %s"%(ln))
                     csv.write(ln)
                     csv.write("\t")
+
+                    # TODO recorde the kpi.csv
+                    # Controller dBm
+                    # worksheet.write(row, col, cc_dbmi, center_blue)
+                    results_dict = kpi_csv.kpi_csv_get_dict_update_time()
+                    results_dict['Graph-Group'] = "Tx Power {ap} {band} {channel}".format(ap=args.ap, band=args.band, channel=cc_ch)
+                    results_dict['pass/fail'] = pfs
+                    # TODO kpi pass fail
+                    # results_dict['Subtest-Pass'] = None
+                    # results_dict['Subtest-Fail'] = None
+                    results_dict['short-description'] = "CC dBm {ap} {band} {channel} {nss} {bw} {mode} {txpower}".format(
+                        ap=args.ap, band=args.band, channel=cc_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
+                    results_dict['numeric-score'] = "{cc_dbmi}".format(cc_dbmi=cc_dbmi)
+                    results_dict['Units'] = "dBm"
+                    kpi_csv.kpi_csv_write_dict(results_dict)
+
+                    # Calculated beacon dBm
+                    # worksheet.write(row, col, calc_dbm_beacon, center_blue)
+                    results_dict = kpi_csv.kpi_csv_get_dict_update_time()
+                    results_dict['Graph-Group'] = "Tx Power {ap} {band} {channel}".format(ap=args.ap, band=args.band, channel=cc_ch)
+                    results_dict['pass/fail'] = pfs
+                    # TODO kpi pass fail
+                    # results_dict['Subtest-Pass'] = None
+                    # results_dict['Subtest-Fail'] = None
+                    results_dict['short-description'] = "Calc dBm Beacon {ap} {band} {channel} {nss} {bw} {mode} {txpower}".format(
+                        ap=args.ap, band=args.band, channel=cc_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
+                    results_dict['numeric-score'] = "{calc_dbm_beacon}".format(calc_dbm_beacon=calc_dbm_beacon)
+                    results_dict['Units'] = "dBm"
+                    kpi_csv.kpi_csv_write_dict(results_dict)
+
+                    # Diff Controller dBm & Beacon dBM (+/- 7 dBm)
+                    # worksheet.write(row, col, diff_dbm_beacon, center_blue)
+                    results_dict = kpi_csv.kpi_csv_get_dict_update_time()
+                    results_dict['Graph-Group'] = "Tx Power {ap} {band} {channel}".format(ap=args.ap, band=args.band, channel=cc_ch)
+                    results_dict['pass/fail'] = pfs
+                    # TODO kpi pass fail
+                    # results_dict['Subtest-Pass'] = None
+                    # results_dict['Subtest-Fail'] = None
+                    results_dict['short-description'] = "Diff CC & Beacon dBm {ap} {band} {channel} {nss} {bw} {mode} {txpower}".format(
+                        ap=args.ap, band=args.band, channel=cc_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
+                    results_dict['numeric-score'] = "{diff_dbm_beacon}".format(diff_dbm_beacon=diff_dbm_beacon)
+                    results_dict['Units'] = "dBm"
+                    kpi_csv.kpi_csv_write_dict(results_dict)
+
+                    # Calculated dBm Combined
+                    # worksheet.write(row, col, calc_dbm, center_blue)
+                    results_dict = kpi_csv.kpi_csv_get_dict_update_time()
+                    results_dict['Graph-Group'] = "Tx Power {ap} {band} {channel}".format(ap=args.ap, band=args.band, channel=cc_ch)
+                    results_dict['pass/fail'] = pfs
+                    # TODO kpi pass fail
+                    # results_dict['Subtest-Pass'] = None
+                    # results_dict['Subtest-Fail'] = None
+                    results_dict['short-description'] = "Calc dBm Combined {ap} {band} {channel} {nss} {bw} {mode} {txpower}".format(
+                        ap=args.ap, band=args.band, channel=cc_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
+                    results_dict['numeric-score'] = "{calc_dbm}".format(calc_dbm=calc_dbm)
+                    results_dict['Units'] = "dBm"
+                    kpi_csv.kpi_csv_write_dict(results_dict)
+
+                    # Diff Controller dBm and Combined
+                    # worksheet.write(row, col, diff_dbm, center_blue)
+                    results_dict = kpi_csv.kpi_csv_get_dict_update_time()
+                    results_dict['Graph-Group'] = "Tx Power {ap} {band} {channel}".format(ap=args.ap, band=args.band, channel=cc_ch)
+                    results_dict['pass/fail'] = pfs
+                    # TODO kpi pass fail
+                    # results_dict['Subtest-Pass'] = None
+                    # results_dict['Subtest-Fail'] = None
+                    results_dict['short-description'] = "Diff CC dBm & Combined {ap} {band} {channel} {nss} {bw} {mode} {txpower}".format(
+                        ap=args.ap, band=args.band, channel=cc_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
+                    results_dict['numeric-score'] = "{diff_dbm}".format(diff_dbm=diff_dbm)
+                    results_dict['Units'] = "dBm"
+                    kpi_csv.kpi_csv_write_dict(results_dict)
+
+                    # Start xlsx reporting
 
                     ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
                         myrd, pathloss, antenna_gain, _ch, _nss, _bw, tx, allowed_per_path,
