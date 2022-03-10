@@ -228,6 +228,13 @@ class lf_report:
     def set_table_dataframe_from_csv(self, _csv):
         self.dataframe = pd.read_csv(_csv)
 
+    def set_table_dataframe_from_csv_sep_tab(self, _csv):
+        self.dataframe = pd.read_csv(_csv, sep='\t')
+
+    # TODO
+    def set_table_dataframe_from_xlsx(self,_xlsx):
+        self.dataframe = pd.read_excel(_xlsx)
+
     def set_custom_html(self, _custom_html):
         self.custom_html = _custom_html
 
@@ -458,6 +465,7 @@ class lf_report:
         self.dataframe_html = self.dataframe.to_html(index=False,
                                                      justify='center')  # have the index be able to be passed in.
         self.html += self.dataframe_html
+
 
     def test_setup_table(self, test_setup_data, value):
         if test_setup_data is None:

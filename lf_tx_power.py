@@ -406,6 +406,7 @@ def main():
     parser.add_argument('--wait_time', type=str, help='[test configuration] --wait_time <how long to wait for station to connect seconds>  example --wait_time 180 (seconds) default: 180 ', default='180')
     parser.add_argument("--outfile", help="[test configuration] Output file for csv data --outfile 'tx_power_AX210_2x2_6E")
     parser.add_argument("-k", "--keep_state", "--no_cleanup", dest="keep_state", action="store_true", help="[test configuration] --no_cleanup, keep the state, no configuration change at the end of the test")
+    parser.add_argument("-enb","--enable_all_bands", dest="enable_all_bands", action="store_true", help="[test configuration] --enable_all_bands, enable 6g, 5g, 24b bands at end of test")
 
     # test configuration
     parser.add_argument("--testbed_id", "--test_rig", dest='test_rig', type=str, help="[testbed configuration] --test_rig", default="")
@@ -1845,7 +1846,7 @@ def main():
                     # results_dict['Subtest-Pass'] = None
                     # results_dict['Subtest-Fail'] = None
                     results_dict['short-description'] = "CC dBm {ap} {band} {channel} {nss} {bw} {mode} {txpower}".format(
-                        ap=args.ap, band=args.band, channel=cc_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
+                        ap=args.ap, band=args.band, channel=_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
                     results_dict['numeric-score'] = "{cc_dbmi}".format(cc_dbmi=cc_dbmi)
                     results_dict['Units'] = "dBm"
                     kpi_csv.kpi_csv_write_dict(results_dict)
@@ -1859,7 +1860,7 @@ def main():
                     # results_dict['Subtest-Pass'] = None
                     # results_dict['Subtest-Fail'] = None
                     results_dict['short-description'] = "Calc dBm Beacon {ap} {band} {channel} {nss} {bw} {mode} {txpower}".format(
-                        ap=args.ap, band=args.band, channel=cc_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
+                        ap=args.ap, band=args.band, channel=_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
                     results_dict['numeric-score'] = "{calc_dbm_beacon}".format(calc_dbm_beacon=calc_dbm_beacon)
                     results_dict['Units'] = "dBm"
                     kpi_csv.kpi_csv_write_dict(results_dict)
@@ -1873,7 +1874,7 @@ def main():
                     # results_dict['Subtest-Pass'] = None
                     # results_dict['Subtest-Fail'] = None
                     results_dict['short-description'] = "Diff CC & Beacon dBm {ap} {band} {channel} {nss} {bw} {mode} {txpower}".format(
-                        ap=args.ap, band=args.band, channel=cc_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
+                        ap=args.ap, band=args.band, channel=_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
                     results_dict['numeric-score'] = "{diff_dbm_beacon}".format(diff_dbm_beacon=diff_dbm_beacon)
                     results_dict['Units'] = "dBm"
                     kpi_csv.kpi_csv_write_dict(results_dict)
@@ -1887,7 +1888,7 @@ def main():
                     # results_dict['Subtest-Pass'] = None
                     # results_dict['Subtest-Fail'] = None
                     results_dict['short-description'] = "Calc dBm Combined {ap} {band} {channel} {nss} {bw} {mode} {txpower}".format(
-                        ap=args.ap, band=args.band, channel=cc_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
+                        ap=args.ap, band=args.band, channel=_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
                     results_dict['numeric-score'] = "{calc_dbm}".format(calc_dbm=calc_dbm)
                     results_dict['Units'] = "dBm"
                     kpi_csv.kpi_csv_write_dict(results_dict)
@@ -1901,7 +1902,7 @@ def main():
                     # results_dict['Subtest-Pass'] = None
                     # results_dict['Subtest-Fail'] = None
                     results_dict['short-description'] = "Diff CC dBm & Combined {ap} {band} {channel} {nss} {bw} {mode} {txpower}".format(
-                        ap=args.ap, band=args.band, channel=cc_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
+                        ap=args.ap, band=args.band, channel=_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
                     results_dict['numeric-score'] = "{diff_dbm}".format(diff_dbm=diff_dbm)
                     results_dict['Units'] = "dBm"
                     kpi_csv.kpi_csv_write_dict(results_dict)
@@ -2095,7 +2096,6 @@ def main():
         pss = cs.show_ap_summary()
         logg.info(pss)
 
-        exit_test(workbook)
     else:
         logg.info("9800/3504 flag --keep_state False thus setting controller to known state ")
         # TODO what is the known state
@@ -2161,12 +2161,41 @@ def main():
             pss = cs.config_no_ap_dot11_24ghz_shutdown()  # enable_network 5ghz
             logg.info(pss)
 
-        # Show controller status
-        # TODO show valid / short status
-        pss = cs.show_ap_dot11_6gz_summary()
-        pss = cs.show_ap_dot11_5gz_summary()
-        pss = cs.show_ap_dot11_24gz_summary()
-        logg.info(pss)
+        if args.enable_all_bands:
+            pss = cs.config_no_ap_dot11_6ghz_shutdown()  # enable_network 5ghz
+            logg.info(pss)
+            pss = cs.config_no_ap_dot11_5ghz_shutdown()  # enable_network 5ghz
+            logg.info(pss)
+            pss = cs.config_no_ap_dot11_24ghz_shutdown()  # enable_network 5ghz
+            logg.info(pss)
+
+
+    # Show controller status
+    # TODO show valid / short status
+    pss = cs.show_ap_dot11_6gz_summary()
+    pss = cs.show_ap_dot11_5gz_summary()
+    pss = cs.show_ap_dot11_24gz_summary()
+    logg.info(pss)
+    # Generate Report
+    report.set_title("Tx Power")
+    report.build_banner()
+    report.set_table_title("Tx Power")
+    # TODO fix csv output
+    # report.set_table_dataframe_from_csv_sep_tab(full_outfile)
+    # report.build_table()
+    # TODO the table looks off
+    report.set_table_dataframe_from_xlsx(outfile_xlsx)
+    eport.build_table()
+    report.write_html_with_timestamp()
+    report.write_index_html()
+    report.build_footer()
+
+    report.write_index_html()
+
+    report.write_pdf(_page_size = 'A3', _orientation='Landscape')
+    # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
+    # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+    exit_test(workbook)
 
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----

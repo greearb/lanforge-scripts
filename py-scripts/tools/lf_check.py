@@ -1259,6 +1259,11 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                                         self.iteration += 1
                                         # Runs the scripts
                                         self.run_script()
+                    # once done clear out the lists
+                    self.channel_list = []
+                    self.nss_list = []
+                    self.bandwidth_list = []
+                    self.tx_power_list = []
                 elif self.channel_list and self.nss_list and self.bandwidth_list and not self.tx_power_list:
                     for self.channel in self.channel_list:
                         for self.nss in self.nss_list:
@@ -1273,6 +1278,11 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                                     # in batch mode need to set the VARIABLES back into the test
                                     # Runs the scripts
                                     self.run_script()
+                    self.channel_list = []
+                    self.nss_list = []
+                    self.bandwidth_list = []
+                    self.tx_power_list = []
+
                 elif self.channel_list and self.nss_list and not self.bandwidth_list and not self.tx_power_list:
                     for self.channel in self.channel_list:
                         for self.nss in self.nss_list:
@@ -1286,7 +1296,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                                 self.iteration += 1
                                 # Runs the scripts
                                 self.run_script()
-
+                    self.channel_list = []
+                    self.nss_list = []
+                    self.bandwidth_list = []
+                    self.tx_power_list = []
                 else:
 
                     # log may contain multiple runs - this helps put the meta.txt

@@ -361,6 +361,9 @@ class csv_sql:
             kpi_html_path = kpi_html_path.replace(self.cut, '')
             # self.html_results +="""<br>"""
             # link to full test results
+            # if self.server == '':
+            #    report_index_html_path = self.server + kpi_path_list[-1] 
+            # else:
             report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
             report_index_html_path = report_index_html_path.replace(self.cut, '')
             self.html_results += """<a href={report_index_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_Report </a>
@@ -621,7 +624,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         default='qa_table')
     parser.add_argument(
         '--server',
-        help="--server http://<server ip>/  example: http://192.168.95.6/ default: ''",
+        help="--server http://<server ip>/ system running the tests may also be a server example: --server 'http://192.168.95.6/' default: ''",
         default='')
     parser.add_argument(
         '--cut',
