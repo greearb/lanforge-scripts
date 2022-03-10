@@ -244,9 +244,9 @@ class create_controller_series_object:
 
         # possible need to look for exact command
         elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_ap_wlan_summary", "show_wlan_summary", "show_wlan_id",
-                             "advanced", "disable", "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
+                             "advanced", "disable_operation_status", "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
                              "show_ap_bssid_24g", "show_ap_bssid_5g", "show_ap_bssid_6g_dual_band", "show_ap_bssid_6g",
-                             "manual", "auto", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz", "enable", "11r_logs"]:
+                             "manual", "auto", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz", "enable_operation_status", "11r_logs"]:
 
             self.command_extend = ["--action", self.action]
             self.command.extend(self.command_extend)
@@ -407,21 +407,21 @@ class create_controller_series_object:
     def show_ap_dot11_5gz_shutdown(self):
         logger.info("ap name {name} dot11 5ghz shutdown")
         self.band = '5g'
-        self.action = "disable"
+        self.action = "disable_operation_status"
         summary = self.send_command()
         return summary
 
     def show_ap_dot11_6gz_shutdown(self):
         logger.info("ap name {name} dot11 6ghz shutdown")
         self.band = '6g'
-        self.action = "disable"
+        self.action = "disable_operation_status"
         summary = self.send_command()
         return summary
 
     def show_ap_dot11_24gz_shutdown(self):
         logger.info("ap name {name} dot11 24ghz shutdown")
         self.band = '24g'
-        self.action = "disable"
+        self.action = "disable_operation_status"
         summary = self.send_command()
         return summary
 
@@ -728,26 +728,26 @@ class create_controller_series_object:
 
     # enable ap 6ghz
     def config_ap_no_dot11_6ghz_shutdown(self):
-        logger.info("ap name %s dot11 6ghz shutdown {ap}  (enable ap)".format(ap=self.ap))
         self.band = '6g'
-        self.action = "enable"
+        self.action = "enable_operation_status"
         summary = self.send_command()
+        logger.info("ap name {ap} dot11 {band}hz shutdown {slot}  (enable ap)".format(ap=self.ap,band=self.band,slot=self.ap_band_slot))
         return summary
 
     # enable ap 5ghz
     def config_ap_no_dot11_5ghz_shutdown(self):
-        logger.info("ap name %s dot11 5ghz shutdown {ap}  (enable ap)".format(ap=self.ap))
         self.band = '5g'
-        self.action = "enable"
+        self.action = "enable_operation_status"
         summary = self.send_command()
+        logger.info("ap name {ap} dot11 {band}hz shutdown {slot}  (enable ap)".format(ap=self.ap,band=self.band,slot=self.ap_band_slot))
         return summary
 
     # enable ap 24ghz
     def config_ap_no_dot11_24ghz_shutdown(self):
-        logger.info("ap name %s dot11 24ghz shutdown {ap} (enable ap)".format(ap=self.ap))
         self.band = '24g'
-        self.action = "enable"
+        self.action = "enable_operation_status"
         summary = self.send_command()
+        logger.info("ap name {ap} dot11 {band}hz shutdown {slot}  (enable ap)".format(ap=self.ap,band=self.band,slot=self.ap_band_slot))
         return summary
 
     def show_11r_logs(self):

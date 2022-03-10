@@ -145,7 +145,8 @@ def main():
     # parser.add_argument("--wlan_name", type=str, help="--wlan_name open-wlan", default="open-wlan")
 
     parser.add_argument("--action", type=str, help="perform action",
-                        choices=["config", "dtim", "debug_disable_all", "no_logging_console", "line_console_0", "country", "ap_country", "enable", "disable", "summary", "advanced",
+                        choices=["config", "dtim", "debug_disable_all", "no_logging_console", "line_console_0", "country", "ap_country", 
+                                 "enable_operation_status", "disable_operation_status", "summary", "advanced",
                                  "cmd", "txPower", "bandwidth", "manual", "auto", "no_wlan", "show_ap_wlan_summary", "show_wlan_summary", "show_radio",
                                  "ap_channel", "auto_rf", "channel", "show", "create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "enable_wlan", "disable_wlan", "wlan_qos",
                                  "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
@@ -1221,10 +1222,12 @@ def main():
             logg.info("3504 enable_network_24ghz")
             command = "config 802.11b enable network"
 
-    # change command name to no shut down
-    if (args.action == "enable" and (args.ap is None)):
+    # This will take the operation status down 
+    if (args.action == "enable_operation_status" and (args.ap is None)):
         raise Exception("action requires AP name")
-    if (args.action == "enable"):
+    if (args.action == "enable_operation_status"):
+        logg.info("send command to enable operation status: ap name %s no dot11 6ghz slot %s shutdown" % (args.ap, args.ap_band_slot))
+
         if args.series == "9800":
             if band == "6g":
                 # command = "ap name %s no dot11 6ghz slot %s shutdown" % (args.ap, args.ap_band_slot)
@@ -1237,9 +1240,10 @@ def main():
             command = "config 802.11%s enable %s" % (band, args.ap)
 
     # TODO change disable to shutdown
-    if (args.action == "disable" and (args.ap is None)):
+    if (args.action == "disable_operation_status" and (args.ap is None)):
         raise Exception("action requires AP name")
-    if (args.action == "disable"):
+    if (args.action == "disable_operation_status"):
+        logg.info("send command to disable  operation status: ap name %s dot11 6ghz slot %s shutdown" % (args.ap, args.ap_band_slot))
         if args.series == "9800":
             # TODO use the 24g 5g 6g notation, also support abgn (dual band?)
             if band == '6g':

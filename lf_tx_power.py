@@ -1100,27 +1100,28 @@ def main():
 
                     # enable transmission for the entier 802.11z network
                     # enable_network_6ghz or enable_network_5ghz or enable_network_24ghz
-                    if args.band == '6g':
-                        # enable 6g wlan
-                        pss = cs.config_no_ap_dot11_6ghz_shutdown()
-                        logg.info(pss)
-                        # enable 6g band
-                        pss = cs.config_ap_no_dot11_6ghz_shutdown()
-                        logg.info(pss)
-                    elif args.band == '5g' or args.band == 'a':
-                        # enable 5g wlan
-                        pss = cs.config_no_ap_dot11_5ghz_shutdown()
-                        logg.info(pss)
-                        # enable 5g band
-                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
-                        logg.info(pss)
-                    elif args.band == '24g' or args.band == 'a':
-                        # enable wlan
-                        pss = cs.config_no_ap_dot11_24ghz_shutdown()
-                        logg.info(pss)
-                        # enable 2ghz band
-                        cs.config_ap_no_dot11_24ghz_shutdown()
-                        logg.info(pss)
+                    # if args.band == '6g':
+                    # enable 6g wlan
+                    pss = cs.config_no_ap_dot11_6ghz_shutdown()
+                    logg.info(pss)
+                    # enable 6g operation status
+                    pss = cs.config_ap_no_dot11_6ghz_shutdown()
+                    logg.info(pss)
+                    #  elif args.band == '5g' or args.band == 'a':
+                    # enable 5g wlan
+                    pss = cs.config_no_ap_dot11_5ghz_shutdown()
+                    logg.info(pss)
+                    # enable 5g operation status
+                    pss = cs.config_ap_no_dot11_5ghz_shutdown()
+                    logg.info(pss)
+                    # elif args.band == '24g' or args.band == 'a':
+                    # enable wlan 24ghz
+                    pss = cs.config_no_ap_dot11_24ghz_shutdown()
+                    logg.info(pss)
+                    # enable 24ghz operation status
+                    cs.config_ap_no_dot11_24ghz_shutdown()
+                    logg.info(pss)
+
 
                     # Wait a bit for AP to come back up
                     time.sleep(3)
@@ -2106,6 +2107,7 @@ def main():
             pss = cs.config_no_wlan()
             logg.info(pss)
 
+        # Enable wlan networks 
         pss = cs.ap_dot11_6ghz_shutdown()
         logg.info(pss)
         pss = cs.ap_dot11_5ghz_shutdown()
@@ -2185,7 +2187,7 @@ def main():
     # report.build_table()
     # TODO the table looks off
     report.set_table_dataframe_from_xlsx(outfile_xlsx)
-    eport.build_table()
+    report.build_table()
     report.write_html_with_timestamp()
     report.write_index_html()
     report.build_footer()
