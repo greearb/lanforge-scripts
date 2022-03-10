@@ -246,7 +246,7 @@ class create_controller_series_object:
         elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_ap_wlan_summary", "show_wlan_summary", "show_wlan_id",
                              "advanced", "disable", "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
                              "show_ap_bssid_24g", "show_ap_bssid_5g", "show_ap_bssid_6g_dual_band", "show_ap_bssid_6g",
-                             "manual", "auto", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz", "enable"]:
+                             "manual", "auto", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz", "enable", "11r_logs"]:
 
             self.command_extend = ["--action", self.action]
             self.command.extend(self.command_extend)
@@ -747,6 +747,12 @@ class create_controller_series_object:
         logger.info("ap name %s dot11 24ghz shutdown {ap} (enable ap)".format(ap=self.ap))
         self.band = '24g'
         self.action = "enable"
+        summary = self.send_command()
+        return summary
+
+    def show_11r_logs(self):
+        logger.info("sh wi stats client detail | inc 11r ")
+        self.action = "11r_logs"
         summary = self.send_command()
         return summary
 
