@@ -151,7 +151,7 @@ def main():
                                  "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
                                  "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
                                  "wireless_tag_policy", "no_wlan_wireless_tag_policy", "delete_wlan",
-                                 "show_ap_bssid_24g", "show_ap_bssid_5g", "show_ap_bssid_6g_dual_band", "shwo_ap_bssid_6g"])
+                                 "show_ap_bssid_24g", "show_ap_bssid_5g", "show_ap_bssid_6g_dual_band", "shwo_ap_bssid_6g",  "11r_logs"])
     parser.add_argument("--value", type=str, help="set value")
     # logging configuration
     parser.add_argument(
@@ -1398,6 +1398,11 @@ def main():
     if (args.action == "show_wlan_summary"):
         print("command show wlan summary ")
         command = "show wlan summary"
+
+    # used for 11r log reading
+    if (args.action == "11r_logs"):
+        if args.series == "9800":
+            command = "sh wi stats client detail | inc 11r"
 
     # need the wlan name to elevate the prompt
     # WLC1#config t
