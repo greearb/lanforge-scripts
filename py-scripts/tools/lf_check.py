@@ -656,18 +656,17 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         else:
             self.logger.info("TEST_TIMEOUT not in test_rig_parameters json")
             exit(1)
+        # EMAIL is optional
         if "EMAIL_LIST_PRODUCTION" in self.json_rig["test_rig_parameters"]:
             self.email_list_production = self.json_rig["test_rig_parameters"]["EMAIL_LIST_PRODUCTION"]
         else:
             self.logger.info(
                 "EMAIL_LIST_PRODUCTION not in test_rig_parameters json")
-            exit(1)
         if "EMAIL_LIST_TEST" in self.json_rig["test_rig_parameters"]:
             self.email_list_test = self.json_rig["test_rig_parameters"]["EMAIL_LIST_TEST"]
             print(self.email_list_test)
         else:
             self.logger.info("EMAIL_LIST_TEST not in test_rig_parameters json")
-            exit(1)
         if "EMAIL_TITLE_TXT" in self.json_rig["test_rig_parameters"]:
             self.email_title_txt = self.json_rig["test_rig_parameters"]["EMAIL_TITLE_TXT"]
         else:
@@ -778,6 +777,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 if 'BSSID_TO_USE' in args_list_element:
                     self.test_dict[self.test]['args_list'][index] = self.test_dict[self.test]['args_list'][index].replace(
                         'BSSID_TO_USE', self.wireless_network_dict[idx]['BSSID_TO_USE'])
+                if 'WLAN_ID_USED' in args_list_element:
+                    self.test_dict[self.test]['args_list'][index] = self.test_dict[self.test]['args_list'][index].replace(
+                        'WLAN_ID_USED', self.wireless_network_dict[idx]['WLAN_ID_USED'])
+
                 # use_ssid_idx is ephemeral and used only for
                 # variable replacement , remove
                 tmp_idx = "use_ssid_idx={}".format(ssid_idx_number)
@@ -1688,8 +1691,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         print("exception write_pdf_with_timestamp()")
 
     print("lf_check_html_report: " + html_report)
-    if args.no_send_email:
-        print("send email not set")
+    if args.no_send_email or check.email_list_test == "":
+        print("send email not set or email_list_test not set")
     else:
         check.send_results_email(report_file=html_report)
     #

@@ -624,7 +624,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         default='qa_table')
     parser.add_argument(
         '--server',
-        help="--server http://<server ip>/ system running the tests may also be a server example: --server 'http://192.168.95.6/' default: ''",
+        help="--server http://<server ip>/ for running with server enabled. Not needed for running locally. --server 'http://192.168.95.6/' default: ''",
         default='')
     parser.add_argument(
         '--cut',

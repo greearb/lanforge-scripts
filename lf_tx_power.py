@@ -158,7 +158,7 @@ The user also has the option of setting up the station oustide of this script, h
 NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme defaults to ssh
 
 
-# Below
+# TODO update , OLD EXAMPLE - Connecting to AP 
 ##############################################################################################
 # read AP for powercfg values using : show controllers dot11Radio 1 powercfg | g T1'
 ##############################################################################################
@@ -169,6 +169,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
     --antenna_gain "6" --wlanID 1 --wlan open-wlan --wlanSSID open-wlan\
     --ap_info "ap_scheme==telnet ap_prompt==9120_Candela ap_ip==172.19.27.55 ap_port==2008 ap_user==admin ap_pw==Wnbulab@123"
 
+# TODO update OLD EXAMPLE replaced by BATCH mode 
 ##############################################################################################
 # Long duration test -- need to create the ---wlanID 1 --wlan open-wlan --wlanSSID open-wlan
 ##############################################################################################
@@ -343,7 +344,7 @@ def main():
 
     # controller configuration
     parser.add_argument("-s", "--scheme", type=str, choices=["serial", "ssh", "telnet"], help="[controller configuration] Connect via serial, ssh or telnet --scheme ssh", required=True)
-    parser.add_argument("-d", "--dest", type=str, help="[controller configuration] address of the controller --dest localhost", required=True)
+    parser.add_argument("-d", "--controller_ip","--dest", dest="dest",type=str, help="[controller configuration] address of the controller --dest localhost", required=True)
     parser.add_argument("-o", "--port", type=str, help="[controller configuration] controller port on the controller --port 8887", required=True)
     parser.add_argument("-u", "--user", type=str, help="[controller configuration] controller login/username --user admin", required=True)
     parser.add_argument("-p", "--passwd", type=str, help="[controller configuration] credential password --passwd Cisco123", required=True)
@@ -1289,6 +1290,13 @@ def main():
                     wait_ip_print = False
                     wait_assoc_print = False
 
+                    # Temporary Work around 
+                    # disable the AP for 6g and enable 
+                    if args.band == '6g':
+                        cs.ap_name_shutdown()
+                        sleep(5)
+                        cs.ap_name_no_shutdown()
+
                     # Wait untill LANforge station connects
                     while True:
                         port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
@@ -1860,7 +1868,7 @@ def main():
                     # TODO kpi pass fail
                     # results_dict['Subtest-Pass'] = None
                     # results_dict['Subtest-Fail'] = None
-                    results_dict['short-description'] = "Calc dBm Beacon {ap} {band} {channel} {nss} {bw} {mode} {txpower}".format(
+                    results_dict['short-description'] = "Calc dBm Beacon {ap} {band} ch:{channel} nss:{nss} bw:{bw} {mode} tx:{txpower}".format(
                         ap=args.ap, band=args.band, channel=_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
                     results_dict['numeric-score'] = "{calc_dbm_beacon}".format(calc_dbm_beacon=calc_dbm_beacon)
                     results_dict['Units'] = "dBm"
@@ -1874,7 +1882,7 @@ def main():
                     # TODO kpi pass fail
                     # results_dict['Subtest-Pass'] = None
                     # results_dict['Subtest-Fail'] = None
-                    results_dict['short-description'] = "Diff CC & Beacon dBm {ap} {band} {channel} {nss} {bw} {mode} {txpower}".format(
+                    results_dict['short-description'] = "Diff CC & Beacon dBm {ap} {band} ch:{channel} nss:{nss} bw:{bw} {mode} tx:{txpower}".format(
                         ap=args.ap, band=args.band, channel=_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
                     results_dict['numeric-score'] = "{diff_dbm_beacon}".format(diff_dbm_beacon=diff_dbm_beacon)
                     results_dict['Units'] = "dBm"
@@ -1888,7 +1896,7 @@ def main():
                     # TODO kpi pass fail
                     # results_dict['Subtest-Pass'] = None
                     # results_dict['Subtest-Fail'] = None
-                    results_dict['short-description'] = "Calc dBm Combined {ap} {band} {channel} {nss} {bw} {mode} {txpower}".format(
+                    results_dict['short-description'] = "Calc dBm Combined {ap} {band} ch:{channel} nss:{nss} bw:{bw} {mode} tx:{txpower}".format(
                         ap=args.ap, band=args.band, channel=_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
                     results_dict['numeric-score'] = "{calc_dbm}".format(calc_dbm=calc_dbm)
                     results_dict['Units'] = "dBm"
@@ -1902,7 +1910,7 @@ def main():
                     # TODO kpi pass fail
                     # results_dict['Subtest-Pass'] = None
                     # results_dict['Subtest-Fail'] = None
-                    results_dict['short-description'] = "Diff CC dBm & Combined {ap} {band} {channel} {nss} {bw} {mode} {txpower}".format(
+                    results_dict['short-description'] = "Diff CC dBm & Combined {ap} {band} ch:{channel} nss:{nss} bw:{bw} {mode} tx:{txpower}".format(
                         ap=args.ap, band=args.band, channel=_ch, nss=_nss, bw=_bw, mode=_mode, txpower=cc_power)
                     results_dict['numeric-score'] = "{diff_dbm}".format(diff_dbm=diff_dbm)
                     results_dict['Units'] = "dBm"
@@ -2018,7 +2026,7 @@ def main():
                     col += 1
 
                     if (_bw != bw):
-                        err = "ERROR:  Requested bandwidth: %s != station's reported bandwidth: %s.  " % (bw, _bw)
+                        err = "WARNING: Known Issue with AX210 Requested bandwidth: %s != station's reported bandwidth: %s.  " % (bw, _bw)
                         e_tot += err
                         logg.info(err)
                         csv.write(err)
@@ -2188,11 +2196,10 @@ def main():
     # TODO the table looks off
     report.set_table_dataframe_from_xlsx(outfile_xlsx)
     report.build_table()
+    report.build_footer()
     report.write_html_with_timestamp()
     report.write_index_html()
-    report.build_footer()
 
-    report.write_index_html()
 
     report.write_pdf(_page_size = 'A3', _orientation='Landscape')
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
