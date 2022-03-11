@@ -11,8 +11,11 @@ Example: lf_dash.py --store --png --show --path <path to read kpi.csv> (read kpi
 import os
 import dash
 from dash.development.base_component import _check_if_has_indexable_children
-import dash_core_components as dcc
-import dash_html_components as html
+
+# DEPRECATED import dash_core_components as dcc
+from dash import dcc
+# DEPRECATED import dash_html_components as html
+from dash import html
 import plotly.express as px
 import pandas as pd
 import sqlite3
