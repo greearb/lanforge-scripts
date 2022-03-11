@@ -13,38 +13,41 @@ This script replaces the functionality of test_ipv4_l4.py, test_ipv4_l4_ftp_uplo
 test_ipv4_l4_ftp_wifi.py, test_ipv4_l4_urls_per_ten.py, test_ipv4_l4_urls_per_ten.py, test_ipv4_l4_wifi.py
 
 EXAMPLE (urls/s):
-    ./test_l4.py --upstream_port eth1 --radio wiphy0 --num_stations 3 --security {open|wep|wpa|wpa2|wpa3}
-                 --ssid netgear --passwd admin123 --requests_per_ten 600 --mode   1 --num_tests 1 --test_type 'urls'
-                 --url "dl http://10.40.0.1 /dev/null" --ap "00:0e:8e:78:e1:76" --target_per_ten 600 --output_format csv
-                 --report_file ~/Documents/results.csv --test_duration 2m --debug
-
-EXAMPLE (bytes-wr):
-    ./test_l4.py --upstream_port eth1 --radio wiphy0 --num_stations 3 --security {open|wep|wpa|wpa2|wpa3}
-                 --ssid netgear --passwd admin123 --test_duration 2m --url "ul http://10.40.0.1 /dev/null"
-                 --requests_per_ten 600 --test_type bytes-wr --debug
+    ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
+                 --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
+                 --url "dl http://192.168.1.101 /dev/null" --requests_per_ten 600 --test_type 'urls'
+                 --csv_outfile test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
+                 --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
 
 EXAMPLE (bytes-rd):
-    ./test_l4.py --upstream_port eth1 (optional) --radio wiphy0  (required) --num_stations 3 (optional)
-                 --security {open|wep|wpa|wpa2|wpa3} (required) --ssid netgear (required)
-                 --url "dl http://10.40.0.1 /dev/null" (required) --password admin123 (required)
-                 --test_duration 2m (optional) --test_type bytes-rd --debug (optional)
+    ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
+                 --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 2m
+                 --url "dl http://192.168.1.101 /dev/null" --requests_per_ten 600 --test_type bytes-rd
+                 --csv_outfile test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
+                 --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
 
 EXAMPLE (ftp urls/s):
-    ./test_l4.py --upstream_port eth1 --radio wiphy0 --num_stations 3 --security {open|wep|wpa|wpa2|wpa3}
-                 --ssid netgear --passwd admin123 --test_duration 2m --interval 1s --mode 1 --ap "00:0e:8e:78:e1:76"
-                 --requests_per_ten 600 --num_tests 1 --ftp --test_type 'urls'
-                 --url "ul ftp://lanforge:lanforge@10.40.0.1/example.txt  /home/lanforge/example.txt" --debug
+    ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
+                 --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
+                 --url "ul ftp://lanforge:lanforge@192.168.1.101/large-file.bin /home/lanforge/large-file.bin"
+                 --requests_per_ten 600 --test_type 'urls' --csv_outfile test_l4.csv --test_rig Test-Lab
+                 --test_tag L4 --dut_hw_version Linux --dut_model_num 1 --dut_sw_version 5.4.5
+                 --dut_serial_num 1234 --test_id "L4 data"
 
 EXAMPLE (ftp bytes-wr):
-    ./test_l4.py --upstream_port eth1 --radio wiphy0 --num_stations 3 --security {open|wep|wpa|wpa2|wpa3}
-                 --ssid netgear --passwd admin123 --test_duration 2m --url "ul ftp://10.40.0.1 /dev/null"
-                 --requests_per_ten 600 --ftp --test_type bytes-wr --debug
+    ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
+                 --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
+                 --url "ul ftp://lanforge:lanforge@192.168.1.101/large-file.bin /home/lanforge/large-file.bin"
+                 --requests_per_ten 600 --test_type bytes-wr --csv_outfile test_l4.csv --test_rig Test-Lab
+                 --test_tag L4 --dut_hw_version Linux --dut_model_num 1 --dut_sw_version 5.4.5
+                 --dut_serial_num 1234 --test_id "L4 data"
 
 EXAMPLE (ftp bytes-rd):
-    ./test_l4.py --upstream_port eth1 (optional) --radio wiphy0  (required) --num_stations 3 (optional)
-                 --security {open|wep|wpa|wpa2|wpa3} (required) --ssid netgear (required)
-                 --url "dl ftp://10.40.0.1 /dev/null" (required) --password admin123 (required)
-                 --test_duration 2m (optional) --ftp --test_type bytes-rd --debug (optional)
+    ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
+                 --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
+                 --url "dl ftp://192.168.1.101 /dev/null" --requests_per_ten 600 --test_type bytes-rd
+                 --csv_outfile test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
+                 --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
 
 Use './test_l4.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
@@ -52,6 +55,7 @@ License: Free to distribute and modify. LANforge systems must be licensed.
 """
 import sys
 import os
+import csv
 import importlib
 import time
 import argparse
@@ -72,6 +76,7 @@ port_utils = importlib.import_module("py-json.port_utils")
 PortUtils = port_utils.PortUtils
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 lf_report = importlib.import_module("py-scripts.lf_report")
+lf_graph = importlib.import_module("py-scripts.lf_graph")
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
@@ -90,6 +95,8 @@ class IPV4L4(Realm):
                  station_list=None,
                  test_duration="2m",
                  ap=None,
+                 outfile=None,
+                 kpi_csv=None,
                  mode=0,
                  target_requests_per_ten=60,
                  number_template="00000",
@@ -101,13 +108,6 @@ class IPV4L4(Realm):
                  source=None,
                  dest=None,
                  test_type=None,
-                 test_rig=None,
-                 test_tag=None,
-                 dut_hw_version=None,
-                 dut_sw_version=None,
-                 dut_model_num=None,
-                 dut_serial_num=None,
-                 test_id=None,
                  _exit_on_error=False,
                  _exit_on_fail=False):
         super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on)
@@ -122,6 +122,9 @@ class IPV4L4(Realm):
         self.url = url
         self.mode = mode
         self.ap = ap
+        self.outfile = outfile
+        self.kpi_csv = kpi_csv
+        self.epoch_time = int(time.time())
         self.debug = _debug_on
         self.requests_per_ten = int(requests_per_ten)
         self.number_template = number_template
@@ -154,6 +157,12 @@ class IPV4L4(Realm):
         self.cx_profile.requests_per_ten = self.requests_per_ten
         self.cx_profile.target_requests_per_ten = self.target_requests_per_ten
 
+        if self.outfile is not None:
+            results = self.outfile[:-4]
+            results = results + "-results.csv"
+            self.csv_results_file = open(results, "w")
+            self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
+
         self.ftp = ftp
         if self.ftp and 'ftp://' not in self.url:
             logger.info("WARNING! FTP test chosen, but ftp:// not present in url!")
@@ -165,16 +174,69 @@ class IPV4L4(Realm):
 
         self.report = lf_report.lf_report(_results_dir_name="test_l4", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf")
 
-        kpi_path = self.report.get_report_path()
-        self.kpi_csv = lf_kpi_csv.lf_kpi_csv(
-            _kpi_path=kpi_path,
-            _kpi_test_rig=test_rig,
-            _kpi_test_tag=test_tag,
-            _kpi_dut_hw_version=dut_hw_version,
-            _kpi_dut_sw_version=dut_sw_version,
-            _kpi_dut_model_num=dut_model_num,
-            _kpi_dut_serial_num=dut_serial_num,
-            _kpi_test_id=test_id)
+    def get_csv_name(self):
+        logger.info("self.csv_results_file {}".format(self.csv_results_file.name))
+        return self.csv_results_file.name
+
+    # Common code to generate timestamp for CSV files.
+    def time_stamp(self):
+        return time.strftime('%m_%d_%Y_%H_%M_%S', time.localtime(self.epoch_time))
+
+    # Query all endpoints to generate rx and other stats, returned
+    # as an array of objects.
+    def get_rx_values(self):
+        endp_list = self.json_get("/layer4/all")
+        logger.info("endp_list: {endp_list}".format(endp_list=endp_list))
+
+        endp_rx_drop_map = {}
+        endp_rx_map = {}
+        our_endps = {}
+        endps = []
+
+        total_bytes_rd = 0
+        total_bytes_wr = 0
+        total_rx_rate = 0
+        total_tx_rate = 0
+        urls_seconds = 0
+        total_urls = 0
+
+        '''
+        for e in self.cx_profile.created_endp.keys():
+            our_endps[e] = e
+        print("our_endps {our_endps}".format(our_endps=our_endps))
+        '''
+        for endp_name in endp_list['endpoint']:
+            if endp_name != 'uri' and endp_name != 'handler':
+                for item, endp_value in endp_name.items():
+                    # if item in our_endps:
+                    if True:
+                        endps.append(endp_value)
+                        logger.debug("endpoint: {item} value:\n".format(item=item))
+                        logger.debug(endp_value)
+                        # print("item {item}".format(item=item))
+
+                        for value_name, value in endp_value.items():
+                            if value_name == 'bytes-rd':
+                                endp_rx_map[item] = value
+                                total_bytes_rd += int(value)
+                            if value_name == 'bytes-wr':
+                                endp_rx_map[item] = value
+                                total_bytes_wr += int(value)
+                            if value_name == 'rx rate':
+                                endp_rx_map[item] = value
+                                total_rx_rate += int(value)
+                            if value_name == 'tx rate':
+                                endp_rx_map[item] = value
+                                total_tx_rate += int(value)
+                            if value_name == 'urls/s':
+                                endp_rx_map[item] = value
+                                urls_seconds += int(value)
+                            if value_name == 'total-urls':
+                                endp_rx_map[item] = value
+                                total_urls += int(value)
+
+        # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
+        return endp_rx_map, endps, total_bytes_rd, total_bytes_wr, total_rx_rate, total_tx_rate, urls_seconds, total_urls
 
     def build(self):
         # Build stations
@@ -213,45 +275,18 @@ class IPV4L4(Realm):
         temp_stas = self.sta_list.copy()
 
         self.station_profile.admin_up()
+
         if self.wait_for_ip(temp_stas):
             self._pass("All stations got IPs", print_pass)
         else:
             self._fail("Stations failed to get IPs", print_fail)
             exit(1)
 
+        self.csv_add_column_headers()
         self.cx_profile.start_cx()
         logger.info("Starting test")
 
     def stop(self):
-        cx_list = self.json_get('layer4/sta0000_l4,sta0001_l4?urls%2Fs,rx-bps')['endpoint']
-        cx_map = dict()
-        for sub in cx_list:
-                for key in sub:
-                    cx_map[key] = sub[key]
-                cx_map[key].pop('name')
-        logger.info(cx_map)
-        urls = 0
-        rx_bps = 0
-
-        for value in cx_map.values():
-            urls += value['urls/s']
-            rx_bps += value['rx rate']
-
-
-        self.kpi_csv.kpi_csv_get_dict_update_time()
-        self.kpi_csv.kpi_dict['Graph-Group'] = "Average URLs per Second"
-        self.kpi_csv.kpi_dict['short-description'] = "Average URLs per Second"
-        self.kpi_csv.kpi_dict['numeric-score'] = urls
-        self.kpi_csv.kpi_dict['Units'] = "urls/s"
-        self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-
-
-        self.kpi_csv.kpi_dict['Graph-Group'] = "RX BPS"
-        self.kpi_csv.kpi_dict['short-description'] = "RX BPS"
-        self.kpi_csv.kpi_dict['numeric-score'] = rx_bps
-        self.kpi_csv.kpi_dict['Units'] = "bps"
-        self.kpi_csv.kpi_csv_write_dict(self.kpi_csv.kpi_dict)
-
         self.cx_profile.stop_cx()
         if self.ftp:
             self.port_util.set_ftp(port_name=self.name_to_eid(self.upstream_port)[2], resource=1, on=False)
@@ -262,6 +297,171 @@ class IPV4L4(Realm):
         self.station_profile.cleanup(sta_list)
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
+
+    # builds test data into kpi.csv report
+    def record_kpi_csv(
+            self,
+            station_list,
+            total_test,
+            total_pass,
+            total_bytes_rd,
+            total_bytes_wr,
+            total_rx_rate,
+            total_tx_rate,
+            urls_second,
+            total_urls):
+
+        sta_count = len(station_list)
+        # logic for Subtest-Pass & Subtest-Fail columns
+        subpass_bytes_rd = 0
+        subpass_bytes_wr = 0
+        subpass_rx_rate = 0
+        subpass_tx_rate = 0
+        subpass_urls = 0
+        subfail_bytes_rd = 1
+        subfail_bytes_wr = 1
+        subfail_rx_rate = 1
+        subfail_tx_rate = 1
+        subfail_urls = 1
+
+        if total_bytes_rd > 0:
+            subpass_bytes_rd = 1
+            subfail_bytes_rd = 0
+        if total_bytes_wr > 0:
+            subpass_bytes_wr = 1
+            subfail_bytes_wr = 0
+        if total_rx_rate > 0:
+            subpass_rx_rate = 1
+            subfail_rx_rate = 0
+        if total_tx_rate > 0:
+            subpass_tx_rate = 1
+            subfail_tx_rate = 0
+        if urls_second > 0:
+            subpass_urls = 1
+            subfail_urls = 0
+
+
+        # logic for pass/fail column
+        # total_test & total_pass values from lfcli_base.py
+        if total_test == total_pass:
+            pass_fail = "PASS"
+        else:
+            pass_fail = "FAIL"
+
+        results_dict = self.kpi_csv.kpi_csv_get_dict_update_time()
+
+        # kpi data for combined station totals
+        if self.url.startswith('dl'):
+            # kpi data for Total Bytes-RD
+            results_dict['Graph-Group'] = "L4 Total Bytes-RD"
+            results_dict['pass/fail'] = pass_fail
+            results_dict['Subtest-Pass'] = subpass_bytes_rd
+            results_dict['Subtest-Fail'] = subfail_bytes_rd
+            results_dict['short-description'] = "Total Bytes-RD"
+            results_dict['numeric-score'] = "{}".format(total_bytes_rd)
+            results_dict['Units'] = "bytes-rd"
+            self.kpi_csv.kpi_csv_write_dict(results_dict)
+
+            # kpi data for RX Rate
+            results_dict['Graph-Group'] = "L4 Total RX Rate"
+            results_dict['pass/fail'] = pass_fail
+            results_dict['Subtest-Pass'] = subpass_rx_rate
+            results_dict['Subtest-Fail'] = subfail_rx_rate
+            results_dict['short-description'] = "Total RX Rate bps"
+            results_dict['numeric-score'] = "{}".format(total_rx_rate)
+            results_dict['Units'] = "bps"
+            self.kpi_csv.kpi_csv_write_dict(results_dict)
+
+        if self.url.startswith('ul'):
+            # kpi data for Bytes-WR
+            results_dict['Graph-Group'] = "L4 Total Bytes-WR"
+            results_dict['pass/fail'] = pass_fail
+            results_dict['Subtest-Pass'] = subpass_bytes_wr
+            results_dict['Subtest-Fail'] = subfail_bytes_wr
+            results_dict['short-description'] = "Total Bytes-WR"
+            results_dict['numeric-score'] = "{}".format(total_bytes_wr)
+            results_dict['Units'] = "bytes-wr"
+            self.kpi_csv.kpi_csv_write_dict(results_dict)
+
+            # kpi data for TX Rate
+            results_dict['Graph-Group'] = "L4 Total TX Rate"
+            results_dict['pass/fail'] = pass_fail
+            results_dict['Subtest-Pass'] = subpass_tx_rate
+            results_dict['Subtest-Fail'] = subfail_tx_rate
+            results_dict['short-description'] = "Total TX Rate bps"
+            results_dict['numeric-score'] = "{}".format(total_tx_rate)
+            results_dict['Units'] = "bps"
+            self.kpi_csv.kpi_csv_write_dict(results_dict)
+
+        # kpi data for URLs/s
+        results_dict['Graph-Group'] = "Average URLs per Second"
+        results_dict['pass/fail'] = pass_fail
+        results_dict['Subtest-Pass'] = subpass_urls
+        results_dict['Subtest-Fail'] = subfail_urls
+        results_dict['short-description'] = "Average URLs per Second"
+        results_dict['numeric-score'] = "{}".format(urls_second)
+        results_dict['Units'] = "urls/s"
+        self.kpi_csv.kpi_csv_write_dict(results_dict)
+
+        # kpi data for Total URLs
+        results_dict['Graph-Group'] = "Total URLs"
+        results_dict['pass/fail'] = pass_fail
+        results_dict['Subtest-Pass'] = subpass_urls
+        results_dict['Subtest-Fail'] = subfail_urls
+        results_dict['short-description'] = "Total URLs"
+        results_dict['numeric-score'] = "{}".format(total_urls)
+        results_dict['Units'] = "total-urls"
+        self.kpi_csv.kpi_csv_write_dict(results_dict)
+
+    # record results for .html & .pdf reports
+    def record_results(
+            self,
+            sta_count,
+            bytes_rd,
+            bytes_wr,
+            rx_rate,
+            tx_rate,
+            urls_second,
+            total_urls):
+
+        tags = dict()
+        tags['station-count'] = sta_count
+        # tags['attenuation'] = atten
+        tags["script"] = 'test_l4'
+
+        # now = str(datetime.datetime.utcnow().isoformat())
+
+        if self.csv_results_file:
+            row = [self.epoch_time, self.time_stamp(), sta_count,
+                   bytes_rd, bytes_wr, rx_rate, tx_rate,
+                   urls_second, total_urls
+                   ]
+
+            self.csv_results_writer.writerow(row)
+            self.csv_results_file.flush()
+
+    def csv_generate_results_column_headers(self):
+        csv_rx_headers = [
+            'Time epoch',
+            'Time',
+            'Station-Count',
+            'Bytes-RD',
+            'Bytes-WR',
+            'RX Rate',
+            'TX Rate',
+            'URLs/s',
+            'Total URLs',
+            ]
+
+        return csv_rx_headers
+
+    # Write initial headers to csv file.
+    def csv_add_column_headers(self):
+        logger.info("self.csv_results_file: {csv_results_file}".format(csv_results_file=self.csv_results_file))
+        if self.csv_results_file is not None:
+            self.csv_results_writer.writerow(
+                self.csv_generate_results_column_headers())
+            self.csv_results_file.flush()
 
 
 def main():
@@ -305,13 +505,15 @@ Generic command example:
                         default='bytes-rd')
     parser.add_argument('--ftp_user', help='--ftp_user sets the username to be used for ftp', default=None)
     parser.add_argument('--ftp_passwd', help='--ftp_user sets the password to be used for ftp', default=None)
-    parser.add_argument('--no_cleanup', help='Do not cleanup before exit', action='store_true')
     parser.add_argument('--dest',
                         help='--dest specifies the destination for the file, should be used when downloading',
                         default="/dev/null")
     parser.add_argument('--source',
                         help='--source specifies the source of the file, should be used when uploading',
                         default="/var/www/html/data_slug_4K.bin")
+    parser.add_argument('--local_lf_report_dir',
+                        help='--local_lf_report_dir override the report path, primary use when running test in test suite',
+                        default="")
     # kpi_csv arguments
     parser.add_argument(
         "--test_rig",
@@ -346,7 +548,6 @@ Generic command example:
         help="--csv_outfile <Output file for csv data>",
         default="")
 
-
     args = parser.parse_args()
 
     # set up logger
@@ -355,6 +556,50 @@ Generic command example:
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
+
+    # for kpi.csv generation
+    local_lf_report_dir = args.local_lf_report_dir
+    test_rig = args.test_rig
+    test_tag = args.test_tag
+    dut_hw_version = args.dut_hw_version
+    dut_sw_version = args.dut_sw_version
+    dut_model_num = args.dut_model_num
+    dut_serial_num = args.dut_serial_num
+    # test_priority = args.test_priority  # this may need to be set per test
+    test_id = args.test_id
+
+    if local_lf_report_dir != "":
+        report = lf_report.lf_report(
+            _path=local_lf_report_dir,
+            _results_dir_name="test_l4",
+            _output_html="test_l4.html",
+            _output_pdf="test_l4.pdf")
+    else:
+        report = lf_report.lf_report(
+            _results_dir_name="test_l4",
+            _output_html="test_l4.html",
+            _output_pdf="test_l4.pdf")
+
+    kpi_path = report.get_report_path()
+    # kpi_filename = "kpi.csv"
+    logger.info("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
+
+    kpi_csv = lf_kpi_csv.lf_kpi_csv(
+        _kpi_path=kpi_path,
+        _kpi_test_rig=test_rig,
+        _kpi_test_tag=test_tag,
+        _kpi_dut_hw_version=dut_hw_version,
+        _kpi_dut_sw_version=dut_sw_version,
+        _kpi_dut_model_num=dut_model_num,
+        _kpi_dut_serial_num=dut_serial_num,
+        _kpi_test_id=test_id)
+
+    if args.csv_outfile is not None:
+        current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+        csv_outfile = "{}_{}-test_l4.csv".format(
+            args.csv_outfile, current_time)
+        csv_outfile = report.file_add_path(csv_outfile)
+        logger.info("csv output file : {}".format(csv_outfile))
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
@@ -374,7 +619,7 @@ Generic command example:
         else:
             output_form = args.output_format
 
-            # Create directory
+    # Create directory
     if args.report_file is None:
         if os.path.isdir('/home/lanforge/report-data'):
             homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':', '-') + 'test_l4'
@@ -405,6 +650,8 @@ Generic command example:
                      url=args.url,
                      mode=args.mode,
                      ap=args.ap,
+                     outfile=args.csv_outfile,
+                     kpi_csv=kpi_csv,
                      ftp=args.ftp,
                      ftp_user=args.ftp_user,
                      ftp_passwd=args.ftp_passwd,
@@ -419,6 +666,7 @@ Generic command example:
     ip_test.cleanup(station_list)
     ip_test.build()
     ip_test.start()
+    l4_cx_results = {}
 
     layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.json_get('layer4')['endpoint']])
     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
@@ -429,19 +677,48 @@ Generic command example:
                                script_name='test_l4',
                                arguments=args,
                                debug=args.debug)
+
+    temp_stations_list = []
+    temp_stations_list.extend(ip_test.station_profile.station_names.copy())
+    logger.info("temp_stations_list: {temp_stations_list}".format(temp_stations_list=temp_stations_list))
+    total_test = len(ip_test.get_result_list())
+    total_pass = len(ip_test.get_passed_result_list())
+
+    endp_rx_map, endps, total_bytes_rd, total_bytes_wr, total_rx_rate, total_tx_rate, urls_second, total_urls = ip_test.get_rx_values()
+    #endp_rx_map, endp_rx_drop_map, endps, bytes_rd, bytes_wr, rx_rate, tcp_ul, tx_rate, urls_sec, total_urls, total_ul_ll = ip_test.get_rx_values()
+
+    ip_test.record_kpi_csv(temp_stations_list, total_test, total_pass, total_bytes_rd, total_bytes_wr, total_rx_rate, total_tx_rate, urls_second, total_urls)
+    ip_test.record_results(len(temp_stations_list), total_bytes_rd, total_bytes_wr, total_rx_rate, total_tx_rate, urls_second, total_urls)
+    # ip_test.record_results(len(temp_stations_list), bytes_rd, bytes_wr, rx_rate, tx_rate, urls_sec, total_urls)
+
+    # Reporting Results (.pdf & .html)
+    csv_results_file = ip_test.get_csv_name()
+    logger.info("csv_results_file: %s", csv_results_file)
+    # csv_results_file = kpi_path + "/" + kpi_filename
+    report.set_title("L4 Test")
+    report.build_banner()
+    report.set_table_title("L4 Test Key Performance Indexes")
+    report.build_table_title()
+    report.set_table_dataframe_from_csv(csv_results_file)
+    report.build_table()
+    report.write_html_with_timestamp()
+    report.write_index_html()
+    # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
+    # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
+    report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+
+    is_passing = ip_test.passes()
+
     ip_test.stop()
-    if not ip_test.passes():
-        logger.info(ip_test.get_fail_message())
-        exit(1)
-    time.sleep(30)
-    #cleanup stations
-    if args.no_cleanup:
-        if ip_test.passes():
-            logger.info("Full test passed")
-        exit(0)
-    else:
+    # cleanup stations:
+
+    if not args.no_cleanup:
+        # time.sleep(15)
         ip_test.cleanup(station_list)
-    if ip_test.passes():
+
+    if not is_passing:
+        logger.info(ip_test.get_fail_message())
+    if is_passing:
         logger.info("Full test passed")
 
 
