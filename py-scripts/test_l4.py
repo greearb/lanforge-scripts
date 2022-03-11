@@ -367,7 +367,7 @@ class IPV4L4(Realm):
             results_dict['pass/fail'] = pass_fail
             results_dict['Subtest-Pass'] = subpass_rx_rate
             results_dict['Subtest-Fail'] = subfail_rx_rate
-            results_dict['short-description'] = "Total RX Rate bps"
+            results_dict['short-description'] = "{sta_count} Stations Total RX Rate".format(sta_count=sta_count)
             results_dict['numeric-score'] = "{}".format(total_rx_rate)
             results_dict['Units'] = "bps"
             self.kpi_csv.kpi_csv_write_dict(results_dict)
@@ -388,7 +388,7 @@ class IPV4L4(Realm):
             results_dict['pass/fail'] = pass_fail
             results_dict['Subtest-Pass'] = subpass_tx_rate
             results_dict['Subtest-Fail'] = subfail_tx_rate
-            results_dict['short-description'] = "Total TX Rate bps"
+            results_dict['short-description'] = "{sta_count} Stations Total TX Rate".format(sta_count=sta_count)
             results_dict['numeric-score'] = "{}".format(total_tx_rate)
             results_dict['Units'] = "bps"
             self.kpi_csv.kpi_csv_write_dict(results_dict)
