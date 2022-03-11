@@ -107,7 +107,7 @@ class TTLSTest(Realm):
         self.hs20_enable = hs20_enable
         self.enable_pkc = enable_pkc
 
-        self.timeout = 120
+        self.timeout = 60
         self.number_template = number_template
         self.debug = _debug_on
         self.station_profile = self.new_station_profile()

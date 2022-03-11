@@ -99,6 +99,7 @@ class IPVariableTime(Realm):
         self.traffic_type = traffic_type
         self.number_template = number_template
         self.debug = _debug_on
+        self.timeout_sec = 60
         # self.json_post("/cli-json/set_resource", {
         #     "shelf":1,
         #     "resource":all,
@@ -165,7 +166,7 @@ class IPVariableTime(Realm):
         self.station_profile.admin_up()
         temp_stas = self.station_profile.station_names.copy()
         print("temp_stas {temp_stas}".format(temp_stas=temp_stas))
-        if self.wait_for_ip(temp_stas, ipv4=not self.ipv6, ipv6=self.ipv6):
+        if self.wait_for_ip(temp_stas, ipv4=not self.ipv6, ipv6=self.ipv6, timeout_sec=self.timeout_sec):
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
