@@ -407,7 +407,10 @@ def main():
     parser.add_argument('--wait_time', type=str, help='[test configuration] --wait_time <how long to wait for station to connect seconds>  example --wait_time 180 (seconds) default: 180 ', default='180')
     parser.add_argument("--outfile", help="[test configuration] Output file for csv data --outfile 'tx_power_AX210_2x2_6E")
     parser.add_argument("-k", "--keep_state", "--no_cleanup", dest="keep_state", action="store_true", help="[test configuration] --no_cleanup, keep the state, no configuration change at the end of the test")
+    # TODO may want to remove enable_all_bands , all bands need to be enabled for 6E testing for 6E to know the domain
     parser.add_argument("-enb","--enable_all_bands", dest="enable_all_bands", action="store_true", help="[test configuration] --enable_all_bands, enable 6g, 5g, 24b bands at end of test")
+    parser.add_argument('--tx_power_adjust_6E', action="store_true", help="[test configuration] --power_adjust_6E  stores true, 6E: 20 Mhz pw 1-6, 40 Mhz pw 1-7 ")
+
 
     # test configuration
     parser.add_argument("--testbed_id", "--test_rig", dest='test_rig', type=str, help="[testbed configuration] --test_rig", default="")
@@ -809,6 +812,7 @@ def main():
     bandwidths = args.bandwidth.split()
     channels = args.channel.split()
     nss = args.nss.split()
+    # args.tx_power.split() will be read later since 6E 20 Mhz does not do tx power 7 8, 40 Mhz does not do power 8
     txpowers = args.txpower.split()
 
     # The script has the ability to create a station if one does not exist
@@ -966,6 +970,21 @@ def main():
                     subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", parent,
                                     "--cli_cmd", set_cmd], capture_output=True)
                 # tx power 1 is the highest power ,  2 power is 1/2 of 1 power etc till power 8 the lowest.
+                # 6E 20Mhz tx power 1 - 6
+                # 6E 40Mhz tx power 1 - 7 
+                # TODO make txpower file into object , 
+                if args.tx_power_adjust_6E:
+                    txpowers = args.txpower.split()
+                    if args.band == '6g':
+                        if bw == '20':
+                            if '8' in txpowers:
+                                txpowers.remove('8')
+                            if '7' in txpowers:
+                                txpowers.remove('7')
+                        elif bw == '40':
+                            if '8' in txpowers:
+                                txpowers.remove('8')
+
                 for tx in txpowers:
                     # e_tot is the errors, w_tot is the warning, i_tot is information
                     e_tot = ""
