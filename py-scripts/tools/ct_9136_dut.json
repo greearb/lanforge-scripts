@@ -7,7 +7,7 @@
         ]  
     },
     "test_dut":{
-        "DUT_SET_NAME": "DUT_NAME ASUSRT-AX88U",
+        "DUT_SET_NAME": "AP687D.B45C.2B24",
         "USE_DUT_NAME": "AP687D.B45C.2B24",
         "DUT_SW": "12345678",
         "DUT_HW": "9136I-B",
