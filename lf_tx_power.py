@@ -467,11 +467,33 @@ def main():
     test_id = args.test_id
 
     # put in test information in title name
-    results_dir_name = ("tx_power"
-                        + '_ch_' + args.channel.replace(' ', '_')
-                        + '_nss_' + args.nss.replace(' ', '_')
-                        + '_bw_' + args.bandwidth.replace(' ', '_')
-                        + '_txpw_' + args.txpower.replace(' ', '_'))
+    # this only works for single test passed in. 
+    if  args.tx_power_adjust_6E and args.band == '6g':
+        txpowers = args.txpower.split()
+        if args.bandwidth == '20':
+            if '8' in txpowers:
+                txpowers.remove('8')
+            if '7' in txpowers:
+                txpowers.remove('7')
+        elif args.bandwidth == '40':
+            if '8' in txpowers:
+                txpowers.remove('8')
+        txpowers_str = '_'.join(txpowers)
+
+        
+        results_dir_name = ("tx_power"
+                            + '_ch_' + args.channel.replace(' ', '_')
+                            + '_nss_' + args.nss.replace(' ', '_')
+                            + '_bw_' + args.bandwidth.replace(' ', '_')
+                            + '_txpw_' + txpowers_str) 
+
+    else:
+        results_dir_name = ("tx_power"
+                            + '_ch_' + args.channel.replace(' ', '_')
+                            + '_nss_' + args.nss.replace(' ', '_')
+                            + '_bw_' + args.bandwidth.replace(' ', '_')
+                            + '_txpw_' + args.txpower.replace(' ', '_'))
+
 
     if local_lf_report_dir != "":
         report = lf_report.lf_report(
