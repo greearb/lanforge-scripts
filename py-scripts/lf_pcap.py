@@ -114,7 +114,7 @@ class LfPcap(Realm):
         try:
             if pcap_file is not None:
                 cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.vht.capabilities.mubeamformer == 1 &&  '
-                                                                       'wlan.fc.type_subtype==0x000')
+                                                                       'wlan.fc.type_subtype == 0')
                 packet_count = 0
                 for pkt in cap:
                     if 'wlan.mgt' in pkt:
@@ -134,7 +134,7 @@ class LfPcap(Realm):
         try:
             if pcap_file is not None:
                 cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.vht.capabilities.mubeamformer == 1 &&  '
-                                                                       'wlan.fc.type_subtype==0x001')
+                                                                       'wlan.fc.type_subtype == 1')
                 packet_count = 0
                 for pkt in cap:
                     if 'wlan.mgt' in pkt:
@@ -152,7 +152,49 @@ class LfPcap(Realm):
     def check_beamformer_report_poll(self, pcap_file):
         try:
             if pcap_file is not None:
-                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype == 0x0014')
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype == 20')
+                packet_count = 0
+                for pkt in cap:
+                    packet_count += 1
+                if packet_count >= 1:
+                    return True
+                else:
+                    return False
+        except ValueError:
+            raise "pcap file is required."
+
+    def check_he_capability(self, pcap_file):
+        try:
+            if pcap_file is not None:
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='radiotap.he.data_1.ppdu_format')
+                packet_count = 0
+                for pkt in cap:
+                    packet_count += 1
+                if packet_count >= 1:
+                    return True
+                else:
+                    return False
+        except ValueError:
+            raise "pcap file is required."
+
+    def check_probe_request(self, pcap_file):
+        try:
+            if pcap_file is not None:
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype == 4')
+                packet_count = 0
+                for pkt in cap:
+                    packet_count += 1
+                if packet_count >= 1:
+                    return True
+                else:
+                    return False
+        except ValueError:
+            raise "pcap file is required."
+
+    def check_probe_response(self, pcap_file):
+        try:
+            if pcap_file is not None:
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype == 5')
                 packet_count = 0
                 for pkt in cap:
                     packet_count += 1
