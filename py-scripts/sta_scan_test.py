@@ -78,52 +78,55 @@ class StaScan(Realm):
         self.station_profile.mode = mode
 
     def start(self):
-        self.station_profile.admin_up()
-        print(self.sta_list)
-        LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
-                                          debug_=self.debug)
-        stations = [LFUtils.name_to_eid(x) for x in self.sta_list]
-        stations = pd.DataFrame(stations)
-        resources = stations[1].unique()
-        interfaces = list()
-        for resource in resources:
-            shelf = stations[0][0]
-            resource_station = list(stations[stations[1] == resource][2])
-            url = '/port/%s/%s/%s' % (shelf, resource, ','.join(resource_station))
-            response = self.json_get(url)
-            if 'interface' in response.keys():
-                interface = response['interface']
-                interfaces.append(interface)
-            elif 'interfaces' in response.keys():
-                response_interfaces = response['interfaces']
-                for interface in response_interfaces:
-                    for item in interface.values():
-                        interfaces.append(item)
-        df = pd.DataFrame(interfaces)
-        stations = df[df['port type'] == 'WIFI-STA']
-        stations = list(stations.drop_duplicates('parent dev')['alias'])
-        stations = [station for station in stations if station in self.sta_list]
+        try:
+            self.station_profile.admin_up()
+            print(self.sta_list)
+            LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
+                                              debug_=self.debug)
+            stations = [LFUtils.name_to_eid(x) for x in self.sta_list]
+            stations = pd.DataFrame(stations)
+            resources = stations[1].unique()
+            interfaces = list()
+            for resource in resources:
+                shelf = stations[0][0]
+                resource_station = list(stations[stations[1] == resource][2])
+                url = '/port/%s/%s/%s' % (shelf, resource, ','.join(resource_station))
+                response = self.json_get(url)
+                if 'interface' in response.keys():
+                    interface = response['interface']
+                    interfaces.append(interface)
+                elif 'interfaces' in response.keys():
+                    response_interfaces = response['interfaces']
+                    for interface in response_interfaces:
+                        for item in interface.values():
+                            interfaces.append(item)
+            df = pd.DataFrame(interfaces)
+            stations = df[df['port type'] == 'WIFI-STA']
+            stations = list(stations.drop_duplicates('parent dev')['alias'])
+            stations = [station for station in stations if station in self.sta_list]
 
-        for port in stations:
-            port = LFUtils.name_to_eid(port)
-            data = {
-                "shelf": port[0],
-                "resource": port[1],
-                "port": port[2]
-            }
-            self.json_post("/cli-json/scan_wifi", data)
-            time.sleep(15)
-            scan_results = self.json_get("scanresults/%s/%s/%s" % (port[0], port[1], port[2]))
-            if self.csv_output:
-                results = scan_results['scan-results']
-                df = pd.DataFrame([list(result.values())[0] for result in results])
-                df.to_csv(self.csv_output)
-                print('CSV output saved at %s' % self.csv_output)
-            else:
-                print("{0:<23}".format("BSS"), "{0:<7}".format("Signal"), "{0:<5}".format("SSID"))
-                for result in scan_results['scan-results']:
-                    for name, info in result.items():
-                        print("%s\t%s\t%s" % (info['bss'], info['signal'], info['ssid']))
+            for port in stations:
+                port = LFUtils.name_to_eid(port)
+                data = {
+                    "shelf": port[0],
+                    "resource": port[1],
+                    "port": port[2]
+                }
+                self.json_post("/cli-json/scan_wifi", data)
+                time.sleep(15)
+                scan_results = self.json_get("scanresults/%s/%s/%s" % (port[0], port[1], port[2]))
+                if self.csv_output:
+                    results = scan_results['scan-results']
+                    df = pd.DataFrame([list(result.values())[0] for result in results])
+                    df.to_csv(self.csv_output)
+                    print('CSV output saved at %s' % self.csv_output)
+                else:
+                    print("{0:<23}".format("BSS"), "{0:<7}".format("Signal"), "{0:<5}".format("SSID"))
+                    for result in scan_results['scan-results']:
+                        for name, info in result.items():
+                            print("%s\t%s\t%s" % (info['bss'], info['signal'], info['ssid']))
+        except Exception as e:
+            print(e)
 
     def pre_cleanup(self):
         self.station_profile.cleanup(self.sta_list)
