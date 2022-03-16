@@ -1730,6 +1730,7 @@ def main():
 
                             try:
                                 logg.info("ap_ctl.py: read AP power information")
+                                # TODO use ap module
                                 ap_info = subprocess.run(["./ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'], "--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
                                                           "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'], "--action", "powercfg"], stdout=subprocess.PIPE)
                                 try:

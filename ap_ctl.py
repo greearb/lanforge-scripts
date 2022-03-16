@@ -47,6 +47,13 @@ import argparse
 import pexpect
 import serial
 from pexpect_serial import SerialSpawn
+import importlib
+
+
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../")))
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+mux_client = importlib.import_module("mux_client")
 
 # pip install pexpect-serial  (on Ubuntu)
 # sudo pip install pexpect-serial (on Ubuntu for everyone)
@@ -55,7 +62,8 @@ default_host = "localhost"
 default_ports = {
     "serial": None,
     "ssh":   22,
-    "telnet": 23
+    "telnet": 23,
+    "mux_serial": 23200 
 }
 NL = "\n"
 CR = "\r\n"
@@ -119,11 +127,13 @@ def main():
     parser.add_argument("-o", "--port",    type=int, help="control port on the AP, 2008")
     parser.add_argument("-u", "--user",    type=str, help="credential login/username, admin")
     parser.add_argument("-p", "--passwd",  type=str, help="credential password Wnbulab@123")
-    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
+    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet", "mux_client"], help="Connect via serial, ssh, telnet, mux_client")
     parser.add_argument("-t", "--tty",     type=str, help="tty serial device for connecting to AP")
     parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console",default="stdout")
     parser.add_argument("-z", "--action",  type=str, help="action,  current action is powercfg")
-    parser.add_argument("-b", "--baud",    type=str, help="action,  baud rate lanforge: 115200  cisco: 9600")
+    parser.add_argument("-b", "--baud",    type=str, help="baud,  baud rate lanforge: 115200  cisco: 9600")
+    parser.add_argument("--mux_client_module", type=str, help="mux client module")
+
 
     args = None
     try:
@@ -168,7 +178,7 @@ def main():
 
         elif (scheme == "ssh"):
             if (port is None):
-                port = 22
+                port = default_ports["ssh"]
             cmd = "ssh -p%d %s@%s"%(port, user, host)
             logg.info("Spawn: "+cmd+NL)
             egg = pexpect.spawn(cmd)
@@ -176,12 +186,18 @@ def main():
             egg.logfile = FileAdapter(logg)
         elif (scheme == "telnet"):
             if (port is None):
-                port = 23
+                port = default_ports["telnet"]
             cmd = "telnet {} {}".format(host, port)
             logg.info("Spawn: "+cmd+NL)
             egg = pexpect.spawn(cmd)
             egg.logfile = FileAdapter(logg)
             # Will login below as needed.
+        elif (scheme == "mux_serial"):
+            # sudo ./mux_server.py --device /dev/ttyUSB0 --baud 115200 --port 23200
+            if port is None:
+                port = default_ports["mux_serial"]
+            cmd = "./mux_client.py "
+
         else:
             usage()
             exit(1)
@@ -251,6 +267,7 @@ def main():
             sleep(1)
 
 
+    # show controllers dot11Radio 2 powerreg
     if (args.action == "powercfg"):
         logg.info("execute: show controllers dot11Radio 1 powercfg | g T1")
         egg.sendline('show controllers dot11Radio 1 powercfg | g T1')
