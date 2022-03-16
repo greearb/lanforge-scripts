@@ -48,6 +48,7 @@ import pexpect
 import serial
 from pexpect_serial import SerialSpawn
 import importlib
+import os
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../")))
@@ -63,7 +64,7 @@ default_ports = {
     "serial": None,
     "ssh":   22,
     "telnet": 23,
-    "mux_serial": 23200 
+    "mux_client": 23200 
 }
 NL = "\n"
 CR = "\r\n"
@@ -124,13 +125,15 @@ def main():
     parser = argparse.ArgumentParser(description="Cisco AP Control Script")
     parser.add_argument("-a", "--prompt",  type=str, help="ap prompt")
     parser.add_argument("-d", "--dest",    type=str, help="address of the AP  172.19.27.55")
+    parser.add_argument("-m", "--host",    type=str, help="address of the mux_serial server 192.168.100.239")
     parser.add_argument("-o", "--port",    type=int, help="control port on the AP, 2008")
     parser.add_argument("-u", "--user",    type=str, help="credential login/username, admin")
     parser.add_argument("-p", "--passwd",  type=str, help="credential password Wnbulab@123")
     parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet", "mux_client"], help="Connect via serial, ssh, telnet, mux_client")
     parser.add_argument("-t", "--tty",     type=str, help="tty serial device for connecting to AP")
     parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console",default="stdout")
-    parser.add_argument("-z", "--action",  type=str, help="action,  current action is powercfg")
+    parser.add_argument("-z", "--action",  type=str, help="action,  cmd, powercfg, clear_log, show_log, cac_expiry_evt, ds_data_5ghz, ds_data_24ghz  ")
+    parser.add_argument("-v", "--value",   type=str, help="value,  cmd value")
     parser.add_argument("-b", "--baud",    type=str, help="baud,  baud rate lanforge: 115200  cisco: 9600")
     parser.add_argument("--mux_client_module", type=str, help="mux client module")
 
@@ -192,20 +195,29 @@ def main():
             egg = pexpect.spawn(cmd)
             egg.logfile = FileAdapter(logg)
             # Will login below as needed.
-        elif (scheme == "mux_serial"):
+        elif (scheme == "mux_client"):
             # sudo ./mux_server.py --device /dev/ttyUSB0 --baud 115200 --port 23200
             if port is None:
-                port = default_ports["mux_serial"]
-            cmd = "./mux_client.py "
+                port = default_ports["mux_client"]
+            # for client                
+            cmd = "./mux_client.py --host {host} --port {port}".format(host=args.host,port=args.port)
+            logg.info("Spawn: "+cmd+NL)
+            egg = pexpect.spawn(cmd)
+            egg.logfile = FileAdapter(logg)
 
         else:
             usage()
             exit(1)
     except Exception as e:
         logging.exception(e)
-    
-    AP_PROMPT       = "{}>".format(args.prompt)
-    AP_HASH         = "{}#".format(args.prompt)
+    if args.scheme == 'mux_client' or args.prompt is None:
+        AP_PROMPT       = ">"
+        AP_HASH         = "#"
+        MUX_PROMPT      = "MUX>"
+    else:
+        AP_PROMPT       = "{}>".format(args.prompt)
+        AP_HASH         = "{}#".format(args.prompt)
+
     time.sleep(0.1)
     logged_in  = False
     loop_count = 0

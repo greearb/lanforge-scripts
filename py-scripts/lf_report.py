@@ -32,6 +32,7 @@ import datetime
 import pandas as pd
 import pdfkit
 import argparse
+import traceback
 
 
 # internal candela references included during intial phases, to be deleted at future date
@@ -185,7 +186,8 @@ class lf_report:
         try:
             if not os.path.exists(self.path_date_time):
                 os.mkdir(self.path_date_time)
-        except:
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             self.path_date_time = os.path.join(self.current_path, self.date_time_directory)
             if not os.path.exists(self.path_date_time):
                 os.mkdir(self.path_date_time)
@@ -197,7 +199,8 @@ class lf_report:
         try:
             if not os.path.exists(self.log_directory):
                 os.mkdir(self.log_directory)
-        except:
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             print("exception making {}".format(self.log_directory))
             exit(1)
 
@@ -277,7 +280,8 @@ class lf_report:
             test_file = open(self.write_output_html, "w")
             test_file.write(self.html)
             test_file.close()
-        except:
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             print("write_html failed")
         return self.write_output_html
 
@@ -288,7 +292,8 @@ class lf_report:
             test_file = open(self.write_output_index_html, "w")
             test_file.write(self.html)
             test_file.close()
-        except:
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             print("write_index_html failed")
         return self.write_output_index_html
 
@@ -299,7 +304,8 @@ class lf_report:
             test_file = open(self.write_output_html, "w")
             test_file.write(self.html)
             test_file.close()
-        except:
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             print("write_html failed")
         return self.write_output_html
 
@@ -456,7 +462,8 @@ class lf_report:
         try:
             self.path_date_time = os.path.join(self.path, self.date_time)
             os.mkdir(self.path_date_time)
-        except:
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             self.path_date_time = os.path.join(curr_dir_path, self.date_time)
             os.mkdir(self.path_date_time)
