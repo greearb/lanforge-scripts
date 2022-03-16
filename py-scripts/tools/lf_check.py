@@ -48,6 +48,21 @@ curl -H 'Accept: application/json' http://localhost:8080/ | json_pp
       "JsonVersion" : "1.0.25931"
    },
 
+user@user:~/git/lf-scripts/py-json/LANforge$ curl -H 'Accept: application/json' http://192.168.100.178:8080/ | json_pp | grep -A 7 "VersionInfo"
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100 11532  100 11532    0     0  91523      0 --:--:-- --:--:-- --:--:-- 91523
+   "VersionInfo" : {
+      "BuildDate" : "Wed 09 Mar 2022 12:14:20 PM PST",
+      "BuildMachine" : "v-f30-64",
+      "BuildVersion" : "5.4.5",
+      "Builder" : "greearb",
+      "GitVersion" : "0aab99fc6974b6abf805a05dadacf78dec228f94",
+      "JsonVersion" : "1.0.26808"
+   },
+user@user:~/git/lf-scripts/py-json/LANforge$ 
+
+
 curl -u 'user:pass' -H 'Accept: application/json' http://<lanforge ip>:8080 | json_pp  | grep -A 7 "VersionInfo"
 
 6. for Fedora you can do a:  dnf group list  , to see what all is installed
