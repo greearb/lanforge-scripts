@@ -152,7 +152,7 @@ def main():
                                  "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
                                  "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
                                  "wireless_tag_policy", "no_wlan_wireless_tag_policy", "delete_wlan",
-                                 "show_ap_bssid_24g", "show_ap_bssid_5g", "show_ap_bssid_6g_dual_band", "shwo_ap_bssid_6g",  "11r_logs"])
+                                 "show_ap_bssid_24g", "show_ap_bssid_5g", "show_ap_bssid_6g_dual_band", "shwo_ap_bssid_6g",  "11r_logs", "enable_ft_akm_ftpsk"])
     parser.add_argument("--value", type=str, help="set value")
     # logging configuration
     parser.add_argument(
@@ -1490,6 +1490,45 @@ def main():
                 logg.info("did not get the (config)# prompt")
         else:
             command = "config wlan create {} {} {}".format(args.wlanID, args.wlan, args.wlanSSID)
+
+
+    if (args.action == "enable_ft_akm_ftpsk" and  (args.wlan is None) ):
+        raise Exception("enable ft wlanID, wlan, wlanSSID are required")
+    if (args.action == "enable_ft_akm_ftpsk"):
+        logg.info("enable ft and select ft + psk akm  wlan {} wlanID {} wlanSSID {}".format(args.wlan, args.wlanID, args.wlanSSID))
+        if args.series == "9800":
+            egg.sendline("config t")
+            sleep(0.4)
+            i = egg.expect_exact(["(config)#", pexpect.TIMEOUT], timeout=timeout)
+            if i == 0:
+                logg.info("elevated to (config)#")
+                # for create wlan <name> <ID> <ssid>
+                command = "wlan {wlan}".format(wlan=args.wlan)
+                egg.sendline(command)
+                sleep(0.4)
+                j = egg.expect_exact([CCP_CONFIG_WLAN, pexpect.TIMEOUT], timeout=timeout)
+                if j == 0:
+
+                    for command in ["shutdown",
+                                    "security ft",
+                                    "security wpa psk set-key ascii 0 {security_key}".format(security_key=args.security_key),
+                                    "no security wpa akm dot1x",
+                                    "security wpa akm ft psk",
+                                    "no shutdown"
+                                    ]:
+                        egg.sendline(command)
+                        sleep(1)
+                        k = egg.expect_exact([CCP_CONFIG_WLAN, pexpect.TIMEOUT], timeout=timeout)
+                        if k == 0:
+                            logg.info("command sent: {}".format(command))
+                        if k == 1:
+                            logg.info("command time out: {}".format(command))
+                if j == 1:
+                    logg.info("did not get the (config-wlan)# prompt")
+            if i == 0:
+                logg.info("did not get the (config)# prompt")
+
+
 
     if (args.action == "create_wlan_wpa3" and ((args.wlanID is None) or (args.wlan is None) or (args.wlanSSID is None) or (args.security_key is None))):
         raise Exception("create_wlan_wpa3 wlanID, wlan, wlanSSID are required an")
