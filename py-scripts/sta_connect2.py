@@ -890,6 +890,9 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
+    if args.debug:
+        logger_config.set_level("debug")
+
     # for kpi.csv generation
     local_lf_report_dir = args.local_lf_report_dir
     test_rig = args.test_rig
