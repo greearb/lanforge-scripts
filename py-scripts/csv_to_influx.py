@@ -5,7 +5,6 @@ import importlib
 from pathlib import Path
 import argparse
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 cv_test_manager = importlib.import_module("py-json.cv_test_manager")
@@ -14,6 +13,7 @@ cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
 InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")
 RecordInflux = InfluxRequest.RecordInflux
 influx_add_parser_args = InfluxRequest.influx_add_parser_args
+
 
 class CSVtoInflux:
     def __init__(self,
@@ -34,7 +34,7 @@ class CSVtoInflux:
         path = Path(self.path)
         self.kpi_list = list(path.glob('**/kpi.csv'))
         for kpi in self.kpi_list:
-            self.influxdb.RecordInflux.csv_to_influx(kpi)
+            self.influxdb.csv_to_influx(kpi)
 
 
 def main():
