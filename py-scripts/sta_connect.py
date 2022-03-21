@@ -491,11 +491,12 @@ class StaConnect(Realm):
 def main():
     parser = Realm.create_basic_argparse(
         prog="sta_connect.py",
-        description="""LANforge Unit Test:  Connect Station to AP
+        formatter_class=argparse.RawTextHelpFormatter,
+        description="""\
+        LANforge Unit Test:  Connect Station to AP
 Example:
-./sta_connect.py --mgr 192.168.100.209 --dut_ssid OpenWrt-2 --dut_bssid 24:F5:A2:08:21:6C
+./sta_connect.py --mgr 192.168.100.209 --ssid OpenWrt-2 --dut_bssid 24:F5:A2:08:21:6C
 """)
-    parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)", default=8080)
     parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1", default=1)
     parser.add_argument("--upstream_resource", type=str, help="LANforge Ethernet port resource ID to use, default is 1", default=1)
     parser.add_argument("--sta_mode", type=str,
@@ -506,7 +507,7 @@ Example:
     args = parser.parse_args()
     monitor_interval = Realm.parse_time(args.test_duration).total_seconds()
 
-    staConnect = StaConnect(args.mgr, args.port, _upstream_port=args.upstream_port, _runtime_sec=monitor_interval,
+    staConnect = StaConnect(args.mgr, args.mgr_port, _upstream_port=args.upstream_port, _runtime_sec=monitor_interval,
                             _sta_mode=args.sta_mode, _upstream_resource=args.upstream_resource,
                             _radio=args.radio, _resource=args.resource, _passwd=args.passwd, _dut_passwd=args.passwd,
                             _dut_bssid=args.dut_bssid, _dut_ssid=args.ssid, _dut_security=args.security,
