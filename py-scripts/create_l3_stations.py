@@ -242,10 +242,6 @@ def main():
             help='Optional: User defined station names, can be a comma or space separated list',
             nargs='+',
             default=None)
-        optional_args.add_argument(
-            '--no_cleanup',
-            help="Optional: Don't cleanup existing stations",
-            action='store_true')
     args = parser.parse_args()
 
     logger_config = lf_logger_config.lf_logger_config()
