@@ -34,7 +34,7 @@ class CSVtoInflux:
         path = Path(self.path)
         self.kpi_list = list(path.glob('**/kpi.csv'))
         for kpi in self.kpi_list:
-            self.influxdb.RecordInflux.csv_to_influx(kpi)
+            self.influxdb.csv_to_influx(kpi)
 
 
 def main():

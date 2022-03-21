@@ -8,6 +8,7 @@ import sys
 import os
 
 import pandas as pd
+from influxdb_client import WritePrecision
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -61,7 +62,7 @@ class RecordInflux():
         for tag_key, tag_value in tags.items():
             p.tag(tag_key, tag_value)
             print(tag_key, tag_value)
-        p.time(time)
+        p.time(datetime.datetime.strptime(time, '%Y-%m-%dT%H:%M:%S.%f').utcnow(), WritePrecision.NS)
         p.field("value", value)
         self.write_api.write(bucket=self.influx_bucket, org=self.influx_org, record=p)
 
