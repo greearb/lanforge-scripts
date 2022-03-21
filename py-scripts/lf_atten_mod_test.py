@@ -27,7 +27,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 realm = importlib.import_module("py-json.realm")
@@ -56,6 +56,7 @@ class CreateAttenuator(Realm):
 
 
 def main():
+    # create_basic_argparse defined in lanforge-scripts/py-json/LANforge/lfcli_base.py
     parser = Realm.create_basic_argparse(
         prog='lf_atten_mod_test.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -68,7 +69,8 @@ def main():
                 ''')
 
     parser.add_argument('-hst', '--host', help='host name', default='192.168.200.12')
-    parser.add_argument('-port', '--port', help='port name', default=8080)
+    # basic_argparser contains --port option
+    # parser.add_argument('-port', '--port', help='port name', default=8080)
     parser.add_argument('-atten_serno', '--atten_serno', help='Serial number for requested Attenuator, or \'all\'', default=2222)
     parser.add_argument('-atten_idx', '--atten_idx', help='Attenuator index eg. For module 1 = 0,module 2 = 1', default=7)
     parser.add_argument('-atten_val', '--atten_val', help='Requested attenution in 1/10ths of dB (ddB).', default=550)
