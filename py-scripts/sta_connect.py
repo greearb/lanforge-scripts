@@ -1,8 +1,25 @@
 #!/usr/bin/env python3
-#  This will create a station, create TCP and UDP traffic, run it a short amount of time,
-#  and verify whether traffic was sent and received.  It also verifies the station connected
-#  to the requested BSSID if bssid is specified as an argument.
-#  The script will clean up the station and connections at the end of the test.
+"""
+NAME: sta_connect.py
+
+PURPOSE:
+    This will create a station, create TCP and UDP traffic, run it a short amount of time,
+    and verify whether traffic was sent and received.  It also verifies the station connected
+    to the requested BSSID if bssid is specified as an argument.
+    The script will clean up the station and connections at the end of the test.
+
+EXAMPLE:
+    ./sta_connect.py --ssid Logan-Test-Net --passwd Logan-Test-Net --security wpa2 --radio 1.1.wiphy1
+                     --upstream_port eth2 --dut_bssid 08:36:C9:E3:D4:DC
+
+    ./sta_connect.py --ssid Logan-Test-Net --passwd Logan-Test-Net --security wpa2 --radio 1.2.wiphy1
+                     --upstream_port eth2 --dut_bssid 08:36:C9:E3:D4:DC --resource 2
+
+Use './sta_connect.py --help' to see command line usage and options
+Copyright 2021 Candela Technologies Inc
+License: Free to distribute and modify. LANforge systems must be licensed.
+"""
+
 import sys
 import os
 import importlib
