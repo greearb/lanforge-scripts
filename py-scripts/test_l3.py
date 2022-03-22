@@ -1630,10 +1630,6 @@ Setting wifi_settings per radio
         default="")
 
     parser.add_argument(
-        "--cap_ctl_out",
-        help="--cap_ctl_out, switch the controller output will be captured",
-        action='store_true')
-    parser.add_argument(
         "--wait",
         help="--wait <time> , time to wait at the end of the test",
         default='0')
