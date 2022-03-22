@@ -123,18 +123,19 @@ def main():
 
     
     parser = argparse.ArgumentParser(description="Cisco AP Control Script")
+    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet", "mux_client"], help="Connect via serial, ssh, telnet, mux_client")
+    parser.add_argument("-d", "--dest",    type=str, help="address of the AP  172.19.27.55 or address of the mux_serial server 192.168.100.239")
+    # parser.add_argument("-m", "--host",    type=str, help="address of the mux_serial server 192.168.100.239")
     parser.add_argument("-a", "--prompt",  type=str, help="ap prompt")
-    parser.add_argument("-d", "--dest",    type=str, help="address of the AP  172.19.27.55")
-    parser.add_argument("-m", "--host",    type=str, help="address of the mux_serial server 192.168.100.239")
     parser.add_argument("-o", "--port",    type=int, help="control port on the AP, 2008")
     parser.add_argument("-u", "--user",    type=str, help="credential login/username, admin")
     parser.add_argument("-p", "--passwd",  type=str, help="credential password Wnbulab@123")
-    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet", "mux_client"], help="Connect via serial, ssh, telnet, mux_client")
     parser.add_argument("-t", "--tty",     type=str, help="tty serial device for connecting to AP")
     parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console",default="stdout")
     parser.add_argument("-z", "--action",  type=str, help="action,  cmd, powercfg, clear_log, show_log, cac_expiry_evt, ds_data_5ghz, ds_data_24ghz  ")
     parser.add_argument("-v", "--value",   type=str, help="value,  cmd value")
     parser.add_argument("-b", "--baud",    type=str, help="baud,  baud rate lanforge: 115200  cisco: 9600")
+    # TODO possibly include the mux_client as a module to run 
     parser.add_argument("--mux_client_module", type=str, help="mux client module")
 
 
@@ -200,7 +201,7 @@ def main():
             if port is None:
                 port = default_ports["mux_client"]
             # for client                
-            cmd = "./mux_client.py --host {host} --port {port}".format(host=args.host,port=args.port)
+            cmd = "./mux_client.py --host {host} --port {port}".format(host=args.dest,port=args.port)
             logg.info("Spawn: "+cmd+NL)
             egg = pexpect.spawn(cmd)
             egg.logfile = FileAdapter(logg)
@@ -211,9 +212,9 @@ def main():
     except Exception as e:
         logging.exception(e)
     if args.scheme == 'mux_client' or args.prompt is None:
-        AP_PROMPT       = ">"
-        AP_HASH         = "#"
-        MUX_PROMPT      = "MUX>"
+        AP_PROMPT       = "{}>".format(args.prompt)
+        AP_HASH         = "{}#".format(args.prompt)
+        MUX_PROMPT      = "MUX >"
     else:
         AP_PROMPT       = "{}>".format(args.prompt)
         AP_HASH         = "{}#".format(args.prompt)
@@ -223,11 +224,13 @@ def main():
     loop_count = 0
     while (loop_count <= 8 and logged_in == False):
         loop_count += 1
-        i = egg.expect_exact([AP_ESCAPE,AP_PROMPT,AP_HASH,AP_USERNAME,AP_PASSWORD,AP_MORE,LF_PROMPT,pexpect.TIMEOUT],timeout=5)
+        i = egg.expect_exact([AP_ESCAPE,AP_PROMPT,AP_HASH,AP_USERNAME,AP_PASSWORD,AP_MORE,LF_PROMPT,MUX_PROMPT,pexpect.TIMEOUT],timeout=5)
+        # AP_ESCAPE
         if i == 0:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_ESCAPE,i,egg.before,egg.after))
             egg.sendline(CR) # Needed after Escape or should just do timeout and then a CR?
             sleep(1)
+        # AP_PROMPT
         if i == 1:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_PROMPT,i,egg.before,egg.after))
             egg.sendline(AP_EN) 
@@ -245,19 +248,22 @@ def main():
                     logg.info("Expect: {} i: {} j: {} k: {} before: {} after: {}".format("Timeout",i,j,k,egg.before,egg.after))
             if j == 1:
                 logg.info("Expect: {} i: {} j: {} before: {} after: {}".format("Timeout",i,j,egg.before,egg.after))
-
+        # AP_HASH
         if i == 2:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_HASH,i,egg.before,egg.after))
             logged_in = True 
             sleep(1)
+        # AP_USERNAME
         if i == 3:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_USERNAME,i,egg.before,egg.after))
             egg.sendline(args.user) 
             sleep(1)
+        # AP_PASSWORD
         if i == 4:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_PASSWORD,i,egg.before,egg.after))
             egg.sendline(args.passwd) 
             sleep(1)
+        # AP_MORE
         if i == 5:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_MORE,i,egg.before,egg.after))
             if (scheme == "serial"):
@@ -266,6 +272,7 @@ def main():
                 egg.sendcontrol('c')
             sleep(1)
         # for Testing serial connection using Lanforge
+        # LF_PROMPT
         if i == 6:
             logg.info("Expect: {} i: {} before: {} after: {}".format(LF_PROMPT,i,egg.before.decode('utf-8', 'ignore'),egg.after.decode('utf-8', 'ignore')))
             if (loop_count < 3):
@@ -273,7 +280,14 @@ def main():
                 sleep(1)
             if (loop_count > 4):
                 logged_in = True # basically a test mode using lanforge serial
+        # MUX_PROMPT
         if i == 7:
+            logg.info("Received MUX prompt, send carriage return")
+            logg.info("Expect: {} i: {} before: {} after: {}".format("Timeout",i,egg.before,egg.after))
+            egg.sendline(CR) 
+            sleep(1)
+        # TIMEOUT
+        if i == 8:
             logg.info("Expect: {} i: {} before: {} after: {}".format("Timeout",i,egg.before,egg.after))
             egg.sendline(CR) 
             sleep(1)
