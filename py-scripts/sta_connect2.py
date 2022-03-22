@@ -1030,7 +1030,7 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
 
     # cleanup stations
     if not args.no_cleanup:
-        staConnect.pre_cleanup()
+        staConnect.cleanup()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
