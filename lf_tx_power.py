@@ -158,7 +158,7 @@ The user also has the option of setting up the station oustide of this script, h
 NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme defaults to ssh
 
 
-# TODO update , OLD EXAMPLE - Connecting to AP 
+# TODO update , OLD EXAMPLE - Connecting to AP
 ##############################################################################################
 # read AP for powercfg values using : show controllers dot11Radio 1 powercfg | g T1'
 ##############################################################################################
@@ -169,7 +169,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
     --antenna_gain "6" --wlanID 1 --wlan open-wlan --wlanSSID open-wlan\
     --ap_info "ap_scheme==telnet ap_prompt==9120_Candela ap_ip==172.19.27.55 ap_port==2008 ap_user==admin ap_pw==Wnbulab@123"
 
-# TODO update OLD EXAMPLE replaced by BATCH mode 
+# TODO update OLD EXAMPLE replaced by BATCH mode
 ##############################################################################################
 # Long duration test -- need to create the ---wlanID 1 --wlan open-wlan --wlanSSID open-wlan
 ##############################################################################################
@@ -246,7 +246,7 @@ Offset 1, Offset 2, Offset 3, Offset 4: which in the code is diff_aX = calc_antX
 Pass/Fail : (~line 1286) If the diff / offset is greater than the pfrange determins the pass or fail
 
 Show the tx_power for a specific station:
- iw dev <station> station dump 
+ iw dev <station> station dump
  iw dev sta0000 station dump
 
 '''
@@ -348,7 +348,7 @@ def main():
 
     # controller configuration
     parser.add_argument("-s", "--scheme", type=str, choices=["serial", "ssh", "telnet"], help="[controller configuration] Connect via serial, ssh or telnet --scheme ssh", required=True)
-    parser.add_argument("-d", "--controller_ip","--dest", dest="dest",type=str, help="[controller configuration] address of the controller --dest localhost", required=True)
+    parser.add_argument("-d", "--controller_ip", "--dest", dest="dest", type=str, help="[controller configuration] address of the controller --dest localhost", required=True)
     parser.add_argument("-o", "--port", type=str, help="[controller configuration] controller port on the controller --port 8887", required=True)
     parser.add_argument("-u", "--user", type=str, help="[controller configuration] controller login/username --user admin", required=True)
     parser.add_argument("-p", "--passwd", type=str, help="[controller configuration] credential password --passwd Cisco123", required=True)
@@ -412,9 +412,8 @@ def main():
     parser.add_argument("--outfile", help="[test configuration] Output file for csv data --outfile 'tx_power_AX210_2x2_6E")
     parser.add_argument("-k", "--keep_state", "--no_cleanup", dest="keep_state", action="store_true", help="[test configuration] --no_cleanup, keep the state, no configuration change at the end of the test")
     # TODO may want to remove enable_all_bands , all bands need to be enabled for 6E testing for 6E to know the domain
-    parser.add_argument("-enb","--enable_all_bands", dest="enable_all_bands", action="store_true", help="[test configuration] --enable_all_bands, enable 6g, 5g, 24b bands at end of test")
+    parser.add_argument("-enb", "--enable_all_bands", dest="enable_all_bands", action="store_true", help="[test configuration] --enable_all_bands, enable 6g, 5g, 24b bands at end of test")
     parser.add_argument('--tx_power_adjust_6E', action="store_true", help="[test configuration] --power_adjust_6E  stores true, 6E: 20 Mhz pw 1-6, 40 Mhz pw 1-7 ")
-
 
     # test configuration
     parser.add_argument("--testbed_id", "--test_rig", dest='test_rig', type=str, help="[testbed configuration] --test_rig", default="")
@@ -471,8 +470,8 @@ def main():
     test_id = args.test_id
 
     # put in test information in title name
-    # this only works for single test passed in. 
-    if  args.tx_power_adjust_6E and args.band == '6g':
+    # this only works for single test passed in.
+    if args.tx_power_adjust_6E and args.band == '6g':
         txpowers = args.txpower.split()
         if args.bandwidth == '20':
             if '8' in txpowers:
@@ -1238,6 +1237,7 @@ def main():
                                             ap_band_slot = '1'
 
                                         if(m.group(2) == ap_band_slot):
+                                            cc_ap = m.group(0)
                                             cc_mac = m.group(1)
                                             cc_slot = m.group(2)
                                             cc_ch = m.group(6)  # (132,136,140,144)
@@ -1251,8 +1251,10 @@ def main():
                                             cc_ch_count = cc_ch.count(",") + 1
                                             cc_bw = m.group(3)
                                             logg.info(
-                                                "group 1: {} 2: {} 3: {} 4: {} 5: {} 6: {}".format(
-                                                    m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6)))
+                                                ("group 0 (ap): {ap} group 1 (cc_mac): {mac} 2(ap band slot): {slot} 3 (admin state): {admin}",
+                                                 "4 (cc_Txpwr): {Txpwr} 5 (cc_dbm): {dbm} 6 (cc_ch): {chan}".format(
+                                                    ap=m.group(0),mac=m.group(1), slot=m.group(2), admin=m.group(3), Txpwr=m.group(4), 
+                                                    dbm=m.group(5), chan=m.group(6))))
                                             logg.info("9800 test_parameters_summary:  read: tx: {} ch: {} bw: {}".format(tx, ch, bw))
 
                                             logg.info("9800 test_parameters cc_mac:   read : {}".format(cc_mac))
