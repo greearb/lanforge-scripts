@@ -744,9 +744,9 @@ def main():
     worksheet.write(row, col, 'Controller\nChannel', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, '{ap}\nClient Channel'.format(ap=args.ap), dblue_bold)
+    worksheet.write(row, col, '{ap}\nClient Reported\nChannel'.format(ap=args.ap), dblue_bold)
     col += 1
-    worksheet.write(row, col, 'Client NSS', dblue_bold)
+    worksheet.write(row, col, 'Client\nNSS', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 10)  # Set width
     worksheet.write(row, col, 'Controller\nBW', dblue_bold)
@@ -756,68 +756,82 @@ def main():
     worksheet.write(row, col, 'Tx\nPower\nSetting', dtan_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Tx Power\nAP Summary', dtan_bold)
+    worksheet.write(row, col, 'Controller\nReported Tx Power\nFrom AP Summary', dtan_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Allowed Per Path\nPer Spatial Steam', dtan_bold)
+    worksheet.write(row, col, 'Allowed dBm\nPer Spatial Steam', dtan_bold)
     col += 1
     worksheet.write(row, col, 'Cabling\nPathloss', dtan_bold)
     col += 1
     worksheet.write(row, col, 'Antenna\nGain', dtan_bold)
     col += 1
-    worksheet.write(row, col, 'Noise\n', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\n Noise\n', dpeach_bold)
+    col += 1
+    worksheet.write(row, col, 'rssi_adj\nnoise bare - nf at cal', dpeach_bold)
     col += 1
     if (args.adjust_nf):
-        worksheet.write(row, col, 'Noise\nAdjust\n(vs -105)', dpeach_bold)
+        worksheet.write(row, col, 'Noise Floor\nAdjust\n(vs -105)', dpeach_bold)
         col += 1
 
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Last\nMCS\n', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nRx Rate\n', dpeach_bold)
     col += 1
-    worksheet.set_column(col, col, 10)  # Set width
-    worksheet.write(row, col, 'Beacon\nRSSI\n', dpeach_bold)
+    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.write(row, col, 'Client Reported\nBeacon Signal dBm\nRSSI', dpeach_bold)
     col += 1
-    worksheet.set_column(col, col, 10)  # Set width
-    worksheet.write(row, col, 'Combined\nRSSI\n', dpeach_bold)
+    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.write(row, col, 'Client Reported\nTotal Signal dBm\nRSSI', dpeach_bold)
     col += 1
-    worksheet.write(row, col, 'RSSI\n1', dpeach_bold)
+    worksheet.set_column(col, col, 15)  # Set width
+    worksheet.write(row, col, 'Client Reported\nRSSI\n SS 1', dpeach_bold)
     col += 1
-    worksheet.write(row, col, 'RSSI\n2', dpeach_bold)
+    worksheet.set_column(col, col, 15)  # Set width
+    worksheet.write(row, col, 'Client Reported\nRSSI\n SS 2', dpeach_bold)
     col += 1
-    worksheet.write(row, col, 'RSSI\n3', dpeach_bold)
+    worksheet.set_column(col, col, 15)  # Set width
+    worksheet.write(row, col, 'Client Reported\nRSSI\n SS 3', dpeach_bold)
     col += 1
-    worksheet.write(row, col, 'RSSI\n4', dpeach_bold)
+    worksheet.set_column(col, col, 15)  # Set width
+    worksheet.write(row, col, 'Client Reported\nRSSI\n SS 4', dpeach_bold)
     col += 1
-    worksheet.write(row, col, 'Ant\n1', dpink_bold)
+    worksheet.set_column(col, col, 15)  # Set width
+    worksheet.write(row, col, 'Calc Ant 1\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
     col += 1
-    worksheet.write(row, col, 'Ant\n2', dpink_bold)
+    worksheet.set_column(col, col, 15)  # Set width
+    worksheet.write(row, col, 'Calc Ant 2\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
     col += 1
-    worksheet.write(row, col, 'Ant\n3', dpink_bold)
+    worksheet.set_column(col, col, 15)  # Set width
+    worksheet.write(row, col, 'Calc Ant 3\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
     col += 1
-    worksheet.write(row, col, 'Ant\n4', dpink_bold)
+    worksheet.set_column(col, col, 15)  # Set width
+    worksheet.write(row, col, 'Calc Ant 4\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
     col += 1
-    worksheet.write(row, col, 'Offset\n1', dyel_bold)
+    worksheet.set_column(col, col, 15)  # Set width
+    worksheet.write(row, col, 'Allowed Per Path\nCalc Ant\n - cc_dbm(per SS)\n1', dyel_bold)
     col += 1
-    worksheet.write(row, col, 'Offset\n2', dyel_bold)
+    worksheet.set_column(col, col, 15)  # Set width
+    worksheet.write(row, col, 'Allowed Per Path\nCalc Ant\n - cc_dbm(per SS)\n2', dyel_bold)
     col += 1
-    worksheet.write(row, col, 'Offset\n3', dyel_bold)
+    worksheet.set_column(col, col, 15)  # Set width
+    worksheet.write(row, col, 'Allowed Per Path\nCalc Ant\n - cc_dbm(per SS)\n3', dyel_bold)
     col += 1
-    worksheet.write(row, col, 'Offset\n4', dyel_bold)
+    worksheet.set_column(col, col, 15)  # Set width
+    worksheet.write(row, col, 'Allowed Per Path\nCalc Ant\n - cc_dbm(per SS)\n4', dyel_bold)
     col += 1
-    worksheet.set_column(col, col, 10)  # Set width
-    worksheet.write(row, col, 'Controller\n dBm', dblue_bold)
+    worksheet.set_column(col, col, 15)  # Set width
+    worksheet.write(row, col, 'Controller\nReported\ndBm', dblue_bold)
     col += 1
-    worksheet.set_column(col, col, 10)  # Set width
-    worksheet.write(row, col, 'Calculated\n dBm\n Beacon', dblue_bold)
+    worksheet.set_column(col, col, 25)  # Set width
+    worksheet.write(row, col, 'Client Calc Beacon dBm\n beacon + pathloss\n + rssi_adj + antenna gain', dblue_bold)
     col += 1
-    worksheet.set_column(col, col, 18)  # Set width
-    worksheet.write(row, col, 'Diff Controller dBm\n & Beacon dBm \n (+/- {} dBm)'.format(args.beacon_dbm_diff), dblue_bold)
+    worksheet.set_column(col, col, 25)  # Set width
+    worksheet.write(row, col, 'Difference Between Controller dBm\n & Client Calc Beacon dBm \n (+/- {diff} dBm)'.format(diff=args.beacon_dbm_diff), dblue_bold)
     col += 1
-    worksheet.set_column(col, col, 14)  # Set width
-    worksheet.write(row, col, 'Calculated\n dBm\n Combined', dblue_bold)
+    worksheet.set_column(col, col, 25)  # Set width
+    worksheet.write(row, col, 'Client Calc Total Signal dBm\n total signal dBm + pathloss\n + rssi_adj + antenna gain', dblue_bold)
     col += 1
-    worksheet.set_column(col, col, 14)  # Set width
-    worksheet.write(row, col, 'Diff\nController dBm\n & Combined', dblue_bold)
+    worksheet.set_column(col, col, 25)  # Set width
+    worksheet.write(row, col, 'Difference Between\n Controller dBm\n  & Client Calc Total Sig dBm', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 12)  # Set width
     worksheet.write(row, col, "PASS /\nFAIL\n( += %s dBm)" % (pf_dbm), dgreen_bold)
@@ -1436,7 +1450,8 @@ def main():
                         foundit = False
                         for line in pss.splitlines():
                             # logg.info("probe-line: %s"%(line))
-                            m = re.search('signal avg:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
+                            # m = re.search('signal avg:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
+                            m = re.search('signal:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
                             # print("m singal avg : {}".format(m))
                             # AX210 needs to look at signal
                             if (m is None):
@@ -1507,6 +1522,7 @@ def main():
                             antstr += " "
                         antstr += "\t"
 
+                    logg.info("antenna dBm {antstr}".format(antstr=antstr))
                     port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
                                                  "--show_port", "AP,IP,Mode,NSS,Bandwidth,Channel,Signal,Noise,Status,RX-Rate"], capture_output=True, check=True)
                     pss = port_stats.stdout.decode('utf-8', 'ignore')
@@ -2006,6 +2022,8 @@ def main():
                     worksheet.write(row, col, antenna_gain, center_tan)
                     col += 1
                     worksheet.write(row, col, _noise, center_tan)
+                    col += 1
+                    worksheet.write(row, col, rssi_adj, center_tan)
                     col += 1
                     if (args.adjust_nf):
                         worksheet.write(row, col, rssi_adj, center_tan)
