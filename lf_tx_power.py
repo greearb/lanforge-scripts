@@ -483,12 +483,11 @@ def main():
                 txpowers.remove('8')
         txpowers_str = '_'.join(txpowers)
 
-        
         results_dir_name = ("tx_power"
                             + '_ch_' + args.channel.replace(' ', '_')
                             + '_nss_' + args.nss.replace(' ', '_')
                             + '_bw_' + args.bandwidth.replace(' ', '_')
-                            + '_txpw_' + txpowers_str) 
+                            + '_txpw_' + txpowers_str)
 
     else:
         results_dir_name = ("tx_power"
@@ -496,7 +495,6 @@ def main():
                             + '_nss_' + args.nss.replace(' ', '_')
                             + '_bw_' + args.bandwidth.replace(' ', '_')
                             + '_txpw_' + args.txpower.replace(' ', '_'))
-
 
     if local_lf_report_dir != "":
         report = lf_report.lf_report(
@@ -997,8 +995,8 @@ def main():
                                     "--cli_cmd", set_cmd], capture_output=True)
                 # tx power 1 is the highest power ,  2 power is 1/2 of 1 power etc till power 8 the lowest.
                 # 6E 20Mhz tx power 1 - 6
-                # 6E 40Mhz tx power 1 - 7 
-                # TODO make txpower file into object , 
+                # 6E 40Mhz tx power 1 - 7
+                # TODO make txpower file into object ,
                 if args.tx_power_adjust_6E:
                     txpowers = args.txpower.split()
                     if args.band == '6g':
@@ -1168,7 +1166,6 @@ def main():
                     cs.config_ap_no_dot11_24ghz_shutdown()
                     logg.info(pss)
 
-
                     # Wait a bit for AP to come back up
                     time.sleep(3)
                     loop_count = 0
@@ -1253,10 +1250,11 @@ def main():
                                             logg.info(
                                                 ("group 0 (ap): {ap} group 1 (cc_mac): {mac} 2(ap band slot): {slot} 3 (admin state): {admin}",
                                                  "4 (cc_Txpwr): {Txpwr} 5 (cc_dbm): {dbm} 6 (cc_ch): {chan}".format(
-                                                    ap=m.group(0),mac=m.group(1), slot=m.group(2), admin=m.group(3), Txpwr=m.group(4), 
-                                                    dbm=m.group(5), chan=m.group(6))))
+                                                     ap=m.group(0), mac=m.group(1), slot=m.group(2), admin=m.group(3), Txpwr=m.group(4),
+                                                     dbm=m.group(5), chan=m.group(6))))
                                             logg.info("9800 test_parameters_summary:  read: tx: {} ch: {} bw: {}".format(tx, ch, bw))
 
+                                            logg.info("9800 test_parameters cc_ap:    read : {}".format(cc_ap))
                                             logg.info("9800 test_parameters cc_mac:   read : {}".format(cc_mac))
                                             logg.info("9800 test_parameters cc_slot:  read : {}".format(cc_slot))
                                             logg.info("9800 test_parameters cc_count: read : {}".format(cc_ch_count))
@@ -1338,8 +1336,8 @@ def main():
                     wait_ip_print = False
                     wait_assoc_print = False
 
-                    # Temporary Work around 
-                    # disable the AP for 6g and enable 
+                    # Temporary Work around
+                    # disable the AP for 6g and enable
                     if args.band == '6g':
                         cs.ap_name_shutdown()
                         sleep(5)
@@ -2164,7 +2162,7 @@ def main():
             pss = cs.config_no_wlan()
             logg.info(pss)
 
-        # Enable wlan networks 
+        # Enable wlan networks
         pss = cs.ap_dot11_6ghz_shutdown()
         logg.info(pss)
         pss = cs.ap_dot11_5ghz_shutdown()
@@ -2228,7 +2226,6 @@ def main():
             pss = cs.config_no_ap_dot11_24ghz_shutdown()  # enable_network 5ghz
             logg.info(pss)
 
-
     # Show controller status
     # TODO show valid / short status
     pss = cs.show_ap_dot11_6gz_summary()
@@ -2249,8 +2246,7 @@ def main():
     report.write_html_with_timestamp()
     report.write_index_html()
 
-
-    report.write_pdf(_page_size = 'A3', _orientation='Landscape')
+    report.write_pdf(_page_size='A3', _orientation='Landscape')
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
     exit_test(workbook)
