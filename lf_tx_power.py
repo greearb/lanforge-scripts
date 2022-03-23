@@ -756,19 +756,20 @@ def main():
     worksheet.write(row, col, 'Tx\nPower\nSetting', dtan_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Controller\nReported Tx Power\nFrom AP Summary', dtan_bold)
+    worksheet.write(row, col, 'Controller Reported\n Tx Power dBm\nFrom AP Summary', dtan_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Allowed dBm\nPer Spatial Steam', dtan_bold)
+    worksheet.write(row, col, 'Allowed dBm\nPer Spatial Steam\n cc_dbm(per SS)', dtan_bold)
     col += 1
     worksheet.write(row, col, 'Cabling\nPathloss', dtan_bold)
     col += 1
     worksheet.write(row, col, 'Antenna\nGain', dtan_bold)
     col += 1
-    worksheet.write(row, col, 'Client\n Reported\n Noise\n', dpeach_bold)
+    worksheet.set_column(col, col, 10)  # Set width
+    worksheet.write(row, col, 'Client\n Reported\n Noise', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'rssi_adj\nnoise bare - nf at cal', dpeach_bold)
+    worksheet.write(row, col, 'rssi_adj\nnoise bare\n - noise floor', dpeach_bold)
     col += 1
     if (args.adjust_nf):
         worksheet.write(row, col, 'Noise Floor\nAdjust\n(vs -105)', dpeach_bold)
