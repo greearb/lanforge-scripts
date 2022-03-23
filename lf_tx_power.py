@@ -809,16 +809,16 @@ def main():
     worksheet.write(row, col, 'Calc Ant 4 =\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Allowed Per Path 1\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
+    worksheet.write(row, col, 'Offset 1\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Allowed Per Path 2\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
+    worksheet.write(row, col, 'Offset 2\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Allowed Per Path 3\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
+    worksheet.write(row, col, 'Offset 3\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Allowed Per Path 4\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
+    worksheet.write(row, col, 'Offset 4\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
     worksheet.write(row, col, 'Controller\nReported\ndBm', dblue_bold)
