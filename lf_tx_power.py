@@ -245,6 +245,10 @@ Offset 1, Offset 2, Offset 3, Offset 4: which in the code is diff_aX = calc_antX
 
 Pass/Fail : (~line 1286) If the diff / offset is greater than the pfrange determins the pass or fail
 
+Show the tx_power for a specific station:
+ iw dev <station> station dump 
+ iw dev sta0000 station dump
+
 '''
 
 if sys.version_info[0] != 3:
@@ -743,9 +747,9 @@ def main():
     worksheet.write(row, col, 'Controller\nChannel', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'AP\n{ap}\nChannel'.format(ap=args.ap), dblue_bold)
+    worksheet.write(row, col, '{ap}\nClient Channel'.format(ap=args.ap), dblue_bold)
     col += 1
-    worksheet.write(row, col, 'NSS', dblue_bold)
+    worksheet.write(row, col, 'Client NSS', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 10)  # Set width
     worksheet.write(row, col, 'Controller\nBW', dblue_bold)
@@ -937,6 +941,7 @@ def main():
             m = re.search(pat, line)
             if (m is not None):
                 myrd = m.group(1)
+                logger.info("Regulatory Domain from show AP Summary : {domain}".format(domain=myrd))
 
     # Loop through all iterations and run txpower tests.
     # The is the main loop of loops:   Channels, spatial streams (nss), bandwidth (bw), txpowers (tx)
