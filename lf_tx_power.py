@@ -785,28 +785,28 @@ def main():
     worksheet.write(row, col, 'Client Reported\nTotal Signal dBm\nRSSI', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Client Reported\nAnt dBm\n SS 1', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nAnt Sig dBm\n SS 1', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Client Reported\nAnt dBm\n SS 2', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nAnt Sig dBm\n SS 2', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Client Reported\nAnt dBm\n SS 3', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nAnt Sig dBm\n SS 3', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Client Reported\nAnt dBm\n SS 4', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nAnt Sig dBm\n SS 4', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 1 =\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
+    worksheet.write(row, col, 'Calc Ant 1 =\n Ant Sig dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 2 =\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
+    worksheet.write(row, col, 'Calc Ant 2 =\n Ant Sig dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 3 =\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
+    worksheet.write(row, col, 'Calc Ant 3 =\n Ant Sig dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 4 =\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
+    worksheet.write(row, col, 'Calc Ant 4 =\n Ant Sig dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
     worksheet.write(row, col, 'Offset 1\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
