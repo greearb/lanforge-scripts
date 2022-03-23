@@ -363,7 +363,8 @@ class cv_test(Realm):
                         raise e  # Exception("Could not find Reports")
                     break
             else:
-                print('Not reporting to kpi file')
+                #print('Not reporting to kpi file')
+                pass
 
             # Of if test stopped for some reason and could not generate report.
             if not self.get_is_running(instance_name):
