@@ -753,9 +753,13 @@ def main():
     col += 1
     worksheet.write(row, col, 'STA\nRpt\nBW', dblue_bold)
     col += 1
-    worksheet.write(row, col, 'Tx\nPower', dtan_bold)
+    worksheet.write(row, col, 'Tx\nPower\nSetting', dtan_bold)
     col += 1
-    worksheet.write(row, col, 'Allowed\nPer\nPath', dtan_bold)
+    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.write(row, col, 'Tx Power\nAP Summary', dtan_bold)
+    col += 1
+    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.write(row, col, 'Allowed Per Path\nPer Spatial Steam', dtan_bold)
     col += 1
     worksheet.write(row, col, 'Cabling\nPathloss', dtan_bold)
     col += 1
@@ -1234,7 +1238,7 @@ def main():
                                             ap_band_slot = '1'
 
                                         if(m.group(2) == ap_band_slot):
-                                            cc_ap = m.group(0)
+                                            cc_ap = args.ap
                                             cc_mac = m.group(1)
                                             cc_slot = m.group(2)
                                             cc_ch = m.group(6)  # (132,136,140,144)
@@ -1247,21 +1251,22 @@ def main():
 
                                             cc_ch_count = cc_ch.count(",") + 1
                                             cc_bw = m.group(3)
+                                            logg.info("show ap summary : {summary}".format(summary=m.group(0)))
                                             logg.info(
-                                                ("group 0 (ap): {ap} group 1 (cc_mac): {mac} 2(ap band slot): {slot} 3 (admin state): {admin}",
-                                                 "4 (cc_Txpwr): {Txpwr} 5 (cc_dbm): {dbm} 6 (cc_ch): {chan}".format(
-                                                     ap=m.group(0), mac=m.group(1), slot=m.group(2), admin=m.group(3), Txpwr=m.group(4),
+                                                ("(ap): {ap}, group 1 (cc_mac): {mac}, group 2(ap band slot): {slot}, group 3 (bw): {admin} "
+                                                 "group 4 (cc_Txpwr): {Txpwr}, group 5 (cc_dbm): {dbm}, group 6 (cc_ch): {chan}".format(
+                                                     ap=args.ap, mac=m.group(1), slot=m.group(2), admin=m.group(3), Txpwr=m.group(4),
                                                      dbm=m.group(5), chan=m.group(6))))
                                             logg.info("9800 test_parameters_summary:  read: tx: {} ch: {} bw: {}".format(tx, ch, bw))
 
-                                            logg.info("9800 test_parameters cc_ap:    read : {}".format(cc_ap))
-                                            logg.info("9800 test_parameters cc_mac:   read : {}".format(cc_mac))
-                                            logg.info("9800 test_parameters cc_slot:  read : {}".format(cc_slot))
-                                            logg.info("9800 test_parameters cc_count: read : {}".format(cc_ch_count))
-                                            logg.info("9800 test_parameters cc_bw:    read : {}".format(cc_bw))
-                                            logg.info("9800 test_parameters cc_power: read : {}".format(cc_power))
-                                            logg.info("9800 test_parameters cc_dbm:   read : {}".format(cc_dbm))
-                                            logg.info("9800 test_parameters cc_ch:    read : {}".format(cc_ch))
+                                            logg.info("9800  cc_ap:    read : {}".format(cc_ap))
+                                            logg.info("9800 from ap summary cc_mac:   read : {}".format(cc_mac))
+                                            logg.info("9800 from ap summary cc_slot:  read : {}".format(cc_slot))
+                                            logg.info("9800 from ap summary cc_count: read : {}".format(cc_ch_count))
+                                            logg.info("9800 from ap summary cc_bw:    read : {}".format(cc_bw))
+                                            logg.info("9800 from ap summary cc_power: read : {}".format(cc_power))
+                                            logg.info("9800 from ap summary cc_dbm:   read : {}".format(cc_dbm))
+                                            logg.info("9800 from ap summary cc_ch:    read : {}".format(cc_ch))
                                             break
 
                             if (cc_dbm == ""):
@@ -1880,6 +1885,8 @@ def main():
                     run_start_time = run_end_time
 
                     time_stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]
+
+                    # This line writes the data to the CSV
                     ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
                         myrd, pathloss, antenna_gain, ch, n, bw, tx, beacon_sig, sig,
                         antstr, _ap, _bw, _ch, _mode, _nss, _noise, _rxrate,
@@ -1963,10 +1970,9 @@ def main():
                     results_dict['Units'] = "dBm"
                     kpi_csv.kpi_csv_write_dict(results_dict)
 
-                    # Start xlsx reporting
-
-                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
-                        myrd, pathloss, antenna_gain, _ch, _nss, _bw, tx, allowed_per_path,
+                    # Start xlsx reporting - report as reported from ap summary
+                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
+                        myrd, pathloss, antenna_gain, _ch, _nss, _bw, cc_power, cc_dbm, allowed_per_path,
                         antstr,
                         calc_ant1, calc_ant2, calc_ant3, calc_ant4,
                         diff_a1, diff_a2, diff_a3, diff_a4, pfs, time_stamp, run_duration, total_run_duration_str
@@ -1989,7 +1995,9 @@ def main():
                     col += 1
                     worksheet.write(row, col, _bw, center_blue)
                     col += 1
-                    worksheet.write(row, col, tx, center_tan)
+                    worksheet.write(row, col, cc_power, center_tan)
+                    col += 1
+                    worksheet.write(row, col, cc_dbm, center_tan)
                     col += 1
                     worksheet.write(row, col, allowed_per_path, center_tan)
                     col += 1
