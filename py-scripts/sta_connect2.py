@@ -66,7 +66,7 @@ class StaConnect2(Realm):
                  _influx_host=None, _influx_db=None, _influx_user=None,
                  _influx_passwd=None,
                  _resource=1, _upstream_resource=1, _upstream_port="eth1",
-                 _sta_name=None, _sta_prefix='sta', _bringup_time_sec=300,
+                 _sta_name=None, _sta_prefix=None, _bringup_time_sec=300,
                  debug_=False, _dut_security=OPEN, _exit_on_error=False,
                  _cleanup_on_exit=True, _clean_all_sta=False, _runtime_sec=None, kpi_csv=None, outfile=None,
                  download_bps=None, upload_bps=None, side_a_pdu=None, side_b_pdu=None, _exit_on_fail=False):
@@ -127,6 +127,9 @@ class StaConnect2(Realm):
             results = results + "-results.csv"
             self.csv_results_file = open(results, "w")
             self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
+        
+        if self.sta_prefix is None:
+            self.sta_prefix = "1.%s.sta" % (self.resource)
 
     def get_kpi_results(self):
         # make json call to get kpi results
@@ -233,10 +236,20 @@ class StaConnect2(Realm):
         if sta_name_ is None:
             raise ValueError("get_station_url wants a station name")
         if self.sta_url_map is None:
+            self.sta_url_map = "port/1/%s/%s" % (self.resource, sta_name_)
+            logger.info("self.sta_url: %s", self.sta_url_map)
+        return self.sta_url_map
+        '''
+        if self.sta_url_map is None:
             self.sta_url_map = {}
             for sta_name in self.station_names:
-                self.sta_url_map[sta_name] = "port/1/%s/%s" % (self.resource, sta_name)
-        return self.sta_url_map[sta_name_]
+                split_sta_name = sta_name.split('.')
+                only_sta_name = split_sta_name[2]
+                # sta_url = self.get_station_url(only_sta_name)
+                self.sta_url_map[only_sta_name] = "port/1/%s/%s" % (self.resource, only_sta_name)
+        # return self.sta_url_map[sta_name_]
+        return self.sta_url_map
+        '''
 
     def get_upstream_url(self):
         if self.upstream_url is None:
@@ -343,7 +356,7 @@ class StaConnect2(Realm):
             raise ValueError("Unable to find ports named '%s'+" % self.sta_prefix)
         self.l3_udp_profile.create(endp_type="lf_udp",
                                    side_a=port_list,
-                                   side_b="%d.%s" % (self.resource, self.upstream_port),
+                                   side_b="%s.%s" % (self.resource, self.upstream_port),
                                    suppress_related_commands=True)
 
         # Create TCP endpoints
@@ -360,7 +373,7 @@ class StaConnect2(Realm):
         self.l3_tcp_profile.report_timer = 1000
         self.l3_tcp_profile.create(endp_type="lf_tcp",
                                    side_a=list(self.find_ports_like("%s+" % self.sta_prefix)),
-                                   side_b="%d.%s" % (self.resource, self.upstream_port),
+                                   side_b="%s.%s" % (self.resource, self.upstream_port),
                                    suppress_related_commands=True)
 
     def start(self):
@@ -407,7 +420,10 @@ class StaConnect2(Realm):
             time.sleep(3)
             print(".", end="")
             for sta_name in self.station_names:
-                sta_url = self.get_station_url(sta_name)
+                split_sta_name = sta_name.split('.')
+                # logger.info("sta_name.split: %s", split_sta_name)
+                only_sta_name = split_sta_name[2]
+                sta_url = self.get_station_url(only_sta_name)
                 station_info = self.json_get(sta_url + "?fields=port,ip,ap")
 
                 # logger.info("start() - sta_url: %s", sta_url)
@@ -544,7 +560,10 @@ class StaConnect2(Realm):
         # remove all endpoints and cxs
         if self.cleanup_on_exit:
             for sta_name in self.station_names:
-                LFUtils.removePort(self.resource, sta_name, self.lfclient_url)
+                split_sta_name = sta_name.split('.')
+                # logger.info("sta_name.split: %s", split_sta_name)
+                only_sta_name = split_sta_name[2]
+                LFUtils.removePort(self.resource, only_sta_name, self.lfclient_url)
             curr_endp_names = []
             removeCX(self.lfclient_url, self.l3_udp_profile.get_cx_names())
             removeCX(self.lfclient_url, self.l3_tcp_profile.get_cx_names())
@@ -938,6 +957,7 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
         logger.info("csv output file : {}".format(csv_outfile))
 
     upstream_port = LFUtils.name_to_eid(args.upstream_port)
+    logger.info("upstream_port: %s", upstream_port)
     if args.upstream_resource:
         upstream_resource = args.upstream_resource
     else:
@@ -977,7 +997,7 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
     if args.dut_security:
         staConnect.dut_security = args.dut_security
     if args.prefix or (args.prefix != "sta"):
-        staConnect.sta_prefix = args.prefix
+        args.prefix = staConnect.sta_prefix
 
     staConnect.station_names = ["%s0000" % args.prefix]
     staConnect.bringup_time_sec = args.bringup_time
