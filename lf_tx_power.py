@@ -730,7 +730,7 @@ def main():
     orange_left.set_bg_color("#e0efda")
     orange_left.set_border(1)
 
-    worksheet.set_row(0, 45)  # Set height
+    worksheet.set_row(0, 75)  # Set height
     worksheet.set_column(0, 0, 10)  # Set width
 
     col = 0
@@ -776,7 +776,7 @@ def main():
         col += 1
 
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Client Reported\nRx Rate\n', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nRx Rate', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
     worksheet.write(row, col, 'Client Reported\nBeacon Signal dBm\nRSSI', dpeach_bold)
@@ -797,28 +797,28 @@ def main():
     worksheet.write(row, col, 'Client Reported\nAnt Sig dBm\n SS 4', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 1 =\n Ant Sig dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
+    worksheet.write(row, col, 'Calc Ant 1 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 2 =\n Ant Sig dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
+    worksheet.write(row, col, 'Calc Ant 2 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 3 =\n Ant Sig dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
+    worksheet.write(row, col, 'Calc Ant 3 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 4 =\n Ant Sig dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
+    worksheet.write(row, col, 'Calc Ant 4 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Offset 1\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
+    worksheet.write(row, col, 'Offset 1 = \nCalc Ant\n - cc_dbm(per SS)\n (cc_dbm(per SS)\n is allowed_per_path)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Offset 2\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
+    worksheet.write(row, col, 'Offset 2 =\nCalc Ant\n - cc_dbm(per SS)\n (cc_dbm(per SS)\n is allowed_per_path)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Offset 3\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
+    worksheet.write(row, col, 'Offset 3 =\nCalc Ant\n - cc_dbm(per SS)\n (cc_dbm(per SS)\n is allowed_per_path)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Offset 4\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
+    worksheet.write(row, col, 'Offset 4 =\nCalc Ant\n - cc_dbm(per SS)\n (cc_dbm(per SS)\n is allowed_per_path)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
     worksheet.write(row, col, 'Controller\nReported\ndBm', dblue_bold)
@@ -1452,6 +1452,7 @@ def main():
                         foundit = False
                         for line in pss.splitlines():
                             # logg.info("probe-line: %s"%(line))
+                            # TODO switch to signal avg 
                             # m = re.search('signal avg:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
                             m = re.search('signal:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
                             # print("m singal avg : {}".format(m))
