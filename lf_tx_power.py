@@ -765,8 +765,9 @@ def main():
     col += 1
     worksheet.write(row, col, 'Antenna\nGain', dtan_bold)
     col += 1
-    worksheet.write(row, col, 'Client Reported\n Noise\n', dpeach_bold)
+    worksheet.write(row, col, 'Client\n Reported\n Noise\n', dpeach_bold)
     col += 1
+    worksheet.set_column(col, col, 15)  # Set width
     worksheet.write(row, col, 'rssi_adj\nnoise bare - nf at cal', dpeach_bold)
     col += 1
     if (args.adjust_nf):
@@ -783,40 +784,40 @@ def main():
     worksheet.write(row, col, 'Client Reported\nTotal Signal dBm\nRSSI', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Client Reported\nRSSI\n SS 1', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nAnt dBm\n SS 1', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Client Reported\nRSSI\n SS 2', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nAnt dBm\n SS 2', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Client Reported\nRSSI\n SS 3', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nAnt dBm\n SS 3', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Client Reported\nRSSI\n SS 4', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nAnt dBm\n SS 4', dpeach_bold)
     col += 1
-    worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Calc Ant 1\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
+    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.write(row, col, 'Calc Ant 1 =\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
     col += 1
-    worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Calc Ant 2\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
+    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.write(row, col, 'Calc Ant 2 =\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
     col += 1
-    worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Calc Ant 3\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
+    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.write(row, col, 'Calc Ant 3 =\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
     col += 1
-    worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Calc Ant 4\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
+    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.write(row, col, 'Calc Ant 4 =\n Ant dBm + pathloss\n + rssi_adj + ant gain', dpink_bold)
     col += 1
-    worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Allowed Per Path\nCalc Ant\n - cc_dbm(per SS)\n1', dyel_bold)
+    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.write(row, col, 'Allowed Per Path 1\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
     col += 1
-    worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Allowed Per Path\nCalc Ant\n - cc_dbm(per SS)\n2', dyel_bold)
+    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.write(row, col, 'Allowed Per Path 2\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
     col += 1
-    worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Allowed Per Path\nCalc Ant\n - cc_dbm(per SS)\n3', dyel_bold)
+    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.write(row, col, 'Allowed Per Path 3\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
     col += 1
-    worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Allowed Per Path\nCalc Ant\n - cc_dbm(per SS)\n4', dyel_bold)
+    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.write(row, col, 'Allowed Per Path 4\nCalc Ant\n - cc_dbm(per SS)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
     worksheet.write(row, col, 'Controller\nReported\ndBm', dblue_bold)
