@@ -1659,7 +1659,9 @@ Setting wifi_settings per radio
 
     debug = args.debug
 
+    # Gather data for test reporting
     # for kpi.csv generation
+    logger.info("read in command line paramaters")
     local_lf_report_dir = args.local_lf_report_dir
     test_rig = args.test_rig
     test_tag = args.test_tag
@@ -1697,6 +1699,7 @@ Setting wifi_settings per radio
 
     # Create report, when running with the test framework (lf_check.py)
     # results need to be in the same directory
+    logger.info("configure reporting")
     if local_lf_report_dir != "":
         report = lf_report.lf_report(
             _path=local_lf_report_dir,
@@ -1709,9 +1712,8 @@ Setting wifi_settings per radio
             _output_html="test_l3.html",
             _output_pdf="test_l3.pdf")
 
-    # Get the report path to create the kpi.csv path
     kpi_path = report.get_report_path()
-    logger.info("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
+    logger.info("Report and kpi_path :{kpi_path}".format(kpi_path=kpi_path))
 
     kpi_csv = lf_kpi_csv.lf_kpi_csv(
         _kpi_path=kpi_path,
@@ -1732,6 +1734,7 @@ Setting wifi_settings per radio
 
     MAX_NUMBER_OF_STATIONS = 1000
 
+    # Lists to help with station creation
     radio_name_list = []
     number_of_stations_per_radio_list = []
     ssid_list = []
@@ -1748,6 +1751,8 @@ Setting wifi_settings per radio
     reset_port_time_min_list = []
     reset_port_time_max_list = []
 
+    # 
+    logger.info("parse radio arguments used for station configuration")
     if radios is not None:
         logger.info("radios {}".format(radios))
         for radio_ in radios:
@@ -1769,7 +1774,7 @@ Setting wifi_settings per radio
                         " ").split()))
             # radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('"', '').split()))
 
-            logger.info("radio_dict {}".format(radio_info_dict))
+            logger.debug("radio_dict {}".format(radio_info_dict))
 
             for key in radio_keys:
                 if key not in radio_info_dict:
@@ -1878,6 +1883,7 @@ Setting wifi_settings per radio
             "ERROR:  ul_pdus %s and dl_pdus %s arrays must be same length\n" %
             (len(ul_rates), len(dl_rates)))
 
+    logger.info("configure and create test object")
     ip_var_test = L3VariableTime(
         endp_types=endp_types,
         args=args,
@@ -1913,14 +1919,19 @@ Setting wifi_settings per radio
         debug=debug,
         kpi_csv=kpi_csv)
 
+    logger.info("clean up any existing cxs on LANforge")
     ip_var_test.pre_cleanup()
 
+    logger.info("create stations, build the test")
     ip_var_test.build()
     if not ip_var_test.passes():
         logger.critical("build step failed.")
         logger.critical(ip_var_test.get_fail_message())
         exit(1)
+    
+    logger.info("Start the test and run for a duration")
     ip_var_test.start(False)
+
     ip_var_test.stop()
     if not ip_var_test.passes():
         logger.warning("Test Ended: There were Failures")
