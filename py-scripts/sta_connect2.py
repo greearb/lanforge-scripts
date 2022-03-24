@@ -904,13 +904,16 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
+
+    if args.debug:
+        logger_config.set_level("debug")
+
+    # lf_logger_config_json will take presidence to changing debug levels
     if args.lf_logger_config_json:
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-    if args.debug:
-        logger_config.set_level("debug")
 
     # for kpi.csv generation
     local_lf_report_dir = args.local_lf_report_dir
