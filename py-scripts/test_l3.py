@@ -45,7 +45,7 @@ Example using wifi_settings
      wifi_mode==0 wifi_settings==wifi_settings
      enable_flags==('ht160_enable'|'wpa2_enable'|'80211u_enable'|'create_admin_down')"
      --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000
-     --test_rig CT-US-001 --test_tag 'l3_longevity'
+     --test_rig CT-US-001 --test_tag 'test_L3'
 
 COPYRIGHT:
 Copyright 2021 Candela Technologies Inc
@@ -383,7 +383,6 @@ class L3VariableTime(Realm):
                     total_ul_rate_ll += int(endp["rx rate ll"])
                     total_ul_pkts_ll += int(endp["rx pkts ll"])
                     ul_rx_drop_percent = int(endp["rx drop %"])
-
 
         return lat, jit, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent
 
@@ -758,7 +757,7 @@ class L3VariableTime(Realm):
                         self.epoch_time = int(time.time())
                         new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
                         log_msg = "main loop, total-dl: {total_dl_bps} total-ul: {total_ul_bps} total-dl-ll: {total_dl_ll_bps}".format(
-                                total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total_dl_ll_bps=total_dl_ll_bps)
+                            total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total_dl_ll_bps=total_dl_ll_bps)
 
                         logger.debug(log_msg)
 
@@ -902,10 +901,10 @@ class L3VariableTime(Realm):
             total_ul_ll_bps):
 
         logger.debug("NOTE:  Adding kpi to kpi.csv, sta_count {sta_count}  total-download-bps:{total_dl_bps}  upload: {total_ul_bps}  bi-directional: {total}\n".format(
-              sta_count=sta_count, total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total=(total_ul_bps + total_dl_bps)))
+            sta_count=sta_count, total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total=(total_ul_bps + total_dl_bps)))
 
         logger.debug("NOTE:  Adding kpi to kpi.csv, sta_count {sta_count}  total-download-bps:{total_dl_ll_bps}  upload: {total_ul_ll_bps}  bi-directional: {total_ll}\n".format(
-              sta_count=sta_count, total_dl_ll_bps=total_dl_ll_bps, total_ul_ll_bps=total_ul_ll_bps, total_ll=(total_ul_ll_bps + total_dl_ll_bps)))
+            sta_count=sta_count, total_dl_ll_bps=total_dl_ll_bps, total_ul_ll_bps=total_ul_ll_bps, total_ll=(total_ul_ll_bps + total_dl_ll_bps)))
 
         # the short description will all for more data to show up in one
         # test-tag graph
@@ -1665,18 +1664,17 @@ Setting wifi_settings per radio
         help="--wait <time> , time to wait at the end of the test",
         default='0')
 
-
     parser.add_argument('--sta_start_offset', help='Station start offset for building stations',
-                              default='0')
+                        default='0')
 
     parser.add_argument('--no_pre_cleanup', help='Do not pre cleanup stations on start',
-                              action='store_true')
+                        action='store_true')
 
     parser.add_argument('--no_cleanup', help='Do not cleanup before exit',
-                              action='store_true')
+                        action='store_true')
 
     parser.add_argument('--no_stop_traffic', help='leave traffic running',
-                              action='store_true')
+                        action='store_true')
 
     # logging configuration
     parser.add_argument(
@@ -1795,7 +1793,7 @@ Setting wifi_settings per radio
     reset_port_time_min_list = []
     reset_port_time_max_list = []
 
-    # 
+    #
     logger.info("parse radio arguments used for station configuration")
     if radios is not None:
         logger.info("radios {}".format(radios))
@@ -1896,7 +1894,7 @@ Setting wifi_settings per radio
                 quit(1)
             station_list = LFUtils.portNameSeries(
                 prefix_="sta",
-                start_id_= 1 + index * 1000 + int(args.sta_start_offset),
+                start_id_=1 + index * 1000 + int(args.sta_start_offset),
                 end_id_=number_of_stations + index * 1000 + int(args.sta_start_offset),
                 padding_number_=10000,
                 radio=radio_name_)
@@ -1963,7 +1961,6 @@ Setting wifi_settings per radio
         debug=debug,
         kpi_csv=kpi_csv)
 
-
     if args.no_pre_cleanup:
         logger.info("No station pre clean up any existing cxs on LANforge")
     else:
@@ -1976,7 +1973,7 @@ Setting wifi_settings per radio
         logger.critical("build step failed.")
         logger.critical(ip_var_test.get_fail_message())
         exit(1)
-    
+
     logger.info("Start the test and run for a duration")
     ip_var_test.start(False)
 
@@ -1995,16 +1992,16 @@ Setting wifi_settings per radio
     time.sleep(int(args.wait))
     if args.no_cleanup:
         logger.info("--no_cleanup set stations will be left intack")
-    else:        
+    else:
         ip_var_test.cleanup()
-    
+
     if ip_var_test.passes():
         test_passed = True
         logger.info("Full test passed, all connections increased rx bytes")
 
     # Results
     csv_results_file = ip_var_test.get_results_csv()
-    report.set_title("L3 Longevity")
+    report.set_title("Test L3 ")
     report.build_banner()
     report.set_table_title("Test L3 Key Performance Indexes")
     report.build_table_title()
