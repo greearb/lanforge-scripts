@@ -62,6 +62,7 @@ import sys
 import time
 from pprint import pprint
 import logging
+import platform
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -1634,6 +1635,19 @@ Setting wifi_settings per radio
         help="--wait <time> , time to wait at the end of the test",
         default='0')
 
+
+    parser.add_argument('--sta_start_number', help='Station start number for building stations',
+                              default='1')
+
+    parser.add_argument('--no_pre_cleanup', help='Do not pre cleanup stations on start',
+                              action='store_true')
+
+    parser.add_argument('--no_cleanup', help='Do not cleanup before exit',
+                              action='store_true')
+
+    parser.add_argument('--no_stop_traffic', help='leave traffic running',
+                              action='store_true')
+
     # logging configuration
     parser.add_argument(
         "--lf_logger_config_json",
@@ -1852,7 +1866,7 @@ Setting wifi_settings per radio
                 quit(1)
             station_list = LFUtils.portNameSeries(
                 prefix_="sta",
-                start_id_=1 + index * 1000,
+                start_id_=int(args.sta_start_number) + index * 1000,
                 end_id_=number_of_stations + index * 1000,
                 padding_number_=10000,
                 radio=radio_name_)
@@ -1919,8 +1933,12 @@ Setting wifi_settings per radio
         debug=debug,
         kpi_csv=kpi_csv)
 
-    logger.info("clean up any existing cxs on LANforge")
-    ip_var_test.pre_cleanup()
+
+    if args.no_pre_cleanup:
+        logger.info("No station pre clean up any existing cxs on LANforge")
+    else:
+        logger.info("clean up any existing cxs on LANforge")
+        ip_var_test.pre_cleanup()
 
     logger.info("create stations, build the test")
     ip_var_test.build()
@@ -1932,7 +1950,11 @@ Setting wifi_settings per radio
     logger.info("Start the test and run for a duration")
     ip_var_test.start(False)
 
-    ip_var_test.stop()
+    # Admin down the stations
+    if args.no_stop_traffic:
+        logger.info("--no_stop_traffic set leave traffic running")
+    else:
+        ip_var_test.stop()
     if not ip_var_test.passes():
         logger.warning("Test Ended: There were Failures")
         logger.warning(ip_var_test.get_fail_message())
@@ -1941,7 +1963,11 @@ Setting wifi_settings per radio
         "Pausing {} seconds for manual inspection before clean up.".format(
             args.wait))
     time.sleep(int(args.wait))
-    ip_var_test.cleanup()
+    if args.no_cleanup:
+        logger.info("--no_cleanup set stations will be left intack")
+    else:        
+        ip_var_test.cleanup()
+    
     if ip_var_test.passes():
         test_passed = True
         logger.info("Full test passed, all connections increased rx bytes")
@@ -1958,7 +1984,8 @@ Setting wifi_settings per radio
     report.write_index_html()
     # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
-    report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+    if platform.system() == 'Linux':
+        report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
     if test_passed:
         exit(0)
