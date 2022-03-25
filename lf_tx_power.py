@@ -417,6 +417,8 @@ def main():
 
     # test configuration
     parser.add_argument("--testbed_id", "--test_rig", dest='test_rig', type=str, help="[testbed configuration] --test_rig", default="")
+    parser.add_argument("--testbed_location", dest='testbed_location', type=str, help="[testbed configuration] --testbed_location <from show ap summary Location>", default="default location")
+    
     # kpi_csv arguments:
     parser.add_argument("--test_tag", default="", help="test tag for kpi.csv,  test specific information to differenciate the test")
     parser.add_argument("--dut_hw_version", default="", help="dut hw version for kpi.csv, hardware version of the device under test")
@@ -782,7 +784,7 @@ def main():
     worksheet.write(row, col, 'Client Reported\nBeacon Signal dBm\nRSSI', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Client Reported\nTotal Signal dBm\nRSSI', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nCombined Signal dBm\nRSSI\nSignal ave', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
     worksheet.write(row, col, 'Client Reported\nAnt Sig dBm\n SS 1', dpeach_bold)
@@ -830,7 +832,7 @@ def main():
     worksheet.write(row, col, 'Difference Between Controller dBm\n & Client Calc Beacon dBm \n (+/- {diff} dBm)'.format(diff=args.beacon_dbm_diff), dblue_bold)
     col += 1
     worksheet.set_column(col, col, 25)  # Set width
-    worksheet.write(row, col, 'Client Calc Total Signal dBm\n total signal dBm + pathloss\n + rssi_adj + antenna gain', dblue_bold)
+    worksheet.write(row, col, 'Client Calc Combined Signal dBm\n total signal dBm + pathloss\n + rssi_adj + antenna gain', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 25)  # Set width
     worksheet.write(row, col, 'Difference Between\n Controller dBm\n  & Client Calc Total Sig dBm', dblue_bold)
@@ -952,7 +954,7 @@ def main():
         # when using https://regex101.com/ for tool beginning of string begins with ^
         if (searchap):
             if args.series == "9800":
-                pat = "%s\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+(\\S+)" % (args.ap)
+                pat = "%s\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+%s\\s+(\\S+)" % (args.ap,args.testbed_location)
             else:
                 pat = "%s\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+.*  (\\S+)\\s+\\S+\\s*\\S+\\s+\\[" % (args.ap)
             m = re.search(pat, line)
@@ -960,6 +962,8 @@ def main():
                 myrd = m.group(1)
                 logger.info("Regulatory Domain from show AP Summary : {domain}".format(domain=myrd))
 
+    if myrd == "":
+        logger.error("Regulatory domain is blank: --testbed_location <show ap summary Location> : location entered {location}".format(location=args.testbed_location))
     # Loop through all iterations and run txpower tests.
     # The is the main loop of loops:   Channels, spatial streams (nss), bandwidth (bw), txpowers (tx)
     # Note: supports 9800 and 3504 controllers
@@ -1453,8 +1457,8 @@ def main():
                         for line in pss.splitlines():
                             # logg.info("probe-line: %s"%(line))
                             # TODO switch to signal avg 
-                            # m = re.search('signal avg:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
-                            m = re.search('signal:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
+                            m = re.search('signal avg:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
+                            # m = re.search('signal:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
                             # print("m singal avg : {}".format(m))
                             # AX210 needs to look at signal
                             if (m is None):
