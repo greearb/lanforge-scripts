@@ -34,6 +34,10 @@ class CSVParcer:
         i_rxbps = -1
         i_beacon_rssi = -1
         i_data_rssi = -1
+        i_rx_mcs = -1
+        i_tx_mcs = -1
+        rate_with_units = False
+
         fpo = open(csv_outfile, "w")
         with open(csv_infile) as fp:
             line = fp.readline()
@@ -44,6 +48,8 @@ class CSVParcer:
             x = line.split(",")
             cni = 0
             for cn in x:
+                #print("cn: " + cn)
+                # This works with the 'brief' csv output.
                 if cn == "Attenuation [dB]":
                     i_atten = cni
                 if cn == "Position [Deg]":
@@ -54,25 +60,50 @@ class CSVParcer:
                     i_beacon_rssi = cni
                 if cn == "Data RSSI [dBm]":
                     i_data_rssi = cni
+
+                # This is for parsing the more complete csv output.
+                if cn == "Atten":
+                    i_atten = cni
+                if cn == "Rotation":
+                    i_rotation = cni
+                if cn == "Rx-Bps":
+                    rate_with_units = True
+                    i_rxbps = cni
+                # NOTE: Beacon RSSI does not exist in the 'full' csv
+                if cn == "RSSI":
+                    i_data_rssi = cni
+                if cn == "Tx-Rate":
+                    i_tx_mcs = cni
+                if cn == "Rx-Rate":
+                    i_rx_mcs = cni
+                    
                 cni += 1
 
             # Write out out header for the new file.
-            fpo.write(
-                "Test Run,Position [Deg],Attenuation 1 [dB],Pal Stats Endpoint 1 Control Rssi [dBm],Pal Stats Endpoint 1 Data Rssi [dBm]\n")
+            fpo.write("Test Run,Position [Deg],Attenuation 1 [dB],Pal Stats Endpoint 1 Control Rssi [dBm],Pal Stats Endpoint 1 Data Rssi [dBm],Pal Stats Endpoint 1 RX rate [Mbps] Mode,Pal Stats Endpoint 1 TX rate [Mbps] Mode\n")
 
             # Read rest of the input lines, processing one at a time.  Covert the columns as
             # needed, and write out new data to the output file.
             line = fp.readline()
 
-            bottom_half = "Step Index,Position [Deg],Attenuation [dB],Traffic Pair 1 Throughput [Mbps]\n"
+            bottom_half = "Step Index,Position [Deg],Attenuation [dB],Traffic Pair 1 Throughput [Mbps],Pal Stats Endpoint 1 RX rate [Mbps] Mode,Pal Stats Endpoint 1 TX rate [Mbps] Mode\n"
 
             test_run = "1"
 
             step_i = 0
             while line:
                 x = line.split(",")
-                fpo.write("%s,%s,%s,%s,%s" % (test_run, x[i_rotation], x[i_atten], x[i_beacon_rssi], x[i_data_rssi]))
-                bottom_half += ("%s,%s,%s,%s\n" % (step_i, x[i_rotation], x[i_atten], x[i_rxbps]))
+                beacon_rssi = "0"
+                if (i_beacon_rssi >= 0):
+                    beacon_rssi = x[i_beacon_rssi]
+                tx_rate = "0"
+                rx_rate = "0"
+                if (i_tx_mcs >= 0):
+                    tx_rate = self.convert_to_mbps(x[i_tx_mcs])
+                if (i_rx_mcs >= 0):
+                    rx_rate = self.convert_to_mbps(x[i_rx_mcs])
+                fpo.write("%s,%s,%s,%s,%s,%s,%s\n" % (test_run, x[i_rotation], x[i_atten], beacon_rssi, x[i_data_rssi], tx_rate, rx_rate))
+                bottom_half += ("%s,%s,%s,%s,%s,%s\n" % (step_i, x[i_rotation], x[i_atten], self.convert_to_mbps(x[i_rxbps]), tx_rate, rx_rate))
                 line = fp.readline()
                 step_i += 1
 
@@ -80,6 +111,20 @@ class CSVParcer:
             fpo.write("\n\n# RvRvO Data\n\n")
             fpo.write(bottom_half)
 
+    def convert_to_mbps(self, val):
+        tokens = val.split(" ")
+        rv = float(tokens[0])
+
+        try:
+            units = tokens[1]
+            if units == "Gbps":
+                rv = rv * 1000.0;
+            if units == "Kbps":
+                rv = rv / 1000.0
+            return int(rv)
+        except:
+            # Assume no units and that it is already mbps
+            return int(rv)
 
 def main():
     parser = argparse.ArgumentParser(
