@@ -1512,7 +1512,7 @@ def main():
                     for command in ["shutdown",
                                     "security ft",
                                     "security wpa psk set-key ascii 0 {security_key}".format(security_key=args.security_key),
-                                    "no security wpa akm dot1x",
+                                    "no security wpa akm psk",
                                     "security wpa akm ft psk",
                                     "no shutdown"
                                     ]:
