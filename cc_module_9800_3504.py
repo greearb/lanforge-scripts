@@ -221,6 +221,8 @@ class create_controller_series_object:
                                        "--wlanID", self.wlanID, "--wlanSSID", self.wlanSSID, "--security_key", self.security_key]
             elif self.action in ["dtim"]:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan, "--value", self.value]
+            elif self.action in ["enable_ft_akm_ftpsk"]:
+                self.command_extend = ["--action", self.action, "--wlan", self.wlan, "--security_key", self.security_key]
 
             self.command.extend(self.command_extend)
 
@@ -756,7 +758,7 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
-    def enable_ft_psk(self):
+    def enable_ft_psk_cc(self):
         logger.info("enable ft and akm ft+psk ")
         self.action = "enable_ft_akm_ftpsk"
         summary = self.send_command()
