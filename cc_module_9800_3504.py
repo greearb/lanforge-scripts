@@ -211,7 +211,7 @@ class create_controller_series_object:
             self.command_extend = ["--action", self.action, "--value", self.value]
             self.command.extend(self.command_extend)
 
-        elif self.action in ["create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "dtim"]:
+        elif self.action in ["create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "dtim",  "enable_ft_akm_ftpsk"]:
 
             if self.action in ["create_wlan"]:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan,
