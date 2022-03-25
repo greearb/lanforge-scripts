@@ -313,9 +313,11 @@ class L3VariableTime(Realm):
         total_dl_rate = 0
         total_dl_rate_ll = 0
         total_dl_pkts_ll = 0
+        dl_rx_drop_percent = 0
         total_ul_rate = 0
         total_ul_rate_ll = 0
         total_ul_pkts_ll = 0
+        ul_rx_drop_percent = 0
         count = 0
         sta_name = 'no_station'
 
@@ -374,13 +376,16 @@ class L3VariableTime(Realm):
                     total_dl_rate += int(endp["rx rate"])
                     total_dl_rate_ll += int(endp["rx rate ll"])
                     total_dl_pkts_ll += int(endp["rx pkts ll"])
+                    dl_rx_drop_percent = int(endp["rx drop %"])
                 # -B upload side
                 else:
                     total_ul_rate += int(endp["rx rate"])
                     total_ul_rate_ll += int(endp["rx rate ll"])
                     total_ul_pkts_ll += int(endp["rx pkts ll"])
+                    ul_rx_drop_percent = int(endp["rx drop %"])
 
-        return lat, jit, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll
+
+        return lat, jit, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent
 
     # Query all endpoints to generate rx and other stats, returned
     # as an array of objects.
@@ -651,6 +656,7 @@ class L3VariableTime(Realm):
             self.csv_add_port_column_headers(
                 eid_name, self.csv_generate_port_column_headers())
 
+        # TODO test with LANforge VAP
         # ul -ports (this if AP is present)
         # port_eids = self.gather_port_eids()
         # for eid_name in port_eids:
@@ -774,7 +780,7 @@ class L3VariableTime(Realm):
                                 pprint(response)
                             else:
                                 port_data = response['interface']
-                                latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
+                                latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
                                     port_data["port"], endps)
                                 self.write_port_csv(
                                     len(temp_stations_list),
@@ -790,9 +796,11 @@ class L3VariableTime(Realm):
                                     total_ul_rate,
                                     total_ul_rate_ll,
                                     total_ul_pkts_ll,
+                                    ul_rx_drop_percent,
                                     total_dl_rate,
                                     total_dl_rate_ll,
-                                    total_dl_pkts_ll)
+                                    total_dl_pkts_ll,
+                                    dl_rx_drop_percent)
 
                     # At end of test step, record KPI into kpi.csv
                     self.record_kpi_csv(
@@ -846,9 +854,11 @@ class L3VariableTime(Realm):
             total_ul_rate,
             total_ul_rate_ll,
             total_ul_pkts_ll,
+            ul_rx_drop_percent,
             total_dl_rate,
             total_dl_rate_ll,
-            total_dl_pkts_ll):
+            total_dl_pkts_ll,
+            dl_rx_drop_percent):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, eid_name
@@ -866,9 +876,11 @@ class L3VariableTime(Realm):
                      total_ul_rate,
                      total_ul_rate_ll,
                      total_ul_pkts_ll,
+                     ul_rx_drop_percent,
                      total_dl_rate,
                      total_dl_rate_ll,
-                     total_dl_pkts_ll]
+                     total_dl_pkts_ll,
+                     dl_rx_drop_percent]
 
         # Add in info queried from AP.
 
@@ -1034,9 +1046,12 @@ class L3VariableTime(Realm):
             'Ul-Rx-Goodput-bps',
             'Ul-Rx-Rate-ll',
             'Ul-Rx-Pkts-ll',
+            'UL-Rx-Drop-Percent',
             'Dl-Rx-Goodput-bps',
             'Dl-Rx-Rate-ll',
-            'Dl-Rx-Pkts-ll']
+            'Dl-Rx-Pkts-ll',
+            'Dl-Rx-Drop_Percent']
+
         # Add in columns we are going to query from the AP
         # for col in self.ap_stats_col_titles:
         #    csv_rx_headers.append(col)
@@ -1070,9 +1085,11 @@ class L3VariableTime(Realm):
             'Ul-Rx-Goodput-bps',
             'Ul-Rx-Rate-ll',
             'Ul-Rx-Pkts-ll',
+            'UL-Rx-Drop-Percent',
             'Dl-Rx-Goodput-bps',
             'Dl-Rx-Rate-ll',
-            'Dl-Rx-Pkts-ll']
+            'Dl-Rx-Pkts-ll',
+            'Dl-Rx-Drop_Percent']
         # Add in columns we are going to query from the AP
         # for col in self.ap_stats_ul_col_titles:
         #    csv_ul_rx_headers.append(col)
@@ -1174,6 +1191,8 @@ def valid_endp_types(_endp_type):
 
 
 # Starting point for running this from cmd line.
+# note: when adding command line delimiters : +,=@
+# https://stackoverflow.com/questions/37304799/cross-platform-safe-to-use-command-line-string-separator
 def main():
     lfjson_host = "localhost"
     lfjson_port = 8080
@@ -1237,7 +1256,18 @@ mc_udp  : IPv4 multi cast UDP traffic
 mc_udp6 : IPv6 multi cast UDP traffic
 
 <tos>:
-BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred numeric values.
+BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred numeric values. Cross connects type of service
+
+    Data 0 (Best Effort, BE): Medium priority queue, medium throughput and
+    delay. Most traditional IP data is sent to this queue.
+    Data 1 (Background, BK): Lowest priority queue, high throughput. Bulk
+    data that requires maximum throughput and is not time-sensitive is sent
+    to this queue (FTP data, for example):
+    Data 2 (Video, VI): High priority queue, minimum delay. Time-sensitive
+    data such as Video and other streaming media are automatically sent
+    to this queue.
+    Data 3 (Voice, VO): Highest priority queue, minimum delay.
+    Time-sensitive data such as Voice over IP (VoIP) is automatically sent to this Queue
 
 #################################
 #Command switches
@@ -1552,7 +1582,7 @@ Setting wifi_settings per radio
         default='3m')
     parser.add_argument(
         '--tos',
-        help='--tos:  Support different ToS settings: BK | BE | VI | VO | numeric',
+        help='--tos:  Support different ToS settings: BK,BE,VI,VO,numeric',
         default="BE")
     parser.add_argument(
         '--debug',
@@ -1636,8 +1666,8 @@ Setting wifi_settings per radio
         default='0')
 
 
-    parser.add_argument('--sta_start_number', help='Station start number for building stations',
-                              default='1')
+    parser.add_argument('--sta_start_offset', help='Station start offset for building stations',
+                              default='0')
 
     parser.add_argument('--no_pre_cleanup', help='Do not pre cleanup stations on start',
                               action='store_true')
@@ -1866,8 +1896,8 @@ Setting wifi_settings per radio
                 quit(1)
             station_list = LFUtils.portNameSeries(
                 prefix_="sta",
-                start_id_=int(args.sta_start_number) + index * 1000,
-                end_id_=number_of_stations + index * 1000,
+                start_id_= 1 + index * 1000 + int(args.sta_start_offset),
+                end_id_=number_of_stations + index * 1000 + int(args.sta_start_offset),
                 padding_number_=10000,
                 radio=radio_name_)
             station_lists.append(station_list)
