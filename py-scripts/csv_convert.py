@@ -26,8 +26,8 @@ if sys.version_info[0] != 3:
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 
-class CSVParcer:
-    def __init__(self, csv_infile=None, csv_outfile=None):
+class CSVParser:
+    def __init__(self, csv_infile=None, csv_infile2=None, csv_outfile=None):
 
         i_atten = -1
         i_rotation = -1
@@ -39,10 +39,22 @@ class CSVParcer:
         rate_with_units = False
 
         fpo = open(csv_outfile, "w")
-        with open(csv_infile) as fp:
+        fp = open(csv_infile)
+        fp2 = None
+        if csv_infile2:
+            fp2 = open(csv_infile2)
+
+        if True:
             line = fp.readline()
             if not line:
                 exit(1)
+
+            # Concat lines so we can read data from both csv files.
+            if fp2:
+                l2 = fp2.readline()
+                if l2:
+                    line = "%s,%s" %(line, l2)
+
             # Read in initial line, this is the CSV headers.  Parse it to find the column indices for
             # the columns we care about.
             x = line.split(",")
@@ -86,6 +98,12 @@ class CSVParcer:
             # needed, and write out new data to the output file.
             line = fp.readline()
 
+            # Concat lines so we can read data from both csv files.
+            if fp2:
+                l2 = fp2.readline()
+                if l2:
+                    line = "%s,%s" %(line, l2)
+
             bottom_half = "Step Index,Position [Deg],Attenuation [dB],Traffic Pair 1 Throughput [Mbps],Pal Stats Endpoint 1 RX rate [Mbps] Mode,Pal Stats Endpoint 1 TX rate [Mbps] Mode\n"
 
             test_run = "1"
@@ -105,6 +123,13 @@ class CSVParcer:
                 fpo.write("%s,%s,%s,%s,%s,%s,%s\n" % (test_run, x[i_rotation], x[i_atten], beacon_rssi, x[i_data_rssi], tx_rate, rx_rate))
                 bottom_half += ("%s,%s,%s,%s,%s,%s\n" % (step_i, x[i_rotation], x[i_atten], self.convert_to_mbps(x[i_rxbps]), tx_rate, rx_rate))
                 line = fp.readline()
+
+                # Concat lines so we can read data from both csv files.
+                if fp2:
+                    l2 = fp2.readline()
+                    if l2:
+                        line = "%s,%s" %(line, l2)
+
                 step_i += 1
 
             # First half is written out now, and second half is stored...
@@ -136,24 +161,33 @@ def main():
 
         description='''
 csv_convert.py:  
-    converts the candela brief csv into the data for specific customer,
+    converts the candela brief csv and/or more complete csv into the data for specific customer.
+    Both csv files need to be passed in order to have beacon rssi and phy rates since neither
+    csv file contains all of that data.
+
+Example:
+    ./csv_convert.py -i ~/dataplane-2022-02-08-12-18-45/text-csv-2.csv -I ~/dataplane-2022-02-08-12-18-45/text-csv-0.csv
         ''')
 
     parser.add_argument('-i', '--infile', help="input file of csv data", required=True)
+    parser.add_argument('-I', '--infile2', help="secondary input file of csv data", required=True)
     parser.add_argument('-o', '--outfile', help="output file in .csv format", default='outfile.csv')
 
     args = parser.parse_args()
     csv_outfile_name = None
     csv_infile_name = None
+    csv_infile_name2 = None
 
     if args.infile:
         csv_infile_name = args.infile
+    if args.infile2:
+        csv_infile_name2 = args.infile2
     if args.outfile:
         csv_outfile_name = args.outfile
 
-    print("infile: %s  outfile: %s" % (csv_infile_name, csv_outfile_name))
+    print("infile: %s infile2: %s  outfile: %s" % (csv_infile_name, csv_infile_name2, csv_outfile_name))
 
-    CSVParcer(csv_infile_name, csv_outfile_name)
+    CSVParser(csv_infile_name, csv_infile_name2, csv_outfile_name)
 
 
 if __name__ == "__main__":
