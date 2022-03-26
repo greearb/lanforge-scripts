@@ -66,8 +66,8 @@ class create_controller_series_object:
                  ap_band_slot_24g=None,
                  ap_band_slot_5g=None,
                  ap_band_slot_6g=None,
-                 ap_band_slot_dual_band_5g=None,
-                 ap_band_slot_dual_band_6g=None,
+                 ap_dual_band_slot_5g=None,
+                 ap_dual_band_slot_6g=None,
                  port=None,
                  timeout=None,
                  pwd=None
@@ -123,17 +123,17 @@ class create_controller_series_object:
         else:
             self.ap_band_slot_6g = ap_band_slot_6g
 
-        if ap_band_slot_dual_band_5g is None:
-            logger.warning("ap_band_slot_dual_band_5g not configured using value of '2'")
-            self.ap_band_slot_dual_band_5g = '2'
+        if ap_dual_band_slot_5g is None:
+            logger.warning("ap_dual_band_slot_5g not configured using value of '2'")
+            self.ap_dual_band_slot_5g = '2'
         else:
-            self.ap_band_slot_dual_band_5g = ap_band_slot_dual_band_5g
+            self.ap_dual_band_slot_5g = ap_dual_band_slot_5g
 
-        if ap_band_slot_dual_band_6g is None:
-            logger.warning("ap_band_slot_dual_band_6g not configured using value of '2'")
-            self.ap_band_slot_dual_band_6g = '2'
+        if ap_dual_band_slot_6g is None:
+            logger.warning("ap_dual_band_slot_6g not configured using value of '2'")
+            self.ap_dual_band_slot_6g = '2'
         else:
-            self.ap_band_slot_dual_band_6g = ap_band_slot_dual_band_6g
+            self.ap_dual_band_slot_6g = ap_dual_band_slot_6g
 
         if band is None:
             raise ValueError('Controller band  must be set')
@@ -1043,8 +1043,8 @@ INCLUDE_IN_README
     parser.add_argument("--ap_band_slot_24g", type=str, help="ap_band_slot_24g", default='0')
     parser.add_argument("--ap_band_slot_5g", type=str, help="ap_band_slot_5g", default='1')
     parser.add_argument("--ap_band_slot_6g", type=str, help="ap_band_slot_6g", default='2')
-    parser.add_argument("--ap_band_slot_dual_band_5g", type=str, help="ap_band_slot_dual_band_5g", default='2')
-    parser.add_argument("--ap_band_slot_dual_band_6g", type=str, help="ap_band_slot_dual_band_6g", default='2')
+    parser.add_argument("--ap_dual_band_slot_5g", type=str, help="ap_dual_band_slot_5g", default='2')
+    parser.add_argument("--ap_dual_band_slot_6g", type=str, help="ap_dual_band_slot_6g", default='2')
     parser.add_argument("--prompt", type=str, help="controller prompt", required=True)
     parser.add_argument("--band", type=str, help="band to test 24g, 5g, 6g, dual_band_5g, dual_band_6g", required=True)
     parser.add_argument("--series", type=str, help="controller series", choices=["9800", "3504"], required=True)

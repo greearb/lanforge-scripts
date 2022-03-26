@@ -1446,7 +1446,7 @@ def main():
             if i == 0:
                 logg.info("did not get the (config)# prompt")
         else:
-            command = "dtim {value}".format(args.value)
+            command = "dtim {value}".format(value=args.value)
 
     if (args.action == "create_wlan_wpa2" and ((args.wlanID is None) or (args.wlan is None) or (args.wlanSSID is None) or (args.security_key is None))):
         raise Exception("create_wlan_wpa2 wlanID, wlan, wlanSSID are required an")
