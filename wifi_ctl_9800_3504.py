@@ -1321,7 +1321,9 @@ def main():
         raise Exception("ap_channel requires ap")
     if (args.action == "ap_channel"):
         if args.series == "9800":
-            if band == '6g':
+            if band == "dual_band_6g" or band == "dual_band_5g":
+                command = "show ap dot11 dual-band summary"
+            elif band == "6g":
                 command = "show ap dot11 6ghz summary"
             elif band == '5g':
                 command = "show ap dot11 5ghz summary"
@@ -1451,7 +1453,10 @@ def main():
                 sleep(0.4)
                 j = egg.expect_exact([CCP_CONFIG_WLAN, pexpect.TIMEOUT], timeout=timeout)
                 if j == 0:
-                    command = "dtim dot11 5ghz {value}".format(value=args.value)
+                    if args.band == '6g':
+                        command = "dtim dot11 6ghz {value}".format(value=args.value)
+                    elif args.band == '5g':
+                        command = "dtim dot11 5ghz {value}".format(value=args.value)
                     logg.info("dtim command:  {command}".format(command=command))
                     egg.sendline(command)
                     sleep(0.4)
