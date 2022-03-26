@@ -8,7 +8,10 @@ PURPOSE:
 Perform tx power testing
 
 SETUP:
-TODO : describe
+You might need to install perl
+Fedora : dnf install perl-Net-Telnet
+Ubunto : sudo apt install libnet-telnet-perl
+
 
 EXAMPLE:
 TODO : add sample command
