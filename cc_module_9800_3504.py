@@ -62,10 +62,12 @@ class create_controller_series_object:
                  series=None,
                  band=None,
                  ap=None,
-                 ap_slot=None, # TODO deprecated , left in for backward compatibility,
+                 ap_slot=None,  # TODO deprecated , left in for backward compatibility,
                  ap_band_slot_24g=None,
                  ap_band_slot_5g=None,
                  ap_band_slot_6g=None,
+                 ap_band_slot_dual_band_5g=None,
+                 ap_band_slot_dual_band_6g=None,
                  port=None,
                  timeout=None,
                  pwd=None
@@ -121,6 +123,18 @@ class create_controller_series_object:
         else:
             self.ap_band_slot_6g = ap_band_slot_6g
 
+        if ap_band_slot_dual_band_5g is None:
+            logger.warning("ap_band_slot_dual_band_5g not configured using value of '2'")
+            self.ap_band_slot_dual_band_5g = '2'
+        else:
+            self.ap_band_slot_dual_band_5g = ap_band_slot_dual_band_5g
+
+        if ap_band_slot_dual_band_6g is None:
+            logger.warning("ap_band_slot_dual_band_6g not configured using value of '2'")
+            self.ap_band_slot_dual_band_6g = '2'
+        else:
+            self.ap_band_slot_dual_band_6g = ap_band_slot_dual_band_6g
+
         if band is None:
             raise ValueError('Controller band  must be set')
         else:
@@ -165,11 +179,15 @@ class create_controller_series_object:
             self.band = 'a'
         elif self.band == '6g':
             self.band = '6g'
+        elif self.band == 'dual_band_5g':
+            self.band = 'dual_band_5g'
+        elif self.band == 'dual_band_6g':
+            self.band = 'dual_band_6g'
         elif self.band == 'a' or self.band == 'b':
             pass
         else:
-            logger.critical("band needs to be set 24g 5g or 6g")
-            raise ValueError("band needs to be set 24g 5g or 6g")
+            logger.critical("band needs to be set 24g 5g 6g dual_band_5g, dual_band_6g")
+            raise ValueError("band needs to be set 24g 5g 6g dual_band_5g or dual_band_6g")
 
     # TODO need to configure the slot
     def set_ap_band_slot(self):
@@ -179,7 +197,12 @@ class create_controller_series_object:
             self.ap_band_slot = self.ap_band_slot_5g
         # TODO need to support configuration
         elif self.band == '6g':
-            self.ap_band_slot = self.ap_band_slot_6g  # TODO need to read slot
+            self.band = '6g'
+        elif self.band == 'dual_band_5g':
+            self.band = 'dual_band_5g'
+        elif self.band == 'dual_band_6g':
+            self.band = 'dual_band_6g'
+
             # if self.ap_band_slot is None:
             #    logger.critical("ap_band_slot_6g needs to be set to 2 or 3")
             #    raise ValueError("ap_band_slot_6g needs to be set to 2 or 3")
@@ -211,7 +234,7 @@ class create_controller_series_object:
             self.command_extend = ["--action", self.action, "--value", self.value]
             self.command.extend(self.command_extend)
 
-        elif self.action in ["create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "dtim",  "enable_ft_akm_ftpsk"]:
+        elif self.action in ["create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "dtim", "enable_ft_akm_ftpsk"]:
 
             if self.action in ["create_wlan"]:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan,
@@ -246,9 +269,12 @@ class create_controller_series_object:
 
         # possible need to look for exact command
         elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_ap_wlan_summary", "show_wlan_summary", "show_wlan_id",
-                             "advanced", "disable_operation_status", "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
-                             "show_ap_bssid_24g", "show_ap_bssid_5g", "show_ap_bssid_6g_dual_band", "show_ap_bssid_6g",
-                             "manual", "auto", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz", "enable_operation_status", "11r_logs", "enable_ft_akm_ftpsk"]:
+                             "advanced", "disable_operation_status",
+                             "disable_network_dual_band_6ghz", "disable_network_dual_band_5ghz", "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
+                             "show_ap_bssid_dual_band_6g", "show_ap_bssid_dual_band_5g", "show_ap_bssid_6g", "show_ap_bssid_5g", "show_ap_bssid_24g",
+                             "manual", "auto",
+                             "enable_network_dual_band_6ghz", "enable_network_dual_band_5ghz", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
+                             "enable_operation_status", "11r_logs", "enable_ft_akm_ftpsk"]:
 
             self.command_extend = ["--action", self.action]
             self.command.extend(self.command_extend)
@@ -287,20 +313,17 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
-    # DTIM Delivery Traffic Indication Message
-    def config_dtim_dot11_24ghz(self):
-        logger.info("dtim dot11 24ghz")
-        self.band = '24g'
+    def config_dtim_dot11_dual_band_6ghz(self):
+        logger.info("dtim dot11 dual band 6ghz")
+        self.band = 'dual_band_6g'
         self.action = "dtim"
         self.value = self.dtim
         summary = self.send_command()
         return summary
 
-
-    # DTIM Delivery Traffic Indication Message
-    def config_dtim_dot11_5ghz(self):
-        logger.info("dtim dot11 5ghz")
-        self.band = '5g'
+    def config_dtim_dot11_dual_band_5ghz(self):
+        logger.info("dtim dot11 dual band 5ghz")
+        self.band = 'dual_band_5g'
         self.action = "dtim"
         self.value = self.dtim
         summary = self.send_command()
@@ -314,6 +337,23 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    # DTIM Delivery Traffic Indication Message
+    def config_dtim_dot11_5ghz(self):
+        logger.info("dtim dot11 5ghz")
+        self.band = '5g'
+        self.action = "dtim"
+        self.value = self.dtim
+        summary = self.send_command()
+        return summary
+
+    # DTIM Delivery Traffic Indication Message
+    def config_dtim_dot11_24ghz(self):
+        logger.info("dtim dot11 24ghz")
+        self.band = '24g'
+        self.action = "dtim"
+        self.value = self.dtim
+        summary = self.send_command()
+        return summary
 
     # NOTE: need to do _no_logging_console and line_console_0 at the beginning of every session
     # to avoid unexpected log messages showing up
@@ -344,10 +384,24 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
-    def show_ap_bssid_24ghz(self):
-        logger.info("show ap name  wlan dot11 24ghz")
-        self.band = '24g'
-        self.action = "show_ap_bssid_24g"
+    def show_ap_bssid_dual_band_6ghz(self):
+        logger.info("show ap name  wlan dot11 dual-band")
+        self.band = 'dual_band_6g'
+        self.action = "show_ap_bssid_dual_band_6g"
+        summary = self.send_command()
+        return summary
+
+    def show_ap_bssid_dual_band_5ghz(self):
+        logger.info("show ap name  wlan dot11 dual-band")
+        self.band = 'dual_band_5g'
+        self.action = "show_ap_bssid_dual_band_5g"
+        summary = self.send_command()
+        return summary
+
+    def show_ap_bssid_6ghz(self):
+        logger.info("show ap name <AP NAME> wlan dot11 6ghz")
+        self.band = '6g'
+        self.action = "show_ap_bssid_6g"
         summary = self.send_command()
         return summary
 
@@ -358,18 +412,16 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
-    def show_ap_bssid_6ghz_dual_band(self):
-        logger.info("show ap name  wlan dot11 dual-band")
-        self.band = '6g'
-        self.action = "show_ap_bssid_6g_dual_band"
+    def show_ap_bssid_24ghz(self):
+        logger.info("show ap name  wlan dot11 24ghz")
+        self.band = '24g'
+        self.action = "show_ap_bssid_24g"
         summary = self.send_command()
         return summary
 
-    # TB1 has a dual band radio
-    def show_ap_bssid_6ghz(self):
-        logger.info("show ap name <AP NAME> wlan dot11 6ghz")
-        self.band = '6g'
-        self.action = "show_ap_bssid_6g"
+    def show_ap_wlan_dual_band_summary(self):
+        logger.info("show ap wlan summary")
+        self.action = "show_ap_wlan_summary"
         summary = self.send_command()
         return summary
 
@@ -382,6 +434,20 @@ class create_controller_series_object:
     def show_wlan_summary(self):
         logger.info("show_wlan_summary")
         self.action = "show_wlan_summary"
+        summary = self.send_command()
+        return summary
+
+    def show_ap_dot11_dual_band_6gz_summary(self):
+        logger.info("show ap dot11 dual-band 6gz summary")
+        self.band = 'dual_band_6g'
+        self.action = "advanced"
+        summary = self.send_command()
+        return summary
+
+    def show_ap_dot11_dual_band_5gz_summary(self):
+        logger.info("show ap dot11 dual-band 5gz summary")
+        self.band = 'dual_band_5g'
+        self.action = "advanced"
         summary = self.send_command()
         return summary
 
@@ -406,9 +472,16 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
-    def show_ap_dot11_5gz_shutdown(self):
-        logger.info("ap name {name} dot11 5ghz shutdown")
-        self.band = '5g'
+    def show_ap_dot11_dual_band_6gz_shutdown(self):
+        logger.info("ap name {name} dot11 dual-band 6ghz shutdown")
+        self.band = 'dual_band_6g'
+        self.action = "disable_operation_status"
+        summary = self.send_command()
+        return summary
+
+    def show_ap_dot11_dual_band_5gz_shutdown(self):
+        logger.info("ap name {name} dot11 dual-band 5ghz shutdown")
+        self.band = 'dual_band_5g'
         self.action = "disable_operation_status"
         summary = self.send_command()
         return summary
@@ -416,6 +489,13 @@ class create_controller_series_object:
     def show_ap_dot11_6gz_shutdown(self):
         logger.info("ap name {name} dot11 6ghz shutdown")
         self.band = '6g'
+        self.action = "disable_operation_status"
+        summary = self.send_command()
+        return summary
+
+    def show_ap_dot11_5gz_shutdown(self):
+        logger.info("ap name {name} dot11 5ghz shutdown")
+        self.band = '5g'
         self.action = "disable_operation_status"
         summary = self.send_command()
         return summary
@@ -435,6 +515,20 @@ class create_controller_series_object:
 
     # TODO May need to check if 6g supported on AP ,
     # or just send command and let controller show not supported.
+    def ap_dot11_dual_band_6ghz_shutdown(self):
+        logger.info("ap dot11 dual-band 6ghz shutdown")
+        self.band = 'dual_band_6g'
+        self.action = "disable_network_dual_band_6ghz"
+        summary = self.send_command()
+        return summary
+
+    def ap_dot11_dual_band_5ghz_shutdown(self):
+        logger.info("ap dot11 dual-band 5ghz shutdown")
+        self.band = 'dual_band_5g'
+        self.action = "disable_network_dual_band_5ghz"
+        summary = self.send_command()
+        return summary
+
     def ap_dot11_6ghz_shutdown(self):
         logger.info("ap dot11 6ghz shutdown")
         self.band = '6g'
@@ -453,6 +547,20 @@ class create_controller_series_object:
         logger.info("wlan {wlan} shutdown".format(wlan=self.wlan))
         self.band = '24g'
         self.action = "disable_network_24ghz"
+        summary = self.send_command()
+        return summary
+
+    def ap_dot11_dual_band_6ghz_radio_role_manual_client_serving(self):
+        logger.info("ap name {ap_name} dot11 dual band 6ghz radio role manual client-serving".format(ap_name=self.ap))
+        self.band = 'dual_band_6g'
+        self.action = "manual"
+        summary = self.send_command()
+        return summary
+
+    def ap_dot11_dual_band_5ghz_radio_role_manual_client_serving(self):
+        logger.info("ap name {ap_name} dot11 dual band 5ghz radio role manual client-serving".format(ap_name=self.ap))
+        self.band = 'dual_band_5g'
+        self.action = "manual"
         summary = self.send_command()
         return summary
 
@@ -477,6 +585,20 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    def ap_dot11_dual_band_6ghz_radio_role_auto(self):
+        logger.info("ap name {ap_name} dot11 dual band 6ghz radio role auto".format(ap_name=self.ap))
+        self.band = 'dual_band_6g'
+        self.action = "auto"
+        summary = self.send_command()
+        return summary
+
+    def ap_dot11_dual_band_5ghz_radio_role_auto(self):
+        logger.info("ap name {ap_name} dot11 dual band 5ghz radio role auto".format(ap_name=self.ap))
+        self.band = 'dual_band_5g'
+        self.action = "auto"
+        summary = self.send_command()
+        return summary
+
     def ap_dot11_6ghz_radio_role_auto(self):
         logger.info("ap name {ap_name} dot11 6ghz radio role auto".format(ap_name=self.ap))
         self.band = '6g'
@@ -498,6 +620,7 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    # TODO check if this command is used
     def config_dot11_5ghz_disable_network(self):
         logger.info("config_dot11_5ghz_disable_network")
         self.action = "cmd"
@@ -505,6 +628,7 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    # TODO check if this command is used
     def config_dot11_24ghz_disable_network(self):
         logger.info("config_dot11_24ghz_disable_network")
         self.action = "cmd"
@@ -513,6 +637,22 @@ class create_controller_series_object:
         return summary
 
     # txPower
+    def config_dot11_dual_band_6ghz_tx_power(self):
+        logger.info("config_dot11_dual_band_6ghz_tx_power")
+        self.band = 'dual_band_6g'
+        self.action = "txPower"
+        self.value = "{tx_power}".format(tx_power=self.tx_power)
+        summary = self.send_command()
+        return summary
+
+    def config_dot11_dual_band_5ghz_tx_power(self):
+        logger.info("config_dot11_dual_band_5ghz_tx_power")
+        self.band = 'dual_band_5g'
+        self.action = "txPower"
+        self.value = "{tx_power}".format(tx_power=self.tx_power)
+        summary = self.send_command()
+        return summary
+
     def config_dot11_6ghz_tx_power(self):
         logger.info("config_dot11_6ghz_tx_power")
         self.band = '6g'
@@ -538,8 +678,24 @@ class create_controller_series_object:
         return summary
 
     # set channel
+    def config_dot11_dual_band_6ghz_channel(self):
+        logger.info("config_dot11_dual_band_6ghz_channel {channel}".format(channel=self.channel))
+        self.band = 'dual_band_6g'
+        self.action = "channel"
+        self.value = "{channel}".format(channel=self.channel)
+        summary = self.send_command()
+        return summary
+
+    def config_dot11_dual_band_5ghz_channel(self):
+        logger.info("config_dot11_dual_band_5ghz_channel {channel}".format(channel=self.channel))
+        self.band = 'dual_band_5g'
+        self.action = "channel"
+        self.value = "{channel}".format(channel=self.channel)
+        summary = self.send_command()
+        return summary
+
     def config_dot11_6ghz_channel(self):
-        logger.info("config_dot11_5ghz_channel {channel}".format(channel=self.channel))
+        logger.info("config_dot11_6ghz_channel {channel}".format(channel=self.channel))
         self.band = '6g'
         self.action = "channel"
         self.value = "{channel}".format(channel=self.channel)
@@ -563,6 +719,22 @@ class create_controller_series_object:
         return summary
 
     # set bandwidth
+    def config_dot11_dual_band_6ghz_channel_width(self):
+        logger.info("config_dot11_dual_band_6ghz_channel width {bandwidth}".format(bandwidth=self.bandwidth))
+        self.band = 'dual_band_6g'
+        self.action = "bandwidth"
+        self.value = "{bandwidth}".format(bandwidth=self.bandwidth)
+        summary = self.send_command()
+        return summary
+
+    def config_dot11_dual_band_5ghz_channel_width(self):
+        logger.info("config_dot11_dual_band_5ghz_channel width {bandwidth}".format(bandwidth=self.bandwidth))
+        self.band = 'dual_band_5g'
+        self.action = "bandwidth"
+        self.value = "{bandwidth}".format(bandwidth=self.bandwidth)
+        summary = self.send_command()
+        return summary
+
     def config_dot11_6ghz_channel_width(self):
         logger.info("config_dot11_6ghz_channel width {bandwidth}".format(bandwidth=self.bandwidth))
         self.band = '6g'
@@ -695,6 +867,28 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    # enable_network_dual_band_6ghz
+    def config_no_ap_dot11_dual_band_6ghz_shutdown(self):
+        logger.info(
+            "config_no_ap_dot11_dual_band_6ghz_shutdown (enable network dual band 6ghz): Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(
+                wlan=self.wlan,
+                wlanID=self.wlanID,
+                wlanSSID=self.wlanSSID))
+        self.action = "enable_network_dual_band_6ghz"
+        summary = self.send_command()
+        return summary
+
+    # enable_dual_band_network_5ghz
+    def config_no_ap_dot11_dual_band_5ghz_shutdown(self):
+        logger.info(
+            "config_no_ap_dot11_dual_band_5ghz_shutdown (enable network dual band 5ghz): Profile name {wlan} wlanID {wlanID} wlanSSID {wlanSSID}".format(
+                wlan=self.wlan,
+                wlanID=self.wlanID,
+                wlanSSID=self.wlanSSID))
+        self.action = "enable_network_dual_band_5ghz"
+        summary = self.send_command()
+        return summary
+
     # enable_network_6ghz
     def config_no_ap_dot11_6ghz_shutdown(self):
         logger.info(
@@ -728,12 +922,28 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    # enable ap dual band 6ghz
+    def config_ap_no_dot11_dual_band_6ghz_shutdown(self):
+        self.band = 'dual_band_6g'
+        self.action = "enable_operation_status"
+        summary = self.send_command()
+        logger.info("ap name {ap} dot11 {band}hz shutdown {slot}  (enable ap)".format(ap=self.ap, band=self.band, slot=self.ap_band_slot))
+        return summary
+
+    # enable ap dual band 5ghz
+    def config_ap_no_dot11_dual_band_5ghz_shutdown(self):
+        self.band = 'dual_band_5g'
+        self.action = "enable_operation_status"
+        summary = self.send_command()
+        logger.info("ap name {ap} dot11 {band}hz shutdown {slot}  (enable ap)".format(ap=self.ap, band=self.band, slot=self.ap_band_slot))
+        return summary
+
     # enable ap 6ghz
     def config_ap_no_dot11_6ghz_shutdown(self):
         self.band = '6g'
         self.action = "enable_operation_status"
         summary = self.send_command()
-        logger.info("ap name {ap} dot11 {band}hz shutdown {slot}  (enable ap)".format(ap=self.ap,band=self.band,slot=self.ap_band_slot))
+        logger.info("ap name {ap} dot11 {band}hz shutdown {slot}  (enable ap)".format(ap=self.ap, band=self.band, slot=self.ap_band_slot))
         return summary
 
     # enable ap 5ghz
@@ -741,7 +951,7 @@ class create_controller_series_object:
         self.band = '5g'
         self.action = "enable_operation_status"
         summary = self.send_command()
-        logger.info("ap name {ap} dot11 {band}hz shutdown {slot}  (enable ap)".format(ap=self.ap,band=self.band,slot=self.ap_band_slot))
+        logger.info("ap name {ap} dot11 {band}hz shutdown {slot}  (enable ap)".format(ap=self.ap, band=self.band, slot=self.ap_band_slot))
         return summary
 
     # enable ap 24ghz
@@ -749,7 +959,7 @@ class create_controller_series_object:
         self.band = '24g'
         self.action = "enable_operation_status"
         summary = self.send_command()
-        logger.info("ap name {ap} dot11 {band}hz shutdown {slot}  (enable ap)".format(ap=self.ap,band=self.band,slot=self.ap_band_slot))
+        logger.info("ap name {ap} dot11 {band}hz shutdown {slot}  (enable ap)".format(ap=self.ap, band=self.band, slot=self.ap_band_slot))
         return summary
 
     def show_11r_logs(self):
@@ -782,6 +992,12 @@ def sample_test_dump_status(cs):
     elif cs.band in ['6g']:
         cs.show_ap_bssid_6ghz_dual_band()
         cs.show_ap_dot11_6gz_summary()
+    elif cs.band in ['dual_band_5g']:
+        cs.show_ap_bssid_dual_band_5ghz_dual_band()
+        cs.show_ap_dot11_dual_band_5gz_summary()
+    elif cs.band in ['dual_band_6g']:
+        cs.show_ap_bssid_dual_band_6ghz_dual_band()
+        cs.show_ap_dot11_dual_band_6gz_summary()
 
 
 # unit test for 9800 3504 controller
@@ -827,8 +1043,10 @@ INCLUDE_IN_README
     parser.add_argument("--ap_band_slot_24g", type=str, help="ap_band_slot_24g", default='0')
     parser.add_argument("--ap_band_slot_5g", type=str, help="ap_band_slot_5g", default='1')
     parser.add_argument("--ap_band_slot_6g", type=str, help="ap_band_slot_6g", default='2')
+    parser.add_argument("--ap_band_slot_dual_band_5g", type=str, help="ap_band_slot_dual_band_5g", default='2')
+    parser.add_argument("--ap_band_slot_dual_band_6g", type=str, help="ap_band_slot_dual_band_6g", default='2')
     parser.add_argument("--prompt", type=str, help="controller prompt", required=True)
-    parser.add_argument("--band", type=str, help="band to test 24g, 5g, 6g", required=True)
+    parser.add_argument("--band", type=str, help="band to test 24g, 5g, 6g, dual_band_5g, dual_band_6g", required=True)
     parser.add_argument("--series", type=str, help="controller series", choices=["9800", "3504"], required=True)
     parser.add_argument("--scheme", type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
     parser.add_argument("--timeout", type=str, help="timeout value", default=3)
@@ -837,6 +1055,16 @@ INCLUDE_IN_README
 
     # set up logger , do not delete
     logger_config = lf_logger_config.lf_logger_config()
+
+    # set the logger level to debug
+    if args.debug:
+        logger_config.set_level_debug()
+
+    # lf_logger_config_json will take presidence to changing debug levels
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
 
     cs = create_controller_series_object(
         scheme=args.scheme,
