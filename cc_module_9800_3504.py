@@ -199,9 +199,9 @@ class create_controller_series_object:
         elif self.band == '6g':
             self.ap_band_slot = self.ap_band_slot_6g
         elif self.band == 'dual_band_5g':
-            self.band = self.ap_band_slot_dual_band_5g
+            self.ap_band_slot = self.ap_band_slot_dual_band_5g
         elif self.band == 'dual_band_6g':
-            self.band = self.ap_band_slot_dual_band_6g
+            self.ap_band_slot = self.ap_band_slot_dual_band_6g
 
             # if self.ap_band_slot is None:
             #    logger.critical("ap_band_slot_6g needs to be set to 2 or 3")

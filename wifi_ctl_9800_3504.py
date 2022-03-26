@@ -138,7 +138,7 @@ def main():
     # TODO Should the Slot be passed for every command? or just check with 6g
     parser.add_argument("--ap_band_slot", type=str, help="select AP ap slot 24g = 0, 5g = 1 , 6g = 2 or 3")
     parser.add_argument("-b", "--band", type=str, help="Select band (a | b | abgn | 6g | 5g | 24g)",
-                        choices=["24g", "5g", "6g", "a", "b", "abgn"])
+                        choices=["dual_band_6g", "dual_band_5g", "6g", "5g", "24g", "a", "b", "abgn"])
     parser.add_argument("--tag_policy", type=str, help="--tag_policy default-tag-policy")
     # parser.add_argument("--tag_policy",     type=str, help="--tag_policy default-tag-policy", default="RM204-TB2")
     parser.add_argument("--policy_profile", type=str, help="--policy_profile default-policy-profile")
@@ -149,10 +149,11 @@ def main():
                                  "enable_operation_status", "disable_operation_status", "summary", "advanced",
                                  "cmd", "txPower", "bandwidth", "manual", "auto", "no_wlan", "show_ap_wlan_summary", "show_wlan_summary", "show_radio",
                                  "ap_channel", "auto_rf", "channel", "show", "create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "enable_wlan", "disable_wlan", "wlan_qos",
-                                 "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
-                                 "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
+                                 "disable_dual_band_network_6ghz","disable_dual_band_network_5ghz","disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
+                                 "enable_dual_band_network_6ghz","enable_dual_band_network_5ghz","enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
                                  "wireless_tag_policy", "no_wlan_wireless_tag_policy", "delete_wlan",
-                                 "show_ap_bssid_24g", "show_ap_bssid_5g", "show_ap_bssid_6g_dual_band", "shwo_ap_bssid_6g",  "11r_logs", "enable_ft_akm_ftpsk"])
+                                 "show_ap_bssid_dual_band_6g", "show_ap_bssid_dual_band_5g", "show_ap_bssid_6g", "show_ap_bssid_5g", "show_ap_bssid_24g",  
+                                 "11r_logs", "enable_ft_akm_ftpsk"])
     parser.add_argument("--value", type=str, help="set value")
     # logging configuration
     parser.add_argument(
@@ -1033,7 +1034,9 @@ def main():
 
     if (args.action == "advanced"):
         if args.series == "9800":
-            if band == '6g':
+            if band == 'dual_band_5g' or band == 'dual_band_6g':
+                command = "show ap dot11 dual-band summary"
+            elif band == '6g':
                 command = "show ap dot11 6ghz summary"
             elif band == '5g':
                 command = "show ap dot11 5ghz summary"
@@ -1050,8 +1053,7 @@ def main():
         if args.series == "9800":
             command = "show ap name %s wlan dot11 5ghz" % (args.ap)
 
-    # TODO delete if do not need to support dual band
-    if (args.action == "show_ap_bssid_6g_dual_band"):
+    if (args.action == "show_ap_bssid_dual_band_6g" or args.action == "show_ap_bssid_dual_band_5g"):
         if args.series == "9800":
             command = "show ap name %s wlan dot11 dual-band" % (args.ap)
 
@@ -1096,7 +1098,9 @@ def main():
         raise Exception("action requires AP name")
     if (args.action == "manual"):
         if args.series == "9800":
-            if band == "6g":
+            if band == "dual_band_6g" or band == "dual_band_5g":
+                command = "ap name %s dot11 dual-band slot %s radio role manual client-serving" % (args.ap, args.ap_band_slot)
+            elif band == "6g":
                 command = "ap name %s dot11 6ghz slot %s radio role manual client-serving" % (args.ap, args.ap_band_slot)
             elif band == '5g':
                 command = "ap name %s dot11 5ghz slot %s radio role manual client-serving" % (args.ap, args.ap_band_slot)
@@ -1107,14 +1111,17 @@ def main():
         raise Exception("action requires AP name")
     if (args.action == "auto"):
         if args.series == "9800":
-            if band == "6g":
+            if band == "dual_band_6g" or band == "dual_band_5g":
+                command = "ap name %s dot11 dual-band slot %s radio role auto" % (args.ap, args.ap_band_slot)
+            elif band == "6g":
                 command = "ap name %s dot11 6ghz slot %s radio role auto" % (args.ap, args.ap_band_slot)
             elif band == '5g':
                 command = "ap name %s dot11 5ghz slot %s radio role auto" % (args.ap, args.ap_band_slot)
             else:
                 command = "ap name %s dot11 24ghz slot %s radio role auto" % (args.ap, args.ap_band_slot)
 
-    if (args.action == "disable_network_6ghz"):
+    # TODO Check if dual-band is separate
+    if (args.action == "disable_network_6ghz" or args.action == 'disable_network_dual_band_6ghz'):
         if args.series == "9800":
             egg.sendline("config t")
             sleep(0.1)
@@ -1135,7 +1142,7 @@ def main():
             if i == 1:
                 logg.info("timed out on (config)# disable_network_6ghz")
 
-    if (args.action == "disable_network_5ghz"):
+    if (args.action == "disable_network_5ghz" or args.action == "disable_network_dual_band_5ghz"):
         if args.series == "9800":
             egg.sendline("config t")
             sleep(0.1)
@@ -1183,7 +1190,7 @@ def main():
             logg.info("3504 disable_network_24ghz")
             command = 'config 802.11a disable network'
 
-    if (args.action == "enable_network_6ghz"):
+    if (args.action == "enable_network_6ghz" or args.action == "enable_network_dual_band_6ghz"):
         if args.series == "9800":
             egg.sendline("config t")
             sleep(0.1)
@@ -1194,7 +1201,7 @@ def main():
             if i == 1:
                 logg.info("timed out on (config) prompt")
 
-    if (args.action == "enable_network_5ghz"):
+    if (args.action == "enable_network_5ghz" or args.action == "enable_network_dual_band_5ghz"):
         if args.series == "9800":
             egg.sendline("config t")
             sleep(0.1)
@@ -1229,8 +1236,9 @@ def main():
         logg.info("send command to enable operation status: ap name %s no dot11 %shz slot %s shutdown" % (args.ap, band, args.ap_band_slot))
 
         if args.series == "9800":
-            if band == "6g":
-                # command = "ap name %s no dot11 6ghz slot %s shutdown" % (args.ap, args.ap_band_slot)
+            if band == "dual_band_6g" or band == "dual_band_5g":
+                command = "ap name %s no dot11 dual-band slot %s shutdown" % (args.ap, args.ap_band_slot)
+            elif band == "6g":
                 command = "ap name %s no dot11 6ghz slot %s shutdown" % (args.ap, args.ap_band_slot)
             elif band == '5g':
                 command = "ap name %s no dot11 5ghz slot %s shutdown" % (args.ap, args.ap_band_slot)
@@ -1246,7 +1254,9 @@ def main():
         logg.info("send command to disable  operation status: ap name %s dot11 %shz slot %s shutdown" % (args.ap, band, args.ap_band_slot))
         if args.series == "9800":
             # TODO use the 24g 5g 6g notation, also support abgn (dual band?)
-            if band == '6g':
+            if band == 'dual_band_6g' or band == 'dual_band_5g':
+                command = "ap name %s dot11 dual-band slot %s shutdown" % (args.ap, args.ap_band_slot)
+            elif band == '6g':
                 command = "ap name %s dot11 6ghz slot %s shutdown" % (args.ap, args.ap_band_slot)
             elif band == '5g':
                 command = "ap name %s dot11 5ghz slot %s shutdown" % (args.ap, args.ap_band_slot)
@@ -1259,7 +1269,9 @@ def main():
         raise Exception("txPower requires ap and value")
     if (args.action == "txPower"):
         if args.series == "9800":
-            if band == "6g":
+            if band == "dual_band_6g" or band == "dual_band_5g":
+                command = "ap name %s dot11 dual-band slot %s txpower %s" % (args.ap, args.ap_band_slot, args.value)
+            elif band == "6g":
                 command = "ap name %s dot11 6ghz slot %s txpower %s" % (args.ap, args.ap_band_slot, args.value)
             elif band == "5g":
                 command = "ap name %s dot11 5ghz slot %s txpower %s" % (args.ap, args.ap_band_slot, args.value)
@@ -1275,8 +1287,9 @@ def main():
         raise Exception("bandwidth requires ap and value (20, 40, 80, 160)")
     if (args.action == "bandwidth"):
         if args.series == "9800":
-            if band == "6g":
-                # TODO pass in the slot
+            if band == "dual_band_6g" or band == "dual_band_5g":
+                command = "ap name %s dot11 dual-band slot %s channel width %s" % (args.ap, args.ap_band_slot, args.value)
+            elif band == "6g":
                 command = "ap name %s dot11 6ghz slot %s channel width %s" % (args.ap, args.ap_band_slot, args.value)
             elif band == "5g" :
                 command = "ap name %s dot11 5ghz slot %s channel width %s" % (args.ap, args.ap_band_slot, args.value)
@@ -1291,8 +1304,9 @@ def main():
         raise Exception("channel requires ap and value 5Ghz ")
     if (args.action == "channel"):
         if args.series == "9800":
-            # TODO need to do for dual b
-            if band == "6g":
+            if band == "dual_band_6g" or band == "dual_band_5g":
+                command = "ap name %s dot11 dual-band slot %s channel %s" % (args.ap, args.ap_band_slot, args.value)
+            elif band == "6g":
                 command = "ap name %s dot11 6ghz slot %s channel %s" % (args.ap, args.ap_band_slot, args.value)
             elif band == "5g":
                 command = "ap name %s dot11 5ghz slot %s channel %s" % (args.ap, args.ap_band_slot, args.value)
