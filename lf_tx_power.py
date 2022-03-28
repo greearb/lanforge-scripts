@@ -273,7 +273,7 @@ outfile = "cisco_power_results.txt"
 full_outfile = "cisco_power_results_full.txt"
 outfile_xlsx = "cisco_power_results.xlsx"
 upstream_port = "eth1"
-pf_dbm = 6
+pf_dbm = 3
 
 # kpi notes
 # Maybe subtest pass/failed is interesting,
@@ -382,7 +382,7 @@ def main():
     # tx power pathloss configuration
     parser.add_argument("--pathloss", type=str, help="[tx power configuration] Calculated pathloss between LANforge Station and AP --pathloss 59", required=True)
     parser.add_argument("--antenna_gain", type=str, help="[tx power configuration] Antenna gain,  take into account the gain due to the antenna --antenna_gain 6", required=True)
-    parser.add_argument("--pf_dbm", type=str, help="[tx power configuration] Pass/Fail threshold.  Default is 6", default="6")
+    parser.add_argument("--pf_dbm", type=str, help="[tx power configuration] Pass/Fail threshold.  Default is 3", default="3")
     parser.add_argument("--pf_ignore_offset", type=str, help="[tx power configuration] Allow a chain to have lower tx-power and still pass. default 0 so disabled", default="0")
     parser.add_argument("--adjust_nf", action='store_true', help="[tx power configuration] Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
     parser.add_argument('--beacon_dbm_diff', type=str, help="[tx power configuration] --beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured", default="7")
@@ -417,6 +417,8 @@ def main():
     # TODO may want to remove enable_all_bands , all bands need to be enabled for 6E testing for 6E to know the domain
     parser.add_argument("-enb", "--enable_all_bands", dest="enable_all_bands", action="store_true", help="[test configuration] --enable_all_bands, enable 6g, 5g, 24b bands at end of test")
     parser.add_argument('--tx_power_adjust_6E', action="store_true", help="[test configuration] --power_adjust_6E  stores true, 6E: 20 Mhz pw 1-6, 40 Mhz pw 1-7 ")
+    parser.add_argument('--per_ss', action="store_true", help="[test configuration] --per_ss  stores true, per spatial stream used in pass fail criteria")
+
 
     # test configuration
     parser.add_argument("--testbed_id", "--test_rig", dest='test_rig', type=str, help="[testbed configuration] --test_rig", default="")
@@ -838,7 +840,7 @@ def main():
     worksheet.write(row, col, 'Client Calc Combined Signal dBm\n total signal dBm + pathloss\n + rssi_adj + antenna gain', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 25)  # Set width
-    worksheet.write(row, col, 'Difference Between\n Controller dBm\n  & Client Calc Total Sig dBm', dblue_bold)
+    worksheet.write(row, col, 'Difference Between\n Controller dBm\n& Client Calc Combined\n Signal dBm', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 12)  # Set width
     worksheet.write(row, col, "PASS /\nFAIL\n( += %s dBm)" % (pf_dbm), dgreen_bold)
@@ -1641,21 +1643,29 @@ def main():
                     diff_a3 = ""
                     diff_a4 = ""
 
+
+                    pfs = "PASS"
+                    pfrange = pf_dbm
+
                     if (cc_dbm == ""):
                         cc_dbmi = 0
                     else:
                         cc_dbmi = int(cc_dbm)
                     diff_dbm = calc_dbm - cc_dbmi
+                    if(int(abs(diff_dbm)) > pfrange):
+                        e_tot = "ERROR: Controller dBm and Calculated dBm Beacon power different by greater than +/- {} dBm".format(
+                            args.pf_dbm) # pass / fail dbm
+                        pf = 0
+                        
+
                     logg.info("diff_dbm {} calc_dbm {} - cc_dbmi {}".format(diff_dbm, calc_dbm, cc_dbmi))
                     diff_dbm_beacon = calc_dbm_beacon - cc_dbmi
                     logg.info("diff_dbm_beacon {} calc_dbm_beacon {} - cc_dbmi {}".format(diff_dbm_beacon, calc_dbm_beacon, cc_dbmi))
 
                     if(int(abs(diff_dbm_beacon)) > int(args.beacon_dbm_diff)):
-                        w_tot = "ERROR: Controller dBm and Calculated dBm Beacon power different by greater than +/- {} dBm".format(
+                        w_tot = "WARN: Controller dBm and Calculated dBm Beacon power different by greater than +/- {} dBm".format(
                             args.beacon_dbm_diff)
 
-                    pfs = "PASS"
-                    pfrange = pf_dbm
 
                     # Allowed per path is what we expect the AP should be transmitting at.
                     # calc_ant1 is what we calculated it actually transmitted at based on rssi
@@ -1668,8 +1678,9 @@ def main():
                         diff_a1 = calc_ant1 - cc_dbmi
                         logg.info("(Offset 1) diff_a1 (): {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
 
-                        if (abs(diff_a1) > pfrange):
-                            pf = 0
+                        if args.per_ss:                        
+                            if (abs(diff_a1) > pfrange ):
+                                pf = 0
                     if (int(_nss) == 2):
                         # NSS of 2 means each chain should transmit at 1/2 total power, thus the '- 3'
                         allowed_per_path = cc_dbmi - 3
@@ -1680,10 +1691,10 @@ def main():
 
                         diff_a2 = calc_ant2 - allowed_per_path
                         logg.info("(Offset 2) diff_a2: {} = calc_ant2: {} - allowed_per_path: {}".format(diff_a2, calc_ant2, allowed_per_path))
-
-                        if ((abs(diff_a1) > pfrange) or
+                        if args.per_ss:                        
+                            if ((abs(diff_a1) > pfrange) or
                                 (abs(diff_a2) > pfrange)):
-                            pf = 0
+                                pf = 0
                     if (int(_nss) == 3):
                         # NSS of 3 means each chain should transmit at 1/3 total power, thus the '- 5'
                         allowed_per_path = cc_dbmi - 5
@@ -1698,10 +1709,11 @@ def main():
                         diff_a3 = calc_ant3 - allowed_per_path
                         logg.info("(Offset 3) diff_a3: {} = calc_ant3: {} - allowed_per_path: {}".format(diff_a3, calc_ant3, allowed_per_path))
 
-                        if ((abs(diff_a1) > pfrange) or
-                            (abs(diff_a2) > pfrange) or
+                        if args.per_ss:                        
+                            if ((abs(diff_a1) > pfrange) or
+                                (abs(diff_a2) > pfrange) or
                                 (abs(diff_a3) > pfrange)):
-                            pf = 0
+                                pf = 0
                     if (int(_nss) == 4):
                         # NSS of 4 means each chain should transmit at 1/4 total power, thus the '- 6'
                         allowed_per_path = cc_dbmi - 6
@@ -1850,7 +1862,8 @@ def main():
                                     logg.info("i_tot {}".format(i_tot))
                                 else:
                                     logg.info("diff_a1: {} failure".format(diff_a1))
-                                    pf = 0
+                                    if args.per_ss:
+                                        pf = 0
                             if (diff_a2 < -pfrange):
                                 if(diff_a2 < (-pfrange - pf_ignore_offset)):
                                     logg.info("diff_a2: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a2, pfrange, pf_ignore_offset))
@@ -1858,7 +1871,8 @@ def main():
                                     logg.info("i_tot {}".format(i_tot))
                                 else:
                                     logg.info("diff_a2: {} failure".format(diff_a2))
-                                    pf = 0
+                                    if args.per_ss:                                    
+                                        pf = 0
                             if (diff_a3 < -pfrange):
                                 if(diff_a3 < (-pfrange - pf_ignore_offset)):
                                     logg.info("diff_a3: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a3, pfrange, pf_ignore_offset))
@@ -1866,7 +1880,8 @@ def main():
                                     logg.info("i_tot {}".format(i_tot))
                                 else:
                                     logg.info("diff_a3: {} failure".format(diff_a3))
-                                    pf = 0
+                                    if args.per_ss:
+                                        pf = 0
                             if (diff_a4 < -pfrange):
                                 if(diff_a4 < (-pfrange - pf_ignore_offset)):
                                     logg.info("diff_a4: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a4, pfrange, pf_ignore_offset))
@@ -1874,17 +1889,20 @@ def main():
                                     logg.info("i_tot {}".format(i_tot))
                                 else:
                                     logg.info("diff_a4: {} failure".format(diff_a4))
-                                    pf = 0
+                                    if args.per_ss:
+                                        pf = 0
 
+                        if args.per_ss:
                         # check for range to high
-                        if (diff_a1 > pfrange):
-                            pf = 0
-                        if (diff_a2 > pfrange):
-                            pf = 0
-                        if (diff_a3 > pfrange):
-                            pf = 0
-                        if (diff_a4 > pfrange):
-                            pf = 0
+                        # TODO is this may not be correct as it needs to be like the code above
+                            if (diff_a1 > pfrange):
+                                pf = 0
+                            if (diff_a2 > pfrange):
+                                pf = 0
+                            if (diff_a3 > pfrange):
+                                pf = 0
+                            if (diff_a4 > pfrange):
+                                pf = 0
 
                     logg.info("_nss {}  allowed_per_path (AP should be transmitting at) {}".format(_nss, allowed_per_path))
 
