@@ -328,6 +328,14 @@ class Realm(LFCliBase):
             "cx_state": "STOPPED"
         }, debug_=self.debug)
 
+    # def quiesce_cx(self, cx_name):
+    def drain_stop_cx(self, cx_name):
+        self.json_post("/cli-json/set_cx_state", {
+            "test_mgr": "ALL",
+            "cx_name": cx_name,
+            "cx_state": "QUIESCE"
+        }, debug_=self.debug)
+
     def cleanup_cxe_prefix(self, prefix):
         cx_list = self.cx_list()
         if cx_list:

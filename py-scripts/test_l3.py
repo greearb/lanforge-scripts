@@ -47,6 +47,29 @@ Example using wifi_settings
      --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000
      --test_rig CT-US-001 --test_tag 'test_L3'
 
+NOTES: 
+command composer : <lanforge ip>:8080/help 
+
+Drop RX - in port manager is not the same are layer 3 cx Rx Drop %
+Notes from Ben Greear
+
+Port Mgr Drop Rx
+unlikely you will see rx drop on port mgr
+layer-3 rx drop is related to gaps in rx sequence numbers, 
+which means network under test dropped frames somehow and/or re-ordered them.
+
+Layer 3 cx Rx Drop %
+cx mgr drop% is based on number peer inpoint transmitted vs what we received.  
+It would ignore reodering problem, and also detect complete path loss 
+(where rx drop based on seq numbers would not since there is no gap).  
+But, packets in-flight through network under test may be counted as dropped 
+when really they are probably not dropped.
+
+you can quiesce a test at the end, which means stop transmitter 
+but leave received going to drain packets from the network and get better drop% calculations.  
+Stopping a test would record packets in flight at the moment it is stopped as dropped.
+
+
 COPYRIGHT:
 Copyright 2021 Candela Technologies Inc
 
@@ -376,13 +399,13 @@ class L3VariableTime(Realm):
                     total_dl_rate += int(endp["rx rate"])
                     total_dl_rate_ll += int(endp["rx rate ll"])
                     total_dl_pkts_ll += int(endp["rx pkts ll"])
-                    dl_rx_drop_percent = int(endp["rx drop %"])
+                    dl_rx_drop_percent = round(endp["rx drop %"],2)
                 # -B upload side
                 else:
                     total_ul_rate += int(endp["rx rate"])
                     total_ul_rate_ll += int(endp["rx rate ll"])
                     total_ul_pkts_ll += int(endp["rx pkts ll"])
-                    ul_rx_drop_percent = int(endp["rx drop %"])
+                    ul_rx_drop_percent = round(endp["rx drop %"],2)
 
         return lat, jit, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent
 
@@ -616,6 +639,10 @@ class L3VariableTime(Realm):
                 (self.station_count, self.cx_count))
 
     # Run the main body of the test logic.
+    # todo there may be a need to start all existing stations on lanforge
+    # sta_json = super().json_get(
+    #   "port/1/{resource}/list?field=alias".format(resource=self.resource))['interfaces']
+
 
     def start(self, print_pass=False):
         logger.info("Bringing up stations")
@@ -755,7 +782,7 @@ class L3VariableTime(Realm):
                                 self.reset_port_check()
 
                         self.epoch_time = int(time.time())
-                        new_rx_values, rx_drop_percent, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
+                        endp_rx_map, endp_rx_drop_map, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
                         log_msg = "main loop, total-dl: {total_dl_bps} total-ul: {total_ul_bps} total-dl-ll: {total_dl_ll_bps}".format(
                             total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total_dl_ll_bps=total_dl_ll_bps)
 
@@ -832,8 +859,9 @@ class L3VariableTime(Realm):
                     # Stop connections.
                     self.cx_profile.stop_cx()
                     self.multicast_profile.stop_mc()
-
+                    # TODO the passes and expected_passes are not checking anything
                     if passes == expected_passes:
+                        # Sets the pass indication 
                         self._pass(
                             "PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" %
                             (ul, dl, ul_pdu, dl_pdu), print_pass)
@@ -995,7 +1023,13 @@ class L3VariableTime(Realm):
 
             self.csv_results_writer.writerow(row)
             self.csv_results_file.flush()
-
+    
+    # quiesce the cx : quiesce a test at the end, which means stop transmitter 
+    # but leave received going to drain packets from the network and get better drop% calculations.  
+    # Stopping a test would record packets in flight at the moment it is stopped as dropped.
+    def quiesce_cx(self):
+        self.cx_profile.quiesce_cx()
+    
     # Stop traffic and admin down stations.
     def stop(self):
         self.cx_profile.stop_cx()
@@ -1676,6 +1710,9 @@ Setting wifi_settings per radio
     parser.add_argument('--no_stop_traffic', help='leave traffic running',
                         action='store_true')
 
+    parser.add_argument('--quiesce_cx', help='--quiesce store true,  allow the cx to drain then stop so as to not have rx drop pkts',
+                        action='store_true')
+
     # logging configuration
     parser.add_argument(
         "--lf_logger_config_json",
@@ -1894,8 +1931,8 @@ Setting wifi_settings per radio
                 quit(1)
             station_list = LFUtils.portNameSeries(
                 prefix_="sta",
-                start_id_=1 + index * 1000 + int(args.sta_start_offset),
-                end_id_=number_of_stations + index * 1000 + int(args.sta_start_offset),
+                start_id_=0 + index * 1000 + int(args.sta_start_offset),
+                end_id_=number_of_stations - 1 + index * 1000 + int(args.sta_start_offset),
                 padding_number_=10000,
                 radio=radio_name_)
             station_lists.append(station_list)
@@ -1981,7 +2018,12 @@ Setting wifi_settings per radio
     if args.no_stop_traffic:
         logger.info("--no_stop_traffic set leave traffic running")
     else:
-        ip_var_test.stop()
+        if args.quiesce_cx:
+            ip_var_test.quiesce_cx()
+            time.sleep(3)
+        # Quisce cx
+        else:
+            ip_var_test.stop()
     if not ip_var_test.passes():
         logger.warning("Test Ended: There were Failures")
         logger.warning(ip_var_test.get_fail_message())

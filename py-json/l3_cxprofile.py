@@ -397,6 +397,16 @@ class L3CXProfile(LFCliBase):
         if self.debug:
             print("")
 
+    def quiesce_cx(self):
+        logger.info("Quiesce CXs...")
+        for cx_name in self.created_cx.keys():
+            # TODO see why quiesce_cx does not work 
+            # self.local_realm.quiesce_cx(cx_name)
+            self.local_realm.drain_stop_cx(cx_name)
+            # this is for a visual affect someone watching the screen, leave as print
+            print(".", end='')
+        print("")
+
     def stop_cx(self):
         logger.info("Stopping CXs...")
         for cx_name in self.created_cx.keys():
