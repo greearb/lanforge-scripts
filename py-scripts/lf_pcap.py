@@ -19,6 +19,8 @@ INCLUDE_IN_README
 import os
 import sys
 import argparse
+import time
+
 import pyshark as ps
 import importlib
 from datetime import datetime
@@ -45,9 +47,11 @@ class LfPcap(Realm):
                  _live_filter=None,
                  _live_remote_cap_host=None,
                  _live_remote_cap_interface=None,
-                 _debug_on=False
+                 _debug_on=False,
+                 _pcap_name=None
                  ):
         # super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on)
+        self.pcap_name = _pcap_name
         self.host = host,
         self.port = port
         self.debug = _debug_on
@@ -179,9 +183,9 @@ class LfPcap(Realm):
                                 break
                 print(packet_count)
                 if packet_count >= 1:
-                    return {"Association Request - MU Beamformee Capable": value}
+                    return f"Association Request - MU Beamformee Capable: {value}"
                 else:
-                    return {"Association Request - MU Beamformee Capable": value}
+                    return f"Association Request - MU Beamformee Capable: {value}"
         except ValueError:
             raise "pcap file is required"
 
@@ -205,9 +209,9 @@ class LfPcap(Realm):
                             if packet_count == 1:
                                 break
                 if packet_count >= 1:
-                    return {"Association Response -MU Beamformer Capable": value}
+                    return f"Association Response - MU Beamformer Capable : {value}"
                 else:
-                    return {"Association Response -MU Beamformer Capable": value}
+                    return f"Association Response - MU Beamformer Capable: {value}"
         except ValueError:
             raise "pcap file is required"
 
@@ -230,9 +234,9 @@ class LfPcap(Realm):
                             if packet_count == 1:
                                 break
                 if packet_count >= 1:
-                    return {"Beacon Frame - MU Beamformer Capable": value}
+                    return f"Beacon Frame - MU Beamformer Capable: {value}"
                 else:
-                    return {"Beacon Frame - MU Beamformer Capable": value}
+                    return f"Beacon Frame - MU Beamformer Capable: {value}"
         except ValueError:
             raise "pcap file is required."
 
@@ -251,16 +255,16 @@ class LfPcap(Realm):
                             if packet_count == 1:
                                 break
                 if packet_count >= 1:
-                    return {"Beamforming Report Poll ": value}
+                    return f"Beamforming Report Poll : {value}"
                 else:
-                    return {"Beamforming Report Poll ": value}
+                    return f"Beamforming Report Poll : {value}"
         except ValueError:
             raise "pcap file is required."
 
-    def check_he_capability(self, pcap_file):
+    def check_he_capability_beacon_frame(self, pcap_file):
         try:
             if pcap_file is not None:
-                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='radiotap.he.data_1.ppdu_format')
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='radiotap.he.data_1.ppdu_format && wlan.fc.type_subtype == 8')
                 packet_count = 0
                 for pkt in cap:
                     packet_count += 1
@@ -271,10 +275,10 @@ class LfPcap(Realm):
         except ValueError:
             raise "pcap file is required."
 
-    def check_probe_request(self, pcap_file):
+    def check_he_capability_probe_request(self, pcap_file):
         try:
             if pcap_file is not None:
-                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype == 4')
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='radiotap.he.data_1.ppdu_format && wlan.fc.type_subtype == 4')
                 packet_count = 0
                 for pkt in cap:
                     packet_count += 1
@@ -285,10 +289,10 @@ class LfPcap(Realm):
         except ValueError:
             raise "pcap file is required."
 
-    def check_probe_response(self, pcap_file):
+    def check_he_capability_probe_response(self, pcap_file):
         try:
             if pcap_file is not None:
-                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype == 5')
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='radiotap.he.data_1.ppdu_format && wlan.fc.type_subtype == 5')
                 packet_count = 0
                 for pkt in cap:
                     packet_count += 1
@@ -300,16 +304,28 @@ class LfPcap(Realm):
             raise "pcap file is required."
 
     def sniff_packets(self, interface_name="wiphy1", test_name="mu-mimo", channel=-1, sniff_duration=180):
-        pcap_name = test_name + str(datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':', '-') + ".pcap"
+        if test_name is not None:
+            self.pcap_name = test_name + ".pcap"
+        else:
+            self.pcap_name = "capture" + str(datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':', '-') + ".pcap"
+        print('----------pcap name----------: ', self.pcap_name)
         self.wifi_monitor.create(resource_=1, channel=channel, mode="AUTO", radio_=interface_name, name_="moni0")
-        self.wifi_monitor.start_sniff(capname=pcap_name, duration_sec=sniff_duration)
+        self.wifi_monitor.start_sniff(capname=self.pcap_name, duration_sec=sniff_duration)
+        for i in range(int(sniff_duration)):
+            time.sleep(1)
         self.wifi_monitor.cleanup()
-        return pcap_name
+        return self.pcap_name
 
-    def move_pcap(self, current_path, updated_path):
-        lf_report.pull_reports(hostname=self.host, port=22, username="lanforge", password="lanforge",
-                     report_location=current_path,
-                     report_dir=updated_path)
+    def move_pcap(self, current_path="/home/lanforge/", pcap_name=None):
+        if current_path is None:
+            current_path = "/home/lanforge/"
+        if pcap_name is None:
+            pcap_name = self.pcap_name
+        if pcap_name is not None:
+            print('...............Moving pcap to directory............', current_path + pcap_name)
+            lf_report.pull_reports(hostname=self.host, port=self.port, username="lanforge", password="lanforge", report_location=current_path + pcap_name, report_dir=".")
+        else:
+            raise ValueError("pcap_name is Required!")
 
 
 def main():
