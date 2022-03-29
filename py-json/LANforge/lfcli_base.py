@@ -421,7 +421,7 @@ class LFCliBase:
                 if ("license" in lic_json) and lic_json["license"]:
                     lic_block = lic_json["license"].replace("\\n|\\r|\r|\n", "____")
                     lic_block = lic_block.replace("____+", "\n")
-                    logger.debug("\nlicense contents found:\n"+ lic_block)
+                    logger.debug("\nlicense contents found:\n{lic_block}".format(lic_block=lic_block))
                     lic_list = lic_block.split("\n")
 
                     for line in lic_list:
