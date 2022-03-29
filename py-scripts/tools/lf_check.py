@@ -965,7 +965,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         try:
             summary = subprocess.Popen(command_to_run, shell=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                        universal_newlines=True)
-
+        # TODO the looks one directory higher,  there needs to be a way to execute from higher directory.
         except FileNotFoundError:
             # TODO tx_power is one directory up from py-scripts
             self.logger.info("FileNotFoundError will try to execute from lanforge Top directory")
@@ -980,6 +980,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         except IsADirectoryError:
             self.logger.info("IsADirectoryError on execution of {command}".format(command=command_to_run))
 
+        # This code will read the output as the script is running and log 
         for line in iter(summary.stdout.readline, ''):
             self.logger.info(line)
             summary_output += line
@@ -995,6 +996,8 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # py-scripts
         os.chdir(self.scripts_wd)
         self.logger.info("Current Working Directory {}".format(os.getcwd()))
+
+        # Since using "wait" above the return code will be set. 
 
         self.logger.info(summary_output)
         stdout_log.write(summary_output)
@@ -1114,6 +1117,9 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     else:
                         self.test_result = "Some Tests Failed"
                         background = self.background_orange
+                elif 'IndexError: list index out of range' in text:
+                    self.test_result = "Test Errors"
+                    background = self.background_red
                 elif 'ERROR: FAILED ' in text:
                     self.test_result = "Some Tests Failed"
                     background = self.background_orange
