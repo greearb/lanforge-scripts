@@ -1050,6 +1050,9 @@ INCLUDE_IN_README
     parser.add_argument("--series", type=str, help="controller series", choices=["9800", "3504"], required=True)
     parser.add_argument("--scheme", type=str, choices=["serial", "ssh", "telnet"], help="Connect via serial, ssh or telnet")
     parser.add_argument("--timeout", type=str, help="timeout value", default=3)
+    parser.add_argument("--lf_logger_config_json", help="[debug configuration] --lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument("--debug", help='--debug flag present debug on  enable debugging', action='store_true')
+    parser.add_argument('--log_level', default=None, help='--log_level <level>', choices=['debug', 'info', 'warning', 'error','critical'])
 
     args = parser.parse_args()
 
@@ -1058,7 +1061,10 @@ INCLUDE_IN_README
 
     # set the logger level to debug
     if args.debug:
-        logger_config.set_level_debug()
+        logger_config.set_level('debug')
+
+    if args.log_level:
+        logger_config.set_level(args.log_level)
 
     # lf_logger_config_json will take presidence to changing debug levels
     if args.lf_logger_config_json:
