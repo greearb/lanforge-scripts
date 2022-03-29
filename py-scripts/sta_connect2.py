@@ -1049,15 +1049,19 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
     # py-json/lanforge/lfcli_base.py - get_all_message():
     logger.info(staConnect.get_all_message())
 
-    # TODO clean up pass fail  to use realm
-    if not is_passing:
-        logger.info("FAIL:  Some tests failed")
-    else:
-        logger.info("PASS:  All tests pass")
 
     # cleanup stations
     if not args.no_cleanup:
         staConnect.cleanup()
+
+    # Added Exit codes 
+    if not is_passing:
+        logger.info("FAIL:  Some tests failed")
+        exit(1)
+    else:
+        logger.info("PASS:  All tests pass")
+        exit(0)
+
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
