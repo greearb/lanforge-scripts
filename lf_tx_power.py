@@ -417,7 +417,7 @@ def main():
     # TODO may want to remove enable_all_bands , all bands need to be enabled for 6E testing for 6E to know the domain
     parser.add_argument("-enb", "--enable_all_bands", dest="enable_all_bands", action="store_true", help="[test configuration] --enable_all_bands, enable 6g, 5g, 24b bands at end of test")
     parser.add_argument('--tx_power_adjust_6E', action="store_true", help="[test configuration] --power_adjust_6E  stores true, 6E: 20 Mhz pw 1-6, 40 Mhz pw 1-7 ")
-    parser.add_argument('--per_ss', action="store_true", help="[test configuration] --per_ss  stores true, per spatial stream used in pass fail criteria")
+    # parser.add_argument('--per_ss', action="store_true", help="[test configuration] --per_ss  stores true, per spatial stream used in pass fail criteria")
 
 
     # test configuration
@@ -1083,9 +1083,9 @@ def main():
                         # TODO add 24ghz and 6ghz
                         if args.band == '6g':
                             cs.config_dot11_6ghz_tx_power()
-                        elif args.band == '5g' or args.band == 'a':
+                        elif args.band == '5g':
                             cs.config_dot11_5ghz_tx_power()
-                        elif args.band == '24g' or args.band == 'a':
+                        elif args.band == '24g':
                             cs.config_dot11_24ghz_tx_power()
 
                     # NSS is set on the station earlier...
@@ -1094,9 +1094,9 @@ def main():
                         cs.channel = ch
                         if args.band == '6g':
                             cs.config_dot11_6ghz_channel()
-                        elif args.band == '5g' or args.band == 'a':
+                        elif args.band == '5g':
                             cs.config_dot11_5ghz_channel()
-                        elif args.band == '24g' or args.band == 'b':
+                        elif args.band == '24g':
                             cs.config_dot11_24ghz_channel()
 
                     if (bw != "NA"):
@@ -1104,9 +1104,9 @@ def main():
                         cs.bandwidth = bw
                         if args.band == '6g':
                             cs.config_dot11_6ghz_channel_width()
-                        elif args.band == '5g' or args.band == 'a':
+                        elif args.band == '5g':
                             cs.config_dot11_5ghz_channel_width()
-                        elif args.band == '24g' or args.band == 'b':
+                        elif args.band == '24g':
                             # 24g can only be 20 Mhz
                             pass
 
@@ -1128,9 +1128,9 @@ def main():
                             logg.info(pss)
                             if args.band == '6g':
                                 cs.show_ap_dot11_6gz_summary
-                            elif args.band == '5g' or args.band == 'a':
+                            elif args.band == '5g':
                                 cs.show_ap_dot11_5gz_summary
-                            elif args.band == '24g' or args.band == 'a':
+                            elif args.band == '24g':
                                 cs.show_ap_dot11_24gz_summary
 
                             #  "number of WLANs:\s+(\S+)"
@@ -1173,27 +1173,28 @@ def main():
 
                     # enable transmission for the entier 802.11z network
                     # enable_network_6ghz or enable_network_5ghz or enable_network_24ghz
-                    # if args.band == '6g':
-                    # enable 6g wlan
-                    pss = cs.config_no_ap_dot11_6ghz_shutdown()
-                    logg.info(pss)
-                    # enable 6g operation status
-                    pss = cs.config_ap_no_dot11_6ghz_shutdown()
-                    logg.info(pss)
-                    #  elif args.band == '5g' or args.band == 'a':
-                    # enable 5g wlan
-                    pss = cs.config_no_ap_dot11_5ghz_shutdown()
-                    logg.info(pss)
-                    # enable 5g operation status
-                    pss = cs.config_ap_no_dot11_5ghz_shutdown()
-                    logg.info(pss)
-                    # elif args.band == '24g' or args.band == 'a':
+                    if args.band == '6g':
+                        # enable 6g wlan
+                        pss = cs.config_no_ap_dot11_6ghz_shutdown()
+                        logg.info(pss)
+                        # enable 6g operation status
+                        pss = cs.config_ap_no_dot11_6ghz_shutdown()
+                        logg.info(pss)
+                    # 6g needs to see the 5g bands
+                    elif args.band == '5g' or args.band == '6g':
+                        # enable 5g wlan
+                        pss = cs.config_no_ap_dot11_5ghz_shutdown()
+                        logg.info(pss)
+                        # enable 5g operation status
+                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+                        logg.info(pss)
+                    elif args.band == '24g':
                     # enable wlan 24ghz
-                    pss = cs.config_no_ap_dot11_24ghz_shutdown()
-                    logg.info(pss)
-                    # enable 24ghz operation status
-                    cs.config_ap_no_dot11_24ghz_shutdown()
-                    logg.info(pss)
+                        pss = cs.config_no_ap_dot11_24ghz_shutdown()
+                        logg.info(pss)
+                        # enable 24ghz operation status
+                        cs.config_ap_no_dot11_24ghz_shutdown()
+                        logg.info(pss)
 
                     # Wait a bit for AP to come back up
                     time.sleep(3)
@@ -1210,7 +1211,7 @@ def main():
                                 logg.info("show ap dot11 6ghz summary")
                                 logg.info("ap: {ap} ap_band_slot_6g: {slot} ".format(ap=args.ap, slot=args.ap_band_slot_6g))
                                 logg.info(pss)
-                            elif args.band == '5g' or args.band == 'a':
+                            elif args.band == '5g':
                                 logg.info("show ap dot11 5ghz summary")
                                 logg.info("ap: {ap} ap_band_slot_5g: {slot} ".format(ap=args.ap, slot=args.ap_band_slot_5g))
                                 pss = cs.show_ap_dot11_5gz_summary()
@@ -1653,9 +1654,8 @@ def main():
                         cc_dbmi = int(cc_dbm)
                     diff_dbm = calc_dbm - cc_dbmi
                     if(int(abs(diff_dbm)) > pfrange):
-                        e_tot = "ERROR: Controller dBm and Calculated dBm power different by greater than +/- {} dBm".format(
+                        w_tot = "Info: Controller dBm and Calculated dBm power different by greater than +/- {} dBm".format(
                             args.pf_dbm) # pass / fail dbm
-                        pf = 0
                         
 
                     logg.info("diff_dbm {} calc_dbm {} - cc_dbmi {}".format(diff_dbm, calc_dbm, cc_dbmi))
@@ -1678,9 +1678,9 @@ def main():
                         diff_a1 = calc_ant1 - cc_dbmi
                         logg.info("(Offset 1) diff_a1 (): {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
 
-                        if args.per_ss:                        
-                            if (abs(diff_a1) > pfrange ):
-                                pf = 0
+                        # if args.per_ss:                        
+                        if (abs(diff_a1) > pfrange ):
+                            pf = 0
                     if (int(_nss) == 2):
                         # NSS of 2 means each chain should transmit at 1/2 total power, thus the '- 3'
                         allowed_per_path = cc_dbmi - 3
@@ -1691,9 +1691,9 @@ def main():
 
                         diff_a2 = calc_ant2 - allowed_per_path
                         logg.info("(Offset 2) diff_a2: {} = calc_ant2: {} - allowed_per_path: {}".format(diff_a2, calc_ant2, allowed_per_path))
-                        if args.per_ss:                        
-                            if ((abs(diff_a1) > pfrange) or
-                                (abs(diff_a2) > pfrange)):
+                        # if args.per_ss:                        
+                        if ((abs(diff_a1) > pfrange) or
+                            (abs(diff_a2) > pfrange)):
                                 pf = 0
                     if (int(_nss) == 3):
                         # NSS of 3 means each chain should transmit at 1/3 total power, thus the '- 5'
@@ -1709,11 +1709,11 @@ def main():
                         diff_a3 = calc_ant3 - allowed_per_path
                         logg.info("(Offset 3) diff_a3: {} = calc_ant3: {} - allowed_per_path: {}".format(diff_a3, calc_ant3, allowed_per_path))
 
-                        if args.per_ss:                        
-                            if ((abs(diff_a1) > pfrange) or
-                                (abs(diff_a2) > pfrange) or
-                                (abs(diff_a3) > pfrange)):
-                                pf = 0
+                        # if args.per_ss:                        
+                        if ((abs(diff_a1) > pfrange) or
+                            (abs(diff_a2) > pfrange) or
+                            (abs(diff_a3) > pfrange)):
+                            pf = 0
                     if (int(_nss) == 4):
                         # NSS of 4 means each chain should transmit at 1/4 total power, thus the '- 6'
                         allowed_per_path = cc_dbmi - 6
@@ -1862,8 +1862,8 @@ def main():
                                     logg.info("i_tot {}".format(i_tot))
                                 else:
                                     logg.info("diff_a1: {} failure".format(diff_a1))
-                                    if args.per_ss:
-                                        pf = 0
+                                    # if args.per_ss:
+                                    pf = 0
                             if (diff_a2 < -pfrange):
                                 if(diff_a2 < (-pfrange - pf_ignore_offset)):
                                     logg.info("diff_a2: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a2, pfrange, pf_ignore_offset))
@@ -1871,8 +1871,8 @@ def main():
                                     logg.info("i_tot {}".format(i_tot))
                                 else:
                                     logg.info("diff_a2: {} failure".format(diff_a2))
-                                    if args.per_ss:                                    
-                                        pf = 0
+                                    # if args.per_ss:                                    
+                                    pf = 0
                             if (diff_a3 < -pfrange):
                                 if(diff_a3 < (-pfrange - pf_ignore_offset)):
                                     logg.info("diff_a3: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a3, pfrange, pf_ignore_offset))
@@ -1880,8 +1880,8 @@ def main():
                                     logg.info("i_tot {}".format(i_tot))
                                 else:
                                     logg.info("diff_a3: {} failure".format(diff_a3))
-                                    if args.per_ss:
-                                        pf = 0
+                                    # if args.per_ss:
+                                    pf = 0
                             if (diff_a4 < -pfrange):
                                 if(diff_a4 < (-pfrange - pf_ignore_offset)):
                                     logg.info("diff_a4: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a4, pfrange, pf_ignore_offset))
@@ -1889,20 +1889,20 @@ def main():
                                     logg.info("i_tot {}".format(i_tot))
                                 else:
                                     logg.info("diff_a4: {} failure".format(diff_a4))
-                                    if args.per_ss:
-                                        pf = 0
+                                    # if args.per_ss:
+                                    pf = 0
 
-                        if args.per_ss:
+                        # if args.per_ss:
                         # check for range to high
                         # TODO is this may not be correct as it needs to be like the code above
-                            if (diff_a1 > pfrange):
-                                pf = 0
-                            if (diff_a2 > pfrange):
-                                pf = 0
-                            if (diff_a3 > pfrange):
-                                pf = 0
-                            if (diff_a4 > pfrange):
-                                pf = 0
+                        if (diff_a1 > pfrange):
+                            pf = 0
+                        if (diff_a2 > pfrange):
+                            pf = 0
+                        if (diff_a3 > pfrange):
+                            pf = 0
+                        if (diff_a4 > pfrange):
+                            pf = 0
 
                     logg.info("_nss {}  allowed_per_path (AP should be transmitting at) {}".format(_nss, allowed_per_path))
 
@@ -2232,15 +2232,15 @@ def main():
         if (ch != "NA"):
             if args.band == '6g':
                 pss = cs.config_dot11_6ghz_channel()
-            elif args.band == '5g' or args.band == 'a':
+            elif args.band == '5g':
                 pss = cs.config_dot11_5ghz_channel()
-            elif args.band == '24g' or args.band == 'a':
+            elif args.band == '24g':
                 pss = cs.config_dot11_24ghz_channel()
 
         if (bw != "NA"):
             if args.band == '6g':
                 pss = cs.config_dot11_6ghz_channel_width()
-            elif args.band == '5g' or args.band == 'a':
+            elif args.band == '5g':
                 pss = cs.config_dot11_5ghz_channel_width()
             logg.info(pss)
 

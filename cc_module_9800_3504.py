@@ -174,16 +174,19 @@ class create_controller_series_object:
 
     def convert_band(self):
         if self.band == '24g':
-            self.band = 'b'
+            self.band = '24g'
         elif self.band == '5g':
-            self.band = 'a'
+            self.band = '5g'
         elif self.band == '6g':
             self.band = '6g'
         elif self.band == 'dual_band_5g':
             self.band = 'dual_band_5g'
         elif self.band == 'dual_band_6g':
             self.band = 'dual_band_6g'
-        elif self.band == 'a' or self.band == 'b':
+        elif self.band == 'a':
+            self.band = '5g'
+        elif self.band == 'b':
+            self.band = '24g'
             pass
         else:
             logger.critical("band needs to be set 24g 5g 6g dual_band_5g, dual_band_6g")
@@ -191,9 +194,9 @@ class create_controller_series_object:
 
     # TODO need to configure the slot
     def set_ap_band_slot(self):
-        if self.band == 'b':
+        if self.band == '24g':
             self.ap_band_slot = self.ap_band_slot_24g
-        elif self.band == 'a':
+        elif self.band == '5g':
             self.ap_band_slot = self.ap_band_slot_5g
         # TODO need to support configuration
         elif self.band == '6g':
@@ -210,7 +213,7 @@ class create_controller_series_object:
     # TODO consolidate the command formats
 
     def send_command(self):
-        # for backward compatibility wifi_ctl_9800_3504 expects 'a' for 5g and 'b' for 24b
+        # for converting 'a' to '5g' , and 'b' to '24g'
         self.convert_band()
         self.set_ap_band_slot()
 
