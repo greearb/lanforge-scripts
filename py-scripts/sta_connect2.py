@@ -32,6 +32,8 @@ from pprint import pformat
 import time
 import logging
 import datetime
+import platform
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -1033,7 +1035,9 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
     report.write_index_html()
     # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
-    report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+    # TODO install wkhtmltopdf on windows
+    if platform.system() == 'Linux':
+        report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
     staConnect.stop()
     # exit(1)
