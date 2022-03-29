@@ -332,7 +332,7 @@ class LFCliBase:
                 return None
         except ValueError as ve:
             if debug_ or self.exit_on_error:
-                logger.debug("jsonGet asked for " + _req_url)
+                logger.debug("jsonGet asked for {_req_url} ".format(_req_url=_req_url))
                 logger.debug("Exception %s:" % ve)
                 logger.debug(traceback.format_exception(ValueError, ve, ve.__traceback__, chain=True))
             if self.exit_on_error:
@@ -343,7 +343,7 @@ class LFCliBase:
     def json_delete(self, _req_url, debug_=False):
         debug_ |= self.debug
         if debug_:
-            logger.debug("DELETE: " + _req_url)
+            logger.debug("DELETE: {_req_url}".format(_req_url=_req_url))
         json_response = None
         try:
             # logger.info("----- DELETE ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ")
@@ -360,7 +360,7 @@ class LFCliBase:
                 return None
         except ValueError as ve:
             if debug_ or self.exit_on_error:
-                logger.debug("json_delete asked for " + _req_url)
+                logger.debug("json_delete asked for {_req_url}".format(_req_url=_req_url))
                 logger.debug("Exception %s:" % ve)
                 logger.debug(traceback.format_exception(ValueError, ve, ve.__traceback__, chain=True))
             if self.exit_on_error:
