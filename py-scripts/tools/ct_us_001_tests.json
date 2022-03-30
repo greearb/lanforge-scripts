@@ -864,8 +864,7 @@
                     " --lfmgr LF_MGR_IP --local_lf_report_dir REPORT_PATH --test_duration 15s --polling_interval 5s --upstream_port UPSTREAM_PORT ",
                     " use_ssid_idx=1 --radio 'radio==wiphy1,stations==4,ssid==SSID_USED,ssid_pw==SSID_PW_USED,security==SECURITY_USED' ",
                     " --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000",
-                    " --test_rig TEST_RIG --test_tag 'test_l3'",
-                    " --ap_read --ap_test_mode"
+                    " --test_rig TEST_RIG --test_tag 'test_l3'"
                 ]
             },
             "lf_qa":{
