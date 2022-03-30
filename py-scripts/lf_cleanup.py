@@ -14,6 +14,7 @@ import os
 import importlib
 import argparse
 import time
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -24,6 +25,8 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class lf_clean(Realm):
@@ -33,7 +36,8 @@ class lf_clean(Realm):
                  resource=1,
                  clean_cxs=None,
                  clean_endp=None,
-                 clean_sta=None):
+                 clean_sta=None,
+                 sanitze_all=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port),
         self.host = host
@@ -42,9 +46,11 @@ class lf_clean(Realm):
         self.clean_cxs = clean_cxs
         self.clean_endp = clean_endp
         self.clean_sta = clean_sta
+        self.sanitze_all = sanitze_all
         self.cxs_done = False
         self.endp_done = False
         self.sta_done = False
+        self.sanitize_done = False
         self.br_done = False
         self.misc_done = False
 
@@ -53,13 +59,13 @@ class lf_clean(Realm):
         iterations_cxs = 1
         while still_looking_cxs and iterations_cxs <= 10:
             iterations_cxs += 1
-            print("cxs_clean: iterations_cxs: {iterations_cxs}".format(iterations_cxs=iterations_cxs))
+            logger.info("cxs_clean: iterations_cxs: {iterations_cxs}".format(iterations_cxs=iterations_cxs))
             cx_json = super().json_get("cx")
             if cx_json is not None:
-                print("Removing old cross connects")
+                logger.info("Removing old cross connects")
                 for name in list(cx_json):
                     if name != 'handler' and name != 'uri' and name != 'empty':
-                        print(name)
+                        logger.info(name)
                         req_url = "cli-json/rm_cx"
                         data = {
                             "test_mgr": "default_tm",
@@ -69,9 +75,9 @@ class lf_clean(Realm):
                         time.sleep(.5)
                 time.sleep(1)
             else:
-                print("No cross connects found to cleanup")
+                logger.info("No cross connects found to cleanup")
                 still_looking_cxs = False
-        print("clean_cxs still_looking_cxs {cxs_looking}".format(cxs_looking=still_looking_cxs))
+        logger.info("clean_cxs still_looking_cxs {cxs_looking}".format(cxs_looking=still_looking_cxs))
         if not still_looking_cxs:
             self.cxs_done = True
         return still_looking_cxs
@@ -81,27 +87,27 @@ class lf_clean(Realm):
         iterations_endp = 0
         while still_looking_endp and iterations_endp <= 10:
             iterations_endp += 1
-            print("endp_clean: iterations_endp: {iterations_endp}".format(iterations_endp=iterations_endp))
+            logger.info("endp_clean: iterations_endp: {iterations_endp}".format(iterations_endp=iterations_endp))
             # get and remove current endps
             endp_json = super().json_get("endp")
             if endp_json is not None:
-                print("Removing old endpoints")
+                logger.info("Removing old endpoints")
                 for name in list(endp_json['endpoint']):
-                    print(list(name)[0])
+                    logger.info(list(name)[0])
                     if name[list(name)[0]]["name"] == '':
                         continue
                     req_url = "cli-json/rm_endp"
                     data = {
                         "endp_name": list(name)[0]
                     }
-                    print(data)
+                    logger.info(data)
                     super().json_post(req_url, data)
                     time.sleep(.5)
                 time.sleep(1)
             else:
-                print("No endpoints found to cleanup")
+                logger.info("No endpoints found to cleanup")
                 still_looking_endp = False
-        print("clean_endp still_looking_endp {ednp_looking}".format(ednp_looking=still_looking_endp))
+        logger.info("clean_endp still_looking_endp {ednp_looking}".format(ednp_looking=still_looking_endp))
         if not still_looking_endp:
             self.endp_done = True
         return still_looking_endp
@@ -109,23 +115,29 @@ class lf_clean(Realm):
     def sta_clean(self):
         still_looking_sta = True
         iterations_sta = 0
+        # TODO: change <=10 to non-static variable
         while still_looking_sta and iterations_sta <= 10:
             iterations_sta += 1
-            print("sta_clean: iterations_sta: {iterations_sta}".format(iterations_sta=iterations_sta))
+            logger.info("sta_clean: iterations_sta: {iterations_sta}".format(iterations_sta=iterations_sta))
             try:
-                sta_json = super().json_get(
-                    "port/1/{resource}/list?field=alias".format(resource=self.resource))['interfaces']
+                #sta_json = super().json_get("/port/?fields=alias".format(resource=self.resource))['interfaces']
+                sta_json = super().json_get("/port/?fields=port+type,alias".format(resource=self.resource))['interfaces']
+                logger.info(sta_json)
             except TypeError:
                 sta_json = None
-                print("sta_json set to None")
+                logger.info("sta_json set to None")
 
             # get and remove current stations
             if sta_json is not None:
-                # print(sta_json)
-                print("Removing old stations ")
+                logger.info(sta_json)
+                logger.info("Removing old stations ")
                 for name in list(sta_json):
                     for alias in list(name):
-                        # print("alias {alias}".format(alias=alias))
+                        # logger.info("alias {alias}".format(alias=alias))
+                        # if 'sta' in alias:
+                        # this is expecting '1.x.eth0'. everything hits this if statment. hints why the whiphy's are deleted
+                        #if alias != 'eth0':
+                        # if port_type != 'Ethernet' or port_type != 'WIFI-Radio':
                         if 'sta' in alias:
                             info = self.name_to_eid(alias)
                             req_url = "cli-json/rm_vlan"
@@ -134,7 +146,7 @@ class lf_clean(Realm):
                                 "resource": info[1],
                                 "port": info[2]
                             }
-                            # print(data)
+                            logger.info(data)
                             super().json_post(req_url, data)
                             time.sleep(.5)
                         if 'wlan' in alias:
@@ -145,7 +157,7 @@ class lf_clean(Realm):
                                 "resource": info[1],
                                 "port": info[2]
                             }
-                            # print(data)
+                            # logger.info(data)
                             super().json_post(req_url, data)
                             time.sleep(.5)
                         if 'moni' in alias:
@@ -156,7 +168,7 @@ class lf_clean(Realm):
                                 "resource": info[1],
                                 "port": info[2]
                             }
-                            # print(data)
+                            # logger.info(data)
                             super().json_post(req_url, data)
                             time.sleep(.5)
                         if 'Unknown' in alias:
@@ -167,24 +179,72 @@ class lf_clean(Realm):
                                 "resource": info[1],
                                 "port": info[2]
                             }
-                            # print(data)
+                            # logger.info(data)
                             super().json_post(req_url, data)
                             time.sleep(.5)
                 time.sleep(1)
             else:
-                print("No stations found to cleanup")
+                logger.info("No stations found to cleanup")
         still_looking_sta = False
-        print("clean_sta still_looking_sta {sta_looking}".format(sta_looking=still_looking_sta))
+        logger.info("clean_sta still_looking_sta {sta_looking}".format(sta_looking=still_looking_sta))
         if not still_looking_sta:
             self.sta_done = True
         return still_looking_sta
+
+    # cleans all gui or script created objects from Port Mgr tab
+    def clean_all(self):
+        still_looking_sta = True
+        iterations_sta = 0
+        # TODO: change <=10 to non-static variable
+        while still_looking_sta and iterations_sta <= 10:
+            iterations_sta += 1
+            logger.info("sta_clean: iterations_sta: {iterations_sta}".format(iterations_sta=iterations_sta))
+            try:
+                sta_json = super().json_get("/port/?fields=port+type,alias".format(resource=self.resource))['interfaces']
+                logger.info(sta_json)
+            except TypeError:
+                sta_json = None
+                logger.info("sta_json set to None")
+
+            # get and remove LF Port Mgr objects
+            if sta_json is not None:
+                logger.info("Removing old stations ")
+                # [if LF system is an APU2/CT521a]: if wiphy radios are deleted run the following command and reboot: 
+                # /root/lf_kinstall.pl --lfver 5.4.5 --do_sys_reconfig
+                for name in list(sta_json):
+                    # logger.info(name)
+                    for alias in list(name):
+                        # logger.info(alias)
+                        port_type = name[alias]['port type']
+                        # logger.info(port_type)
+                        if port_type != 'Ethernet' and port_type != 'WIFI-Radio':
+                            info = self.name_to_eid(alias)
+                            req_url = "cli-json/rm_vlan"
+                            data = {
+                                "shelf": info[0],
+                                "resource": info[1],
+                                "port": info[2]
+                            }
+                            #logger.info(data)
+                            logger.info("Removing {alias}...".format(alias=alias))
+                            super().json_post(req_url, data)
+                            time.sleep(.5)
+                time.sleep(1)
+            else:
+                logger.info("No stations found to cleanup")
+                still_looking_sta = False
+                logger.info("clean_sta still_looking_sta {sta_looking}".format(sta_looking=still_looking_sta))
+            if not still_looking_sta:
+                self.sta_done = True
+            return still_looking_sta
+
 
     def bridge_clean(self):
         still_looking_br = True
         iterations_br = 0
         while still_looking_br and iterations_br <= 10:
             iterations_br += 1
-            print("bridge_clean: iterations_br: {iterations_br}".format(iterations_br=iterations_br))
+            logger.info("bridge_clean: iterations_br: {iterations_br}".format(iterations_br=iterations_br))
             try:
                 br_json = super().json_get(
                     "port/1/1/list?field=alias")['interfaces']
@@ -193,12 +253,12 @@ class lf_clean(Realm):
 
             # get and remove current stations
             if br_json is not None:
-                # print(br_json)
-                print("Removing old bridges ")
+                # logger.info(br_json)
+                logger.info("Removing old bridges ")
                 for name in list(br_json):
                     for alias in list(name):
                         if 'br' in alias:
-                            print(alias)
+                            logger.info(alias)
                             info = self.name_to_eid(alias)
                             req_url = "cli-json/rm_vlan"
                             data = {
@@ -206,15 +266,15 @@ class lf_clean(Realm):
                                 "resource": info[1],
                                 "port": info[2]
                             }
-                            # print(data)
+                            # logger.info(data)
                             super().json_post(req_url, data)
                             time.sleep(.5)
                 time.sleep(1)
 
             else:
-                print("No bridges found to cleanup")
+                logger.info("No bridges found to cleanup")
                 still_looking_br = False
-        print("clean_bridge still_looking_br {br_looking}".format(br_looking=still_looking_br))
+        logger.info("clean_bridge still_looking_br {br_looking}".format(br_looking=still_looking_br))
         if not still_looking_br:
             self.br_done = True
         return still_looking_br
@@ -225,7 +285,7 @@ class lf_clean(Realm):
         iterations_misc = 0
         while still_looking_misc and iterations_misc <= 10:
             iterations_misc += 1
-            print("misc_clean: iterations_misc: {iterations_misc}".format(iterations_misc=iterations_misc))
+            logger.info("misc_clean: iterations_misc: {iterations_misc}".format(iterations_misc=iterations_misc))
             try:
                 misc_json = super().json_get(
                     "port/1/1/list?field=alias")['interfaces']
@@ -234,12 +294,12 @@ class lf_clean(Realm):
 
             # get and remove current stations
             if misc_json is not None:
-                print(misc_json)
-                print("Removing misc station names phy, 1.1.eth (malformed station name) ")
+                logger.info(misc_json)
+                logger.info("Removing misc station names phy, 1.1.eth (malformed station name) ")
                 for name in list(misc_json):
                     for alias in list(name):
                         if 'phy' in alias and 'wiphy' not in alias:
-                            print(alias)
+                            logger.info(alias)
                             info = self.name_to_eid(alias)
                             req_url = "cli-json/rm_vlan"
                             data = {
@@ -247,14 +307,14 @@ class lf_clean(Realm):
                                 "resource": info[1],
                                 "port": info[2]
                             }
-                            # print(data)
+                            # logger.info(data)
                             super().json_post(req_url, data)
                             time.sleep(.5)
                         if '1.1.1.1.eth' in alias:
-                            print('alias 1.1.1.1.eth {alias}'.format(alias=alias))
+                            logger.info('alias 1.1.1.1.eth {alias}'.format(alias=alias))
                             # need to hand construct for delete.
                             info = alias.split('.')
-                            print('info {info}'.format(info=info))
+                            logger.info('info {info}'.format(info=info))
                             req_url = "cli-json/rm_vlan"
                             info_2 = "{info2}.{info3}.{info4}".format(info2=info[2], info3=info[3], info4=info[4])
                             data = {
@@ -262,14 +322,14 @@ class lf_clean(Realm):
                                 "resource": info[1],
                                 "port": info_2
                             }
-                            print(data)
+                            logger.info(data)
                             super().json_post(req_url, data)
                             time.sleep(.5)
                 time.sleep(1)
             else:
-                print("No misc found to cleanup")
+                logger.info("No misc found to cleanup")
                 still_looking_misc = False
-        print("clean_misc still_looking_misc {misc_looking}".format(misc_looking=still_looking_misc))
+        logger.info("clean_misc still_looking_misc {misc_looking}".format(misc_looking=still_looking_misc))
         if not still_looking_misc:
             self.misc_done = True
         return still_looking_misc
@@ -286,24 +346,24 @@ class lf_clean(Realm):
             # also clean the endp when cleaning cxs
             still_looking_cxs = self.cxs_clean()
             still_looking_endp = self.endp_clean()
-            print("clean_cxs: still_looking_cxs {looking_cxs} still_looking_endp {looking_endp}".format(
+            logger.info("clean_cxs: still_looking_cxs {looking_cxs} still_looking_endp {looking_endp}".format(
                 looking_cxs=still_looking_cxs, looking_endp=still_looking_endp))
 
         if self.clean_endp and not self.clean_cxs:
             still_looking_endp = self.endp_clean()
-            print("clean_endp: still_looking_endp {looking_endp}".format(looking_endp=still_looking_endp))
+            logger.info("clean_endp: still_looking_endp {looking_endp}".format(looking_endp=still_looking_endp))
 
         if self.clean_sta:
             still_looking_sta = self.sta_clean()
-            print("clean_sta: still_looking_sta {looking_sta}".format(looking_sta=still_looking_sta))
+            logger.info("clean_sta: still_looking_sta {looking_sta}".format(looking_sta=still_looking_sta))
 
         if self.clean_br:
             still_looking_br = self.bridge_clean()
-            print("clean_br: still_looking_br {looking_br}".format(looking_br=still_looking_br))
+            logger.info("clean_br: still_looking_br {looking_br}".format(looking_br=still_looking_br))
 
         if self.clean_misc:
             still_looking_misc = self.misc_clean()
-            print("clean_misc: still_looking_misc {looking_misc}".format(looking_misc=still_looking_misc))
+            logger.info("clean_misc: still_looking_misc {looking_misc}".format(looking_misc=still_looking_misc))
 
 
 def main():
@@ -347,7 +407,11 @@ python3 ./lf_clean.py --mgr MGR
         action='store_true')
     parser.add_argument(
         '--sta',
-        help="--sta, this will clear all the stations",
+        help="--sta, this will clear all the stations generated by a script",
+        action='store_true')
+    parser.add_argument(
+        '--sanitize',
+        help="--sanitze, this will clear all the created objects (wifi-sta, mac-vlans, vap, br)",
         action='store_true')
     parser.add_argument(
         '--br',
@@ -357,29 +421,50 @@ python3 ./lf_clean.py --mgr MGR
         '--misc',
         help="--misc, this will clear sta with names phy (not wiphy) and 1.1.eth stations",
         action='store_true')
+    parser.add_argument(
+        "--debug", 
+        help="enable debugging", 
+        action="store_true")
+    parser.add_argument(
+        "--lf_logger_config_json",
+        help="--lf_logger_config_json <json file> , json configuration of logger")
 
     args = parser.parse_args()
-    if args.cxs or args.endp or args.sta or args.br or args.misc:
-        clean = lf_clean(host=args.mgr, resource=int(args.resource), clean_cxs=args.cxs, clean_endp=args.endp, clean_sta=args.sta)
-        print("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.endp, sta=args.sta))
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
+    if args.debug:
+        logger_config.set_level("debug")
+
+    # if args.cxs or args.endp or args.sta or args.br or args.misc:
+    if args.cxs or args.endp or args.sta or args.br or args.misc or args.sanitize:
+        clean = lf_clean(host=args.mgr, resource=int(args.resource), clean_cxs=args.cxs, clean_endp=args.endp, clean_sta=args.sta, sanitze_all=args.sanitize)
+        logger.info("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.endp, sta=args.sta))
         if args.cxs:
-            print("cleaning cxs will also clean endp")
+            logger.info("cleaning cxs will also clean endp")
             clean.cxs_clean()
             clean.endp_clean()
         if args.endp and not args.cxs:
             clean.endp_clean()
         if args.sta:
             clean.sta_clean()
+        if args.sanitize:
+            clean.clean_all()
         if args.br:
             clean.bridge_clean()
         if args.misc:
             clean.misc_clean()
 
-        print("Clean done")
+        logger.info("Clean done")
         # print("Clean  cxs_done {cxs_done} endp_done {endp_done} sta_done {sta_done}"
         #    .format(cxs_done=clean.cxs_done,endp_done=clean.endp_done,sta_done=clean.sta_done))
     else:
-        print("please add option of --cxs ,--endp, --sta , --br, --misc to clean")
+        logger.info("please add option of --cxs ,--endp, --sta , --br, --misc to clean")
 
 
 if __name__ == "__main__":
