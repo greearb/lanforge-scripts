@@ -1106,15 +1106,15 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 "TIMEOUT FAILURE,  Check LANforge Radios")
             self.test_result = "Time Out"
             background = self.background_purple
-        elif return_code == '1':
+        elif return_code == 1:
             self.logger.error("Test returne fail  return code {return_code} for test: {command}".format(return_code=return_code,command=command_to_run))
             self.test_result = "Script retured Fail"
             background = self.background_red
-        elif return_code == '2':
+        elif return_code == 2:
             self.logger.error("Incorrect args:  return code {return_code} for test: {command}".format(return_code=return_code,command=command_to_run))
             self.test_result = "Incorrect args"
             background = self.background_orange
-        elif return_code != '0':
+        elif return_code != 0:
             self.logger.error("None zero return code:  return code {return_code} for test: {command}".format(return_code=return_code,command=command_to_run))
             self.test_result = "return code {return_code}".format(return_code=return_code)
             background = self.background_orange
