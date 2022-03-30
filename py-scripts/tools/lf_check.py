@@ -1000,7 +1000,11 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # Since using "wait" above the return code will be set. 
         try:
             return_code = summary.returncode 
-            self.logger.info("return code {return_code} for test: {command}".format(return_code=return_code,command=command_to_run))
+            if return_code == '0':
+                self.logger.info("Script returned pass return code: {return_code} for test: {command}".format(return_code=return_code,command=command_to_run))
+            else: 
+                self.logger.info("Script returned non-zero return code: {return_code} for test: {command}".format(return_code=return_code,command=command_to_run))
+
         except BaseException as err:
             self.logger.info("issue reading return code err:{err}".format(err=err))
 
@@ -1093,12 +1097,27 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 self.logger.critical("unable to write meta {meta_data_path} : {msg})".format(meta_data_path=meta_data_path, msg=err))
             except BaseException as err:
                 self.logger.critical("BaseException unable to write meta {meta_data_path} : {msg}".format(meta_data_path=meta_data_path, msg=err))
+
+        # Code for checking if the script passed or failed much of the 
+        # code is checking the output.
         # Timeout needs to be reported and not overwriten
         if self.test_result == "TIMEOUT":
             self.logger.info(
                 "TIMEOUT FAILURE,  Check LANforge Radios")
             self.test_result = "Time Out"
             background = self.background_purple
+        elif return_code == '1':
+            self.logger.error("Test returne fail  return code {return_code} for test: {command}".format(return_code=return_code,command=command_to_run))
+            self.test_result = "Script retured Fail"
+            background = self.background_red
+        elif return_code == '2':
+            self.logger.error("Incorrect args:  return code {return_code} for test: {command}".format(return_code=return_code,command=command_to_run))
+            self.test_result = "Incorrect args"
+            background = self.background_orange
+        elif return_code != '0':
+            self.logger.error("None zero return code:  return code {return_code} for test: {command}".format(return_code=return_code,command=command_to_run))
+            self.test_result = "return code {return_code}".format(return_code=return_code)
+            background = self.background_orange
         else:
             # TODO use summary returned from subprocess
             if stdout_log_size > 0:
@@ -1155,6 +1174,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         elif self.test_result == "Some Tests Failed":
             self.tests_some_failure += 1
         elif self.test_result == "Test Errors":
+            self.tests_failure += 1
+        elif self.test_result == "Incorrect args":
+            self.tests_failure += 1
+        elif "return code" in self.test_result: 
             self.tests_failure += 1
         elif self.test_result == "TIMEOUT":
             self.tests_timeout += 1
