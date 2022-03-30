@@ -1653,7 +1653,7 @@ def main():
                         cc_dbmi = int(cc_dbm)
                     diff_dbm = calc_dbm - cc_dbmi
                     if(int(abs(diff_dbm)) > pfrange):
-                        e_tot = "ERROR: Controller dBm and Calculated dBm Beacon power different by greater than +/- {} dBm".format(
+                        e_tot = "ERROR: Controller dBm and Calculated dBm power different by greater than +/- {} dBm".format(
                             args.pf_dbm) # pass / fail dbm
                         pf = 0
                         
