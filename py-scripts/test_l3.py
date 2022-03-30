@@ -1874,7 +1874,7 @@ Setting wifi_settings per radio
             wifi_settings_found = True
             for key in wifi_settings_keys:
                 if key not in radio_info_dict:
-                    logger.error("wifi_settings_keys not enabled")
+                    logger.info("wifi_settings_keys not enabled")
                     wifi_settings_found = False
                     break
 
