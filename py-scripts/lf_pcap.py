@@ -50,7 +50,7 @@ class LfPcap(Realm):
                  _debug_on=False,
                  _pcap_name=None
                  ):
-        # super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on)
+        super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on)
         self.pcap_name = _pcap_name
         self.host = host,
         self.port = port
@@ -65,7 +65,7 @@ class LfPcap(Realm):
         self.live_cap_timeout = _live_cap_timeout
         self.remote_cap_host = _live_remote_cap_host
         self.remote_cap_interface = _live_remote_cap_interface
-        # self.wifi_monitor = WiFiMonitor(self.lfclient_url, local_realm=self, debug_=self.debug)
+        self.wifi_monitor = WiFiMonitor(self.lfclient_url, local_realm=self, debug_=self.debug)
 
     def read_pcap(self, pcap_file, apply_filter=None):
         self.pcap_file = pcap_file
@@ -308,7 +308,7 @@ class LfPcap(Realm):
             self.pcap_name = test_name + ".pcap"
         else:
             self.pcap_name = "capture" + str(datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':', '-') + ".pcap"
-        print('----------pcap name----------: ', self.pcap_name)
+        print('----------pcap name----------: \n', self.pcap_name)
         self.wifi_monitor.create(resource_=1, channel=channel, mode="AUTO", radio_=interface_name, name_="moni0")
         self.wifi_monitor.start_sniff(capname=self.pcap_name, duration_sec=sniff_duration)
         for i in range(int(sniff_duration)):
@@ -322,8 +322,11 @@ class LfPcap(Realm):
         if pcap_name is None:
             pcap_name = self.pcap_name
         if pcap_name is not None:
-            print('...............Moving pcap to directory............', current_path + pcap_name)
-            lf_report.pull_reports(hostname=self.host, port=self.port, username="lanforge", password="lanforge", report_location=current_path + pcap_name, report_dir=".")
+            if os.path.exists(current_path+self.pcap_name):
+                print('...............Moving pcap to directory............\n', current_path + pcap_name)
+                lf_report.pull_reports(hostname=self.host, port=22, username="lanforge", password="lanforge", report_location=current_path + pcap_name, report_dir="./")
+            else:
+                raise FileNotFoundError
         else:
             raise ValueError("pcap_name is Required!")
 
