@@ -39,6 +39,22 @@ Consolidate the login for Telnet and SSH for 9800 if possible.
 Note: trying to simplify the login process lead to lockups and made it more difficult to understand what stage
 of the login was locking up.  The timing was determined emperically.
 
+TODO setting the number of spatial streams.
+
+
+no ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 1
+no ap dot11 6ghz dot11ax mcs tx index 9 spatial-stream 1
+no ap dot11 6ghz dot11ax mcs tx index 11 spatial-stream 1
+no ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 2
+no ap dot11 6ghz dot11ax mcs tx index 9 spatial-stream 2
+no ap dot11 6ghz dot11ax mcs tx index 11 spatial-stream 2
+no ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 3
+no ap dot11 6ghz dot11ax mcs tx index 9 spatial-stream 3
+no ap dot11 6ghz dot11ax mcs tx index 11 spatial-stream 3
+no ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 4
+no ap dot11 6ghz dot11ax mcs tx index 9 spatial-stream 4
+no ap dot11 6ghz dot11ax mcs tx index 11 spatial-stream 4
+
 '''
 
 
