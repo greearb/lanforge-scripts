@@ -92,7 +92,7 @@ class CSVParser:
                 cni += 1
 
             # Write out out header for the new file.
-            fpo.write("Test Run,Position [Deg],Attenuation 1 [dB],Pal Stats Endpoint 1 Control Rssi [dBm],Pal Stats Endpoint 1 Data Rssi [dBm],Pal Stats Endpoint 1 RX rate [Mbps] Mode,Pal Stats Endpoint 1 TX rate [Mbps] Mode\n")
+            fpo.write("Test Run,Position [Deg],Attenuation 1 [dB],Pal Stats Endpoint 1 Control Rssi [dBm],Pal Stats Endpoint 1 Data Rssi [dBm] Mean,Pal Stats Endpoint 1 RX rate [Mbps] Mode,Pal Stats Endpoint 1 TX rate [Mbps] Mode\n")
 
             # Read rest of the input lines, processing one at a time.  Covert the columns as
             # needed, and write out new data to the output file.
@@ -104,7 +104,7 @@ class CSVParser:
                 if l2:
                     line = "%s,%s" %(line, l2)
 
-            bottom_half = "Step Index,Position [Deg],Attenuation [dB],Traffic Pair 1 Throughput [Mbps],Pal Stats Endpoint 1 RX rate [Mbps] Mode,Pal Stats Endpoint 1 TX rate [Mbps] Mode\n"
+            bottom_half = "Step Index,Position [Deg],Attenuation [dB],Traffic Pair 1 Throughput [Mbps]\n"
 
             test_run = "1"
 
@@ -121,7 +121,7 @@ class CSVParser:
                 if (i_rx_mcs >= 0):
                     rx_rate = self.convert_to_mbps(x[i_rx_mcs])
                 fpo.write("%s,%s,%s,%s,%s,%s,%s\n" % (test_run, x[i_rotation], x[i_atten], beacon_rssi, x[i_data_rssi], tx_rate, rx_rate))
-                bottom_half += ("%s,%s,%s,%s,%s,%s\n" % (step_i, x[i_rotation], x[i_atten], self.convert_to_mbps(x[i_rxbps]), tx_rate, rx_rate))
+                bottom_half += ("%s,%s,%s,%s\n" % (step_i, x[i_rotation], x[i_atten], self.convert_to_mbps(x[i_rxbps])))
                 line = fp.readline()
 
                 # Concat lines so we can read data from both csv files.
