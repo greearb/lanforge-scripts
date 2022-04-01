@@ -56,11 +56,11 @@ class lf_clean(Realm):
 
     def cxs_clean(self):
         still_looking_cxs = True
-        # iterations_cxs = 1
-        # while still_looking_cxs and iterations_cxs <= 10:
-        while still_looking_cxs:
-            # iterations_cxs += 1
-            # logger.info("cxs_clean: iterations_cxs: {iterations_cxs}".format(iterations_cxs=iterations_cxs))
+        iterations_cxs = 1
+
+        while still_looking_cxs and iterations_cxs <= 10:
+            iterations_cxs += 1
+            logger.info("cxs_clean: iterations_cxs: {iterations_cxs}".format(iterations_cxs=iterations_cxs))
             cx_json = super().json_get("cx")
             if cx_json is not None:
                 logger.info("Removing old cross connects")
@@ -85,11 +85,11 @@ class lf_clean(Realm):
 
     def endp_clean(self):
         still_looking_endp = True
-        # iterations_endp = 0
-        # while still_looking_endp and iterations_endp <= 10:
-        while still_looking_endp:
-            # iterations_endp += 1
-            # logger.info("endp_clean: iterations_endp: {iterations_endp}".format(iterations_endp=iterations_endp))
+        iterations_endp = 0
+
+        while still_looking_endp and iterations_endp <= 10:
+            iterations_endp += 1
+            logger.info("endp_clean: iterations_endp: {iterations_endp}".format(iterations_endp=iterations_endp))
             # get and remove current endps
             endp_json = super().json_get("endp")
             if endp_json is not None:
@@ -116,11 +116,11 @@ class lf_clean(Realm):
 
     def sta_clean(self):
         still_looking_sta = True
-        # iterations_sta = 0
-        # while still_looking_sta and iterations_sta <= 10:
-        while still_looking_sta:
-            # iterations_sta += 1
-            # logger.info("sta_clean: iterations_sta: {iterations_sta}".format(iterations_sta=iterations_sta))
+        iterations_sta = 0
+
+        while still_looking_sta and iterations_sta <= 10:
+            iterations_sta += 1
+            logger.info("sta_clean: iterations_sta: {iterations_sta}".format(iterations_sta=iterations_sta))
             try:
                 sta_json = super().json_get("/port/?fields=alias".format(resource=self.resource))['interfaces']
                 # logger.info(sta_json)
@@ -143,6 +143,7 @@ class lf_clean(Realm):
                                 "port": info[2]
                             }
                             # logger.info(data)
+                            logger.info("Removing {alias}...".format(alias=alias))
                             super().json_post(req_url, data)
                             time.sleep(.5)
                         if 'wlan' in alias:
@@ -154,6 +155,7 @@ class lf_clean(Realm):
                                 "port": info[2]
                             }
                             # logger.info(data)
+                            logger.info("Removing {alias}...".format(alias=alias))
                             super().json_post(req_url, data)
                             time.sleep(.5)
                         if 'moni' in alias:
@@ -165,6 +167,7 @@ class lf_clean(Realm):
                                 "port": info[2]
                             }
                             # logger.info(data)
+                            logger.info("Removing {alias}...".format(alias=alias))
                             super().json_post(req_url, data)
                             time.sleep(.5)
                         if 'Unknown' in alias:
@@ -176,6 +179,7 @@ class lf_clean(Realm):
                                 "port": info[2]
                             }
                             # logger.info(data)
+                            logger.info("Removing {alias}...".format(alias=alias))
                             super().json_post(req_url, data)
                             time.sleep(.5)
                 time.sleep(1)
@@ -188,10 +192,13 @@ class lf_clean(Realm):
             return still_looking_sta
 
     # cleans all gui or script created objects from Port Mgr tab
-    def clean_all(self):
+    def sanitize_all(self):
         still_looking_sta = True
+        iterations_sta = 0
 
-        while still_looking_sta:
+        while still_looking_sta and iterations_sta <= 10:
+            iterations_sta += 1
+            logger.info("sta_clean: iterations_sta: {iterations_sta}".format(iterations_sta=iterations_sta))
             try:
                 sta_json = super().json_get("/port/?fields=port+type,alias".format(resource=self.resource))['interfaces']
                 # logger.info(sta_json)
@@ -215,7 +222,7 @@ class lf_clean(Realm):
                         # logger.info(alias)
                         port_type = name[alias]['port type']
                         # logger.info(port_type)
-                        if port_type != 'Ethernet' and port_type != 'WIFI-Radio':
+                        if port_type != 'Ethernet' and port_type != 'WIFI-Radio' and port_type != 'NA':
                             info = self.name_to_eid(alias)
                             req_url = "cli-json/rm_vlan"
                             data = {
@@ -231,7 +238,7 @@ class lf_clean(Realm):
             else:
                 logger.info("No stations found to cleanup")
                 still_looking_sta = False
-                logger.info("clean_all still_looking_sta {sta_looking}".format(sta_looking=still_looking_sta))
+                logger.info("sanitize_all still_looking_sta {sta_looking}".format(sta_looking=still_looking_sta))
             if not still_looking_sta:
                 self.sanitize_done = True
             return still_looking_sta
@@ -239,14 +246,14 @@ class lf_clean(Realm):
 
     def bridge_clean(self):
         still_looking_br = True
-        # iterations_br = 0
-        # while still_looking_br and iterations_br <= 10:
-        while still_looking_br:
-            # iterations_br += 1
-            # logger.info("bridge_clean: iterations_br: {iterations_br}".format(iterations_br=iterations_br))
+        iterations_br = 0
+
+        while still_looking_br and iterations_br <= 10:
+            iterations_br += 1
+            logger.info("bridge_clean: iterations_br: {iterations_br}".format(iterations_br=iterations_br))
             try:
                 # br_json = super().json_get("port/1/1/list?field=alias")['interfaces']
-                br_json = super().json_get("/port/?fields=alias".format(resource=self.resource))['interfaces']
+                br_json = super().json_get("/port/?fields=port+type,alias".format(resource=self.resource))['interfaces']
             except TypeError:
                 br_json = None
 
@@ -256,7 +263,9 @@ class lf_clean(Realm):
                 logger.info("Removing old bridges ")
                 for name in list(br_json):
                     for alias in list(name):
-                        if 'br' in alias:
+                        port_type = name[alias]['port type']
+                        # if 'br' in alias:
+                        if 'Bridge' in port_type:
                             # logger.info(alias)
                             info = self.name_to_eid(alias)
                             req_url = "cli-json/rm_vlan"
@@ -266,6 +275,7 @@ class lf_clean(Realm):
                                 "port": info[2]
                             }
                             # logger.info(data)
+                            logger.info("Removing {alias}...".format(alias=alias))
                             super().json_post(req_url, data)
                             time.sleep(.5)
                 time.sleep(1)
@@ -281,8 +291,8 @@ class lf_clean(Realm):
     def misc_clean(self):
         still_looking_misc = True
         iterations_misc = 0
-        # while still_looking_misc and iterations_misc <= 10:
-        while still_looking_misc:
+
+        while still_looking_misc and iterations_misc <= 10:
             iterations_misc += 1
             logger.info("misc_clean: iterations_misc: {iterations_misc}".format(iterations_misc=iterations_misc))
             try:
@@ -453,7 +463,7 @@ python3 ./lf_clean.py --mgr MGR
         if args.sta:
             clean.sta_clean()
         if args.sanitize:
-            clean.clean_all()
+            clean.sanitize_all()
         if args.br:
             clean.bridge_clean()
         if args.misc:
