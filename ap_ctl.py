@@ -125,7 +125,7 @@ def main():
     parser = argparse.ArgumentParser(description="Cisco AP Control Script")
     parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet", "mux_client"], help="Connect via serial, ssh, telnet, mux_client")
     parser.add_argument("-d", "--dest",    type=str, help="address of the AP  172.19.27.55 or address of the mux_serial server 192.168.100.239")
-    # parser.add_argument("-m", "--host",    type=str, help="address of the mux_serial server 192.168.100.239")
+    parser.add_argument("-s", "--slot",    type=str, help="slot of the radio for powerreg and powercfg commands",default='2')
     parser.add_argument("-a", "--prompt",  type=str, help="ap prompt")
     parser.add_argument("-o", "--port",    type=int, help="control port on the AP, 2008")
     parser.add_argument("-u", "--user",    type=str, help="credential login/username, admin")
@@ -293,6 +293,8 @@ def main():
             sleep(1)
 
 
+
+
     # show controllers dot11Radio 2 powerreg
     if (args.action == "powercfg"):
         logg.info("execute: show controllers dot11Radio 1 powercfg | g T1")
@@ -305,6 +307,22 @@ def main():
         if i == 1:
             logg.info("send cntl c anyway")
             egg.sendcontrol('c')
+
+    elif (args.action == "powerreg"):
+        command = "show controllers dot11Radio {slot} powerreg".format(slot=args.slot)
+        logg.info("execute: {command}".format(command=command))
+        egg.sendline(command)
+        sleep(0.4)
+        egg.expect([pexpect.TIMEOUT], timeout=2)  # do not delete this for it allows for subprocess to see output
+        print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
+        i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=4)
+        if i == 0:
+            egg.sendline('r')
+            egg.expect([pexpect.TIMEOUT], timeout=4)  # do not delete this for it allows for subprocess to see output
+            print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
+        if i == 1:
+            print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
+
 
     elif (args.action == "clear_log"):
         logg.info("execute: clear log")
