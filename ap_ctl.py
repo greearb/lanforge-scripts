@@ -123,18 +123,18 @@ def main():
 
     
     parser = argparse.ArgumentParser(description="Cisco AP Control Script")
-    parser.add_argument("-s", "--scheme",  type=str, choices=["serial", "ssh", "telnet", "mux_client"], help="Connect via serial, ssh, telnet, mux_client")
-    parser.add_argument("-d", "--dest",    type=str, help="address of the AP  172.19.27.55 or address of the mux_serial server 192.168.100.239")
-    parser.add_argument("-s", "--slot",    type=str, help="slot of the radio for powerreg and powercfg commands",default='2')
-    parser.add_argument("-a", "--prompt",  type=str, help="ap prompt")
-    parser.add_argument("-o", "--port",    type=int, help="control port on the AP, 2008")
-    parser.add_argument("-u", "--user",    type=str, help="credential login/username, admin")
-    parser.add_argument("-p", "--passwd",  type=str, help="credential password Wnbulab@123")
-    parser.add_argument("-t", "--tty",     type=str, help="tty serial device for connecting to AP")
-    parser.add_argument("-l", "--log",     type=str, help="logfile for messages, stdout means output to console",default="stdout")
-    parser.add_argument("-z", "--action",  type=str, help="action,  cmd, powercfg, clear_log, show_log, cac_expiry_evt, ds_data_5ghz, ds_data_24ghz  ")
-    parser.add_argument("-v", "--value",   type=str, help="value,  cmd value")
-    parser.add_argument("-b", "--baud",    type=str, help="baud,  baud rate lanforge: 115200  cisco: 9600")
+    parser.add_argument("--scheme",  type=str, choices=["serial", "ssh", "telnet", "mux_client"], help="Connect via serial, ssh, telnet, mux_client")
+    parser.add_argument("--dest",    type=str, help="address of the AP  172.19.27.55 or address of the mux_serial server 192.168.100.239")
+    parser.add_argument("--radio_slot",    type=str, help="slot of the radio for powerreg and powercfg commands",default='2')
+    parser.add_argument("--prompt",  type=str, help="ap prompt")
+    parser.add_argument("--port",    type=int, help="control port on the AP, 2008, mux_client 23200")
+    parser.add_argument("--user",    type=str, help="credential login/username, admin")
+    parser.add_argument("--passwd",  type=str, help="credential password Cisco123",default="Admin123")
+    parser.add_argument("--tty",     type=str, help="tty serial device for connecting to AP")
+    parser.add_argument("--log",     type=str, help="logfile for messages, stdout means output to console",default="stdout")
+    parser.add_argument("--action",  type=str, help="action,  cmd, powercfg, powerreg, clear_log, show_log, cac_expiry_evt, ds_data_5ghz, ds_data_24ghz  ")
+    parser.add_argument("--value",   type=str, help="value,  cmd value")
+    parser.add_argument("--baud",    type=str, help="baud,  baud rate lanforge: 115200  cisco: 9600")
     # TODO possibly include the mux_client as a module to run 
     parser.add_argument("--mux_client_module", type=str, help="mux client module")
 
@@ -212,12 +212,14 @@ def main():
     except Exception as e:
         logging.exception(e)
     if args.scheme == 'mux_client' or args.prompt is None:
-        AP_PROMPT       = "{}>".format(args.prompt)
-        AP_HASH         = "{}#".format(args.prompt)
+        AP_PROMPT       = ">"
+        AP_HASH         = "#"
         MUX_PROMPT      = "MUX >"
     else:
         AP_PROMPT       = "{}>".format(args.prompt)
         AP_HASH         = "{}#".format(args.prompt)
+        MUX_PROMPT      = "MUX >"
+
 
     time.sleep(0.1)
     logged_in  = False
@@ -309,7 +311,7 @@ def main():
             egg.sendcontrol('c')
 
     elif (args.action == "powerreg"):
-        command = "show controllers dot11Radio {slot} powerreg".format(slot=args.slot)
+        command = "show controllers dot11Radio {slot} powerreg".format(slot=args.radio_slot)
         logg.info("execute: {command}".format(command=command))
         egg.sendline(command)
         sleep(0.4)
