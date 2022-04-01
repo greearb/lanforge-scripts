@@ -275,7 +275,8 @@ class create_controller_series_object:
                              "show_ap_bssid_dual_band_6g", "show_ap_bssid_dual_band_5g", "show_ap_bssid_6g", "show_ap_bssid_5g", "show_ap_bssid_24g",
                              "manual", "auto",
                              "enable_network_dual_band_6ghz", "enable_network_dual_band_5ghz", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
-                             "enable_operation_status", "11r_logs", "enable_ft_akm_ftpsk", "enable_ftotd_akm_ftpsk"]:
+                             "enable_operation_status", "11r_logs", "enable_ft_akm_ftpsk", "enable_ftotd_akm_ftpsk",
+                             "config_dual_band_mode"]:
 
             self.command_extend = ["--action", self.action]
             self.command.extend(self.command_extend)
@@ -923,12 +924,28 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    # dual-band change radio roll 6ghz
+    def config_ap_dot11_dual_band_to_6ghz(self):
+        self.band = 'dual_band_6g'
+        self.action = 'config_dual_band_mode'
+        summary = self.send_command()
+        logger.info("ap name {ap} dot11 dual-band slot {slot} band 6ghz {band}".format(ap=self.ap,band=self.band,slot=self.ap_band_slot))
+        return summary
+
+    # dual-band change radio roll 5ghz
+    def config_ap_dot11_dual_band_to_5ghz(self):
+        self.band = 'dual_band_5g'
+        self.action = 'config_dual_band_mode'
+        summary = self.send_command()
+        logger.info("ap name {ap} dot11 dual-band slot {slot} band 5ghz {band}".format(ap=self.ap,band=self.band,slot=self.ap_band_slot))
+        return summary
+
     # enable ap dual band 6ghz
     def config_ap_no_dot11_dual_band_6ghz_shutdown(self):
         self.band = 'dual_band_6g'
         self.action = "enable_operation_status"
         summary = self.send_command()
-        logger.info("ap name {ap} dot11 {band}hz shutdown {slot}  (enable ap)".format(ap=self.ap, band=self.band, slot=self.ap_band_slot))
+        logger.info("ap name {ap} dot11 {band} shutdown {slot}  (enable ap)".format(ap=self.ap, band=self.band, slot=self.ap_band_slot))
         return summary
 
     # enable ap dual band 5ghz
@@ -936,7 +953,7 @@ class create_controller_series_object:
         self.band = 'dual_band_5g'
         self.action = "enable_operation_status"
         summary = self.send_command()
-        logger.info("ap name {ap} dot11 {band}hz shutdown {slot}  (enable ap)".format(ap=self.ap, band=self.band, slot=self.ap_band_slot))
+        logger.info("ap name {ap} dot11 {band} shutdown {slot}  (enable ap)".format(ap=self.ap, band=self.band, slot=self.ap_band_slot))
         return summary
 
     # enable ap 6ghz

@@ -169,7 +169,8 @@ def main():
                                  "enable_dual_band_network_6ghz","enable_dual_band_network_5ghz","enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
                                  "wireless_tag_policy", "no_wlan_wireless_tag_policy", "delete_wlan",
                                  "show_ap_bssid_dual_band_6g", "show_ap_bssid_dual_band_5g", "show_ap_bssid_6g", "show_ap_bssid_5g", "show_ap_bssid_24g",  
-                                 "11r_logs", "enable_ft_akm_ftpsk", "enable_ftotd_akm_ftpsk"])
+                                 "11r_logs", "enable_ft_akm_ftpsk", "enable_ftotd_akm_ftpsk",
+                                 "config_dual_band_mode"])
     parser.add_argument("--value", type=str, help="set value")
     # logging configuration
     parser.add_argument(
@@ -1244,6 +1245,20 @@ def main():
         else:
             logg.info("3504 enable_network_24ghz")
             command = "config 802.11b enable network"
+
+
+    # This will configure the dual band mode 
+    if (args.action == "config_dual_band_mode" and (args.ap is None or args.ap_band_slot is None)):
+        raise Exception("action requires AP name and ap band slot")
+    if (args.action == "config_dual_band_mode"):
+        logg.info("send command to set the dual band mode : ap name %s no dot11 dual-ban slot %s : %s " % (args.ap, band, args.ap_band_slot, band))
+
+        if args.series == "9800":
+            if band == "dual_band_6g":
+                command = "ap name %s no dot11 dual-band slot %s band 6ghz" % (args.ap, args.ap_band_slot)
+            elif band == "dual_band_5g":
+                command = "ap name %s no dot11 dual-band slot %s band 5ghz" % (args.ap, args.ap_band_slot)
+            
 
     # This will take the operation status down 
     if (args.action == "enable_operation_status" and (args.ap is None)):
