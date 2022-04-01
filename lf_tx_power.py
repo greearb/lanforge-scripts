@@ -357,7 +357,7 @@ def main():
     parser.add_argument("-p", "--passwd", type=str, help="[controller configuration] credential password --passwd Cisco123", required=True)
     parser.add_argument('-ccp', '--prompt', type=str, help="[controller configuration] controller prompt --prompt WLC1", required=True)
     parser.add_argument("--series", type=str, help="[controller configuration] controller series --series 9800", required=True)
-    parser.add_argument("--band", type=str, help="band testing --band 6g", choices=["a", "5g", "24g", "b", "abgn", "6g"])
+    parser.add_argument("--band", type=str, help="band testing --band 6g", choices=["5g", "24g", "6g"])
     parser.add_argument("--module", type=str, help="[controller configuration] series module (cc_module_9800_3504.py)  --module cc_module_9800_3504 ", required=True)
     parser.add_argument("--timeout", type=str, help="[controller configuration] controller command timeout --timeout 3 ", default=3)
 
@@ -831,13 +831,13 @@ def main():
     worksheet.write(row, col, 'Controller\nReported\ndBm', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 25)  # Set width
-    worksheet.write(row, col, 'Client Calc Beacon dBm\n beacon + pathloss\n + rssi_adj + antenna gain', dblue_bold)
+    worksheet.write(row, col, 'Client Calc Beacon dBm\n beacon + pathloss\n + rssi_adj - antenna gain', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 25)  # Set width
-    worksheet.write(row, col, 'Difference Between Controller dBm\n & Client Calc Beacon dBm \n (+/- {diff} dBm)'.format(diff=args.beacon_dbm_diff), dblue_bold)
+    worksheet.write(row, col, 'Difference Between\n Controller dBm\n & Client Calc Beacon dBm \n (+/- {diff} dBm)'.format(diff=args.beacon_dbm_diff), dblue_bold)
     col += 1
     worksheet.set_column(col, col, 25)  # Set width
-    worksheet.write(row, col, 'Client Calc Combined Signal dBm\n total signal dBm + pathloss\n + rssi_adj + antenna gain', dblue_bold)
+    worksheet.write(row, col, 'Client Calc\n Combined Signal dBm\n total signal dBm + pathloss\n + rssi_adj - antenna gain', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 25)  # Set width
     worksheet.write(row, col, 'Difference Between\n Controller dBm\n& Client Calc Combined\n Signal dBm', dblue_bold)

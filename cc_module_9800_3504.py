@@ -183,11 +183,6 @@ class create_controller_series_object:
             self.band = 'dual_band_5g'
         elif self.band == 'dual_band_6g':
             self.band = 'dual_band_6g'
-        elif self.band == 'a':
-            self.band = '5g'
-        elif self.band == 'b':
-            self.band = '24g'
-            pass
         else:
             logger.critical("band needs to be set 24g 5g 6g dual_band_5g, dual_band_6g")
             raise ValueError("band needs to be set 24g 5g 6g dual_band_5g or dual_band_6g")
@@ -213,8 +208,7 @@ class create_controller_series_object:
     # TODO consolidate the command formats
 
     def send_command(self):
-        # for converting 'a' to '5g' , and 'b' to '24g'
-        self.convert_band()
+        # self.convert_band()
         self.set_ap_band_slot()
 
         logger.info("action {action}".format(action=self.action))
