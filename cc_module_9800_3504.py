@@ -237,7 +237,8 @@ class create_controller_series_object:
             self.command_extend = ["--action", self.action, "--value", self.value]
             self.command.extend(self.command_extend)
 
-        elif self.action in ["create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "dtim", "enable_ft_akm_ftpsk"]:
+        elif self.action in ["create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "dtim", "enable_ft_akm_ftpsk",
+                             "enable_ftotd_akm_ftpsk"]:
 
             if self.action in ["create_wlan"]:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan,
@@ -249,6 +250,9 @@ class create_controller_series_object:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan, "--value", self.value]
             elif self.action in ["enable_ft_akm_ftpsk"]:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan, "--security_key", self.security_key]
+            elif self.action in ["enable_ftotd_akm_ftpsk"]:
+                self.command_extend = ["--action", self.action, "--wlan", self.wlan, "--security_key",
+                                       self.security_key]
 
             self.command.extend(self.command_extend)
 
@@ -277,7 +281,7 @@ class create_controller_series_object:
                              "show_ap_bssid_dual_band_6g", "show_ap_bssid_dual_band_5g", "show_ap_bssid_6g", "show_ap_bssid_5g", "show_ap_bssid_24g",
                              "manual", "auto",
                              "enable_network_dual_band_6ghz", "enable_network_dual_band_5ghz", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
-                             "enable_operation_status", "11r_logs", "enable_ft_akm_ftpsk"]:
+                             "enable_operation_status", "11r_logs", "enable_ft_akm_ftpsk", "enable_ftotd_akm_ftpsk"]:
 
             self.command_extend = ["--action", self.action]
             self.command.extend(self.command_extend)
@@ -975,6 +979,13 @@ class create_controller_series_object:
         logger.info("enable ft and akm ft+psk ")
         self.action = "enable_ft_akm_ftpsk"
         summary = self.send_command()
+        return summary
+
+    def enable_ftotd_psk_cc(self):
+        logger.info("enable ft , ft over the ds  and akm ft+psk ")
+        self.action = "enable_ftotd_akm_ftpsk"
+        summary = self.send_command()
+        print(summary)
         return summary
 
 
