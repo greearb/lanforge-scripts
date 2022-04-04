@@ -91,19 +91,20 @@ class LfPcap(Realm):
             raise "Host error"
         return self.remote_pcap
 
-    def get_packet_info(self, pcap_file):
+    def get_packet_info(self, pcap_file, filter='wlan.fc.type_subtype==3 && wlan.tag.number==55'):
         """get packet info from each packet from the pcap file"""
         print("pcap file path:  %s" % pcap_file)
         try:
             if pcap_file is not None:
-                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype==3 && wlan.tag.number==55')
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter=filter)
                 packet_count = 0
                 data = []
                 for pkt in cap:
-                    data.append(pkt)
+                    data.append(str(pkt))
                     packet_count += 1
                 print("Total Packets: ", packet_count)
                 print(data)
+                data = "\n".join(data)
                 if packet_count != 0:
                     return data
                 else:
@@ -111,19 +112,19 @@ class LfPcap(Realm):
         except ValueError:
             raise "pcap file is required"
 
-    def get_wlan_mgt_status_code(self, pcap_file):
+    def get_wlan_mgt_status_code(self, pcap_file, filter='wlan.fc.type_subtype==3 && wlan.tag.number==55'):
         """ To get status code of each packet in WLAN MGT Layer """
         print("pcap file path:  %s" % pcap_file)
         try:
             if pcap_file is not None:
-                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype==3 && wlan.tag.number==55')
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter=filter)
                 packet_count = 0
                 value, data = '', []
                 for pkt in cap:
                     # print(pkt)
                     if 'wlan.mgt' in pkt:
                         value = pkt['wlan.mgt'].get_field_value('wlan_fixed_status_code')
-                        if value == '0x0000':
+                        if value == '0x0000' or value == '0':
                             data.append('Successful')
                         else:
                             data.append('failed')
