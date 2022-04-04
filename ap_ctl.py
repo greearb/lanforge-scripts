@@ -113,8 +113,8 @@ def main():
     global logfile
 
     AP_ESCAPE       = "Escape character is '^]'."
-    AP_USERNAME     = "Username:"
-    AP_PASSWORD     = "Password:"
+    AP_USERNAME     = "Username: "
+    AP_PASSWORD     = "Password: "
     AP_EN           = "en"
     AP_MORE         = "--More--"
     AP_EXIT         = "exit"
@@ -259,12 +259,12 @@ def main():
         if i == 3:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_USERNAME,i,egg.before,egg.after))
             egg.sendline(args.user) 
-            sleep(1)
+            sleep(2)
         # AP_PASSWORD
         if i == 4:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_PASSWORD,i,egg.before,egg.after))
             egg.sendline(args.passwd) 
-            sleep(1)
+            sleep(2)
         # AP_MORE
         if i == 5:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_MORE,i,egg.before,egg.after))

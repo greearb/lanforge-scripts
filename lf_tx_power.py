@@ -1471,7 +1471,6 @@ def main():
                             # exit_test(workbook)
                             summary = "empty_process_error"
 
-                        exit(1)
 
                     # Gather probe results and record data, verify NSS, BW, Channel
                     i = 0
