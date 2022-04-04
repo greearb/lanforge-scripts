@@ -1438,6 +1438,41 @@ def main():
                     logg.info("Waiting {} seconds to let traffic run for a bit, Channel {} NSS {} BW {} TX-Power {}".format(args.duration, ch, n, bw, tx))
                     time.sleep(int(args.duration))
 
+                    # gather information from ap
+                    if(bool(ap_dict)):
+                        logg.info("ap_dict {}".format(ap_dict))
+                        logg.info("Read AP ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {}".format(ap_dict['ap_scheme'], ap_dict['ap_ip'], ap_dict["ap_port"],
+                                                                                                             ap_dict['ap_user'], ap_dict['ap_pw']))
+                        logg.info("####################################################################################################")
+                        logg.info("# READ AP POWERREG")
+                        logg.info("####################################################################################################")
+                        try:
+                            logg.info("ap_ctl.py: read AP power information")
+                            # TODO use ap module
+                            summary_output = ''
+                            command = ["./ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'], "--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                                      "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'], "--action", "powerreg"]
+                            summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                            for line in iter(summary.stdout.readline, ''):
+                                logger.debug(line)
+                                summary_output += line
+                                # sys.stdout.flush() # please see comments regarding the necessity of this line
+                            summary.wait()
+                            logger.info(summary_output)  # .decode('utf-8', 'ignore'))
+                        except subprocess.CalledProcessError as process_error:
+                            logg.info("####################################################################################################")
+                            logg.info("# CHECK IF AP HAS TELNET CONNECTION ALREADY ACTIVE")
+                            logg.info("####################################################################################################")
+                            logg.info("####################################################################################################")
+                            logg.info(
+                                "# Unable to commicate to AP error code: {} output {}".format(
+                                    process_error.returncode, process_error.output))
+                            logg.info("####################################################################################################")
+                            # exit_test(workbook)
+                            summary = "empty_process_error"
+
+                        exit(1)
+
                     # Gather probe results and record data, verify NSS, BW, Channel
                     i = 0
                     beacon_sig = None
@@ -1780,14 +1815,26 @@ def main():
                             try:
                                 logg.info("ap_ctl.py: read AP power information")
                                 # TODO use ap module
-                                ap_info = subprocess.run(["./ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'], "--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
-                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'], "--action", "powercfg"], stdout=subprocess.PIPE)
-                                try:
-                                    pss = ap_info.stdout.decode('utf-8', 'ignore')
-                                except BaseException:
-                                    logg.info("ap_info was of type NoneType will set pss empty")
-                                    pss = "empty"
+                                summary_output = ''
+                                command = ["./ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'], "--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'], "--action", "powercfg"]
+                                summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                                for line in iter(summary.stdout.readline, ''):
+                                    logger.debug(line)
+                                    summary_output += line
+                                    # sys.stdout.flush() # please see comments regarding the necessity of this line
+                                summary.wait()
+                                logger.info(summary_output)  # .decode('utf-8', 'ignore'))
 
+                                # ap_info = subprocess.run(["./ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'], "--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
+                                #                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'], "--action", "powerreg"], stdout=subprocess.PIPE)
+                                # try:
+                                #     pss = ap_info.stdout.decode('utf-8', 'ignore')
+                                # except BaseException:
+                                #     logg.info("ap_info was of type NoneType will set pss empty")
+                                #     pss = "empty"
+
+                            # TODO print out the call stack
                             except subprocess.CalledProcessError as process_error:
                                 logg.info("####################################################################################################")
                                 logg.info("# CHECK IF AP HAS TELNET CONNECTION ALREADY ACTIVE")
@@ -1799,10 +1846,10 @@ def main():
                                         process_error.returncode, process_error.output))
                                 logg.info("####################################################################################################")
                                 # exit_test(workbook)
-                                pss = "empty_process_error"
+                                summary = "empty_process_error"
 
-                            logg.info(pss)
-                            for line in pss.splitlines():
+                            logg.info(summary)
+                            for line in summary.splitlines():
                                 logg.info("ap {}".format(line))
                                 pat = '^\\s+1\\s+6\\s+\\S+\\s+\\S+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)'
                                 m = re.search(pat, line)
