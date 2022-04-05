@@ -542,9 +542,9 @@ Example:
     print(staConnect.get_all_message())
 
     if not staConnect.passes():
-        print("FAIL:  Some tests failed")
+        staConnect.exit_fail()
     else:
-        print("PASS:  All tests pass")
+        staConnect.exit_success()
 
     print(staConnect.get_all_message())
 
