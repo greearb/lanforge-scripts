@@ -492,7 +492,7 @@ Generic command example:
                         default=1)
     parser.add_argument('--url', help='--url specifies upload/download, address, and dest',
                         default="dl http://10.40.0.1 /dev/null")
-    parser.add_argument('--test_duration', help='duration of test', default="2m")
+    parser.add_argument('--test_duration', help='duration of test', default="1m")
     parser.add_argument('--target_per_ten',
                         help='--target_per_ten target number of request per ten minutes. test will check for 90 percent this value',
                         default=600)
@@ -718,8 +718,10 @@ Generic command example:
 
     if not is_passing:
         logger.info(ip_test.get_fail_message())
+        ip_test.cx_profile.exit_fail()
     if is_passing:
         logger.info("Full test passed")
+        ip_test.exit_success()
 
 
 if __name__ == "__main__":
