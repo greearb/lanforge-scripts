@@ -2057,9 +2057,9 @@ Setting wifi_settings per radio
         report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
     if test_passed:
-        exit(0)
+        ip_var_test.exit_success()
     else:
-        exit(1)
+        ip_var_test.exit_fail()
 
 
 if __name__ == "__main__":

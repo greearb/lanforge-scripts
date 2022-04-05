@@ -718,7 +718,7 @@ Generic command example:
 
     if not is_passing:
         logger.info(ip_test.get_fail_message())
-        ip_test.cx_profile.exit_fail()
+        ip_test.exit_fail()
     if is_passing:
         logger.info("Full test passed")
         ip_test.exit_success()
