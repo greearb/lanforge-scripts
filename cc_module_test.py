@@ -109,7 +109,7 @@ class create_module_test_object:
         # bandwidth (to set to 20 if channel change does not support)
         # self.cs.config_dot11_5ghz_channel_width()
         self.cs.channel = '33'
-        
+
         # channel
         self.cs.config_dot11_6ghz_channel()
         # self.cs.config_dot11_5ghz_channel()
@@ -641,7 +641,6 @@ class create_module_test_object:
 
     # tb2
 
-
     def test_config_tx_power_5g_open_tb2_AP3(self):
 
         logger.info("test_config_tx_power_open")
@@ -798,7 +797,6 @@ class create_module_test_object:
         # show_wlan_summary
         self.cs.show_wlan_summary()
 
-
     def test_config_tx_power_6g_wpa3_AP4(self):
 
         logger.info("sample_test_tx_power_sequence for 6G AP3 on AP")
@@ -884,9 +882,8 @@ class create_module_test_object:
         # show_wlan_summary
         self.cs.show_wlan_summary()
 
-
-
     # Used before testbed change
+
     def test_config_tx_power_wpa2_IDIC(self):
 
         logger.info("sample_test_tx_power_sequence")
@@ -1047,7 +1044,6 @@ INCLUDE_IN_README
     # mt.test_config_tx_power_5g_wpa2_AP3()
 
     mt.test_config_tx_power_6g_wpa3_AP4()
-
 
     # mt.test_config_tx_power_6g_wpa3_attempt2()
 
