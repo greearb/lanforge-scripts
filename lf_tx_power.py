@@ -1097,7 +1097,6 @@ def main():
                         elif args.band == '6g':
                             cs.ap_dot11_6ghz_shutdown()
 
-                        # There is only 3 slots on 6g and dualband
                         cs.ap_dot11_5ghz_shutdown()
                         cs.ap_dot11_24ghz_shutdown()
 
@@ -1121,7 +1120,7 @@ def main():
                     if (tx != "NA"):
                         logg.info("9800/3504 test_parameters: set txPower: {tx_power}".format(tx_power=tx))
                         cs.tx_power = tx
-
+                        
                         if args.band == 'dual_band_6g':
                             cs.config_dot11_dual_band_6ghz_tx_power()
                         elif args.band == 'dual_band_5g':
@@ -2371,8 +2370,6 @@ def main():
         elif args.band == 'dual_band_5g':
             pss = cs.ap_dot11_dual_band_5ghz_shutdown()
             logg.info(pss)
-        # Assume on non dual-band AP 9136 , yet 6164 does not support 6g
-        # TODO pass in AP model
         else:
             pss = cs.ap_dot11_6ghz_shutdown()
             logg.info(pss)

@@ -36,6 +36,8 @@ import argparse
 import logging
 import importlib
 import os
+from time import sleep
+
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "././")))
 
@@ -310,69 +312,148 @@ class create_module_test_object:
         self.cs.line_console_0()
         # summary
         self.cs.show_ap_summary()
+        
 
-        # Disable AP, apply settings, enable AP
-        self.cs.show_ap_dot11_6gz_shutdown()
-        self.cs.show_ap_dot11_5gz_shutdown()
-        self.cs.show_ap_dot11_24gz_shutdown()
+        # set the dual-band slot
+        self.cs.ap_dual_band_slot_6g = '2'
+        # configure dual-band to be 6G
+        # disable dual-band mode
+        if self.cs.band == "dual_band_6g":
+            logger.info("ap_dot11_dual_band_mode_shutdown_6ghz")
+            self.cs.ap_dot11_dual_band_mode_shutdown_6ghz()
+        elif self.cs.band == "dual_band_5g":
+            logger.info("ap_dot11_dual_band_mode_shutdown_6ghz")
+            self.cs.ap_dot11_dual_band_mode_shutdown_5ghz()
 
-        # disable_wlan
-        self.cs.wlan_shutdown()
-        # disable_network_6ghz
-        self.cs.ap_dot11_6ghz_shutdown()
-        # disable_network_5ghz
-        self.cs.ap_dot11_5ghz_shutdown()
-        # disable_network_24ghz
-        self.cs.ap_dot11_24ghz_shutdown()
-        # manual
-        self.cs.ap_dot11_6ghz_radio_role_manual_client_serving()
-        self.cs.ap_dot11_5ghz_radio_role_manual_client_serving()
-        self.cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+        # ap name APCC9C.3EF4.E0B0 dot11 dual-band slot 2 band 6ghz
+        # % Error: AP APCC9C.3EF4.E0B0 Slot 2 - Failed to change band, Radio role selection is not Manual
+        # set the radio role selection 
+        if self.cs.band == 'dual_band_6g':
+            logger.info("ap_dot11_dual_band_6ghz_radio_role_manual_client_serving")
+            self.cs.ap_dot11_dual_band_6ghz_radio_role_manual_client_serving()
+        elif self.cs.band == 'dual_band_5g':
+            logger.info("ap_dot11_dual_band_5ghz_radio_role_manual_client_serving")
+            self.cs.ap_dot11_dual_band_5ghz_radio_role_manual_client_serving()
+        elif self.cs.band == '6g':
+            self.cs.ap_dot11_6ghz_radio_role_manual_client_serving()
+        # self.cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+        # self.cs.ap_dot11_24ghz_radio_role_manual_client_serving()
 
-        # Configuration for 6g
+
+        # config dual-band mode
+        if self.cs.band == "dual_band_6g":
+            logger.info("config_ap_dot11_dual_band_to_6ghz")
+            self.cs.config_ap_dot11_dual_band_to_6ghz()
+        elif self.cs.band == "dual_band_5g":
+            logger.info("config_ap_dot11_dual_band_to_5ghz")
+            self.cs.config_ap_dot11_dual_band_to_5ghz
+
+        # enable  dual-band mode
+        if self.cs.band == "dual_band_6g":
+            logger.info("ap_dot11_dual_band_no_mode_shutdown_6ghz")
+            self.cs.ap_dot11_dual_band_no_mode_shutdown_6ghz()
+        elif self.cs.band == "dual_band_5g":
+            logger.info("ap_dot11_dual_band_no_mode_shutdown_5ghz")
+            self.cs.ap_dot11_dual_band_no_mode_shutdown_5ghz()
 
         # Configuration for 6g
         # txPower
         # TODO is this still needed
-        self.cs.config_dot11_6ghz_tx_power()
-        self.cs.bandwidth = '20'
-        # bandwidth (to set to 20 if channel change does not support)
-        self.cs.config_dot11_6ghz_channel_width()
-        self.cs.channel = '1'
+        logger.info("config_dot11_dual_band_6ghz_tx_power")
+        self.cs.config_dot11_dual_band_6ghz_tx_power()
         # channel
-        self.cs.config_dot11_6ghz_channel()
+        self.cs.channel = '1'
+        logger.info("config_dot11_dual_band_6ghz_channel")
+        self.cs.config_dot11_dual_band_6ghz_channel()
         self.cs.bandwidth = '40'
         # bandwidth
-        self.cs.config_dot11_6ghz_channel_width()
+        self.cs.bandwidth = '20'
+        self.cs.config_dot11_dual_band_6ghz_channel_width()
+
         # show_wlan_summary
         self.cs.show_wlan_summary()
 
-        # delete_wlan
-        # TODO (there were two in tx_power the logs)
-        # need to check if wlan present
-        # delete wlan
-        self.cs.config_no_wlan()
-
-        # create_wlan_wpa3
-        self.cs.config_wlan_wpa3()
-
-        # wireless_tag_policy
-        self.cs.config_wireless_tag_policy_and_policy_profile()
         # enable_wlan
         self.cs.config_enable_wlan_send_no_shutdown()
-        # enable_network_5ghz
-        self.cs.config_no_ap_dot11_6ghz_shutdown()
-        # enable_network_24ghz
-        # self.cs.config_no_ap_dot11_5ghz_shutdown()
-        # enable
-        self.cs.config_ap_no_dot11_6ghz_shutdown()
-        # config_ap_no_dot11_24ghz_shutdown
-        # advanced
-        self.cs.show_ap_dot11_6gz_summary()
+
+        # enable_network_6ghz or enable_network_5ghz or enable_network_24ghz
+        if self.cs.band == 'dual_band_6g':
+            # enable 6g wlan
+            logger.info("config_no_ap_dot11_dual_band_6ghz_shutdown")
+            pss = self.cs.config_no_ap_dot11_dual_band_6ghz_shutdown()
+            logger.info(pss)
+            # enable 6g operation status
+            pss = self.cs.config_ap_no_dot11_dual_band_6ghz_shutdown()
+            logger.info(pss)
+        elif self.cs.band == 'dual_band_5g':
+            # enable 5g wlan
+            pss = self.cs.config_no_ap_dot11_dual_band_5ghz_shutdown()
+            logger.info(pss)
+            # enable 5g operation status
+            pss = self.cs.config_ap_no_dot11_dual_band_5ghz_shutdown()
+            logger.info(pss)
+        elif self.cs.band == '6g':
+            # enable 6g wlan
+            pss = self.cs.config_no_ap_dot11_6ghz_shutdown()
+            logger.info(pss)
+            # enable 6g operation status
+            pss = self.cs.config_ap_no_dot11_6ghz_shutdown()
+            logger.info(pss)
+        # 6g needs to see the 5g bands
+        elif self.cs.band == '5g' or self.cs.band == '6g' or self.cs.band == 'dual_band_6g':
+            # enable 5g wlan
+            pss = self.cs.config_no_ap_dot11_5ghz_shutdown()
+            logger.info(pss)
+            # enable 5g operation status
+            pss = self.cs.config_ap_no_dot11_5ghz_shutdown()
+            logger.info(pss)
+        elif self.cs.band == '24g':
+            # enable wlan 24ghz
+            pss = self.cs.config_no_ap_dot11_24ghz_shutdown()
+            logger.info(pss)
+            # enable 24ghz operation status
+            self.cs.config_ap_no_dot11_24ghz_shutdown()
+            logger.info(pss)
+        
+
+        if self.cs.band == 'dual_band_6g':
+            pss = self.cs.show_ap_dot11_dual_band_6gz_summary()
+            logger.info("show ap dot11 dual-band (6ghz) summary")
+            logger.info("ap: {ap} ap_band_slot_6g: {slot} ".format(ap=self.cs.ap, slot=self.cs.ap_band_slot))
+            logger.info(pss)
+        elif self.cs.band == 'dual_band_5g':
+            pss = self.cs.show_ap_dot11_dual_band_5gz_summary()
+            logger.info("show ap dot11 dual-band (5ghz) summary")
+            logger.info("ap: {ap} ap_band_slot_5g: {slot} ".format(ap=self.cs.ap, slot=self.cs.ap_band_slot_5g))
+            logger.info(pss)
+        elif self.cs.band == '6g':
+            pss = self.cs.show_ap_dot11_6gz_summary()
+            logger.info("show ap dot11 6ghz summary")
+            logger.info("ap: {ap} ap_band_slot_6g: {slot} ".format(ap=self.cs.ap, slot=self.cs.ap_band_slot_6g))
+            logger.info(pss)
+        elif self.cs.band == '5g':
+            logger.info("show ap dot11 5ghz summary")
+            logger.info("ap: {ap} ap_band_slot_5g: {slot} ".format(ap=self.cs.ap, slot=self.cs.ap_band_slot_5g))
+            pss = self.cs.show_ap_dot11_5gz_summary()
+            logger.info(pss)
+        else:
+            logger.info("show ap dot11 24ghz summary")
+            logger.info("ap: {ap} ap_band_slot_24g: {slot} ".format(ap=self.cs.ap, slot=self.cs.ap_band_slot_24g))
+            pss = self.cs.show_ap_dot11_24gz_summary()
+            logger.info(pss)
+
+        # Temporary Work around
+        # disable the AP for 6g and enable
+        if self.cs.band == '6g':
+            self.cs.ap_name_shutdown()
+            sleep(5)
+            self.cs.ap_name_no_shutdown()
+
+        
         # show_wlan_summary
         self.cs.show_wlan_summary()
 
-
+    
     def test_config_tx_power_6g_wpa3(self):
         # TODO : leave for now for reference
         # WLC1#show ap summary
@@ -1112,6 +1193,8 @@ INCLUDE_IN_README
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
 
+    logger_config.set_level('debug')
+
     # dynamic import of the controller module
     # 'cc_module_9800_3504'
     series = importlib.import_module(args.module)
@@ -1139,7 +1222,9 @@ INCLUDE_IN_README
 
     # mt.test_config_tx_power_5g_wpa2_AP3()
 
-    mt.test_config_tx_power_6g_wpa3_AP4()
+    # mt.test_config_tx_power_6g_wpa3_AP4()
+
+    mt.test_config_tx_power_dual_band_6g_wpa3()
 
     # mt.test_config_tx_power_6g_wpa3_attempt2()
 
