@@ -364,6 +364,8 @@ def main():
     # AP configuration
     parser.add_argument("-a", "--ap", type=str, help="[AP configuration] select AP  ", required=True)
     parser.add_argument("--ap_slot", type=str, dest="ap_slot", help="[AP configuration] --ap_slot 3 , 9800 AP slot , use show ap summary", required=True)
+    parser.add_argument("--ap_dual_band_slot_6g", type=str, help="[AP configuration] --ap_dual_band_slot_6g 3 , 9800 AP dual-band slot , for 6g dual-band use show ap dot11 dual-band summary", default='2')
+    parser.add_argument("--ap_dual_band_slot_5g", type=str, help="[AP configuration] --ap_dual_band_slot_5g 1 , 9800 AP dual-band slot , for 5g dual-band use show ap dot11 dual-band summary", default='2')
     parser.add_argument("--ap_band_slot_6g", type=str, help="[AP configuration] --ap_band_slot_6g 3 , 9800 AP band slot , use show ap dot11 6ghz summary", default='2')
     parser.add_argument("--ap_band_slot_5g", type=str, help="[AP configuration] --ap_band_slot_5g 1 , 9800 AP band slot , use show ap dot11 5ghz summary", default='1')
     parser.add_argument("--ap_band_slot_24g", type=str, help="[AP configuration] --ap_band_slot_24g 0 , 9800 AP band slot , use show ap dot11 24ghz summary", default='0')
@@ -870,7 +872,7 @@ def main():
         if (args.radio is None):
             logg.info("WARNING --create needs a radio")
             exit_test(workbook)
-        if (args.band == '6g'):
+        if (args.band == '6g' or args.band == 'dual_band_6g'):
             if (args.vht160):
                 logg.info("creating station with VHT160 set: {} on radio {}".format(args.station, args.radio))
                 logg.info("cwd lf_associate_ap.pl: {dir}".format(dir=os.getcwd()))
@@ -1028,7 +1030,7 @@ def main():
                 # TODO make txpower file into object ,
                 if args.tx_power_adjust_6E:
                     txpowers = args.txpower.split()
-                    if args.band == '6g':
+                    if args.band == '6g' or args.band == 'dual_band_6g':
                         if bw == '20':
                             if '8' in txpowers:
                                 txpowers.remove('8')
@@ -1063,11 +1065,25 @@ def main():
                         # 9800 series need to  "Configure radio for manual channel assignment"
                         logg.info("9800 Configure radio for manual channel assignment")
                         cs.wlan_shutdown()
-                        cs.ap_dot11_6ghz_shutdown()
+                        if args.band == 'dual_band_6g':
+                            cs.ap_dot11_dual_band_6ghz_shutdown()
+                        elif args.band == 'dual_band_5g':
+                            cs.ap_dot11_dual_band_5ghz_shutdown()
+                        elif args.band == '6g':
+                            cs.ap_dot11_6ghz_shutdown()
+
+                        # There is only 3 slots on 6g and dualband                     
                         cs.ap_dot11_5ghz_shutdown()
                         cs.ap_dot11_24ghz_shutdown()
+
                         # manual
-                        cs.ap_dot11_6ghz_radio_role_manual_client_serving()
+                        if args.band == 'dual_band_6g':
+                            cs.ap_dot11_dual_band_6ghz_radio_role_manual_client_serving()
+                        elif args.band == 'dual_band_5g':
+                            cs.ap_dot11_dual_band_5ghz_radio_role_manual_client_serving()
+                        elif args.band == '6g':
+                            cs.ap_dot11_6ghz_radio_role_manual_client_serving()
+
                         cs.ap_dot11_5ghz_radio_role_manual_client_serving()
                         cs.ap_dot11_24ghz_radio_role_manual_client_serving()
 
@@ -1080,8 +1096,12 @@ def main():
                     if (tx != "NA"):
                         logg.info("9800/3504 test_parameters: set txPower: {tx_power}".format(tx_power=tx))
                         cs.tx_power = tx
-                        # TODO add 24ghz and 6ghz
-                        if args.band == '6g':
+
+                        if args.band == 'dual_band_6g':
+                            cs.config_dot11_dual_band_6ghz_tx_power()
+                        elif args.band == 'dual_band_5g':
+                            cs.config_dot11_dual_band_5ghz_tx_power()
+                        elif args.band == '6g':
                             cs.config_dot11_6ghz_tx_power()
                         elif args.band == '5g':
                             cs.config_dot11_5ghz_tx_power()
@@ -1092,7 +1112,11 @@ def main():
                     if (ch != "NA"):
                         logg.info("9800/3504 test_parameters set channel: {}".format(ch))
                         cs.channel = ch
-                        if args.band == '6g':
+                        if args.band == 'dual_band_6g':
+                            cs.config_dot11_dual_band_6ghz_channel()
+                        elif args.band == 'dual_band_5g':
+                            cs.config_dot11_dual_band_5ghz_channel()
+                        elif args.band == '6g':
                             cs.config_dot11_6ghz_channel()
                         elif args.band == '5g':
                             cs.config_dot11_5ghz_channel()
@@ -1102,7 +1126,11 @@ def main():
                     if (bw != "NA"):
                         logg.info("9800/3504 test_parameters bandwidth: set : {}".format(bw))
                         cs.bandwidth = bw
-                        if args.band == '6g':
+                        if args.band == 'dual_band_6g':
+                            cs.config_dot11_dual_band_6ghz_channel_width()
+                        elif args.band == 'dual_band_5g':
+                            cs.config_dot11_dual_band_5ghz_channel_width()
+                        elif args.band == '6g':
                             cs.config_dot11_6ghz_channel_width()
                         elif args.band == '5g':
                             cs.config_dot11_5ghz_channel_width()
@@ -1126,7 +1154,11 @@ def main():
                             # delete the wlan if already exists
                             pss = cs.show_wlan_summary()
                             logg.info(pss)
-                            if args.band == '6g':
+                            if args.band == 'dual_band_6g':
+                                cs.show_ap_dot11_dual_band_6gz_summary
+                            elif args.band == 'dual_band_5g':
+                                cs.show_ap_dot11_dual_band_5gz_summary
+                            elif args.band == '6g':
                                 cs.show_ap_dot11_6gz_summary
                             elif args.band == '5g':
                                 cs.show_ap_dot11_5gz_summary
@@ -1172,8 +1204,23 @@ def main():
                         cs.config_enable_wlan_send_no_shutdown()
 
                     # enable transmission for the entier 802.11z network
+                    # the wlan may not care about dual_band
                     # enable_network_6ghz or enable_network_5ghz or enable_network_24ghz
-                    if args.band == '6g':
+                    if args.band == 'dual_band_6g':
+                        # enable 6g wlan
+                        pss = cs.config_no_ap_dot11_dual_band_6ghz_shutdown()
+                        logg.info(pss)
+                        # enable 6g operation status
+                        pss = cs.config_ap_no_dot11_6ghz_shutdown()
+                        logg.info(pss)
+                    elif args.band == 'dual_band_5g':
+                        # enable 5g wlan
+                        pss = cs.config_no_ap_dot11_dual_band_5ghz_shutdown()
+                        logg.info(pss)
+                        # enable 5g operation status
+                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+                        logg.info(pss)
+                    elif args.band == '6g':
                         # enable 6g wlan
                         pss = cs.config_no_ap_dot11_6ghz_shutdown()
                         logg.info(pss)
@@ -1181,7 +1228,7 @@ def main():
                         pss = cs.config_ap_no_dot11_6ghz_shutdown()
                         logg.info(pss)
                     # 6g needs to see the 5g bands
-                    elif args.band == '5g' or args.band == '6g':
+                    elif args.band == '5g' or args.band == '6g' or args.band == 'dual_band_6g':
                         # enable 5g wlan
                         pss = cs.config_no_ap_dot11_5ghz_shutdown()
                         logg.info(pss)
@@ -1205,8 +1252,18 @@ def main():
                             logg.info("9800 read controller dBm")
                             loop_count += 1
                             time.sleep(1)
-                            # TODO configuration for 24g, 6g
-                            if args.band == '6g':
+
+                            if args.band == 'dual_band_6g':
+                                pss = cs.show_ap_dot11_dual_band_6gz_summary()
+                                logg.info("show ap dot11 dual-band (6ghz) summary")
+                                logg.info("ap: {ap} ap_band_slot_6g: {slot} ".format(ap=args.ap, slot=args.ap_band_slot_6g))
+                                logg.info(pss)
+                            elif args.band == 'dual_band_5g':
+                                pss = cs.show_ap_dot11_dual_band_5gz_summary()
+                                logg.info("show ap dot11 dual-band (5ghz) summary")
+                                logg.info("ap: {ap} ap_band_slot_5g: {slot} ".format(ap=args.ap, slot=args.ap_band_slot_5g))
+                                logg.info(pss)
+                            elif args.band == '6g':
                                 pss = cs.show_ap_dot11_6gz_summary()
                                 logg.info("show ap dot11 6ghz summary")
                                 logg.info("ap: {ap} ap_band_slot_6g: {slot} ".format(ap=args.ap, slot=args.ap_band_slot_6g))
@@ -1236,7 +1293,11 @@ def main():
                                 if (searchap):
                                     logg.info("##### line #####")
                                     logg.info(line)
-                                    if args.band == '6g':
+                                    if args.band == 'dual_band_6g':
+                                        logg.info("ap : {ap} ap_dual_band_slot_6g: {slot}".format(ap=args.ap, slot=args.ap_dual_band_slot_6g))
+                                    elif args.band == 'dual_band_5g':
+                                        logg.info("ap : {ap} ap_dual_band_slot_5g: {slot}".format(ap=args.ap, slot=args.ap_dual_band_slot_5g))
+                                    elif args.band == '6g':
                                         logg.info("ap : {ap} ap_band_slot_6g: {slot}".format(ap=args.ap, slot=args.ap_band_slot_6g))
                                     elif args.band == '5g':
                                         logg.info("ap : {ap} ap_band_slot_5g: {slot}".format(ap=args.ap, slot=args.ap_band_slot_5g))
@@ -1250,7 +1311,13 @@ def main():
                                     logg.info(m)
                                     ap_band_slot = None
                                     if (m is not None):
-                                        if args.band == '6g':
+                                        if args.band == 'dual_band_6g':
+                                            logg.info("checking of dual-band slot for 6g {band_slot} present in the show ap dot11 dual-band summary".format(band_slot=args.ap_dual_band_slot_6g))
+                                            ap_band_slot = args.ap_band_slot_6g
+                                        elif args.band == 'dual_band_5g':
+                                            logg.info("checking of dual-band slot for 5g {band_slot} present in the show ap dot11 dual-band summary".format(band_slot=args.ap_dual_band_slot_5g))
+                                            ap_band_slot = args.ap_band_slot_5g
+                                        elif args.band == '6g':
                                             logg.info("checking of band slot 6g {band_slot} present in the show ap dot11 6ghz summary".format(band_slot=args.ap_band_slot_6g))
                                             ap_band_slot = args.ap_band_slot_6g
                                         elif args.band == '5g':
@@ -1423,7 +1490,12 @@ def main():
                         time.sleep(1)
 
                     if args.series == "9800":
-                        if args.band == '6g':
+                        # being explicite as 
+                        if args.band == 'dual_band_6g':
+                            pss = cs.show_ap_dot11_dual_band_6gz_summary()
+                        elif args.band == 'dual_band_5g':
+                            pss = cs.show_ap_dot11_dual_band_5gz_summary()
+                        elif args.band == '6g':
                             pss = cs.show_ap_dot11_6gz_summary()
                         elif args.band == '5g':
                             pss = cs.show_ap_dot11_5gz_summary()
@@ -2243,9 +2315,17 @@ def main():
 
     # keep the state of the controller
     if(args.keep_state):
+        # TODO may have to check the AP type or AP series
         logg.info("9800/3504 flag --keep_state True thus leaving controller is last test configuration")
-        pss = cs.show_ap_dot11_6gz_summary()
-        logg.info(pss)
+        if args.band == 'dual_band_6g':
+            pss = cs.show_ap_dot11_dual_band_6gz_summary()
+            logg.info(pss)
+        elif args.band == 'dual_band_5g':
+            pss = cs.show_ap_dot11_dual_band_5gz_summary()
+            logg.info(pss)
+        elif args.band == '6g':
+            pss = cs.show_ap_dot11_6gz_summary()
+            logg.info(pss)
         pss = cs.show_ap_dot11_5gz_summary()
         logg.info(pss)
         pss = cs.show_ap_dot11_24gz_summary()
@@ -2263,43 +2343,86 @@ def main():
             pss = cs.config_no_wlan()
             logg.info(pss)
 
-        # Enable wlan networks
-        pss = cs.ap_dot11_6ghz_shutdown()
-        logg.info(pss)
+        # Disable wlan networks to try to restore to original configuration
+        if args.band == 'dual_band_6g':
+            pss = cs.ap_dot11_dual_band_6ghz_shutdown()
+            logg.info(pss)
+        elif args.band == 'dual_band_5g':
+            pss = cs.ap_dot11_dual_band_5ghz_shutdown()
+            logg.info(pss)
+        # Assume on non dual-band AP 9136 , yet 6164 does not support 6g
+        # TODO pass in AP model
+        else:
+            pss = cs.ap_dot11_6ghz_shutdown()
+            logg.info(pss)
         pss = cs.ap_dot11_5ghz_shutdown()
         logg.info(pss)
         pss = cs.ap_dot11_24ghz_shutdown()
         logg.info(pss)
-        pss = cs.config_dot11_6ghz_tx_power()
-        logg.info(pss)
-        pss = cs.config_dot11_5ghz_tx_power()
-        logg.info(pss)
+
+
+        if args.band == 'dual_band_6g':
+            pss = cs.config_dot11_dual_band_6ghz_tx_power()
+            logg.info(pss)
+        elif args.band == 'dual_band_5g':
+            pss = cs.config_dot11_dual_band_5ghz_tx_power()
+            logg.info(pss)
+        elif args.band == '6g':
+            pss = cs.config_dot11_6ghz_tx_power()
+            logg.info(pss)
+        elif args.band == '5g':
+            pss = cs.config_dot11_5ghz_tx_power()
+            logg.info(pss)
 
         # NSS is set on the station earlier...
         if (ch != "NA"):
-            if args.band == '6g':
+            if args.band == 'dual_band_6g':
+                pss = cs.config_dot11_dual_band_6ghz_channel()
+            elif args.band == 'dual_band_5g':
+                pss = cs.config_dot11_dual_band_5ghz_channel()
+            elif args.band == '6g':
                 pss = cs.config_dot11_6ghz_channel()
             elif args.band == '5g':
                 pss = cs.config_dot11_5ghz_channel()
             elif args.band == '24g':
                 pss = cs.config_dot11_24ghz_channel()
+            logg.info(pss)
 
         if (bw != "NA"):
-            if args.band == '6g':
+            if args.band == 'dual_band_6g':
+                pss = cs.config_dot11_dual_band_6ghz_channel_width()
+            elif args.band == 'dual_band_5g':
+                pss = cs.config_dot11_dual_band_5ghz_channel_width()
+            elif args.band == '6g':
                 pss = cs.config_dot11_6ghz_channel_width()
             elif args.band == '5g':
                 pss = cs.config_dot11_5ghz_channel_width()
             logg.info(pss)
 
         if args.series == "9800":
-            pss = cs.config_no_ap_dot11_6ghz_shutdown()
-            logg.info(pss)
+            if args.band == 'dual_band_6g':
+                pss = cs.config_no_ap_dot11_dual_band_6ghz_shutdown()
+                logg.info(pss)
+            elif args.band == 'dual_band_5g':
+                pss = cs.config_no_ap_dot11_dual_band_5ghz_shutdown()
+                logg.info(pss)
+            elif args.band == '6g':
+                pss = cs.config_no_ap_dot11_6ghz_shutdown()
+                logg.info(pss)
             pss = cs.config_no_ap_dot11_5ghz_shutdown()
             logg.info(pss)
             pss = cs.config_no_ap_dot11_24ghz_shutdown()
             logg.info(pss)
-            pss = cs.ap_dot11_6ghz_radio_role_auto()
-            logg.info(pss)
+
+            if args.band == 'dual_band_6g':
+                pss = cs.ap_dot11_dual_band_6ghz_radio_role_auto()
+                logg.info(pss)
+            elif args.band == 'dual_band_5g':
+                pss = cs.ap_dot11_dual_band_5ghz_radio_role_auto()
+                logg.info(pss)
+            elif args.band == '6g':
+                pss = cs.ap_dot11_6ghz_radio_role_auto()
+                logg.info(pss)
             pss = cs.ap_dot11_5ghz_radio_role_auto()
             logg.info(pss)
 
@@ -2309,28 +2432,53 @@ def main():
             pss = cs.config_no_ap_dot11_24ghz_shutdown()
             logg.info(pss)
 
+        if args.band == 'dual_band_6g':
+            pss = cs.config_no_ap_dot11_dual_band_6ghz_shutdown()  # enable_network dual_band 6ghz
+            logg.info(pss)
+        if args.band == 'dual_band_5g':
+            pss = cs.config_no_ap_dot11_dual_band_5ghz_shutdown()  # enable_network dual_band 6ghz
+            logg.info(pss)
         if args.band == '6g':
-            pss = cs.config_no_ap_dot11_6ghz_shutdown()  # enable_network 5ghz
+            pss = cs.config_no_ap_dot11_6ghz_shutdown()  # enable_network 6ghz
             logg.info(pss)
         if args.band == '5g':
             pss = cs.config_no_ap_dot11_5ghz_shutdown()  # enable_network 5ghz
             logg.info(pss)
         if args.band == '24g':
-            pss = cs.config_no_ap_dot11_24ghz_shutdown()  # enable_network 5ghz
+            pss = cs.config_no_ap_dot11_24ghz_shutdown()  # enable_network 24ghz
             logg.info(pss)
 
+        # try enabling all bands 
         if args.enable_all_bands:
-            pss = cs.config_no_ap_dot11_6ghz_shutdown()  # enable_network 5ghz
-            logg.info(pss)
+            if args.band == 'dual_band_6g':
+                pss = cs.config_no_ap_dot11_dual_band_6ghz_shutdown()  # enable_network dual_band 6ghz
+                logg.info(pss)
+            if args.band == 'dual_band_5g':
+                pss = cs.config_no_ap_dot11_dual_band_5ghz_shutdown()  # enable_network dual_band 6ghz
+                logg.info(pss)
+            if args.band == '6g':
+                pss = cs.config_no_ap_dot11_6ghz_shutdown()  # enable_network 6ghz
+                logg.info(pss)
+
             pss = cs.config_no_ap_dot11_5ghz_shutdown()  # enable_network 5ghz
             logg.info(pss)
             pss = cs.config_no_ap_dot11_24ghz_shutdown()  # enable_network 5ghz
             logg.info(pss)
 
     # Show controller status
-    # TODO show valid / short status
-    pss = cs.show_ap_dot11_6gz_summary()
+    # Note 
+    if args.band == 'dual_band_6g':
+        pss = cs.show_ap_dot11_dual_band_6gz_summary() 
+        logg.info(pss)
+    if args.band == 'dual_band_5g':
+        pss = cs.show_ap_dot11_dual_band_5gz_summary() 
+        logg.info(pss)
+    if args.band == '6g':
+        pss = cs.show_ap_dot11_6gz_summary()  
+        logg.info(pss)
+
     pss = cs.show_ap_dot11_5gz_summary()
+    logg.info(pss)
     pss = cs.show_ap_dot11_24gz_summary()
     logg.info(pss)
     # Generate Report

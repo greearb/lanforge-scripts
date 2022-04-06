@@ -1247,7 +1247,44 @@ def main():
             command = "config 802.11b enable network"
 
 
-    # This will configure the dual band mode 
+    # This will shut down the dual band 
+
+    # for dual-band 6g
+    # ap name CM66 dot11 dual-band shutdown    
+    # ap name CM66 dot11 dual-band slot 2 band 6ghz 
+    # ap name CM66 no dot11 dual-band shutdown 
+
+    # for dual-band 5g
+    # ap name CM66 dot11 dual-band shutdown    
+    # ap name CM66 dot11 dual-band slot 2 band 5ghz 
+    # ap name CM66 no dot11 dual-band shutdown 
+
+    # shutdown dual-band mode
+    if (args.action == "dual_band_mode_shutdown" and (args.ap is None or args.ap_band_slot is None)):
+        raise Exception("action requires AP name and ap band slot")
+    if (args.action == "dual_band_mode_shutdown"):
+        logg.info("command: ap name %s dot11 dual-band shutdown , slot %s : %s " % (args.ap, band, args.ap_band_slot, band))
+
+        if args.series == "9800":
+            if band == "dual_band_6g":
+                command = "ap name %s dot11 dual-band shutdown" % (args.ap)
+            elif band == "dual_band_5g":
+                command = "ap name %s dot11 dual-band shutdown" % (args.ap)
+
+    # shutdown dual-band mode
+    if (args.action == "dual_band_no_mode_shutdown" and (args.ap is None or args.ap_band_slot is None)):
+        raise Exception("action requires AP name and ap band slot")
+    if (args.action == "dual_band_no_mode_shutdown"):
+        logg.info("command: ap name %s no dot11 dual-band shutdown , slot %s : %s " % (args.ap, band, args.ap_band_slot, band))
+
+        if args.series == "9800":
+            if band == "dual_band_6g":
+                command = "ap name %s no dot11 dual-band shutdown" % (args.ap)
+            elif band == "dual_band_5g":
+                command = "ap name %s no dot11 dual-band shutdown" % (args.ap)
+
+
+    # configure the dual band mode 
     if (args.action == "config_dual_band_mode" and (args.ap is None or args.ap_band_slot is None)):
         raise Exception("action requires AP name and ap band slot")
     if (args.action == "config_dual_band_mode"):
@@ -1255,9 +1292,9 @@ def main():
 
         if args.series == "9800":
             if band == "dual_band_6g":
-                command = "ap name %s no dot11 dual-band slot %s band 6ghz" % (args.ap, args.ap_band_slot)
+                command = "ap name %s dot11 dual-band slot %s band 6ghz" % (args.ap, args.ap_band_slot)
             elif band == "dual_band_5g":
-                command = "ap name %s no dot11 dual-band slot %s band 5ghz" % (args.ap, args.ap_band_slot)
+                command = "ap name %s dot11 dual-band slot %s band 5ghz" % (args.ap, args.ap_band_slot)
             
 
     # This will take the operation status down 
