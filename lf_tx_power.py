@@ -421,11 +421,10 @@ def main():
     parser.add_argument('--tx_power_adjust_6E', action="store_true", help="[test configuration] --power_adjust_6E  stores true, 6E: 20 Mhz pw 1-6, 40 Mhz pw 1-7 ")
     # parser.add_argument('--per_ss', action="store_true", help="[test configuration] --per_ss  stores true, per spatial stream used in pass fail criteria")
 
-
     # test configuration
     parser.add_argument("--testbed_id", "--test_rig", dest='test_rig', type=str, help="[testbed configuration] --test_rig", default="")
     parser.add_argument("--testbed_location", dest='testbed_location', type=str, help="[testbed configuration] --testbed_location <from show ap summary Location>", default="default location")
-    
+
     # kpi_csv arguments:
     parser.add_argument("--test_tag", default="", help="test tag for kpi.csv,  test specific information to differenciate the test")
     parser.add_argument("--dut_hw_version", default="", help="dut hw version for kpi.csv, hardware version of the device under test")
@@ -961,7 +960,7 @@ def main():
         # when using https://regex101.com/ for tool beginning of string begins with ^
         if (searchap):
             if args.series == "9800":
-                pat = "%s\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+%s\\s+(\\S+)" % (args.ap,args.testbed_location)
+                pat = "%s\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+%s\\s+(\\S+)" % (args.ap, args.testbed_location)
             else:
                 pat = "%s\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+.*  (\\S+)\\s+\\S+\\s*\\S+\\s+\\[" % (args.ap)
             m = re.search(pat, line)
@@ -1072,7 +1071,7 @@ def main():
                         elif args.band == '6g':
                             cs.ap_dot11_6ghz_shutdown()
 
-                        # There is only 3 slots on 6g and dualband                     
+                        # There is only 3 slots on 6g and dualband
                         cs.ap_dot11_5ghz_shutdown()
                         cs.ap_dot11_24ghz_shutdown()
 
@@ -1236,7 +1235,7 @@ def main():
                         pss = cs.config_ap_no_dot11_5ghz_shutdown()
                         logg.info(pss)
                     elif args.band == '24g':
-                    # enable wlan 24ghz
+                        # enable wlan 24ghz
                         pss = cs.config_no_ap_dot11_24ghz_shutdown()
                         logg.info(pss)
                         # enable 24ghz operation status
@@ -1490,7 +1489,7 @@ def main():
                         time.sleep(1)
 
                     if args.series == "9800":
-                        # being explicite as 
+                        # being explicite as
                         if args.band == 'dual_band_6g':
                             pss = cs.show_ap_dot11_dual_band_6gz_summary()
                         elif args.band == 'dual_band_5g':
@@ -1543,7 +1542,6 @@ def main():
                             # exit_test(workbook)
                             summary = "empty_process_error"
 
-
                     # Gather probe results and record data, verify NSS, BW, Channel
                     i = 0
                     beacon_sig = None
@@ -1568,7 +1566,7 @@ def main():
                         foundit = False
                         for line in pss.splitlines():
                             # logg.info("probe-line: %s"%(line))
-                            # TODO switch to signal avg 
+                            # TODO switch to signal avg
                             # m = re.search('signal avg:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
                             m = re.search('signal:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
                             # print("m singal avg : {}".format(m))
@@ -1751,7 +1749,6 @@ def main():
                     diff_a3 = ""
                     diff_a4 = ""
 
-
                     pfs = "PASS"
                     pfrange = pf_dbm
 
@@ -1762,8 +1759,7 @@ def main():
                     diff_dbm = calc_dbm - cc_dbmi
                     if(int(abs(diff_dbm)) > pfrange):
                         w_tot = "Info: Controller dBm and Calculated dBm power different by greater than +/- {} dBm".format(
-                            args.pf_dbm) # pass / fail dbm
-                        
+                            args.pf_dbm)  # pass / fail dbm
 
                     logg.info("diff_dbm {} calc_dbm {} - cc_dbmi {}".format(diff_dbm, calc_dbm, cc_dbmi))
                     diff_dbm_beacon = calc_dbm_beacon - cc_dbmi
@@ -1772,7 +1768,6 @@ def main():
                     if(int(abs(diff_dbm_beacon)) > int(args.beacon_dbm_diff)):
                         w_tot = "WARN: Controller dBm and Calculated dBm Beacon power different by greater than +/- {} dBm".format(
                             args.beacon_dbm_diff)
-
 
                     # Allowed per path is what we expect the AP should be transmitting at.
                     # calc_ant1 is what we calculated it actually transmitted at based on rssi
@@ -1785,8 +1780,8 @@ def main():
                         diff_a1 = calc_ant1 - cc_dbmi
                         logg.info("(Offset 1) diff_a1 (): {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
 
-                        # if args.per_ss:                        
-                        if (abs(diff_a1) > pfrange ):
+                        # if args.per_ss:
+                        if (abs(diff_a1) > pfrange):
                             pf = 0
                     if (int(_nss) == 2):
                         # NSS of 2 means each chain should transmit at 1/2 total power, thus the '- 3'
@@ -1798,10 +1793,10 @@ def main():
 
                         diff_a2 = calc_ant2 - allowed_per_path
                         logg.info("(Offset 2) diff_a2: {} = calc_ant2: {} - allowed_per_path: {}".format(diff_a2, calc_ant2, allowed_per_path))
-                        # if args.per_ss:                        
+                        # if args.per_ss:
                         if ((abs(diff_a1) > pfrange) or
-                            (abs(diff_a2) > pfrange)):
-                                pf = 0
+                                (abs(diff_a2) > pfrange)):
+                            pf = 0
                     if (int(_nss) == 3):
                         # NSS of 3 means each chain should transmit at 1/3 total power, thus the '- 5'
                         allowed_per_path = cc_dbmi - 5
@@ -1816,10 +1811,10 @@ def main():
                         diff_a3 = calc_ant3 - allowed_per_path
                         logg.info("(Offset 3) diff_a3: {} = calc_ant3: {} - allowed_per_path: {}".format(diff_a3, calc_ant3, allowed_per_path))
 
-                        # if args.per_ss:                        
+                        # if args.per_ss:
                         if ((abs(diff_a1) > pfrange) or
                             (abs(diff_a2) > pfrange) or
-                            (abs(diff_a3) > pfrange)):
+                                (abs(diff_a3) > pfrange)):
                             pf = 0
                     if (int(_nss) == 4):
                         # NSS of 4 means each chain should transmit at 1/4 total power, thus the '- 6'
@@ -1990,7 +1985,7 @@ def main():
                                     logg.info("i_tot {}".format(i_tot))
                                 else:
                                     logg.info("diff_a2: {} failure".format(diff_a2))
-                                    # if args.per_ss:                                    
+                                    # if args.per_ss:
                                     pf = 0
                             if (diff_a3 < -pfrange):
                                 if(diff_a3 < (-pfrange - pf_ignore_offset)):
@@ -2360,7 +2355,6 @@ def main():
         pss = cs.ap_dot11_24ghz_shutdown()
         logg.info(pss)
 
-
         if args.band == 'dual_band_6g':
             pss = cs.config_dot11_dual_band_6ghz_tx_power()
             logg.info(pss)
@@ -2448,7 +2442,7 @@ def main():
             pss = cs.config_no_ap_dot11_24ghz_shutdown()  # enable_network 24ghz
             logg.info(pss)
 
-        # try enabling all bands 
+        # try enabling all bands
         if args.enable_all_bands:
             if args.band == 'dual_band_6g':
                 pss = cs.config_no_ap_dot11_dual_band_6ghz_shutdown()  # enable_network dual_band 6ghz
@@ -2466,15 +2460,15 @@ def main():
             logg.info(pss)
 
     # Show controller status
-    # Note 
+    # Note
     if args.band == 'dual_band_6g':
-        pss = cs.show_ap_dot11_dual_band_6gz_summary() 
+        pss = cs.show_ap_dot11_dual_band_6gz_summary()
         logg.info(pss)
     if args.band == 'dual_band_5g':
-        pss = cs.show_ap_dot11_dual_band_5gz_summary() 
+        pss = cs.show_ap_dot11_dual_band_5gz_summary()
         logg.info(pss)
     if args.band == '6g':
-        pss = cs.show_ap_dot11_6gz_summary()  
+        pss = cs.show_ap_dot11_6gz_summary()
         logg.info(pss)
 
     pss = cs.show_ap_dot11_5gz_summary()
