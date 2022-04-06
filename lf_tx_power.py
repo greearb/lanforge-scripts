@@ -1055,10 +1055,36 @@ def main():
                                                  "--set_ifstate", "down"])
                     cs.show_ap_summary()
 
+                    # if dual band : disable dual-band mode, config mode, enable dual-band mode
+                    # disable dual-band mode
+                    if args.band == "dual_band_6g":
+                        cs.ap_dot11_dual_band_mode_shutdown_6ghz()
+                    elif args.band == "dual_band_5g":
+                        cs.ap_dot11_dual_band_mode_shutdown_5ghz()
+
+                    # config dual-band mode
+                    if args.band == "dual_band_6g":
+                        cs.config_ap_dot11_dual_band_to_6ghz()
+                    elif args.band == "dual_band_5g":
+                        cs.config_ap_dot11_dual_band_to_5ghz()
+
+                    # enable  dual-band mode
+                    if args.band == "dual_band_6g":
+                        cs.ap_dot11_dual_band_no_mode_shutdown_6ghz()
+                    elif args.band == "dual_band_5g":
+                        cs.ap_dot11_dual_band_no_mode_shutdown_5ghz()
+
+
                     # Disable AP, apply settings, enable AP
-                    cs.show_ap_dot11_6gz_shutdown()
+                    if args.band == "dual_band_6g":
+                        cs.show_ap_dot11_dual_band_6g_shutdown()
+                    elif args.band == "dual_band_5g":
+                        cs.show_ap_dot11_dual_band_5g_shutdown()
+                    elif args.band == "6g":
+                        cs.show_ap_dot11_6gz_shutdown()
                     cs.show_ap_dot11_5gz_shutdown()
                     cs.show_ap_dot11_24gz_shutdown()
+
 
                     if args.series == "9800":
                         # 9800 series need to  "Configure radio for manual channel assignment"
