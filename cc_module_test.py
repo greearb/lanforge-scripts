@@ -362,12 +362,14 @@ class create_module_test_object:
         logger.info("config_dot11_dual_band_6ghz_tx_power")
         self.cs.config_dot11_dual_band_6ghz_tx_power()
         # channel
-        self.cs.channel = '1'
+        # self.cs.channel = '1'
+        # self.cs.channel = '33'
+        self.cs.channel = '65'
         logger.info("config_dot11_dual_band_6ghz_channel")
         self.cs.config_dot11_dual_band_6ghz_channel()
-        self.cs.bandwidth = '40'
         # bandwidth
-        self.cs.bandwidth = '20'
+        self.cs.bandwidth = '40'
+        # self.cs.bandwidth = '20'
         self.cs.config_dot11_dual_band_6ghz_channel_width()
 
         # show_wlan_summary
@@ -385,6 +387,14 @@ class create_module_test_object:
             # enable 6g operation status
             pss = self.cs.config_ap_no_dot11_dual_band_6ghz_shutdown()
             logger.info(pss)
+
+            # enable 5g wlan to show scans
+            pss = self.cs.config_no_ap_dot11_5ghz_shutdown()
+            logger.info(pss)
+            # enable 5g operation status
+            pss = self.cs.config_ap_no_dot11_5ghz_shutdown()
+            logger.info(pss)
+
         elif self.cs.band == 'dual_band_5g':
             # enable 5g wlan
             pss = self.cs.config_no_ap_dot11_dual_band_5ghz_shutdown()
@@ -399,8 +409,15 @@ class create_module_test_object:
             # enable 6g operation status
             pss = self.cs.config_ap_no_dot11_6ghz_shutdown()
             logger.info(pss)
+            # enable 5g wlan
+            pss = self.cs.config_no_ap_dot11_5ghz_shutdown()
+            logger.info(pss)
+            # enable 5g operation status
+            pss = self.cs.config_ap_no_dot11_5ghz_shutdown()
+            logger.info(pss)
+
         # 6g needs to see the 5g bands
-        elif self.cs.band == '5g' or self.cs.band == '6g' or self.cs.band == 'dual_band_6g':
+        elif self.cs.band == '5g':
             # enable 5g wlan
             pss = self.cs.config_no_ap_dot11_5ghz_shutdown()
             logger.info(pss)
