@@ -59,13 +59,39 @@ td a, td a:visited {
    color: #005500;
 }
 
-td.up_color {
+.score_card {
+}
+
+.report_card {
+}
+
+.down_color {
+    color: blue;
+}
+
+.neutral_color {
+    color: #777;
+}
+
+.up_color {
+    color: green;
+}
+.fail_metric.down_color {
+   color: orange;
+}
+.fail_metric.neutral_color {
+   color: #555;
+}
+.fail_metric.up_color {
+   color: red;
+}
+.pass_metric.up_color {
    color: green;
 }
-td.neutral_color {
-   color: #777;
+.pass_metric.neutral_color {
+   color: #555;
 }
-td.down_color {
+.pass_metric.down_color {
    color: red;
 }
 
