@@ -35,7 +35,7 @@ table {
 }
 table, td, th {
    border: 1px solid gray;
-   padding 4px;
+   padding: 4px;
    background: white;
 }
 table.noborder, table.noborder td, table.noborder th  {
@@ -58,6 +58,17 @@ th {
 td a, td a:visited {
    color: #005500;
 }
+
+td.up_color {
+   color: green;
+}
+td.neutral_color {
+   color: #777;
+}
+td.down_color {
+   color: red;
+}
+
 #lf_title {
    text-align:          center;
    background-image:    url(candela_swirl_small-72h.png);
@@ -85,7 +96,10 @@ td a, td a:visited {
   font-size: 12px;
   line-height: 1.5;
   margin: 1em;
-  padding: 0.25em inherit 0.25em inherit;
+  padding-top: 0.25em;
+  padding-right: inherit;
+  padding-bottom: 0.25em;
+  padding-left: inherit;
   max-height: 8em;
   overflow: auto;
 }
@@ -105,7 +119,8 @@ li {
    padding: 0;
 }
 .ct-point {
-  stroke-width: 6px;}
+  stroke-width: 6px;
+}
 
 .o_el {
    display:       inline-block;
@@ -144,7 +159,7 @@ li {
    display:       block;
    font-size:     14px;
    margin:        0 auto;
-   padding:       none;
+   padding:       0;
    border:        none;
    background:    white;
    text-align:    center;
@@ -238,6 +253,7 @@ li {
    margin-right:  auto;
    margin-top:    0.5em;
    margin-bottom: 0.2em;
+   font-size:     50px;
    padding-top:   20px;
    padding-left:  20px;
    color:         darkgreen;
@@ -268,7 +284,7 @@ div.HeaderStyle h1, div.HeaderStyle h2 {
    min-width: 800px;
 }
 div.Section {
-   padding 5px;
+   padding: 5px;
    position: relative;
 }
 div.Section img {
@@ -347,7 +363,7 @@ table.dataframe tr th {
    font-family: Consolas,monaco,"Lucida Sans Typewriter","Lucida Typewriter","Courier New",monospace;
    color: #777;
    padding: 2px;
-   line-spacing: 1.05;
+   line-height: 1.05;
    display: block;
    margin: 0;
    padding: 0;
