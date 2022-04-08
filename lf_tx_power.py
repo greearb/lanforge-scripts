@@ -543,6 +543,10 @@ def main():
 
     outfile_path = report.get_report_path()
     current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
+    test_name = ('Tx Power: ' + ' Channel: ' + args.channel.replace(' ', '_')
+                       + ', NSS: ' + args.nss.replace(' ', '_')
+                       + ', BW: ' + args.bandwidth.replace(' ', '_')
+                       + ', Tx Power: ' + args.txpower.replace(' ', '_'))
     if (args.outfile):
         outfile_tmp = (outfile_path + '/' + current_time + '_' + args.outfile
                        # TODO - have the channel, nss, bw, txpower in outfile
@@ -684,6 +688,7 @@ def main():
     # bold = workbook.add_format({'bold': True, 'align': 'center'})
     dblue_bold = workbook.add_format({'bold': True, 'align': 'center'})
     dblue_bold.set_bg_color("#b8cbe4")
+    # dblue_bold.set_bg_color("#00FFFF")
     dblue_bold.set_border(1)
     dtan_bold = workbook.add_format({'bold': True, 'align': 'center'})
     dtan_bold.set_bg_color("#dcd8c3")
@@ -737,12 +742,35 @@ def main():
     orange_left = workbook.add_format({'color': 'orange', 'align': 'left'})
     orange_left.set_bg_color("#e0efda")
     orange_left.set_border(1)
+    # Set up some formats to use.
+    dark_green = workbook.add_format({'color': '#006400','bold': True})
+    black = workbook.add_format({'color': 'black','bold': True})    
+    # #e68b15
+    title_format = workbook.add_format({
+        'bold': 1,
+        'border': 10,
+        'align': 'left',
+        'valign': 'vcenter',
+        'fg_color': "#FFD700"})
 
-    worksheet.set_row(0, 75)  # Set height
+    row = 0
+    col = 0
+    worksheet.set_row(0,40)
+    worksheet.set_column(0,0,10)
+    # Create a format to use in the merged range.
+    # https://xlsxwriter.readthedocs.io/worksheet.html
+    # parameters  merge_range(first_row, first_col, last_row, last_col, data[, cell_format])
+    # worksheet.merge_range(0,0,0,27, '   Candela Technologies : {test_name}'.format(test_name=test_name), title_format)
+
+    # Can only write simple types to merged ranges so write a blank string
+    worksheet.merge_range(0,0,0,39, ' ', title_format)
+    worksheet.write_rich_string(0,0, dark_green, '      Candela Technologies : ', black, '{test_name}'.format(test_name=test_name), title_format)
+
+    worksheet.set_row(1, 60)  # Set height
     worksheet.set_column(0, 0, 10)  # Set width
 
+    row = 1
     col = 0
-    row = 0
     worksheet.write(row, col, 'Regulatory\nDomain', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 16)  # Set width
@@ -2515,7 +2543,6 @@ def main():
         pss = cs.show_ap_dot11_dual_band_5gz_summary()
         logg.info(pss)
     if args.band == '6g':
-        pss = cs.show_ap_dot11_6gz_summary()
         logg.info(pss)
 
     pss = cs.show_ap_dot11_5gz_summary()
