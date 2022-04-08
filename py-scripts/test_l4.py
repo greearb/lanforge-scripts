@@ -186,7 +186,7 @@ class IPV4L4(Realm):
     # as an array of objects.
     def get_rx_values(self):
         endp_list = self.json_get("/layer4/all")
-        logger.info("endp_list: {endp_list}".format(endp_list=endp_list))
+        # logger.info("endp_list: {endp_list}".format(endp_list=endp_list))
 
         endp_rx_drop_map = {}
         endp_rx_map = {}
@@ -492,7 +492,7 @@ Generic command example:
                         default=1)
     parser.add_argument('--url', help='--url specifies upload/download, address, and dest',
                         default="dl http://10.40.0.1 /dev/null")
-    parser.add_argument('--test_duration', help='duration of test', default="1m")
+    parser.add_argument('--test_duration', help='duration of test', default="2m")
     parser.add_argument('--target_per_ten',
                         help='--target_per_ten target number of request per ten minutes. test will check for 90 percent this value',
                         default=600)
@@ -624,6 +624,7 @@ Generic command example:
         if os.path.isdir('/home/lanforge/report-data'):
             homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':', '-') + 'test_l4'
             path = os.path.join('/home/lanforge/report-data/', homedir)
+            logger.info(path)
             os.mkdir(path)
         else:
             path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -631,11 +632,14 @@ Generic command example:
         if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
                                   'xlsx']:
             rpt_file = path + '/data.' + args.output_format
+            logger.info(rpt_file)
         else:
             logger.info('Defaulting data file output type to Excel')
             rpt_file = path + '/data.xlsx'
+            logger.info(rpt_file)
     else:
         rpt_file = args.report_file
+        logger.info(rpt_file)
 
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
                                           radio=args.radio)
