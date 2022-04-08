@@ -357,13 +357,13 @@ def main():
     parser.add_argument("-p", "--passwd", type=str, help="[controller configuration] credential password --passwd Cisco123", required=True)
     parser.add_argument('-ccp', '--prompt', type=str, help="[controller configuration] controller prompt --prompt WLC1", required=True)
     parser.add_argument("--series", type=str, help="[controller configuration] controller series --series 9800", required=True)
-    parser.add_argument("--band", type=str, help="band testing --band 6g", choices=["5g", "24g", "6g"])
+    parser.add_argument("--band", type=str, help="band testing --band 6g", choices=["5g", "24g", "6g", "dual_band_5g","dual_band_6g"])
     parser.add_argument("--module", type=str, help="[controller configuration] series module (cc_module_9800_3504.py)  --module cc_module_9800_3504 ", required=True)
     parser.add_argument("--timeout", type=str, help="[controller configuration] controller command timeout --timeout 3 ", default=3)
 
     # AP configuration
     parser.add_argument("-a", "--ap", type=str, help="[AP configuration] select AP  ", required=True)
-    parser.add_argument("--ap_slot", type=str, dest="ap_slot", help="[AP configuration] --ap_slot 3 , 9800 AP slot , use show ap summary", required=True)
+    parser.add_argument("--ap_slot", type=str, dest="ap_slot", help="[AP configuration] --ap_slot 3 , 9800 AP slot , deprecated", required=True)
     parser.add_argument("--ap_dual_band_slot_6g", type=str, help="[AP configuration] --ap_dual_band_slot_6g 3 , 9800 AP dual-band slot , for 6g dual-band use show ap dot11 dual-band summary", default='2')
     parser.add_argument("--ap_dual_band_slot_5g", type=str, help="[AP configuration] --ap_dual_band_slot_5g 1 , 9800 AP dual-band slot , for 5g dual-band use show ap dot11 dual-band summary", default='2')
     parser.add_argument("--ap_band_slot_6g", type=str, help="[AP configuration] --ap_band_slot_6g 3 , 9800 AP band slot , use show ap dot11 6ghz summary", default='2')
@@ -1058,9 +1058,19 @@ def main():
                     # if dual band : disable dual-band mode, config mode, enable dual-band mode
                     # disable dual-band mode
                     if args.band == "dual_band_6g":
+                        logg.info("ap_dot11_dual_band_mode_shutdown_6ghz")
                         cs.ap_dot11_dual_band_mode_shutdown_6ghz()
                     elif args.band == "dual_band_5g":
+                        logg.info("ap_dot11_dual_band_mode_shutdown_5ghz")
                         cs.ap_dot11_dual_band_mode_shutdown_5ghz()
+
+                    # set the radio role selection 
+                    if args.band == 'dual_band_6g':
+                        logg.info("ap_dot11_dual_band_6ghz_radio_role_manual_client_serving")
+                        cs.ap_dot11_dual_band_6ghz_radio_role_manual_client_serving()
+                    elif args.band == 'dual_band_5g':
+                        logg.info("ap_dot11_dual_band_5ghz_radio_role_manual_client_serving")
+                        cs.ap_dot11_dual_band_5ghz_radio_role_manual_client_serving()
 
                     # config dual-band mode
                     if args.band == "dual_band_6g":
@@ -1077,13 +1087,13 @@ def main():
 
                     # Disable AP, apply settings, enable AP
                     if args.band == "dual_band_6g":
-                        cs.show_ap_dot11_dual_band_6g_shutdown()
+                        cs.ap_dot11_dual_band_6ghz_shutdown()
                     elif args.band == "dual_band_5g":
-                        cs.show_ap_dot11_dual_band_5g_shutdown()
+                        cs.ap_dot11_dual_band_5ghz_shutdown()
                     elif args.band == "6g":
-                        cs.show_ap_dot11_6gz_shutdown()
-                    cs.show_ap_dot11_5gz_shutdown()
-                    cs.show_ap_dot11_24gz_shutdown()
+                        cs.ap_dot11_6ghz_shutdown()
+                    cs.ap_dot11_5ghz_shutdown()
+                    cs.ap_dot11_24ghz_shutdown()
 
 
                     if args.series == "9800":
@@ -1237,6 +1247,13 @@ def main():
                         # enable 6g operation status
                         pss = cs.config_ap_no_dot11_6ghz_shutdown()
                         logg.info(pss)
+                                    # enable 5g wlan to show scans
+                        pss = cs.config_no_ap_dot11_5ghz_shutdown()
+                        logger.info(pss)
+                        # enable 5g operation status
+                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+                        logger.info(pss)
+
                     elif args.band == 'dual_band_5g':
                         # enable 5g wlan
                         pss = cs.config_no_ap_dot11_dual_band_5ghz_shutdown()
@@ -1251,7 +1268,14 @@ def main():
                         # enable 6g operation status
                         pss = cs.config_ap_no_dot11_6ghz_shutdown()
                         logg.info(pss)
-                    # 6g needs to see the 5g bands
+                        # 6g needs to see the 5g bands
+                        # enable 5g wlan
+                        pss = cs.config_no_ap_dot11_5ghz_shutdown()
+                        logger.info(pss)
+                        # enable 5g operation status
+                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+                        logger.info(pss)
+
                     elif args.band == '5g' or args.band == '6g' or args.band == 'dual_band_6g':
                         # enable 5g wlan
                         pss = cs.config_no_ap_dot11_5ghz_shutdown()

@@ -294,6 +294,51 @@ class create_module_test_object:
         # AP687D.B45C.2B24                     4      C9136I-B              687d.b45c.2b24  687d.b460.04b0  RM204-TB1-AP5                     US          172.16.222.201                             Registered    
         # APA453.0E7B.CF9C                     2      C9120AXE-B            a453.0e7b.cf9c  d4ad.bda2.2ce0  RM204-TB1-AP2                     US          172.16.222.176                             Registered    
 
+        # helper commands 
+        # WLC# ap slots  , shows the ap slots shows slot dual band
+        # show ap dot11 5ghz summary # slot 2 enabled 
+        #   show ap slots check 
+        # show ap dot11 dual-band summary # will show if in 5g or 6g
+        # show ap name <ap name> dot11 
+        # config file / Cisco - yaml file 
+        # 
+        # Flow of script -for roaming - skeleton. 
+        # show ap summary 
+        # configure wlan - (config file  - security combo)
+        # configure band (config file , 2g/5g/6g) 
+        # config channel / channel width 
+        # AP min state up 
+        # check admin state of AP
+        # Bring down unused band ( if 2g, bring down 5g)
+        # show ap dot11 5ghz summary : verify the configuration
+        # Siffer capture
+        # 
+        # Client side connections
+        # Sniffer verification - 11r configuration (if 11r)
+        # check in controller/AP -> client connected -> also check 11r (sh wireless client details)
+        # Ping traffic or dup traffie - insure smotth
+        # Siffer capture
+        # Roam
+        # Siffer verification 
+        # Keep the iteration for above steps from the ping traffice 
+        # Common clean up 
+        # Table display
+        # Isaac : there needs to be a 5g ssid present for 6E to 6E roaming
+
+        # Nikita - multi client , pass fail criteria
+        # Sythia (Cisco) - 10 20 50 , table per client , number of iterations
+        # Nikita - show transitions using bssi , roam time
+        # Sythia would like data per client,  
+        # pytest / Allure has limitations to show the proper data in Allure
+        # Sythia would prefer data as compared to pass / fail
+
+        # Nikia - how to push voice traffic when attempting to roam
+        # Sythia - VO platinum, VI ,  the clients need to choose traffic (do rdp traffic)
+        # ingress / egress configured by wifi controller.
+        # 
+
+
+
 
         logger.info("test_config_tx_power_dual_6g_wpa3")
         # This needs to be here to disable and delete
@@ -334,8 +379,8 @@ class create_module_test_object:
         elif self.cs.band == 'dual_band_5g':
             logger.info("ap_dot11_dual_band_5ghz_radio_role_manual_client_serving")
             self.cs.ap_dot11_dual_band_5ghz_radio_role_manual_client_serving()
-        elif self.cs.band == '6g':
-            self.cs.ap_dot11_6ghz_radio_role_manual_client_serving()
+        # elif self.cs.band == '6g':
+        #    self.cs.ap_dot11_6ghz_radio_role_manual_client_serving()
         # self.cs.ap_dot11_5ghz_radio_role_manual_client_serving()
         # self.cs.ap_dot11_24ghz_radio_role_manual_client_serving()
 
