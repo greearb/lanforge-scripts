@@ -37,7 +37,7 @@ class lf_clean(Realm):
                  clean_cxs=None,
                  clean_endp=None,
                  clean_sta=None,
-                 sanitze_all=None):
+                 sanitze_mgr=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port),
         self.host = host
@@ -46,7 +46,7 @@ class lf_clean(Realm):
         self.clean_cxs = clean_cxs
         self.clean_endp = clean_endp
         self.clean_sta = clean_sta
-        self.sanitze_all = sanitze_all
+        self.sanitze_mgr = sanitze_mgr
         self.cxs_done = False
         self.endp_done = False
         self.sta_done = False
@@ -62,29 +62,47 @@ class lf_clean(Realm):
             iterations_cxs += 1
             logger.info("cxs_clean: iterations_cxs: {iterations_cxs}".format(iterations_cxs=iterations_cxs))
             cx_json = super().json_get("cx")
-            # cx_json = super().json_get("/port/?fields=cx,alias".format(resource=self.resource))['interfaces']
-            logger.info(cx_json)
+            # logger.info(cx_json)
+            endp_json = super().json_get("endp")
+            # logger.info(endp_json)
             if cx_json is not None:
                 logger.info("Removing old cross connects")
-                for name in list(cx_json):
-                    if name != 'handler' and name != 'uri' and name != 'empty':
-                        logger.info(name)
-                        req_url = "cli-json/rm_cx"
-                        data = {
-                            "test_mgr": "default_tm",
-                            "cx_name": name
-                        }
-                        logger.info(data)
-                        super().json_post(req_url, data)
-                        time.sleep(.5)
+                # delete L3-CX based upon the L3-Endp name & the resource value from
+                # the e.i.d of the associated L3-Endps
+                for cx_name in list(cx_json):
+                    # logger.info(cx_name)
+                    if cx_name != 'handler' and cx_name != 'uri' and cx_name != 'empty':
+                        for endp_num in endp_json['endpoint']:
+                            # get L3-Endp e.i.d & name:
+                            for endp_val in endp_num.values():
+                                endp_eid = endp_val['entity id']
+                                # logger.info(endp_eid)
+                                endp_name = endp_val['name']
+                                # logger.info(endp_name)
+                                # if name + '-A' in endp_name or name + '-B' in endp_name:
+                                if cx_name + '-A' in endp_name:
+                                    endp_eid_split = endp_eid.split('.')
+                                    # endp_eid_split[1] == realm resource value:
+                                    resource_eid = str(endp_eid_split[1])
+                                    # logger.info(resource_eid)
+                                    if resource_eid in self.resource or 'all' in self.resource:
+                                        req_url = "cli-json/rm_cx"
+                                        data = {
+                                            "test_mgr": "default_tm",
+                                            "cx_name": cx_name
+                                        }
+                                        # logger.info(data)
+                                        logger.info("Removing {cx_name}...".format(cx_name=cx_name))
+                                        super().json_post(req_url, data)
+                                        time.sleep(.5)
                 time.sleep(1)
             else:
                 logger.info("No cross connects found to cleanup")
                 still_looking_cxs = False
-        logger.info("clean_cxs still_looking_cxs {cxs_looking}".format(cxs_looking=still_looking_cxs))
-        if not still_looking_cxs:
-            self.cxs_done = True
-        return still_looking_cxs
+                logger.info("clean_cxs still_looking_cxs {cxs_looking}".format(cxs_looking=still_looking_cxs))
+            if not still_looking_cxs:
+                self.cxs_done = True
+            return still_looking_cxs
 
     def endp_clean(self):
         still_looking_endp = True
@@ -93,30 +111,52 @@ class lf_clean(Realm):
         while still_looking_endp and iterations_endp <= 10:
             iterations_endp += 1
             logger.info("endp_clean: iterations_endp: {iterations_endp}".format(iterations_endp=iterations_endp))
-            # get and remove current endps
             endp_json = super().json_get("endp")
-            logger.info(endp_json)
+            # logger.info(endp_json)
+            cx_json = super().json_get("cx")
+            # logger.info(cx_json)
             if endp_json is not None:
                 logger.info("Removing old endpoints")
                 for name in list(endp_json['endpoint']):
-                    logger.info(list(name)[0])
-                    if name[list(name)[0]]["name"] == '':
-                        continue
-                    req_url = "cli-json/rm_endp"
-                    data = {
-                        "endp_name": list(name)[0]
-                    }
-                    logger.info(data)
-                    super().json_post(req_url, data)
-                    time.sleep(.5)
+                    endp_name = list(name)[0]
+                    # logger.info(endp_name)
+                    # get existing L3-CX names:
+                    if cx_json is not None:
+                        for cx_name in list(cx_json):
+                            # logger.info(cx_name)
+                            if cx_name != 'handler' and cx_name != 'uri' and cx_name != 'empty':
+                                # remove all L3-endps without an associated L3-CX:
+                                if cx_name + '-A' not in endp_name and cx_name + '-B' not in endp_name:
+                                    if name[list(name)[0]]["name"] == '':
+                                        continue
+                                    req_url = "cli-json/rm_endp"
+                                    data = {
+                                        "endp_name": list(name)[0]
+                                    }
+                                    # logger.info(data)
+                                    logger.info("Removing {endp_name}...".format(endp_name=endp_name))
+                                    super().json_post(req_url, data)
+                                    time.sleep(.5)
+                    # if there are no L3-CX's, remove all L3-Endps:
+                    else:
+                        if name[list(name)[0]]["name"] == '':
+                            continue
+                        req_url = "cli-json/rm_endp"
+                        data = {
+                            "endp_name": list(name)[0]
+                        }
+                        # logger.info(data)
+                        logger.info("Removing {endp_name}...".format(endp_name=endp_name))
+                        super().json_post(req_url, data)
+                        time.sleep(.5)
                 time.sleep(1)
             else:
                 logger.info("No endpoints found to cleanup")
                 still_looking_endp = False
-        logger.info("clean_endp still_looking_endp {ednp_looking}".format(ednp_looking=still_looking_endp))
-        if not still_looking_endp:
-            self.endp_done = True
-        return still_looking_endp
+                logger.info("clean_endp still_looking_endp {ednp_looking}".format(ednp_looking=still_looking_endp))
+            if not still_looking_endp:
+                self.endp_done = True
+            return still_looking_endp
 
     def sta_clean(self):
         still_looking_sta = True
@@ -219,7 +259,7 @@ class lf_clean(Realm):
                 logger.info("Removing old stations ")
                 '''
                 NOTE: [LF system - APU2/CT521a]: if wiphy radios are deleted
-                      run the following command and reboot to fix: 
+                      run the following command and reboot to fix:
                       /root/lf_kinstall.pl --lfver 5.4.5 --do_sys_reconfig
                 '''
                 for name in list(sanitize_json):
@@ -251,7 +291,6 @@ class lf_clean(Realm):
             if not still_looking_san:
                 self.sanitize_done = True
             return still_looking_san
-
 
     def bridge_clean(self):
         still_looking_br = True
@@ -293,7 +332,7 @@ class lf_clean(Realm):
             else:
                 logger.info("No bridges found to cleanup")
                 still_looking_br = False
-            logger.info("clean_bridge still_looking_br {br_looking}".format(br_looking=still_looking_br))
+                logger.info("clean_bridge still_looking_br {br_looking}".format(br_looking=still_looking_br))
             if not still_looking_br:
                 self.br_done = True
             return still_looking_br
@@ -355,7 +394,7 @@ class lf_clean(Realm):
             else:
                 logger.info("No misc found to cleanup")
                 still_looking_misc = False
-            logger.info("clean_misc still_looking_misc {misc_looking}".format(misc_looking=still_looking_misc))
+                logger.info("clean_misc still_looking_misc {misc_looking}".format(misc_looking=still_looking_misc))
             if not still_looking_misc:
                 self.misc_done = True
             return still_looking_misc
@@ -366,7 +405,6 @@ class lf_clean(Realm):
         3: delete sta
         when deleting sta first, you will end up with phantom CX
     '''
-
     def cleanup(self):
         if self.clean_cxs:
             # also clean the endp when cleaning cxs
@@ -379,6 +417,10 @@ class lf_clean(Realm):
             still_looking_endp = self.endp_clean()
             logger.info("clean_endp: still_looking_endp {looking_endp}".format(looking_endp=still_looking_endp))
 
+        if self.sanitze_mgr:
+            still_looking_san = self.sanitize_all()
+            logger.info("clean_sta: still_looking_san {looking_sta}".format(looking_sta=still_looking_san))
+        '''
         if self.clean_sta:
             still_looking_sta = self.sta_clean()
             logger.info("clean_sta: still_looking_sta {looking_sta}".format(looking_sta=still_looking_sta))
@@ -386,6 +428,7 @@ class lf_clean(Realm):
         if self.clean_br:
             still_looking_br = self.bridge_clean()
             logger.info("clean_br: still_looking_br {looking_br}".format(looking_br=still_looking_br))
+        '''
 
         if self.clean_misc:
             still_looking_misc = self.misc_clean()
@@ -448,8 +491,8 @@ python3 ./lf_clean.py --mgr MGR
         help="--misc, this will clear sta with names phy (not wiphy) and 1.1.eth stations",
         action='store_true')
     parser.add_argument(
-        "--debug", 
-        help="enable debugging", 
+        "--debug",
+        help="enable debugging",
         action="store_true")
     parser.add_argument(
         "--lf_logger_config_json",
@@ -469,7 +512,7 @@ python3 ./lf_clean.py --mgr MGR
 
     # if args.cxs or args.endp or args.sta or args.br or args.misc:
     if args.cxs or args.endp or args.sta or args.br or args.misc or args.sanitize:
-        clean = lf_clean(host=args.mgr, resource=args.resource, clean_cxs=args.cxs, clean_endp=args.endp, clean_sta=args.sta, sanitze_all=args.sanitize)
+        clean = lf_clean(host=args.mgr, resource=args.resource, clean_cxs=args.cxs, clean_endp=args.endp, clean_sta=args.sta, sanitze_mgr=args.sanitize)
         logger.info("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.endp, sta=args.sta))
         if args.cxs:
             logger.info("cleaning cxs will also clean endp")
