@@ -92,7 +92,6 @@ WLC1#ap name APCCC9C.3EF4.DDE0 dot11 6ghz slot 3 ?
 
 [AP Configuration]
 --ap AP687D.B45C.25EC
---ap_slot 3
 --ap_band_slot_6g 3
 
 [wlan configuration]
@@ -130,10 +129,10 @@ WLC1#ap name APCCC9C.3EF4.DDE0 dot11 6ghz slot 3 ?
 
 # Command on one line
 
-./lf_tx_power.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --prompt 'WLC1' --series 9800 --band 6g --module cc_module_9800_3504 --timeout 3 --ap AP687D.B45C.25EC  --ap_slot 3 --ap_band_slot_6g 3 --wlan '6G-wpa3-AP3' --wlan_id 15 --wlan_ssid '6G-wpa3-AP3' --tag_policy 'RM204-TB1-AP4' --policy_profile 'default-policy-profile' --pathloss 69 --antenna_gain 6 --lfmgr '192.168.100.139' --upstream_port eth2 --lfresource 1 --radio wiphy0 --station 'wlan0' --ssid '6G-wpa3-AP3' --ssidpw 'hello123' --security wpa3 --no_cleanup_station --channel 1 --bandwidth 160 --vht160 --nss 2 --txpower 3 --duration 25 --outfile 'tx_power_AP4_AX210_2x2_6E' --no_cleanup  2>&1 |tee tx_output_AP4_AX210_2x2_6E.txt
+./lf_tx_power.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --prompt 'WLC1' --series 9800 --band 6g --module cc_module_9800_3504 --timeout 3 --ap AP687D.B45C.25EC  --ap_band_slot_6g 3 --wlan '6G-wpa3-AP3' --wlan_id 15 --wlan_ssid '6G-wpa3-AP3' --tag_policy 'RM204-TB1-AP4' --policy_profile 'default-policy-profile' --pathloss 69 --antenna_gain 6 --lfmgr '192.168.100.139' --upstream_port eth2 --lfresource 1 --radio wiphy0 --station 'wlan0' --ssid '6G-wpa3-AP3' --ssidpw 'hello123' --security wpa3 --no_cleanup_station --channel 1 --bandwidth 160 --vht160 --nss 2 --txpower 3 --duration 25 --outfile 'tx_power_AP4_AX210_2x2_6E' --no_cleanup  2>&1 |tee tx_output_AP4_AX210_2x2_6E.txt
 
 # Verified 3/1/2022
-./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8887 --scheme ssh --ap AP687D.B45C.25EC  --bandwidth "160" --vht160  --channel "1" --nss 2 --txpower "2" --pathloss 59 --antenna_gain 6 --band 6g --upstream_port eth2 --series 9800 --radio wiphy0 --ap_slot 3 --ap_band_slot_6g 3 --ssid 6G-wpa3-AP3 --prompt "WLC1"  --station 'wlan0' --lfmgr '192.168.100.139' --ssidpw hello123 --security wpa3   --wlan 6G-wpa3-AP3 --wlanID 15 --wlanSSID 6G-wpa3-AP3 --lfresource 1  --tag_policy "RM204-TB1-AP4" --policy_profile "default-policy-profile" --testbed_id 'Cisco-WLC1-AP4' --module 'cc_module_9800_3504' --no_cleanup --outfile 'tx_power_AP4_AX210_2x2_6E' --duration 25  2>&1 |tee tx_output_AP4_AX210_2x2_6E.txt
+./lf_tx_power.py -d localhost -u admin -p Cisco123 --port 8887 --scheme ssh --ap AP687D.B45C.25EC  --bandwidth "160" --vht160  --channel "1" --nss 2 --txpower "2" --pathloss 59 --antenna_gain 6 --band 6g --upstream_port eth2 --series 9800 --radio wiphy0 --ap_band_slot_6g 3 --ssid 6G-wpa3-AP3 --prompt "WLC1"  --station 'wlan0' --lfmgr '192.168.100.139' --ssidpw hello123 --security wpa3   --wlan 6G-wpa3-AP3 --wlanID 15 --wlanSSID 6G-wpa3-AP3 --lfresource 1  --tag_policy "RM204-TB1-AP4" --policy_profile "default-policy-profile" --testbed_id 'Cisco-WLC1-AP4' --module 'cc_module_9800_3504' --no_cleanup --outfile 'tx_power_AP4_AX210_2x2_6E' --duration 25  2>&1 |tee tx_output_AP4_AX210_2x2_6E.txt
 
 ##############################################################################################
 ##############################################################################################
@@ -363,7 +362,6 @@ def main():
 
     # AP configuration
     parser.add_argument("-a", "--ap", type=str, help="[AP configuration] select AP  ", required=True)
-    parser.add_argument("--ap_slot", type=str, dest="ap_slot", help="[AP configuration] --ap_slot 3 , 9800 AP slot , deprecated", required=True)
     parser.add_argument("--ap_dual_band_slot_6g", type=str, help="[AP configuration] --ap_dual_band_slot_6g 3 , 9800 AP dual-band slot , for 6g dual-band use show ap dot11 dual-band summary", default='2')
     parser.add_argument("--ap_dual_band_slot_5g", type=str, help="[AP configuration] --ap_dual_band_slot_5g 1 , 9800 AP dual-band slot , for 5g dual-band use show ap dot11 dual-band summary", default='2')
     parser.add_argument("--ap_band_slot_6g", type=str, help="[AP configuration] --ap_band_slot_6g 3 , 9800 AP band slot , use show ap dot11 6ghz summary", default='2')
@@ -405,6 +403,7 @@ def main():
     parser.add_argument("--wifi_mode", type=str, help="[station configuration] --wifi_mode auto  types auto|a|abg|abgn|abgnAC|abgnAX|an|anAC|anAX|b|bg|bgn|bgnAC|bgnAX|g ", default='auto')
     parser.add_argument("--vht160", action='store_true', help="[station configuration] --vht160 , Enable VHT160 in lanforge ")
     parser.add_argument("--ieee80211w", type=str, help="[station configuration] --ieee80211w 0 (Disabled) 1 (Optional) 2 (Required) (Required needs to be set to Required for 6g and wpa3 default Optional ", default='1')
+    parser.add_argument("--wave2", help="[station configuration] --wave2 , wave2 (9984) has restrictions : 160Mhz is 2x2", action ='store_true')
     parser.add_argument("--no_cleanup_station", action='store_true', help="[station configuration] --no_cleanup_station , do not clean up station after test completes ")
 
     # test configuration
@@ -543,19 +542,20 @@ def main():
 
     outfile_path = report.get_report_path()
     current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
-    test_name = ('Tx Power: ' + ' Channel: ' + args.channel.replace(' ', '_')
-                       + ', NSS: ' + args.nss.replace(' ', '_')
-                       + ', BW: ' + args.bandwidth.replace(' ', '_')
-                       + ', Tx Power: ' + args.txpower.replace(' ', '_'))
+    test_name = ('Tx Power: ' + 'Band: ' + args.band + ', Channel: ' + args.channel
+                       + ', NSS: ' + args.nss
+                       + ', BW: ' + args.bandwidth
+                       + ', Tx Power: ' + args.txpower)
     if (args.outfile):
         outfile_tmp = (outfile_path + '/' + current_time + '_' + args.outfile
-                       # TODO - have the channel, nss, bw, txpower in outfile
+                       + '_band_' + args.band
                        + '_ch_' + args.channel.replace(' ', '_')
                        + '_nss_' + args.nss.replace(' ', '_')
                        + '_bw_' + args.bandwidth.replace(' ', '_')
                        + '_tx_pw_' + args.txpower.replace(' ', '_'))
     else:
         outfile_tmp = (outfile_path + '/' + current_time + '_' + 'tx_power'
+                       + '_band_' + args.band
                        + '_ch_' + args.channel.replace(' ', '_')
                        + '_nss_' + args.nss.replace(' ', '_')
                        + '_bw_' + args.bandwidth.replace(' ', '_')
@@ -576,7 +576,7 @@ def main():
         pf_ignore_offset = int(args.pf_ignore_offset)
     if (args.wlanSSID != args.ssid):
         print("####### ERROR ################################")
-        print("wlanSSID: {} must equial the station ssid: {}".format(args.wlanSSID, args.ssid))
+        print("wlanSSID: {} must equal the station ssid: {}".format(args.wlanSSID, args.ssid))
         print("####### ERROR ################################")
         exit(1)
     if (args.create_wlan):
@@ -616,7 +616,6 @@ def main():
         prompt=args.prompt,
         series=args.series,
         ap=args.ap,
-        ap_slot=args.ap_slot,
         ap_band_slot_6g=args.ap_band_slot_6g,
         port=args.port,
         band=args.band,
@@ -626,7 +625,6 @@ def main():
     cs.wlanSSID = args.wlanSSID
     # TODO change to use args.security_key
     cs.security_key = args.ssidpw
-    # cs.ap_slot = args.slot
 
     if args.create_wlan:
         cs.tag_policy = args.tag_policy
@@ -760,13 +758,12 @@ def main():
     # Create a format to use in the merged range.
     # https://xlsxwriter.readthedocs.io/worksheet.html
     # parameters  merge_range(first_row, first_col, last_row, last_col, data[, cell_format])
-    # worksheet.merge_range(0,0,0,27, '   Candela Technologies : {test_name}'.format(test_name=test_name), title_format)
 
     # Can only write simple types to merged ranges so write a blank string
-    worksheet.merge_range(0,0,0,39, ' ', title_format)
+    worksheet.merge_range(0,0,0,38, ' ', title_format)
     worksheet.write_rich_string(0,0, dark_green, '      Candela Technologies : ', black, '{test_name}'.format(test_name=test_name), title_format)
 
-    worksheet.set_row(1, 60)  # Set height
+    worksheet.set_row(1, 75)  # Set height
     worksheet.set_column(0, 0, 10)  # Set width
 
     row = 1
@@ -1023,23 +1020,19 @@ def main():
                         logg.info("ERROR:  Skipping setting the spatial streams because cannot find Parent radio for station: %s." % (lfstation))
                     else:
                         # Set nss on LANforge Station, not sure it can be done on AP
+                        # for ax210, it can do any bandwidth at up to 2 NSS
+                        # for 9984 (wave-2), it does have restrictions 
+                        # 9984 can do 4x4 at 80Mhz, and 2x2 at 160Mhz
                         if (bw == "160"):
-                            # TODO automatically set vht160 is bw set to 160
-                            # 9984 hardware needs 2 chains to do one NSS at 160Mhz
-                            if (ni > 2):
-                                if(args.vht160):
-                                    ni = 2
-                                    logg.info("NOTE: --vht160 set will set ni : {}".format(ni))
-                                    # Set radio to 2x requested value
-                                    ni *= 2
-                                    logg.info("NOTE: --vht160 set will set  ni * 2 : {}".format(ni))
-                                else:
-                                    logg.info("NOTE: Skipping NSS %s for 160Mhz, LANforge radios do not support more than 2NSS at 160Mhz currently." % (n))
-                                    logg.info("NOTE: use --vht160 to force 2NSS at 160Mhz")
-                                    continue
+                            if(args.vht160):
+                                # for 9984 (wave-2) for 160 Mhz set for 160 set ni = 2 
+                                if(args.wave2):
+                                    ni = int(2)
+                                    logg.info("NOTE: wave2 (9984) has restrictions : 160Mhz is 2x2 --vht160 set and will set ni : {}".format(ni))
                             else:
-                                # Set radio to 2x requested value for 160Mhz
-                                ni *= 2
+                                logg.info("NOTE: Skipping NSS %s for 160Mhz, LANforge needs 160Mhz enabled." % (n))
+                                logg.info("NOTE: use --vht160 to force 160Mhz")
+                                continue
                     antset = 0  # all available
                     if (ni == 1):
                         antset = 1
@@ -1047,6 +1040,8 @@ def main():
                         antset = 4
                     if (ni == 3):
                         antset = 7
+                    if (ni == 4):
+                        antset = 8
                     set_cmd = "set_wifi_radio 1 %s %s NA NA NA NA NA NA NA NA NA %s" % (lfresource, parent, antset)
                     logg.info("Setting LANforge radio to %s NSS with command: %s" % (ni, set_cmd))
                     subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", parent,

@@ -62,7 +62,6 @@ class create_controller_series_object:
                  series=None,
                  band=None,
                  ap=None,
-                 ap_slot=None,  # TODO deprecated , left in for backward compatibility,
                  ap_band_slot_24g=None,
                  ap_band_slot_5g=None,
                  ap_band_slot_6g=None,
