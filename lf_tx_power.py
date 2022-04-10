@@ -382,10 +382,13 @@ def main():
     # tx power pathloss configuration
     parser.add_argument("--pathloss", type=str, help="[tx power configuration] Calculated pathloss between LANforge Station and AP --pathloss 59", required=True)
     parser.add_argument("--antenna_gain", type=str, help="[tx power configuration] Antenna gain,  take into account the gain due to the antenna --antenna_gain 6", required=True)
-    parser.add_argument("--pf_dbm", type=str, help="[tx power configuration] Pass/Fail threshold.  Default is 3", default="3")
     parser.add_argument("--pf_ignore_offset", type=str, help="[tx power configuration] Allow a chain to have lower tx-power and still pass. default 0 so disabled", default="0")
     parser.add_argument("--adjust_nf", action='store_true', help="[tx power configuration] Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
     parser.add_argument('--beacon_dbm_diff', type=str, help="[tx power configuration] --beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured", default="7")
+
+    # pass / fail criterial 
+    parser.add_argument("--pf_dbm", type=str, help="[tx power pass / fail criteria] Pass/Fail threshold per Spetial Stream.  Default is 3", default="3")
+
 
     # traffic generation configuration (LANforge)
     parser.add_argument("--lfmgr", type=str, help="[traffic generation configuration (LANforge)] LANforge Manager IP address --lfmgr 192.168.100.178", required=True)
@@ -1838,7 +1841,7 @@ def main():
                     logg.info("diff_dbm_beacon {} calc_dbm_beacon {} - cc_dbmi {}".format(diff_dbm_beacon, calc_dbm_beacon, cc_dbmi))
 
                     if(int(abs(diff_dbm_beacon)) > int(args.beacon_dbm_diff)):
-                        w_tot = "WARN: Controller dBm and Calculated dBm Beacon power different by greater than +/- {} dBm".format(
+                        w_tot = "INFO: Controller dBm and Calculated dBm Beacon power different by greater than +/- {} dBm".format(
                             args.beacon_dbm_diff)
 
                     # Allowed per path is what we expect the AP should be transmitting at.
