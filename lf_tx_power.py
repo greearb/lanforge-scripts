@@ -239,7 +239,7 @@ Ant 1, Ant 2, Ant 3, Ant 4 : ()
 
     rssi_adj (only used if --adjust_nf and _noise_bare != None) (~line 1263)  _noise_i(_noise_bear) - nf_at_calibration (fixed value of -105)
 
-    Thus calc_antX =  int(antX read from Lanforge) + pi (path loss from command line) + rssi_adj - ag (antenna gain from command line)
+    Thus calc_antX =  int(antX read from Lanforge) + pi (path loss from command line) + rssi_adj + ag (antenna gain from command line)
 
     calc_antX is put on the spread sheet under Ant X
 
@@ -833,16 +833,16 @@ def main():
     worksheet.write(row, col, 'Client Reported\nAnt Sig dBm\n SS 4', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 1 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n - ant gain', dpink_bold)
+    worksheet.write(row, col, 'Calc Ant 1 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 2 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n - ant gain', dpink_bold)
+    worksheet.write(row, col, 'Calc Ant 2 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 3 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n - ant gain', dpink_bold)
+    worksheet.write(row, col, 'Calc Ant 3 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 4 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n - ant gain', dpink_bold)
+    worksheet.write(row, col, 'Calc Ant 4 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
     worksheet.write(row, col, 'Offset 1 = \nCalc Ant\n - cc_dbm(per SS)\n (cc_dbm(per SS)\n is allowed_per_path)', dyel_bold)
@@ -1788,11 +1788,11 @@ def main():
 
                     pi = int(pathloss)
                     ag = int(antenna_gain)
-                    calc_dbm_beacon = int(beacon_sig) + pi + rssi_adj - ag
+                    calc_dbm_beacon = int(beacon_sig) + pi + rssi_adj + ag
                     logg.info("calc_dbm_beacon {}".format(calc_dbm_beacon))
 
                     logg.info("sig: %s" % sig)
-                    calc_dbm = int(sig) + pi + rssi_adj - ag
+                    calc_dbm = int(sig) + pi + rssi_adj + ag
                     logg.info("calc_dbm %s" % (calc_dbm))
 
                     # Calculated per-antenna power is what we calculate the AP transmitted
@@ -1802,22 +1802,22 @@ def main():
                     # then we calculate AP transmitted at +2
                     calc_ant1 = 0
                     if (ants[0] != ""):
-                        calc_ant1 = int(ants[0]) + pi + rssi_adj - ag
-                        logg.info("calc_ant1: {} = ants[0]: {} + pi: {} + rssi_adj: {} - ag: {}".format(calc_ant1, ants[0], pi, rssi_adj, ag))
+                        calc_ant1 = int(ants[0]) + pi + rssi_adj + ag
+                        logg.info("calc_ant1: {} = ants[0]: {} + pi: {} + rssi_adj: {} + ag: {}".format(calc_ant1, ants[0], pi, rssi_adj, ag))
                     calc_ant2 = 0
                     calc_ant3 = 0
                     calc_ant4 = 0
                     if (len(ants) > 1 and ants[1] != ""):
-                        calc_ant2 = int(ants[1]) + pi + rssi_adj - ag
-                        logg.info("calc_ant2: {} = ants[1]: {} + pi: {} + rssi_adj: {} - ag: {}".format(calc_ant2, ants[1], pi, rssi_adj, ag))
+                        calc_ant2 = int(ants[1]) + pi + rssi_adj + ag
+                        logg.info("calc_ant2: {} = ants[1]: {} + pi: {} + rssi_adj: {} + ag: {}".format(calc_ant2, ants[1], pi, rssi_adj, ag))
 
                     if (len(ants) > 2 and ants[2] != ""):
-                        calc_ant3 = int(ants[2]) + pi + rssi_adj - ag
-                        logg.info("calc_ant3: {} = ants[2]: {} + pi: {} + rssi_adj: {} - ag: {}".format(calc_ant3, ants[2], pi, rssi_adj, ag))
+                        calc_ant3 = int(ants[2]) + pi + rssi_adj + ag
+                        logg.info("calc_ant3: {} = ants[2]: {} + pi: {} + rssi_adj: {} + ag: {}".format(calc_ant3, ants[2], pi, rssi_adj, ag))
 
                     if (len(ants) > 3 and ants[3] != ""):
-                        calc_ant4 = int(ants[3]) + pi + rssi_adj - ag
-                        logg.info("calc_ant4: {} = ants[3]: {} + pi: {} + rssi_adj: {} - ag: {}".format(calc_ant4, ants[3], pi, rssi_adj, ag))
+                        calc_ant4 = int(ants[3]) + pi + rssi_adj + ag
+                        logg.info("calc_ant4: {} = ants[3]: {} + pi: {} + rssi_adj: {} + ag: {}".format(calc_ant4, ants[3], pi, rssi_adj, ag))
 
                     diff_a1 = ""
                     diff_a2 = ""
