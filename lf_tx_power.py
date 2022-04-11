@@ -1302,7 +1302,7 @@ def main():
                         pss = cs.config_ap_no_dot11_5ghz_shutdown()
                         logger.info(pss)
 
-                    elif args.band == '5g' or args.band == '6g' or args.band == 'dual_band_6g':
+                    elif args.band == '5g':
                         # enable 5g wlan
                         pss = cs.config_no_ap_dot11_5ghz_shutdown()
                         logg.info(pss)
