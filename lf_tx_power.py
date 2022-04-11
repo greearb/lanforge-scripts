@@ -494,6 +494,7 @@ def main():
         txpowers_str = '_'.join(txpowers)
 
         results_dir_name = ("tx_power"
+                            + '_band_' + args.band
                             + '_ch_' + args.channel.replace(' ', '_')
                             + '_nss_' + args.nss.replace(' ', '_')
                             + '_bw_' + args.bandwidth.replace(' ', '_')
@@ -501,6 +502,7 @@ def main():
 
     else:
         results_dir_name = ("tx_power"
+                            + '_band_' + args.band
                             + '_ch_' + args.channel.replace(' ', '_')
                             + '_nss_' + args.nss.replace(' ', '_')
                             + '_bw_' + args.bandwidth.replace(' ', '_')
