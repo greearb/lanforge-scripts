@@ -1120,7 +1120,8 @@ def main():
                         cs.ap_dot11_dual_band_5ghz_shutdown()
                     elif args.band == "6g":
                         cs.ap_dot11_6ghz_shutdown()
-                    cs.ap_dot11_5ghz_shutdown()
+                    elif args.band == "5g":
+                        cs.ap_dot11_5ghz_shutdown()
                     cs.ap_dot11_24ghz_shutdown()
 
 
@@ -1134,8 +1135,8 @@ def main():
                             cs.ap_dot11_dual_band_5ghz_shutdown()
                         elif args.band == '6g':
                             cs.ap_dot11_6ghz_shutdown()
-
-                        cs.ap_dot11_5ghz_shutdown()
+                        elif args.band == '5g':
+                            cs.ap_dot11_5ghz_shutdown()
                         cs.ap_dot11_24ghz_shutdown()
 
                         # manual
@@ -1145,8 +1146,8 @@ def main():
                             cs.ap_dot11_dual_band_5ghz_radio_role_manual_client_serving()
                         elif args.band == '6g':
                             cs.ap_dot11_6ghz_radio_role_manual_client_serving()
-
-                        cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+                        elif args.band == '5g':
+                            cs.ap_dot11_5ghz_radio_role_manual_client_serving()
                         cs.ap_dot11_24ghz_radio_role_manual_client_serving()
 
                     else:
@@ -1273,7 +1274,7 @@ def main():
                         pss = cs.config_no_ap_dot11_dual_band_6ghz_shutdown()
                         logg.info(pss)
                         # enable 6g operation status
-                        pss = cs.config_ap_no_dot11_6ghz_shutdown()
+                        pss = cs.config_ap_no_dot11_dual_band_6ghz_shutdown()
                         logg.info(pss)
                                     # enable 5g wlan to show scans
                         pss = cs.config_no_ap_dot11_5ghz_shutdown()
@@ -1287,7 +1288,7 @@ def main():
                         pss = cs.config_no_ap_dot11_dual_band_5ghz_shutdown()
                         logg.info(pss)
                         # enable 5g operation status
-                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+                        pss = cs.config_ap_no_dot11_dual_band_5ghz_shutdown()
                         logg.info(pss)
                     elif args.band == '6g':
                         # enable 6g wlan
