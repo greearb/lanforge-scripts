@@ -300,8 +300,8 @@ li {
    margin:     5px;
    width:      200px;
    border:     none;
-   filter:     drop-shadow(3px 3px 3px #333333);
-   -webkit-filter: drop-shadow(3px 3px 3px #333333);
+   filter:         drop-shadow(4px 1px 2px #D0D7FE);
+   -webkit-filter: drop-shadow(4px 1px 2px #D0D7FE);
 }
 #BannerLogoFooter {
    text-align: right;
