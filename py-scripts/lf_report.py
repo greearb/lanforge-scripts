@@ -390,12 +390,10 @@ class lf_report:
     <body>
         <div id='BannerBack'>
             <div id='Banner'>
-                <br/>
                 <img id='BannerLogo' align='right' src="CandelaLogo2-90dpi-200x90-trans.png" border='0'/>
                 <div class='HeaderStyle'>
-                    <br>
                     <h1 class='TitleFontPrint' style='color:darkgreen;'>{title}</h1>
-                    <h3 class='TitleFontPrint' style='color:darkgreen;'>{date}</h3>
+                    <h4 class='TitleFontPrintSub' style='color:darkgreen;'>{date}</h4>
                 </div>
             </div>
         </div>
@@ -417,12 +415,10 @@ class lf_report:
     <body>
         <div id='BannerBack'>
             <div id='BannerLeft'>
-                <br/>
                 <img id='BannerLogo' align='right' src="CandelaLogo2-90dpi-200x90-trans.png" border='0'/>
                 <div class='HeaderStyle'>
-                    <br>
                     <h1 class='TitleFontPrint' style='color:darkgreen;'>{title}</h1>
-                    <h3 class='TitleFontPrint' style='color:darkgreen;'>{date}</h3>
+                    <h4 class='TitleFontPrintSub' style='color:darkgreen;'>{date}</h4>
                 </div>
             </div>
         </div>

@@ -23,6 +23,7 @@ h1 { font-size: 30px;}
 h2 { font-size: 24px;}
 h3 { font-size: 18px;}
 h4 { font-size: 14px;}
+
 li,pre,tt {
   text-align: left;
 }
@@ -322,7 +323,7 @@ li {
    margin-right:  auto;
    margin-top:    0.5em;
    margin-bottom: 0.2em;
-   font-size:     50px;
+   /* font-size:     50px;  Let h1 control */
    padding-top:   20px;
    padding-left:  20px;
    color:         darkgreen;
@@ -343,6 +344,20 @@ li {
 .TableFont {}
 .TableBorder {}
 .ImgStyle {}
+div.HeaderStyle>h1.TitleFontPrint {
+    font-size: 50px;
+    height: 150px;
+    max-height: 160px;
+}
+div.HeaderStyle>h3.TitleFontPrintSub {
+    padding-top: 5px;
+    font-size: 30px;
+}
+div.HeaderStyle>h4.TitleFontPrintSub {
+    padding-top: 5px;
+    font-size: 18px;
+}
+
 div.Section h1, div.Section h2 {
    margin: 0 0 0 0em;
 }
