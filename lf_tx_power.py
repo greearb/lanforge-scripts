@@ -780,7 +780,7 @@ def main():
     worksheet.set_column(col, col, 16)  # Set width
     worksheet.write(row, col, 'Controller\n{test_rig}\n{location}'.format(test_rig=args.test_rig,location=args.testbed_location), dblue_bold)
     col += 1
-    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.set_column(col, col, 25)  # Set width
     worksheet.write(row, col, 'Controller\nChannel', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
