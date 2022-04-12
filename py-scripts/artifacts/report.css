@@ -66,6 +66,41 @@ td a, td a:visited {
 .report_card {
 }
 
+.snapshot {
+}
+
+table.snapshot th {
+    font-size: 10px;
+    padding: 2px;
+    margin: 0;
+}
+
+table.snapshot td {
+    font-size: 10px;
+    padding: 2px;
+    margin: 0;
+}
+
+table.snapshot td:not(:first-child) {
+    text-align: right;
+}
+table.snapshot td:nth-child(2),
+table.snapshot td:nth-child(3),
+table.snapshot td:nth-child(4),
+table.snapshot td:nth-child(5),
+table.snapshot td:nth-child(6),
+table.snapshot td:nth-child(8),
+table.snapshot td:nth-child(9),
+table.snapshot td:nth-child(10) {
+    white-space: nowrap;
+}
+
+table.snapshot td:nth-child(11),
+table.snapshot td:nth-child(13) {
+    font-size: 9px;
+    font-family: "Lucida Typewriter", "DejaVu Sans Mono", "Courier New", courier, monospace; 
+}
+
 .down_color {
     color: blue;
 }
@@ -145,6 +180,9 @@ li {
        max-width: 8in;
        margin: 1em auto;
        padding: 0;
+    }
+    .contentDiv pre {
+        max-height: 384px;
     }
     .report_card * {
         font-size: 10px;
@@ -348,7 +386,7 @@ li {
 .ImgStyle {}
 div.HeaderStyle>h1.TitleFontPrint {
     font-size: 50px;
-    height: 150px;
+    height: 85px;
     max-height: 160px;
 }
 div.HeaderStyle>h3.TitleFontPrintSub {
