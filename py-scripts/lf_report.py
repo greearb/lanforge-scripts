@@ -26,6 +26,7 @@ INCLUDE_IN_README
 """
 # CAUTION: adding imports to this file which are not in update_dependencies.py is not advised
 import os
+import sys
 import shutil
 import datetime
 
@@ -33,7 +34,13 @@ import pandas as pd
 import pdfkit
 import argparse
 import traceback
+import logging
+import importlib
 
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 # internal candela references included during intial phases, to be deleted at future date
 # https://candelatech.atlassian.net/wiki/spaces/LANFORGE/pages/372703360/Scripting+Data+Collection+March+2021
@@ -62,13 +69,13 @@ class lf_report:
         # _path is where the directory with the data time will be created
         if _path == "local" or _path == "here":
             self.path = os.path.abspath(__file__)
-            print("path set to file path: {}".format(self.path))
+            logger.info("path set to file path: {}".format(self.path))
         elif _alt_path != "":
             self.path = _alt_path
-            print("path set to alt path: {}".format(self.path))
+            logger.info("path set to alt path: {}".format(self.path))
         else:
             self.path = _path
-            print("path set: {}".format(self.path))
+            logger.info("path set: {}".format(self.path))
 
         self.dataframe = _dataframe
         self.text = ""
@@ -155,15 +162,15 @@ class lf_report:
     def move_graph_image(self, ):
         graph_src_file = str(self.graph_image)
         graph_dst_file = str(self.path_date_time) + '/' + str(self.graph_image)
-        print("graph_src_file: {}".format(graph_src_file))
-        print("graph_dst_file: {}".format(graph_dst_file))
+        logger.info("graph_src_file: {}".format(graph_src_file))
+        logger.info("graph_dst_file: {}".format(graph_dst_file))
         shutil.move(graph_src_file, graph_dst_file)
 
     def move_csv_file(self):
         csv_src_file = str(self.csv_file_name)
         csv_dst_file = str(self.path_date_time) + '/' + str(self.csv_file_name)
-        print("csv_src_file: {}".format(csv_src_file))
-        print("csv_dst_file: {}".format(csv_dst_file))
+        logger.info("csv_src_file: {}".format(csv_src_file))
+        logger.info("csv_dst_file: {}".format(csv_dst_file))
         shutil.move(csv_src_file, csv_dst_file)
 
     def set_path(self, _path):
@@ -182,7 +189,7 @@ class lf_report:
         if self.date_time_directory == "":
             self.set_date_time_directory()
         self.path_date_time = os.path.join(self.path, self.date_time_directory)
-        print("path_date_time {}".format(self.path_date_time))
+        logger.info("path_date_time {}".format(self.path_date_time))
         try:
             if not os.path.exists(self.path_date_time):
                 os.mkdir(self.path_date_time)
@@ -191,7 +198,7 @@ class lf_report:
             self.path_date_time = os.path.join(self.current_path, self.date_time_directory)
             if not os.path.exists(self.path_date_time):
                 os.mkdir(self.path_date_time)
-        print("report path : {}".format(self.path_date_time))
+        logger.info("report path : {}".format(self.path_date_time))
 
     def build_log_directory(self):
         if self.log_directory == "":
@@ -201,7 +208,7 @@ class lf_report:
                 os.mkdir(self.log_directory)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            print("exception making {}".format(self.log_directory))
+            logger.critical("exception making {}".format(self.log_directory))
             exit(1)
 
     def set_text(self, _text):
@@ -270,43 +277,43 @@ class lf_report:
 
     def file_add_path(self, file):
         output_file = str(self.path_date_time) + '/' + str(file)
-        print("output file {}".format(output_file))
+        logger.info("output file {}".format(output_file))
         return output_file
 
     def write_html(self):
         self.write_output_html = str(self.path_date_time) + '/' + str(self.output_html)
-        print("write_output_html: {}".format(self.write_output_html))
+        logger.info("write_output_html: {}".format(self.write_output_html))
         try:
             test_file = open(self.write_output_html, "w")
             test_file.write(self.html)
             test_file.close()
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            print("write_html failed")
+            logger.info("write_html failed")
         return self.write_output_html
 
     def write_index_html(self):
         self.write_output_index_html = str(self.path_date_time) + '/' + str("index.html")
-        print("write_output_index_html: {}".format(self.write_output_index_html))
+        logger.info("write_output_index_html: {}".format(self.write_output_index_html))
         try:
             test_file = open(self.write_output_index_html, "w")
             test_file.write(self.html)
             test_file.close()
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            print("write_index_html failed")
+            logger.info("write_index_html failed")
         return self.write_output_index_html
 
     def write_html_with_timestamp(self):
         self.write_output_html = "{}/{}-{}".format(self.path_date_time, self.date, self.output_html)
-        print("write_output_html: {}".format(self.write_output_html))
+        logger.info("write_output_html: {}".format(self.write_output_html))
         try:
             test_file = open(self.write_output_html, "w")
             test_file.write(self.html)
             test_file.close()
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            print("write_html failed")
+            logger.warning("write_html failed")
         return self.write_output_html
 
     # https://wkhtmltopdf.org/usage/wkhtmltopdf.txt
@@ -594,7 +601,7 @@ if __name__ == "__main__":
     # the args parser is not really used , this is so the report is not generated when testing 
     # the imports with --help
     args = parser.parse_args()
-    print("LANforge manager {lfmgr}".format(lfmgr=args.lfmgr))
+    logger.info("LANforge manager {lfmgr}".format(lfmgr=args.lfmgr))
 
     # Testing: generate data frame
     dataframe = pd.DataFrame({
@@ -606,7 +613,7 @@ if __name__ == "__main__":
         'mbps': [300, 300, 300, 10000, 10000, 10000, 10000]
     })
 
-    print(dataframe)
+    logger.info(dataframe)
 
     # Testing: generate data frame 
     dataframe2 = pd.DataFrame({
@@ -635,8 +642,8 @@ if __name__ == "__main__":
     report.build_footer_no_png()
 
     html_file = report.write_html()
-    print("returned file ")
-    print(html_file)
+    logger.info("returned file ")
+    logger.info(html_file)
     report.write_pdf()
 
-    print("report path {}".format(report.get_path()))
+    logger.info("report path {}".format(report.get_path()))
