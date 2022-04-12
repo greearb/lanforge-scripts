@@ -547,12 +547,13 @@ def main():
 
     outfile_path = report.get_report_path()
     current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
-    test_name = ('Tx Power: ' + 'Band: ' + args.band + ', Channel: ' + args.channel
+    test_name = ('Tx Power: ' + 'AP: ' + args.ap + ', Band: ' + args.band + ', Channel: ' + args.channel
                        + ', NSS: ' + args.nss
                        + ', BW: ' + args.bandwidth
                        + ', Tx Power: ' + args.txpower)
     if (args.outfile):
         outfile_tmp = (outfile_path + '/' + current_time + '_' + args.outfile
+                       + '_AP_' + args.ap
                        + '_band_' + args.band
                        + '_ch_' + args.channel.replace(' ', '_')
                        + '_nss_' + args.nss.replace(' ', '_')
@@ -560,6 +561,7 @@ def main():
                        + '_tx_pw_' + args.txpower.replace(' ', '_'))
     else:
         outfile_tmp = (outfile_path + '/' + current_time + '_' + 'tx_power'
+                       + '_AP_' + args.ap
                        + '_band_' + args.band
                        + '_ch_' + args.channel.replace(' ', '_')
                        + '_nss_' + args.nss.replace(' ', '_')
