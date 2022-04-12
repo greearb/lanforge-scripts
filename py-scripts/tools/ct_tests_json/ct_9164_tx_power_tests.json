@@ -114,7 +114,7 @@
                 "args_list":[
                     " --scheme ssh --dest localhost --port 8887",
                     " --user admin --passwd Cisco123 --prompt WLC1",
-                    " --series 9800 --band 5g --module cc_module_9800_3504",
+                    " --series 9800 --band 6g --module cc_module_9800_3504",
                     " --timeout 3 --ap USE_DUT_NAME --ap_band_slot_5g 1",
                     " use_ssid_idx=1 --wlan SSID_USED --wlan_id 2 --wlan_ssid SSID_USED",
                     " --tag_policy RM204-TB1-AP5 --policy_profile default-policy-profile",
