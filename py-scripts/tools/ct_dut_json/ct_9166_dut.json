@@ -7,10 +7,10 @@
         ]  
     },
     "test_dut":{
-        "DUT_SET_NAME": "AP687D.B45C.2B24",
-        "USE_DUT_NAME": "AP687D.B45C.2B24",
+        "DUT_SET_NAME": "APCC9C.3EF4.E0B0",
+        "USE_DUT_NAME": "APCC9C.3EF4.E0B0",
         "DUT_SW": "12345678",
-        "DUT_HW": "C9136I-B",
+        "DUT_HW": "CW9166I-B",
         "DUT_SN": "12345678",
         "wireless_network_dict":{
             "ssid_idx=0":{"ssid_idx":"0","SSID_USED":"24G-wpa2","SSID_PW_USED":"hello123","BSSID_TO_USE":"68:7d:b4:60:04:b0","SECURITY_USED":"wpa2","WLAN_ID_USED":"3"},
