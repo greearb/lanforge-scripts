@@ -373,10 +373,10 @@ li {
    line-height:   1;
    margin-left:   0px;
    margin-right:  auto;
-   margin-top:    0;
+   margin-top:    12px;
    margin-bottom: 0;
    /*font-size: 20px; Let 'h3', etc control this */
-   padding-top:   0px;
+   padding-top:   4px;
    padding-left:  20px;
 }
 
@@ -385,8 +385,8 @@ li {
 .TableBorder {}
 .ImgStyle {}
 div.HeaderStyle>h1.TitleFontPrint {
-    font-size: 50px;
-    height: 85px;
+    font-size: 45px;
+    /*height: 85px;*/
     max-height: 160px;
 }
 div.HeaderStyle>h3.TitleFontPrintSub {
