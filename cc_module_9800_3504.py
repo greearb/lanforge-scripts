@@ -940,7 +940,7 @@ class create_controller_series_object:
         self.band = 'dual_band_5g'
         self.action = 'dual_band_mode_shutdown'
         summary = self.send_command()
-        logger.info("ap name {ap} dot11 dual-band shutdown slot {slot} band 6ghz {band}".format(ap=self.ap, band=self.band, slot=self.ap_band_slot))
+        logger.info("ap name {ap} dot11 dual-band shutdown slot {slot} band 5ghz {band}".format(ap=self.ap, band=self.band, slot=self.ap_band_slot))
         return summary
 
     # dual-band mode shut down 6ghz
@@ -956,7 +956,7 @@ class create_controller_series_object:
         self.band = 'dual_band_5g'
         self.action = 'dual_band_no_mode_shutdown'
         summary = self.send_command()
-        logger.info("ap name {ap} dot11 dual-band no mode shutdown slot {slot} band 6ghz {band}".format(ap=self.ap, band=self.band, slot=self.ap_band_slot))
+        logger.info("ap name {ap} dot11 dual-band no mode shutdown slot {slot} band 5ghz {band}".format(ap=self.ap, band=self.band, slot=self.ap_band_slot))
         return summary
 
     # dual-band change radio roll 6ghz
