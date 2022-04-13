@@ -78,7 +78,7 @@
                     "USE_BATCH_NSS for nss batch: 1 2",
                     "USE_BATCH_BANDWIDTH for bandwidth batch: 20 40 80 160",
                     "USE_BATCH_TX_POWER for tx_power batch: 1 2 3 4 5 6 7 8"],
-                "enabled":"FALSE",
+                "enabled":"TRUE",
                 "load_db":"skip",
                 "batch_channel":"36",
                 "batch_nss":"1",
@@ -158,7 +158,7 @@
                     " use_ssid_idx=1 --radio wiphy1 --station sta0001 --ssid SSID_USED --ssidpw SSID_PW_USED --security SECURITY_USED",
                     " --pathloss 59 --antenna_gain 0",
                     " --lfmgr LF_MGR_IP --upstream_port eth2 --lfresource 1",
-                    " --vht160 --ieee80211w optional",
+                    " --ieee80211w optional",
                     " --channel USE_BATCH_CHANNEL --nss USE_BATCH_NSS --bandwidth USE_BATCH_BANDWIDTH  --txpower USE_BATCH_TX_POWER",
                     " --outfile tx_power --no_cleanup_station --no_cleanup",
                     " --testbed_id RM204-TB1-9166 --testbed_location RM204-TB1-9166",
@@ -183,8 +183,8 @@
                     " use_ssid_idx=1 --radio wiphy1 --station sta0001 --ssid SSID_USED --ssidpw SSID_PW_USED --security SECURITY_USED",
                     " --pathloss 59 --antenna_gain 0",
                     " --lfmgr LF_MGR_IP --upstream_port eth2 --lfresource 1",
-                    " --vht160 --ieee80211w required",
-                    " --channel '36' --nss '1' --bandwidth '160'  --txpower '4'",
+                    " --ieee80211w optional",
+                    " --channel '100' --nss '2' --bandwidth '80'  --txpower '4'",
                     " --outfile tx_power --no_cleanup_station --no_cleanup",
                     " --testbed_id RM204-TB1-9166 --testbed_location RM204-TB1-9166",
                     " --local_lf_report_dir REPORT_PATH"
@@ -197,7 +197,7 @@
                     "USE_BATCH_NSS for nss batch: 1 2",
                     "USE_BATCH_BANDWIDTH for bandwidth batch: 20 40 80 160",
                     "USE_BATCH_TX_POWER for tx_power batch: 1 2 3 4 5 6 7 8"],
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "load_db":"skip",
                 "batch_channel":"1",
                 "batch_nss":"2",
@@ -226,7 +226,7 @@
             },
             "tx_power_batch_override_dual_band_6g":{
                 "NOTE":["tx power dual-band 6g use existing station"],
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "load_db":"skip",
                 "timeout":"180",
                 "command":"lf_tx_power.py",
@@ -267,7 +267,7 @@
                 "command":"./tools/lf_qa.py",
                 "args":"",
                 "args_list":[
-                    "--path REPORT_PATH --store --png --database DATABASE_SQLITE"
+                    "--server file:///  --path REPORT_PATH --store --png --database DATABASE_SQLITE"
                 ]
             }
 
