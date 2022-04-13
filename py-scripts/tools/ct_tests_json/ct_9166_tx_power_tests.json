@@ -8,7 +8,7 @@
             "Batch nss : 1 2 ",
             "Batch tx power (optional, can run all passed in on command line) : 1 2 3 4 5 6 7 8 ",
             "sample command from tools directory:",
-            " ./lf_check.py --json_rig ./ct_rig_json/ct_9136_WLC1_lanforge.json --json_dut ./ct_dut_json/ct_9136_dut.json --json_test ./ct_tests_json/ct_9136_tx_power_tests.json --suite suite_tx_power --path /home/lanforge/html-reports/ct-us-9136",
+            " ./lf_check.py --json_rig ./ct_rig_json/ct_9166_lanforge.json --json_dut ./ct_dut_json/ct_9166_dut.json --json_test ./ct_tests_json/ct_9166_tx_power_tests.json --suite suite_tx_power --path /home/user/lanforge/html-reports/ct-us-9166",
             "24g wlan : 3, 5g wlan : 2, 6g wlan : 1"
         ]  
     },
@@ -21,7 +21,7 @@
                     "USE_BATCH_NSS for nss batch: 1 2",
                     "USE_BATCH_BANDWIDTH for bandwidth batch: 20",
                     "USE_BATCH_TX_POWER for tx_power batch: 1 2 3 4 5 6 7 8"],
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "load_db":"skip",
                 "batch_channel":"11",
                 "batch_nss":"2",
@@ -78,7 +78,7 @@
                     "USE_BATCH_NSS for nss batch: 1 2",
                     "USE_BATCH_BANDWIDTH for bandwidth batch: 20 40 80 160",
                     "USE_BATCH_TX_POWER for tx_power batch: 1 2 3 4 5 6 7 8"],
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "load_db":"skip",
                 "batch_channel":"36",
                 "batch_nss":"1",
@@ -226,7 +226,7 @@
             },
             "tx_power_batch_override_dual_band_6g":{
                 "NOTE":["tx power dual-band 6g use existing station"],
-                "enabled":"FALSE",
+                "enabled":"TRUE",
                 "load_db":"skip",
                 "timeout":"180",
                 "command":"lf_tx_power.py",

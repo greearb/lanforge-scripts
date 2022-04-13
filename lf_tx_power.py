@@ -1384,7 +1384,10 @@ def main():
                                         logg.info("ap : {ap} ap_band_slot_24g: {slot}".format(ap=args.ap, slot=args.ap_band_slot_24g))
 
                                     logg.info(m)
-                                    pat = "%s\\s+(\\S+)\\s+(\\S+)\\s+\\S+\\s+\\S+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+dBm\\)+\\s+(\\S+)+\\s" % (args.ap)
+                                    if args.band == 'dual_band_6g' or args.band == 'dual_band_5g':
+                                        pat = "%s\\s+(\\S+)\\s+(\\S+)\\s+\\S+\\s+\\S+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+dBm\\)+\\s+\\S+\\s+\\S+\\s+(\\S+)" % (args.ap)
+                                    else:
+                                        pat = "%s\\s+(\\S+)\\s+(\\S+)\\s+\\S+\\s+\\S+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+dBm\\)+\\s+(\\S+)+\\s" % (args.ap)
                                     logg.info(pat)
                                     m = re.search(pat, line)
                                     logg.info(m)
