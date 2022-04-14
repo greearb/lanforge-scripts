@@ -171,7 +171,9 @@ def main():
                                  "show_ap_bssid_dual_band_6g", "show_ap_bssid_dual_band_5g", "show_ap_bssid_6g", "show_ap_bssid_5g", "show_ap_bssid_24g",  
                                  "11r_logs", "enable_ft_akm_ftpsk", "enable_ftotd_akm_ftpsk",
                                  "config_dual_band_mode","dual_band_no_mode_shutdown","dual_band_mode_shutdown",
-                                 "enable_ft_akm_ftsae"])
+                                 "enable_ft_akm_ftsae",
+                                 "ap_dot11_dot11ax_mcs_tx_index_spatial_stream", "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream"
+                                 ])
     parser.add_argument("--value", type=str, help="set value")
     # logging configuration
     parser.add_argument(

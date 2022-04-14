@@ -168,6 +168,8 @@ class create_controller_series_object:
         self.info = "Cisco 9800 Controller Series"
         self.pwd = pwd
         self.dtim = None
+        self.spatial_stream = None  # default cannot be NONE for send command
+        self.mcs_tx_index = None    # default cannot be NONE for send command
 
     # TODO update the wifi_ctl_9800_3504 to use 24g, 5g, 6g
 
@@ -218,11 +220,13 @@ class create_controller_series_object:
         if self.pwd is None:
             self.command = ["./wifi_ctl_9800_3504.py", "--scheme", self.scheme, "--dest", self.dest,
                             "--user", self.user, "--passwd", self.passwd, "--prompt", self.prompt,
-                            "--series", self.series, "--ap", self.ap, "--ap_band_slot", self.ap_band_slot, "--band", self.band, "--port", self.port]
+                            "--series", self.series, "--ap", self.ap, "--ap_band_slot", self.ap_band_slot, "--band", self.band, "--port", self.port,
+                            ]
         else:
             self.command = [str(str(self.pwd) + "/wifi_ctl_9800_3504.py"), "--scheme", self.scheme, "--dest", self.dest,
                             "--user", self.user, "--passwd", self.passwd, "--prompt", self.prompt,
-                            "--series", self.series, "--ap", self.ap, "--ap_band_slot", self.ap_band_slot, "--band", self.band, "--port", self.port]
+                            "--series", self.series, "--ap", self.ap, "--ap_band_slot", self.ap_band_slot, "--band", self.band, "--port", self.port,
+                            ]
 
         # Generate command
         if self.action in ['cmd', 'txPower', 'channel', 'bandwidth']:
@@ -270,6 +274,14 @@ class create_controller_series_object:
                 self.policy_profile]
             self.command.extend(self.command_extend)
 
+        elif self.action in ["ap_dot11_dot11ax_mcs_tx_index_spatial_stream", "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream"]:
+            self.command_extend = [
+                "--action", self.action, 
+                "--spatial_stream", self.spatial_stream, 
+                "--mcs_tx_index", self.mcs_tx_index
+            ]
+
+
         # possible need to look for exact command
         elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_ap_wlan_summary", "show_wlan_summary", "show_wlan_id",
                              "advanced", "disable_operation_status",
@@ -278,7 +290,8 @@ class create_controller_series_object:
                              "manual", "auto",
                              "enable_network_dual_band_6ghz", "enable_network_dual_band_5ghz", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
                              "enable_operation_status", "11r_logs", "enable_ft_akm_ftpsk", "enable_ftotd_akm_ftpsk",
-                             "config_dual_band_mode", "dual_band_no_mode_shutdown", "dual_band_mode_shutdown",  "enable_ft_akm_ftsae"]:
+                             "config_dual_band_mode", "dual_band_no_mode_shutdown", "dual_band_mode_shutdown",  "enable_ft_akm_ftsae",
+                             ]:
 
             self.command_extend = ["--action", self.action]
             self.command.extend(self.command_extend)
@@ -1039,6 +1052,25 @@ class create_controller_series_object:
         summary = self.send_command()
         print(summary)
         return summary
+
+    # Adjusting the number of spatial streams in the controller
+    def ap_dot11_dot11ax_mcs_tx_index_spatial_stream(self):
+        logger.info("ap_dot11_dot11ax_mcs_tx_index_spatial_stream")
+        self.action = "ap_dot11_dot11ax_mcs_tx_index_spatial_stream"
+        summary = self.send_command()
+        logger.info(summary)
+        return summary
+
+
+    # disablespatial streams
+    def no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream(self):
+        logger.info("no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream")
+        self.action = "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream"
+        summary = self.send_command()
+        logger.info(summary)
+        return summary
+
+
 
 
 # This next section is to allow for tests to be created without
