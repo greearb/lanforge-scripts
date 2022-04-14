@@ -413,6 +413,7 @@ def main():
     parser.add_argument("-c", "--channel", type=str, help="[test configuration] --channel '1 33' List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
     parser.add_argument("-b", "--bandwidth", type=str, help="[test configuration] --bandwidth '20 40 80 160' List of bandwidths to test. NA means no change")
     parser.add_argument("-n", "--nss", type=str, help="[test configuration] --nss '2' List of spatial streams to test.  NA means no change")
+    parser.add_argument("--set_nss", help="[test configuration] --set_nss  configure controller to spatial streams to test", action ='stort_true')
     parser.add_argument("-T", "--txpower", type=str, help="[test configuration] List of txpowers to test.  NA means no change")
     parser.add_argument('-D', '--duration', type=str, help='[test configuration] --traffic <how long to run in seconds>  example -D 30 (seconds) default: 30 ', default='20')
     parser.add_argument('--wait_time', type=str, help='[test configuration] --wait_time <how long to wait for station to connect seconds>  example --wait_time 180 (seconds) default: 180 ', default='180')
@@ -1002,6 +1003,13 @@ def main():
 
     if myrd == "":
         logger.error("Regulatory domain is blank: --testbed_location <show ap summary Location> : location entered {location}".format(location=args.testbed_location))
+
+    # these are set to configure the number of spatial streams and MCS values
+    # 5g has 8 spatial streams , MCS is 7, 9, 11
+    # ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 1 << - turn on 
+    # no ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 2 <<-- turn off
+
+
     # Loop through all iterations and run txpower tests.
     # The is the main loop of loops:   Channels, spatial streams (nss), bandwidth (bw), txpowers (tx)
     # Note: supports 9800 and 3504 controllers
@@ -1020,6 +1028,122 @@ def main():
             pathloss = cha[1]
             ch = cha[0]
         for n in nss:
+            if (n != "NA" and args.set_nss):
+                num_spatial_streams = int(n)
+                if (args.band == '6g' or args.band == 'dual_band_6g'):
+                    # set the spatial streams for 6g  - need to disable the wlan and re-enable
+                    # ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 1 << - turn on 
+                    # no ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 2 <<-- turn off
+                    if num_spatial_streams == 1 or num_spatial_streams == 2 or num_spatial_streams == 3 or num_spatial_streams == 4:
+                        # enable spatial stream 1
+                        cs.ap_dot11_6ghz_dot11ax_mcs_tx_index_7_spatial_stream_1()
+                        cs.ap_dot11_6ghz_dot11ax_mcs_tx_index_9_spatial_stream_1()
+                        cs.ap_dot11_6ghz_dot11ax_mcs_tx_index_11_spatial_stream_1()
+
+                    if num_spatial_streams == 2 or num_spatial_streams == 3 or num_spatials_streams == 4:
+                        # enable spatial stream  2
+                        cs.ap_dot11_6ghz_dot11ax_mcs_tx_index_7_spatial_stream_2()
+                        cs.ap_dot11_6ghz_dot11ax_mcs_tx_index_9_spatial_stream_2()
+                        cs.ap_dot11_6ghz_dot11ax_mcs_tx_index_11_spatial_stream_2()
+                    else:
+                        # disable spatial stream 2                        
+                        cs.no_ap_dot11_6ghz_dot11ax_mcs_tx_index_7_spatial_stream_2()
+                        cs.no_ap_dot11_6ghz_dot11ax_mcs_tx_index_9_spatial_stream_2()
+                        cs.no_ap_dot11_6ghz_dot11ax_mcs_tx_index_11_spatial_stream_2()
+
+                    if num_spatial_streams == 3 or num_spatials_streams == 4:
+                        # enble spatial stream 3
+                        cs.ap_dot11_6ghz_dot11ax_mcs_tx_index_7_spatial_stream_3()
+                        cs.ap_dot11_6ghz_dot11ax_mcs_tx_index_9_spatial_stream_3()
+                        cs.ap_dot11_6ghz_dot11ax_mcs_tx_index_11_spatial_stream_3()
+                    else:
+                        # disable spatial stream 3
+                        cs.no_ap_dot11_6ghz_dot11ax_mcs_tx_index_7_spatial_stream_3()
+                        cs.no_ap_dot11_6ghz_dot11ax_mcs_tx_index_9_spatial_stream_3()
+                        cs.no_ap_dot11_6ghz_dot11ax_mcs_tx_index_11_spatial_stream_3()
+
+                    if num_spatials_streams == 4:
+                        # enble spatial stream 3
+                        cs.ap_dot11_6ghz_dot11ax_mcs_tx_index_7_spatial_stream_4()
+                        cs.ap_dot11_6ghz_dot11ax_mcs_tx_index_9_spatial_stream_4()
+                        cs.ap_dot11_6ghz_dot11ax_mcs_tx_index_11_spatial_stream_4()
+                    else:
+                        # disable spatial stream 4
+                        cs.no_ap_dot11_6ghz_dot11ax_mcs_tx_index_7_spatial_stream_4()
+                        cs.no_ap_dot11_6ghz_dot11ax_mcs_tx_index_9_spatial_stream_4()
+                        cs.no_ap_dot11_6ghz_dot11ax_mcs_tx_index_11_spatial_stream_4()
+
+
+                if (args.band == '5g' or args.band == 'dual_band_5g'):
+                    # set the spatial streams for 5g  - need to disable the wlan and re-enable
+                    # not spatial streams 5-8 always disabled.
+                    # ap dot11 5ghz dot11ax mcs tx index 7 spatial-stream 1 << - turn on 
+                    # no ap dot11 5ghz dot11ax mcs tx index 7 spatial-stream 2 <<-- turn off
+                    if num_spatial_streams == 1 or num_spatial_streams == 2 or num_spatial_streams == 3 or num_spatial_streams == 4:
+                        # enable spatial stream 1
+                        cs.ap_dot11_5ghz_dot11ax_mcs_tx_index_7_spatial_stream_1()
+                        cs.ap_dot11_5ghz_dot11ax_mcs_tx_index_9_spatial_stream_1()
+                        cs.ap_dot11_5ghz_dot11ax_mcs_tx_index_11_spatial_stream_1()
+
+                    if num_spatial_streams == 2 or num_spatial_streams == 3 or num_spatials_streams == 4:
+                        # enable spatial stream  2
+                        cs.ap_dot11_5ghz_dot11ax_mcs_tx_index_7_spatial_stream_2()
+                        cs.ap_dot11_5ghz_dot11ax_mcs_tx_index_9_spatial_stream_2()
+                        cs.ap_dot11_5ghz_dot11ax_mcs_tx_index_11_spatial_stream_2()
+                    else:
+                        # disable spatial stream 2                        
+                        cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_7_spatial_stream_2()
+                        cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_9_spatial_stream_2()
+                        cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_11_spatial_stream_2()
+
+                    if num_spatial_streams == 3 or num_spatials_streams == 4:
+                        # enble spatial stream 3
+                        cs.ap_dot11_5ghz_dot11ax_mcs_tx_index_7_spatial_stream_3()
+                        cs.ap_dot11_5ghz_dot11ax_mcs_tx_index_9_spatial_stream_3()
+                        cs.ap_dot11_5ghz_dot11ax_mcs_tx_index_11_spatial_stream_3()
+                    else:
+                        # disable spatial stream 3
+                        cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_7_spatial_stream_3()
+                        cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_9_spatial_stream_3()
+                        cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_11_spatial_stream_3()
+
+                    if num_spatials_streams == 4:
+                        # enble spatial stream 3
+                        cs.ap_dot11_5ghz_dot11ax_mcs_tx_index_7_spatial_stream_4()
+                        cs.ap_dot11_5ghz_dot11ax_mcs_tx_index_9_spatial_stream_4()
+                        cs.ap_dot11_5ghz_dot11ax_mcs_tx_index_11_spatial_stream_4()
+                    else:
+                        # disable spatial stream 4
+                        cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_7_spatial_stream_4()
+                        cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_9_spatial_stream_4()
+                        cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_11_spatial_stream_4()
+
+                    # turn off spatial streams 5 - 8
+                    # disable spatial stream 5
+                    cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_7_spatial_stream_5()
+                    cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_9_spatial_stream_5()
+                    cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_11_spatial_stream_5()
+
+                    # disable spatial stream 6
+                    cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_7_spatial_stream_6()
+                    cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_9_spatial_stream_6()
+                    cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_11_spatial_stream_6()
+
+                    # disable spatial stream 7
+                    cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_7_spatial_stream_7()
+                    cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_9_spatial_stream_7()
+                    cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_11_spatial_stream_7()
+
+                    # disable spatial stream 8
+                    cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_7_spatial_stream_8()
+                    cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_9_spatial_stream_8()
+                    cs.no_ap_dot11_5ghz_dot11ax_mcs_tx_index_11_spatial_stream_8()
+
+\
+                elif args.band == '24g':
+                    # set the spatial streams for 24g
+                    pass
+
             for bw in bandwidths:
                 if (n != "NA"):
                     ni = int(n)
