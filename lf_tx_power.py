@@ -362,9 +362,9 @@ def main():
 
     # AP configuration
     parser.add_argument("-a", "--ap", type=str, help="[AP configuration] select AP  ", required=True)
-    parser.add_argument("--ap_dual_band_slot_6g", type=str, help="[AP configuration] --ap_dual_band_slot_6g 3 , 9800 AP dual-band slot , for 6g dual-band use show ap dot11 dual-band summary", default='2')
-    parser.add_argument("--ap_dual_band_slot_5g", type=str, help="[AP configuration] --ap_dual_band_slot_5g 1 , 9800 AP dual-band slot , for 5g dual-band use show ap dot11 dual-band summary", default='2')
-    parser.add_argument("--ap_band_slot_6g", type=str, help="[AP configuration] --ap_band_slot_6g 3 , 9800 AP band slot , use show ap dot11 6ghz summary", default='2')
+    parser.add_argument("--ap_dual_band_slot_6g", type=str, help="[AP configuration] --ap_dual_band_slot_6g 2 , 9800 AP dual-band slot , for 6g dual-band use show ap dot11 dual-band summary", default='2')
+    parser.add_argument("--ap_dual_band_slot_5g", type=str, help="[AP configuration] --ap_dual_band_slot_5g 2 , 9800 AP dual-band slot , for 5g dual-band use show ap dot11 dual-band summary", default='2')
+    parser.add_argument("--ap_band_slot_6g", type=str, help="[AP configuration] --ap_band_slot_6g 2 , 9800 AP band slot , use show ap dot11 6ghz summary", default='2')
     parser.add_argument("--ap_band_slot_5g", type=str, help="[AP configuration] --ap_band_slot_5g 1 , 9800 AP band slot , use show ap dot11 5ghz summary", default='1')
     parser.add_argument("--ap_band_slot_24g", type=str, help="[AP configuration] --ap_band_slot_24g 0 , 9800 AP band slot , use show ap dot11 24ghz summary", default='0')
 
@@ -1084,6 +1084,10 @@ def main():
                     port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
                                                  "--set_ifstate", "down"])
                     cs.show_ap_summary()
+
+                    # when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .  
+                    # 5g slot 1 will used the 5g channels to 64,  the 5g dual-band will use channels 100 -> 165.  
+                    # When 5g (slot 1) and dual-band 6g (slot 2) is enabled then 5g (slot 1) has all bands.
 
                     # if dual band : disable dual-band mode, config mode, enable dual-band mode
                     # disable dual-band mode

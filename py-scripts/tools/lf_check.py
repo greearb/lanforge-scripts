@@ -470,20 +470,39 @@ class lf_check():
 Results from {hostname}:
 Suite: {suite}
 Database: {db}
+
+lf_check Test Suite Report:
 http://{hostname}/{report}
-""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, suite=self.test_suite, db=self.database_sqlite, hostname=self.hostname, report=report_url)
+
+lf_check Local Test Suite Report:
+file:///{report_local}
+
+""".format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, suite=self.test_suite, db=self.database_sqlite, hostname=self.hostname, report=report_url, report_local=report_url)
+
+
         else:
             message_txt = """Results from {hostname}:
 Suite: {suite}
 Database: {db}
-http://{hostname}/{report}""".format(hostname=self.hostname, suite=self.test_suite, db=self.database_sqlite, report=report_url)
+
+lf_check Test Suite Report:
+http://{hostname}/{report}
+
+lf_check Local Test Suite Report:
+file:///{report_local}
+""".format(hostname=self.hostname, suite=self.test_suite, db=self.database_sqlite, report=report_url, report_local=report_url)
 
         # Put in report information current two methods supported,
         if "NA" not in self.qa_report_html:
             message_txt += """
+            
 QA Report Dashboard:
 http://{ip_qa}/{qa_url}
-NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url)
+
+QA Report Dashboard Local:
+file:///{qa_url_local}
+
+NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url, qa_url_local=qa_url)
 
         else:
             message_txt += """
