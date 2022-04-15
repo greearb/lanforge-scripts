@@ -251,6 +251,13 @@ Show the tx_power for a specific station:
  iw dev <station> station dump
  iw dev sta0000 station dump
 
+#####################################################################
+5g dual band restrictions
+#####################################################################
+
+when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .
+5g slot 1 will used the 5g channels to 64,  the 5g dual-band will use channels 100 -> 165.
+When 5g (slot 1) and dual-band 6g (slot 2) is enabled then 5g (slot 1) has all ba
 '''
 
 if sys.version_info[0] != 3:
@@ -424,11 +431,11 @@ def main():
     parser.add_argument("-enb", "--enable_all_bands", dest="enable_all_bands", action="store_true", help="[test configuration] --enable_all_bands, enable 6g, 5g, 24b bands at end of test")
     parser.add_argument('--tx_power_adjust_6E', action="store_true", help="[test configuration] --power_adjust_6E  stores true, 6E: 20 Mhz pw 1-6, 40 Mhz pw 1-7 ")
     # parser.add_argument('--per_ss', action="store_true", help="[test configuration] --per_ss  stores true, per spatial stream used in pass fail criteria")
-    
+
     # test configuration
     parser.add_argument("--testbed_id", "--test_rig", dest='test_rig', type=str, help="[testbed configuration] --test_rig", default="")
     parser.add_argument("--testbed_location", dest='testbed_location', type=str, help="[testbed configuration] --testbed_location <from show ap summary Location>", default="default location")
-    
+
     # kpi_csv arguments:
     parser.add_argument("--test_tag", default="", help="test tag for kpi.csv,  test specific information to differenciate the test")
     parser.add_argument("--dut_hw_version", default="", help="dut hw version for kpi.csv, hardware version of the device under test")
@@ -437,11 +444,11 @@ def main():
     parser.add_argument("--dut_serial_num", default="", help="dut serial for kpi.csv, serial number / serial number of the device under test")
     parser.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
     parser.add_argument("--test_id", default="TX power", help="test-id for kpi.csv,  script or test name")
-    
+
     parser.add_argument('--local_lf_report_dir', help='--local_lf_report_dir override the report path, primary use when running test in test suite', default="")
-    
+
     # TODO ADD KPI configuration
-    
+
     # debug configuration
     parser.add_argument("--wait_forever", action='store_true', help="[debug configuration] Wait forever for station to associate, may aid debugging if STA cannot associate properly")
     # TODO remove the cleanup flag
@@ -449,15 +456,15 @@ def main():
     parser.add_argument("--lf_logger_config_json", help="[debug configuration] --lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument("--exit_on_fail", action='store_true', help="[debug configuration] --exit_on_fail,  exit on test failure")
     parser.add_argument("--exit_on_error", action='store_true', help="[debug configuration] --exit_on_error, exit on test error, test mechanics failed")
-    
+
     # current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]
     # print(current_time)
     # usage()
     args = None
-    
+
     # Parcing the input parameters and assignment
     args = parser.parse_args()
-    
+
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
     if args.lf_logger_config_json:

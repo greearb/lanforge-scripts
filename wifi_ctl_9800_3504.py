@@ -159,6 +159,9 @@ def main():
     # parser.add_argument("--tag_policy",     type=str, help="--tag_policy default-tag-policy", default="RM204-TB2")
     parser.add_argument("--policy_profile", type=str, help="--policy_profile default-policy-profile")
     # parser.add_argument("--wlan_name", type=str, help="--wlan_name open-wlan", default="open-wlan")
+    parser.add_argument("--spatial_stream", help="--spatial_stream 1 , 2, 3, or 4 , configure controller for specific number of spatial streams")
+    parser.add_argument("--mcs_tx_index", help="--mcs_tx_index 7, 9  or 11 to , configure controller for specific number of spatial streams")
+
 
     parser.add_argument("--action", type=str, help="perform action",
                         choices=["config", "dtim", "debug_disable_all", "no_logging_console", "line_console_0", "country", "ap_country", 
@@ -1113,6 +1116,46 @@ def main():
 
     if (args.action == "country"):
         command = "config country %s" % (args.value)
+
+    if (args.action == "ap_dot11_dot11ax_mcs_tx_index_spatial_stream" and (args.spatial_stream is None or args.mcs_tx_index is None)):
+        raise Exception("action requires spatial_stream and mcs_tx_index to be set: {action}".format(action=action))
+    if (args.action == "ap_dot11_dot11ax_mcs_tx_index_spatial_stream"):
+        if args.series == "9800":
+            if (args.band == '6g' or args.band == 'dual_band_6g'):
+                command = "ap dot11 6ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index,stream=args.spatial_stream)
+            elif (args.band == '5g' or args.band == 'dual_band_5g'):
+                command = "ap dot11 5ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index,stream=args.spatial_stream)
+            elif (args.band == '24g'):
+                command = "ap dot11 24ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index,stream=args.spatial_stream)
+
+            egg.sendline("config t")
+            sleep(0.1)
+            i = egg.expect_exact(["(config)#", pexpect.TIMEOUT], timeout=timeout)
+            if i == 0:
+                egg.sendline(command)
+                sleep(0.1)
+            if i == 1:
+                logg.info("timed out on (config)# command: {command}".format(command=command))
+
+    if (args.action == "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream" and (args.spatial_stream is None or args.mcs_tx_index is None)):
+        raise Exception("action requires spatial_stream and mcs_tx_index to be set: {action}".format(action=action))
+    if (args.action == "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream"):
+        if args.series == "9800":
+            if (args.band == '6g' or args.band == 'dual_band_6g'):
+                command = "no ap dot11 6ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index,stream=args.spatial_stream)
+            elif (args.band == '5g' or args.band == 'dual_band_5g'):
+                command = "no ap dot11 5ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index,stream=args.spatial_stream)
+            elif (args.band == '24g'):
+                command = "no ap dot11 24ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index,stream=args.spatial_stream)
+
+            egg.sendline("config t")
+            sleep(0.1)
+            i = egg.expect_exact(["(config)#", pexpect.TIMEOUT], timeout=timeout)
+            if i == 0:
+                egg.sendline(command)
+                sleep(0.1)
+            if i == 1:
+                logg.info("timed out on (config)# command: {command}".format(command=command))
 
     if (args.action == "manual" and args.ap is None):
         raise Exception("action requires AP name")
