@@ -356,7 +356,7 @@ def main():
     parser.add_argument("-p", "--passwd", type=str, help="[controller configuration] credential password --passwd Cisco123", required=True)
     parser.add_argument('-ccp', '--prompt', type=str, help="[controller configuration] controller prompt --prompt WLC1", required=True)
     parser.add_argument("--series", type=str, help="[controller configuration] controller series --series 9800", required=True)
-    parser.add_argument("--band", type=str, help="band testing --band 6g", choices=["5g", "24g", "6g", "dual_band_5g","dual_band_6g"])
+    parser.add_argument("--band", type=str, help="band testing --band 6g", choices=["5g", "24g", "6g", "dual_band_5g", "dual_band_6g"])
     parser.add_argument("--module", type=str, help="[controller configuration] series module (cc_module_9800_3504.py)  --module cc_module_9800_3504 ", required=True)
     parser.add_argument("--timeout", type=str, help="[controller configuration] controller command timeout --timeout 3 ", default=3)
 
@@ -386,9 +386,8 @@ def main():
     parser.add_argument("--adjust_nf", action='store_true', help="[tx power configuration] Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
     parser.add_argument('--beacon_dbm_diff', type=str, help="[tx power configuration] --beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured", default="7")
 
-    # pass / fail criterial 
+    # pass / fail criterial
     parser.add_argument("--pf_dbm", type=str, help="[tx power pass / fail criteria] Pass/Fail threshold per Spetial Stream.  Default is 3", default="3")
-
 
     # traffic generation configuration (LANforge)
     parser.add_argument("--lfmgr", type=str, help="[traffic generation configuration (LANforge)] LANforge Manager IP address --lfmgr 192.168.100.178", required=True)
@@ -406,18 +405,16 @@ def main():
     parser.add_argument("--wifi_mode", type=str, help="[station configuration] --wifi_mode auto  types auto|a|abg|abgn|abgnAC|abgnAX|an|anAC|anAX|b|bg|bgn|bgnAC|bgnAX|g ", default='auto')
     parser.add_argument("--vht160", action='store_true', help="[station configuration] --vht160 , Enable VHT160 in lanforge ")
     parser.add_argument("--ieee80211w", type=str, help="[station configuration] --ieee80211w 0 (Disabled) 1 (Optional) 2 (Required) (Required needs to be set to Required for 6g and wpa3 default Optional ", default='1')
-    parser.add_argument("--wave2", help="[station configuration] --wave2 , wave2 (9984) has restrictions : 160Mhz is 2x2", action ='store_true')
+    parser.add_argument("--wave2", help="[station configuration] --wave2 , wave2 (9984) has restrictions : 160Mhz is 2x2", action='store_true')
     parser.add_argument("--no_cleanup_station", action='store_true', help="[station configuration] --no_cleanup_station , do not clean up station after test completes ")
 
     # test configuration
     parser.add_argument("-c", "--channel", type=str, help="[test configuration] --channel '1 33' List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
     parser.add_argument("-b", "--bandwidth", type=str, help="[test configuration] --bandwidth '20 40 80 160' List of bandwidths to test. NA means no change")
     parser.add_argument("-n", "--nss", type=str, help="[test configuration] --nss '2' List of spatial streams to test.  NA means no change")
-<<<<<<< HEAD
-    parser.add_argument("--set_nss", help="[test configuration] --set_nss  configure controller to spatial streams to test", action ='stort_true')
-=======
-    parser.add_argument("--set_nss", help="[test configuration] --set_nss  configure controller to spatial streams to test", action ='store_true')
->>>>>>> lf_tx_power.py : enable and disable spatial streams
+
+
+    parser.add_argument("--set_nss", help="[test configuration] --set_nss  configure controller to spatial streams to test", action='store_true')
     parser.add_argument("-T", "--txpower", type=str, help="[test configuration] List of txpowers to test.  NA means no change")
     parser.add_argument('-D', '--duration', type=str, help='[test configuration] --traffic <how long to run in seconds>  example -D 30 (seconds) default: 30 ', default='20')
     parser.add_argument('--wait_time', type=str, help='[test configuration] --wait_time <how long to wait for station to connect seconds>  example --wait_time 180 (seconds) default: 180 ', default='180')
@@ -427,11 +424,11 @@ def main():
     parser.add_argument("-enb", "--enable_all_bands", dest="enable_all_bands", action="store_true", help="[test configuration] --enable_all_bands, enable 6g, 5g, 24b bands at end of test")
     parser.add_argument('--tx_power_adjust_6E', action="store_true", help="[test configuration] --power_adjust_6E  stores true, 6E: 20 Mhz pw 1-6, 40 Mhz pw 1-7 ")
     # parser.add_argument('--per_ss', action="store_true", help="[test configuration] --per_ss  stores true, per spatial stream used in pass fail criteria")
-
+    
     # test configuration
     parser.add_argument("--testbed_id", "--test_rig", dest='test_rig', type=str, help="[testbed configuration] --test_rig", default="")
     parser.add_argument("--testbed_location", dest='testbed_location', type=str, help="[testbed configuration] --testbed_location <from show ap summary Location>", default="default location")
-
+    
     # kpi_csv arguments:
     parser.add_argument("--test_tag", default="", help="test tag for kpi.csv,  test specific information to differenciate the test")
     parser.add_argument("--dut_hw_version", default="", help="dut hw version for kpi.csv, hardware version of the device under test")
@@ -440,11 +437,11 @@ def main():
     parser.add_argument("--dut_serial_num", default="", help="dut serial for kpi.csv, serial number / serial number of the device under test")
     parser.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
     parser.add_argument("--test_id", default="TX power", help="test-id for kpi.csv,  script or test name")
-
+    
     parser.add_argument('--local_lf_report_dir', help='--local_lf_report_dir override the report path, primary use when running test in test suite', default="")
-
+    
     # TODO ADD KPI configuration
-
+    
     # debug configuration
     parser.add_argument("--wait_forever", action='store_true', help="[debug configuration] Wait forever for station to associate, may aid debugging if STA cannot associate properly")
     # TODO remove the cleanup flag
@@ -452,21 +449,21 @@ def main():
     parser.add_argument("--lf_logger_config_json", help="[debug configuration] --lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument("--exit_on_fail", action='store_true', help="[debug configuration] --exit_on_fail,  exit on test failure")
     parser.add_argument("--exit_on_error", action='store_true', help="[debug configuration] --exit_on_error, exit on test error, test mechanics failed")
-
+    
     # current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]
     # print(current_time)
     # usage()
     args = None
-
+    
     # Parcing the input parameters and assignment
     args = parser.parse_args()
-
+    
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
     if args.lf_logger_config_json:
-        # logger_config.lf_logger_config_json = "lf_logger_config.json"
-        logger_config.lf_logger_config_json = args.lf_logger_config_json
-        logger_config.load_lf_logger_config()
+          # logger_config.lf_logger_config_json = "lf_logger_config.json"
+          logger_config.lf_logger_config_json = args.lf_logger_config_json
+          logger_config.load_lf_logger_config()
 
     # TODO refactor to be logger for consistency
     logg = logging.getLogger(__name__)
@@ -553,9 +550,9 @@ def main():
     outfile_path = report.get_report_path()
     current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
     test_name = ('Tx Power: ' + 'AP: ' + args.ap + ', Band: ' + args.band + ', Channel: ' + args.channel
-                       + ', NSS: ' + args.nss
-                       + ', BW: ' + args.bandwidth
-                       + ', Tx Power: ' + args.txpower)
+                 + ', NSS: ' + args.nss
+                 + ', BW: ' + args.bandwidth
+                 + ', Tx Power: ' + args.txpower)
     if (args.outfile):
         outfile_tmp = (outfile_path + '/' + current_time + '_' + args.outfile
                        + '_AP_' + args.ap
@@ -753,8 +750,8 @@ def main():
     orange_left.set_bg_color("#e0efda")
     orange_left.set_border(1)
     # Set up some formats to use.
-    dark_green = workbook.add_format({'color': '#006400','bold': True})
-    black = workbook.add_format({'color': 'black','bold': True})    
+    dark_green = workbook.add_format({'color': '#006400', 'bold': True})
+    black = workbook.add_format({'color': 'black', 'bold': True})
     # #e68b15
     title_format = workbook.add_format({
         'bold': 1,
@@ -765,15 +762,15 @@ def main():
 
     row = 0
     col = 0
-    worksheet.set_row(0,40)
-    worksheet.set_column(0,0,10)
+    worksheet.set_row(0, 40)
+    worksheet.set_column(0, 0, 10)
     # Create a format to use in the merged range.
     # https://xlsxwriter.readthedocs.io/worksheet.html
     # parameters  merge_range(first_row, first_col, last_row, last_col, data[, cell_format])
 
     # Can only write simple types to merged ranges so write a blank string
-    worksheet.merge_range(0,0,0,38, ' ', title_format)
-    worksheet.write_rich_string(0,0, dark_green, '      Candela Technologies : ', black, '{test_name}'.format(test_name=test_name), title_format)
+    worksheet.merge_range(0, 0, 0, 38, ' ', title_format)
+    worksheet.write_rich_string(0, 0, dark_green, '      Candela Technologies : ', black, '{test_name}'.format(test_name=test_name), title_format)
 
     worksheet.set_row(1, 75)  # Set height
     worksheet.set_column(0, 0, 10)  # Set width
@@ -783,7 +780,7 @@ def main():
     worksheet.write(row, col, 'Regulatory\nDomain', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 16)  # Set width
-    worksheet.write(row, col, 'Controller\n{test_rig}\n{location}'.format(test_rig=args.test_rig,location=args.testbed_location), dblue_bold)
+    worksheet.write(row, col, 'Controller\n{test_rig}\n{location}'.format(test_rig=args.test_rig, location=args.testbed_location), dblue_bold)
     col += 1
     worksheet.set_column(col, col, 25)  # Set width
     worksheet.write(row, col, 'Controller\nChannel', dblue_bold)
@@ -1010,9 +1007,8 @@ def main():
 
     # these are set to configure the number of spatial streams and MCS values
     # 5g has 8 spatial streams , MCS is 7, 9, 11
-    # ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 1 << - turn on 
+    # ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 1 << - turn on
     # no ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 2 <<-- turn off
-
 
     # Loop through all iterations and run txpower tests.
     # The is the main loop of loops:   Channels, spatial streams (nss), bandwidth (bw), txpowers (tx)
@@ -1033,10 +1029,10 @@ def main():
             ch = cha[0]
         for n in nss:
             if (n != "NA" and args.set_nss):
-                # the band will be set 
+                # the band will be set
                 num_spatial_streams = int(n)
                 # set the spatial streams for   - need to disable the wlan and re-enable
-                # ap dot11 dot11ax mcs tx index 7 spatial-stream 1 << - turn on 
+                # ap dot11 dot11ax mcs tx index 7 spatial-stream 1 << - turn on
                 # no ap dot11 dot11ax mcs tx index 7 spatial-stream 2 <<-- turn off
                 if num_spatial_streams == 1 or num_spatial_streams == 2 or num_spatial_streams == 3 or num_spatial_streams == 4:
                     cs.spatial_stream = 1
@@ -1097,7 +1093,7 @@ def main():
                     cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.msc_tx_index = 11
                     cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream_1()
-                
+
                 if args.band == '5g' or args.band == 'dual_band_5g':
                     # turn off spatial streams 5 - 8
                     # disable spatial stream 5
@@ -1144,11 +1140,11 @@ def main():
                     else:
                         # Set nss on LANforge Station, not sure it can be done on AP
                         # for ax210, it can do any bandwidth at up to 2 NSS
-                        # for 9984 (wave-2), it does have restrictions 
+                        # for 9984 (wave-2), it does have restrictions
                         # 9984 can do 4x4 at 80Mhz, and 2x2 at 160Mhz
                         if (bw == "160"):
                             if(args.vht160):
-                                # for 9984 (wave-2) for 160 Mhz set for 160 set ni = 2 
+                                # for 9984 (wave-2) for 160 Mhz set for 160 set ni = 2
                                 if(args.wave2):
                                     ni = int(2)
                                     logg.info("NOTE: wave2 (9984) has restrictions : 160Mhz is 2x2 --vht160 set and will set ni : {}".format(ni))
@@ -1201,8 +1197,8 @@ def main():
                                                  "--set_ifstate", "down"])
                     cs.show_ap_summary()
 
-                    # when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .  
-                    # 5g slot 1 will used the 5g channels to 64,  the 5g dual-band will use channels 100 -> 165.  
+                    # when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .
+                    # 5g slot 1 will used the 5g channels to 64,  the 5g dual-band will use channels 100 -> 165.
                     # When 5g (slot 1) and dual-band 6g (slot 2) is enabled then 5g (slot 1) has all bands.
 
                     # if dual band : disable dual-band mode, config mode, enable dual-band mode
@@ -1214,7 +1210,7 @@ def main():
                         logg.info("ap_dot11_dual_band_mode_shutdown_5ghz")
                         cs.ap_dot11_dual_band_mode_shutdown_5ghz()
 
-                    # set the radio role selection 
+                    # set the radio role selection
                     if args.band == 'dual_band_6g':
                         logg.info("ap_dot11_dual_band_6ghz_radio_role_manual_client_serving")
                         cs.ap_dot11_dual_band_6ghz_radio_role_manual_client_serving()
@@ -1234,7 +1230,6 @@ def main():
                     elif args.band == "dual_band_5g":
                         cs.ap_dot11_dual_band_no_mode_shutdown_5ghz()
 
-
                     # Disable AP, apply settings, enable AP
                     if args.band == "dual_band_6g":
                         cs.ap_dot11_dual_band_6ghz_shutdown()
@@ -1245,7 +1240,6 @@ def main():
                     elif args.band == "5g":
                         cs.ap_dot11_5ghz_shutdown()
                     cs.ap_dot11_24ghz_shutdown()
-
 
                     if args.series == "9800":
                         # 9800 series need to  "Configure radio for manual channel assignment"
@@ -1281,7 +1275,7 @@ def main():
                     if (tx != "NA"):
                         logg.info("9800/3504 test_parameters: set txPower: {tx_power}".format(tx_power=tx))
                         cs.tx_power = tx
-                        
+
                         if args.band == 'dual_band_6g':
                             cs.config_dot11_dual_band_6ghz_tx_power()
                         elif args.band == 'dual_band_5g':
@@ -1398,7 +1392,7 @@ def main():
                         # enable 6g operation status
                         pss = cs.config_ap_no_dot11_dual_band_6ghz_shutdown()
                         logg.info(pss)
-                                    # enable 5g wlan to show scans
+                        # enable 5g wlan to show scans
                         pss = cs.config_no_ap_dot11_5ghz_shutdown()
                         logger.info(pss)
                         # enable 5g operation status
