@@ -61,6 +61,7 @@ class IPVariableTime(Realm):
                  port=8080,
                  mode=0,
                  ap=None,
+                 no_cleanup=None,
                  traffic_type=None,
                  side_a_min_rate=256000, side_a_max_rate=0,
                  side_b_min_rate=256000, side_b_max_rate=0,
@@ -101,6 +102,7 @@ class IPVariableTime(Realm):
         self.radio = radio
         self.mode = mode
         self.ap = ap
+        self.no_cleanup = no_cleanup
         self.traffic_type = traffic_type
         self.number_template = number_template
         self.debug = _debug_on
@@ -336,7 +338,9 @@ class IPVariableTime(Realm):
 
             if self.passes():
                 self.success()
-        self.cleanup()
+        if not self.no_cleanup:
+            self.cleanup()
+        logger.info("Leaving existing stations...")
         logger.info("IP Variable Time Test Report Data: {}".format(report_f))
 
 
@@ -559,7 +563,7 @@ python3 ./test_ip_variable_time.py
 
 
     Example command:
-    1. Use Existing station ,  Note: put the resource.shelf.wifi-sta  (below is 1.1.wlan4),
+    1. Use Existing station ,  Note: put the shelf.resource.wifi-sta  (below is 1.1.wlan4),
         The station needs to configured with the ssid, passwd, security and mode in the LANforge GUI
     ./test_ip_variable_time.py  --mgr 192.168.0.100  --radio wiphy4 --ssid ssid_5g --passwd pass_5g
         --security wpa2 --test_duration 60s --output_format csv  --traffic_type lf_tcp
@@ -615,8 +619,9 @@ python3 ./test_ip_variable_time.py
     parser.add_argument('--influx_mgr',
                         help='IP address of the server your Influx database is hosted if different from your LANforge Manager',
                         default=None)
-    parser.add_argument('--use_existing_sta', help='Used an existing stationsto a particular AP', action='store_true')
+    parser.add_argument('--use_existing_sta', help='Used an existing stations to a particular AP', action='store_true')
     parser.add_argument('--sta_names', help='Used to force a connection to a particular AP', default="sta0000")
+
     args = parser.parse_args()
 
     # set up logger
@@ -687,6 +692,7 @@ python3 ./test_ip_variable_time.py
                                  side_b_min_rate=args.b_min,
                                  mode=args.mode,
                                  ap=args.ap,
+                                 no_cleanup=args.no_cleanup,
                                  report_file=args.report_file,
                                  output_format=args.output_format,
                                  layer3_cols=args.layer3_cols,
