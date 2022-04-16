@@ -254,6 +254,7 @@ def main():
     CCP_POLICY_TAG = args.prompt + "(config-policy-tag)#"  # WLC(config-policy-tag)#
     CCP_CONFIG_LINE = args.prompt + "(config-line)#"  # WLC(config-line)#
     CCP_FINGERPRINT = "you want to continue connecting (yes/no/[fingerprint])?"
+    CCP_BAD_IP = "% Bad IP address or host name% Unknown command or computer name, or unable to find computer address"
 
     '''print("CCP {}".format(CCP))
    print("CCP_EN {}".format(CCP_EN))
@@ -1949,9 +1950,9 @@ def main():
             logg.info("command sent {}".format(command))
         logged_out_9800 = False
         loop_count = 0
-        while logged_out_9800 == False and loop_count <= 100:
+        while logged_out_9800 == False and loop_count <= 7:
             loop_count += 1
-            i = egg.expect_exact([CCP, CCP_EN, CCP_CONFIG, CCP_CONFIG_WLAN, CCP_POLICY_TAG, CCP_CONFIG_LINE, pexpect.TIMEOUT, "--More--"], timeout=timeout)
+            i = egg.expect_exact([CCP, CCP_EN, CCP_CONFIG, CCP_CONFIG_WLAN, CCP_POLICY_TAG, CCP_CONFIG_LINE, "--More--", CCP_BAD_IP, pexpect.TIMEOUT], timeout=timeout)
             logg.info("expect index: %s" % i)
             print(egg.before.decode('utf-8', 'ignore'))  # allows program that calls from subprocess to see output from command
             if i == 0:
@@ -1973,6 +1974,7 @@ def main():
             if i == 2:
                 logg.info("{} prompt received will send exit, loop_count: {}".format(CCP_CONFIG, loop_count))
                 try:
+                    # exit will go one prompt up
                     egg.sendline("exit")
                     sleep(0.2)
                     logged_out_9800 = True
@@ -1982,6 +1984,7 @@ def main():
             if i == 3:
                 logg.info("{} prompt received will send end, loop_count: {}".format(CCP_CONFIG_WLAN, loop_count))
                 try:
+                    # end will go to the # prompt
                     egg.sendline("end")
                     sleep(0.2)
                 except BaseException:
@@ -2003,12 +2006,19 @@ def main():
                 except BaseException:
                     logg.info("9800 exception on end")
                     sleep(0.1)
-            if i == 6:
-                logg.info("9800 expect timeout loop_count: {}".format(loop_count))
-                egg.sendline("end")
-            if i == 7:  # --More--
+            if i == 6:  # --More--
                 logg.info("9800 found --More--, sending space")
                 egg.send(SEND_MORE)
+            if i == 7: # BAD IP
+                logg.info("9800 expect timeout loop_count: {}".format(loop_count))
+                egg.sendline("exit")
+                logged_out_9800 = True
+            # Timeout - try to exit
+            if i == 8:
+                logg.info("9800 expect timeout loop_count: {}".format(loop_count))
+                egg.sendline("exit")
+                logged_out_9800 = True
+
 
         if(logged_out_9800 == False):
             logg.info("######################################################################################")

@@ -277,10 +277,10 @@ class create_controller_series_object:
         elif self.action in ["ap_dot11_dot11ax_mcs_tx_index_spatial_stream", "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream"]:
             self.command_extend = [
                 "--action", self.action, 
-                "--spatial_stream", self.spatial_stream, 
-                "--mcs_tx_index", self.mcs_tx_index
+                "--spatial_stream", str(self.spatial_stream), 
+                "--mcs_tx_index", str(self.mcs_tx_index)
             ]
-
+            self.command.extend(self.command_extend)
 
         # possible need to look for exact command
         elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_ap_wlan_summary", "show_wlan_summary", "show_wlan_id",

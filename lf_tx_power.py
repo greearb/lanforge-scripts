@@ -556,11 +556,12 @@ def main():
 
     outfile_path = report.get_report_path()
     current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
-    test_name = ('Tx Power: ' + 'AP: ' + args.ap + ', Band: ' + args.band + ', Channel: ' + args.channel
+    if (args.outfile):
+        test_name = ('Tx Power:' + args.outfile  + 'AP: ' + args.ap + ', Band: ' + args.band + ', Channel: ' + args.channel
                  + ', NSS: ' + args.nss
                  + ', BW: ' + args.bandwidth
                  + ', Tx Power: ' + args.txpower)
-    if (args.outfile):
+
         outfile_tmp = (outfile_path + '/' + current_time + '_' + args.outfile
                        + '_AP_' + args.ap
                        + '_band_' + args.band
@@ -569,6 +570,11 @@ def main():
                        + '_bw_' + args.bandwidth.replace(' ', '_')
                        + '_tx_pw_' + args.txpower.replace(' ', '_'))
     else:
+        test_name = ('Tx Power:' + 'AP: ' + args.ap + ', Band: ' + args.band + ', Channel: ' + args.channel
+                 + ', NSS: ' + args.nss
+                 + ', BW: ' + args.bandwidth
+                 + ', Tx Power: ' + args.txpower)
+
         outfile_tmp = (outfile_path + '/' + current_time + '_' + 'tx_power'
                        + '_AP_' + args.ap
                        + '_band_' + args.band
@@ -1015,7 +1021,7 @@ def main():
     # these are set to configure the number of spatial streams and MCS values
     # 5g has 8 spatial streams , MCS is 7, 9, 11
     # ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 1 << - turn on
-    # no ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 2 <<-- turn off
+    # no ap dot11 6ghz dot11ax mcs tx index 7 www.you-stream 2 <<-- turn off
 
     # Loop through all iterations and run txpower tests.
     # The is the main loop of loops:   Channels, spatial streams (nss), bandwidth (bw), txpowers (tx)
@@ -1036,108 +1042,123 @@ def main():
             ch = cha[0]
         for n in nss:
             if (n != "NA" and args.set_nss):
+                # Disable the wlan to set the spatial streams
+                # Disable wlan, apply settings, Enable wlan
+                if args.band == "dual_band_6g":
+                    cs.ap_dot11_dual_band_6ghz_shutdown()
+                elif args.band == "dual_band_5g":
+                    cs.ap_dot11_dual_band_5ghz_shutdown()
+                elif args.band == "6g":
+                    cs.ap_dot11_6ghz_shutdown()
+                elif args.band == "5g":
+                    cs.ap_dot11_5ghz_shutdown()
+                elif args.band == "24g":
+                    cs.ap_dot11_24ghz_shutdown()
+                
                 # the band will be set
                 num_spatial_streams = int(n)
                 # set the spatial streams for   - need to disable the wlan and re-enable
                 # ap dot11 dot11ax mcs tx index 7 spatial-stream 1 << - turn on
                 # no ap dot11 dot11ax mcs tx index 7 spatial-stream 2 <<-- turn off
+
+                # Cannot disable MCS lower data rates when higher data rates are enabled
                 if num_spatial_streams == 1 or num_spatial_streams == 2 or num_spatial_streams == 3 or num_spatial_streams == 4:
                     cs.spatial_stream = 1
+                    cs.mcs_tx_index = 11
+                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
+                    cs.mcs_tx_index = 9
+                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 7
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 9
-                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 11
-                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream_1()
 
-                if num_spatial_streams == 2 or num_spatial_streams == 3 or num_spatials_streams == 4:
+                if num_spatial_streams == 2 or num_spatial_streams == 3 or num_spatial_streams == 4:
                     cs.spatial_stream = 2
+                    cs.mcs_tx_index = 11
+                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
+                    cs.mcs_tx_index = 9
+                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 7
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 9
-                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 11
-                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream_1()
                 else:
                     cs.spatial_stream = 2
+                    cs.mcs_tx_index = 11
+                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
+                    cs.mcs_tx_index = 9
+                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 7
                     cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 9
-                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 11
-                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream_1()
 
-                if num_spatial_streams == 3 or num_spatials_streams == 4:
+                if num_spatial_streams == 3 or num_spatial_streams == 4:
                     cs.spatial_stream = 3
+                    cs.mcs_tx_index = 11
+                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
+                    cs.mcs_tx_index = 9
+                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 7
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 9
-                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 11
-                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream_1()
                 else:
                     cs.spatial_stream = 3
+                    cs.mcs_tx_index = 11
+                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
+                    cs.mcs_tx_index = 9
+                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 7
                     cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 9
-                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 11
-                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream_1()
 
-                if num_spatials_streams == 4:
+                if num_spatial_streams == 4:
                     cs.spatial_stream = 3
+                    cs.mcs_tx_index = 11
+                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
+                    cs.mcs_tx_index = 9
+                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 7
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 9
-                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 11
-                    cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream_1()
                 else:
                     cs.spatial_stream = 4
+                    cs.mcs_tx_index = 11
+                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
+                    cs.mcs_tx_index = 9
+                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 7
                     cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 9
-                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 11
-                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream_1()
 
                 if args.band == '5g' or args.band == 'dual_band_5g':
                     # turn off spatial streams 5 - 8
                     # disable spatial stream 5
                     cs.spatial_stream = 5
+                    cs.mcs_tx_index = 11
+                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
+                    cs.mcs_tx_index = 9
+                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 7
                     cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 9
-                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 11
-                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream_1()
 
                     # disable spatial stream 6
                     cs.spatial_stream = 6
+                    cs.mcs_tx_index = 11
+                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
+                    cs.mcs_tx_index = 9
+                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 7
                     cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 9
-                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 11
-                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream_1()
 
                     # disable spatial stream 7
                     cs.spatial_stream = 7
+                    cs.mcs_tx_index = 11
+                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
+                    cs.mcs_tx_index = 9
+                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 7
                     cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 9
-                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 11
-                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream_1()
 
                     # disable spatial stream 8
                     cs.spatial_stream = 8
+                    cs.mcs_tx_index = 11
+                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
+                    cs.mcs_tx_index = 9
+                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 7
                     cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 9
-                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.msc_tx_index = 11
-                    cs.no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream_1()
 
             for bw in bandwidths:
                 if (n != "NA"):
