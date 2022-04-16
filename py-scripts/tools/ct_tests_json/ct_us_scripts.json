@@ -271,11 +271,11 @@
                         "command":"lf_cleanup.py",
                         "args":"",
                         "args_list":[
-                            " --mgr LF_MGR_IP --cxs --sta"
+                            " --mgr LF_MGR_IP --cxs --sanitize"
                 ]
             },
             "test_ip_variable_time_ipv4_24g":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"test_ip_variable_time.py",
                 "timeout":"360",
                 "args":"",
