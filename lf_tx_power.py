@@ -38,6 +38,7 @@ import sys
 import datetime
 import importlib
 import os
+import traceback
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../")))
 
 # TODO change the name from logg to logger
@@ -333,10 +334,9 @@ class FileAdapter(object):
         pass  # leave it to logging to flush properly
 
 
-def exit_test(workbook):
+def close_workbook(workbook):
     workbook.close()
     sleep(0.5)
-    # exit(0)
 
 
 def main():
@@ -451,11 +451,13 @@ def main():
 
     # debug configuration
     parser.add_argument("--wait_forever", action='store_true', help="[debug configuration] Wait forever for station to associate, may aid debugging if STA cannot associate properly")
-    # TODO remove the cleanup flag
     parser.add_argument('--show_lf_portmod', action='store_true', help="[debug configuration] --show_lf_portmod,  show the output of lf_portmod after traffic to verify RSSI values measured by lanforge")
-    parser.add_argument("--lf_logger_config_json", help="[debug configuration] --lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument("--exit_on_fail", action='store_true', help="[debug configuration] --exit_on_fail,  exit on test failure")
     parser.add_argument("--exit_on_error", action='store_true', help="[debug configuration] --exit_on_error, exit on test error, test mechanics failed")
+
+    # logg information 
+    parser.add_argument("--lf_logger_config_json", help="[log configuration] --lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument("--log_level", help="[log configuration] --log_level  debug info warning error critical")
 
     # current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]
     # print(current_time)
@@ -467,6 +469,10 @@ def main():
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
+
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
+
     if args.lf_logger_config_json:
           # logger_config.lf_logger_config_json = "lf_logger_config.json"
           logger_config.lf_logger_config_json = args.lf_logger_config_json
@@ -917,7 +923,8 @@ def main():
     if (args.create_station):
         if (args.radio is None):
             logg.info("WARNING --create needs a radio")
-            exit_test(workbook)
+            close_workbook(workbook)
+            exit(1)
         if (args.band == '6g' or args.band == 'dual_band_6g'):
             if (args.vht160):
                 logg.info("creating station with VHT160 set: {} on radio {}".format(args.station, args.radio))
@@ -1682,7 +1689,8 @@ def main():
                             if (m is not None):
                                 _ip = m.group(1)
 
-                        logg.info("IP %s  Status %s" % (_ip, _status))
+                        if (i % 3) == 0 :
+                            logg.info("IP %s  Status %s" % (_ip, _status))
 
                         if (_status == "Authorized"):
                             if ((_ip is not None) and (_ip != "0.0.0.0")):
@@ -1699,7 +1707,7 @@ def main():
 
                         i += 1
                         # We wait a fairly long time since AP will take a long time to start on a CAC channel.
-                        if (i > int(args.wait_time)):  # TODO make configurable
+                        if (i > int(args.wait_time)):  
                             err = "ERROR:  Station did not connect within 180 seconds."
                             logg.info(err)
                             e_tot += err
@@ -1764,7 +1772,6 @@ def main():
                                 "# Unable to commicate to AP error code: {} output {}".format(
                                     process_error.returncode, process_error.output))
                             logg.info("####################################################################################################")
-                            # exit_test(workbook)
                             summary = "empty_process_error"
 
                     # Gather probe results and record data, verify NSS, BW, Channel
@@ -1779,9 +1786,9 @@ def main():
                                                      "--cli_cmd", "probe_port 1 %s %s" % (lfresource, lfstation)], capture_output=True, check=True)
                         pss = port_stats.stdout.decode('utf-8', 'ignore')
                         # for debug: print the output of lf_portmod.pl and the command used
-                        logg.info("######## lf_portmod ######### ")
-                        logg.info(pss)
-                        logg.info("######## lf_portmod  END ######### ")
+                        logg.debug("######## lf_portmod ######### ")
+                        logg.debug(pss)
+                        logg.debug("######## lf_portmod  END ######### ")
 
                         if (args.show_lf_portmod):
                             logg.info("./lf_portmod.pl --manager {} --card {} --port_name {} --cli_cmd probe_port 1 {} {}".format(lfmgr,
@@ -2136,7 +2143,6 @@ def main():
                                     "# Unable to commicate to AP error code: {} output {}".format(
                                         process_error.returncode, process_error.output))
                                 logg.info("####################################################################################################")
-                                # exit_test(workbook)
                                 summary = "empty_process_error"
 
                             logg.info(summary)
@@ -2502,7 +2508,8 @@ def main():
                     if (e_tot != ""):
                         if(args.exit_on_error):
                             logg.info("EXITING ON ERROR, exit_on_error err: {} ".format(e_tot))
-                            exit_test(workbook)
+                            close_workbook(workbook)
+                            exit(1)
 
                     # write out the data and exit on failure
                     if (pf == 0):
@@ -2511,7 +2518,8 @@ def main():
                                 logg.info("EXITING ON FAILURE as a result of  err {}".format(e_tot))
                             else:
                                 logg.info("EXITING ON FAILURE, exit_on_fail set there was no err ")
-                            exit_test(workbook)
+                            close_workbook(workbook)
+                            exit(1)
 
     workbook.close()
 
@@ -2701,11 +2709,19 @@ def main():
     report.set_title("Tx Power")
     report.build_banner()
     report.set_table_title("Tx Power")
+
+    # close the workbook 
+    close_workbook(workbook)
+
     # TODO fix csv output
     # report.set_table_dataframe_from_csv_sep_tab(full_outfile)
     # report.build_table()
     # TODO the table looks off
-    report.set_table_dataframe_from_xlsx(outfile_xlsx)
+    try:
+        report.set_table_dataframe_from_xlsx(outfile_xlsx)
+    except BaseException:
+        traceback.print_exc()
+
     report.build_table()
     report.build_footer()
     report.write_html_with_timestamp()
@@ -2714,8 +2730,7 @@ def main():
     report.write_pdf(_page_size='A3', _orientation='Landscape')
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
-    exit_test(workbook)
-
+    
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':
