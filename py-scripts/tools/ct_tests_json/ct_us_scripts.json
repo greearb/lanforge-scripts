@@ -137,7 +137,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --cxs --sanitize"
             ]},
             "test_l3_longevity_enable_flags":{
                 "enabled":"TRUE",
@@ -157,7 +157,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --cxs --sanitize"
             ]},
             "test_l3_longevity_flags_AX200_5g":{
                 "enabled":"TRUE",
@@ -180,7 +180,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --cxs --sanitize"
             ]},
             "test_l3_longevity_flags_AX200_2g":{
                 "enabled":"TRUE",
@@ -203,7 +203,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --cxs --sanitize"
             ]},
             "test_l3_longevity_flags_5g_all":{
                 "enabled":"TRUE",
@@ -229,7 +229,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --cxs --sanitize"
             ]},
             "test_l3_longevity_flags_2g_all":{
                 "enabled":"TRUE",
@@ -255,7 +255,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --cxs --sanitize"
                 ]
             },
             "test_ip_connection-ipv4":{
@@ -265,13 +265,14 @@
                 "args_list":[
                     " --mgr LF_MGR_IP --num_stations 4 --upstream_port UPSTREAM_PORT",
                     " use_ssid_idx=1 --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
-                    " --debug"]},
-                    "clean_up_cxs_endp_sta":{
-                        "enabled":"TRUE",
-                        "command":"lf_cleanup.py",
-                        "args":"",
-                        "args_list":[
-                            " --mgr LF_MGR_IP --cxs --sanitize"
+                    " --debug"]
+            },
+            "clean_up_cxs_endp_sta":{
+                "enabled":"TRUE",
+                "command":"lf_cleanup.py",
+                "args":"",
+                "args_list":[
+                    " --mgr LF_MGR_IP --cxs --sanitize"
                 ]
             },
             "test_ip_variable_time_ipv4_24g":{
