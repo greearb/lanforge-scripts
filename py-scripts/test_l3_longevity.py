@@ -2869,6 +2869,10 @@ Setting wifi_settings per radio
         "--wait",
         help="--wait <time> , time to wait at the end of the test",
         default='0')
+
+    parser.add_argument('--sta_start_offset', help='Station start offset for building stations',
+                        default='0')
+
     # logging configuration
     parser.add_argument(
         "--lf_logger_config_json",
@@ -3133,8 +3137,8 @@ Setting wifi_settings per radio
                 quit(1)
             station_list = LFUtils.portNameSeries(
                 prefix_="sta",
-                start_id_=1 + index * 1000,
-                end_id_=number_of_stations + index * 1000,
+                start_id_=1 + index * 1000 + int(args.sta_start_offset),
+                end_id_=number_of_stations + index * 1000 + int(args.sta_start_offset),
                 padding_number_=10000,
                 radio=radio_name_)
             station_lists.append(station_list)
