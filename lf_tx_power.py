@@ -1789,9 +1789,9 @@ def main():
                                                      "--cli_cmd", "probe_port 1 %s %s" % (lfresource, lfstation)], capture_output=True, check=True)
                         pss = port_stats.stdout.decode('utf-8', 'ignore')
                         # for debug: print the output of lf_portmod.pl and the command used
-                        logg.debug("######## lf_portmod ######### ")
-                        logg.debug(pss)
-                        logg.debug("######## lf_portmod  END ######### ")
+                        logg.info("######## lf_portmod ######### ")
+                        logg.info(pss)
+                        logg.info("######## lf_portmod  END ######### ")
 
                         if (args.show_lf_portmod):
                             logg.info("./lf_portmod.pl --manager {} --card {} --port_name {} --cli_cmd probe_port 1 {} {}".format(lfmgr,
