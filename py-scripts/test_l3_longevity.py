@@ -2873,6 +2873,12 @@ Setting wifi_settings per radio
     parser.add_argument('--sta_start_offset', help='Station start offset for building stations',
                         default='0')
 
+    parser.add_argument('--no_pre_cleanup', help='Do not pre cleanup stations on start',
+                        action='store_true')
+
+    parser.add_argument('--no_cleanup', help='Do not cleanup before exit',
+                        action='store_true')
+
     # logging configuration
     parser.add_argument(
         "--lf_logger_config_json",
@@ -3226,7 +3232,11 @@ Setting wifi_settings per radio
         ap_chanim_cmd_2g=ap_chanim_cmd_2g,
         ap_test_mode=ap_test_mode)
 
-    ip_var_test.pre_cleanup()
+    if args.no_pre_cleanup:
+        logger.info("No station pre clean up any existing cxs on LANforge")
+    else:
+        logger.info("clean up any existing cxs on LANforge")
+        ip_var_test.pre_cleanup()
 
     ip_var_test.build()
     if not ip_var_test.passes():
@@ -3243,7 +3253,12 @@ Setting wifi_settings per radio
         "Pausing {} seconds for manual inspection before clean up.".format(
             args.wait))
     time.sleep(int(args.wait))
-    ip_var_test.cleanup()
+
+    if args.no_cleanup:
+        logger.info("--no_cleanup set stations will be left intack")
+    else:
+        ip_var_test.cleanup()
+
     if ip_var_test.passes():
         logger.info("Full test passed, all connections increased rx bytes")
 
