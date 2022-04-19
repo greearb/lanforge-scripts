@@ -317,6 +317,20 @@ class IPVariableTime(Realm):
             else:
                 compared_rept = self.compared_report
 
+        # remove endpoints from layer3connections that do not begin with 'VT' prefix:
+        logger.info(layer3connections)
+        # convert layer3connections to list: 
+        split_l3_endps = layer3connections.split(",")
+        # logger.info(split_l3_endps)
+        new_l3_endps_list = []
+        for item in split_l3_endps:
+            if item.startswith('VT'):
+                new_l3_endps_list.append(item)
+                # logger.info(new_l3_endps_list)
+                # convert new_l3_endps_list to str:
+                layer3endps = ','.join(str(l3endps) for l3endps in new_l3_endps_list)
+                # logger.info(layer3endps)
+
         self.cx_profile.monitor(layer3_cols=layer3_cols,
                                 sta_list=self.sta_list,
                                 port_mgr_cols=port_mgr_cols,
@@ -324,7 +338,7 @@ class IPVariableTime(Realm):
                                 systeminfopath=systeminfopath,
                                 duration_sec=self.test_duration,
                                 monitor_interval_ms=monitor_interval,
-                                created_cx=layer3connections,
+                                created_cx=layer3endps,
                                 output_format=output,
                                 compared_report=compared_rept,
                                 script_name='test_ip_variable_time',
