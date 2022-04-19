@@ -259,6 +259,13 @@ Show the tx_power for a specific station:
 when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .
 5g slot 1 will used the 5g channels to 64,  the 5g dual-band will use channels 100 -> 165.
 When 5g (slot 1) and dual-band 6g (slot 2) is enabled then 5g (slot 1) has all ba
+
+Path lost
+24g 5g : 50dB inline attenuation + cables and splitters, so I think last time we estimated the path loss should be about 56dB
+that is to the 5ghz radio
+
+6g : wiphy2 has only 30dB inline attenuation to the 6ghz radio on the 9136
+
 '''
 
 if sys.version_info[0] != 3:
@@ -1053,8 +1060,10 @@ def main():
                 # Disable wlan, apply settings, Enable wlan
                 if args.band == "dual_band_6g":
                     cs.ap_dot11_dual_band_6ghz_shutdown()
+                    cs.ap_dot11_6ghz_shutdown()
                 elif args.band == "dual_band_5g":
                     cs.ap_dot11_dual_band_5ghz_shutdown()
+                    cs.ap_dot11_5ghz_shutdown()
                 elif args.band == "6g":
                     cs.ap_dot11_6ghz_shutdown()
                 elif args.band == "5g":
@@ -1430,6 +1439,14 @@ def main():
                         # enable 6g operation status
                         pss = cs.config_ap_no_dot11_dual_band_6ghz_shutdown()
                         logg.info(pss)
+                        
+                        # enable 6g wlan
+                        pss = cs.config_no_ap_dot11_6ghz_shutdown()
+                        logg.info(pss)
+                        # enable 6g operation status
+                        pss = cs.config_ap_no_dot11_6ghz_shutdown()
+                        logg.info(pss)
+
                         # enable 5g wlan to show scans
                         pss = cs.config_no_ap_dot11_5ghz_shutdown()
                         logger.info(pss)
@@ -1670,7 +1687,7 @@ def main():
 
                     # Temporary Work around
                     # disable the AP for 6g and enable
-                    if args.band == '6g':
+                    if args.band == '6g' or args.band == 'dual_band_6g':
                         cs.ap_name_shutdown()
                         sleep(5)
                         cs.ap_name_no_shutdown()
@@ -1778,6 +1795,8 @@ def main():
                             summary = "empty_process_error"
 
                     # Gather probe results and record data, verify NSS, BW, Channel
+                    # note the probe will get the information from this command
+                    # iw dev sta0000 station dump
                     i = 0
                     beacon_sig = None
                     sig = None
@@ -1835,7 +1854,7 @@ def main():
 
                         i += 1
                         if (i > 10):
-                            err = "Tried and failed 10 times to find correct spatial streams, continuing."
+                            err = "Tried and failed 10 times to find all probe values, continuing."
                             logg.info(err)
                             e_tot += err
                             e_tot += "  "
