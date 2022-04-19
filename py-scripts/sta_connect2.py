@@ -315,9 +315,9 @@ class StaConnect2(Realm):
                 self._pass("%s connected to AP: %s  With IP: %s" % (sta_name, ap, ip))
 
         if not self.passes():
-            if self.cleanup_on_exit:
-                print("Cleaning up...")
-                self.remove_stations()
+            #if self.cleanup_on_exit:
+                #print("Cleaning up...")
+                #self.remove_stations()
             return False
 
         # start cx traffic
