@@ -2026,8 +2026,7 @@ def main():
                         diff_a2 = calc_ant2 - allowed_per_path
                         logg.info("(Offset 2) diff_a2: {} = calc_ant2: {} - allowed_per_path: {}".format(diff_a2, calc_ant2, allowed_per_path))
                         # if args.per_ss:
-                        if ((abs(diff_a1) > pfrange) or
-                                (abs(diff_a2) > pfrange)):
+                        if ((abs(diff_a1) > pfrange) or (abs(diff_a2) > pfrange)):
                             pf = 0
                     if (int(_nss) == 3):
                         # NSS of 3 means each chain should transmit at 1/3 total power, thus the '- 5'
@@ -2046,7 +2045,7 @@ def main():
                         # if args.per_ss:
                         if ((abs(diff_a1) > pfrange) or
                             (abs(diff_a2) > pfrange) or
-                                (abs(diff_a3) > pfrange)):
+                            (abs(diff_a3) > pfrange)):
                             pf = 0
                     if (int(_nss) == 4):
                         # NSS of 4 means each chain should transmit at 1/4 total power, thus the '- 6'
@@ -2069,16 +2068,16 @@ def main():
                         # Thus provide a passing result
                         failed_low = 0
                         # least = 0
-                        if (diff_a1 < -pfrange):
+                        if (abs(diff_a1) > pfrange):
                             failed_low += 1
                             # least = diff_a1 #leave in code if want to move to least
-                        if (diff_a2 < -pfrange):
+                        if (abs(diff_a2) > pfrange):
                             failed_low += 1
                             # least = min(least, diff_a2)
-                        if (diff_a3 < -pfrange):
+                        if (abs(diff_a3) > pfrange):
                             failed_low += 1
                             # least = min(least, diff_a3)
-                        if (diff_a4 < -pfrange):
+                        if (abs(diff_a4) > pfrange):
                             failed_low += 1
                             # least = min(least, diff_a4)
 
@@ -2196,58 +2195,59 @@ def main():
                             logg.info("failed_low: {} > failed_low_threshold: {}".format(failed_low, failed_low_threshold))
                             pf = 0
 
+
+                        # this allows for a larger offset for specific spatial streams
                         if(pf_ignore_offset != 0):
                             logg.info(
                                 "diff_a1: {} diff_a2: {} diff_a3: {} diff_a4: {} pfrange: {} pf_ignore_offset: {}".format(
                                     diff_a1, diff_a2, diff_a3, diff_a4, pfrange, pf_ignore_offset))
-                            if (diff_a1 < -pfrange):
-                                if(diff_a1 < (-pfrange - pf_ignore_offset)):
-                                    logg.info("diff_a1: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a1, pfrange, pf_ignore_offset))
-                                    i_tot += "PASSED diff_a1({}) < -pfrange({}) - pf_ignore_offset({})  ".format(diff_a1, pfrange, pf_ignore_offset)
+                            if (abs(diff_a1) > pfrange):
+                                if(abs(diff_a1) < (pfrange + pf_ignore_offset)):
+                                    logg.info("abs(diff_a1): {} > (pfrange: {} + pf_ignore_offset: {})".format(abs(diff_a1), pfrange, pf_ignore_offset))
+                                    i_tot += "PASSED abs(diff_a1)({}) > pfrange({}) + pf_ignore_offset({})  ".format(abs(diff_a1), pfrange, pf_ignore_offset)
                                     logg.info("i_tot {}".format(i_tot))
                                 else:
-                                    logg.info("diff_a1: {} failure".format(diff_a1))
-                                    # if args.per_ss:
+                                    logg.info("abs(diff_a1): {} failure".format(abs(diff_a1)))
                                     pf = 0
-                            if (diff_a2 < -pfrange):
-                                if(diff_a2 < (-pfrange - pf_ignore_offset)):
-                                    logg.info("diff_a2: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a2, pfrange, pf_ignore_offset))
-                                    i_tot += "PASSED diff_a2({}) < -pfrange({}) - pf_ignore_offset({})  ".format(diff_a2, pfrange, pf_ignore_offset)
+                            if (abs(diff_a2) > pfrange):
+                                if(abs(diff_a2) < (pfrange + pf_ignore_offset)):
+                                    logg.info("abs(diff_a2): {} > pfrange: {} + pf_ignore_offset: {}".format(abs(diff_a2), pfrange, pf_ignore_offset))
+                                    i_tot += "PASSED abs(diff_a2)({}) > pfrange({}) + pf_ignore_offset({})  ".format(abs(diff_a2), pfrange, pf_ignore_offset)
                                     logg.info("i_tot {}".format(i_tot))
                                 else:
-                                    logg.info("diff_a2: {} failure".format(diff_a2))
-                                    # if args.per_ss:
+                                    logg.info("abs(diff_a2): {} failure".format(abs(diff_a2)))
                                     pf = 0
-                            if (diff_a3 < -pfrange):
-                                if(diff_a3 < (-pfrange - pf_ignore_offset)):
-                                    logg.info("diff_a3: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a3, pfrange, pf_ignore_offset))
-                                    i_tot += "PASSED diff_a3({}) < -pfrange({}) - pf_ignore_offset({})  ".format(diff_a3, pfrange, pf_ignore_offset)
+                            if (abs(diff_a3) > pfrange):
+                                if(abs(diff_a3) < (pfrange + pf_ignore_offset)):
+                                    logg.info("abs(diff_a3): {} > pfrange: {} + pf_ignore_offset: {}".format(abs(diff_a3), pfrange, pf_ignore_offset))
+                                    i_tot += "PASSED abs(diff_a3)({}) > pfrange({}) + pf_ignore_offset({})  ".format(abs(diff_a3), pfrange, pf_ignore_offset)
                                     logg.info("i_tot {}".format(i_tot))
                                 else:
-                                    logg.info("diff_a3: {} failure".format(diff_a3))
-                                    # if args.per_ss:
+                                    logg.info("abs(diff_a3): {} failure".format(abs(diff_a3)))
                                     pf = 0
-                            if (diff_a4 < -pfrange):
-                                if(diff_a4 < (-pfrange - pf_ignore_offset)):
-                                    logg.info("diff_a4: {} < -pfrange: {} - pf_ignore_offset: {}".format(diff_a4, pfrange, pf_ignore_offset))
-                                    i_tot += "PASSED diff_a4({}) < -pfrange({}) - pf_ignore_offset({})  ".format(diff_a4, pfrange, pf_ignore_offset)
+                            if (abs(diff_a4) > pfrange):
+                                if(abs(diff_a4) < (pfrange + pf_ignore_offset)):
+                                    logg.info("abs(diff_a4): {} > pfrange: {} + pf_ignore_offset: {}".format(abs(diff_a4), pfrange, pf_ignore_offset))
+                                    i_tot += "PASSED abs(diff_a4)({}) > pfrange({}) + pf_ignore_offset({})  ".format(abs(diff_a4), pfrange, pf_ignore_offset)
                                     logg.info("i_tot {}".format(i_tot))
                                 else:
-                                    logg.info("diff_a4: {} failure".format(diff_a4))
-                                    # if args.per_ss:
+                                    logg.info("abs(diff_a4): {} failure".format(abs(diff_a4)))
                                     pf = 0
-
-                        # if args.per_ss:
-                        # check for range to high
-                        # TODO is this may not be correct as it needs to be like the code above
-                        if (diff_a1 > pfrange):
-                            pf = 0
-                        if (diff_a2 > pfrange):
-                            pf = 0
-                        if (diff_a3 > pfrange):
-                            pf = 0
-                        if (diff_a4 > pfrange):
-                            pf = 0
+                        # Did not read AP , did not have a adjusted offset
+                        # use straight absolute value greater then the expected threshold
+                        if failed_low_threshold == 0:
+                            if (abs(diff_a1) > pfrange):
+                                logg.info("abs(diff_a1): {} > (pfrange: {})".format(abs(diff_a1), pfrange))
+                                pf = 0
+                            if (abs(diff_a2) > pfrange):
+                                logg.info("abs(diff_a2): {} > (pfrange: {})".format(abs(diff_a2), pfrange))
+                                pf = 0
+                            if (abs(diff_a3) > pfrange):
+                                logg.info("abs(diff_a3): {} > (pfrange: {})".format(abs(diff_a3), pfrange))
+                                pf = 0
+                            if (abs(diff_a4) > pfrange):
+                                logg.info("abs(diff_a4): {} > (pfrange: {})".format(abs(diff_a4), pfrange))
+                                pf = 0
 
                     logg.info("_nss {}  allowed_per_path (AP should be transmitting at) {}".format(_nss, allowed_per_path))
 
