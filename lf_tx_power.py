@@ -1274,7 +1274,8 @@ def main():
                         cs.ap_dot11_6ghz_shutdown()
                     elif args.band == "5g":
                         cs.ap_dot11_5ghz_shutdown()
-                    cs.ap_dot11_24ghz_shutdown()
+                    elif args.band == "24g":
+                        cs.ap_dot11_24ghz_shutdown()
 
                     if args.series == "9800":
                         # 9800 series need to  "Configure radio for manual channel assignment"
@@ -1288,7 +1289,8 @@ def main():
                             cs.ap_dot11_6ghz_shutdown()
                         elif args.band == '5g':
                             cs.ap_dot11_5ghz_shutdown()
-                        cs.ap_dot11_24ghz_shutdown()
+                        elif args.band == '24g':
+                            cs.ap_dot11_24ghz_shutdown()
 
                         # manual
                         if args.band == 'dual_band_6g':
@@ -1299,7 +1301,8 @@ def main():
                             cs.ap_dot11_6ghz_radio_role_manual_client_serving()
                         elif args.band == '5g':
                             cs.ap_dot11_5ghz_radio_role_manual_client_serving()
-                        cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+                        elif args.band == '24g':
+                            cs.ap_dot11_24ghz_radio_role_manual_client_serving()
 
                     else:
                         cs.ap_dot11_5ghz_shutdown()
