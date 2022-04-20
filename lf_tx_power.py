@@ -1078,22 +1078,24 @@ def main():
                 # no ap dot11 dot11ax mcs tx index 7 spatial-stream 2 <<-- turn off
 
                 # Cannot disable MCS lower data rates when higher data rates are enabled
+                # enabling MCS  from lower MCS to higher MCS
+                # disabling MCS from higher MCS to lower MCS
                 if num_spatial_streams == 1 or num_spatial_streams == 2 or num_spatial_streams == 3 or num_spatial_streams == 4:
                     cs.spatial_stream = 1
-                    cs.mcs_tx_index = 11
+                    cs.mcs_tx_index = 7
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 9
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.mcs_tx_index = 7
+                    cs.mcs_tx_index = 11
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
 
                 if num_spatial_streams == 2 or num_spatial_streams == 3 or num_spatial_streams == 4:
                     cs.spatial_stream = 2
-                    cs.mcs_tx_index = 11
+                    cs.mcs_tx_index = 7
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 9
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.mcs_tx_index = 7
+                    cs.mcs_tx_index = 11
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                 else:
                     cs.spatial_stream = 2
@@ -1106,11 +1108,11 @@ def main():
 
                 if num_spatial_streams == 3 or num_spatial_streams == 4:
                     cs.spatial_stream = 3
-                    cs.mcs_tx_index = 11
+                    cs.mcs_tx_index = 7
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 9
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.mcs_tx_index = 7
+                    cs.mcs_tx_index = 11
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                 else:
                     cs.spatial_stream = 3
@@ -1123,11 +1125,11 @@ def main():
 
                 if num_spatial_streams == 4:
                     cs.spatial_stream = 3
-                    cs.mcs_tx_index = 11
+                    cs.mcs_tx_index = 7
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                     cs.mcs_tx_index = 9
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
-                    cs.mcs_tx_index = 7
+                    cs.mcs_tx_index = 11
                     cs.ap_dot11_dot11ax_mcs_tx_index_spatial_stream()
                 else:
                     cs.spatial_stream = 4
@@ -1455,12 +1457,19 @@ def main():
                         logger.info(pss)
 
                     elif args.band == 'dual_band_5g':
-                        # enable 5g wlan
+                        # enable 5g wlan - dual band 
                         pss = cs.config_no_ap_dot11_dual_band_5ghz_shutdown()
                         logg.info(pss)
                         # enable 5g operation status
                         pss = cs.config_ap_no_dot11_dual_band_5ghz_shutdown()
                         logg.info(pss)
+                        # enable 5g wlan
+                        pss = cs.config_no_ap_dot11_5ghz_shutdown()
+                        logger.info(pss)
+                        # enable 5g operation status
+                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+                        logger.info(pss)
+
                     elif args.band == '6g':
                         # enable 6g wlan
                         pss = cs.config_no_ap_dot11_6ghz_shutdown()
