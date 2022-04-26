@@ -226,7 +226,11 @@ def main():
     loop_count = 0
     while (loop_count <= 8 and logged_in == False):
         loop_count += 1
-        i = egg.expect_exact([AP_ESCAPE,AP_PROMPT,AP_HASH,AP_USERNAME,AP_PASSWORD,AP_MORE,LF_PROMPT,MUX_PROMPT,pexpect.TIMEOUT],timeout=5)
+        try:
+            i = egg.expect_exact([AP_ESCAPE,AP_PROMPT,AP_HASH,AP_USERNAME,AP_PASSWORD,AP_MORE,LF_PROMPT,MUX_PROMPT,pexpect.TIMEOUT],timeout=5)
+        except BaseException:
+            logg.info("pexcept exception the connection may not be present, exiting")
+            exit(1)
         # AP_ESCAPE
         if i == 0:
             logg.info("Expect: {} i: {} before: {} after: {}".format(AP_ESCAPE,i,egg.before,egg.after))
@@ -296,12 +300,14 @@ def main():
 
 
 
-
-    # show controllers dot11Radio 2 powerreg
+    # include or i will include all lines that match the criteria
+    # section or s will include entire sections that match
+    # show controllers dot11Radio 2 powercfg | i T1
     if (args.action == "powercfg"):
-        logg.info("execute: show controllers dot11Radio 1 powercfg | g T1")
-        egg.sendline('show controllers dot11Radio 1 powercfg | g T1')
-        egg.expect([pexpect.TIMEOUT], timeout=3)  # do not delete this for it allows for subprocess to see output
+        command = 'show controllers dot11Radio {slot} powercfg | i T1'.format(slot=args.radio_slot)
+        logg.info("execute: {command}".format(command=command))
+        egg.sendline(command)
+        egg.expect([pexpect.TIMEOUT], timeout=7)  # do not delete this for it allows for subprocess to see output
         print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
         i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=5)
         if i == 0:
