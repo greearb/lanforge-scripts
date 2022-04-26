@@ -778,6 +778,7 @@ def main():
     # Set up some formats to use.
     dark_green = workbook.add_format({'color': '#006400', 'bold': True})
     black = workbook.add_format({'color': 'black', 'bold': True})
+    black_not_bold = workbook.add_format({'color': 'black', 'bold': False})
     # #e68b15
     title_format = workbook.add_format({
         'bold': 1,
@@ -795,8 +796,10 @@ def main():
     # parameters  merge_range(first_row, first_col, last_row, last_col, data[, cell_format])
 
     # Can only write simple types to merged ranges so write a blank string
+    test_notes =  '                          Pass / Fail criterial based on Offset per spatial stream being greater then {pf_dbm} dBm'.format(pf_dbm=pf_dbm)
     worksheet.merge_range(0, 0, 0, 38, ' ', title_format)
-    worksheet.write_rich_string(0, 0, dark_green, '      Candela Technologies : ', black, '{test_name}'.format(test_name=test_name), title_format)
+    worksheet.write_rich_string(0, 0, dark_green, '      Candela Technologies : ', black, '{test_name}'.format(test_name=test_name), black_not_bold, '\n{test_notes}'.format(test_notes=test_notes), title_format)
+
 
     worksheet.set_row(1, 75)  # Set height
     worksheet.set_column(0, 0, 10)  # Set width
@@ -806,7 +809,7 @@ def main():
     worksheet.write(row, col, 'Regulatory\nDomain', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 16)  # Set width
-    worksheet.write(row, col, 'Controller\n{test_rig}\n{location}'.format(test_rig=args.test_rig, location=args.testbed_location), dblue_bold)
+    worksheet.write(row, col, 'Controller\nTest Rig:\n{test_rig}\nLocation\n{location}'.format(test_rig=args.test_rig, location=args.testbed_location), dblue_bold)
     col += 1
     worksheet.set_column(col, col, 25)  # Set width
     worksheet.write(row, col, 'Controller\nChannel', dblue_bold)
@@ -819,7 +822,8 @@ def main():
     worksheet.set_column(col, col, 10)  # Set width
     worksheet.write(row, col, 'Controller\nBW', dblue_bold)
     col += 1
-    worksheet.write(row, col, 'STA\nRpt\nBW', dblue_bold)
+    worksheet.set_column(col, col, 10)  # Set width
+    worksheet.write(row, col, 'Station\nReported\nBW', dblue_bold)
     col += 1
     worksheet.write(row, col, 'Tx\nPower\nSetting', dtan_bold)
     col += 1
@@ -827,7 +831,7 @@ def main():
     worksheet.write(row, col, 'Controller Reported\n Tx Power dBm\nFrom AP Summary', dtan_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Allowed dBm\nPer Spatial Steam\n cc_dbm(per SS)', dtan_bold)
+    worksheet.write(row, col, 'Allowed dBm\nPer Spatial Steam\n cc_dbm', dtan_bold)
     col += 1
     worksheet.write(row, col, 'Cabling\nPathloss', dtan_bold)
     col += 1
@@ -837,7 +841,7 @@ def main():
     worksheet.write(row, col, 'Client\n Reported\n Noise', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'rssi_adj\nnoise bare\n - noise floor', dpeach_bold)
+    worksheet.write(row, col, 'rssi_adj:\nnoise bare\n - noise floor', dpeach_bold)
     col += 1
     if (args.adjust_nf):
         worksheet.write(row, col, 'Noise Floor\nAdjust\n(vs -105)', dpeach_bold)
@@ -850,43 +854,43 @@ def main():
     worksheet.write(row, col, 'Client Reported\nBeacon Signal dBm\nRSSI', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Client Reported\nCombined Signal dBm\nRSSI\nSignal ave', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nCombined Signal dBm\nRSSI\n(Signal ave)', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Client Reported\nAnt Sig dBm\n SS 1', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nAntenna\nSignal\ndBm\n SS 1', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Client Reported\nAnt Sig dBm\n SS 2', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nAntenna\nSignal\ndBm\n SS 2', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Client Reported\nAnt Sig dBm\n SS 3', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nAntenna\nSignal\ndBm\n SS 3', dpeach_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
-    worksheet.write(row, col, 'Client Reported\nAnt Sig dBm\n SS 4', dpeach_bold)
+    worksheet.write(row, col, 'Client Reported\nAntenna\nSignal\ndBm\n SS 4', dpeach_bold)
+    col += 1
+    worksheet.set_column(col, col, 25)  # Set width
+    worksheet.write(row, col, 'Calculated Antenna 1 =\n Antenna Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
+    col += 1
+    worksheet.set_column(col, col, 25)  # Set width
+    worksheet.write(row, col, 'Calculated Antenna 2 =\n Antenna Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
+    col += 1
+    worksheet.set_column(col, col, 25)  # Set width
+    worksheet.write(row, col, 'Calculated Antenna 3 =\n Antenna Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
+    col += 1
+    worksheet.set_column(col, col, 25)  # Set width
+    worksheet.write(row, col, 'Calculated Antenna 4 =\n Antenna Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 1 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
+    worksheet.write(row, col, 'Offset 1 = \nCalculated Antenna\n - cc_dbm(per SS)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 2 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
+    worksheet.write(row, col, 'Offset 2 = \nCalculated Antenna\n - cc_dbm(per SS)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 3 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
+    worksheet.write(row, col, 'Offset 3 = \nCalculated Antenna\n - cc_dbm(per SS)\n (cc_dbm(per SS)\n is allowed_per_path)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Calc Ant 4 =\n Ant Sig dBm\n + pathloss\n + rssi_adj\n + ant gain', dpink_bold)
-    col += 1
-    worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Offset 1 = \nCalc Ant\n - cc_dbm(per SS)\n (cc_dbm(per SS)\n is allowed_per_path)', dyel_bold)
-    col += 1
-    worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Offset 2 =\nCalc Ant\n - cc_dbm(per SS)\n (cc_dbm(per SS)\n is allowed_per_path)', dyel_bold)
-    col += 1
-    worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Offset 3 =\nCalc Ant\n - cc_dbm(per SS)\n (cc_dbm(per SS)\n is allowed_per_path)', dyel_bold)
-    col += 1
-    worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Offset 4 =\nCalc Ant\n - cc_dbm(per SS)\n (cc_dbm(per SS)\n is allowed_per_path)', dyel_bold)
+    worksheet.write(row, col, 'Offset 4 = \nCalculated Antenna\n - cc_dbm(per SS)\n (cc_dbm(per SS)\n is allowed_per_path)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
     worksheet.write(row, col, 'Controller\nReported\ndBm', dblue_bold)
@@ -984,20 +988,66 @@ def main():
 
     # Now, create the new connection
 
-    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
-                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"], capture_output=False)
+    # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
+    #                "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"], capture_output=False)
+    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
+                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "500000000", "--report_timer", "1000"]
+    logg.info("command: {command}".format(command=command))
+    summary_output = ''
+    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    for line in iter(summary.stdout.readline, ''):
+        logger.debug(line)
+        summary_output += line
+    summary.wait()
+    logger.info(summary_output)  
 
-    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
-                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"], capture_output=False)
+    # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
+    #                "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"], capture_output=False)
 
-    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
-                    "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000", "--endp_type", "lf_udp", "--port_name", lfstation, "--speed", "1000000"], capture_output=False)
+    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
+                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"]    
+    logg.info("command: {command}".format(command=command))
+    summary_output = ''
+    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    for line in iter(summary.stdout.readline, ''):
+        logger.debug(line)
+        summary_output += line
+    summary.wait()
+    logger.info(summary_output)  
 
-    # Old
+
     # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
-    #                "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"], capture_output=False)
+    #                 "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000", "--endp_type", "lf_udp", "--port_name", lfstation, 
+    #                "--speed", "1000000"], capture_output=False)
+
+    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
+                    "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000", "--endp_type", "lf_udp", "--port_name", lfstation, 
+                    "--speed", "500000000"]
+    logg.info("command: {command}".format(command=command))
+    summary_output = ''
+    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    for line in iter(summary.stdout.readline, ''):
+        logger.debug(line)
+        summary_output += line
+    summary.wait()
+    logger.info(summary_output)  
+
+
+    # Notes:
+    # These need to be verified with test_ip_variable_time.py - which calculates the speeds
+    #  1 antenna 80 Mhz 433 Mbps
+    #  2 antenna 80 Mhz 867 Mbps
+    #  3 antenna 80 Mhz 1,300 Mbps
+    #  4 antenna 80 Mhz 1,733 Mbps
+
+    #  1 antenna 160 Mhz 867 Mbps
+    #  2 antenna 160 Mhz 1,733 Mbps
+    #  3 antenna 160 Mhz 2,600 Mbps
+    #  4 antenna 160 Mhz 3,466 Mbps
 
     # ./lf_firemod.pl --manager 192.168.100.178 --resource 1 --action create_cx --cx_name c-udp-power --cx_endps c-udp-power-A,c-udp-power-B --report_timer 1000 --endp_type udp --port_name sta0000 --speed 1000000
+
+    # 5ghz speeds 
 
     myrd = ""
     # The script supports both the 9800 series controller and the 3504 series controller ,  the controllers have different interfaces
@@ -1235,12 +1285,32 @@ def main():
 
                     # Stop traffic , if traffic was running ,  this is on the lanforge side.  Commands that start with lf_ are directed
                     # towards the lanforge
-                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                                    "--cmd", "set_cx_state all c-udp-power STOPPED"], capture_output=True)
+                    # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
+                    #                 "--cmd", "set_cx_state all c-udp-power STOPPED"], capture_output=True)
+                    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
+                                     "--cmd", "set_cx_state all c-udp-power STOPPED"]
+                    summary_output = ''
+                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    for line in iter(summary.stdout.readline, ''):
+                        logger.debug(line)
+                        summary_output += line
+                    summary.wait()
+                    logger.info(summary_output)  
+
 
                     # Down station
-                    port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
-                                                 "--set_ifstate", "down"])
+                    # port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
+                    #                              "--set_ifstate", "down"])
+                    command = ["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
+                                                  "--set_ifstate", "down"]
+                    summary_output = ''
+                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    for line in iter(summary.stdout.readline, ''):
+                        logger.debug(line)
+                        summary_output += line
+                    summary.wait()
+                    logger.info(summary_output)  
+
                     cs.show_ap_summary()
 
                     # when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .
@@ -1764,8 +1834,21 @@ def main():
                             pss = cs.show_ap_dot11_24gz_summary()
                         logg.info(pss)
                     # Start traffic
-                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                                    "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=False)
+                    # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
+                    #                 "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=False)
+                    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
+                                    "--cmd", "set_cx_state all c-udp-power RUNNING"]
+                    logg.info("command: {command}".format(command=command))
+
+                    summary_output = ''
+                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    for line in iter(summary.stdout.readline, ''):
+                        logger.debug(line)
+                        summary_output += line
+                    summary.wait()
+                    logger.info(summary_output)  
+
+
 
                     # Wait configured number of seconds more seconds
                     logg.info("Waiting {} seconds to let traffic run for a bit, Channel {} NSS {} BW {} TX-Power {}".format(args.duration, ch, n, bw, tx))
