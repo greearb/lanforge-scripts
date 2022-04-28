@@ -2911,19 +2911,20 @@ def main():
     # report.set_table_dataframe_from_csv_sep_tab(full_outfile)
     # report.build_table()
     # TODO the table looks off
-    try:
-        report.set_table_dataframe_from_xlsx(outfile_xlsx)
-    except BaseException:
-        traceback.print_exc()
+    #try:
+    #    report.set_table_dataframe_from_xlsx(outfile_xlsx)
+    #    report.build_table()
+    #    report.build_footer()
+    #    report.write_html_with_timestamp()
+    #    report.write_index_html()
+#
+    #    report.write_pdf(_page_size='A3', _orientation='Landscape')
+    #    # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
+    #    # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
-    report.build_table()
-    report.build_footer()
-    report.write_html_with_timestamp()
-    report.write_index_html()
+    # except BaseException:
+    #     traceback.print_exc()
 
-    report.write_pdf(_page_size='A3', _orientation='Landscape')
-    # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
-    # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
     
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
