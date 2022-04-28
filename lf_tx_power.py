@@ -1675,7 +1675,6 @@ def main():
                                     elif args.band == '24g':
                                         logg.info("ap : {ap} ap_band_slot_24g: {slot}".format(ap=args.ap, slot=args.ap_band_slot_24g))
 
-                                    logg.info(m)
                                     if args.band == 'dual_band_6g' or args.band == 'dual_band_5g':
                                         pat = "%s\\s+(\\S+)\\s+(\\S+)\\s+\\S+\\s+\\S+\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+dBm\\)+\\s+\\S+\\s+\\S+\\s+(\\S+)" % (args.ap)
                                     else:
@@ -1687,10 +1686,10 @@ def main():
                                     if (m is not None):
                                         if args.band == 'dual_band_6g':
                                             logg.info("checking of dual-band slot for 6g {band_slot} present in the show ap dot11 dual-band summary".format(band_slot=args.ap_dual_band_slot_6g))
-                                            ap_band_slot = args.ap_band_slot_6g
+                                            ap_band_slot = args.ap_dual_band_slot_6g
                                         elif args.band == 'dual_band_5g':
                                             logg.info("checking of dual-band slot for 5g {band_slot} present in the show ap dot11 dual-band summary".format(band_slot=args.ap_dual_band_slot_5g))
-                                            ap_band_slot = args.ap_band_slot_5g
+                                            ap_band_slot = args.ap_dual_band_slot_5g
                                         elif args.band == '6g':
                                             logg.info("checking of band slot 6g {band_slot} present in the show ap dot11 6ghz summary".format(band_slot=args.ap_band_slot_6g))
                                             ap_band_slot = args.ap_band_slot_6g
