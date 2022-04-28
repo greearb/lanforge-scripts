@@ -430,6 +430,7 @@ def main():
     parser.add_argument("-n", "--nss", type=str, help="[test configuration] --nss '2' List of spatial streams to test.  NA means no change")
 
 
+    parser.add_argument("--nss_4x4_override", help="[test configuration] --nss_4x4_override  controller nss is 4 client nss is 2, set expected power to 1/4", action='store_true')
     parser.add_argument("--set_nss", help="[test configuration] --set_nss  configure controller to spatial streams to test", action='store_true')
     parser.add_argument("-T", "--txpower", type=str, help="[test configuration] List of txpowers to test.  NA means no change")
     parser.add_argument('-D', '--duration', type=str, help='[test configuration] --traffic <how long to run in seconds>  example -D 30 (seconds) default: 30 ', default='20')
@@ -1957,9 +1958,9 @@ def main():
                                                      "--cli_cmd", "probe_port 1 %s %s" % (lfresource, lfstation)], capture_output=True, check=True)
                         pss = port_stats.stdout.decode('utf-8', 'ignore')
                         # for debug: print the output of lf_portmod.pl and the command used
-                        logg.info("######## lf_portmod ######### ")
-                        logg.info(pss)
-                        logg.info("######## lf_portmod  END ######### ")
+                        logg.debug("######## lf_portmod ######### ")
+                        logg.debug(pss)
+                        logg.debug("######## lf_portmod  END ######### ")
 
                         if (args.show_lf_portmod):
                             logg.info("./lf_portmod.pl --manager {} --card {} --port_name {} --cli_cmd probe_port 1 {} {}".format(lfmgr,
@@ -2180,16 +2181,26 @@ def main():
                     allowed_per_path = cc_dbmi
                     logg.info("allowed_per_path: {}  = cc_dbmi: {}".format(allowed_per_path, cc_dbmi))
                     if (int(_nss) == 1):
-                        diff_a1 = calc_ant1 - cc_dbmi
-                        logg.info("(Offset 1) diff_a1 (): {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
+
+                        if args.nss_4x4_override:
+                            allowed_per_path = cc_dbmi - 6
+                            logg.info("allowed_per_path: {}  = cc_dbmi: {} - 6 nss_4x4_override True".format(allowed_per_path, cc_dbmi))
+                            logg.info("(Offset 1) diff_a1 (): {} = calc_ant1: {} - allowed_per_path: {} nss_4x4_override True".format(diff_a1, calc_ant1, allowed_per_path))
+                        else:
+                            diff_a1 = calc_ant1 - cc_dbmi
+                            logg.info("(Offset 1) diff_a1 (): {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
 
                         # if args.per_ss:
                         if (abs(diff_a1) > pfrange):
                             pf = 0
                     if (int(_nss) == 2):
                         # NSS of 2 means each chain should transmit at 1/2 total power, thus the '- 3'
-                        allowed_per_path = cc_dbmi - 3
-                        logg.info("allowed_per_path: {}  = cc_dbmi: {} - 3".format(allowed_per_path, cc_dbmi))
+                        if args.nss_4x4_override:
+                            allowed_per_path = cc_dbmi - 6
+                            logg.info("allowed_per_path: {}  = cc_dbmi: {} - 6 nss_4x4_override True".format(allowed_per_path, cc_dbmi))
+                        else:
+                            allowed_per_path = cc_dbmi - 3
+                            logg.info("allowed_per_path: {}  = cc_dbmi: {} - 3".format(allowed_per_path, cc_dbmi))
 
                         diff_a1 = calc_ant1 - allowed_per_path
                         logg.info("(Offset 1) diff_a1: {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
