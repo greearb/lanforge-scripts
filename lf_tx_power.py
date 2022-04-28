@@ -115,6 +115,7 @@ WLC1#ap name APCCC9C.3EF4.DDE0 dot11 6ghz slot 3 ?
 --ssid 6G-wpa3-AP3
 --ssidpw hello123
 --security wpa3
+--bssid DEFAULT or aa:bb:cc:00:11:22
 --no_cleanup_station
 
 [test configuration]
@@ -214,7 +215,7 @@ NOTE:  Telnet port 23 unless specified ,  ssh  port 22 unless specified,  scheme
 # to create a station
 ##############################################################################################
 
-./lf_associate_ap.pl --mgr 192.168.100.178 --radio wiphy2 --ssid 6G-wpa3-AP3 --passphrase hello123 ssecurity wpa3 --upstream 1.1.eth2 --first_ip DHCP --first_sta sta0000 --duration 25 --cxtype udp --bps_min 1000000000--ieee80211w 2 --wifi_mode abgnAX --action add
+./lf_associate_ap.pl --mgr 192.168.100.178 --radio wiphy2 --ssid 6G-wpa3-AP3 --passphrase hello123 ssecurity wpa3 --bssid DEFAULT --upstream 1.1.eth2 --first_ip DHCP --first_sta sta0000 --duration 25 --cxtype udp --bps_min 1000000000--ieee80211w 2 --wifi_mode abgnAX --action add
 
 Changing regulatory domain should happen outside of this script.
 
@@ -415,6 +416,7 @@ def main():
     parser.add_argument("--station", type=str, help="[LANforge station configuration] Use already created LANforge station, use --no_cleanup also --station wlan0", required=True)
     parser.add_argument("--ssid", type=str, help="[station configuration] station ssid, ssid of station must match the wlan created --ssid 6G-wpa3-AP3", required=True)
     parser.add_argument("--ssidpw", "--security_key", dest='ssidpw', type=str, help="[station configuration]  station security key --ssidpw hello123", required=True)
+    parser.add_argument("--bssid", "--ap_bssid", dest='bssid', type=str, help="[station configuration]  station AP bssid --bssid hello123", required=True, default='DEFAULT')
     parser.add_argument("--security", type=str, help="[station configuration] security type open wpa wpa2 wpa3", required=True)
     parser.add_argument("--wifi_mode", type=str, help="[station configuration] --wifi_mode auto  types auto|a|abg|abgn|abgnAC|abgnAX|an|anAC|anAX|b|bg|bgn|bgnAC|bgnAX|g ", default='auto')
     parser.add_argument("--vht160", action='store_true', help="[station configuration] --vht160 , Enable VHT160 in lanforge ")
@@ -940,13 +942,13 @@ def main():
             if (args.vht160):
                 logg.info("creating station with VHT160 set: {} on radio {}".format(args.station, args.radio))
                 logg.info("cwd lf_associate_ap.pl: {dir}".format(dir=os.getcwd()))
-                subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
+                subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw, "--bssid", args.bssid,
                                 "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
                                 "--first_sta", args.station, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=True)
                 sleep(3)
             else:
                 logg.info("creating station: {} on radio {}".format(args.station, args.radio))
-                subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
+                subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw, "--bssid", args.bssid,
                                 "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
                                 "--first_sta", args.station, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add"], timeout=20, capture_output=True)
 
@@ -954,13 +956,13 @@ def main():
             if (args.vht160):
                 logg.info("creating station with VHT160 set: {} on radio {}".format(args.station, args.radio))
                 print()
-                subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
+                subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw, "--bssid", args.bssid,
                                 "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
                                 "--first_sta", args.station, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=False)
                 sleep(3)
             else:
                 logg.info("creating station: {} on radio {}".format(args.station, args.radio))
-                subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw,
+                subprocess.run(["./lf_associate_ap.pl", "--mgr", lfmgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw, "--bssid", args.bssid,
                                 "--security", args.security, "--upstream", args.upstream_port, "--first_ip", "DHCP",
                                 "--first_sta", args.station, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add"], timeout=20, capture_output=False)
         sleep(3)
@@ -1446,22 +1448,50 @@ def main():
                             logg.info(
                                 "wlan already present, no need to create wlanID {} wlan {} wlanSSID {} port {}".format(
                                     args.wlanID, args.wlan, args.wlanSSID, args.port))
-                            pass
+
+                            if args.band == 'dual_band_6g':
+                                pss = cs.show_ap_dot11_dual_band_6gz_summary()
+                                logg.info(pss)
+                                pss = cs.show_ap_bssid__dual_band_6ghz()
+                                logg.info(pss)
+                            elif args.band == 'dual_band_5g':
+                                pss = cs.show_ap_dot11_dual_band_5gz_summary()
+                                logg.info(pss)
+                                pss = cs.show_ap_bssid_dual_band_5ghz()
+                                logg.info(pss)
+                            elif args.band == '6g':
+                                pss = cs.show_ap_dot11_6gz_summary()
+                                logg.info(pss)
+                                pss = cs.show_ap_bssid_6ghz()
+                                logg.info(pss)                                
+                            elif args.band == '5g':
+                                pss = cs.show_ap_dot11_5gz_summary()
+                                logg.info(pss)
+                                pss = cs.show_ap_bssid_5ghz()
+                                logg.info(pss)
+                            elif args.band == '24g':
+                                pss = cs.show_ap_dot11_24gz_summary()
+                                logg.info(pss)
+                                pss = cs.show_ap_bssid_24ghz()
+                                logg.info(pss)
+
+
+                            
                         else:
                             # Verify that a wlan does not exist on wlanID
                             # delete the wlan if already exists
                             pss = cs.show_wlan_summary()
                             logg.info(pss)
                             if args.band == 'dual_band_6g':
-                                cs.show_ap_dot11_dual_band_6gz_summary
+                                cs.show_ap_dot11_dual_band_6gz_summary()
                             elif args.band == 'dual_band_5g':
-                                cs.show_ap_dot11_dual_band_5gz_summary
+                                cs.show_ap_dot11_dual_band_5gz_summary()
                             elif args.band == '6g':
-                                cs.show_ap_dot11_6gz_summary
+                                cs.show_ap_dot11_6gz_summary()
                             elif args.band == '5g':
-                                cs.show_ap_dot11_5gz_summary
+                                cs.show_ap_dot11_5gz_summary()
                             elif args.band == '24g':
-                                cs.show_ap_dot11_24gz_summary
+                                cs.show_ap_dot11_24gz_summary()
 
                             #  "number of WLANs:\s+(\S+)"
                             # https://regex101.com/
@@ -1824,15 +1854,29 @@ def main():
                         # being explicite as
                         if args.band == 'dual_band_6g':
                             pss = cs.show_ap_dot11_dual_band_6gz_summary()
+                            logg.info(pss)
+                            pss = cs.show_ap_bssid__dual_band_6ghz()
+                            logg.info(pss)
                         elif args.band == 'dual_band_5g':
                             pss = cs.show_ap_dot11_dual_band_5gz_summary()
+                            logg.info(pss)
+                            pss = cs.show_ap_bssid_dual_band_5ghz()
+                            logg.info(pss)
                         elif args.band == '6g':
                             pss = cs.show_ap_dot11_6gz_summary()
+                            logg.info(pss)
+                            pss = cs.show_ap_bssid_6ghz()
+                            logg.info(pss)                                
                         elif args.band == '5g':
                             pss = cs.show_ap_dot11_5gz_summary()
+                            logg.info(pss)
+                            pss = cs.show_ap_bssid_5ghz()
+                            logg.info(pss)
                         elif args.band == '24g':
                             pss = cs.show_ap_dot11_24gz_summary()
-                        logg.info(pss)
+                            logg.info(pss)
+                            pss = cs.show_ap_bssid_24ghz()
+                            logg.info(pss)
                     # Start traffic
                     # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
                     #                 "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=False)
@@ -2662,12 +2706,18 @@ def main():
         if args.band == 'dual_band_6g':
             pss = cs.show_ap_dot11_dual_band_6gz_summary()
             logg.info(pss)
+            pss = cs.show_ap_bssid__dual_band_6ghz()
+            logg.info(pss)
         elif args.band == 'dual_band_5g':
             pss = cs.show_ap_dot11_dual_band_5gz_summary()
+            logg.info(pss)
+            pss = cs.show_ap_bssid_dual_band_5ghz()
             logg.info(pss)
         elif args.band == '6g':
             pss = cs.show_ap_dot11_6gz_summary()
             logg.info(pss)
+            pss = cs.show_ap_bssid_6ghz()
+            logg.info(pss)                                
         pss = cs.show_ap_dot11_5gz_summary()
         logg.info(pss)
         pss = cs.show_ap_dot11_24gz_summary()
@@ -2809,11 +2859,18 @@ def main():
     if args.band == 'dual_band_6g':
         pss = cs.show_ap_dot11_dual_band_6gz_summary()
         logg.info(pss)
-    if args.band == 'dual_band_5g':
+        pss = cs.show_ap_bssid__dual_band_6ghz()
+        logg.info(pss)
+    elif args.band == 'dual_band_5g':
         pss = cs.show_ap_dot11_dual_band_5gz_summary()
         logg.info(pss)
-    if args.band == '6g':
+        pss = cs.show_ap_bssid_dual_band_5ghz()
         logg.info(pss)
+    elif args.band == '6g':
+        pss = cs.show_ap_dot11_6gz_summary()
+        logg.info(pss)
+        pss = cs.show_ap_bssid_6ghz()
+        logg.info(pss)                                
 
     pss = cs.show_ap_dot11_5gz_summary()
     logg.info(pss)
