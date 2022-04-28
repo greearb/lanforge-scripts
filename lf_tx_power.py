@@ -416,7 +416,7 @@ def main():
     parser.add_argument("--station", type=str, help="[LANforge station configuration] Use already created LANforge station, use --no_cleanup also --station wlan0", required=True)
     parser.add_argument("--ssid", type=str, help="[station configuration] station ssid, ssid of station must match the wlan created --ssid 6G-wpa3-AP3", required=True)
     parser.add_argument("--ssidpw", "--security_key", dest='ssidpw', type=str, help="[station configuration]  station security key --ssidpw hello123", required=True)
-    parser.add_argument("--bssid", "--ap_bssid", dest='bssid', type=str, help="[station configuration]  station AP bssid --bssid hello123", required=True, default='DEFAULT')
+    parser.add_argument("--bssid", "--ap_bssid", dest='bssid', type=str, help="[station configuration]  station AP bssid ", required=True)
     parser.add_argument("--security", type=str, help="[station configuration] security type open wpa wpa2 wpa3", required=True)
     parser.add_argument("--wifi_mode", type=str, help="[station configuration] --wifi_mode auto  types auto|a|abg|abgn|abgnAC|abgnAX|an|anAC|anAX|b|bg|bgn|bgnAC|bgnAX|g ", default='auto')
     parser.add_argument("--vht160", action='store_true', help="[station configuration] --vht160 , Enable VHT160 in lanforge ")
@@ -1466,7 +1466,7 @@ def main():
                             if args.band == 'dual_band_6g':
                                 pss = cs.show_ap_dot11_dual_band_6gz_summary()
                                 logg.info(pss)
-                                pss = cs.show_ap_bssid__dual_band_6ghz()
+                                pss = cs.show_ap_bssid_dual_band_6ghz()
                                 logg.info(pss)
                             elif args.band == 'dual_band_5g':
                                 pss = cs.show_ap_dot11_dual_band_5gz_summary()
@@ -1868,7 +1868,7 @@ def main():
                         if args.band == 'dual_band_6g':
                             pss = cs.show_ap_dot11_dual_band_6gz_summary()
                             logg.info(pss)
-                            pss = cs.show_ap_bssid__dual_band_6ghz()
+                            pss = cs.show_ap_bssid_dual_band_6ghz()
                             logg.info(pss)
                         elif args.band == 'dual_band_5g':
                             pss = cs.show_ap_dot11_dual_band_5gz_summary()
@@ -2729,7 +2729,7 @@ def main():
         if args.band == 'dual_band_6g':
             pss = cs.show_ap_dot11_dual_band_6gz_summary()
             logg.info(pss)
-            pss = cs.show_ap_bssid__dual_band_6ghz()
+            pss = cs.show_ap_bssid_dual_band_6ghz()
             logg.info(pss)
         elif args.band == 'dual_band_5g':
             pss = cs.show_ap_dot11_dual_band_5gz_summary()
@@ -2882,7 +2882,7 @@ def main():
     if args.band == 'dual_band_6g':
         pss = cs.show_ap_dot11_dual_band_6gz_summary()
         logg.info(pss)
-        pss = cs.show_ap_bssid__dual_band_6ghz()
+        pss = cs.show_ap_bssid_dual_band_6ghz()
         logg.info(pss)
     elif args.band == 'dual_band_5g':
         pss = cs.show_ap_dot11_dual_band_5gz_summary()
