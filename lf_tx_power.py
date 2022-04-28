@@ -887,10 +887,10 @@ def main():
     worksheet.write(row, col, 'Offset 2 = \nCalculated Antenna\n - cc_dbm(per SS)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Offset 3 = \nCalculated Antenna\n - cc_dbm(per SS)\n (cc_dbm(per SS)\n is allowed_per_path)', dyel_bold)
+    worksheet.write(row, col, 'Offset 3 = \nCalculated Antenna\n - cc_dbm(per SS)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Offset 4 = \nCalculated Antenna\n - cc_dbm(per SS)\n (cc_dbm(per SS)\n is allowed_per_path)', dyel_bold)
+    worksheet.write(row, col, 'Offset 4 = \nCalculated Antenna\n - cc_dbm(per SS)', dyel_bold)
     col += 1
     worksheet.set_column(col, col, 15)  # Set width
     worksheet.write(row, col, 'Controller\nReported\ndBm', dblue_bold)
