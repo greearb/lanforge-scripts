@@ -1321,12 +1321,27 @@ def main():
 
                     # if dual band : disable dual-band mode, config mode, enable dual-band mode
                     # disable dual-band mode
+                    # for other bands just disable the radio
                     if args.band == "dual_band_6g":
                         logg.info("ap_dot11_dual_band_mode_shutdown_6ghz")
                         cs.ap_dot11_dual_band_mode_shutdown_6ghz()
                     elif args.band == "dual_band_5g":
                         logg.info("ap_dot11_dual_band_mode_shutdown_5ghz")
                         cs.ap_dot11_dual_band_mode_shutdown_5ghz()
+                    elif args.band == "6g":
+                        logg.info("ap_dot11_shutdown_6ghz")
+                        cs.show_ap_dot11_6gz_shutdown()
+                    elif args.band == "5g":
+                        logg.info("ap_dot11_shutdown_5ghz")
+                        cs.show_ap_dot11_5gz_shutdown()
+                    elif args.band == "24g":
+                        logg.info("ap_dot11_shutdown_24ghz")
+                        cs.show_ap_dot11_24gz_shutdown()
+
+
+                    # if dual band : disable dual-band mode, config mode, enable dual-band mode
+                    # disable dual-band mode
+
 
                     # set the radio role selection
                     if args.band == 'dual_band_6g':
@@ -1335,6 +1350,15 @@ def main():
                     elif args.band == 'dual_band_5g':
                         logg.info("ap_dot11_dual_band_5ghz_radio_role_manual_client_serving")
                         cs.ap_dot11_dual_band_5ghz_radio_role_manual_client_serving()
+                    elif args.band == '6g':
+                        cs.ap_dot11_6ghz_radio_role_manual_client_serving()
+                        logg.info("ap_dot11_6ghz_radio_role_manual_client_serving")
+                    elif args.band == '5g':
+                        cs.ap_dot11_5ghz_radio_role_manual_client_serving()
+                        logg.info("ap_dot11_5ghz_radio_role_manual_client_serving")
+                    elif args.band == '24g':
+                        cs.ap_dot11_24ghz_radio_role_manual_client_serving()
+                        logg.info("ap_dot11_24ghz_radio_role_manual_client_serving")
 
                     # config dual-band mode
                     if args.band == "dual_band_6g":
@@ -1375,17 +1399,6 @@ def main():
                         elif args.band == '24g':
                             cs.ap_dot11_24ghz_shutdown()
 
-                        # manual
-                        if args.band == 'dual_band_6g':
-                            cs.ap_dot11_dual_band_6ghz_radio_role_manual_client_serving()
-                        elif args.band == 'dual_band_5g':
-                            cs.ap_dot11_dual_band_5ghz_radio_role_manual_client_serving()
-                        elif args.band == '6g':
-                            cs.ap_dot11_6ghz_radio_role_manual_client_serving()
-                        elif args.band == '5g':
-                            cs.ap_dot11_5ghz_radio_role_manual_client_serving()
-                        elif args.band == '24g':
-                            cs.ap_dot11_24ghz_radio_role_manual_client_serving()
 
                     else:
                         cs.ap_dot11_5ghz_shutdown()
