@@ -129,6 +129,15 @@ class lf_report:
         # print("dst_file: {}".format(banner_dst_file))
         shutil.copy(banner_src_file, banner_dst_file)
 
+    def move_data(self, directory=None, _file_name=None, directory_name=None):
+        if directory_name is  None:
+            _src_file = str(self.current_path) +  '/' + str(_file_name)
+            _dst_file = str(self.path_date_time) + '/' + str(directory) + '/' + str(_file_name)
+        else:
+            _src_file = str(self.current_path) + '/' + str(directory_name)
+            _dst_file = str(self.path_date_time) +  '/' + str(directory_name)
+        shutil.move(_src_file, _dst_file)
+
     def copy_css(self):
         reportcss_src_file = str(self.current_path) + '/' + str(self.banner_directory) + '/report.css'
         # print("copy_css: source file is: "+reportcss_src_file)
@@ -209,6 +218,18 @@ class lf_report:
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.critical("exception making {}".format(self.log_directory))
+            exit(1)
+
+    def build_x_directory(self, directory_name=None):
+        directory = None
+        if directory_name:
+            directory = os.path.join(self.path_date_time, str(directory_name))
+        try:
+            if not os.path.exists(directory):
+                os.mkdir(directory)
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.critical("exception making {}".format(directory))
             exit(1)
 
     def set_text(self, _text):
