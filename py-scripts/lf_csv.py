@@ -20,6 +20,7 @@ INCLUDE_IN_README
 '''
 
 import pandas as pd
+from pandas import *
 
 class lf_csv:
     def __init__(self,
@@ -36,11 +37,21 @@ class lf_csv:
 
     def generate_csv(self):
         df = {}
-        for i in range(len(self.columns)):
-            df[self.columns[i]] = self.rows[i]
+        if self.rows != []:
+            for i in range(len(self.columns)):
+                df[self.columns[i]] = self.rows[i]
+        else:
+            for i in range(len(self.columns)):
+                df[self.columns[i]] = []
         csv_df = pd.DataFrame(df)
         print(csv_df)
         csv_df.to_csv(self.filename, index=False, encoding='utf-8', na_rep='NA', float_format='%.2f')
+
+    def read_csv(self, file_name, column=None):
+        data = read_csv(str(file_name))
+        value = data[str(column)].tolist()
+        print("value of column", value)
+        return value
 
 def main():
     test = lf_csv()
