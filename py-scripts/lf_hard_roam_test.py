@@ -28,6 +28,7 @@ cv_test_reports = importlib.import_module("py-json.cv_test_reports")
 lf_report = cv_test_reports.lanforge_reports
 lf_report_pdf = importlib.import_module("py-scripts.lf_report")
 lf_csv = importlib.import_module("py-scripts.lf_csv")
+lf_graph = importlib.import_module("py-scripts.lf_graph")
 
 from lf_cleanup import lf_clean
 from sta_connect2 import StaConnect2
@@ -560,6 +561,50 @@ class HardRoam(Realm):
         FMT = '%b %d %H:%M:%S'
         self.test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
 
+    def generate_client_pass_fail_graph(self, csv_list=None):
+        x_axis_category = []
+        for i in range(self.num_sta):
+            x_axis_category.append(i+1)
+        print(x_axis_category)
+        final_list = []
+        len= None
+        pass_list = []
+        fail_list = []
+        dataset = []
+        for i in csv_list:
+            csv_file = i
+            lf_csv_obj = lf_csv()
+            h = lf_csv_obj.read_csv(file_name=csv_file, column="PASS/FAIL")
+
+            count = h.count("PASS")
+            print(count)
+            count_ = final_list.count("FAIL")
+            pass_list.append(count)
+            fail_list.append(count_)
+        dataset.append(pass_list)
+        dataset.append(fail_list)
+        print(dataset)
+
+
+        # it will contain per station station pass and fail number eg [[9, 7], [3, 4]] here 9, 7 are pass number for clients  3 and 4 are fail number
+        # dataset = [[9, 7 , 4], [3, 4,9]]
+        graph = lf_graph.lf_bar_graph(_data_set=dataset, _xaxis_name="Stations", _yaxis_name="Total iterations = " + str(self.iteration),
+                                      _xaxis_categories = x_axis_category,
+                                       _label=["Pass", "Fail"], _xticks_font=8,
+                                      _graph_image_name="11r roam client per iteration graph",
+                                      _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black',
+                                      _figsize=(12, 4),
+                                      _grp_title="client per iteration graph", _xaxis_step=1,
+                                      _show_bar_value=True,
+                                      _text_font=6, _text_rotation=60,
+                                      _legend_loc="upper right",
+                                      _legend_box=(1, 1.15),
+                                      _enable_csv=True
+                                      )
+        graph_png = graph.build_bar_graph()
+        print("graph name {}".format(graph_png))
+        return graph_png
+
     def generate_report(self, csv_list, current_path=None):
         report = lf_report_pdf.lf_report(_path= "", _results_dir_name="Hard Roam Test", _output_html="hard_roam.html",
                                          _output_pdf="Hard_roam_test.pdf")
@@ -567,6 +612,17 @@ class HardRoam(Realm):
             report.current_path = os.path.dirname(os.path.abspath(current_path))
         report_path = report.get_report_path()
         report.build_x_directory(directory_name="csv_data")
+        for i in csv_list:
+            report.set_obj_html("Client per iteration Graph",
+                                "The below graph provides information about out of total iterations how many times each client got Pass or Fail")
+            report.build_objective()
+
+            graph = self.generate_client_pass_fail_graph(csv_list=i)
+            report.set_graph_image(graph)
+            report.set_csv_filename(graph)
+            report.move_csv_file()
+            report.move_graph_image()
+            report.build_graph()
         for i in csv_list:
             report.move_data(directory="csv_data", _file_name=str(i))
         report.move_data(directory_name="pcap")
@@ -643,7 +699,7 @@ def main():
                    sixg_radio=None,
                    band="fiveg",
                    sniff_radio="wiphy2",
-                   num_sta=2,
+                   num_sta=1,
                    security="wpa2",
                    security_key="something",
                    ssid="RoamAP5g",
@@ -657,9 +713,10 @@ def main():
                    dut_name=["AP687D.B45C.1D1C", "AP687D.B45C.1D1C"]
                    )
     # obj.stop_sniffer()
-    file = obj.generate_csv()
-    obj.run(file_n=file)
-    obj.generate_report(csv_list=file)
+    # file = obj.generate_csv()
+    # obj.run(file_n=file)
+    # obj.generate_report(csv_list=file)
+    obj.generate_client_pass_fail_graph()
 
 
 if __name__ == '__main__':
