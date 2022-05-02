@@ -558,9 +558,11 @@ class HardRoam(Realm):
         FMT = '%b %d %H:%M:%S'
         self.test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
 
-    def generate_report(self, csv_list):
+    def generate_report(self, csv_list, current_path=None):
         report = lf_report_pdf.lf_report(_path= "", _results_dir_name="Hard Roam Test", _output_html="hard_roam.html",
                                          _output_pdf="Hard_roam_test.pdf")
+        if current_path is not None:
+            report.current_path = os.path.dirname(os.path.abspath(current_path))
         report_path = report.get_report_path()
         report.build_x_directory(directory_name="csv_data")
         for i in csv_list:
@@ -608,9 +610,11 @@ class HardRoam(Realm):
             report.set_table_dataframe(test_setup)
             report.build_table()
 
+
         report.build_footer()
         report.write_html()
         report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+        return report_path
 
 
 def main():
