@@ -39,7 +39,7 @@ from lf_csv import lf_csv
 class HardRoam(Realm):
     def __init__(self, lanforge_ip=None,
                  lanforge_port=None,
-                 lanforge_ssh_port=22,
+                 lanforge_ssh_port=None,
                  c1_bssid=None,
                  c2_bssid=None,
                  fiveg_radio=None,
@@ -57,7 +57,8 @@ class HardRoam(Realm):
                  channel=None,
                  option=None,
                  duration_based=None,
-                 iteration_based=None):
+                 iteration_based=None,
+                 dut_name=[]):
         super().__init__(lanforge_ip,
                          lanforge_port)
         self.lanforge_ip = lanforge_ip
@@ -88,6 +89,7 @@ class HardRoam(Realm):
         self.pcap_name = None
         self.test_duration = None
         self.client_list = []
+        self.dut_name = dut_name
 
     def get_station_list(self):
         # realm_obj = self.staConnect.localrealm
@@ -570,8 +572,8 @@ class HardRoam(Realm):
         report.move_data(directory_name="pcap")
         date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
         test_setup_info = {
-            "DUT Name": "AP687D.B45C.1D1C",
-            "SSID": "RoamAP6g",
+            "DUT Name": self.dut_name,
+            "SSID": self.ssid_name,
             "Test Duration": self.test_duration,
         }
         report.set_title("HARD ROAM (11r) TEST")
@@ -585,7 +587,7 @@ class HardRoam(Realm):
         report.set_obj_html("Objective", "The Hard Roam (11r) Test is designed to test the performance of the "
                                          "Access Point. The goal is to check whether the 11r configuration of AP for  all the "
                             + str(self.num_sta) +
-                            "clients are working as expected or not")
+                            " clients are working as expected or not")
         report.build_objective()
 
 
@@ -610,6 +612,19 @@ class HardRoam(Realm):
             report.set_table_dataframe(test_setup)
             report.build_table()
 
+        test_input_infor = {
+            "LANforge ip": self.lanforge_ip,
+            "LANforge port": self.lanforge_port,
+            "Bands": self.band,
+            "Upstream": self.upstream,
+            "Stations": self.num_sta,
+            "SSID": self.ssid_name,
+            "Security": self.security,
+            "Contact": "support@candelatech.com"
+        }
+        report.set_table_title("Test input Information")
+        report.build_table_title()
+        report.test_setup_table(value="Information", test_setup_data=test_input_infor)
 
         report.build_footer()
         report.write_html()
@@ -620,6 +635,7 @@ class HardRoam(Realm):
 def main():
     obj = HardRoam(lanforge_ip="192.168.100.131",
                    lanforge_port=8080,
+                   lanforge_ssh_port=22,
                    c1_bssid="10:f9:20:fd:f3:4d",
                    c2_bssid="68:7d:b4:5f:5c:3d",
                    fiveg_radio="wiphy1",
@@ -637,7 +653,8 @@ def main():
                    channel=40,
                    option="ota",
                    duration_based=False,
-                   iteration_based=True
+                   iteration_based=True,
+                   dut_name=["AP687D.B45C.1D1C", "AP687D.B45C.1D1C"]
                    )
     # obj.stop_sniffer()
     file = obj.generate_csv()
