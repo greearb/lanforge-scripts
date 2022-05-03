@@ -449,17 +449,19 @@ def main():
     parser.add_argument("--testbed_location", dest='testbed_location', type=str, help="[testbed configuration] --testbed_location <from show ap summary Location>", default="default location")
 
     # kpi_csv arguments:
-    parser.add_argument("--test_tag", default="", help="test tag for kpi.csv,  test specific information to differenciate the test")
-    parser.add_argument("--dut_hw_version", default="", help="dut hw version for kpi.csv, hardware version of the device under test")
-    parser.add_argument("--dut_sw_version", default="", help="dut sw version for kpi.csv, software version of the device under test")
-    parser.add_argument("--dut_model_num", default="", help="dut model for kpi.csv,  model number / name of the device under test")
-    parser.add_argument("--dut_serial_num", default="", help="dut serial for kpi.csv, serial number / serial number of the device under test")
-    parser.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
-    parser.add_argument("--test_id", default="TX power", help="test-id for kpi.csv,  script or test name")
+    parser.add_argument("--test_tag", default="", help="[kpi configuration] test tag for kpi.csv,  test specific information to differenciate the test")
+    parser.add_argument("--dut_hw_version", default="", help="[kpi configuration] dut hw version for kpi.csv, hardware version of the device under test")
+    parser.add_argument("--dut_sw_version", default="", help="[kpi configuration] dut sw version for kpi.csv, software version of the device under test")
+    parser.add_argument("--dut_model_num", default="", help="[kpi configuration] dut model for kpi.csv,  model number / name of the device under test")
+    parser.add_argument("--dut_serial_num", default="", help="[kpi configuration] dut serial for kpi.csv, serial number / serial number of the device under test")
+    parser.add_argument("--test_priority", default="", help="[kpi configuration] dut model for kpi.csv,  test-priority is arbitrary number")
+    parser.add_argument("--test_id", default="TX power", help="[kpi configuration] test-id for kpi.csv,  script or test name")
+
+    parser.add_argument("--html_report", help="[html configuration] --html_report store True , will create html and pdf reports", action='store_true')
 
     parser.add_argument('--local_lf_report_dir', help='--local_lf_report_dir override the report path, primary use when running test in test suite', default="")
 
-    # TODO ADD KPI configuration
+    # TODO ADD KP configuration
 
     # debug configuration
     parser.add_argument("--wait_forever", action='store_true', help="[debug configuration] Wait forever for station to associate, may aid debugging if STA cannot associate properly")
@@ -995,15 +997,28 @@ def main():
     # First, delete any old one
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
                     "--cmd", "rm_cx all c-udp-power"], capture_output=False)
+
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
                     "--cmd", "rm_endp c-udp-power-A"], capture_output=False)
+
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "do_cmd",
                     "--cmd", "rm_endp c-udp-power-B"], capture_output=False)
 
     # Now, create the new connection
+    # 
+    # higher is better because it means more frames at the signal level to be measured vs leaked frames at low signal lev
+    # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
+    #                 "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"], capture_output=False)
 
     # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
-    #                "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"], capture_output=False)
+    #             "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"], capture_output=False)
+    
+    
+    # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
+    #                 "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"], capture_output=False)
+
+
+
     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
                     "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "500000000", "--report_timer", "1000"]
     logg.info("command: {command}".format(command=command))
@@ -1015,9 +1030,7 @@ def main():
     summary.wait()
     logger.info(summary_output)  
 
-    # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
-    #                "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"], capture_output=False)
-
+   
     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
                     "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"]    
     logg.info("command: {command}".format(command=command))
@@ -1030,13 +1043,9 @@ def main():
     logger.info(summary_output)  
 
 
-    # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
-    #                 "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000", "--endp_type", "lf_udp", "--port_name", lfstation, 
-    #                "--speed", "1000000"], capture_output=False)
 
     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
-                    "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000", "--endp_type", "lf_udp", "--port_name", lfstation, 
-                    "--speed", "500000000"]
+                    "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"]
     logg.info("command: {command}".format(command=command))
     summary_output = ''
     summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -2999,23 +3008,23 @@ def main():
     # close the workbook 
     close_workbook(workbook)
 
-    # TODO fix csv output
-    # report.set_table_dataframe_from_csv_sep_tab(full_outfile)
-    # report.build_table()
-    # TODO the table looks off
-    #try:
-    #    report.set_table_dataframe_from_xlsx(outfile_xlsx)
-    #    report.build_table()
-    #    report.build_footer()
-    #    report.write_html_with_timestamp()
-    #    report.write_index_html()
-#
-    #    report.write_pdf(_page_size='A3', _orientation='Landscape')
-    #    # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
-    #    # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+    if args.html_report:
+        # TODO fix csv output
+        report.set_table_dataframe_from_csv_sep_tab(full_outfile)
+        report.build_table()
+        # TODO the table looks off
+        try:
+            report.set_table_dataframe_from_xlsx(outfile_xlsx)
+            report.build_table()
+            report.build_footer()
+            report.write_html_with_timestamp()
+            report.write_index_html()
 
-    # except BaseException:
-    #     traceback.print_exc()
+            report.write_pdf(_page_size='A3', _orientation='Landscape')
+            # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
+            # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+        except BaseException:
+             traceback.print_exc()
 
     
 
