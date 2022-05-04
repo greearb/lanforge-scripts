@@ -433,7 +433,7 @@ def main():
     parser.add_argument("--nss_4x4_ap_adjust", help="[test configuration] --nss_4x4_ap_adjust read ap to know number of spatial stream to take into account", action='store_true')
     parser.add_argument("--set_nss", help="[test configuration] --set_nss  configure controller to spatial streams to test", action='store_true')
     parser.add_argument("-T", "--txpower", type=str, help="[test configuration] List of txpowers to test.  NA means no change")
-    parser.add_argument('-D', '--duration', type=str, help='[test configuration] --traffic <how long to run in seconds>  example -D 30 (seconds) default: 30 ', default='20')
+    parser.add_argument('-D', '--duration', type=str, help='[test configuration] --traffic <how long to run in seconds>  example -D 30 (seconds) default: 30 ', default='30')
     parser.add_argument('--wait_time', type=str, help='[test configuration] --wait_time <how long to wait for station to connect seconds>  example --wait_time 180 (seconds) default: 180 ', default='180')
     parser.add_argument("--outfile", help="[test configuration] Output file for csv data --outfile 'tx_power_AX210_2x2_6E")
     parser.add_argument("-k", "--keep_state", "--no_cleanup", dest="keep_state", action="store_true", help="[test configuration] --no_cleanup, keep the state, no configuration change at the end of the test")
@@ -1007,11 +1007,11 @@ def main():
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
                     "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"], capture_output=False)
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
-                "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"], capture_output=False)
+                "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "100000000", "--report_timer", "1000"], capture_output=False)
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
                     "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"], capture_output=False)
     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
-                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"]    
+                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "9600", "--report_timer", "1000"]    
     logg.info("command: {command}".format(command=command))
     summary_output = ''
     summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -1022,7 +1022,7 @@ def main():
     logger.info(summary_output)  
 
     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
-                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000","--log_cli","1"]
+                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "100000000", "--report_timer", "1000"]
     logg.info("command: {command}".format(command=command))
     summary_output = ''
     summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -1034,7 +1034,7 @@ def main():
     # ./lf_firemod.pl --manager 192.168.100.178 --resource 1 --action create_cx --cx_name c-udp-power --cx_endps c-udp-power-A,c-udp-power-B --report_timer 1000 --endp_type lf_udp --port_name sta0003 --use_speeds 0,1000000
     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
                     "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000", "--endp_type", "lf_udp", "--port_name", lfstation,
-                    "--use_speeds","0,1000000"]
+                    "--use_speeds","9600,100000000"]
     logg.info("command: {command}".format(command=command))
     summary_output = ''
     summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
