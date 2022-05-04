@@ -1017,20 +1017,6 @@ def main():
     # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
     #                 "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"], capture_output=False)
 
-
-
-    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
-                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "500000000", "--report_timer", "1000"]
-    logg.info("command: {command}".format(command=command))
-    summary_output = ''
-    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    for line in iter(summary.stdout.readline, ''):
-        logger.debug(line)
-        summary_output += line
-    summary.wait()
-    logger.info(summary_output)  
-
-   
     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
                     "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"]    
     logg.info("command: {command}".format(command=command))
@@ -1042,10 +1028,20 @@ def main():
     summary.wait()
     logger.info(summary_output)  
 
-
+    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
+                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"]
+    logg.info("command: {command}".format(command=command))
+    summary_output = ''
+    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    for line in iter(summary.stdout.readline, ''):
+        logger.debug(line)
+        summary_output += line
+    summary.wait()
+    logger.info(summary_output)  
 
     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
-                    "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"]
+                    "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000", "--endp_type", "lf_udp", "--port_name", lfstation,
+                    "--speed","1000000"]
     logg.info("command: {command}".format(command=command))
     summary_output = ''
     summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -1310,29 +1306,30 @@ def main():
                     # towards the lanforge
                     # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
                     #                 "--cmd", "set_cx_state all c-udp-power STOPPED"], capture_output=True)
-                    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                                     "--cmd", "set_cx_state all c-udp-power STOPPED"]
-                    summary_output = ''
-                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                    for line in iter(summary.stdout.readline, ''):
-                        logger.debug(line)
-                        summary_output += line
-                    summary.wait()
-                    logger.info(summary_output)  
+                    # command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
+                    #                  "--cmd", "set_cx_state all c-udp-power STOPPED"]
+                    # summary_output = ''
+                    # summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    # for line in iter(summary.stdout.readline, ''):
+                    #     logger.debug(line)
+                    #     summary_output += line
+                    # summary.wait()
+                    # logger.info(summary_output)  
 
 
                     # Down station
                     # port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
                     #                              "--set_ifstate", "down"])
-                    command = ["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
-                                                  "--set_ifstate", "down"]
-                    summary_output = ''
-                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                    for line in iter(summary.stdout.readline, ''):
-                        logger.debug(line)
-                        summary_output += line
-                    summary.wait()
-                    logger.info(summary_output)  
+                    # CMR TODO this looks to be an issue
+                    # command = ["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
+                    #                               "--set_ifstate", "down"]
+                    # summary_output = ''
+                    # summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    # for line in iter(summary.stdout.readline, ''):
+                    #     logger.debug(line)
+                    #     summary_output += line
+                    # summary.wait()
+                    # logger.info(summary_output)  
 
                     cs.show_ap_summary()
 
@@ -1910,11 +1907,77 @@ def main():
                             logg.info(pss)
                             pss = cs.show_ap_bssid_24ghz()
                             logg.info(pss)
+
+
+                    # Create downstream connection
+                    # First, delete any old one
+                    # Note this code is duplicated later as a work around for the
+                    # Endpoint B Min Tx Rate being reset to zero
+                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
+                                    "--cmd", "rm_cx all c-udp-power"], capture_output=False)
+
+                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
+                                    "--cmd", "rm_endp c-udp-power-A"], capture_output=False)
+
+                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "do_cmd",
+                                    "--cmd", "rm_endp c-udp-power-B"], capture_output=False)
+
+                    # set speed
+                    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
+                                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"]    
+                    logg.info("command: {command}".format(command=command))
+                    summary_output = ''
+                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    for line in iter(summary.stdout.readline, ''):
+                        logger.debug(line)
+                        summary_output += line
+                    summary.wait()
+                    logger.info(summary_output)  
+
+                    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
+                                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"]
+                    logg.info("command: {command}".format(command=command))
+                    summary_output = ''
+                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    for line in iter(summary.stdout.readline, ''):
+                        logger.debug(line)
+                        summary_output += line
+                    summary.wait()
+                    logger.info(summary_output)  
+
+                    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
+                                    "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000", "--endp_type", "lf_udp", "--port_name", lfstation,
+                                    "--speed","1000000"]
+                    logg.info("command: {command}".format(command=command))
+                    summary_output = ''
+                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    for line in iter(summary.stdout.readline, ''):
+                        logger.debug(line)
+                        summary_output += line
+                    summary.wait()
+                    logger.info(summary_output)  
+
+                    # command = ["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
+                    #                               "--set_ifstate", "up"]
+                    # summary_output = ''
+                    # summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    # for line in iter(summary.stdout.readline, ''):
+                    #     logger.debug(line)
+                    #     summary_output += line
+                    # summary.wait()
+                    # logger.info(summary_output)  
+
+
+
                     # Start traffic
                     # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                    #                 "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=False)
+                    #                 "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=False)   
+                    # 
+                    logg.info("Start Running cx")
+                    
                     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                                    "--cmd", "set_cx_state all c-udp-power RUNNING"]
+                                     "--cmd", "set_cx_state all c-udp-power RUNNING"]
+
                     logg.info("command: {command}".format(command=command))
 
                     summary_output = ''
@@ -1925,6 +1988,17 @@ def main():
                     summary.wait()
                     logger.info(summary_output)  
 
+                    # Config Speed on B after start
+                    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
+                                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"]
+                    logg.info("command: {command}".format(command=command))
+                    summary_output = ''
+                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    for line in iter(summary.stdout.readline, ''):
+                        logger.debug(line)
+                        summary_output += line
+                    summary.wait()
+                    logger.info(summary_output)  
 
 
                     # Wait configured number of seconds more seconds
@@ -2106,6 +2180,8 @@ def main():
                     endp_stats = subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--endp_vals", "rx_bps",
                                                  "--cx_name", "c-udp-power"], capture_output=True, check=True)
 
+                                                 
+
                     pss = endp_stats.stdout.decode('utf-8', 'ignore')
                     logg.info(pss)
 
@@ -2122,8 +2198,22 @@ def main():
                                 e_tot += "  "
 
                     # Stop traffic
-                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                                    "--cmd", "set_cx_state all c-udp-power STOPPED"], capture_output=True, check=True)
+                    # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
+                    #                "--cmd", "set_cx_state all c-udp-power STOPPED"], capture_output=True, check=True)
+
+                    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
+                                     "--cmd", "set_cx_state all c-udp-power STOPPED"]
+
+                    logg.info("command: {command}".format(command=command))
+
+                    summary_output = ''
+                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    for line in iter(summary.stdout.readline, ''):
+                        logger.debug(line)
+                        summary_output += line
+                    summary.wait()
+                    logger.info(summary_output)  
+
 
                     antstr = ""
                     for x in range(4):
