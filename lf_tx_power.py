@@ -1023,7 +1023,7 @@ def main():
     logger.info(summary_output)  
 
     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
-                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"]
+                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000","--log_cli","1"]
     logg.info("command: {command}".format(command=command))
     summary_output = ''
     summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -1032,10 +1032,10 @@ def main():
         summary_output += line
     summary.wait()
     logger.info(summary_output)  
-
+    # ./lf_firemod.pl --manager 192.168.100.178 --resource 1 --action create_cx --cx_name c-udp-power --cx_endps c-udp-power-A,c-udp-power-B --report_timer 1000 --endp_type lf_udp --port_name sta0003 --use_speeds 0,1000000
     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
                     "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000", "--endp_type", "lf_udp", "--port_name", lfstation,
-                    "--speed","1000000"]
+                    "--use_speeds","0,1000000"]
     logg.info("command: {command}".format(command=command))
     summary_output = ''
     summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
