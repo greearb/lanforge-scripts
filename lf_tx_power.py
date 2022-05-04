@@ -1004,7 +1004,6 @@ def main():
     # Now, create the new connection
     # higher is better because it means more frames at the signal level to be measured vs leaked frames at low signal lev
 
-    ################################  Start When work around fixed then only need these creation step ###############################
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
                     "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"], capture_output=False)
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
@@ -1044,7 +1043,6 @@ def main():
         summary_output += line
     summary.wait()
     logger.info(summary_output)  
-    ################################  ^^ End When work around fixed then only need these creation step ###############################
 
 
     # Notes:
@@ -1903,69 +1901,6 @@ def main():
                             pss = cs.show_ap_bssid_24ghz()
                             logg.info(pss)
 
-                    ####################### Start Work Around Part 1 #########################
-                    # TO DO this is part of the work around may not be needed
-                    # Create downstream connection
-                    # First, delete any old one
-                    # Note this code is duplicated later as a work around for the
-                    # Endpoint B Min Tx Rate being reset to zero
-                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                                    "--cmd", "rm_cx all c-udp-power"], capture_output=False)
-
-                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                                    "--cmd", "rm_endp c-udp-power-A"], capture_output=False)
-
-                    subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "do_cmd",
-                                    "--cmd", "rm_endp c-udp-power-B"], capture_output=False)
- 
-                    # set speed
-                    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
-                                     "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"]    
-                    logg.info("command: {command}".format(command=command))
-                    summary_output = ''
-                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                    for line in iter(summary.stdout.readline, ''):
-                        logger.debug(line)
-                        summary_output += line
-                    summary.wait()
-                    logger.info(summary_output)  
-
-                    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
-                                     "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"]
-                    logg.info("command: {command}".format(command=command))
-                    summary_output = ''
-                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                    for line in iter(summary.stdout.readline, ''):
-                        logger.debug(line)
-                        summary_output += line
-                    summary.wait()
-                    logger.info(summary_output)  
-
-                    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
-                                     "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000", "--endp_type", "lf_udp", "--port_name", lfstation,
-                                     "--speed","1000000"]
-                    logg.info("command: {command}".format(command=command))
-                    summary_output = ''
-                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                    for line in iter(summary.stdout.readline, ''):
-                        logger.debug(line)
-                        summary_output += line
-                    summary.wait()
-                    logger.info(summary_output)  
-
-                    command = ["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
-                                                   "--set_ifstate", "up"]
-                    summary_output = ''
-                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                    for line in iter(summary.stdout.readline, ''):
-                        logger.debug(line)
-                        summary_output += line
-                    summary.wait()
-                    logger.info(summary_output)  
-
-                    ######################## End Work Around Part 1 ##################################
-
-
 
                     # Start traffic
                     # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
@@ -1985,21 +1920,6 @@ def main():
                         summary_output += line
                     summary.wait()
                     logger.info(summary_output)  
-
-
-                    ###################### Start Work Around Part 2 ############################
-                    # Config Speed on B after start  <-- work around for Min Tx Rate being zero 
-                    command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
-                                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "1000000", "--report_timer", "1000"]
-                    logg.info("command: {command}".format(command=command))
-                    summary_output = ''
-                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                    for line in iter(summary.stdout.readline, ''):
-                        logger.debug(line)
-                        summary_output += line
-                    summary.wait()
-                    logger.info(summary_output)  
-                    ###################### End Work Around Part 2 ######################
 
                     # Wait configured number of seconds more seconds
                     logg.info("Waiting {} seconds to let traffic run for a bit, Channel {} NSS {} BW {} TX-Power {}".format(args.duration, ch, n, bw, tx))
