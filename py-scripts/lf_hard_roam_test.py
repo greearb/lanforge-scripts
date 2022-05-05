@@ -319,23 +319,44 @@ class HardRoam(Realm):
         print("final bssid", self.final_bssid)
         self.precleanup()
 
+        radio_ = None
         if self.band == "twog":
             self.create_n_clients(sta_prefix="wlan1", num_sta=self.num_sta, dut_ssid=self.ssid_name,
                                   dut_security=self.security, dut_passwd=self.security_key, radio=self.twog_radios,
                                   type="11r")
+            radio_ = self.twog_radios
 
         if self.band == "fiveg":
             self.create_n_clients(sta_prefix="wlan", num_sta=self.num_sta, dut_ssid=self.ssid_name,
                                   dut_security=self.security, dut_passwd=self.security_key, radio=self.fiveg_radios,
                                   type="11r")
+            radio_ = self.fiveg_radios
         if self.band == "sixg":
             self.create_n_clients(sta_prefix="wlan", num_sta=self.num_sta, dut_ssid=self.ssid_name,
                                   dut_security=self.security, radio=self.sixg_radios,
                                   type="11r-sae-802.1x")
+            radio_ = self.sixg_radios
 
         # check if all stations have ip
         sta_list = self.get_station_list()
         print(sta_list)
+        for i in range(len(sta_list)):
+            shelf = sta_list[i].split(".")[0]
+            resource = sta_list[i].split(".")[1]
+            sta_name = sta_list[i].split(".")[2]
+            print("make all stations connect to one ap")
+            add_sta_data = {
+                "shelf": shelf,
+                "resource": resource,
+                "radio": radio_.split(".")[2],
+                "sta_name": sta_name,
+                "flags": "NA",
+                "ssid": self.ssid_name,
+                "key": self.security_key,
+                "ap": self.final_bssid[0]
+            }
+            self.json_post("/cli-json/add_sta", add_sta_data, suppress_related_commands_=True)
+            time.sleep(0.01)
         val = self.wait_for_ip(sta_list)
         self.create_layer3(side_a_min_rate=1000000, side_a_max_rate=1000000, side_b_min_rate=0, side_b_max_rate=0,
                            sta_list=sta_list, traffic_type="lf_udp")
@@ -399,8 +420,8 @@ class HardRoam(Realm):
                     # check if all element of bssid list has same bssid's
                     result = all(element == bssid_list[0] for element in bssid_list)
                     if result:
-                        print("All sstations connected to one ap")
-                        #  if all bid are equal then do check to hich ap it is connected
+                        print("All stations connected to one ap")
+                        #  if all bssid are equal then do check to which ap it is connected
                         formated_bssid = bssid_list[0].lower()
                         station_before = ""
                         if formated_bssid == self.c1_bssid:
@@ -436,7 +457,6 @@ class HardRoam(Realm):
                                     "wpa_cli_cmd": wpa_cmd
                                 }
                                 print(wifi_cli_cmd_data)
-                                # cli_base = LFCliBase(_lfjson_host=self.lanforge_ip, _lfjson_port=self.lanforge_port)
                                 self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
                                 time.sleep(2)
                                 self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
@@ -463,7 +483,6 @@ class HardRoam(Realm):
                                     "wpa_cli_cmd": wifi_cmd
                                 }
                                 print(wifi_cli_cmd_data)
-                                # cli_base = LFCliBase(_lfjson_host=self.lanforge_ip, _lfjson_port=self.lanforge_port)
                                 self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
                                 time.sleep(2)
                                 self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
@@ -497,6 +516,8 @@ class HardRoam(Realm):
 
                             if res == "FAIL":
                                 res = "FAIL"
+                        else:
+                            res = "FAIL"
 
                         # stop sniff and attach data
                         print("stop sniff")
@@ -504,6 +525,8 @@ class HardRoam(Realm):
                         file_name = "./pcap/" + str(file_name_)
                         print("pcap file name", file_name)
                         time.sleep(10)
+
+
 
                         if res == "PASS":
                             query_reasso_response = self.query_sniff_data(pcap_file=str(file_name),
@@ -562,6 +585,7 @@ class HardRoam(Realm):
         self.test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
 
     def generate_client_pass_fail_graph(self, csv_list=None):
+        print("csv_list", csv_list)
         x_axis_category = []
         for i in range(self.num_sta):
             x_axis_category.append(i+1)
@@ -572,10 +596,9 @@ class HardRoam(Realm):
         fail_list = []
         dataset = []
         for i in csv_list:
-            csv_file = i
+            print("i", i)
             lf_csv_obj = lf_csv()
-            h = lf_csv_obj.read_csv(file_name=csv_file, column="PASS/FAIL")
-
+            h = lf_csv_obj.read_csv(file_name=i, column="PASS/FAIL")
             count = h.count("PASS")
             print(count)
             count_ = final_list.count("FAIL")
@@ -612,20 +635,9 @@ class HardRoam(Realm):
             report.current_path = os.path.dirname(os.path.abspath(current_path))
         report_path = report.get_report_path()
         report.build_x_directory(directory_name="csv_data")
-        for i in csv_list:
-            report.set_obj_html("Client per iteration Graph",
-                                "The below graph provides information about out of total iterations how many times each client got Pass or Fail")
-            report.build_objective()
 
-            graph = self.generate_client_pass_fail_graph(csv_list=i)
-            report.set_graph_image(graph)
-            report.set_csv_filename(graph)
-            report.move_csv_file()
-            report.move_graph_image()
-            report.build_graph()
-        for i in csv_list:
-            report.move_data(directory="csv_data", _file_name=str(i))
-        report.move_data(directory_name="pcap")
+
+
         date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
         test_setup_info = {
             "DUT Name": self.dut_name,
@@ -646,7 +658,19 @@ class HardRoam(Realm):
                             " clients are working as expected or not")
         report.build_objective()
 
+        report.set_obj_html("Client per iteration Graph",
+                            "The below graph provides information about out of total iterations how many times each client got Pass or Fail")
+        report.build_objective()
 
+        graph = self.generate_client_pass_fail_graph(csv_list=csv_list)
+        report.set_graph_image(graph)
+        report.set_csv_filename(graph)
+        report.move_csv_file()
+        report.move_graph_image()
+        report.build_graph()
+        for i in csv_list:
+            report.move_data(directory="csv_data", _file_name=str(i))
+        report.move_data(directory_name="pcap")
 
         for i, x in zip(range(self.num_sta), csv_list):
             report.set_table_title("Client information  " + str(i))
@@ -694,7 +718,7 @@ def main():
                    lanforge_ssh_port=22,
                    c1_bssid="10:f9:20:fd:f3:4d",
                    c2_bssid="68:7d:b4:5f:5c:3d",
-                   fiveg_radio="wiphy1",
+                   fiveg_radio="1.1.wiphy1",
                    twog_radio=None,
                    sixg_radio=None,
                    band="fiveg",
