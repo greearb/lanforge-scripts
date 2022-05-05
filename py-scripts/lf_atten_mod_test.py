@@ -65,7 +65,7 @@ def main():
             lf_atten_mod_test.py
             --------------------
         set and show Attenuator:
-        python3 lf_atten_mod_test.py -hst 192.168.200.12 -port 8080 -atten_serno all --atten_idx 7 --atten_val 220
+        python3 lf_atten_mod_test.py --hst 192.168.200.12 --port 8080 -atten_serno all --atten_idx 7 --atten_val 220
                 ''')
 
     parser.add_argument('-hst', '--host', help='host name', default='192.168.200.12')
