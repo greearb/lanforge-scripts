@@ -393,6 +393,9 @@ def main():
     # ap interface configuration
     parser.add_argument('-api', '--ap_info', action='append', nargs=1, type=str, help="[ap configuration] --ap_info ap_scheme==<telnet,ssh or serial> ap_prompt==<ap_prompt> ap_ip==<ap ip> ap_port==<ap port number> ap_user==<ap user> ap_pw==<ap password>")
 
+    # if args.ap_admin_down_up_6g:  - work around for 6G
+    parser.add_argument("--ap_admin_down_up_6g", help="[ap admin down up] --6g_ap_admin_down_up  will admin down and up the AP", action='store_true')
+
     # tx power pathloss configuration
     parser.add_argument("--pathloss", type=str, help="[tx power configuration] Calculated pathloss between LANforge Station and AP --pathloss 59", required=True)
     parser.add_argument("--antenna_gain", type=str, help="[tx power configuration] Antenna gain,  take into account the gain due to the antenna --antenna_gain 6", required=True)
@@ -1819,7 +1822,7 @@ def main():
 
                     # Temporary Work around
                     # disable the AP for 6g and enable
-                    if args.band == '6g' or args.band == 'dual_band_6g':
+                    if args.ap_admin_down_up_6g is True and (args.band == '6g' or args.band == 'dual_band_6g'):
                         cs.ap_name_shutdown()
                         sleep(5)
                         cs.ap_name_no_shutdown()
@@ -2287,9 +2290,8 @@ def main():
                             allowed_per_path = cc_dbmi - 6
                             logg.info("allowed_per_path: {}  = cc_dbmi: {} - 6 nss_4x4_override True".format(allowed_per_path, cc_dbmi))
                             logg.info("(Offset 1) diff_a1 (): {} = calc_ant1: {} - allowed_per_path: {} nss_4x4_override True".format(diff_a1, calc_ant1, allowed_per_path))
-                        else:
-                            diff_a1 = calc_ant1 - cc_dbmi
-                            logg.info("(Offset 1) diff_a1 (): {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
+                        diff_a1 = calc_ant1 - cc_dbmi
+                        logg.info("(Offset 1) diff_a1 (): {} = calc_ant1: {} - allowed_per_path: {}".format(diff_a1, calc_ant1, allowed_per_path))
 
                         # if args.per_ss:
                         if (abs(diff_a1) > pfrange):
