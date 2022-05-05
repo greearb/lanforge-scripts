@@ -1448,6 +1448,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         '--suite',
         help="--suite <suite name> ",
         required=True)
+    parser.add_argument('--flat_dir', help="--flat_dir",action='store_true')
     parser.add_argument(
         '--server_override',
         help="--server_override http://<server ip>/  example: http://192.168.95.6/",
@@ -1545,7 +1546,11 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     csv_results = report.file_add_path(csv_results)
     outfile_name = "{dir}-{outfile}-{current_time}".format(dir=__dir, outfile=args.outfile, current_time=current_time)
     outfile = report.file_add_path(outfile_name)
-    report_path = report.get_report_path()
+    if args.flat_dir:
+        report_path = report.get_flat_dir_report_path()
+    else:
+        report_path = report.get_report_path()
+       
     log_path = report.get_log_path()
 
     # lf_check() class created

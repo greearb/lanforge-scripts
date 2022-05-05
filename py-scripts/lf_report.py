@@ -293,6 +293,9 @@ class lf_report:
     def get_report_path(self):
         return self.path_date_time
 
+    def get_flat_dir_report_path(self):
+        return self.path
+
     def get_log_path(self):
         return self.log_directory
 
