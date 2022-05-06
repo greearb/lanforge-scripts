@@ -230,7 +230,7 @@ class IPV4L4(Realm):
                                 total_tx_rate += int(value)
                             if value_name == 'urls/s':
                                 endp_rx_map[item] = value
-                                urls_seconds += int(value)
+                                urls_seconds += float(value)
                             if value_name == 'total-urls':
                                 endp_rx_map[item] = value
                                 total_urls += int(value)
@@ -312,6 +312,9 @@ class IPV4L4(Realm):
             total_urls):
 
         sta_count = len(station_list)
+        total_seconds = round(urls_second, 2)
+        # logger.info(total_seconds)
+
         # logic for Subtest-Pass & Subtest-Fail columns
         subpass_bytes_rd = 0
         subpass_bytes_wr = 0
@@ -399,7 +402,7 @@ class IPV4L4(Realm):
         results_dict['Subtest-Pass'] = subpass_urls
         results_dict['Subtest-Fail'] = subfail_urls
         results_dict['short-description'] = "Average URLs per Second"
-        results_dict['numeric-score'] = "{}".format(urls_second)
+        results_dict['numeric-score'] = "{}".format(total_seconds)
         results_dict['Units'] = "urls/s"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
