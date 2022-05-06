@@ -490,7 +490,7 @@ Generic command example:
                         default=600)
     parser.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes',
                         default=1)
-    parser.add_argument('--url', help='--url specifies upload/download, address, and dest',
+    parser.add_argument('--url', help='--url specifies upload/download, <ap_ip_address> (Access Point IP), and dest',
                         default="dl http://10.40.0.1 /dev/null")
     parser.add_argument('--test_duration', help='duration of test', default="2m")
     parser.add_argument('--target_per_ten',
