@@ -268,18 +268,18 @@ class IPVariableTime(Realm):
                                     # logger.info(tcp_dl)
                                 # combine total download (tcp&udp) and upload (tcp&udp) test data
                                 if item.endswith("-A"):
-                                    total_dl += int(value)
+                                    total_ul += int(value)
                                     # logger.info(total_dl)
                                 else:
-                                    total_ul += int(value)
+                                    total_dl += int(value)
                                     # logger.info(total_ul)
                             if value_name == 'rx rate ll':
                                 # This hack breaks for mcast or if someone
                                 # names endpoints weirdly.
                                 if item.endswith("-A"):
-                                    total_dl_ll += int(value)
-                                else:
                                     total_ul_ll += int(value)
+                                else:
+                                    total_dl_ll += int(value)
 
         # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endp_rx_drop_map, endps, udp_dl, tcp_dl, udp_ul, tcp_ul, total_dl, total_ul, total_dl_ll, total_ul_ll
@@ -492,8 +492,8 @@ class IPVariableTime(Realm):
         total_test = len(self.get_result_list())
         total_pass = len(self.get_passed_result_list())
         endp_rx_map, endp_rx_drop_map, endps, udp_dl, tcp_dl, udp_ul, tcp_ul, total_dl, total_ul, total_dl_ll, total_ul_ll = self.get_rx_values()
-        self.record_kpi_csv(temp_stations_list, total_test, total_pass, tcp_dl, tcp_ul, total_dl, total_ul)
-        self.record_results(len(temp_stations_list), tcp_dl, tcp_ul, total_dl, total_ul)
+        self.record_kpi_csv(temp_stations_list, total_test, total_pass, udp_dl, tcp_dl, udp_ul, tcp_ul, total_dl, total_ul)
+        self.record_results(len(temp_stations_list), udp_dl, tcp_dl, udp_ul, tcp_ul, total_dl, total_ul)
 
         self.stop()
         if not self.use_existing_sta:
@@ -520,7 +520,9 @@ class IPVariableTime(Realm):
             tmp_sta_list,
             total_test,
             total_pass,
+            udp_dl,
             tcp_dl,
+            udp_ul,
             tcp_ul,
             total_dl,
             total_ul):
@@ -540,11 +542,21 @@ class IPVariableTime(Realm):
 
         sta_list = len(tmp_sta_list)
         # logic for Subtest-Pass & Subtest-Fail columns
+        subpass_udp_dl = 0
+        subpass_udp_ul = 0
         subpass_tcp_dl = 0
         subpass_tcp_ul = 0
+        subfail_udp_dl = 1
+        subfail_udp_ul = 1
         subfail_tcp_dl = 1
         subfail_tcp_ul = 1
 
+        if udp_dl > 0:
+            subpass_udp_dl = 1
+            subfail_udp_dl = 0
+        if udp_ul > 0:
+            subpass_udp_ul = 1
+            subfail_udp_ul = 0
         if tcp_dl > 0:
             subpass_tcp_dl = 1
             subfail_tcp_dl = 0
@@ -583,31 +595,56 @@ class IPVariableTime(Realm):
         # logger.info("mode: {mode}".format(mode=mode))
 
         # kpi data for TCP download traffic
-        results_dict = self.kpi_csv.kpi_csv_get_dict_update_time()
-        results_dict['Graph-Group'] = "TCP Download Rate"
-        results_dict['pass/fail'] = pass_fail
-        results_dict['Subtest-Pass'] = subpass_tcp_dl
-        results_dict['Subtest-Fail'] = subfail_tcp_dl
-        results_dict['short-description'] = "Mode {mode}  TCP-DL {side_a_min_rate} bps  {sta_list} STA".format(mode=mode, side_a_min_rate=self.side_a_min_rate, sta_list=sta_list)
-        results_dict['numeric-score'] = "{}".format(total_dl)
-        results_dict['Units'] = "bps"
-        self.kpi_csv.kpi_csv_write_dict(results_dict)
+        if self.traffic_type.endswith("tcp"):
+            results_dict = self.kpi_csv.kpi_csv_get_dict_update_time()
+            results_dict['Graph-Group'] = "TCP Download Rate"
+            results_dict['pass/fail'] = pass_fail
+            results_dict['Subtest-Pass'] = subpass_tcp_dl
+            results_dict['Subtest-Fail'] = subfail_tcp_dl
+            results_dict['short-description'] = "Mode {mode}  TCP-DL {side_a_min_rate} bps  {sta_list} STA".format(mode=mode, side_a_min_rate=self.side_a_min_rate, sta_list=sta_list)
+            results_dict['numeric-score'] = "{}".format(total_dl)
+            results_dict['Units'] = "bps"
+            self.kpi_csv.kpi_csv_write_dict(results_dict)
 
-        # kpi data for TCP upload traffic
-        results_dict['Graph-Group'] = "TCP Upload Rate"
-        results_dict['pass/fail'] = pass_fail
-        results_dict['Subtest-Pass'] = subpass_tcp_ul
-        results_dict['Subtest-Fail'] = subfail_tcp_ul
-        results_dict['short-description'] = "Mode {mode}  TCP-UL {side_a_min_rate} bps  {sta_list} STA".format(mode=mode, side_a_min_rate=self.side_a_min_rate, sta_list=sta_list)
-        results_dict['numeric-score'] = "{}".format(total_ul)
-        results_dict['Units'] = "bps"
-        self.kpi_csv.kpi_csv_write_dict(results_dict)
+            # kpi data for TCP upload traffic
+            results_dict['Graph-Group'] = "TCP Upload Rate"
+            results_dict['pass/fail'] = pass_fail
+            results_dict['Subtest-Pass'] = subpass_tcp_ul
+            results_dict['Subtest-Fail'] = subfail_tcp_ul
+            results_dict['short-description'] = "Mode {mode}  TCP-UL {side_a_min_rate} bps  {sta_list} STA".format(mode=mode, side_a_min_rate=self.side_a_min_rate, sta_list=sta_list)
+            results_dict['numeric-score'] = "{}".format(total_ul)
+            results_dict['Units'] = "bps"
+            self.kpi_csv.kpi_csv_write_dict(results_dict)
+
+        # kpi data for UDP download traffic
+        elif self.traffic_type.endswith("udp"):
+            results_dict = self.kpi_csv.kpi_csv_get_dict_update_time()
+            results_dict['Graph-Group'] = "UDP Download Rate"
+            results_dict['pass/fail'] = pass_fail
+            results_dict['Subtest-Pass'] = subpass_udp_dl
+            results_dict['Subtest-Fail'] = subfail_udp_dl
+            results_dict['short-description'] = "Mode {mode}  UDP-DL {side_a_min_rate} bps  {sta_list} STA".format(mode=mode, side_a_min_rate=self.side_a_min_rate, sta_list=sta_list)
+            results_dict['numeric-score'] = "{}".format(total_dl)
+            results_dict['Units'] = "bps"
+            self.kpi_csv.kpi_csv_write_dict(results_dict)
+
+            # kpi data for UDP upload traffic
+            results_dict['Graph-Group'] = "UDP Upload Rate"
+            results_dict['pass/fail'] = pass_fail
+            results_dict['Subtest-Pass'] = subpass_udp_ul
+            results_dict['Subtest-Fail'] = subfail_udp_ul
+            results_dict['short-description'] = "Mode {mode}  UDP-UL {side_a_min_rate} bps  {sta_list} STA".format(mode=mode, side_a_min_rate=self.side_a_min_rate, sta_list=sta_list)
+            results_dict['numeric-score'] = "{}".format(total_ul)
+            results_dict['Units'] = "bps"
+            self.kpi_csv.kpi_csv_write_dict(results_dict)
 
     # record results for .html & .pdf reports
     def record_results(
             self,
             sta_count,
+            udp_dl,
             tcp_dl,
+            udp_ul,
             tcp_ul,
             total_dl_bps,
             total_ul_bps):
@@ -628,17 +665,26 @@ class IPVariableTime(Realm):
             "NOTE:  Adding results to influx, total-download-bps: %s  upload: %s  bi-directional: %s\n" %
             (total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)))
 
-        if self.csv_results_file:
-            row = [self.epoch_time, self.time_stamp(), sta_count,
-                   ul, ul, dl, dl, tcp_ul, tcp_dl,
-                   total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)
-                   ]
-
-            self.csv_results_writer.writerow(row)
-            self.csv_results_file.flush()
+        if self.traffic_type.endswith("tcp"):
+            if self.csv_results_file:
+                row = [self.epoch_time, self.time_stamp(), sta_count,
+                       ul, ul, dl, dl, tcp_ul, tcp_dl,
+                       total_ul_bps, total_dl_bps, (total_ul_bps + total_dl_bps)
+                       ]
+                self.csv_results_writer.writerow(row)
+                self.csv_results_file.flush()
+        elif self.traffic_type.endswith("udp"):
+            if self.csv_results_file:
+                row = [self.epoch_time, self.time_stamp(), sta_count,
+                       ul, ul, dl, dl, udp_ul, udp_dl,
+                       total_ul_bps, total_dl_bps, (total_ul_bps + total_dl_bps)
+                       ]
+                self.csv_results_writer.writerow(row)
+                self.csv_results_file.flush()
 
     def csv_generate_results_column_headers(self):
-        csv_rx_headers = [
+        if self.traffic_type.endswith("tcp"):
+            csv_rx_headers = [
             'Time epoch',
             'Time',
             'Station-Count',
@@ -647,13 +693,26 @@ class IPVariableTime(Realm):
             'DL-Min-Requested',
             'DL-Max-Requested',
             # 'Attenuation',
-            # 'UDP-Upload-bps',
             'TCP-Upload-bps',
-            # 'UDP-Download-bps',
             'TCP-Download-bps',
             'Total-TCP-Upload-bps',
             'Total-TCP-Download-bps',
             'Total-TCP-UL/DL-bps']
+        elif self.traffic_type.endswith("udp"):
+            csv_rx_headers = [
+            'Time epoch',
+            'Time',
+            'Station-Count',
+            'UL-Min-Requested',
+            'UL-Max-Requested',
+            'DL-Min-Requested',
+            'DL-Max-Requested',
+            # 'Attenuation',
+            'UDP-Upload-bps',
+            'UDP-Download-bps',
+            'Total-UDP-Upload-bps',
+            'Total-UDP-Download-bps',
+            'Total-UDP-UL/DL-bps']
 
         return csv_rx_headers
 
