@@ -148,20 +148,27 @@ class StaConnect(Realm):
 
     def run(self):
         if not self.setup():
-            return False
+            self._fail("setup stage failed")
+            return False, "setup"
         if not self.start():
-            return False
+            self._fail("start stage failed")
+            return False, "start"
         time.sleep(self.runtime_secs)
         if not self.stop():
-            return False
+            self._fail("stop stage failed")
+            return False, "stop"
         if not self.finish_test():
-            return False
+            self._fail("finish_test stage failed")
+            return False, "finish_test"
         
         # remove all endpoints and cxs
         if self.cleanup_on_exit:
             if not self.cleanup():
-                return False
-        return True
+                self._fail("cleanup stage failed")
+                return False, "cleanup"
+
+        self._pass("All stages of run passed")
+        return True, "run"
 
     @staticmethod
     def add_named_flags(desired_list, command_ref):
@@ -560,6 +567,7 @@ class StaConnect(Realm):
         if self.debug:
             print("Removing endpoints %s" % self.cx_names.values())
         removeEndps(self.lfclient_url, endp_names, debug=False)
+        return True
 
 
 def main():
@@ -601,8 +609,13 @@ Example:
                             _dut_bssid=args.dut_bssid, _dut_ssid=args.ssid, _dut_security=args.security,
                             _sta_name=["sta0000"])
 
-# TODO: check run return code 
-    staConnect.run()
+
+    success, method = staConnect.run()
+    if not success:
+        print("FAIL: staConnect.run method failed at stage \"{method}\"".format(method=method))
+    else:
+        print("PASS: staConnect tests finished successfully")
+
 
     staConnect.get_result_list()
     staConnect.generate_report(test_rig=args.test_rig, test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
