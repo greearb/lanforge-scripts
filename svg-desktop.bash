@@ -13,11 +13,20 @@ my_dev=`ip ro sho | awk '/default via/{print $5}'`
 my_ip=`ip a sho $my_dev | awk '/inet /{print $2}'`
 my_mac=`ip a sho | grep -A1 "$my_dev" | awk '/ether /{print $2}'`
 my_os="$PRETTY_NAME"
+my_realm=`awk '/^realm / {print $2}' /home/lanforge/config.values`
+my_resource=`awk '/^first_client / {print $2}' /home/lanforge/config.values`
+my_mode=`awk '/^mode / {print $2}' /home/lanforge/config.values`
 my_lfver=`cat /var/www/html/installed-ver.txt`
 fill_color=${my_mac//:/}
 fill_color=${fill_color:6:12}
 X=220
 Y=150
+
+if (( $my_realm == 255 )); then
+    my_realm="Stand Alone"
+else
+    my_realm="Realm $my_realm"
+fi
 #convert -pointsize 80 -fill "#$fill_color" -stroke black -strokewidth 1 \
 #  -draw "text $X,$Y \"$my_hostname\"" \
 #  -draw "text $X,$(( Y + 75 )) \"$my_dev $my_ip\"" \
@@ -48,13 +57,14 @@ text {
 }
 </style>
 <g>
-    <rect id='bgrec' x='250' y='50' rx='10' ry='10' width='550px' height='160px'>
+    <rect id='bgrec' x='260' y='50' rx='10' ry='10' width='600px' height='210px'>
     </rect>
     <g>
-        <text x='270' y='85'>$my_hostname $my_lfver</text>
-        <text x='270' y='120'>$my_dev $my_ip</text>
-        <text x='270' y='160'>$my_mac</text>
-        <text x='270' y='200'>$my_os</text>
+        <text x='270' y='85'>$my_hostname LANforge $my_lfver</text>
+        <text x='270' y='125'>$my_realm Resource 1.$my_resource</text>
+        <text x='270' y='165'>$my_dev $my_ip</text>
+        <text x='270' y='245'>$my_mac</text>
+        <text x='270' y='205'>$my_os</text>
     </g>
 </g>
 </svg>
