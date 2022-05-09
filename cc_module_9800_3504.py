@@ -235,7 +235,7 @@ class create_controller_series_object:
             self.command.extend(self.command_extend)
 
         elif self.action in ["create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "dtim", "enable_ft_akm_ftpsk",
-                             "enable_ftotd_akm_ftpsk", "enable_ft_akm_ftsae", "enable_ft_wpa3_dot1x"]:
+                             "enable_ftotd_akm_ftpsk", "enable_ft_akm_ftsae", "enable_ft_wpa3_dot1x", "enable_ft_wpa3_dot1x_sha256"]:
 
             if self.action in ["create_wlan"]:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan,
@@ -251,6 +251,9 @@ class create_controller_series_object:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan, "--security_key",
                                        self.security_key]
             elif self.action in ["enable_ft_wpa3_dot1x"]:
+                self.command_extend = ["--action", self.action, "--wlan", self.wlan, "--security_key",
+                                       self.security_key]
+            elif self.action in ["enable_ft_wpa3_dot1x_sha256"]:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan, "--security_key",
                                        self.security_key]
             elif self.action in ["enable_ftotd_akm_ftpsk"]:
@@ -294,7 +297,7 @@ class create_controller_series_object:
                              "enable_network_dual_band_6ghz", "enable_network_dual_band_5ghz", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
                              "enable_operation_status", "11r_logs", "enable_ft_akm_ftpsk", "enable_ftotd_akm_ftpsk",
                              "config_dual_band_mode", "dual_band_no_mode_shutdown", "dual_band_mode_shutdown",
-                             "enable_ft_akm_ftsae", "enable_ft_wpa3_dot1x"
+                             "enable_ft_akm_ftsae", "enable_ft_wpa3_dot1x", "enable_ft_wpa3_dot1x_sha256",
                              ]:
 
             self.command_extend = ["--action", self.action]
@@ -1060,6 +1063,13 @@ class create_controller_series_object:
     def enable_ft_dot1x_wpa3_cc(self):
         logger.info("enable ft dot1x ")
         self.action = "enable_ft_wpa3_dot1x"
+        summary = self.send_command()
+        print(summary)
+        return summary
+
+    def enable_ft_dot1x_sha256_wpa3_cc(self):
+        logger.info("enable ft dot1x and sha256")
+        self.action = "enable_ft_wpa3_dot1x_sha256"
         summary = self.send_command()
         print(summary)
         return summary
