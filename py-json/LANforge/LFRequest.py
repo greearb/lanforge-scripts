@@ -10,6 +10,9 @@ from pprint import pformat, PrettyPrinter
 import urllib
 from urllib import request
 import json
+import http.client
+http.client._MAXHEADERS = 300
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
