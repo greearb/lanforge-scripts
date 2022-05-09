@@ -10,7 +10,7 @@ import time
 import datetime
 from datetime import datetime
 import pandas as pd
-import csv
+# import csv
 
 logger = logging.getLogger(__name__)
 if sys.version_info[0] != 3:
@@ -28,13 +28,11 @@ cv_test_reports = importlib.import_module("py-json.cv_test_reports")
 lf_report = cv_test_reports.lanforge_reports
 lf_report_pdf = importlib.import_module("py-scripts.lf_report")
 lf_csv = importlib.import_module("py-scripts.lf_csv")
+lf_pcap = importlib.import_module("py-scripts.lf_pcap")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
-
-from lf_cleanup import lf_clean
-from sta_connect2 import StaConnect2
-from lf_sniff_radio import SniffRadio
-from lf_pcap import LfPcap
-from lf_csv import lf_csv
+sniff_radio = importlib.import_module("py-scripts.lf_sniff_radio")
+sta_connect = importlib.import_module("py-scripts.sta_connect2")
+lf_clean = importlib.import_module("py-scripts.lf_cleanup")
 
 
 class HardRoam(Realm):
@@ -59,7 +57,9 @@ class HardRoam(Realm):
                  option=None,
                  duration_based=None,
                  iteration_based=None,
-                 dut_name=[]):
+                 dut_name = [],
+                 traffic_type="lf_udp",
+                 roaming_delay=None):
         super().__init__(lanforge_ip,
                          lanforge_port)
         self.lanforge_ip = lanforge_ip
@@ -84,16 +84,19 @@ class HardRoam(Realm):
         self.iteration_based = iteration_based
         self.duration_based = duration_based
         self.local_realm = realm.Realm(lfclient_host=self.lanforge_ip, lfclient_port=self.lanforge_port)
-        self.staConnect = StaConnect2(self.lanforge_ip, self.lanforge_port)
+        self.staConnect = sta_connect.StaConnect2(self.lanforge_ip, self.lanforge_port)
         self.final_bssid = []
-        self.pcap_obj = None
+        self.pcap_obj_2 = None
         self.pcap_name = None
         self.test_duration = None
         self.client_list = []
         self.dut_name = dut_name
+        self.pcap_obj = lf_pcap.LfPcap()
+        self.lf_csv_obj = lf_csv.lf_csv()
+        self.traffic_type = traffic_type
+        self.roam_delay = roaming_delay
 
     def get_station_list(self):
-        # realm_obj = self.staConnect.localrealm
         sta = self.staConnect.station_list()
         sta_list = []
         for i in sta:
@@ -198,7 +201,7 @@ class HardRoam(Realm):
             return False
 
     def create_layer3(self, side_a_min_rate, side_a_max_rate, side_b_min_rate, side_b_max_rate,
-                      traffic_type, sta_list, ):
+                      traffic_type, sta_list):
         # checked
         print(sta_list)
         print(type(sta_list))
@@ -217,6 +220,12 @@ class HardRoam(Realm):
                           side_b=self.upstream, sleep_time=0)
         cx_profile.start_cx()
 
+    def get_layer3_values(self, cx_name=None, query=None):
+        url = f"/cx/{cx_name}"
+        response = self.json_get(_req_url=url)
+        result = response[str(cx_name)][str(query)]
+        return result
+
     def get_cx_list(self):
         layer3_result = self.local_realm.cx_list()
         layer3_names = [item["name"] for item in layer3_result.values() if "_links" in item]
@@ -224,10 +233,10 @@ class HardRoam(Realm):
         return layer3_names
 
     def precleanup(self):
-        obj = lf_clean(host=self.lanforge_ip,
-                       port=self.lanforge_port,
-                       clean_cxs=True,
-                       clean_endp=True)
+        obj = lf_clean.lf_clean(host=self.lanforge_ip,
+                                port=self.lanforge_port,
+                                clean_cxs=True,
+                                clean_endp=True)
         obj.resource = "all"
         obj.cxs_clean()
         obj.endp_clean()
@@ -246,21 +255,19 @@ class HardRoam(Realm):
 
     def start_sniffer(self, radio_channel=None, radio=None, test_name="sniff_radio", duration=60):
         self.pcap_name = test_name + str(datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':', '-') + ".pcap"
-        self.pcap_obj = SniffRadio(lfclient_host=self.lanforge_ip, lfclient_port=self.lanforge_port, radio=radio,
-                                   channel=radio_channel)
-        self.pcap_obj.setup(0, 0, 0)
+        self.pcap_obj_2 = sniff_radio.SniffRadio(lfclient_host=self.lanforge_ip, lfclient_port=self.lanforge_port,
+                                                 radio=radio, channel=radio_channel)
+        self.pcap_obj_2.setup(0, 0, 0)
         time.sleep(5)
-        self.pcap_obj.monitor.admin_up()
+        self.pcap_obj_2.monitor.admin_up()
         time.sleep(5)
-        self.pcap_obj.monitor.start_sniff(capname=self.pcap_name, duration_sec=duration)
+        self.pcap_obj_2.monitor.start_sniff(capname=self.pcap_name, duration_sec=duration)
 
     def stop_sniffer(self):
         directory = None
         directory_name = "pcap"
         if directory_name:
             directory = os.path.join("", str(directory_name))
-        # if os.path.exists(directory):
-        #     shutil.rmtree(directory)
         try:
 
             if not os.path.exists(directory):
@@ -268,9 +275,9 @@ class HardRoam(Realm):
         except Exception as x:
             print(x)
 
-        self.pcap_obj.monitor.admin_down()
+        self.pcap_obj_2.monitor.admin_down()
         time.sleep(2)
-        self.pcap_obj.cleanup()
+        self.pcap_obj_2.cleanup()
         lf_report.pull_reports(hostname=self.lanforge_ip, port=self.lanforge_ssh_port, username="lanforge",
                                password="lanforge",
                                report_location="/home/lanforge/" + self.pcap_name,
@@ -279,39 +286,18 @@ class HardRoam(Realm):
 
         return self.pcap_name
 
-    def query_sniff_data(self, pcap_file, filter='wlan.fc.type_subtype==0x001'):
-        obj = LfPcap()
-        status = obj.get_wlan_mgt_status_code(pcap_file=pcap_file, filter=filter)
-        return status
-
-    def sniff_full_data(self, pcap_file, filter):
-        obj = LfPcap()
-        status = obj.get_packet_info(pcap_file=pcap_file, filter=filter)
-        # allure.attach(name="pack", body=str(status))
-        return status
 
     def generate_csv(self):
         file_name = []
         for i in range(self.num_sta):
             file = 'test_client_' + str(i) + '.csv'
-            lf_csv_obj = lf_csv(_columns=['Iterations', 'bssid1', 'bssid2', "PASS/FAIL", "Pcap file Name"], _rows=[], _filename=file)
+            lf_csv_obj = lf_csv.lf_csv(_columns=['Iterations', 'bssid1', 'bssid2', "Roam Time(ms)",  "PASS/FAIL", "Pcap file Name", "Remark"], _rows=[], _filename=file)
             file_name.append(file)
             lf_csv_obj.generate_csv()
         return file_name
 
-    def open_csv_append(self, fields, name):
-        # fields = ['first', 'second', 'third']
-        with open(str(name), 'a') as f:
-            writer = csv.writer(f)
-            writer.writerow(fields)
 
     def run(self, file_n=None):
-        # iteration = [[0,"68", "90"], [0,"45", "78"]]
-        #
-        # print(file_n)
-        # for i,x in zip(file_n, iteration):
-        #     self.open_csv_append(fields=x, name=i)
-        # exit()
         test_time = datetime.now()
         test_time = test_time.strftime("%b %d %H:%M:%S")
         print("Test started at ", test_time)
@@ -319,61 +305,78 @@ class HardRoam(Realm):
         print("final bssid", self.final_bssid)
         self.precleanup()
 
-        radio_ = None
+        message = None, None
         if self.band == "twog":
             self.create_n_clients(sta_prefix="wlan1", num_sta=self.num_sta, dut_ssid=self.ssid_name,
                                   dut_security=self.security, dut_passwd=self.security_key, radio=self.twog_radios,
                                   type="11r")
-            radio_ = self.twog_radios
-
         if self.band == "fiveg":
             self.create_n_clients(sta_prefix="wlan", num_sta=self.num_sta, dut_ssid=self.ssid_name,
                                   dut_security=self.security, dut_passwd=self.security_key, radio=self.fiveg_radios,
                                   type="11r")
-            radio_ = self.fiveg_radios
         if self.band == "sixg":
             self.create_n_clients(sta_prefix="wlan", num_sta=self.num_sta, dut_ssid=self.ssid_name,
                                   dut_security=self.security, radio=self.sixg_radios,
                                   type="11r-sae-802.1x")
-            radio_ = self.sixg_radios
 
         # check if all stations have ip
         sta_list = self.get_station_list()
         print(sta_list)
-        for i in range(len(sta_list)):
-            shelf = sta_list[i].split(".")[0]
-            resource = sta_list[i].split(".")[1]
-            sta_name = sta_list[i].split(".")[2]
-            print("make all stations connect to one ap")
-            add_sta_data = {
-                "shelf": shelf,
-                "resource": resource,
-                "radio": radio_.split(".")[2],
-                "sta_name": sta_name,
-                "flags": "NA",
-                "ssid": self.ssid_name,
-                "key": self.security_key,
-                "ap": self.final_bssid[0]
-            }
-            self.json_post("/cli-json/add_sta", add_sta_data, suppress_related_commands_=True)
-            time.sleep(0.01)
         val = self.wait_for_ip(sta_list)
-        self.create_layer3(side_a_min_rate=1000000, side_a_max_rate=1000000, side_b_min_rate=0, side_b_max_rate=0,
-                           sta_list=sta_list, traffic_type="lf_udp")
-        cx_list = self.get_cx_list()
-
-        timeout, variable, iterable_var = None, None, None
-
-        if self.duration_based:
-            timeout = time.time() + 60 * float(self.duration)
-            iteration_dur = 50000000
-            iterable_var = 50000000
-            variable = -1
-
-        if self.iteration_based:
-            variable = self.iteration
-            iterable_var = self.iteration
         if val:
+            print("all stations got ip")
+            print("check if all tations are conncted one ap")
+            check = []
+            for sta_name in sta_list:
+                sta = sta_name.split(".")[2]
+                time.sleep(5)
+                bssid = self.station_data_query(station_name=str(sta), query="ap")
+                print(bssid)
+                check.append(bssid)
+            print(check)
+
+            # check if all element of bssid list has same bssid's
+            result = all(element == check[0] for element in check)
+            if result:
+                self.create_layer3(side_a_min_rate=1000000, side_a_max_rate=1000000, side_b_min_rate=0, side_b_max_rate=0,
+                                   sta_list=sta_list, traffic_type=self.traffic_type)
+                # cx_list = self.get_cx_list()
+            else:
+                print("move all clients to one ap")
+                for sta_name in sta_list:
+                    sta = sta_name.split(".")[2]
+                    print(sta)
+                    wpa_cmd = "roam " + str(check[0])
+                    wifi_cli_cmd_data1 = {
+                        "shelf": 1,
+                        "resource": 1,
+                        "port": str(sta),
+                        "wpa_cli_cmd": 'scan trigger freq 5180 5300'
+                    }
+                    wifi_cli_cmd_data = {
+                        "shelf": 1,
+                        "resource": 1,
+                        "port": str(sta),
+                        "wpa_cli_cmd": wpa_cmd
+                    }
+                    print(wifi_cli_cmd_data)
+                    self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
+                    time.sleep(2)
+                    self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
+                self.create_layer3(side_a_min_rate=1000000, side_a_max_rate=1000000, side_b_min_rate=0, side_b_max_rate=0,
+                                   sta_list=sta_list, traffic_type=self.traffic_type)
+
+            timeout, variable, iterable_var = None, None, None
+
+            if self.duration_based:
+                timeout = time.time() + 60 * float(self.duration)
+                # iteration_dur = 50000000
+                iterable_var = 50000000
+                variable = -1
+
+            if self.iteration_based:
+                variable = self.iteration
+                iterable_var = self.iteration
 
             while variable:
                 print("variable", variable)
@@ -389,191 +392,336 @@ class HardRoam(Realm):
                         if time.time() > timeout:
                             break
                 time.sleep(1)
-                # define ro list per iteration
-                row_list = []
-                sta_list = self.get_station_list()
-                print(sta_list)
-                station = self.wait_for_ip(sta_list)
-                if station:
-                    # get bssid's of all stations connected
-                    bssid_list = []
-                    for sta_name in sta_list:
-                        sta = sta_name.split(".")[2]
-                        time.sleep(5)
-                        bssid = self.station_data_query(station_name=str(sta), query="ap")
-                        bssid_list.append(bssid)
-                    print(bssid_list)
-
-                    for sta_name in sta_list:
-                        # local_row_list = [0, "68"]
-                        local_row_list = []
-                        local_row_list.append(str(iter))
-                        sta = sta_name.split(".")[2]
-                        time.sleep(5)
-                        before_bssid = self.station_data_query(station_name=str(sta), query="ap")
-                        print(before_bssid)
-                        local_row_list.append(before_bssid)
-                        print(local_row_list)
-                        row_list.append(local_row_list)
-                    print(row_list)
-
-                    # check if all element of bssid list has same bssid's
-                    result = all(element == bssid_list[0] for element in bssid_list)
-                    if result:
-                        print("All stations connected to one ap")
-                        #  if all bssid are equal then do check to which ap it is connected
-                        formated_bssid = bssid_list[0].lower()
-                        station_before = ""
-                        if formated_bssid == self.c1_bssid:
-                            print("station connected to chamber1 ap")
-                            station_before = formated_bssid
-                        elif formated_bssid == self.c2_bssid:
-                            print("station connected to chamber 2 ap")
-                            station_before = formated_bssid
-                        print(station_before)
-
-                        # after checking all conditions start roam and start snifffer
-                        print("starting snifer")
-                        self.start_sniffer(radio_channel=int(self.channel), radio=self.sniff_radio,
-                                           test_name="roam_11r_" + str(self.option) + "_iteration_" + str(
-                                               iter) + "_",
-                                           duration=3600)
-                        if station_before == self.final_bssid[0]:
-                            print("connected stations bssid is same to bssid list first element")
-                            for sta_name in sta_list:
-                                sta = sta_name.split(".")[2]
-                                print(sta)
-                                wpa_cmd = "roam " + str(self.final_bssid[1])
-                                wifi_cli_cmd_data1 = {
-                                    "shelf": 1,
-                                    "resource": 1,
-                                    "port": str(sta),
-                                    "wpa_cli_cmd": 'scan trigger freq 5180 5300'
-                                }
-                                wifi_cli_cmd_data = {
-                                    "shelf": 1,
-                                    "resource": 1,
-                                    "port": str(sta),
-                                    "wpa_cli_cmd": wpa_cmd
-                                }
-                                print(wifi_cli_cmd_data)
-                                self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
-                                time.sleep(2)
-                                self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
-                        else:
-                            print("connected stations bssid is same to bssid list second  element")
-                            for sta_name in sta_list:
-                                sta = sta_name.split(".")[2]
-                                wifi_cmd = ""
-                                if self.option == "ota":
-                                    wifi_cmd = "roam " + str(self.final_bssid[0])
-                                if self.option == "otds":
-                                    wifi_cmd = "ft_ds " + str(self.final_bssid[0])
-                                print(sta)
-                                wifi_cli_cmd_data1 = {
-                                    "shelf": 1,
-                                    "resource": 1,
-                                    "port": str(sta),
-                                    "wpa_cli_cmd": 'scan trigger freq 5180 5300'
-                                }
-                                wifi_cli_cmd_data = {
-                                    "shelf": 1,
-                                    "resource": 1,
-                                    "port": str(sta),
-                                    "wpa_cli_cmd": wifi_cmd
-                                }
-                                print(wifi_cli_cmd_data)
-                                self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
-                                time.sleep(2)
-                                self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
-
-                        time.sleep(40)
-                        self.wait_for_ip(sta_list)
-                        bssid_list_1 = []
+                try:
+                    # define ro list per iteration
+                    row_list = []
+                    sta_list = self.get_station_list()
+                    print(sta_list)
+                    station = self.wait_for_ip(sta_list)
+                    if station:
+                        print("all stations got ip")
+                        # get bssid's of all stations connected
+                        bssid_list = []
                         for sta_name in sta_list:
                             sta = sta_name.split(".")[2]
                             time.sleep(5)
                             bssid = self.station_data_query(station_name=str(sta), query="ap")
-                            bssid_list_1.append(bssid)
-                        print(bssid_list_1)
-                        for i, x in zip(row_list, bssid_list_1):
-                            i.append(x)
-                        print("row list", row_list)
-                        # check if all are equal
-                        result = all(element == bssid_list_1[0] for element in bssid_list_1)
+                            bssid_list.append(bssid)
+                        print(bssid_list)
 
-                        res = ""
+                        for sta_name in sta_list:
+                            # local_row_list = [0, "68"]
+                            local_row_list = [str(iter)]
+                            sta = sta_name.split(".")[2]
+                            time.sleep(5)
+                            before_bssid = self.station_data_query(station_name=str(sta), query="ap")
+                            print(before_bssid)
+                            local_row_list.append(before_bssid)
+                            print(local_row_list)
+                            row_list.append(local_row_list)
+                        print(row_list)
                         pass_fail_list = []
                         pcap_file_list = []
+                        roam_time1 = []
+                        remark = []
+                        # check if all element of bssid list has same bssid's
+                        result = all(element == bssid_list[0] for element in bssid_list)
                         if result:
-                            station_after = bssid_list_1[0].lower()
-                            if station_after == station_before or station_after == "na":
-                                print("station did not roamed")
-                                res = "FAIL"
-                            elif station_after != station_before:
-                                print("client performed roam")
-                                res = "PASS"
+                            print("All stations connected to one ap")
+                            #  if all bssid are equal then do check to which ap it is connected
+                            formated_bssid = bssid_list[0].lower()
+                            station_before = ""
+                            if formated_bssid == self.c1_bssid:
+                                print("station connected to chamber1 ap")
+                                station_before = formated_bssid
+                            elif formated_bssid == self.c2_bssid:
+                                print("station connected to chamber 2 ap")
+                                station_before = formated_bssid
+                            print(station_before)
 
-                            if res == "FAIL":
-                                res = "FAIL"
-                        else:
-                            res = "FAIL"
+                            print("check pkt rx before roam")
 
-                        # stop sniff and attach data
-                        print("stop sniff")
-                        file_name_ = self.stop_sniffer()
-                        file_name = "./pcap/" + str(file_name_)
-                        print("pcap file name", file_name)
-                        time.sleep(10)
+                            # after checking all conditions start roam and start snifffer
+                            print("starting snifer")
+                            self.start_sniffer(radio_channel=int(self.channel), radio=self.sniff_radio,
+                                               test_name="roam_11r_" + str(self.option) + "_iteration_" + str(
+                                                   iter) + "_",
+                                               duration=3600)
 
-
-
-                        if res == "PASS":
-                            query_reasso_response = self.query_sniff_data(pcap_file=str(file_name),
-                                                                          filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55)")
-                            print("query", query_reasso_response)
-                            if len(query_reasso_response) != 0:
-                                for i  in range(len(query_reasso_response)):
-                                    if query_reasso_response[i] == "Successful":
-                                        print("reassociation reponse present check for auth rquest")
-                                        query_auth_response = self.query_sniff_data(pcap_file=str(file_name),
-                                                                                filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0002)")
-                                        if len(query_auth_response) != 0:
-                                            if query_auth_response[i] == "Successful":
-                                                print("authentcation is present")
-                                                pass_fail_list.append("PASS")
-                                                pcap_file_list.append(str(file_name))
-                                            else:
-                                                pass_fail_list.append("FAIL")
-                                                pcap_file_list.append(str(file_name))
-
-                                    else:
-                                        print("pcap_file name for fail instance of iteration value ")
+                            if station_before == self.final_bssid[0]:
+                                print("connected stations bssid is same to bssid list first element")
+                                for sta_name in sta_list:
+                                    sta = sta_name.split(".")[2]
+                                    print(sta)
+                                    wpa_cmd = ""
+                                    if self.option == "ota":
+                                        wpa_cmd = "roam " + str(self.final_bssid[1])
+                                    if self.option == "otds":
+                                        wpa_cmd = "ft_ds " + str(self.final_bssid[1])
+                                    # wpa_cmd = "roam " + str(self.final_bssid[1])
+                                    wifi_cli_cmd_data1 = {
+                                        "shelf": 1,
+                                        "resource": 1,
+                                        "port": str(sta),
+                                        "wpa_cli_cmd": 'scan trigger freq 5180 5300'
+                                    }
+                                    wifi_cli_cmd_data = {
+                                        "shelf": 1,
+                                        "resource": 1,
+                                        "port": str(sta),
+                                        "wpa_cli_cmd": wpa_cmd
+                                    }
+                                    print(wifi_cli_cmd_data)
+                                    self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
+                                    time.sleep(2)
+                                    self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
 
                             else:
-                                print("pcap_file for fail instance of iteration value ")
+                                print("connected stations bssid is same to bssid list second  element")
+                                for sta_name in sta_list:
+                                    sta = sta_name.split(".")[2]
+                                    wifi_cmd = ""
+                                    if self.option == "ota":
+                                        wifi_cmd = "roam " + str(self.final_bssid[0])
+                                    if self.option == "otds":
+                                        wifi_cmd = "ft_ds " + str(self.final_bssid[0])
+                                    print(sta)
+                                    wifi_cli_cmd_data1 = {
+                                        "shelf": 1,
+                                        "resource": 1,
+                                        "port": str(sta),
+                                        "wpa_cli_cmd": 'scan trigger freq 5180 5300'
+                                    }
+                                    wifi_cli_cmd_data = {
+                                        "shelf": 1,
+                                        "resource": 1,
+                                        "port": str(sta),
+                                        "wpa_cli_cmd": wifi_cmd
+                                    }
+                                    print(wifi_cli_cmd_data)
+                                    self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
+                                    time.sleep(2)
+                                    self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
+
+                            # stop sniff and attach data
+                            print("stop sniff")
+                            file_name_ = self.stop_sniffer()
+                            file_name = "./pcap/" + str(file_name_)
+                            print("pcap file name", file_name)
+
+
+                            time.sleep(40)
+                            self.wait_for_ip(sta_list)
+                            bssid_list_1 = []
+                            for sta_name in sta_list:
+                                sta = sta_name.split(".")[2]
+                                time.sleep(5)
+                                bssid = self.station_data_query(station_name=str(sta), query="ap")
+                                bssid_list_1.append(bssid)
+                            print(bssid_list_1)
+                            for i, x in zip(row_list, bssid_list_1):
+                                i.append(x)
+                            print("row list", row_list)
+                            # check if all are equal
+                            result = all(element == bssid_list_1[0] for element in bssid_list_1)
+
+                            res = ""
+                            if result:
+                                station_after = bssid_list_1[0].lower()
+                                if station_after == station_before or station_after == "na":
+                                    print("station did not roamed")
+                                    res = "FAIL"
+                                elif station_after != station_before:
+                                    print("client performed roam")
+                                    res = "PASS"
+                                if res == "FAIL":
+                                    res = "FAIL"
+
+
+                            if res == "PASS":
+                                query_reasso_response = self.pcap_obj.get_wlan_mgt_status_code(pcap_file=str(file_name),
+                                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55)")
+                                print("query", query_reasso_response)
+                                if len(query_reasso_response) != 0:
+                                    for i in range(len(query_reasso_response)):
+                                        if query_reasso_response[i] == "Successful":
+                                            print("reassociation reponse present check for auth rquest")
+                                            reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
+                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55)")
+                                            reasso_time = reasso_t[0]
+                                            query_auth_response = self.pcap_obj.get_wlan_mgt_status_code(pcap_file=str(file_name),
+                                                                                                         filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)")
+                                            print("check auth req present or not ")
+                                            if len(query_auth_response) != 0:
+                                                # aauth present
+                                                if query_auth_response[i] == "Successful":
+                                                    print("authentcation is present and success")
+                                                    auth_t = self.pcap_obj.read_time(pcap_file=str(file_name),
+                                                                                     filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)")
+                                                    auth_time = auth_t[0]
+                                                    roam_time = reasso_time - auth_time
+                                                    print("roam time ms", roam_time)
+                                                    roam_time1.append(roam_time)
+                                                    if roam_time < 50:
+                                                        pass_fail_list.append("PASS")
+                                                        pcap_file_list.append(str(file_name))
+                                                        remark.append("Passed all criteria")
+                                                    else:
+                                                        pass_fail_list.append("FAIL")
+                                                        pcap_file_list.append(str(file_name))
+                                                        remark.append("Roam time is greater then 50 ms")
+
+                                                else:
+                                                    roam_time1.append('Auth Fail')
+                                                    pass_fail_list.append("FAIL")
+                                                    pcap_file_list.append(str(file_name))
+                                                    remark.append(" auth failure")
+                                            else:
+                                                roam_time1.append('No Auth')
+                                                pass_fail_list.append("FAIL")
+                                                pcap_file_list.append(str(file_name))
+                                                remark.append("No authentication request")
+
+                                        else:
+                                            roam_time1.append('Reassociation Fail')
+                                            pass_fail_list.append("FAIL")
+                                            pcap_file_list.append(str(file_name))
+                                            remark.append("Reassociation failure")
+                                            print("pcap_file name for fail instance of iteration value ")
+
+                                else:
+                                    for i in range(len(row_list)):
+                                        roam_time1.append("No Reassociation")
+                                    for i in range(len(row_list)):
+                                        pass_fail_list.append("FAIL")
+                                    for i in range(len(row_list)):
+                                        pcap_file_list.append(str(file_name))
+                                    for i in range(len(row_list)):
+                                        remark.append("No Reasso response")
+                                    print("row list", row_list)
+
+                            else:
+                                query_reasso_response = self.pcap_obj.get_wlan_mgt_status_code(pcap_file=str(file_name),
+                                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55)")
+                                print("query", query_reasso_response)
+                                if len(query_reasso_response) != 0:
+                                    for i in range(len(query_reasso_response)):
+                                        if query_reasso_response[i] == "Successful":
+                                            print("reassociation reponse present check for auth rquest")
+                                            reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
+                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55)")
+                                            reasso_time = reasso_t[0]
+                                            query_auth_response = self.pcap_obj.get_wlan_mgt_status_code(pcap_file=str(file_name),
+                                                                                                         filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)")
+                                            print("check auth req present or not ")
+                                            if len(query_auth_response) != 0:
+                                                # aauth present
+                                                if query_auth_response[i] == "Successful":
+                                                    print("authentcation is present and success")
+                                                    auth_t = self.pcap_obj.read_time(pcap_file=str(file_name),
+                                                                                     filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)")
+                                                    auth_time = auth_t[0]
+                                                    roam_time = reasso_time - auth_time
+                                                    print("roam time ms", roam_time)
+                                                    roam_time1.append(roam_time)
+                                                    if roam_time < 50:
+                                                        pass_fail_list.append("PASS")
+                                                        pcap_file_list.append(str(file_name))
+                                                        remark.append("bssid mismatched but can see auth and reaso responsse")
+                                                    else:
+                                                        pass_fail_list.append("FAIL")
+                                                        pcap_file_list.append(str(file_name))
+                                                        remark.append("Roam time is greater then 50 ms(bssid mis matched)")
+
+                                                else:
+                                                    roam_time1.append('Auth Fail')
+                                                    pass_fail_list.append("FAIL")
+                                                    pcap_file_list.append(str(file_name))
+                                                    remark.append("bssid switched  auth failure")
+                                            else:
+                                                roam_time1.append('No Auth')
+                                                pass_fail_list.append("FAIL")
+                                                pcap_file_list.append(str(file_name))
+                                                remark.append("bssid mismatched  No authentication request")
+
+                                        else:
+                                            roam_time1.append('Reassociation Fail')
+                                            pass_fail_list.append("FAIL")
+                                            pcap_file_list.append(str(file_name))
+                                            remark.append("bssid mismatched  Reassociation failure")
+                                            # print("pcap_file name for fail instance of iteration value ")
+
+                                else:
+                                    for i in range(len(row_list)):
+                                        roam_time1.append("No Reassociation")
+                                    for i in range(len(row_list)):
+                                        pass_fail_list.append("FAIL")
+                                    for i in range(len(row_list)):
+                                        pcap_file_list.append(str(file_name))
+                                    for i in range(len(row_list)):
+                                        remark.append("bsid mismatched , No Reasso response")
+                                    print("row list", row_list)
+
+                            for i, x in zip(row_list, roam_time1):
+                                i.append(x)
+                            print("row list", row_list)
+                            for i, x in zip(row_list, pass_fail_list):
+                                i.append(x)
+                            print("row list", row_list)
+                            for i, x in zip(row_list, pcap_file_list):
+                                i.append(x)
+                            print("row list", row_list)
+                            for i, x in zip(row_list, remark):
+                                i.append(x)
+                            print("row list", row_list)
+                            for i, x in zip(file_n, row_list):
+                                self.lf_csv_obj.open_csv_append(fields=x, name=i)
+
 
                         else:
-                            pass_fail_list.append("FAIL")
-                            pcap_file_list.append(str(file_name))
-                            print("pcap_file for fail instance of iteration value ")
-                        for i, x in zip(row_list, pass_fail_list):
-                            i.append(x)
-                        print("row list", row_list)
-                        for i, x in zip(row_list, pcap_file_list):
-                            i.append(x)
-                        print("row list", row_list)
-                        for i, x in zip(file_n, row_list):
-                            self.open_csv_append(fields=x, name=i)
-
+                            message = "all stations are not connected to same ap for iteration " + str(iter)
+                            print("all stations are not connected to same ap")
+                            bssid_list2 = []
+                            for sta_name in sta_list:
+                                # local_row_list = [0, "68"]
+                                local_row_list = [str(iter)]
+                                sta = sta_name.split(".")[2]
+                                time.sleep(5)
+                                before_bssid = self.station_data_query(station_name=str(sta), query="ap")
+                                print(before_bssid)
+                                bssid_list2.append(before_bssid)
+                                local_row_list.append(before_bssid)
+                                print(local_row_list)
+                                row_list.append(local_row_list)
+                            print(row_list)
+                            for i, x in zip(row_list, bssid_list2):
+                                i.append(x)
+                            print("row list", row_list)
+                            for i in range(len(row_list)):
+                                pass_fail_list.append("No Roam Time")
+                            for i in row_list:
+                                i.append("FAIL")
+                            print("row list", row_list)
+                            for i in row_list:
+                                i.append("no roam performed all stations are not connected to same ap")
+                            for i in row_list:
+                                i.append("no roam performed all stations are not connected to same ap")
+                            print("row list", row_list)
+                            for i, x in zip(file_n, row_list):
+                                self.lf_csv_obj.open_csv_append(fields=x, name=i)
 
                     else:
-                        print("all stations are not connected to same ap")
-                if self.duration_based:
-                    if time.time() > timeout:
-                        break
+                        message = "station's failed to get ip  after the test start"
+                        print("station's failed to get ip after test starts")
+                    if self.duration_based:
+                        if time.time() > timeout:
+                            break
+                except Exception as e:
+                    print(e)
+
 
         else:
+            message = "station's failed to get ip  at the begining"
             print("station's failed to get associate at the begining")
 
         test_end = datetime.now()
@@ -583,6 +731,7 @@ class HardRoam(Realm):
         s2 = test_end  # for example
         FMT = '%b %d %H:%M:%S'
         self.test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
+        return message
 
     def generate_client_pass_fail_graph(self, csv_list=None):
         print("csv_list", csv_list)
@@ -590,18 +739,17 @@ class HardRoam(Realm):
         for i in range(self.num_sta):
             x_axis_category.append(i+1)
         print(x_axis_category)
-        final_list = []
-        len= None
         pass_list = []
         fail_list = []
         dataset = []
         for i in csv_list:
             print("i", i)
-            lf_csv_obj = lf_csv()
+            lf_csv_obj = lf_csv.lf_csv()
             h = lf_csv_obj.read_csv(file_name=i, column="PASS/FAIL")
             count = h.count("PASS")
             print(count)
-            count_ = final_list.count("FAIL")
+            count_ = h.count("FAIL")
+            print(count_)
             pass_list.append(count)
             fail_list.append(count_)
         dataset.append(pass_list)
@@ -613,7 +761,7 @@ class HardRoam(Realm):
         # dataset = [[9, 7 , 4], [3, 4,9]]
         graph = lf_graph.lf_bar_graph(_data_set=dataset, _xaxis_name="Stations", _yaxis_name="Total iterations = " + str(self.iteration),
                                       _xaxis_categories = x_axis_category,
-                                       _label=["Pass", "Fail"], _xticks_font=8,
+                                      _label=["Pass", "Fail"], _xticks_font=8,
                                       _graph_image_name="11r roam client per iteration graph",
                                       _color=['forestgreen', 'darkorange', 'blueviolet'], _color_edge='black',
                                       _figsize=(12, 4),
@@ -675,18 +823,22 @@ class HardRoam(Realm):
         for i, x in zip(range(self.num_sta), csv_list):
             report.set_table_title("Client information  " + str(i))
             report.build_table_title()
-            lf_csv_obj = lf_csv()
+            lf_csv_obj = lf_csv. lf_csv()
             y = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Iterations")
             z = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="bssid1")
             u = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="bssid2")
+            t = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Roam Time(ms)")
             h = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="PASS/FAIL")
             p = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Pcap file Name")
+            r = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Remark")
             table = {
                 "iterations": y,
                 "Bssid before": z,
                 "Bssid After": u,
+                "Roam Time(ms)": t,
                 "PASS/FAIL": h,
-                "pcap file name": p
+                "pcap file name": p,
+                "Remark": r
             }
             test_setup = pd.DataFrame(table)
             report.set_table_dataframe(test_setup)
@@ -734,7 +886,8 @@ def main():
                    option="ota",
                    duration_based=False,
                    iteration_based=True,
-                   dut_name=["AP687D.B45C.1D1C", "AP687D.B45C.1D1C"]
+                   dut_name=["AP687D.B45C.1D1C", "AP687D.B45C.1D1C"],
+                   traffic_type="lf_udp"
                    )
     # obj.stop_sniffer()
     # file = obj.generate_csv()
