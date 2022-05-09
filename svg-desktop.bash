@@ -36,6 +36,13 @@ fi
 #  $DesktopFile
 
 #    font-family: 'Source Code Pro', 'FreeMono', 'Liberation Mono', 'DejaVu Sans Mono', 'Lucida Sans Typewriter', 'Consolas',  mono, sans-serif;
+
+imgtag=""
+ANV="/home/lanforge/Pictures/anvil-right.svg"
+if [ -r "$ANV" ] ; then
+    imgtag="<image x='400' y='200' width='800' height='450' href='$ANV' />"
+fi
+
 cat > $DesktopFile <<_EOF_
 <svg viewBox='0 0 1600 900' width='1600' height='900' xmlns='http://www.w3.org/2000/svg'>
 <style>
@@ -67,10 +74,9 @@ text {
         <text x='270' y='205'>$my_os</text>
     </g>
 </g>
+$imgtag
 </svg>
 _EOF_
-
-
 set_background picture-filename ${A}${DesktopFile}${A}
 set_background picture-options  'stretched'
 #
