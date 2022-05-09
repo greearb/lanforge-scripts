@@ -174,7 +174,7 @@ def main():
                                  "show_ap_bssid_dual_band_6g", "show_ap_bssid_dual_band_5g", "show_ap_bssid_6g", "show_ap_bssid_5g", "show_ap_bssid_24g",  
                                  "11r_logs", "enable_ft_akm_ftpsk", "enable_ftotd_akm_ftpsk",
                                  "config_dual_band_mode","dual_band_no_mode_shutdown","dual_band_mode_shutdown",
-                                 "enable_ft_akm_ftsae","enable_ft_wpa3_dot1x",
+                                 "enable_ft_akm_ftsae","enable_ft_wpa3_dot1x","enable_ft_wpa3_dot1x_sha256",
                                  "ap_dot11_dot11ax_mcs_tx_index_spatial_stream", "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream"
                                  ])
     parser.add_argument("--value", type=str, help="set value")
@@ -1704,6 +1704,45 @@ def main():
                     for command in ["shutdown",
                                     "security ft",
                                     "no security wpa akm sae",
+                                    "security wpa akm ft dot1x",
+                                    "security dot1x authentication-list default",
+                                    "no shutdown"
+                                    ]:
+                        egg.sendline(command)
+                        sleep(1)
+                        k = egg.expect_exact([CCP_CONFIG_WLAN, pexpect.TIMEOUT], timeout=timeout)
+                        if k == 0:
+                            logg.info("command sent: {}".format(command))
+                        if k == 1:
+                            logg.info("command time out: {}".format(command))
+                if j == 1:
+                    logg.info("did not get the (config-wlan)# prompt")
+            if i == 0:
+                logg.info("did not get the (config)# prompt")
+
+    if (args.action == "enable_ft_wpa3_dot1x_sha256" and (args.wlan is None)):
+        raise Exception("enable ft wlanID, wlan, wlanSSID are required")
+    if (args.action == "enable_ft_wpa3_dot1x_sha256"):
+        logg.info("enable ft and select ft + dot1x and sha256  akm  wlan {} wlanID {} wlanSSID {}".format(args.wlan,
+                                                                                                          args.wlanID,
+                                                                                                          args.wlanSSID))
+        if args.series == "9800":
+            egg.sendline("config t")
+            sleep(0.4)
+            i = egg.expect_exact(["(config)#", pexpect.TIMEOUT], timeout=timeout)
+            if i == 0:
+                logg.info("elevated to (config)#")
+                # for create wlan <name> <ID> <ssid>
+                command = "wlan {wlan}".format(wlan=args.wlan)
+                egg.sendline(command)
+                sleep(0.4)
+                j = egg.expect_exact([CCP_CONFIG_WLAN, pexpect.TIMEOUT], timeout=timeout)
+                if j == 0:
+
+                    for command in ["shutdown",
+                                    "security ft",
+                                    "no security wpa akm sae",
+                                    "security wpa akm dot1x-sha256",
                                     "security wpa akm ft dot1x",
                                     "security dot1x authentication-list default",
                                     "no shutdown"
