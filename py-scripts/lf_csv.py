@@ -22,6 +22,7 @@ INCLUDE_IN_README
 import pandas as pd
 from pandas import *
 from csv import reader
+import csv
 
 class lf_csv:
     def __init__(self,
@@ -65,7 +66,13 @@ class lf_csv:
                 print(row)
                 lst .append(row)
                 print("list", lst)
-        return  lst
+        return lst
+
+    def open_csv_append(self, fields, name):
+        # fields = ['first', 'second', 'third']
+        with open(str(name), 'a') as f:
+            writer = csv.writer(f)
+            writer.writerow(fields)
 def main():
     test = lf_csv()
     test.generate_csv()
