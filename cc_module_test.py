@@ -16,7 +16,7 @@ EXAMPLE:
     There is a unit test included to try sample command scenarios
       ./cc_module_test.py --scheme ssh --dest localhost --port 8887 --user admin --passwd Cisco123 --ap AP687D.B45C.2B24 --series 9800 --prompt "WLC1" --timeout 10 --band '6g' --module 'cc_module_9800_3504' 2>&1 | tee cc_tx_output_6g.txt
 
-COPYWRITE
+COPYRIGHT:
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 

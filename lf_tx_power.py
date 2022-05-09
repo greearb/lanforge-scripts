@@ -18,7 +18,7 @@ TODO : add sample command
 
 RESULTS:  csv xlsx
 
-COPYWRITE
+COPYRIGHT:
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 

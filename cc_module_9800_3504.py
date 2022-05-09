@@ -27,7 +27,7 @@ formula:
 6GHz channel = (freq_mhz - 5955) / 5 + 1
 
 
-COPYWRITE
+COPYRIGHT:
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 

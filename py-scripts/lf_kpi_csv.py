@@ -13,7 +13,7 @@ None
 EXAMPLE:
 
 
-COPYWRITE
+COPYRIGHT:
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 

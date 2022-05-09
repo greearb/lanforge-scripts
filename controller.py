@@ -14,7 +14,7 @@ EXAMPLE:
     There is a unit test included to try sample command scenarios
 
 
-COPYWRITE
+COPYRIGHT:
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 

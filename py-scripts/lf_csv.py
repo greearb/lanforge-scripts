@@ -12,7 +12,7 @@ SETUP:
 EXAMPLE:
 see: /py-scripts/lf_report_test.py for example
 
-COPYWRITE
+COPYRIGHT:
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 
