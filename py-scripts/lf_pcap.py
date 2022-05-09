@@ -75,6 +75,29 @@ class LfPcap(Realm):
             raise error
         return self.pcap
 
+    def read_time(self, pcap_file,
+                  filter='(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)'):
+        try:
+            if pcap_file is not None:
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter=filter)
+                packet_count = 0
+                data = []
+                for pkt in cap:
+                    x = pkt.frame_info.time_relative
+                    y = float(x)
+                    z = round(y, 4)
+                    m = z * 1000
+                    data.append(m)
+                    packet_count += 1
+                print("Total Packets: ", packet_count)
+                # print(data)
+                if packet_count != 0:
+                    return data
+                else:
+                    return data
+        except ValueError:
+            raise "pcap file is required"
+
     def capture_live_pcap(self):
         try:
             self.live_pcap = ps.LiveCapture(interface=self.live_pcap_interface, output_file='captured.pcap')
@@ -335,11 +358,11 @@ EXAMPLE:
 see: /py-scritps/lf_pcap.py 
 ---------------------
 ''')
-    parser.add_argument('--pcap_file', '-p', help='provide the pcap file path', dest="pcap_file", required=True)
+    parser.add_argument('--pcap_file', '-p', help='provide the pcap file path', dest="pcap_file",  default=None)
     parser.add_argument('--apply_filter', '-f', help='apply the filter you want to', dest='apply_filter', default=None)
     args = parser.parse_args()
     pcap_obj = LfPcap(
-        host="192.168.200.229",
+        host="192.168.100.131",
         port=8080,
         _read_pcap_file=args.pcap_file,
         _apply_filter=args.apply_filter,
@@ -355,7 +378,7 @@ see: /py-scritps/lf_pcap.py
     # pcap_obj.check_beamformer_beacon_frame(pcap_file=pcap_obj.pcap_file)
     # pcap_obj.get_wlan_mgt_status_code(pcap_file=pcap_obj.pcap_file)
     # pcap_obj.get_packet_info(pcap_obj.pcap_file)
-
+    pcap_obj.read_time(pcap_file="roam_11r_ota_iteration_0_2022-05-05-22-20.pcap")
 
 if __name__ == "__main__":
     main()
