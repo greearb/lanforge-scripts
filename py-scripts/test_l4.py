@@ -230,26 +230,26 @@ class IPV4L4(Realm):
 
                         for value_name, value in endp_value.items():
                             # value can be a '' empty string
-                            # if len(value) != 0: 
-                            if value_name == 'bytes-rd':
-                                endp_rx_map[item] = value
-                                total_bytes_rd += int(value)
-                            if value_name == 'bytes-wr':
-                                endp_rx_map[item] = value
-                                total_bytes_wr += int(value)
-                            if value_name == 'rx rate':
-                                endp_rx_map[item] = value
-                                total_rx_rate += int(value)
-                            if value_name == 'tx rate':
-                                endp_rx_map[item] = value
-                                total_tx_rate += int(value)
-                            if value_name == 'urls/s':
-                                endp_rx_map[item] = value
-                                urls_seconds += float(value)
-                            if value_name == 'total-urls':
-                                endp_rx_map[item] = value
-                                total_urls += int(value)
-
+                            if value != '': 
+                                if value_name == 'bytes-rd':
+                                    endp_rx_map[item] = value
+                                    total_bytes_rd += int(value)
+                                if value_name == 'bytes-wr':
+                                    endp_rx_map[item] = value
+                                    total_bytes_wr += int(value)
+                                if value_name == 'rx rate':
+                                    endp_rx_map[item] = value
+                                    total_rx_rate += int(value)
+                                if value_name == 'tx rate':
+                                    endp_rx_map[item] = value
+                                    total_tx_rate += int(value)
+                                if value_name == 'urls/s':
+                                    endp_rx_map[item] = value
+                                    urls_seconds += float(value)
+                                if value_name == 'total-urls':
+                                    endp_rx_map[item] = value
+                                    total_urls += int(value)
+    
         # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endps, total_bytes_rd, total_bytes_wr, total_rx_rate, total_tx_rate, urls_seconds, total_urls
 
@@ -570,6 +570,10 @@ Generic command example:
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
+
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
+
     if args.lf_logger_config_json:
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
