@@ -9,20 +9,31 @@ This script will monitor the urls/s, bytes-rd, or bytes-wr attribute of the endp
 These attributes can be tested over FTP using a --ftp flag.
 If the monitored value does not continually increase, this test will not pass.
 
+SETUP:
+    The test may be run with a single LF, the eth port that is connected to the lan or wan of the AP would be updated 
+    to host http, ftp.  The IP on the eth port would queried.
+    In the examples below LANforge eth2 had IP  http://192.168.50.217/
+
+    To enamble the host http and ftp on eth port:  
+        Port tab->Modify Port->Select FTP, Select HTTP for that eth port
+        the ftp files just upload right to /home/lanforge
+
+NOTES:
+
 This script replaces the functionality of test_ipv4_l4.py, test_ipv4_l4_ftp_upload.py, test_ipv4_l4_ftp_urls_per_ten.py,
 test_ipv4_l4_ftp_wifi.py, test_ipv4_l4_urls_per_ten.py, test_ipv4_l4_urls_per_ten.py, test_ipv4_l4_wifi.py
 
 EXAMPLE (urls/s):
     ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
                  --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
-                 --url "dl http://192.168.1.101 /dev/null" --requests_per_ten 600 --test_type 'urls'
+                 --url "dl http://192.168.50.217/ /dev/null" --requests_per_ten 600 --test_type 'urls'
                  --csv_outfile test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
                  --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
 
 EXAMPLE (bytes-rd):
     ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
                  --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 2m
-                 --url "dl http://192.168.1.101 /dev/null" --requests_per_ten 600 --test_type bytes-rd
+                 --url "dl http://192.168.50.217/ /dev/null" --requests_per_ten 600 --test_type bytes-rd
                  --csv_outfile test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
                  --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
 
@@ -49,9 +60,9 @@ EXAMPLE (ftp bytes-rd):
                  --csv_outfile test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
                  --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
 
-Use './test_l4.py --help' to see command line usage and options
-Copyright 2021 Candela Technologies Inc
-License: Free to distribute and modify. LANforge systems must be licensed.
+COPYRIGHT:
+    Copyright 2021 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
 """
 import sys
 import os
@@ -202,9 +213,11 @@ class IPV4L4(Realm):
 
         '''
         for e in self.cx_profile.created_endp.keys():
+        # for e in self.cx_profile.created_cx.keys():
             our_endps[e] = e
-        print("our_endps {our_endps}".format(our_endps=our_endps))
+        logger.info("our_endps {our_endps}".format(our_endps=our_endps))
         '''
+        
         for endp_name in endp_list['endpoint']:
             if endp_name != 'uri' and endp_name != 'handler':
                 for item, endp_value in endp_name.items():
@@ -213,9 +226,11 @@ class IPV4L4(Realm):
                         endps.append(endp_value)
                         logger.debug("endpoint: {item} value:\n".format(item=item))
                         logger.debug(endp_value)
-                        # print("item {item}".format(item=item))
+                        logger.info("item {item}".format(item=item))
 
                         for value_name, value in endp_value.items():
+                            # value can be a '' empty string
+                            # if len(value) != 0: 
                             if value_name == 'bytes-rd':
                                 endp_rx_map[item] = value
                                 total_bytes_rd += int(value)

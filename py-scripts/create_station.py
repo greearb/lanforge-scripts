@@ -1,6 +1,21 @@
 #!/usr/bin/env python3
 """
-    Script for creating a variable number of stations.
+NAME: create_station.py
+
+PURPOSE:
+    create_station.py will create a variable number of stations.
+
+EXAMPLE:
+    create_station.py --mrg <lanforge ip> --radio wipyh1 --start_id 2 --num_stations 1 --ssid asus_5g --passwd hello123 --security wpa2
+
+NOTES: 
+    Does not create cross connects 
+    Mainly used to determine how to create a station
+
+COPYRIGHT: 
+Copyright 2022 Candela Technologies Inc
+License: Free to distribute and modify. LANforge systems must be licensed.
+
 """
 import sys
 import os
@@ -138,6 +153,21 @@ def main():
             --security open
             --ssid netgear
             --passwd BLANK
+            --mode   1
+                {"auto"   : "0",
+                "a"      : "1",
+                "b"      : "2",
+                "g"      : "3",
+                "abg"    : "4",
+                "abgn"   : "5",
+                "bgn"    : "6",
+                "bg"     : "7",
+                "abgnAC" : "8",
+                "anAC"   : "9",
+                "an"     : "10",
+                "bgnAC"  : "11",
+                "abgnAX" : "12",
+                "bgnAX"  : "13"}
             --debug
             ''')
     required = parser.add_argument_group('required arguments')
