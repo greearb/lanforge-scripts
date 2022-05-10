@@ -244,8 +244,6 @@ class StaConnect(Realm):
             set_port_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/set_port")
             set_port_r.addPostData(set_port_data)
             set_port_r.jsonPost()
-            # TODO:  Remove sleep
-            time.sleep(0.01)
 
         print("\nBringing ports up...")
         for port in self.station_names:
