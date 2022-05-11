@@ -176,7 +176,7 @@ def main():
                                  "config_dual_band_mode","dual_band_no_mode_shutdown","dual_band_mode_shutdown",
                                  "enable_ft_akm_ftsae","enable_ft_wpa3_dot1x","enable_ft_wpa3_dot1x_sha256",
                                  "ap_dot11_dot11ax_mcs_tx_index_spatial_stream", "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream",
-                                 "show_wireless_client_sumry", 'show_client_macadd_detail','debug_wieless_mac'
+                                 "show_wireless_client_sumry", 'show_client_macadd_detail','debug_wieless_mac', 'no_debug_wieless_mac',
                                  ])
     parser.add_argument("--value", type=str, help="set value")
     # logging configuration
@@ -1099,6 +1099,13 @@ def main():
         print("args.value", args.value)
         if args.series == "9800":
             command = "debug wireless mac %s" % (args.value)
+
+    if (args.action == 'no_debug_wieless_mac'):
+        print("args.value", args.value)
+        if args.series == "9800":
+            command = "no debug wireless mac  %s" % (args.value)
+
+
 
 
     if ((args.action == "auto_rf") and ((args.ap is None))):
