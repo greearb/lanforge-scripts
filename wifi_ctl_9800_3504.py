@@ -175,7 +175,8 @@ def main():
                                  "11r_logs", "enable_ft_akm_ftpsk", "enable_ftotd_akm_ftpsk",
                                  "config_dual_band_mode","dual_band_no_mode_shutdown","dual_band_mode_shutdown",
                                  "enable_ft_akm_ftsae","enable_ft_wpa3_dot1x","enable_ft_wpa3_dot1x_sha256",
-                                 "ap_dot11_dot11ax_mcs_tx_index_spatial_stream", "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream"
+                                 "ap_dot11_dot11ax_mcs_tx_index_spatial_stream", "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream",
+                                 "show_wireless_client_sumry", 'show_client_macadd_detail',
                                  ])
     parser.add_argument("--value", type=str, help="set value")
     # logging configuration
@@ -1084,6 +1085,15 @@ def main():
     if (args.action == "show_ap_bssid_6g"):
         if args.series == "9800":
             command = "show ap name %s wlan dot11 6ghz" % (args.ap)
+
+    if (args.action == "show_wireless_client_sumry"):
+        if args.series == "9800":
+            command = "show  wireless client summary"
+
+    if (args.action == 'show_client_macadd_detail'):
+        print("args.value", args.value)
+        if args.series == "9800":
+            command = "show wireless client mac-address %s  detail" % (args.value)
 
     if ((args.action == "auto_rf") and ((args.ap is None))):
         raise Exception("auto_rf requires AP name")
