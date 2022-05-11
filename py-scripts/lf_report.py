@@ -37,6 +37,8 @@ import traceback
 import logging
 import importlib
 
+from matplotlib import pyplot as plt
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 logger = logging.getLogger(__name__)
@@ -495,11 +497,51 @@ class lf_report:
             self.path_date_time = os.path.join(curr_dir_path, self.date_time)
             os.mkdir(self.path_date_time)
 
+    def pass_fail_background(self, cell_value):
+
+        highlight_success = 'background-color: #4af84a;'
+        highlight_fail = 'background-color: #ff1300;'
+
+        if type(cell_value) in [str]:
+            if cell_value == "Success":
+                return highlight_success
+            elif cell_value == "Failed":
+                return highlight_fail
+
     def build_table(self):
         self.dataframe_html = self.dataframe.to_html(index=False,
                                                      justify='center')  # have the index be able to be passed in.
         self.html += self.dataframe_html
 
+    def pass_failed_build_table(self):
+        self.dataframe_html = self.dataframe.style.hide_index(subset=None, level=None, names=False).applymap \
+            (self.pass_fail_background).to_html(index=False,
+                                                justify='center')  # have the index be able to be passed in.
+        self.html += self.dataframe_html
+
+    def save_csv(self, file_name, save_to_csv_data):
+        save_to_csv_data.to_csv(str(self.path_date_time) + "/" + file_name)
+
+    def save_pie_chart(self, pie_chart_data):
+        explode = (0, 0.1)
+        pie_chart = pie_chart_data.plot.pie(y='Pass/Fail', autopct="%.2f%%", explode=explode, figsize=(10, 10),
+                                            shadow=True, startangle=90,
+                                            colors=['#4af84a', '#ff1300'])
+        plt.savefig(str(self.path_date_time) + '/pie-chart.png')
+
+    def save_bar_chart(self, bar_chart_data, name):
+        plot = bar_chart_data.plot.bar(alpha=0.3)
+        plot.legend(bbox_to_anchor=(1.0, 1.0))
+        plot.set_title(name)
+        for p in plot.patches:
+            height = p.get_height()
+            plot.annotate('{}'.format(height),
+                          xy=(p.get_x() + p.get_width() / 2, height),
+                          xytext=(0, 0),  # 3 points vertical offset
+                          textcoords="offset points",
+                          ha='center', va='bottom')
+        plt.tight_layout()
+        plt.savefig(str(self.path_date_time) + '/' + name + '.png')
 
     def test_setup_table(self, test_setup_data, value):
         if test_setup_data is None:
@@ -614,6 +656,19 @@ function copyTextToClipboard(ele) {
     def end_content_div(self):
         self.html += "\n</div><!-- end contentDiv -->\n"
 
+    def build_chart_title(self, chart_title):
+        self.chart_title_html = """
+            <div class='HeaderStyle'>
+                <h3 class='TitleFontPrint' style='color:darkgreen;'>{title}</h3>
+            """.format(title=chart_title)
+        self.html += self.chart_title_html
+
+    def build_chart(self, name):
+        self.chart_html_obj = """
+              <img align='center' style='padding:15px;margin:5px 5px 2em 5px;width:500px;' src='{image}'/>
+            """.format(image=name)
+        self.html += self.chart_html_obj
+
 
 # Unit Test
 if __name__ == "__main__":
@@ -622,7 +677,7 @@ if __name__ == "__main__":
         formatter_class=argparse.RawTextHelpFormatter,
         description="Reporting library Unit Test")
     parser.add_argument('--lfmgr', help='sample argument: where LANforge GUI is running', default='localhost')
-    # the args parser is not really used , this is so the report is not generated when testing 
+    # the args parser is not really used , this is so the report is not generated when testing
     # the imports with --help
     args = parser.parse_args()
     logger.info("LANforge manager {lfmgr}".format(lfmgr=args.lfmgr))
@@ -639,7 +694,7 @@ if __name__ == "__main__":
 
     logger.info(dataframe)
 
-    # Testing: generate data frame 
+    # Testing: generate data frame
     dataframe2 = pd.DataFrame({
         'station': [1, 2, 3, 4, 5, 6, 7],
         'time_seconds': [23, 78, 22, 19, 45, 22, 25]
