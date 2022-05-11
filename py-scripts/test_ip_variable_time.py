@@ -133,7 +133,7 @@ class IPVariableTime(Realm):
         self.station_profile.use_ht160 = use_ht160
         if self.station_profile.use_ht160:
             self.station_profile.mode = 9
-        self.station_profile.mode = mode
+        # self.station_profile.mode = mode
         if self.ap:
             self.station_profile.set_command_param("add_sta", "ap", self.ap)
         if self.use_existing_sta:
@@ -322,8 +322,9 @@ class IPVariableTime(Realm):
         self.cx_profile.cleanup_prefix()
         # do not clean up station if existed prior to test
         if not self.use_existing_sta:
-            for sta in self.sta_list:
-                self.rm_port(sta, check_exists=True, debug_=self.debug)
+            for sta_list in self.sta_list:
+                for sta in sta_list:
+                    self.rm_port(sta, check_exists=True, debug_=self.debug)
 
     def cleanup(self):
         self.cx_profile.cleanup()
@@ -333,29 +334,36 @@ class IPVariableTime(Realm):
                                                debug=self.debug)
 
     def build(self):
-        self.station_profile.use_security(self.security, self.ssid, self.password)
-        self.station_profile.set_number_template(self.number_template)
-        # logger.info("sta_list {}".format(self.sta_list))
-        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.station_profile.set_command_param("set_port", "report_timer", 1500)
-        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+        for i in range(len(self.upstream)):
+            self.station_profile.use_security(self.security[i], self.ssid[i], self.password[i])
+            self.station_profile.set_number_template(self.number_template)
+            # logger.info("sta_list {}".format(self.sta_list))
+            self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+            self.station_profile.set_command_param("set_port", "report_timer", 1500)
+            self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
 
-        if self.use_existing_sta:
-            logger.info("Use Existing Stations: {sta_list}".format(sta_list=self.sta_list))
-        else:
-            logger.info("Creating stations")
-            self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
-            self._pass("PASS: Station build finished")
+            if self.use_existing_sta:
+                logger.info("Use Existing Stations: {sta_list}".format(sta_list=self.sta_list))
+            else:
+                logger.info("Creating stations")
+                try:
+                    self.station_profile.mode = self.mode[i]
+                except Exception as e:
+                    self.station_profile.mode = 0
+                self.station_profile.create(radio=self.radio[i], sta_names_=self.sta_list[i], debug=self.debug)
+                self._pass("PASS: Station build finished")
 
-        self.cx_profile.create(endp_type=self.traffic_type, side_a=self.sta_list,
-                               side_b=self.upstream,
-                               sleep_time=0)
+            self.cx_profile.create(endp_type=self.traffic_type, side_a=self.sta_list[i],
+                                   side_b=self.upstream[i],
+                                   sleep_time=0)
 
     def run(self):
         if self.report_file is None:
             # new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':','-') + '_test_ip_variable_time'
             # create path name
             new_file_path = self.kpi_path
+            # new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':','-') + \
+            #                 '_test_ip_variable_time'  # create path name
             if os.path.exists('/home/lanforge/report-data'):
                 path = os.path.join('/home/lanforge/report-data/', new_file_path)
                 os.mkdir(path)
@@ -472,9 +480,11 @@ class IPVariableTime(Realm):
                 # convert new_l3_endps_list to str:
                 layer3endps = ','.join(str(l3endps) for l3endps in new_l3_endps_list)
                 # logger.info(layer3endps)
-
+        # for i in range(len(self.upstream)):
+        comp_sta_list = []
+        list(map(comp_sta_list.extend,self.sta_list))
         self.cx_profile.monitor(layer3_cols=layer3_cols,
-                                sta_list=self.sta_list,
+                                sta_list=comp_sta_list,
                                 port_mgr_cols=port_mgr_cols,
                                 report_file=report_f,
                                 systeminfopath=systeminfopath,
@@ -728,7 +738,7 @@ def main():
     # Realm args parser is one directory up then traverse into /py-json/LANforge/lfcli_base.py
     # search for create_basic_argsparse
     # --mgr --mgr_port --upstream_port --num_stations --radio --security --ssid --passwd
-    parser = Realm.create_basic_argparse(
+    parser = argparse.ArgumentParser(
         prog='test_ip_variable_time.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
@@ -965,38 +975,80 @@ python3 ./test_ip_variable_time.py
         --num_stations 2
 
             ''')
-
+    optional = parser.add_argument_group('optional arguments')
+    required = parser.add_argument_group('required arguments')
     # Realm args parser is one directory up then traverse into /py-json/LANforge/lfcli_base.py
     # search for create_basic_argsparse
     # --mgr --mgr_port --upstream_port --num_stations --radio --security --ssid --passwd
-    parser.add_argument('--mode', help='Used to force mode of stations')
-    parser.add_argument('--ap', help='Used to force a connection to a particular AP')
-    parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp, udp, tcp], type will be '
+    optional.add_argument('--mgr', '--lfmgr', default='localhost',
+                          help='hostname for where LANforge GUI is running')
+    optional.add_argument('--mgr_port', '--port', default=8080,
+                          help='port LANforge GUI HTTP service is running on')
+    optional.add_argument('-u', '--upstream_port', nargs="+", default=['eth1'],
+                          help='non-station port that generates traffic: <resource>.<port>, e.g: --u eth1 eth2')
+    optional.add_argument('--num_stations', type=int, default=0,
+                          help='Number of stations to create')
+    optional.add_argument('--test_id',
+                          default="webconsole",
+                          help='Test ID (intended to use for ws events)')
+    optional.add_argument('-d', '--debug', action="store_true",
+                          help='Enable debugging')
+    optional.add_argument('--log_level', default=None,
+                          help='Set logging level: debug | info | warning | error | critical')
+    optional.add_argument('--lf_logger_config_json',
+                          help="--lf_logger_config_json <json file> , json configuration of logger")
+    optional.add_argument('--proxy', nargs='?', default=None,
+                          help="Connection proxy like http://proxy.localnet:80 \n"
+                               + " or https://user:pass@proxy.localnet:3128")
+    optional.add_argument('--debugging', nargs="+", action="append",
+                          help="Indicate what areas you would like express debug output:\n"
+                               + " - digest - print terse indications of lanforge_api calls\n"
+                               + " - json - print url and json data\n"
+                               + " - http - print HTTP headers\n"
+                               + " - gui - ask the GUI for extra debugging in responses\n"
+                               + " - method:method_name - enable by_method() debugging (if present)\n"
+                               + " - tag:tagname - enable matching by_tag() debug output\n"
+                          )
+    optional.add_argument('--debug_log', default=None,
+                          help="Specify a file to send debug output to")
+    optional.add_argument('--no_cleanup', help='Do not cleanup before exit',  action='store_true')
+
+    #-----required---------------
+    required.add_argument('--radio', nargs="+", help='radio EID, e.g: --radio wiphy0 wiphy2')
+    required.add_argument('--security', nargs="+", default=["open"],
+                          help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >  e.g: --security open wpa')
+    required.add_argument('--ssid', nargs="+", help='WiFi SSID for script objects to associate to e.g: --ssid ap1_ssid ap2_ssid')
+    required.add_argument('--passwd', '--password', '--key', nargs="+", default=["[BLANK]"],
+                          help='WiFi passphrase/password/key e.g: --passwd [BLANK] passwd@123')
+
+    optional.add_argument('--mode', nargs="+", help='Used to force mode of stations e.g: --mode 11 9')
+    optional.add_argument('--ap', nargs="+", help='Used to force a connection to a particular AP')
+    optional.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp, udp, tcp], type will be '
                                                'adjusted automatically between ipv4 and ipv6 based on use of --ipv6 flag',
                         required=True)
-    parser.add_argument('--output_format', help='choose either csv or xlsx')
-    parser.add_argument('--report_file', help='where you want to store results', default=None)
-    parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
-    parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
-    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-    parser.add_argument('--layer3_cols', help='Columns wished to be monitored from layer 3 endpoint tab',
+    optional.add_argument('--output_format', help='choose either csv or xlsx')
+    optional.add_argument('--report_file', help='where you want to store results', default=None)
+    optional.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
+    optional.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
+    optional.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
+    optional.add_argument('--layer3_cols', help='Columns wished to be monitored from layer 3 endpoint tab',
                         default=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'])
-    parser.add_argument('--port_mgr_cols', help='Columns wished to be monitored from port manager tab',
+    optional.add_argument('--port_mgr_cols', help='Columns wished to be monitored from port manager tab',
                         default=['alias', 'ap', 'ip', 'parent dev', 'rx-rate'])
-    parser.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',
+    optional.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',
                         default=None)
-    parser.add_argument('--monitor_interval',
+    optional.add_argument('--monitor_interval',
                         help='how frequently do you want your monitor function to take measurements, 35s, 2h',
                         default='10s')
-    parser.add_argument('--ipv6', help='Sets the test to use IPv6 traffic instead of IPv4', action='store_true')
-    parser.add_argument('--influx_host')
-    parser.add_argument('--influx_token', help='Username for your Influx database')
-    parser.add_argument('--influx_bucket', help='Password for your Influx database')
-    parser.add_argument('--influx_org', help='Name of your Influx database')
-    parser.add_argument('--influx_port', help='Port where your influx database is located', default=8086)
-    parser.add_argument('--influx_tag', action='append', nargs=2,
+    optional.add_argument('--ipv6', help='Sets the test to use IPv6 traffic instead of IPv4', action='store_true')
+    optional.add_argument('--influx_host')
+    optional.add_argument('--influx_token', help='Username for your Influx database')
+    optional.add_argument('--influx_bucket', help='Password for your Influx database')
+    optional.add_argument('--influx_org', help='Name of your Influx database')
+    optional.add_argument('--influx_port', help='Port where your influx database is located', default=8086)
+    optional.add_argument('--influx_tag', action='append', nargs=2,
                         help='--influx_tag <key> <val>   Can add more than one of these.')
-    parser.add_argument('--influx_mgr',
+    optional.add_argument('--influx_mgr',
                         help='IP address of the server your Influx database is hosted if different from your LANforge Manager',
                         default=None)
     parser.add_argument('--use_existing_sta', help='Used an existing stations to a particular AP', action='store_true')
@@ -1097,15 +1149,20 @@ python3 ./test_ip_variable_time.py
         csv_outfile = report.file_add_path(csv_outfile)
         logger.info("csv output file : {}".format(csv_outfile))
 
+    if len(args.upstream_port) and len(args.radio) and len(args.ssid) and len(args.security) != len(args.passwd):
+        raise ValueError(f"Upstream-ports - {args.upstream_port}\nradio - {args.radio}\nSSID - {args.ssid}\n"
+                         f"Security - {args.security}\nPassword - {args.passwd}\n"
+                         f"Value given to upstream_port,radio,ssid,security,passwd should be equal in number")
     num_sta = 1
     if args.num_stations:
         logger.info("one")
         num_sta = int(args.num_stations)
     if not args.use_existing_sta:
         logger.info("two")
-        station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1,
-                                              padding_number_=10000,
-                                              radio=args.radio)
+        station_list = []
+        for i in args.radio:
+            station_list.append(LFUtils.portNameSeries(prefix_="R"+str(args.radio.index(i))+"-sta", start_id_=0, end_id_=num_sta - 1,
+                                                  padding_number_=10000, radio=i))
     else:
         logger.info("three")
         station_list = args.sta_names.split(",")
