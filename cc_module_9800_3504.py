@@ -236,7 +236,8 @@ class create_controller_series_object:
 
         elif self.action in ["create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "dtim", "enable_ft_akm_ftpsk",
                              "enable_ftotd_akm_ftpsk", "enable_ft_akm_ftsae", "enable_ft_wpa3_dot1x",
-                             "enable_ft_wpa3_dot1x_sha256", "show_client_macadd_detail"]:
+                             "enable_ft_wpa3_dot1x_sha256", "show_client_macadd_detail",  'debug_wieless_mac',
+                             'no_debug_wieless_mac']:
 
             if self.action in ["create_wlan"]:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan,
@@ -261,6 +262,10 @@ class create_controller_series_object:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan, "--security_key",
                                        self.security_key]
             elif self.action in ["show_client_macadd_detail"]:
+                self.command_extend = ["--action", self.action, "--value", self.value]
+            elif self.action in ['debug_wieless_mac']:
+                self.command_extend = ["--action", self.action, "--value", self.value]
+            elif self.action in ['no_debug_wieless_mac']:
                 self.command_extend = ["--action", self.action, "--value", self.value]
 
             self.command.extend(self.command_extend)
@@ -301,7 +306,7 @@ class create_controller_series_object:
                              "enable_operation_status", "11r_logs", "enable_ft_akm_ftpsk", "enable_ftotd_akm_ftpsk",
                              "config_dual_band_mode", "dual_band_no_mode_shutdown", "dual_band_mode_shutdown",
                              "enable_ft_akm_ftsae", "enable_ft_wpa3_dot1x", "enable_ft_wpa3_dot1x_sha256",
-                             "show_wireless_client_sumry","show_client_macadd_detail",
+                             "show_wireless_client_sumry","show_client_macadd_detail", 'debug_wieless_mac','no_debug_wieless_mac',
                              ]:
 
             self.command_extend = ["--action", self.action]
@@ -1103,12 +1108,24 @@ class create_controller_series_object:
 
     def show_wireless_client_mac_details(self, mac):
         logger.info("show wireless client mac-address details")
-
         self.action = "show_client_macadd_detail"
         self.value = mac
         summary = self.send_command()
         return summary
 
+    def debug_wireless_mac_cc(self, mac):
+        logger.info("debug wireless mac <mac> to enable ra_tracing")
+        self.action = 'debug_wieless_mac'
+        self.value = mac
+        summary = self.send_command()
+        return summary
+
+    def no_debug_wireless_mac_cc(self, mac):
+        logger.info("no debug wireless mac <mac> to disable ra_tracing")
+        self.action = 'no_debug_wieless_mac'
+        self.value = mac
+        summary = self.send_command()
+        return summary
 
 
 
