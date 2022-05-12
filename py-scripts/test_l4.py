@@ -18,6 +18,28 @@ SETUP:
         Port tab->Modify Port->Select FTP, Select HTTP for that eth port
         the ftp files just upload right to /home/lanforge
 
+LANforge does have large files for ftp test located in 
+    /var/www/html/data*bin :  data_slug_128K.bin   data_slug_256K.bin  data_slug_4K.bin data_slug_2048K.bin  data_slug_48K.bin
+    /usr/local/lanforge/nginx/html/*.bin : 10m.bin  1m.bin  2m.bin  3m.bin  500k.bin
+
+    http service is nginx and that serves /usr/local/lanforge/nginx/html
+    ftp serves /var/ftp
+    
+    To create the large file in /home/lanforge:
+    [lanforge@ct523c-3ba3 ~]$ dd if=/dev/urandom of=/home/lanforge/large-file.bin bs=1k count=10240
+    10240+0 records in
+    10240+0 records out
+    10485760 bytes (10 MB, 10 MiB) copied, 0.0469094 s, 224 MB/s
+
+    The test can see the /home/lanforge directory .  The destination file may be in 
+    /home/lanforge/tmp/larg-file-dest.bin
+
+
+COOKBOOKS:
+    http://candelatech.com/cookbook.php?vol=fire&book=Introduction+to+Layer+4-7+Traffic
+    https://www.candelatech.com/cookbook.php?vol=wifire&book=UE_Testing_WiFi_Capacity_Test_with_Layer_4_7
+    https://www.candelatech.com/cookbook.php?vol=wifire&book=AP+Testing:Using+the+Port+Monitor
+
 NOTES:
 
 This script replaces the functionality of test_ipv4_l4.py, test_ipv4_l4_ftp_upload.py, test_ipv4_l4_ftp_urls_per_ten.py,
@@ -249,7 +271,7 @@ class IPV4L4(Realm):
                                 if value_name == 'total-urls':
                                     endp_rx_map[item] = value
                                     total_urls += int(value)
-    
+
         # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endps, total_bytes_rd, total_bytes_wr, total_rx_rate, total_tx_rate, urls_seconds, total_urls
 
@@ -532,6 +554,8 @@ Generic command example:
     parser.add_argument('--local_lf_report_dir',
                         help='--local_lf_report_dir override the report path, primary use when running test in test suite',
                         default="")
+
+
     # kpi_csv arguments
     parser.add_argument(
         "--test_rig",
