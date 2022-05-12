@@ -102,6 +102,7 @@ sub report {
 
     # print Data::Dumper->Dump(['report', $self] ), "\n";
     if ($num_pids < 1) {
+        print $fh "0";
         return;
     }
     if (!$fh) {
@@ -149,15 +150,16 @@ for my $name (@main::prog_names) {
 
 
 while (1) {
-    print STDOUT '{';
+    print STDOUT '[';
     for my $name (@main::prog_names) {
         my $lmonitor = $monitor_map{$name};
         # print "$name ";
         $lmonitor->monitor();
         $lmonitor->report(*STDOUT);
+        print ",";
     }
     print_totals(*STDOUT);
-    print "}\n";
-    sleep(60);
+    print "]\n";
+    sleep(5);
 }
 #
