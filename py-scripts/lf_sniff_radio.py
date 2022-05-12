@@ -13,6 +13,7 @@
                         --duration 20
                         --channel 52
                         --radio_mode AUTO
+                        --monitor_name moni0a
 
 """
 import sys
@@ -20,6 +21,7 @@ import os
 import importlib
 import argparse
 import time
+import paramiko
 
  
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
@@ -38,15 +40,16 @@ class SniffRadio(Realm):
                  duration=60,
                  channel=52,
                  radio_mode="AUTO",
-                 debug_on_=False):
+                 debug_on_=False,
+                 monitor_name=None,):
         super().__init__(lfclient_host, lfclient_port)
         self.lfclient_host = lfclient_host
         self.lfclient_port = lfclient_port
         self.debug = debug_on_
-        self.local_realm = realm.Realm(lfclient_host=self.lfclient_host,
-                                       lfclient_port=self.lfclient_port,
-                                       debug_=self.debug)
-        self.monitor = self.local_realm.new_wifi_monitor_profile()
+        # self.local_realm = realm.Realm(lfclient_host=self.lfclient_host,
+        #                                lfclient_port=self.lfclient_port,
+        #                                debug_=self.debug)
+        self.monitor = self.new_wifi_monitor_profile()
         if channel != "AUTO":
             channel = int(channel)
         self.channel = channel
@@ -54,18 +57,22 @@ class SniffRadio(Realm):
         self.outfile = outfile
         self.mode = radio_mode
         self.radio = radio
+        self.monitor_name = monitor_name
+        self.freq = self.chan_to_freq[self.channel]
 
     def setup(self, ht40_value, ht80_value, ht160_value):
         # TODO: Store original channel settings so that radio can be set back to original values.
         self.monitor.set_flag(param_name="disable_ht40", value=ht40_value)
         self.monitor.set_flag(param_name="disable_ht80", value=ht80_value)
         self.monitor.set_flag(param_name="ht160_enable", value=ht160_value)
-        self.monitor.create(radio_=self.radio, channel=self.channel, mode=self.mode, name_="moni3a")
+        self.monitor.create(radio_=self.radio, channel=self.channel, mode=self.mode, name_=self.monitor_name)
 
     def start(self):
         self.monitor.admin_up()
+        LFUtils.wait_until_ports_appear(self.lfclient_url, self.monitor_name, debug=self.debug)
         # TODO:  Use LFUtils.wait_until_ports_admin_up instead of sleep, check return code.
-        time.sleep(5)
+        # time.sleep(5)
+        self.set_freq(ssh_root=self.lfclient_host, ssh_passwd='lanforge', freq=self.freq)
         self.monitor.start_sniff(capname=self.outfile, duration_sec=self.duration)
         for i in range(0, self.duration):
             print("started sniffer, PLease wait,", self.duration - i)
@@ -73,6 +80,29 @@ class SniffRadio(Realm):
         print("Sniffing Completed Success", "Check ", self.outfile)
         self.monitor.admin_down()
         time.sleep(2)
+
+    def set_freq(self, ssh_root, ssh_passwd, freq=0):
+        cmd = f'. lanforge.profile\nsudo iw dev {self.monitor_name} set freq {freq}\n'
+        cmd1 = f'iw dev {self.monitor_name} info'
+        try:
+            ssh = paramiko.SSHClient()
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(ssh_root, 22, 'lanforge', ssh_passwd)
+            time.sleep(10)
+            stdout = ssh.exec_command(cmd, get_pty=True)
+            stdout[0].write(f"{ssh_passwd}\n")
+            stdout[0].flush()
+            stdout = (stdout[1].readlines())
+            print(stdout, "----- set channel frequency")
+            stdout = ssh.exec_command(cmd1)
+            stdout = (stdout[1].readlines())
+            print(stdout, "----- channel frequency info")
+        except paramiko.ssh_exception.NoValidConnectionsError as e:
+            print("####", e, "####")
+            exit(1)
+        except TimeoutError as e:
+            print("####", e, "####")
+            exit(1)
 
     def cleanup(self):
         # TODO:  Add error checking to make sure monitor port really went away.
@@ -93,6 +123,7 @@ def main():
         --duration 1
         --channel 52
         --radio_mode AUTO
+        --monitor_name Sniffer0
         """)
 
     parser.add_argument('--mgr', type=str, help='--mgr: IP Address of LANforge', default="localhost")
@@ -106,9 +137,13 @@ def main():
                         default=0)
     parser.add_argument('--radio_mode', type=str, help='--radio_mode select the radio mode [AUTO, 802.11a, 802.11b, '
                                                        '802.11ab ...]', default="AUTO")
-    parser.add_argument('--disable_ht40', type=str, help='Enable/Disable \"disable_ht40\" [0-disable,1-enable]', default=0)
-    parser.add_argument('--disable_ht80', type=str, help='Enable/Disable \"disable_ht80\" [0-disable,1-enable]', default=0)
-    parser.add_argument('--ht160_enable', type=str, help='Enable/Disable \"ht160_enable\ [0-disable,1-enable]" ', default=0)
+    parser.add_argument('--monitor_name', type=str, help='Wi-Fi monitor name', default="sniffer0")
+    parser.add_argument('--disable_ht40', type=str, help='Enable/Disable \"disable_ht40\" [0-disable,1-enable]',
+                        default=0)
+    parser.add_argument('--disable_ht80', type=str, help='Enable/Disable \"disable_ht80\" [0-disable,1-enable]',
+                        default=0)
+    parser.add_argument('--ht160_enable', type=str, help='Enable/Disable \"ht160_enable\ [0-disable,1-enable]" ',
+                        default=0)
 
     args = parser.parse_args()
 
@@ -118,8 +153,8 @@ def main():
                      duration=args.duration,
                      channel=args.channel,
                      radio=args.radio,
-                     radio_mode=args.radio_mode
-                     )
+                     radio_mode=args.radio_mode,
+                     monitor_name=args.monitor_name,)
     obj.setup(int(args.disable_ht40), int(args.disable_ht80), int(args.ht160_enable))
     # TODO: Add wait-for logic instead of a sleep
     time.sleep(5)
@@ -127,6 +162,7 @@ def main():
     obj.cleanup()
 
     # TODO:  Check if passed or not.
+
 
 if __name__ == '__main__':
     main()
