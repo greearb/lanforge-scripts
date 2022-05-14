@@ -137,7 +137,7 @@ if (@ARGV < 2) {
 GetOptions
 (
   'mgr|m=s'                   => \$::lfmgr_host,
-  'mgr_port|p=i'              => \$lfmgr_port,
+  'mgr_port|p=i'              => \$::lfmgr_port,
   'resource|r=i'              => \$::resource,
   'quiet|q'                   => \$::quiet,
   'verbose|v'                 => \$::verbose,
@@ -174,16 +174,11 @@ if (defined $log_cli) {
     }
   }
 }
-our $t = new Net::Telnet(Prompt => '/default\@btbits\>\>/',
-          Timeout => 20);
-$t->open(Host    => $lfmgr_host,
-         Port    => $lfmgr_port,
-         Timeout => 10);
-$t->waitfor("/btbits\>\>/");
 
 # Configure our utils.
 our $utils = new LANforge::Utils();
-$utils->telnet($t);         # Set our telnet object.
+$::utils->connect($lfmgr_host, $lfmgr_port);
+# $utils->telnet($t);         # Set our telnet object.
 
 if ($utils->isQuiet()) {
   if (defined $ENV{'LOG_CLI'} && $ENV{'LOG_CLI'} ne "") {
