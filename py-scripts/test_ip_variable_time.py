@@ -335,16 +335,19 @@ class IPVariableTime(Realm):
 
     def build(self):
         for i in range(len(self.upstream)):
-            self.station_profile.use_security(self.security[i], self.ssid[i], self.password[i])
-            self.station_profile.set_number_template(self.number_template)
-            # logger.info("sta_list {}".format(self.sta_list))
-            self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-            self.station_profile.set_command_param("set_port", "report_timer", 1500)
-            self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-
             if self.use_existing_sta:
+                self.sta_list[i] = [self.sta_list[i]]
                 logger.info("Use Existing Stations: {sta_list}".format(sta_list=self.sta_list))
+                self.station_profile.station_names = self.sta_list[i]
+
             else:
+                self.station_profile.use_security(self.security[i], self.ssid[i], self.password[i])
+                self.station_profile.set_number_template(self.number_template)
+                logger.info("sta_list {}".format(self.sta_list))
+                self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+                self.station_profile.set_command_param("set_port", "report_timer", 1500)
+                self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+
                 logger.info("Creating stations")
                 try:
                     self.station_profile.mode = self.mode[i]
@@ -354,8 +357,8 @@ class IPVariableTime(Realm):
                 self._pass("PASS: Station build finished")
 
             self.cx_profile.create(endp_type=self.traffic_type, side_a=self.sta_list[i],
-                                   side_b=self.upstream[i],
-                                   sleep_time=0)
+                                       side_b=self.upstream[i],
+                                       sleep_time=0)
 
     def run(self):
         if self.report_file is None:
