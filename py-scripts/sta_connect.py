@@ -204,9 +204,10 @@ class StaConnect(Realm):
 
         for sta_name in self.station_names:
             self.rm_port(sta_name, check_exists=True, debug_=self.debug)
-        # TODO:  Check return code.
-        self.wait_until_ports_disappear(self.station_names, debug_=self.debug)
-
+        if self.wait_until_ports_disappear(self.station_names, debug_=self.debug):
+            self._pass("All ports disappeared")
+        else:
+            self._fail("Not all ports disappeared")
         # Create stations and turn dhcp on
 
         radio = LFUtils.name_to_eid(self.radio)
