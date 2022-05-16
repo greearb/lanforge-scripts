@@ -1,9 +1,19 @@
 #!/usr/bin/perl -w
+
+# Follow these message through journalctl using this technique:
+#
+#   sudo ./loadmon.pl | logger -t loadmon
+# ...new terminal...
+#   watch -n15 'journalctl --since "20 sec ago" -t loadmon | ./parse_loadmon.pl'
+#
+
 use strict;
 use warnings;
 use diagnostics;
 use JSON::Parse qw(parse_json);
 use Data::Dumper;
+
+$| = 1;
 
 sub mb {
     my $kb = shift;
