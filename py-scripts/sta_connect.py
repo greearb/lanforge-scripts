@@ -249,8 +249,11 @@ class StaConnect(Realm):
         print("\nBringing ports up...")
         for port in self.station_names:
             self.admin_up(port)
-        # TODO:  Check return code.
-        LFUtils.waitUntilPortsAdminUp(self.resource, self.lfclient_url, self.station_names)
+            
+        if LFUtils.wait_until_ports_admin_up(self.resource, self.lfclient_url, self.station_names):
+            self._pass("All ports are up")
+        else:
+            self._fail("Not all ports came up in time")
 
         # station_info = self.jsonGet(self.mgr_url, "%s?fields=port,ip,ap" % (self.getStaUrl()))
         duration = 0
