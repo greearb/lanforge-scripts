@@ -9,6 +9,13 @@
 #   RuntimeKeepFree=500M
 #   RuntimeMaxFiles=5
 #   RuntimeMaxFileSize=256M
+#
+# Follow these message through journalctl using this technique:
+#
+#   sudo ./loadmon.pl | logger -t loadmon
+# ...new terminal...
+#   watch -n15 'journalctl --since "20 sec ago" -t loadmon | ./parse_loadmon.pl'
+#
 
 use diagnostics;
 use warnings;
@@ -16,6 +23,7 @@ use strict;
 #use Time::localtime;
 use POSIX;
 use Data::Dumper;
+$| = 1;
 
 package main;
 
@@ -30,11 +38,14 @@ our @prog_names = (
     "dhclient",
     "dnsmasq",
     "hostapd",
+    "httpd",
+    "java",
     "l4helper",
-    "logchopper",
+    # "logchopper",
     "nginx",
     "perl",
     "pipe_helper",
+    "vsftpd",
     "wget",
     "wpa_cli",
     "wpa_supplicant",
