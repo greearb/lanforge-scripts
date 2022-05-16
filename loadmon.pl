@@ -144,8 +144,8 @@ sub print_totals {
         my $ra_pl = $monitor->{ra_pid_list};
         #print Data::Dumper->Dump(["ra_pl", $ra_pl]);
         $tt_num_pids += @$ra_pl;
-        if (defined $main::monitor_map{$name}->{total_mem_KB}) {
-            $tt_mem_kb += $main::monitor_map{$name}->{total_mem_KB};
+        if (defined $main::monitor_map{$name}->{total_mem}) {
+            $tt_mem_kb += $main::monitor_map{$name}->{total_mem};
         }
         $tt_fh += $main::monitor_map{$name}->{total_fh};
     }
