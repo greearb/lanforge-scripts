@@ -48,6 +48,7 @@ from pprint import pformat
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../")))
 
+
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
@@ -237,7 +238,7 @@ class create_controller_series_object:
         elif self.action in ["create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "dtim", "enable_ft_akm_ftpsk",
                              "enable_ftotd_akm_ftpsk", "enable_ft_akm_ftsae", "enable_ft_wpa3_dot1x",
                              "enable_ft_wpa3_dot1x_sha256", "show_client_macadd_detail",  'debug_wieless_mac',
-                             'no_debug_wieless_mac', 'get_data_ra_trace_files']:
+                             'no_debug_wieless_mac', 'get_data_ra_trace_files', 'del_ra_trace_file']:
 
             if self.action in ["create_wlan"]:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan,
@@ -268,6 +269,8 @@ class create_controller_series_object:
             elif self.action in ['no_debug_wieless_mac']:
                 self.command_extend = ["--action", self.action, "--value", self.value]
             elif self.action in ['get_data_ra_trace_files']:
+                self.command_extend = ["--action", self.action, "--value", self.value]
+            elif self.action in ['del_ra_trace_file']:
                 self.command_extend = ["--action", self.action, "--value", self.value]
 
             self.command.extend(self.command_extend)
@@ -308,8 +311,8 @@ class create_controller_series_object:
                              "enable_operation_status", "11r_logs", "enable_ft_akm_ftpsk", "enable_ftotd_akm_ftpsk",
                              "config_dual_band_mode", "dual_band_no_mode_shutdown", "dual_band_mode_shutdown",
                              "enable_ft_akm_ftsae", "enable_ft_wpa3_dot1x", "enable_ft_wpa3_dot1x_sha256",
-                             "show_wireless_client_sumry","show_client_macadd_detail", 'debug_wieless_mac',
-                             'no_debug_wieless_mac', 'get_ra_trace_files','get_data_ra_trace_files',
+                             "show_wireless_client_sumry", "show_client_macadd_detail", 'debug_wieless_mac',
+                             'no_debug_wieless_mac', 'get_ra_trace_files','get_data_ra_trace_files','del_ra_trace_file',
                              ]:
 
             self.command_extend = ["--action", self.action]
@@ -323,6 +326,7 @@ class create_controller_series_object:
         logger.info(self.command)
         # TODO change the subprocess.run to pOpen
         summary_output = ''
+        print(self.command)
         summary = subprocess.Popen(self.command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         for line in iter(summary.stdout.readline, ''):
             logger.debug(line)
@@ -1143,6 +1147,32 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    def get_mc_address(self):
+        wlan_sumry = self.show_wireless_client_sum_cc()
+        print(wlan_sumry)
+        ele_list = [y for y in (x.strip() for x in wlan_sumry.splitlines()) if y]
+        print(ele_list)
+        indices = [i for i, s in enumerate(ele_list) if 'MAC Address' in s]
+        data = indices[1]
+        data2 = data + 1
+        data3 = data + 2
+        data4 = data + 3
+        # ele_list[data]
+        y = ele_list[data3]
+        print(y)
+        list_ = []
+        list_.append(y)
+        z = list_[0].split(" ")
+        print(z[0])
+        return z[0]
+
+    def del_ra_trace_file_cc(self, file):
+        logger.info("delete ra trace file")
+        self.action = 'del_ra_trace_file'
+        self.value = file
+        summary = self.send_command()
+        return summary
+
 
 
 # This next section is to allow for tests to be created without
@@ -1253,14 +1283,14 @@ INCLUDE_IN_README
         port=args.port,
         band=args.band,
         timeout=args.timeout)
-
     # TODO add ability to select tests
     # cs.show_ap_summary()
     # summary = cs.show_ap_bssid_5ghz()
     # logger.info(summary)
 
     # sample to dump status
-    sample_test_dump_status(cs=cs)
+    # sample_test_dump_status(cs=cs)
+    cs.show_wireless_client_sum_cc()
 
 
 if __name__ == "__main__":
