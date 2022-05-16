@@ -17,7 +17,17 @@ if sys.version_info[0] != 3:
     logger.critical("This script requires Python 3")
     exit(1)
 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+# sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../py-json/")))
+# sys.path.append(os.path.join(os.path.abspath("../")))
+# sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+# sys.path.append(os.path.join(os.path.abspath(__file__ + "../")))
+# sys.path.append("../py-json/")
+
+print(sys.path)
+print(os.getcwd())
+
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -33,6 +43,7 @@ lf_graph = importlib.import_module("py-scripts.lf_graph")
 sniff_radio = importlib.import_module("py-scripts.lf_sniff_radio")
 sta_connect = importlib.import_module("py-scripts.sta_connect2")
 lf_clean = importlib.import_module("py-scripts.lf_cleanup")
+series = importlib.import_module("cc_module_9800_3504")
 
 
 class HardRoam(Realm):
@@ -95,6 +106,60 @@ class HardRoam(Realm):
         self.lf_csv_obj = lf_csv.lf_csv()
         self.traffic_type = traffic_type
         self.roam_delay = roaming_delay
+        self.cx_profile = self.local_realm.new_l3_cx_profile()
+        self.cc = None
+        self.cc = series.create_controller_series_object(
+            scheme="ssh",
+            dest="localhost",
+            user="admin",
+            passwd="Cisco123",
+            prompt="WLC2",
+            series="9800",
+            ap="AP687D.B45C.1D1C",
+            port="8888",
+            band="5g",
+            timeout="10")
+        self.cc.pwd = "../"
+
+    def get_mac_add(self):
+        x = self.cc.get_mc_address()
+        print(x)
+        return x
+
+    def start_debug_(self):
+        mac = self.get_mac_add()
+        y = self.cc.debug_wireless_mac_cc(mac=str(mac))
+        print(y)
+
+    def stop_debug_(self):
+        mac = self.get_mac_add()
+        y = self.cc.no_debug_wireless_mac_cc(mac=str(mac))
+        print(y)
+
+    def get_ra_trace_file(self):
+        ra = self.cc.get_ra_trace_files__cc()
+        print(ra)
+        ele_list = [y for y in (x.strip() for x in ra.splitlines()) if y]
+        print(ele_list)
+        return ele_list
+
+    def get_file_name(self):
+        file = self.get_ra_trace_file()
+        indices = [i for i, s in enumerate(file) if 'dir bootflash: | i ra_trace' in s]
+        # print(indices)
+        y = indices[3]
+        z = file[y + 1]
+        list_ = []
+        list_.append(z)
+        m = list_[0].split(" ")
+        print(m)
+        print(len(m))
+        print(m[-1])
+        return m[-1]
+
+    def delete_trace_file(self):
+        file = self.get_file_name()
+        self.cc.del_ra_trace_file_cc(file=file)
 
     def get_station_list(self):
         sta = self.staConnect.station_list()
@@ -150,6 +215,7 @@ class HardRoam(Realm):
             station_profile.set_command_flag("add_sta", "80211u_enable", 0)
             station_profile.set_command_flag("add_sta", "8021x_radius", 1)
             station_profile.set_command_flag("add_sta", "disable_roam", 1)
+            station_profile.set_command_flag("add_sta", "power_save_enable", 1)
             station_profile.set_wifi_extra(key_mgmt="FT-PSK     ",
                                            pairwise="",
                                            group="",
@@ -164,6 +230,7 @@ class HardRoam(Realm):
             station_profile.set_command_flag("add_sta", "80211u_enable", 0)
             station_profile.set_command_flag("add_sta", "8021x_radius", 1)
             station_profile.set_command_flag("add_sta", "disable_roam", 1)
+            station_profile.set_command_flag("add_sta", "power_save_enable", 1)
             station_profile.set_wifi_extra(key_mgmt="FT-SAE     ",
                                            pairwise="",
                                            group="",
@@ -180,6 +247,7 @@ class HardRoam(Realm):
             station_profile.set_command_flag("add_sta", "80211u_enable", 0)
             station_profile.set_command_flag("add_sta", "8021x_radius", 1)
             station_profile.set_command_flag("add_sta", "disable_roam", 1)
+            station_profile.set_command_flag("add_sta", "power_save_enable", 1)
             # station_profile.set_command_flag("add_sta", "ap", "68:7d:b4:5f:5c:3f")
             station_profile.set_wifi_extra(key_mgmt="FT-EAP     ",
                                            pairwise="[BLANK]",
@@ -200,25 +268,28 @@ class HardRoam(Realm):
             print("Stations failed to get IPs")
             return False
 
-    def create_layer3(self, side_a_min_rate, side_a_max_rate, side_b_min_rate, side_b_max_rate,
+    def create_layer3(self, side_a_min_rate, side_a_max_rate, side_b_min_rate, side_b_max_rate, side_a_min_pdu,
+                      side_b_min_pdu,
                       traffic_type, sta_list):
         # checked
         print(sta_list)
         print(type(sta_list))
         print(self.upstream)
-        cx_profile = self.local_realm.new_l3_cx_profile()
-        cx_profile.host = self.lanforge_ip
-        cx_profile.port = self.lanforge_port
+        # cx_profile = self.local_realm.new_l3_cx_profile()
+        self.cx_profile.host = self.lanforge_ip
+        self.cx_profile.port = self.lanforge_port
         # layer3_cols = ['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate']
-        cx_profile.side_a_min_bps = side_a_min_rate
-        cx_profile.side_a_max_bps = side_a_max_rate
-        cx_profile.side_b_min_bps = side_b_min_rate
-        cx_profile.side_b_max_bps = side_b_max_rate
+        self.cx_profile.side_a_min_bps = side_a_min_rate
+        self.cx_profile.side_a_max_bps = side_a_max_rate
+        self.cx_profile.side_b_min_bps = side_b_min_rate
+        self.cx_profile.side_b_max_bps = side_b_max_rate
+        self.cx_profile.side_a_min_pdu = side_a_min_pdu,
+        self.cx_profile.side_b_min_pdu = side_b_min_pdu,
 
         # create
-        cx_profile.create(endp_type=traffic_type, side_a=sta_list,
+        self.cx_profile.create(endp_type=traffic_type, side_a=sta_list,
                           side_b=self.upstream, sleep_time=0)
-        cx_profile.start_cx()
+        self.cx_profile.start_cx()
 
     def get_layer3_values(self, cx_name=None, query=None):
         url = f"/cx/{cx_name}"
@@ -231,6 +302,19 @@ class HardRoam(Realm):
         layer3_names = [item["name"] for item in layer3_result.values() if "_links" in item]
         print(layer3_names)
         return layer3_names
+
+    def get_endp_values(self, endp="A", cx_name="niki", query="tx bytes"):
+        # self.get_cx_list()
+        # self.json_get("http://192.168.100.131:8080/endp/Unsetwlan000-0-B?fields=rx%20rate")
+        url = f"/endp/{cx_name}-{endp}?fields={query}"
+        response = self.json_get(_req_url=url)
+        print(response)
+        if (response is None) or ("endpoint" not in response):
+            print("incomplete response:")
+            exit(1)
+        final = response["endpoint"][query]
+        print(final)
+        return final
 
     def precleanup(self):
         obj = lf_clean.lf_clean(host=self.lanforge_ip,
@@ -286,16 +370,16 @@ class HardRoam(Realm):
 
         return self.pcap_name
 
-
     def generate_csv(self):
         file_name = []
         for i in range(self.num_sta):
             file = 'test_client_' + str(i) + '.csv'
-            lf_csv_obj = lf_csv.lf_csv(_columns=['Iterations', 'bssid1', 'bssid2', "Roam Time(ms)",  "PASS/FAIL", "Pcap file Name", "Remark"], _rows=[], _filename=file)
+            lf_csv_obj = lf_csv.lf_csv(_columns=['Iterations', 'bssid1', 'bssid2', "Roam Time(ms)",
+                                                 "PASS/FAIL", "Pcap file Name", "Log File", "Remark"], _rows=[], _filename=file)
+            # "Packet loss",
             file_name.append(file)
             lf_csv_obj.generate_csv()
         return file_name
-
 
     def run(self, file_n=None):
         test_time = datetime.now()
@@ -307,14 +391,18 @@ class HardRoam(Realm):
 
         message = None, None
         if self.band == "twog":
+            self.local_realm.reset_port(self.twog_radios)
             self.create_n_clients(sta_prefix="wlan1", num_sta=self.num_sta, dut_ssid=self.ssid_name,
                                   dut_security=self.security, dut_passwd=self.security_key, radio=self.twog_radios,
                                   type="11r")
+
         if self.band == "fiveg":
+            self.local_realm.reset_port(self.fiveg_radios)
             self.create_n_clients(sta_prefix="wlan", num_sta=self.num_sta, dut_ssid=self.ssid_name,
                                   dut_security=self.security, dut_passwd=self.security_key, radio=self.fiveg_radios,
                                   type="11r")
         if self.band == "sixg":
+            self.local_realm.reset_port(self.sixg_radios)
             self.create_n_clients(sta_prefix="wlan", num_sta=self.num_sta, dut_ssid=self.ssid_name,
                                   dut_security=self.security, radio=self.sixg_radios,
                                   type="11r-sae-802.1x")
@@ -338,9 +426,10 @@ class HardRoam(Realm):
             # check if all element of bssid list has same bssid's
             result = all(element == check[0] for element in check)
             if result:
-                self.create_layer3(side_a_min_rate=1000000, side_a_max_rate=1000000, side_b_min_rate=0, side_b_max_rate=0,
-                                   sta_list=sta_list, traffic_type=self.traffic_type)
-                # cx_list = self.get_cx_list()
+                self.create_layer3(side_a_min_rate=1000000, side_a_max_rate=0, side_b_min_rate=1000000,
+                                   side_b_max_rate=0,
+                                   sta_list=sta_list, traffic_type=self.traffic_type, side_a_min_pdu=1250,
+                                   side_b_min_pdu=1250)
             else:
                 print("move all clients to one ap")
                 for sta_name in sta_list:
@@ -398,6 +487,8 @@ class HardRoam(Realm):
                     sta_list = self.get_station_list()
                     print(sta_list)
                     station = self.wait_for_ip(sta_list)
+                    print("start debug")
+                    self.start_debug_()
                     if station:
                         print("all stations got ip")
                         # get bssid's of all stations connected
@@ -423,9 +514,12 @@ class HardRoam(Realm):
                         pass_fail_list = []
                         pcap_file_list = []
                         roam_time1 = []
+                        packet_loss_lst = []
                         remark = []
+                        log_file = []
                         # check if all element of bssid list has same bssid's
                         result = all(element == bssid_list[0] for element in bssid_list)
+
                         if result:
                             print("All stations connected to one ap")
                             #  if all bssid are equal then do check to which ap it is connected
@@ -438,9 +532,6 @@ class HardRoam(Realm):
                                 print("station connected to chamber 2 ap")
                                 station_before = formated_bssid
                             print(station_before)
-
-                            print("check pkt rx before roam")
-
                             # after checking all conditions start roam and start snifffer
                             print("starting snifer")
                             self.start_sniffer(radio_channel=int(self.channel), radio=self.sniff_radio,
@@ -504,11 +595,32 @@ class HardRoam(Realm):
                                     self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
 
                             # stop sniff and attach data
+                            time.sleep(30)
                             print("stop sniff")
                             file_name_ = self.stop_sniffer()
                             file_name = "./pcap/" + str(file_name_)
                             print("pcap file name", file_name)
 
+                            # cx_list = self.get_cx_list()
+                            # print("quiece layer3")
+                            # self.local_realm.drain_stop_cx(cx_name=cx_list[0])
+                            # time.sleep(10)
+                            # self.cx_profile.start_cx()
+                            # time.sleep(10)
+                            #
+                            # print("quiece layer3")
+                            #
+                            # cx_list = self.get_cx_list()
+                            # print(cx_list)
+                            # self.local_realm.drain_stop_cx(cx_name=cx_list[0])
+                            # time.sleep(30)
+                            # tx_b = self.get_endp_values(cx_name=cx_list[0], query="tx bytes", endp="B")
+                            # rx_a = self.get_endp_values(cx_name=cx_list[0], query="rx bytes", endp="A")
+                            # packet_loss = int(tx_b) - int(rx_a)
+                            # print(packet_loss)
+                            # packet_loss_lst.append(packet_loss)
+                            # print("start cx again")
+                            # self.cx_profile.start_cx()
 
                             time.sleep(40)
                             self.wait_for_ip(sta_list)
@@ -566,21 +678,43 @@ class HardRoam(Realm):
                                                         pass_fail_list.append("PASS")
                                                         pcap_file_list.append(str(file_name))
                                                         remark.append("Passed all criteria")
+                                                        print("stop debug")
+                                                        self.stop_debug_()
+                                                        print("delete debug")
+                                                        time.sleep(5)
+                                                        self.delete_trace_file()
+                                                        log_file.append("N/A")
                                                     else:
                                                         pass_fail_list.append("FAIL")
                                                         pcap_file_list.append(str(file_name))
                                                         remark.append("Roam time is greater then 50 ms")
+                                                        print("stop debug")
+                                                        self.stop_debug_()
+                                                        print("get  debug name")
+                                                        trace = self.get_file_name()
+                                                        log_file.append(trace)
+
 
                                                 else:
                                                     roam_time1.append('Auth Fail')
                                                     pass_fail_list.append("FAIL")
                                                     pcap_file_list.append(str(file_name))
                                                     remark.append(" auth failure")
+                                                    print("stop debug")
+                                                    self.stop_debug_()
+                                                    print("get  debug name")
+                                                    trace = self.get_file_name()
+                                                    log_file.append(trace)
                                             else:
                                                 roam_time1.append('No Auth')
                                                 pass_fail_list.append("FAIL")
                                                 pcap_file_list.append(str(file_name))
                                                 remark.append("No authentication request")
+                                                print("stop debug")
+                                                self.stop_debug_()
+                                                print("get  debug name")
+                                                trace = self.get_file_name()
+                                                log_file.append(trace)
 
                                         else:
                                             roam_time1.append('Reassociation Fail')
@@ -588,6 +722,11 @@ class HardRoam(Realm):
                                             pcap_file_list.append(str(file_name))
                                             remark.append("Reassociation failure")
                                             print("pcap_file name for fail instance of iteration value ")
+                                            print("stop debug")
+                                            self.stop_debug_()
+                                            print("get  debug name")
+                                            trace = self.get_file_name()
+                                            log_file.append(trace)
 
                                 else:
                                     for i in range(len(row_list)):
@@ -599,6 +738,12 @@ class HardRoam(Realm):
                                     for i in range(len(row_list)):
                                         remark.append("No Reasso response")
                                     print("row list", row_list)
+                                    print("stop debug")
+                                    self.stop_debug_()
+                                    print("get  debug name")
+                                    trace = self.get_file_name()
+                                    for i in range(len(row_list)):
+                                        log_file.append(trace)
 
                             else:
                                 query_reasso_response = self.pcap_obj.get_wlan_mgt_status_code(pcap_file=str(file_name),
@@ -625,24 +770,44 @@ class HardRoam(Realm):
                                                     print("roam time ms", roam_time)
                                                     roam_time1.append(roam_time)
                                                     if roam_time < 50:
-                                                        pass_fail_list.append("PASS")
+                                                        pass_fail_list.append("FAIL")
                                                         pcap_file_list.append(str(file_name))
-                                                        remark.append("bssid mismatched but can see auth and reaso responsse")
+                                                        remark.append("(bssid mismatched)Client disconnected after roaming")
+                                                        print("stop debug")
+                                                        self.stop_debug_()
+                                                        print("get  debug name")
+                                                        trace = self.get_file_name()
+                                                        log_file.append(trace)
                                                     else:
                                                         pass_fail_list.append("FAIL")
                                                         pcap_file_list.append(str(file_name))
-                                                        remark.append("Roam time is greater then 50 ms(bssid mis matched)")
+                                                        remark.append("(bssid mis matched)Roam time is greater then 50 ms,")
+                                                        print("stop debug")
+                                                        self.stop_debug_()
+                                                        print("get  debug name")
+                                                        trace = self.get_file_name()
+                                                        log_file.append(trace)
 
                                                 else:
                                                     roam_time1.append('Auth Fail')
                                                     pass_fail_list.append("FAIL")
                                                     pcap_file_list.append(str(file_name))
                                                     remark.append("bssid switched  auth failure")
+                                                    print("stop debug")
+                                                    self.stop_debug_()
+                                                    print("get  debug name")
+                                                    trace = self.get_file_name()
+                                                    log_file.append(trace)
                                             else:
                                                 roam_time1.append('No Auth')
                                                 pass_fail_list.append("FAIL")
                                                 pcap_file_list.append(str(file_name))
                                                 remark.append("bssid mismatched  No authentication request")
+                                                print("stop debug")
+                                                self.stop_debug_()
+                                                print("get  debug name")
+                                                trace = self.get_file_name()
+                                                log_file.append(trace)
 
                                         else:
                                             roam_time1.append('Reassociation Fail')
@@ -650,6 +815,11 @@ class HardRoam(Realm):
                                             pcap_file_list.append(str(file_name))
                                             remark.append("bssid mismatched  Reassociation failure")
                                             # print("pcap_file name for fail instance of iteration value ")
+                                            print("stop debug")
+                                            self.stop_debug_()
+                                            print("get  debug name")
+                                            trace = self.get_file_name()
+                                            log_file.append(trace)
 
                                 else:
                                     for i in range(len(row_list)):
@@ -659,16 +829,27 @@ class HardRoam(Realm):
                                     for i in range(len(row_list)):
                                         pcap_file_list.append(str(file_name))
                                     for i in range(len(row_list)):
-                                        remark.append("bsid mismatched , No Reasso response")
+                                        remark.append("bssid mismatched , No Reasso response")
                                     print("row list", row_list)
+                                    print("stop debug")
+                                    self.stop_debug_()
+                                    print("get  debug name")
+                                    trace = self.get_file_name()
+                                    for i in range(len(row_list)):
+                                        log_file.append(trace)
+
 
                             for i, x in zip(row_list, roam_time1):
                                 i.append(x)
                             print("row list", row_list)
+                            # for i, x in zip(row_list, packet_loss_lst):
+                            #     i.append(x)
                             for i, x in zip(row_list, pass_fail_list):
                                 i.append(x)
                             print("row list", row_list)
                             for i, x in zip(row_list, pcap_file_list):
+                                i.append(x)
+                            for i, x in zip(row_list, log_file):
                                 i.append(x)
                             print("row list", row_list)
                             for i, x in zip(row_list, remark):
@@ -699,20 +880,33 @@ class HardRoam(Realm):
                             print("row list", row_list)
                             for i in range(len(row_list)):
                                 pass_fail_list.append("No Roam Time")
+                            # for i in range(len(row_list)):
+                            #     pass_fail_list.append("N/A")
                             for i in row_list:
                                 i.append("FAIL")
                             print("row list", row_list)
                             for i in row_list:
                                 i.append("no roam performed all stations are not connected to same ap")
+                            print("stop debug")
+                            self.stop_debug_()
+                            print("get  debug name")
+                            trace = self.get_file_name()
+                            for i in row_list:
+                                i.append(trace)
                             for i in row_list:
                                 i.append("no roam performed all stations are not connected to same ap")
                             print("row list", row_list)
                             for i, x in zip(file_n, row_list):
                                 self.lf_csv_obj.open_csv_append(fields=x, name=i)
 
+
                     else:
                         message = "station's failed to get ip  after the test start"
                         print("station's failed to get ip after test starts")
+                        print("stop debug")
+                        self.stop_debug_()
+                        print("get  debug name")
+                        self.get_file_name()
                     if self.duration_based:
                         if time.time() > timeout:
                             break
@@ -828,8 +1022,10 @@ class HardRoam(Realm):
             z = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="bssid1")
             u = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="bssid2")
             t = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Roam Time(ms)")
+            # l = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Packet loss")
             h = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="PASS/FAIL")
             p = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Pcap file Name")
+            lf = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Log File")
             r = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Remark")
             table = {
                 "iterations": y,
@@ -838,6 +1034,7 @@ class HardRoam(Realm):
                 "Roam Time(ms)": t,
                 "PASS/FAIL": h,
                 "pcap file name": p,
+                "Log File": lf,
                 "Remark": r
             }
             test_setup = pd.DataFrame(table)
@@ -893,7 +1090,11 @@ def main():
     # file = obj.generate_csv()
     # obj.run(file_n=file)
     # obj.generate_report(csv_list=file)
-    obj.generate_client_pass_fail_graph()
+    # obj.generate_client_pass_fail_graph()
+    # obj.controller_class()
+    # obj.stop_debug_()
+    obj.get_file_name()
+    # obj.delete_trace_file()
 
 
 if __name__ == '__main__':
