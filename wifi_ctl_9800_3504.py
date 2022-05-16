@@ -177,7 +177,7 @@ def main():
                                  "enable_ft_akm_ftsae","enable_ft_wpa3_dot1x","enable_ft_wpa3_dot1x_sha256",
                                  "ap_dot11_dot11ax_mcs_tx_index_spatial_stream", "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream",
                                  "show_wireless_client_sumry", 'show_client_macadd_detail','debug_wieless_mac',
-                                 'no_debug_wieless_mac','get_ra_trace_files','get_data_ra_trace_files'
+                                 'no_debug_wieless_mac','get_ra_trace_files','get_data_ra_trace_files', 'del_ra_trace_file'
                                  ])
     parser.add_argument("--value", type=str, help="set value")
     # logging configuration
@@ -1109,6 +1109,11 @@ def main():
     if (args.action == 'get_ra_trace_files'):
         if args.series == "9800":
             command = "dir bootflash: | i ra_trace"
+
+    if (args.action == 'del_ra_trace_file'):
+        print("args.value", args.value)
+        if args.series == "9800":
+            command = "delete /force bootflash:%s" % (args.value)
 
     if (args.action == 'get_data_ra_trace_files'):
         print("args.value", args.value)
