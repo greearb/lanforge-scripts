@@ -19,15 +19,6 @@ if sys.version_info[0] != 3:
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
-# sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../py-json/")))
-# sys.path.append(os.path.join(os.path.abspath("../")))
-# sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
-# sys.path.append(os.path.join(os.path.abspath(__file__ + "../")))
-# sys.path.append("../py-json/")
-
-print(sys.path)
-print(os.getcwd())
-
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -119,7 +110,7 @@ class HardRoam(Realm):
             port="8888",
             band="5g",
             timeout="10")
-        self.cc.pwd = "../"
+        self.cc.pwd = "../lanforge/lanforge-scripts"
 
     def get_mac_add(self):
         x = self.cc.get_mc_address()
@@ -157,8 +148,8 @@ class HardRoam(Realm):
         print(m[-1])
         return m[-1]
 
-    def delete_trace_file(self):
-        file = self.get_file_name()
+    def delete_trace_file(self, file):
+        # file = self.get_file_name()
         self.cc.del_ra_trace_file_cc(file=file)
 
     def get_station_list(self):
@@ -681,9 +672,13 @@ class HardRoam(Realm):
                                                         print("stop debug")
                                                         self.stop_debug_()
                                                         print("delete debug")
-                                                        time.sleep(5)
-                                                        self.delete_trace_file()
-                                                        log_file.append("N/A")
+                                                        time.sleep(60)
+                                                        # print()
+                                                        trace = self.get_file_name()
+                                                        log_file.append(trace)
+                                                        # time.sleep(5)
+                                                        # self.delete_trace_file(file=trace)
+
                                                     else:
                                                         pass_fail_list.append("FAIL")
                                                         pcap_file_list.append(str(file_name))
@@ -691,6 +686,7 @@ class HardRoam(Realm):
                                                         print("stop debug")
                                                         self.stop_debug_()
                                                         print("get  debug name")
+                                                        time.sleep(60)
                                                         trace = self.get_file_name()
                                                         log_file.append(trace)
 
@@ -703,6 +699,7 @@ class HardRoam(Realm):
                                                     print("stop debug")
                                                     self.stop_debug_()
                                                     print("get  debug name")
+                                                    time.sleep(60)
                                                     trace = self.get_file_name()
                                                     log_file.append(trace)
                                             else:
@@ -713,6 +710,7 @@ class HardRoam(Realm):
                                                 print("stop debug")
                                                 self.stop_debug_()
                                                 print("get  debug name")
+                                                time.sleep(60)
                                                 trace = self.get_file_name()
                                                 log_file.append(trace)
 
@@ -725,6 +723,7 @@ class HardRoam(Realm):
                                             print("stop debug")
                                             self.stop_debug_()
                                             print("get  debug name")
+                                            time.sleep(60)
                                             trace = self.get_file_name()
                                             log_file.append(trace)
 
@@ -741,6 +740,7 @@ class HardRoam(Realm):
                                     print("stop debug")
                                     self.stop_debug_()
                                     print("get  debug name")
+                                    time.sleep(60)
                                     trace = self.get_file_name()
                                     for i in range(len(row_list)):
                                         log_file.append(trace)
@@ -776,6 +776,7 @@ class HardRoam(Realm):
                                                         print("stop debug")
                                                         self.stop_debug_()
                                                         print("get  debug name")
+                                                        time.sleep(60)
                                                         trace = self.get_file_name()
                                                         log_file.append(trace)
                                                     else:
@@ -785,6 +786,7 @@ class HardRoam(Realm):
                                                         print("stop debug")
                                                         self.stop_debug_()
                                                         print("get  debug name")
+                                                        time.sleep(60)
                                                         trace = self.get_file_name()
                                                         log_file.append(trace)
 
@@ -796,6 +798,7 @@ class HardRoam(Realm):
                                                     print("stop debug")
                                                     self.stop_debug_()
                                                     print("get  debug name")
+                                                    time.sleep(60)
                                                     trace = self.get_file_name()
                                                     log_file.append(trace)
                                             else:
@@ -806,6 +809,7 @@ class HardRoam(Realm):
                                                 print("stop debug")
                                                 self.stop_debug_()
                                                 print("get  debug name")
+                                                time.sleep(60)
                                                 trace = self.get_file_name()
                                                 log_file.append(trace)
 
@@ -818,6 +822,7 @@ class HardRoam(Realm):
                                             print("stop debug")
                                             self.stop_debug_()
                                             print("get  debug name")
+                                            time.sleep(60)
                                             trace = self.get_file_name()
                                             log_file.append(trace)
 
@@ -834,6 +839,7 @@ class HardRoam(Realm):
                                     print("stop debug")
                                     self.stop_debug_()
                                     print("get  debug name")
+                                    time.sleep(60)
                                     trace = self.get_file_name()
                                     for i in range(len(row_list)):
                                         log_file.append(trace)
@@ -890,6 +896,7 @@ class HardRoam(Realm):
                             print("stop debug")
                             self.stop_debug_()
                             print("get  debug name")
+                            time.sleep(60)
                             trace = self.get_file_name()
                             for i in row_list:
                                 i.append(trace)
@@ -906,6 +913,7 @@ class HardRoam(Realm):
                         print("stop debug")
                         self.stop_debug_()
                         print("get  debug name")
+                        time.sleep(60)
                         self.get_file_name()
                     if self.duration_based:
                         if time.time() > timeout:
