@@ -10,7 +10,7 @@ import time
 import datetime
 from datetime import datetime
 import pandas as pd
-# import csv
+import paramiko
 
 logger = logging.getLogger(__name__)
 if sys.version_info[0] != 3:
@@ -37,6 +37,7 @@ lf_clean = importlib.import_module("py-scripts.lf_cleanup")
 series = importlib.import_module("cc_module_9800_3504")
 
 
+
 class HardRoam(Realm):
     def __init__(self, lanforge_ip=None,
                  lanforge_port=None,
@@ -61,7 +62,19 @@ class HardRoam(Realm):
                  iteration_based=None,
                  dut_name = [],
                  traffic_type="lf_udp",
-                 roaming_delay=None):
+                 roaming_delay=None,
+                 path="../",
+                 scheme="ssh",
+                 dest="localhost",
+                 user="admin",
+                 passwd="Cisco123",
+                 prompt="WLC2",
+                 series_cc="9800",
+                 ap="AP687D.B45C.1D1C",
+                 port="8888",
+                 band_cc="5g",
+                 timeout="10"
+                 ):
         super().__init__(lanforge_ip,
                          lanforge_port)
         self.lanforge_ip = lanforge_ip
@@ -100,17 +113,20 @@ class HardRoam(Realm):
         self.cx_profile = self.local_realm.new_l3_cx_profile()
         self.cc = None
         self.cc = series.create_controller_series_object(
-            scheme="ssh",
-            dest="localhost",
-            user="admin",
-            passwd="Cisco123",
-            prompt="WLC2",
-            series="9800",
-            ap="AP687D.B45C.1D1C",
-            port="8888",
-            band="5g",
-            timeout="10")
-        self.cc.pwd = "../lanforge/lanforge-scripts"
+            scheme=scheme,
+            dest=dest,
+            user=user,
+            passwd=passwd,
+            prompt=prompt,
+            series=series_cc,
+            ap=ap,
+            port=port,
+            band=band_cc,
+            timeout=timeout)
+        self.cc.pwd = path
+        # self.cc.pwd = "../lanforge/lanforge-scripts"
+        self.start_time = None
+        self.end_time = None
 
     def get_mac_add(self):
         x = self.cc.get_mc_address()
@@ -279,7 +295,7 @@ class HardRoam(Realm):
 
         # create
         self.cx_profile.create(endp_type=traffic_type, side_a=sta_list,
-                          side_b=self.upstream, sleep_time=0)
+                               side_b=self.upstream, sleep_time=0)
         self.cx_profile.start_cx()
 
     def get_layer3_values(self, cx_name=None, query=None):
@@ -372,10 +388,33 @@ class HardRoam(Realm):
             lf_csv_obj.generate_csv()
         return file_name
 
+    def journal_ctl_logs(self, file):
+        jor_lst = []
+        name = "kernel_log" + file + ".txt"
+        jor_lst.append(name)
+        try:
+            ssh = paramiko.SSHClient()
+            command = "journalctl --since '5 minutes ago' > kernel_log" + file + ".txt"
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(hostname=self.lanforge_ip, port=self.lanforge_ssh_port, username="lanforge", password="lanforge", banner_timeout=600)
+            stdin, stdout, stderr = ssh.exec_command(str(command))
+            output = stdout.readlines()
+            ssh.close()
+            kernel_log = "/home/lanforge/kernel_log" + file + ".txt"
+            lf_report.pull_reports(hostname=self.lanforge_ip, port=self.lanforge_ssh_port, username="lanforge",
+                               password="lanforge",
+                               report_location=kernel_log,
+                               report_dir=".")
+        except Exception as e:
+            print(e)
+        return jor_lst
+
     def run(self, file_n=None):
+        kernel_log = []
         test_time = datetime.now()
         test_time = test_time.strftime("%b %d %H:%M:%S")
         print("Test started at ", test_time)
+        self.start_time = test_time
         self.final_bssid.extend([self.c1_bssid, self.c2_bssid])
         print("final bssid", self.final_bssid)
         self.precleanup()
@@ -557,6 +596,7 @@ class HardRoam(Realm):
                                     self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
                                     time.sleep(2)
                                     self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
+                                    time.sleep(2)
 
                             else:
                                 print("connected stations bssid is same to bssid list second  element")
@@ -584,10 +624,15 @@ class HardRoam(Realm):
                                     self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
                                     time.sleep(2)
                                     self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
+                                    time.sleep(2)
 
+                            # krnel logs
+                            kernel = self.journal_ctl_logs(file=str(iter))
+                            for i in kernel:
+                                kernel_log.append(i)
                             # stop sniff and attach data
                             time.sleep(30)
-                            print("stop sniff")
+                            # print("stop sniff")
                             file_name_ = self.stop_sniffer()
                             file_name = "./pcap/" + str(file_name_)
                             print("pcap file name", file_name)
@@ -676,7 +721,7 @@ class HardRoam(Realm):
                                                         # print()
                                                         trace = self.get_file_name()
                                                         log_file.append(trace)
-                                                        # time.sleep(5)
+                                                        time.sleep(5)
                                                         # self.delete_trace_file(file=trace)
 
                                                     else:
@@ -685,8 +730,9 @@ class HardRoam(Realm):
                                                         remark.append("Roam time is greater then 50 ms")
                                                         print("stop debug")
                                                         self.stop_debug_()
-                                                        print("get  debug name")
                                                         time.sleep(60)
+                                                        print("get  debug name")
+                                                        time.sleep(10)
                                                         trace = self.get_file_name()
                                                         log_file.append(trace)
 
@@ -698,8 +744,8 @@ class HardRoam(Realm):
                                                     remark.append(" auth failure")
                                                     print("stop debug")
                                                     self.stop_debug_()
-                                                    print("get  debug name")
                                                     time.sleep(60)
+                                                    print("get  debug name")
                                                     trace = self.get_file_name()
                                                     log_file.append(trace)
                                             else:
@@ -709,8 +755,8 @@ class HardRoam(Realm):
                                                 remark.append("No authentication request")
                                                 print("stop debug")
                                                 self.stop_debug_()
-                                                print("get  debug name")
                                                 time.sleep(60)
+                                                print("get  debug name")
                                                 trace = self.get_file_name()
                                                 log_file.append(trace)
 
@@ -722,8 +768,8 @@ class HardRoam(Realm):
                                             print("pcap_file name for fail instance of iteration value ")
                                             print("stop debug")
                                             self.stop_debug_()
-                                            print("get  debug name")
                                             time.sleep(60)
+                                            print("get  debug name")
                                             trace = self.get_file_name()
                                             log_file.append(trace)
 
@@ -739,8 +785,8 @@ class HardRoam(Realm):
                                     print("row list", row_list)
                                     print("stop debug")
                                     self.stop_debug_()
-                                    print("get  debug name")
                                     time.sleep(60)
+                                    print("get  debug name")
                                     trace = self.get_file_name()
                                     for i in range(len(row_list)):
                                         log_file.append(trace)
@@ -775,8 +821,8 @@ class HardRoam(Realm):
                                                         remark.append("(bssid mismatched)Client disconnected after roaming")
                                                         print("stop debug")
                                                         self.stop_debug_()
-                                                        print("get  debug name")
                                                         time.sleep(60)
+                                                        print("get  debug name")
                                                         trace = self.get_file_name()
                                                         log_file.append(trace)
                                                     else:
@@ -785,8 +831,8 @@ class HardRoam(Realm):
                                                         remark.append("(bssid mis matched)Roam time is greater then 50 ms,")
                                                         print("stop debug")
                                                         self.stop_debug_()
-                                                        print("get  debug name")
                                                         time.sleep(60)
+                                                        print("get  debug name")
                                                         trace = self.get_file_name()
                                                         log_file.append(trace)
 
@@ -797,8 +843,8 @@ class HardRoam(Realm):
                                                     remark.append("bssid switched  auth failure")
                                                     print("stop debug")
                                                     self.stop_debug_()
-                                                    print("get  debug name")
                                                     time.sleep(60)
+                                                    print("get  debug name")
                                                     trace = self.get_file_name()
                                                     log_file.append(trace)
                                             else:
@@ -808,8 +854,8 @@ class HardRoam(Realm):
                                                 remark.append("bssid mismatched  No authentication request")
                                                 print("stop debug")
                                                 self.stop_debug_()
-                                                print("get  debug name")
                                                 time.sleep(60)
+                                                print("get  debug name")
                                                 trace = self.get_file_name()
                                                 log_file.append(trace)
 
@@ -821,8 +867,8 @@ class HardRoam(Realm):
                                             # print("pcap_file name for fail instance of iteration value ")
                                             print("stop debug")
                                             self.stop_debug_()
-                                            print("get  debug name")
                                             time.sleep(60)
+                                            print("get  debug name")
                                             trace = self.get_file_name()
                                             log_file.append(trace)
 
@@ -838,8 +884,8 @@ class HardRoam(Realm):
                                     print("row list", row_list)
                                     print("stop debug")
                                     self.stop_debug_()
-                                    print("get  debug name")
                                     time.sleep(60)
+                                    print("get  debug name")
                                     trace = self.get_file_name()
                                     for i in range(len(row_list)):
                                         log_file.append(trace)
@@ -895,8 +941,8 @@ class HardRoam(Realm):
                                 i.append("no roam performed all stations are not connected to same ap")
                             print("stop debug")
                             self.stop_debug_()
-                            print("get  debug name")
                             time.sleep(60)
+                            print("get  debug name")
                             trace = self.get_file_name()
                             for i in row_list:
                                 i.append(trace)
@@ -912,8 +958,8 @@ class HardRoam(Realm):
                         print("station's failed to get ip after test starts")
                         print("stop debug")
                         self.stop_debug_()
-                        print("get  debug name")
                         time.sleep(60)
+                        print("get  debug name")
                         self.get_file_name()
                     if self.duration_based:
                         if time.time() > timeout:
@@ -929,11 +975,12 @@ class HardRoam(Realm):
         test_end = datetime.now()
         test_end = test_end.strftime("%b %d %H:%M:%S")
         print("Test ended at ", test_end)
+        self.end_time = test_end
         s1 = test_time
         s2 = test_end  # for example
         FMT = '%b %d %H:%M:%S'
         self.test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
-        return message
+        return kernel_log
 
     def generate_client_pass_fail_graph(self, csv_list=None):
         print("csv_list", csv_list)
@@ -961,7 +1008,7 @@ class HardRoam(Realm):
 
         # it will contain per station station pass and fail number eg [[9, 7], [3, 4]] here 9, 7 are pass number for clients  3 and 4 are fail number
         # dataset = [[9, 7 , 4], [3, 4,9]]
-        graph = lf_graph.lf_bar_graph(_data_set=dataset, _xaxis_name="Stations", _yaxis_name="Total iterations = " + str(self.iteration),
+        graph = lf_graph.lf_bar_graph(_data_set=dataset, _xaxis_name="Stations = " + str(self.num_sta), _yaxis_name="Total iterations = " + str(self.iteration),
                                       _xaxis_categories = x_axis_category,
                                       _label=["Pass", "Fail"], _xticks_font=8,
                                       _graph_image_name="11r roam client per iteration graph",
@@ -978,15 +1025,16 @@ class HardRoam(Realm):
         print("graph name {}".format(graph_png))
         return graph_png
 
-    def generate_report(self, csv_list, current_path=None):
+    def generate_report(self, csv_list, kernel_lst, current_path=None):
         report = lf_report_pdf.lf_report(_path= "", _results_dir_name="Hard Roam Test", _output_html="hard_roam.html",
                                          _output_pdf="Hard_roam_test.pdf")
         if current_path is not None:
             report.current_path = os.path.dirname(os.path.abspath(current_path))
         report_path = report.get_report_path()
         report.build_x_directory(directory_name="csv_data")
-
-
+        report.build_x_directory(directory_name="kernel_log")
+        for i in kernel_lst:
+            report.move_data(directory="kernel_log", _file_name=str(i))
 
         date = str(datetime.now()).split(",")[0].replace(" ", "-").split(".")[0]
         test_setup_info = {
@@ -1020,11 +1068,18 @@ class HardRoam(Realm):
         report.build_graph()
         for i in csv_list:
             report.move_data(directory="csv_data", _file_name=str(i))
+
         report.move_data(directory_name="pcap")
 
         for i, x in zip(range(self.num_sta), csv_list):
-            report.set_table_title("Client information  " + str(i))
-            report.build_table_title()
+            # report.set_table_title("Client information  " + str(i))
+            # report.build_table_title()
+            report.set_obj_html("Client " + str(i+1) + "  Information", "This Table gives detailed information  "
+                                                             "of client " + str(i+1) + "like the bssid it was before roam," +
+                               " bssid it was after roam, " +
+                                "roam time, capture file name and ra_trace file name along with remarks ")
+
+            report.build_objective()
             lf_csv_obj = lf_csv. lf_csv()
             y = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="Iterations")
             z = lf_csv_obj.read_csv(file_name=str(report_path) + "/csv_data/" + str(x), column="bssid1")
@@ -1052,14 +1107,17 @@ class HardRoam(Realm):
         test_input_infor = {
             "LANforge ip": self.lanforge_ip,
             "LANforge port": self.lanforge_port,
+            "test start time": self.start_time,
+            "test end time": self.end_time,
             "Bands": self.band,
             "Upstream": self.upstream,
             "Stations": self.num_sta,
+            "iterations": self.iteration,
             "SSID": self.ssid_name,
             "Security": self.security,
             "Contact": "support@candelatech.com"
         }
-        report.set_table_title("Test input Information")
+        report.set_table_title("Test basic Information")
         report.build_table_title()
         report.test_setup_table(value="Information", test_setup_data=test_input_infor)
 
@@ -1092,7 +1150,18 @@ def main():
                    duration_based=False,
                    iteration_based=True,
                    dut_name=["AP687D.B45C.1D1C", "AP687D.B45C.1D1C"],
-                   traffic_type="lf_udp"
+                   traffic_type="lf_udp",
+                   path= "../lanforge/lanforge-scripts",
+                   scheme="ssh",
+                   dest="localhost",
+                   user="admin",
+                   passwd="Cisco123",
+                   prompt="WLC2",
+                   series_cc="9800",
+                   ap="AP687D.B45C.1D1C",
+                   port="8888",
+                   band_cc="5g",
+                   timeout="10"
                    )
     # obj.stop_sniffer()
     # file = obj.generate_csv()
@@ -1101,8 +1170,11 @@ def main():
     # obj.generate_client_pass_fail_graph()
     # obj.controller_class()
     # obj.stop_debug_()
-    obj.get_file_name()
+    # obj.get_file_name()
     # obj.delete_trace_file()
+    lst = obj.journal_ctl_logs(file="nik")
+    file = []
+    obj.generate_report(csv_list=file, kernel_lst=lst)
 
 
 if __name__ == '__main__':
