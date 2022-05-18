@@ -191,10 +191,10 @@ class WeCanStaScan(Realm):
 
     def generate_report(self, dataset, full_scan_data_list, phone_name, pass_fail):
         input_table = pd.DataFrame({
-            "Server IP": ["192.168.200.218"],
-            "Target SSID": ["Candela-Office"],
-            "Security": ["wpa2"],
-            "radio": ["2G"],
+            "Server IP": [self.host],
+            "Target SSID": [self.ssid],
+            "Security": [self.security],
+            "radio": [self.radio],
         })
         save_to_csv = pd.DataFrame(
             {"Phone Name": phone_name,
