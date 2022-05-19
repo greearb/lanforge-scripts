@@ -4,7 +4,7 @@ NAME: lf_radio_info.py
 
 PURPOSE:
 
- This script will gather all wiphy radio information, and then parse and 
+ This script will gather all wiphy radio information, and then parse and
   return specific wiphy radio data that is requested per script function.
 
 EXAMPLE:
@@ -46,9 +46,10 @@ WPA2 = "wpa2"
 WPA3 = "wpa3"
 MODE_AUTO = 0
 
+
 class RadioInfo(Realm):
-    def __init__(self, host, 
-                 _resource="1", 
+    def __init__(self, host,
+                 _resource="1",
                  debug_=False, _exit_on_fail=False):
         super().__init__(host, debug_=debug_, _exit_on_fail=_exit_on_fail)
         self.host = host
@@ -119,7 +120,6 @@ class RadioInfo(Realm):
         max_station = self.lf_radio_df.get(["Radio", "max_sta"])
         # logger.info(max_station)
 
-        # process specific elements from dataframe:
         for row in max_station.index:
             if wiphy_radio == "1.1.wiphy0":
                 if max_station.loc[row, "Radio"] == "1." + self.resource + ".wiphy0":
@@ -129,16 +129,14 @@ class RadioInfo(Realm):
                 if max_station.loc[row, "Radio"] == "1." + self.resource + ".wiphy1":
                     max_sta = max_station.loc[row, "max_sta"]
                     # logger.info(max_sta)
-        
+
         return max_sta
-        
 
     # returns specific radio maximum virtual access points:
     def get_max_vap(self, wiphy_radio):
         max_vaps = self.lf_radio_df.get(["Radio", "max_vap"])
         # logger.info(max_vaps)
 
-        # process specific elements from dataframe:
         for row in max_vaps.index:
             if wiphy_radio == "1.1.wiphy0":
                 if max_vaps.loc[row, "Radio"] == "1." + self.resource + ".wiphy0":
@@ -148,7 +146,7 @@ class RadioInfo(Realm):
                 if max_vaps.loc[row, "Radio"] == "1." + self.resource + ".wiphy1":
                     wiphy_max_vaps = max_vaps.loc[row, "max_vap"]
                     # logger.info(max_sta)
-        
+
         return wiphy_max_vaps
 
     # returns specific radio maximum supported virtual clients:
@@ -156,7 +154,6 @@ class RadioInfo(Realm):
         max_vif = self.lf_radio_df.get(["Radio", "max_vifs"])
         # logger.info(max_vif)
 
-        # process specific elements from dataframe:
         for row in max_vif.index:
             if wiphy_radio == "1.1.wiphy0":
                 if max_vif.loc[row, "Radio"] == "1." + self.resource + ".wiphy0":
@@ -166,7 +163,7 @@ class RadioInfo(Realm):
                 if max_vif.loc[row, "Radio"] == "1." + self.resource + ".wiphy1":
                     wiphy_max_vif = max_vif.loc[row, "max_vifs"]
                     # logger.info(max_sta)
-        
+
         return wiphy_max_vif
 
     # returns specific radio driver information:
@@ -174,10 +171,8 @@ class RadioInfo(Realm):
         radio_driver = self.lf_radio_df.get(["Radio", "WIFI-Radio Driver"])
         # logger.info(radio_driver)
 
-        # process specific elements from dataframe:
         for row in radio_driver.index:
             if wiphy_radio == "1.1.wiphy0":
-                # rad_name = "1." + self.resource + ".wiphy0"
                 if radio_driver.loc[row, "Radio"] == "1." + self.resource + ".wiphy0":
                     wiphy_driver = radio_driver.loc[row, "WIFI-Radio Driver"]
                     # logger.info(max_sta)
@@ -185,7 +180,7 @@ class RadioInfo(Realm):
                 if radio_driver.loc[row, "Radio"] == "1." + self.resource + ".wiphy1":
                     wiphy_driver = radio_driver.loc[row, "WIFI-Radio Driver"]
                     # logger.info(max_sta)
-        
+
         return wiphy_driver
 
     # returns specific radio 802.11 wifi capabilities:
@@ -193,7 +188,6 @@ class RadioInfo(Realm):
         radio_caps = self.lf_radio_df.get(["Radio", "Radio Capabilities"])
         # logger.info(radio_capabilities)
 
-        # process specific elements from dataframe:
         for row in radio_caps.index:
             if wiphy_radio == "1.1.wiphy0":
                 if radio_caps.loc[row, "Radio"] == "1." + self.resource + ".wiphy0":
@@ -203,14 +197,22 @@ class RadioInfo(Realm):
                 if radio_caps.loc[row, "Radio"] == "1." + self.resource + ".wiphy1":
                     wiphy_capability = radio_caps.loc[row, "Radio Capabilities"]
                     # logger.info(max_sta)
-        
+
         return wiphy_capability
 
+    # returns radios installed on system:
+    def get_radios(self):
+        radios = self.lf_radio_df.get(["Radio"])
+        # logger.info(radios)
 
+        radio_list = []
+        for row in radios.index:
+            radio_list.append(radios.loc[row, "Radio"])
+            # logger.info(radio_list)
+        
+        return radio_list
 
-    # ~class
-
-
+# ~class
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
@@ -225,23 +227,23 @@ LANforge Unit Test:  Retreive Wiphy Radio Information - lf_radio_info.py
 Summary:
 This script will gather all wiphy radio information to be used by other test scripts.
 ---------------------------
-CLI Example: 
+CLI Example:
 
-./lf_radio_info.py --mgr 192.168.30.12 
+./lf_radio_info.py --mgr 192.168.30.12
 
---------------------------- 
+---------------------------
 """)
     parser.add_argument("-m", "--mgr", type=str, help="address of the LANforge GUI machine (localhost is default)",
                         default='localhost')
     parser.add_argument("--debug", help="enable debugging", action="store_true")
     parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1", default="1")
-    #parser.add_argument('--radio_list', default=None, help="Specify a file to send debug output to")
-    #parser.add_argument('--index_list', default=None, help="Specify a file to send debug output to")
+    # parser.add_argument('--radio_list', default=None, help="Specify a file to send debug output to")
+    # parser.add_argument('--index_list', default=None, help="Specify a file to send debug output to")
     parser.add_argument('--debug_log', default=None, help="Specify a file to send debug output to")
     # logging configuration:
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
-    
+
     # TODO: Try to start with: --radio 'radio==wiphy4,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2':
     parser.add_argument(
         '-r', '--radio',
@@ -268,11 +270,10 @@ CLI Example:
     if args.debug:
         logger_config.set_level("debug")
 
-    
     radioInfo = RadioInfo(args.mgr,
                           _resource=args.resource,
                           debug_=args.debug,
-                          _exit_on_fail=True)  
+                          _exit_on_fail=True)
 
     # basic unit module test:
 
@@ -302,16 +303,17 @@ CLI Example:
     # get radio driver for specified wiphy radio:
     radio_driver = radioInfo.get_radio_driver(radio)
     logger.info(radio_driver)
-    
+
     # get 802.11 capabilities for specified radio:
     radio_capabilities = radioInfo.get_radio_capabilities(radio)
     logger.info(radio_capabilities)
 
-    
-    
+    # get 802.11 capabilities for specified radio:
+    system_radios = radioInfo.get_radios()
+    logger.info(system_radios)
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
 if __name__ == "__main__":
     main()
-
