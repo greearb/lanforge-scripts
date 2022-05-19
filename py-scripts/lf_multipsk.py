@@ -27,12 +27,13 @@ import os
 import importlib
 import argparse
 import time
+import allure
+from tabulate import tabulate
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -75,6 +76,8 @@ class MultiPsk(Realm):
 
     def build(self):
         station_list = []
+        data_table = ""
+        dict_table = {}
         for idex, input in enumerate(self.input):
             # print(input)
             if "." in input['upstream']:
@@ -94,12 +97,37 @@ class MultiPsk(Realm):
             self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
             self.station_profile.create(radio=input['radio'], sta_names_=station_list, debug=self.debug)
             self.wait_until_ports_appear(sta_list=station_list)
+            for sta_name in station_list:
+                if '1.1.' in sta_name:
+                    sta_name = sta_name.strip('1.1.')
+                try:
+                    cli_base = LFCliBase(_lfjson_host=self.lfclient_host, _lfjson_port=self.lfclient_port)
+                    resp = cli_base.json_get(_req_url=f'port/1/1/{sta_name}')
+                    dict_data = resp['interface']
+                    dict_table[""] = list(dict_data.keys())
+                    dict_table["Before"] = list(dict_data.values())
+                except Exception as e:
+                    print(e)
             self.station_profile.admin_up()
             if self.wait_for_ip(station_list, timeout_sec=120):
                 print("All stations got IPs")
             else:
                 print("Stations failed to get IPs")
-
+            for sta_name2 in station_list:
+                if '1.1.' in sta_name2:
+                    sta_name2 = sta_name2.strip('1.1.')
+                try:
+                    cli_base = LFCliBase(_lfjson_host=self.lfclient_host, _lfjson_port=self.lfclient_port)
+                    resp = cli_base.json_get(_req_url=f'port/1/1/{sta_name2}')
+                    dict_data = resp['interface']
+                    dict_table["After"] = list(dict_data.values())
+                    try:
+                        data_table = tabulate(dict_table, headers='keys', tablefmt='fancy_grid')
+                    except Exception as e:
+                        print(e)
+                    allure.attach(name=f'{sta_name2} info', body=data_table)
+                except Exception as e:
+                    print(e)
             print("create udp endp")
             self.cx_profile_udp = self.new_l3_cx_profile()
             self.cx_profile_udp.side_a_min_bps = 128000
@@ -329,7 +357,7 @@ def main():
         "mac": "",
         "num_station": 1,
         "radio": "wiphy4"
-        },
+    },
         {
             "password": "lanforge2",
             "upstream": "eth2.200",
@@ -352,7 +380,7 @@ def main():
             "radio": "wiphy0"
         },
 
-        ]
+    ]
     multi_obj = MultiPsk(host=args.mgr,
                          port=args.mgr_port,
                          ssid=args.ssid,
