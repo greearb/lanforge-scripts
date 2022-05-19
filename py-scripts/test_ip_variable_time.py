@@ -369,7 +369,10 @@ class IPVariableTime(Realm):
             #                 '_test_ip_variable_time'  # create path name
             if os.path.exists('/home/lanforge/report-data'):
                 path = os.path.join('/home/lanforge/report-data/', new_file_path)
-                os.mkdir(path)
+                if os.path.exists(path):
+                    pass
+                else:
+                    os.mkdir(path)
             else:
                 logger.info(new_file_path)
                 # curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -976,6 +979,12 @@ python3 ./test_ip_variable_time.py
         --a_min 600000000 --b_min 600000000  --upstream_port eth2 --mode '5'
         --layer3_cols 'name','tx rate','rx rate'  --port_mgr_cols 'alias','channel','activity','mode'
         --num_stations 2
+    
+    4. Create Multiple stations and run traffic with different upstream port
+    ./test_ip_variable_time.py --mgr 192.168.200.37  --radio wiphy0 wiphy0 --ssid ssid_2g ssid_5g 
+        --test_duration 60s --output_format csv  --traffic_type lf_tcp --a_min 600000000 --b_min 600000000  
+        --upstream_port eth2 eth1 --mode '5' --num_stations 1 --passwd pass_2g pass_5g --security wpa2 wpa2
+
 
             ''')
     optional = parser.add_argument_group('optional arguments')
