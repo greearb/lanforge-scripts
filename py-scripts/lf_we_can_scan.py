@@ -227,9 +227,10 @@ class WeCanStaScan(Realm):
         report.build_banner()
 
         report.start_content_div()
-        report.set_text("<h3>Objective:" + "<h4>The WE-CAN scan Test is designed to test the user's Phone Wi-Fi radio scan "
-                                            "the script Verifies that wheather a station  is available in a scan of a phone with specified resource "
-                                            "id, for each resouce id it performs a scan and compares if given ssid is present in the scan.")
+        report.set_text("<h3>Objective:" + "<h4>The scan test in the WE-CAN APP is designed to scan the SSID of the "
+                                           "different Access Points in the particular network within its range so all "
+                                           "the connected clients in the LANforge WE-CAN server should scan the given "
+                                           "SSID within its range")
         report.build_date_time()
         report.build_text()
 
