@@ -118,8 +118,10 @@ class StaConnect(Realm):
         # print(f"Comparing {name}")
         if postVal > 0:
             self._pass("%s %s" % (name, postVal), print_pass)
+            return True
         else:
             self._fail("%s did not report traffic: %s" % (name, postVal), print_fail)
+            return False
 
     def remove_stations(self):
         for name in self.station_names:
@@ -448,14 +450,11 @@ class StaConnect(Realm):
                 ptest_b_tx = ptest['endpoint']['tx bytes']
                 ptest_b_rx = ptest['endpoint']['rx bytes']
 
-                # TODO: Return based on compares
-                self.compare_vals("testTCP-A TX", ptest_a_tx)
-                self.compare_vals("testTCP-A RX", ptest_a_rx)
-
-                self.compare_vals("testTCP-B TX", ptest_b_tx)
-                self.compare_vals("testTCP-B RX", ptest_b_rx)
-
-                return True
+                if (self.compare_vals("testTCP-A TX", ptest_a_tx) & self.compare_vals("testTCP-A RX", ptest_a_rx) & 
+                    self.compare_vals("testTCP-B TX", ptest_b_tx) & self.compare_vals("testTCP-B RX", ptest_b_rx)):
+                    return True
+                else:
+                    return False
                 
             except Exception as e:
                 self.error(e)
