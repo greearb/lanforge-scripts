@@ -47,7 +47,7 @@ WPA3 = "wpa3"
 MODE_AUTO = 0
 
 
-class RadioInfo(Realm):
+class radio_information(Realm):
     def __init__(self, host,
                  _resource="1",
                  debug_=False, _exit_on_fail=False):
@@ -158,11 +158,15 @@ class RadioInfo(Realm):
             if wiphy_radio == "1.1.wiphy0":
                 if max_vif.loc[row, "Radio"] == "1." + self.resource + ".wiphy0":
                     wiphy_max_vif = max_vif.loc[row, "max_vifs"]
-                    # logger.info(max_sta)
+                    # logger.info(wiphy_max_vif)
+                    if int(wiphy_max_vif) > 200:
+                        wiphy_max_vif = "200"
             elif wiphy_radio == "1.1.wiphy1":
                 if max_vif.loc[row, "Radio"] == "1." + self.resource + ".wiphy1":
                     wiphy_max_vif = max_vif.loc[row, "max_vifs"]
-                    # logger.info(max_sta)
+                    # logger.info(wiphy_max_vif)
+                    if int(wiphy_max_vif) > 200:
+                        wiphy_max_vif = "200"
 
         return wiphy_max_vif
 
@@ -270,46 +274,47 @@ CLI Example:
     if args.debug:
         logger_config.set_level("debug")
 
-    radioInfo = RadioInfo(args.mgr,
+    wiphy_radio_info = radio_information(args.mgr,
                           _resource=args.resource,
                           debug_=args.debug,
                           _exit_on_fail=True)
+    #lf_radio_info.RadioInfo
 
     # basic unit module test:
 
     radio = "1.1.wiphy1"
 
     # get all system radio information:
-    all_radio_info = radioInfo.get_lanforge_radio_information()
+    all_radio_info = wiphy_radio_info.get_lanforge_radio_information()
     logger.info(all_radio_info)
 
     # get max stations per each install wiphy radio:
-    all_max_sta = radioInfo.get_max_stations_all()
+    all_max_sta = wiphy_radio_info.get_max_stations_all()
     print()
     logger.info(all_max_sta)
 
     # get max stations for specified wiphy radio:
-    radio_max_sta = radioInfo.get_radio_max_station(radio)
+    radio_max_sta = wiphy_radio_info.get_radio_max_station(radio)
     logger.info(radio_max_sta)
 
     # get max vap that can be created per spicified wiphy radio:
-    max_vap = radioInfo.get_max_vap(radio)
+    max_vap = wiphy_radio_info.get_max_vap(radio)
     logger.info(max_vap)
 
     # get max vif that can be created per specified wiphy radio:
-    max_vifs = radioInfo.get_max_vifs(radio)
+    max_vifs = wiphy_radio_info.get_max_vifs(radio)
     logger.info(max_vifs)
 
     # get radio driver for specified wiphy radio:
-    radio_driver = radioInfo.get_radio_driver(radio)
+    radio_driver = wiphy_radio_info.get_radio_driver(radio)
     logger.info(radio_driver)
 
     # get 802.11 capabilities for specified radio:
-    radio_capabilities = radioInfo.get_radio_capabilities(radio)
+    radio_capabilities = wiphy_radio_info.get_radio_capabilities(radio)
     logger.info(radio_capabilities)
 
     # get 802.11 capabilities for specified radio:
-    system_radios = radioInfo.get_radios()
+    system_radios = wiphy_radio_info.get_radios()
     logger.info(system_radios)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
