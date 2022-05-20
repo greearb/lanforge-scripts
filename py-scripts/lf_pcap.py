@@ -145,7 +145,7 @@ class LfPcap(Realm):
                 print("Checking for Group ID Management Actions Frame...")
                 cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.mgt && wlan.vht.group_id_management')
                 packet_count = 0
-                value = "Frame Not Found"
+                value = "Packet Not Found"
                 for pkt in cap:
                     if 'wlan.mgt' in pkt:
                         value = pkt['wlan.mgt'].get_field_value('wlan_vht_group_id_management')
@@ -168,7 +168,7 @@ class LfPcap(Realm):
                 cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.vht.capabilities.mubeamformee == 1 &&  '
                                                                        'wlan.fc.type_subtype == 0')
                 packet_count = 0
-                value = "Frame Not Found"
+                value = "Packet Not Found"
                 for pkt in cap:
                     if 'wlan.mgt' in pkt:
                         value = pkt['wlan.mgt'].get_field_value('wlan_vht_capabilities_mubeamformee')
@@ -195,7 +195,7 @@ class LfPcap(Realm):
                 cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.vht.capabilities.mubeamformer == 1 &&  '
                                                                        'wlan.fc.type_subtype == 1')
                 packet_count = 0
-                value = "Frame Not Found"
+                value = "Packet Not Found"
                 for pkt in cap:
                     if 'wlan.mgt' in pkt:
                         value = pkt['wlan.mgt'].get_field_value('wlan_vht_capabilities_mubeamformer')
@@ -220,7 +220,7 @@ class LfPcap(Realm):
             if pcap_file is not None:
                 cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype == 8')
                 packet_count = 0
-                value = "Frame Not Found"
+                value = "Packet Not Found"
                 for pkt in cap:
                     if 'wlan.mgt' in pkt:
                         value = pkt['wlan.mgt'].get_field_value('wlan_vht_capabilities_mubeamformer')
@@ -245,7 +245,7 @@ class LfPcap(Realm):
             if pcap_file is not None:
                 cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype == 20')
                 packet_count = 0
-                value = "Frame Not Found"
+                value = "Packet Not Found"
                 for pkt in cap:
                     if 'wlan' in pkt:
                         value = pkt['wlan'].get_field_value('fc_type_subtype')
@@ -264,12 +264,12 @@ class LfPcap(Realm):
     def check_he_capability_beacon_frame(self, pcap_file):
         try:
             if pcap_file is not None:
-                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='radiotap.he.data_1.ppdu_format && wlan.fc.type_subtype == 8')
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype == 8')
                 packet_count = 0
-                value = "Frame Not Found"
+                value = "Packet Not Found"
                 for pkt in cap:
                     if 'wlan.mgt' in pkt:
-                        value = pkt['wlan.mgt'].get_field_value('wlan_vht_capabilities_mubeamformer')
+                        value = pkt['wlan.mgt'].get_field_value('he_su_ppdu_etc_gi')
                         if value is not None:
                             print(value)
                             packet_count += 1
@@ -289,12 +289,12 @@ class LfPcap(Realm):
     def check_he_capability_probe_request(self, pcap_file):
         try:
             if pcap_file is not None:
-                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='radiotap.he.data_1.ppdu_format && wlan.fc.type_subtype == 4')
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.ext_tag.he_phy_cap.he_su_ppdu_etc_gi == 1 && wlan.fc.type_subtype == 4                                 ')
                 packet_count = 0
-                value = "Frame Not Found"
+                value = "Packet Not Found"
                 for pkt in cap:
                     if 'wlan.mgt' in pkt:
-                        value = pkt['wlan.mgt'].get_field_value('wlan_vht_capabilities_mubeamformer')
+                        value = pkt['wlan.mgt'].get_field_value('radiotap.he.data_1.ppdu_format')
                         if value is not None:
                             print(value)
                             packet_count += 1
@@ -314,12 +314,12 @@ class LfPcap(Realm):
     def check_he_capability_probe_response(self, pcap_file):
         try:
             if pcap_file is not None:
-                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='radiotap.he.data_1.ppdu_format && wlan.fc.type_subtype == 5')
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.ext_tag.he_phy_cap.he_su_ppdu_etc_gi == 1 && wlan.fc.type_subtype == 5')
                 packet_count = 0
-                value = "Frame Not Found"
+                value = "Packet Not Found"
                 for pkt in cap:
                     if 'wlan.mgt' in pkt:
-                        value = pkt['wlan.mgt'].get_field_value('wlan_vht_capabilities_mubeamformer')
+                        value = pkt['wlan.mgt'].get_field_value('radiotap.he.data_1.ppdu_format')
                         if value is not None:
                             print(value)
                             packet_count += 1
@@ -340,9 +340,9 @@ class LfPcap(Realm):
         print("pcap file path:  %s" % pcap_file)
         try:
             if pcap_file is not None:
-                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype == 0')
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.ext_tag.he_phy_cap.he_su_ppdu_etc_gi == 1 && wlan.fc.type_subtype == 0')
                 packet_count = 0
-                value = "Frame Not Found"
+                value = "Packet Not Found"
                 for pkt in cap:
                     if 'wlan.mgt' in pkt:
                         value = pkt['wlan.mgt'].get_field_value('wlan_vht_capabilities_mubeamformee')
@@ -366,9 +366,34 @@ class LfPcap(Realm):
     def check_he_capability_association_response(self, pcap_file):
         try:
             if pcap_file is not None:
-                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype == 1')
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.ext_tag.he_phy_cap.he_su_ppdu_etc_gi == 1 && wlan.fc.type_subtype == 1')
                 packet_count = 0
-                value = "Frame Not Found"
+                value = "Packet Not Found"
+                for pkt in cap:
+                    if 'wlan.mgt' in pkt:
+                        value = pkt['wlan.mgt'].get_field_value('wlan_vht_capabilities_mubeamformer')
+                        if value is not None:
+                            print(value)
+                            packet_count += 1
+                            if value == 0:
+                                value = "Not Supported"
+                            if value == 1:
+                                value = "Supported"
+                            if packet_count == 1:
+                                break
+                if packet_count >= 1:
+                    return f"Association Response - HE Capability : {value}"
+                else:
+                    return f"Association Response - HE Capability : {value}"
+        except ValueError:
+            raise "pcap file is required"
+
+    def check_he_gi_bus(self, pcap_file):
+        try:
+            if pcap_file is not None:
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='radiotap.he.data_5.gi')
+                packet_count = 0
+                value = "Packet Not Found"
                 for pkt in cap:
                     if 'wlan.mgt' in pkt:
                         value = pkt['wlan.mgt'].get_field_value('wlan_vht_capabilities_mubeamformer')
