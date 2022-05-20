@@ -200,14 +200,14 @@ class StaConnect(Realm):
             self._fail("Warning: %s lacks ip address" % self.get_upstream_url())
             return False
 
-        # TODO: Precleanup
-
         for sta_name in self.station_names:
             self.rm_port(sta_name, check_exists=True, debug_=self.debug)
-        if self.wait_until_ports_disappear(self.station_names, debug_=self.debug):
+
+        if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_names, debug=self.debug):
             self._pass("All ports disappeared")
         else:
             self._fail("Not all ports disappeared")
+        
         # Create stations and turn dhcp on
 
         radio = LFUtils.name_to_eid(self.radio)
@@ -249,7 +249,7 @@ class StaConnect(Realm):
         print("\nBringing ports up...")
         for port in self.station_names:
             self.admin_up(port)
-            
+
         if LFUtils.wait_until_ports_admin_up(self.resource, self.lfclient_url, self.station_names):
             self._pass("All ports are up")
         else:
@@ -261,66 +261,11 @@ class StaConnect(Realm):
         ip = "0.0.0.0"
         ap = ""
 
-        # TODO:  Move this logic to LFUtils, ensure it does proper return code.
         print("Waiting for %s stations to associate to AP: " % len(self.station_names), end="")
-        connected_stations = {}
-        while (len(connected_stations.keys()) < len(self.station_names)) and (duration < maxTime):
-            duration += 3
-            time.sleep(3)
-            print(".", end="")
-            for sta_name in self.station_names:
-                sta_url = self.get_station_url(sta_name)
-                station_info = self.json_get(sta_url + "?fields=port,ip,ap", debug_=False)
-
-                # LFUtils.debug_printer.pprint(station_info)
-                if station_info and "interface" in station_info:
-                    if "ip" in station_info["interface"]:
-                        ip = station_info["interface"]["ip"]
-                    if "ap" in station_info["interface"]:
-                        ap = station_info["interface"]["ap"]
-
-                if (ap == "Not-Associated") or (ap == ""):
-                    if self.debugOn:
-                        print(" -%s," % sta_name, end="")
-                else:
-                    if ip == "0.0.0.0":
-                        if self.debugOn:
-                            print(" %s (0.0.0.0)" % sta_name, end="")
-                    else:
-                        connected_stations[sta_name] = sta_url
-            data = {
-                "shelf": 1,
-                "resource": self.resource,
-                "port": "ALL",
-                "probe_flags": 1
-            }
-            self.json_post("/cli-json/nc_show_ports", data, suppress_related_commands_=True)
-
-        # make a copy of the connected stations for test records
-        for sta_name in self.station_names:
-            sta_url = self.get_station_url(sta_name)
-            station_info = self.json_get(sta_url)  # + "?fields=port,ip,ap")
-            self.resulting_stations[sta_url] = station_info
-            ap = station_info["interface"]["ap"]
-            ip = station_info["interface"]["ip"]
-            if (ap != "") and (ap != "Not-Associated"):
-                print(" %s +AP %s, " % (sta_name, ap), end="")
-                if self.dut_bssid != "":
-                    if self.dut_bssid.lower() == ap.lower():
-                        self._pass(sta_name + " connected to BSSID: " + ap)
-                        # self.test_results.append("PASSED: )
-                        # print("PASSED: Connected to BSSID: "+ap)
-                    else:
-                        self._fail(
-                            "%s connected to wrong BSSID, requested: %s  Actual: %s" % (sta_name, self.dut_bssid, ap))
-            else:
-                self._fail(sta_name + " did not connect to AP")
-                return False
-
-            if ip == "0.0.0.0":
-                self._fail("%s did not get an ip. Ending test" % sta_name)
-            else:
-                self._pass("%s connected to AP: %s  With IP: %s" % (sta_name, ap, ip))
+        if self.wait_for_ip(self.station_names):
+            self._pass("All stations got IPs")
+        else:
+            self._fail("Stations failed to get IPs")
 
         if not self.passes():
             if self.cleanup_on_exit:
