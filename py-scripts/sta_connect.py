@@ -123,8 +123,14 @@ class StaConnect(Realm):
 
     def remove_stations(self):
         for name in self.station_names:
-            LFUtils.removePort(self.resource, name, self.lfclient_url)
-        # TODO:  Add wait-until-removed call to LFUtils, check return code.
+            self.rm_port(name, check_exists=True, debug_=self.debug)
+            #LFUtils.removePort(self.resource, name, self.lfclient_url)
+
+        if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_names, debug=self.debug):
+            self._pass("All ports disappeared")
+        else:
+            self._fail("Not all ports disappeared")
+
 
     def num_associated(self, bssid):
         counter = 0
@@ -200,14 +206,9 @@ class StaConnect(Realm):
             self._fail("Warning: %s lacks ip address" % self.get_upstream_url())
             return False
 
-        for sta_name in self.station_names:
-            self.rm_port(sta_name, check_exists=True, debug_=self.debug)
+        # Pre-cleanup of stations being used        
+        self.remove_stations()
 
-        if LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_names, debug=self.debug):
-            self._pass("All ports disappeared")
-        else:
-            self._fail("Not all ports disappeared")
-        
         # Create stations and turn dhcp on
 
         radio = LFUtils.name_to_eid(self.radio)
