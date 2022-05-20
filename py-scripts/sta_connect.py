@@ -373,8 +373,11 @@ class StaConnect(Realm):
             }
             self.json_post("/cli-json/set_cx_report_timer", data, suppress_related_commands_=True)
 
-        # TODO:  Check return code and do pass/fail, unless base class does that?  If so, add comment about it.
-        self.wait_until_cxs_appear(self.cx_names, debug=self.debug)
+        if self.wait_until_cxs_appear(self.cx_names, debug=self.debug):
+            self._pass("All cxs appeared")
+        else:
+            self._fail("Not all cxs appeared")
+            
         return True
 
     def start(self):
