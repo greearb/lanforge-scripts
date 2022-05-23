@@ -99,7 +99,7 @@ die_err("no mgt_dev in config.values")
 info("LANforge config states mgt_dev $configv{'mgt_dev'}");
 
 if ( ! -d "/sys/class/net/$configv{'mgt_dev'}") {
-   die_err( "Please run lfconfig again with your updated mgt_port value.");
+   die_err( "Unable to find [/sys/class/net/$configv{'mgt_dev'}] Please run lfconfig to set mgt_port value.");
 }
 my $ipline = `ip -o a show $configv{"mgt_dev"}`;
 
