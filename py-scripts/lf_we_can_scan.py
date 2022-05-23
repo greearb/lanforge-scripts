@@ -269,6 +269,7 @@ class WeCanStaScan(Realm):
                 report.build_table_title()
                 report.set_table_dataframe(tmp_dataset)
                 report.pass_failed_build_table()
+                report.end_content_div()
 
         # if (all(dataset['Passed/Failed'])):
         #     report.set_text("Description: All the phones are able to scan the given ssid  as we can see from the table")
