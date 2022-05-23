@@ -280,9 +280,9 @@ class LfPcap(Realm):
                             if packet_count == 1:
                                 break
                 if packet_count >= 1:
-                    return f"Beacon Frame - {value}"
+                    return f"{value}"
                 else:
-                    return f"Beacon Frame - {value}"
+                    return f"{value}"
         except ValueError:
             raise "pcap file is required."
 
@@ -305,9 +305,9 @@ class LfPcap(Realm):
                             if packet_count == 1:
                                 break
                 if packet_count >= 1:
-                    return f"Probe Request - {value}"
+                    return f"{value}"
                 else:
-                    return f"Probe Request - {value}"
+                    return f"{value}"
         except ValueError:
             raise "pcap file is required."
 
@@ -330,9 +330,9 @@ class LfPcap(Realm):
                             if packet_count == 1:
                                 break
                 if packet_count >= 1:
-                    return f"Probe Response - {value}"
+                    return f"{value}"
                 else:
-                    return f"Probe Response - {value}"
+                    return f"{value}"
         except ValueError:
             raise "pcap file is required."
 
@@ -356,9 +356,9 @@ class LfPcap(Realm):
                                 break
                 print(packet_count)
                 if packet_count >= 1:
-                    return f"Association Request - HE Capability : {value}"
+                    return f"{value}"
                 else:
-                    return f"Association Request - HE Capability : {value}"
+                    return f"{value}"
         except ValueError:
             raise "pcap file is required"
 
@@ -381,9 +381,9 @@ class LfPcap(Realm):
                             if packet_count == 1:
                                 break
                 if packet_count >= 1:
-                    return f"Association Response -  {value}"
+                    return f"{value}"
                 else:
-                    return f"Association Response -  {value}"
+                    return f"{value}"
         except ValueError:
             raise "pcap file is required"
 
@@ -395,7 +395,7 @@ class LfPcap(Realm):
                 value = "Packet Not Found"
                 for pkt in cap:
                     if 'radiotap' in pkt:
-                        value = pkt['radiotap'].get_field_value('radiotap_he_data_5_gi')
+                        value = pkt['radiotap'].get_field_value('radiotap_he_data')
                         if value is not None:
                             print(value)
                             value = f"GI: {str(value)}us"
@@ -403,9 +403,9 @@ class LfPcap(Realm):
                             if packet_count == 1:
                                 break
                 if packet_count >= 1:
-                    return f"Radio Tap Header - {value}"
+                    return f"{value}"
                 else:
-                    return f"Radio Tap Header - {value}"
+                    return f"{value}"
         except ValueError:
             raise "pcap file is required"
 
