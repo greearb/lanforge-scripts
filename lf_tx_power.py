@@ -12,6 +12,13 @@ You might need to install perl
 Fedora : dnf install perl-Net-Telnet
 Ubunto : sudo apt install libnet-telnet-perl
 
+NOTE: To convert the per spatial stream dBm to combined dBm
+convert dBm to watts (power) for each spatial stream,  add the power values then convert back to dBm
+https://www.rapidtables.com/convert/power/dBm_to_Watt.html
+https://www.rapidtables.com/convert/power/Watt_to_dBm.html
+
+Discussion
+https://www.thepacketologist.com/2021/10/power-conversion-in-python/
 
 EXAMPLE:
 TODO : add sample command
@@ -806,7 +813,7 @@ def main():
     # Can only write simple types to merged ranges so write a blank string
     test_notes =  '                          Pass / Fail criterial based on Offset per spatial stream being greater then {pf_dbm} dBm'.format(pf_dbm=pf_dbm)
     worksheet.merge_range(0, 0, 0, 38, ' ', title_format)
-    worksheet.write_rich_string(0, 0, dark_green, '      Candela Technologies : ', black, '{test_name}'.format(test_name=test_name), black_not_bold, '\n{test_notes}'.format(test_notes=test_notes), title_format)
+    worksheet.write_rich_string(0, 0, dark_green, '      Candela Technologies : ', black, '{test_name} '.format(test_name=test_name), black_not_bold, '\n{test_notes}'.format(test_notes=test_notes), title_format)
 
 
     worksheet.set_row(1, 75)  # Set height
@@ -843,7 +850,7 @@ def main():
         worksheet.write(row, col, 'AP Reported\nTotal \nTx Power dBm', dtan_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
-    worksheet.write(row, col, 'Allowed dBm\nPer Spatial Steam\n cc_dbm', dtan_bold)
+    worksheet.write(row, col, 'Allowed dBm\nPer Spatial Stream\n cc_dbm', dtan_bold)
     if (bool(ap_dict)):
         col += 1
         worksheet.set_column(col, col, 20)  # Set width
@@ -1822,10 +1829,11 @@ def main():
 
                     # Temporary Work around
                     # disable the AP for 6g and enable
-                    if args.ap_admin_down_up_6g is True and (args.band == '6g' or args.band == 'dual_band_6g'):
-                        cs.ap_name_shutdown()
-                        sleep(5)
-                        cs.ap_name_no_shutdown()
+                    # if args.ap_admin_down_up_6g is True and (args.band == '6g' or args.band == 'dual_band_6g'):
+                    # TODO this is needed after an upgrade
+                    cs.ap_name_shutdown()
+                    sleep(5)
+                    cs.ap_name_no_shutdown()
 
                     # Wait untill LANforge station connects
                     while True:
@@ -1909,7 +1917,7 @@ def main():
                     # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
                     #                 "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=False)   
                     # 
-                    logg.info("Start Running cx")
+                    logg.info("Start Running traffic cx")
                     
                     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
                                      "--cmd", "set_cx_state all c-udp-power RUNNING"]
@@ -2059,8 +2067,8 @@ def main():
                         for line in pss.splitlines():
                             # logg.info("probe-line: %s"%(line))
                             # TODO switch to signal avg
-                            # m = re.search('signal avg:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
-                            m = re.search('signal:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
+                            m = re.search('signal avg:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
+                            # m = re.search('signal:\\s+(\\S+)\\s+\\[(.*)\\]\\s+dBm', line)
                             # print("m singal avg : {}".format(m))
                             # AX210 needs to look at signal
                             if (m is None):
@@ -2283,7 +2291,7 @@ def main():
                     # NSS tranmission will mean that each chain should be decreased so that sum total
                     # of all chains is equal to the maximum allowed txpower.
                     allowed_per_path = cc_dbmi
-                    logg.info("allowed_per_path: {}  = cc_dbmi: {}".format(allowed_per_path, cc_dbmi))
+                    logg.info("combined_power read from Controller: {}  = cc_dbmi: {}".format(allowed_per_path, cc_dbmi))
                     if (int(_nss) == 1):
 
                         if args.nss_4x4_override:
