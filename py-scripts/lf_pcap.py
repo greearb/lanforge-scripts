@@ -294,7 +294,7 @@ class LfPcap(Realm):
                 value = "Packet Not Found"
                 for pkt in cap:
                     if 'wlan.mgt' in pkt:
-                        value = pkt['wlan.mgt'].get_field_value('wlan_ext_tag_he_phy_cap_he_su_ppdu_with_1x_he_ltf_08us')
+                        value = pkt['wlan.mgt'].get_field_value('wlan_ext_tag_he_phy_cap_he_su_ppdu_etc_gi')
                         if value is not None:
                             print(value)
                             packet_count += 1
@@ -395,13 +395,13 @@ class LfPcap(Realm):
                 value = "Packet Not Found"
                 for pkt in cap:
                     if 'radiotap' in pkt:
-                        value = pkt['radiotap'].get_field_value('radiotap_he_data')
+                        value = pkt['radiotap'].get_field_value('he_data_5_gi')
                         if value is not None:
                             print(value)
                             value = f"GI: {str(value)}us"
                             packet_count += 1
-                            if packet_count == 1:
-                                break
+                        if packet_count == 1:
+                            break
                 if packet_count >= 1:
                     return f"{value}"
                 else:
@@ -414,7 +414,7 @@ class LfPcap(Realm):
             self.pcap_name = test_name + ".pcap"
         else:
             self.pcap_name = "capture" + str(datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':', '-') + ".pcap"
-        print('----------pcap name----------: \n', self.pcap_name)
+        print('pcap file name: ', self.pcap_name)
         self.wifi_monitor.create(resource_=1, channel=channel, mode="AUTO", radio_=interface_name, name_="moni0")
         self.wifi_monitor.start_sniff(capname=self.pcap_name, duration_sec=sniff_duration)
         for i in range(int(sniff_duration)):
