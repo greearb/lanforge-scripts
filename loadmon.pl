@@ -39,11 +39,13 @@ our @prog_names = (
     "dnsmasq",
     "hostapd",
     "httpd",
+    "iw",
     "java",
     "l4helper",
     # "logchopper",
     "nginx",
     "perl",
+    "php-fpm",
     "pipe_helper",
     "vsftpd",
     "wget",
@@ -62,6 +64,7 @@ sub new {
         ra_pid_list => [],
         total_mem => 0,
         total_fh => 0,
+        total_thr => 0,
     };
     bless $self, $class;
     return $self;
@@ -71,6 +74,7 @@ sub monitor {
     my $self = shift;
     $self->{total_mem} = 0;
     $self->{total_fh} = 0;
+    $self->{total_threads} = 0;
 
     my $cmd = qq(pgrep -f $self->{basename});
     # print "CMD[$cmd]\n";
@@ -102,6 +106,10 @@ sub monitor {
         if (@lines > 0 ) {
             $self->{total_fh} += int($lines[0]);
         }
+        $cmd = "ls /proc/$pid/task/ | wc -l";
+        my $threads = `$cmd`;
+        chomp $threads;
+        $self->{total_threads} += int($threads);
     }
 
     #die("testing");
@@ -122,7 +130,8 @@ sub report {
     print $fh qq(${LC}"basename":"$self->{basename}",);
     print $fh qq("num_pids":$num_pids,);
     print $fh qq("total_mem_KB":$self->{total_mem},);
-    print $fh qq("total_fh":$self->{total_fh}${RC});
+    print $fh qq("total_fh":$self->{total_fh},);
+    print $fh qq("total_threads":$self->{total_threads}${RC});
 }
 1;
 ## - - - End loadmon - - - ##
@@ -138,6 +147,7 @@ sub print_totals {
     my $tt_num_pids = 0;
     my $tt_mem_kb = 0;
     my $tt_fh = 0;
+    my $tt_threads = 0;
     for my $name (@main::prog_names) {
         my $monitor = $main::monitor_map{$name};
         #print Data::Dumper->Dump(["mm_name", $monitor ]);
@@ -148,8 +158,9 @@ sub print_totals {
             $tt_mem_kb += $main::monitor_map{$name}->{total_mem};
         }
         $tt_fh += $main::monitor_map{$name}->{total_fh};
+        $tt_threads += $main::monitor_map{$name}->{total_threads};
     }
-    print $fh qq(${LC}"tt_num_pids":$tt_num_pids, "tt_mem_kb":$tt_mem_kb, "tt_fh":$tt_fh${RC});
+    print $fh qq(${LC}"tt_num_pids":$tt_num_pids, "tt_mem_kb":$tt_mem_kb, "tt_fh":$tt_fh, "tt_threads":$tt_threads${RC});
 }
 
 ## - - -
