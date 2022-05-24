@@ -2,9 +2,19 @@
 
 # Follow these message through journalctl using this technique:
 #
+#   Read from a pipe or a fifo:
+#       sudo ./loadmon | ./parse_loadmon.pl
+#
+#       mkfifo /tmp/load.fifo
+#       ./parse_loadmon.pl < /tmp/load.fifo
+#       sudo ./loadmon > /tmp/load.fifo
+#
+#   Loadmon output is now longer than journalctl line limits, so the
+#   below example will not work:
 #   sudo ./loadmon.pl | logger -t loadmon
 # ...new terminal...
 #   watch -n15 'journalctl --since "20 sec ago" -t loadmon | ./parse_loadmon.pl'
+
 #
 
 use strict;
@@ -26,7 +36,7 @@ sub mb {
 
 while (my $line=<STDIN>) {
     chomp $line;
-    print "line[$line]\n";
+    # print "line[$line]\n";
     my $lc_pos = index($line, '[{');
     # print "lc at $lc_pos\n";
     next if ($lc_pos < 0);
