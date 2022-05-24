@@ -1619,8 +1619,11 @@ Setting wifi_settings per radio
         default="BE")
     parser.add_argument(
         '--debug',
-        help='--debug flag present debug on  enable debugging',
+        help='--debug this will enable debugging in py-json method',
         action='store_true')
+    parser.add_argument('--log_level', 
+        default=None, 
+        help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument(
         '-t',
         '--endp_type',
@@ -1727,8 +1730,8 @@ Setting wifi_settings per radio
     logger_config = lf_logger_config.lf_logger_config()
 
     # set the logger level to debug
-    if args.debug:
-        logger_config.set_level_debug()
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
 
     # lf_logger_config_json will take presidence to changing debug levels
     if args.lf_logger_config_json:
