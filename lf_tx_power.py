@@ -58,6 +58,39 @@ lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 
 EPILOG = '''\
 
+#############################################################################################
+# RSSI adjust 
+manually disable it run-time by echo-ing a zero to the debugfs file, like: 
+echo 0 > /debug/ieee80211/wiphy0/ath10k/ofdm_peak_power_rssi
+
+manually enable 
+echo 1 > /debug/ieee80211/wiphy0/ath10k/ofdm_peak_power_rssi
+
+/* QCA seems to report a max-power average over the bandwidth, where mtk and intel radios
+ * report a ofdm peak power.  The ofdm peak power corresponds more closely to tx-power minus
+ * pathloss, so I think that is preferred output.  After some extensive measurements in
+ * a fully cabled environment, it looks like these adjustments are appropriate to make
+ * QCA be similar to MTK7915 and ax210:
+ * 2.4Ghz:
+ *  1x1 +8            (+13 to match txpower - pathloss.  Less confident on anything above 1x1 for this column)
+ *  2x2 +4             +11
+ *  3x3 +3             +10
+ *  4x4 +3             +10
+ * 5Ghz
+ *  1x1 +12            +18
+ *  2x2 +12            +18
+ *  3x3 +10            +18
+ *  4x4 +10            +18
+ */
+
+/* OFDM RSSI adjustments, for nss 1-4 */
+const int adjust_24[4] = {8, 4, 3, 3};
+const int adjust_5[4] = {12, 12, 10, 10};
+const int adjust_zero[4] = {0, 0, 0, 0};
+
+note the second collumn, that is what we calculate from actual received peak OFDM power, 
+but I was not sure we'd want to go that far, so intead I tried to make it match ax210 and mtk7915
+
 ##############################################################################################
 # Support History
 ##############################################################################################
