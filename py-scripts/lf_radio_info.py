@@ -247,6 +247,8 @@ CLI Example:
     # logging configuration:
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
+    parser.add_argument('--log_level', default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
 
     # TODO: Try to start with: --radio 'radio==wiphy4,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2':
     parser.add_argument(
@@ -266,6 +268,11 @@ CLI Example:
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
+
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
+
+    # lf_logger_config_json will take presidence to changing debug levels
     if args.lf_logger_config_json:
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
