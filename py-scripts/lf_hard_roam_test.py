@@ -415,16 +415,20 @@ class HardRoam(Realm):
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(hostname=self.lanforge_ip, port=self.lanforge_ssh_port, username="lanforge", password="lanforge", banner_timeout=600)
             stdin, stdout, stderr = ssh.exec_command(str(command))
-            output = stdout.readlines()
+            stdout.readlines()
             ssh.close()
             kernel_log = "/home/lanforge/kernel_log" + file + ".txt"
             lf_report.pull_reports(hostname=self.lanforge_ip, port=self.lanforge_ssh_port, username="lanforge",
-                               password="lanforge",
-                               report_location=kernel_log,
-                               report_dir=".")
+                                   password="lanforge", report_location=kernel_log, report_dir=".")
         except Exception as e:
             print(e)
         return jor_lst
+
+    def get_wlan_mgt_status(self, file_name, filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55)"):
+        query_reasso_response = self.pcap_obj.get_wlan_mgt_status_code(pcap_file=str(file_name),
+                                                                       filter=filter)
+        print("query", query_reasso_response)
+        return query_reasso_response
 
     def run(self, file_n=None):
         kernel_log = []
@@ -572,7 +576,7 @@ class HardRoam(Realm):
                         pass_fail_list = []
                         pcap_file_list = []
                         roam_time1 = []
-                        packet_loss_lst = []
+                        # packet_loss_lst = []
                         remark = []
                         log_file = []
                         # check if all element of bssid list has same bssid's
@@ -721,52 +725,47 @@ class HardRoam(Realm):
 
 
                             if res == "PASS":
-                                query_reasso_response = self.pcap_obj.get_wlan_mgt_status_code(pcap_file=str(file_name),
-                                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55)")
-                                print("query", query_reasso_response)
-                                if len(query_reasso_response) != 0:
-                                    for i in (range(len(query_reasso_response))):
-                                        if query_reasso_response[i] == "Successful":
-                                            print("reassociation reponse present check for auth rquest")
+                                for i in mac_list:
+                                    query_reasso_response = self.get_wlan_mgt_status(file_name=file_name,
+                                                                                     filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
+                                                                                         str(i)))
+                                    print(query_reasso_response)
+                                    if len(query_reasso_response) != 0:
+                                        if query_reasso_response == "Successful":
+                                            print("re-association status is successful")
                                             reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
-                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55)")
-                                            reasso_time = reasso_t[0]
-                                            query_auth_response = self.pcap_obj.get_wlan_mgt_status_code(pcap_file=str(file_name),
-                                                                                                         filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)")
-                                            print("check auth req present or not ")
-                                            if len(query_auth_response) != 0:
-                                                # aauth present
-                                                if query_auth_response[i] == "Successful":
-                                                    print("authentcation is present and success")
-                                                    auth_t = self.pcap_obj.read_time(pcap_file=str(file_name),
-                                                                                     filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)")
-                                                    auth_time = auth_t[0]
-                                                    roam_time = reasso_time - auth_time
-                                                    print("roam time ms", roam_time)
-                                                    roam_time1.append(roam_time)
-                                                    if roam_time < 50:
-                                                        pass_fail_list.append("PASS")
-                                                        pcap_file_list.append(str(file_name))
-                                                        remark.append("Passed all criteria")
-
-                                                    else:
-                                                        pass_fail_list.append("FAIL")
-                                                        pcap_file_list.append(str(file_name))
-                                                        remark.append("Roam time is greater then 50 ms")
+                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
+                                                                                   str(i)))
+                                            print("reassociation time is", reasso_t)
+                                            print("check for auth frame")
+                                            query_auth_response = self.pcap_obj.get_wlan_mgt_status_code(
+                                                pcap_file=str(file_name),
+                                                filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001) && (wlan.sa == %s)" % (
+                                                    str(i)))
+                                            if query_auth_response == "Successful":
+                                                print("authentication request is present")
+                                                auth_time = self.pcap_obj.read_time(pcap_file=str(file_name),
+                                                                                    filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)  && (wlan.sa == %s)" % (
+                                                                                        str(i)))
+                                                print("auth time is", auth_time)
+                                                roam_time = reasso_t - auth_time
+                                                print("roam time ms", roam_time)
+                                                roam_time1.append(roam_time)
+                                                if roam_time < 50:
+                                                    pass_fail_list.append("PASS")
+                                                    pcap_file_list.append(str(file_name))
+                                                    remark.append("Passed all criteria")
 
                                                 else:
-                                                    roam_time1.append('Auth Fail')
                                                     pass_fail_list.append("FAIL")
                                                     pcap_file_list.append(str(file_name))
-                                                    remark.append(" auth failure")
+                                                    remark.append("Roam time is greater then 50 ms")
 
                                             else:
-                                                roam_time1.append('No Auth')
+                                                roam_time1.append('Auth Fail')
                                                 pass_fail_list.append("FAIL")
                                                 pcap_file_list.append(str(file_name))
-                                                remark.append("No authentication request")
-
-
+                                                remark.append(" auth failure")
                                         else:
                                             roam_time1.append('Reassociation Fail')
                                             pass_fail_list.append("FAIL")
@@ -774,83 +773,78 @@ class HardRoam(Realm):
                                             remark.append("Reassociation failure")
                                             print("pcap_file name for fail instance of iteration value ")
 
-
-                                else:
-                                    for i in range(len(row_list)):
-                                        roam_time1.append("No Reassociation")
-                                    for i in range(len(row_list)):
-                                        pass_fail_list.append("FAIL")
-                                    for i in range(len(row_list)):
-                                        pcap_file_list.append(str(file_name))
-                                    for i in range(len(row_list)):
-                                        remark.append("No Reasso response")
-                                    print("row list", row_list)
-
-
+                                    else:
+                                        for a in range(len(row_list)):
+                                            roam_time1.append("No Reassociation")
+                                        for a in range(len(row_list)):
+                                            pass_fail_list.append("FAIL")
+                                        for a in range(len(row_list)):
+                                            pcap_file_list.append(str(file_name))
+                                        for a in range(len(row_list)):
+                                            remark.append("No Reasso response")
+                                        print("row list", row_list)
                             else:
-                                query_reasso_response = self.pcap_obj.get_wlan_mgt_status_code(pcap_file=str(file_name),
-                                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55)")
-                                print("query", query_reasso_response)
-                                if len(query_reasso_response) != 0:
-                                    for i in range(len(query_reasso_response)):
-                                        if query_reasso_response[i] == "Successful":
-                                            print("reassociation reponse present check for auth rquest")
+                                for i in mac_list:
+                                    query_reasso_response = self.get_wlan_mgt_status(file_name=file_name,
+                                                                                     filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
+                                                                                         str(i)))
+                                    print(query_reasso_response)
+                                    if len(query_reasso_response) != 0:
+                                        if query_reasso_response == "Successful":
+                                            print("re-association status is successful")
                                             reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
-                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55)")
-                                            reasso_time = reasso_t[0]
-                                            query_auth_response = self.pcap_obj.get_wlan_mgt_status_code(pcap_file=str(file_name),
-                                                                                                         filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)")
-                                            print("check auth req present or not ")
-                                            if len(query_auth_response) != 0:
-                                                # aauth present
-                                                if query_auth_response[i] == "Successful":
-                                                    print("authentcation is present and success")
-                                                    auth_t = self.pcap_obj.read_time(pcap_file=str(file_name),
-                                                                                     filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)")
-                                                    auth_time = auth_t[0]
-                                                    roam_time = reasso_time - auth_time
-                                                    print("roam time ms", roam_time)
-                                                    roam_time1.append(roam_time)
-                                                    if roam_time < 50:
-                                                        pass_fail_list.append("FAIL")
-                                                        pcap_file_list.append(str(file_name))
-                                                        remark.append("(bssid mismatched)Client disconnected after roaming")
-
-                                                    else:
-                                                        pass_fail_list.append("FAIL")
-                                                        pcap_file_list.append(str(file_name))
-                                                        remark.append("(bssid mis matched)Roam time is greater then 50 ms,")
-
-                                                else:
-                                                    roam_time1.append('Auth Fail')
+                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
+                                                                                   str(i)))
+                                            print("reassociation time is", reasso_t)
+                                            print("check for auth frame")
+                                            query_auth_response = self.pcap_obj.get_wlan_mgt_status_code(
+                                                pcap_file=str(file_name),
+                                                filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001) && (wlan.sa == %s)" % (
+                                                    str(i)))
+                                            if query_auth_response == "Successful":
+                                                print("authentication request is present")
+                                                auth_time = self.pcap_obj.read_time(pcap_file=str(file_name),
+                                                                                    filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)  && (wlan.sa == %s)" % (
+                                                                                        str(i)))
+                                                print("auth time is", auth_time)
+                                                roam_time = reasso_t - auth_time
+                                                print("roam time ms", roam_time)
+                                                roam_time1.append(roam_time)
+                                                if roam_time < 50:
                                                     pass_fail_list.append("FAIL")
                                                     pcap_file_list.append(str(file_name))
-                                                    remark.append("bssid switched  auth failure")
+                                                    remark.append("(bssid mismatched)Client disconnected after roaming")
+
+                                                else:
+                                                    pass_fail_list.append("FAIL")
+                                                    pcap_file_list.append(str(file_name))
+                                                    remark.append("(bssid mis matched)Roam time is greater then 50 ms,")
+
 
                                             else:
-                                                roam_time1.append('No Auth')
+                                                roam_time1.append('Auth Fail')
                                                 pass_fail_list.append("FAIL")
                                                 pcap_file_list.append(str(file_name))
-                                                remark.append("bssid mismatched  No authentication request")
-
-
+                                                remark.append("bssid switched  auth failure")
                                         else:
                                             roam_time1.append('Reassociation Fail')
                                             pass_fail_list.append("FAIL")
                                             pcap_file_list.append(str(file_name))
                                             remark.append("bssid mismatched  Reassociation failure")
 
-                                else:
-                                    for i in range(len(row_list)):
-                                        roam_time1.append("No Reassociation")
-                                    for i in range(len(row_list)):
-                                        pass_fail_list.append("FAIL")
-                                    for i in range(len(row_list)):
-                                        pcap_file_list.append(str(file_name))
-                                    for i in range(len(row_list)):
-                                        remark.append("bssid mismatched , No Reasso response")
-                                    print("row list", row_list)
 
+
+                                    else:
+                                        for a in range(len(row_list)):
+                                            roam_time1.append("No Reassociation")
+                                        for a in range(len(row_list)):
+                                            pass_fail_list.append("FAIL")
+                                        for a in range(len(row_list)):
+                                            pcap_file_list.append(str(file_name))
+                                        for a in range(len(row_list)):
+                                            remark.append("bssid mismatched , No Reasso response")
+
+                                        print("row list", row_list)
 
                             for i, x in zip(row_list, roam_time1):
                                 i.append(x)
@@ -921,17 +915,11 @@ class HardRoam(Realm):
                     else:
                         message = "station's failed to get ip  after the test start"
                         print("station's failed to get ip after test starts")
-                        print("stop debug")
-                        self.stop_debug_()
-                        time.sleep(60)
-                        print("get  debug name")
-                        self.get_file_name()
                     if self.duration_based:
                         if time.time() > timeout:
                             break
                 except Exception as e:
                     pass
-
 
         else:
             message = "station's failed to get ip  at the begining"
@@ -945,7 +933,7 @@ class HardRoam(Realm):
         s2 = test_end  # for example
         FMT = '%b %d %H:%M:%S'
         self.test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
-        return kernel_log
+        return kernel_log, message
 
     def generate_client_pass_fail_graph(self, csv_list=None):
         print("csv_list", csv_list)
@@ -1040,8 +1028,8 @@ class HardRoam(Realm):
             # report.set_table_title("Client information  " + str(i))
             # report.build_table_title()
             report.set_obj_html("Client " + str(i+1) + "  Information", "This Table gives detailed information  "
-                                                             "of client " + str(i+1) + "like the bssid it was before roam," +
-                               " bssid it was after roam, " +
+                                                             "of client " + str(i+1) + " like the bssid it was before roam," +
+                                " bssid it was after roam, " +
                                 "roam time, capture file name and ra_trace file name along with remarks ")
 
             report.build_objective()
