@@ -258,7 +258,7 @@ class create_controller_series_object:
                                        self.security_key]
             elif self.action in ["enable_ft_wpa3_dot1x_sha256"]:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan, "--security_key",
-                                       self.security_key]
+                                       self.security_key, "--value", self.value]
             elif self.action in ["enable_ftotd_akm_ftpsk"]:
                 self.command_extend = ["--action", self.action, "--wlan", self.wlan, "--security_key",
                                        self.security_key]
@@ -1083,8 +1083,9 @@ class create_controller_series_object:
         print(summary)
         return summary
 
-    def enable_ft_dot1x_sha256_wpa3_cc(self):
+    def enable_ft_dot1x_sha256_wpa3_cc(self, radius):
         logger.info("enable ft dot1x and sha256")
+        self.value = radius
         self.action = "enable_ft_wpa3_dot1x_sha256"
         summary = self.send_command()
         print(summary)
