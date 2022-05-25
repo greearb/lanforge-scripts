@@ -1780,7 +1780,7 @@ def main():
                                     "no security wpa akm sae",
                                     "security wpa akm dot1x-sha256",
                                     "security wpa akm ft dot1x",
-                                    "security dot1x authentication-list default",
+                                    "security dot1x authentication-list  {value}".format(value=args.value),
                                     "no shutdown"
                                     ]:
                         egg.sendline(command)
