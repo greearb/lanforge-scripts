@@ -11,6 +11,7 @@ import datetime
 from datetime import datetime
 import pandas as pd
 import paramiko
+from itertools import chain
 
 logger = logging.getLogger(__name__)
 if sys.version_info[0] != 3:
@@ -73,7 +74,9 @@ class HardRoam(Realm):
                  ap="AP687D.B45C.1D1C",
                  port="8888",
                  band_cc="5g",
-                 timeout="10"
+                 timeout="10",
+                 identity=None,
+                 ttls_pass=None
                  ):
         super().__init__(lanforge_ip,
                          lanforge_port)
@@ -127,21 +130,20 @@ class HardRoam(Realm):
         # self.cc.pwd = "../lanforge/lanforge-scripts"
         self.start_time = None
         self.end_time = None
+        self.identity = identity
+        self.ttls_pass = ttls_pass
 
-    def get_mac_add(self):
-        x = self.cc.get_mc_address()
-        print(x)
-        return x
+    def start_debug_(self, mac_list):
+        mac = mac_list
+        for i in mac:
+            y = self.cc.debug_wireless_mac_cc(mac=str(i))
+            print(y)
 
-    def start_debug_(self):
-        mac = self.get_mac_add()
-        y = self.cc.debug_wireless_mac_cc(mac=str(mac))
-        print(y)
-
-    def stop_debug_(self):
-        mac = self.get_mac_add()
-        y = self.cc.no_debug_wireless_mac_cc(mac=str(mac))
-        print(y)
+    def stop_debug_(self, mac_list):
+        mac = mac_list
+        for i in mac:
+            y = self.cc.no_debug_wireless_mac_cc(mac=str(i))
+            print(y)
 
     def get_ra_trace_file(self):
         ra = self.cc.get_ra_trace_files__cc()
@@ -150,19 +152,34 @@ class HardRoam(Realm):
         print(ele_list)
         return ele_list
 
-    def get_file_name(self):
+    def get_file_name(self, client):
         file = self.get_ra_trace_file()
         indices = [i for i, s in enumerate(file) if 'dir bootflash: | i ra_trace' in s]
         # print(indices)
         y = indices[3]
-        z = file[y + 1]
-        list_ = []
-        list_.append(z)
-        m = list_[0].split(" ")
-        print(m)
-        print(len(m))
-        print(m[-1])
-        return m[-1]
+        file_name = []
+        if client == 1:
+            z = file[y + 1]
+            list_ = []
+            list_.append(z)
+            m = list_[0].split(" ")
+            print(m)
+            print(len(m))
+            print(m[-1])
+            file_name.append(m[-1])
+        else:
+            for i in range(client):
+                z = file[y + (int(i)+1)]
+                list_ = []
+                list_.append(z)
+                m = list_[0].split(" ")
+                print(m)
+                print(len(m))
+                print(m[-1])
+                file_name.append(m[-1])
+        print("file_name", file_name)
+        file_name.reverse()
+        return file_name
 
     def delete_trace_file(self, file):
         # file = self.get_file_name()
@@ -261,8 +278,8 @@ class HardRoam(Realm):
                                            group="[BLANK]",
                                            psk="[BLANK]",
                                            eap="TTLS",
-                                           identity="testuser",
-                                           passwd="testpasswd",
+                                           identity=self.identity,
+                                           passwd=self.ttls_pass,
                                            pin=""
                                            )
         station_profile.create(radio=radio, sta_names_=station_list)
@@ -347,7 +364,7 @@ class HardRoam(Realm):
     def start_sniffer(self, radio_channel=None, radio=None, test_name="sniff_radio", duration=60):
         self.pcap_name = test_name + str(datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':', '-') + ".pcap"
         self.pcap_obj_2 = sniff_radio.SniffRadio(lfclient_host=self.lanforge_ip, lfclient_port=self.lanforge_port,
-                                                 radio=radio, channel=radio_channel)
+                                                 radio=radio, channel=radio_channel, monitor_name="monitor")
         self.pcap_obj_2.setup(0, 0, 0)
         time.sleep(5)
         self.pcap_obj_2.monitor.admin_up()
@@ -441,6 +458,14 @@ class HardRoam(Realm):
         sta_list = self.get_station_list()
         print(sta_list)
         val = self.wait_for_ip(sta_list)
+        mac_list = []
+        for sta_name in sta_list:
+            sta = sta_name.split(".")[2]
+            time.sleep(5)
+            mac = self.station_data_query(station_name=str(sta), query="mac")
+            mac_list.append(mac)
+        print(mac_list)
+
         if val:
             print("all stations got ip")
             print("check if all tations are conncted one ap")
@@ -482,8 +507,10 @@ class HardRoam(Realm):
                     self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
                     time.sleep(2)
                     self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
-                self.create_layer3(side_a_min_rate=1000000, side_a_max_rate=1000000, side_b_min_rate=0, side_b_max_rate=0,
-                                   sta_list=sta_list, traffic_type=self.traffic_type)
+                self.create_layer3(side_a_min_rate=1000000, side_a_max_rate=0, side_b_min_rate=1000000,
+                                   side_b_max_rate=0,
+                                   sta_list=sta_list, traffic_type=self.traffic_type, side_a_min_pdu=1250,
+                                   side_b_min_pdu=1250)
 
             timeout, variable, iterable_var = None, None, None
 
@@ -517,8 +544,9 @@ class HardRoam(Realm):
                     sta_list = self.get_station_list()
                     print(sta_list)
                     station = self.wait_for_ip(sta_list)
+                    time.sleep(20)
                     print("start debug")
-                    self.start_debug_()
+                    self.start_debug_(mac_list=mac_list)
                     if station:
                         print("all stations got ip")
                         # get bssid's of all stations connected
@@ -632,7 +660,7 @@ class HardRoam(Realm):
                                 kernel_log.append(i)
                             # stop sniff and attach data
                             time.sleep(30)
-                            # print("stop sniff")
+                            print("stop sniff")
                             file_name_ = self.stop_sniffer()
                             file_name = "./pcap/" + str(file_name_)
                             print("pcap file name", file_name)
@@ -685,13 +713,19 @@ class HardRoam(Realm):
                                 if res == "FAIL":
                                     res = "FAIL"
 
+                            self.stop_debug_(mac_list=mac_list)
+
+                            time.sleep(60)
+                            trace = self.get_file_name(client=self.num_sta)
+                            log_file.append(trace)
+
 
                             if res == "PASS":
                                 query_reasso_response = self.pcap_obj.get_wlan_mgt_status_code(pcap_file=str(file_name),
                                                                                                filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55)")
                                 print("query", query_reasso_response)
                                 if len(query_reasso_response) != 0:
-                                    for i in range(len(query_reasso_response)):
+                                    for i in (range(len(query_reasso_response))):
                                         if query_reasso_response[i] == "Successful":
                                             print("reassociation reponse present check for auth rquest")
                                             reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
@@ -714,51 +748,24 @@ class HardRoam(Realm):
                                                         pass_fail_list.append("PASS")
                                                         pcap_file_list.append(str(file_name))
                                                         remark.append("Passed all criteria")
-                                                        print("stop debug")
-                                                        self.stop_debug_()
-                                                        print("delete debug")
-                                                        time.sleep(60)
-                                                        # print()
-                                                        trace = self.get_file_name()
-                                                        log_file.append(trace)
-                                                        time.sleep(5)
-                                                        # self.delete_trace_file(file=trace)
 
                                                     else:
                                                         pass_fail_list.append("FAIL")
                                                         pcap_file_list.append(str(file_name))
                                                         remark.append("Roam time is greater then 50 ms")
-                                                        print("stop debug")
-                                                        self.stop_debug_()
-                                                        time.sleep(60)
-                                                        print("get  debug name")
-                                                        time.sleep(10)
-                                                        trace = self.get_file_name()
-                                                        log_file.append(trace)
-
 
                                                 else:
                                                     roam_time1.append('Auth Fail')
                                                     pass_fail_list.append("FAIL")
                                                     pcap_file_list.append(str(file_name))
                                                     remark.append(" auth failure")
-                                                    print("stop debug")
-                                                    self.stop_debug_()
-                                                    time.sleep(60)
-                                                    print("get  debug name")
-                                                    trace = self.get_file_name()
-                                                    log_file.append(trace)
+
                                             else:
                                                 roam_time1.append('No Auth')
                                                 pass_fail_list.append("FAIL")
                                                 pcap_file_list.append(str(file_name))
                                                 remark.append("No authentication request")
-                                                print("stop debug")
-                                                self.stop_debug_()
-                                                time.sleep(60)
-                                                print("get  debug name")
-                                                trace = self.get_file_name()
-                                                log_file.append(trace)
+
 
                                         else:
                                             roam_time1.append('Reassociation Fail')
@@ -766,12 +773,7 @@ class HardRoam(Realm):
                                             pcap_file_list.append(str(file_name))
                                             remark.append("Reassociation failure")
                                             print("pcap_file name for fail instance of iteration value ")
-                                            print("stop debug")
-                                            self.stop_debug_()
-                                            time.sleep(60)
-                                            print("get  debug name")
-                                            trace = self.get_file_name()
-                                            log_file.append(trace)
+
 
                                 else:
                                     for i in range(len(row_list)):
@@ -783,13 +785,7 @@ class HardRoam(Realm):
                                     for i in range(len(row_list)):
                                         remark.append("No Reasso response")
                                     print("row list", row_list)
-                                    print("stop debug")
-                                    self.stop_debug_()
-                                    time.sleep(60)
-                                    print("get  debug name")
-                                    trace = self.get_file_name()
-                                    for i in range(len(row_list)):
-                                        log_file.append(trace)
+
 
                             else:
                                 query_reasso_response = self.pcap_obj.get_wlan_mgt_status_code(pcap_file=str(file_name),
@@ -819,58 +815,30 @@ class HardRoam(Realm):
                                                         pass_fail_list.append("FAIL")
                                                         pcap_file_list.append(str(file_name))
                                                         remark.append("(bssid mismatched)Client disconnected after roaming")
-                                                        print("stop debug")
-                                                        self.stop_debug_()
-                                                        time.sleep(60)
-                                                        print("get  debug name")
-                                                        trace = self.get_file_name()
-                                                        log_file.append(trace)
+
                                                     else:
                                                         pass_fail_list.append("FAIL")
                                                         pcap_file_list.append(str(file_name))
                                                         remark.append("(bssid mis matched)Roam time is greater then 50 ms,")
-                                                        print("stop debug")
-                                                        self.stop_debug_()
-                                                        time.sleep(60)
-                                                        print("get  debug name")
-                                                        trace = self.get_file_name()
-                                                        log_file.append(trace)
 
                                                 else:
                                                     roam_time1.append('Auth Fail')
                                                     pass_fail_list.append("FAIL")
                                                     pcap_file_list.append(str(file_name))
                                                     remark.append("bssid switched  auth failure")
-                                                    print("stop debug")
-                                                    self.stop_debug_()
-                                                    time.sleep(60)
-                                                    print("get  debug name")
-                                                    trace = self.get_file_name()
-                                                    log_file.append(trace)
+
                                             else:
                                                 roam_time1.append('No Auth')
                                                 pass_fail_list.append("FAIL")
                                                 pcap_file_list.append(str(file_name))
                                                 remark.append("bssid mismatched  No authentication request")
-                                                print("stop debug")
-                                                self.stop_debug_()
-                                                time.sleep(60)
-                                                print("get  debug name")
-                                                trace = self.get_file_name()
-                                                log_file.append(trace)
+
 
                                         else:
                                             roam_time1.append('Reassociation Fail')
                                             pass_fail_list.append("FAIL")
                                             pcap_file_list.append(str(file_name))
                                             remark.append("bssid mismatched  Reassociation failure")
-                                            # print("pcap_file name for fail instance of iteration value ")
-                                            print("stop debug")
-                                            self.stop_debug_()
-                                            time.sleep(60)
-                                            print("get  debug name")
-                                            trace = self.get_file_name()
-                                            log_file.append(trace)
 
                                 else:
                                     for i in range(len(row_list)):
@@ -882,13 +850,6 @@ class HardRoam(Realm):
                                     for i in range(len(row_list)):
                                         remark.append("bssid mismatched , No Reasso response")
                                     print("row list", row_list)
-                                    print("stop debug")
-                                    self.stop_debug_()
-                                    time.sleep(60)
-                                    print("get  debug name")
-                                    trace = self.get_file_name()
-                                    for i in range(len(row_list)):
-                                        log_file.append(trace)
 
 
                             for i, x in zip(row_list, roam_time1):
@@ -901,7 +862,11 @@ class HardRoam(Realm):
                             print("row list", row_list)
                             for i, x in zip(row_list, pcap_file_list):
                                 i.append(x)
-                            for i, x in zip(row_list, log_file):
+
+                            print("log file", log_file)
+                            my_unnested_list = list(chain(*log_file))
+                            print(my_unnested_list)
+                            for i, x in zip(row_list, my_unnested_list):
                                 i.append(x)
                             print("row list", row_list)
                             for i, x in zip(row_list, remark):
@@ -939,13 +904,13 @@ class HardRoam(Realm):
                             print("row list", row_list)
                             for i in row_list:
                                 i.append("no roam performed all stations are not connected to same ap")
-                            print("stop debug")
-                            self.stop_debug_()
-                            time.sleep(60)
-                            print("get  debug name")
-                            trace = self.get_file_name()
-                            for i in row_list:
-                                i.append(trace)
+
+                            print("log file", log_file)
+                            my_unnested_list = list(chain(*log_file))
+                            print(my_unnested_list)
+                            for i, x in zip(row_list, my_unnested_list):
+                                i.append(x)
+                            print("row list", row_list)
                             for i in row_list:
                                 i.append("no roam performed all stations are not connected to same ap")
                             print("row list", row_list)
@@ -965,7 +930,7 @@ class HardRoam(Realm):
                         if time.time() > timeout:
                             break
                 except Exception as e:
-                    print(e)
+                    pass
 
 
         else:
@@ -1161,7 +1126,9 @@ def main():
                    ap="AP687D.B45C.1D1C",
                    port="8888",
                    band_cc="5g",
-                   timeout="10"
+                   timeout="10",
+                   identity="testuser",
+                   ttls_pass="testpasswd"
                    )
     # obj.stop_sniffer()
     # file = obj.generate_csv()
