@@ -201,7 +201,7 @@ class StaConnect2(Realm):
             raise ValueError("Unable to find ports named '%s'+" % self.sta_prefix)
         self.l3_udp_profile.create(endp_type="lf_udp",
                                    side_a=port_list,
-                                   side_b="%d.%s" % (self.resource, self.upstream_port),
+                                   side_b="%d.%s" % (int(self.upstream_resource), self.upstream_port),
                                    suppress_related_commands=True)
 
         # Create TCP endpoints
@@ -212,7 +212,7 @@ class StaConnect2(Realm):
         self.l3_tcp_profile.report_timer = 1000
         self.l3_tcp_profile.create(endp_type="lf_tcp",
                                    side_a=list(self.find_ports_like("%s+" % self.sta_prefix)),
-                                   side_b="%d.%s" % (self.resource, self.upstream_port),
+                                   side_b="%d.%s" % (int(self.upstream_resource), self.upstream_port),
                                    suppress_related_commands=True)
 
     def start(self):
