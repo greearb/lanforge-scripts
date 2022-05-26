@@ -60,6 +60,10 @@ EPILOG = '''\
 
 #############################################################################################
 # RSSI adjust 
+
+be root  
+sudo -s
+
 manually disable it run-time by echo-ing a zero to the debugfs file, like: 
 echo 0 > /debug/ieee80211/wiphy0/ath10k/ofdm_peak_power_rssi
 
