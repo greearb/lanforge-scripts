@@ -443,7 +443,7 @@ def main():
     parser.add_argument("--adjust_nf", action='store_true', help="[tx power configuration] Adjust RSSI based on noise-floor.  ath10k without the use-real-noise-floor fix needs this option")
     parser.add_argument('--beacon_dbm_diff', type=str, help="[tx power configuration] --beacon_dbm_diff <value>  is the delta that is allowed between the controller tx and the beacon measured", default="7")
 
-    # pass / fail criterial
+    # pass / fail criteria
     parser.add_argument("--pf_dbm", type=str, help="[tx power pass / fail criteria] Pass/Fail threshold per Spetial Stream.  Default is 3", default="3")
 
     # traffic generation configuration (LANforge)
@@ -844,7 +844,7 @@ def main():
     # parameters  merge_range(first_row, first_col, last_row, last_col, data[, cell_format])
 
     # Can only write simple types to merged ranges so write a blank string
-    test_notes =  '                          Pass / Fail criterial based on Offset per spatial stream being greater then {pf_dbm} dBm'.format(pf_dbm=pf_dbm)
+    test_notes =  '                          Pass / Fail criteria based on Offset per spatial stream being greater then {pf_dbm} dBm'.format(pf_dbm=pf_dbm)
     worksheet.merge_range(0, 0, 0, 38, ' ', title_format)
     worksheet.write_rich_string(0, 0, dark_green, '      Candela Technologies : ', black, '{test_name} '.format(test_name=test_name), black_not_bold, '\n{test_notes}'.format(test_notes=test_notes), title_format)
 
