@@ -156,7 +156,7 @@ class HardRoam(Realm):
         file = self.get_ra_trace_file()
         indices = [i for i, s in enumerate(file) if 'dir bootflash: | i ra_trace' in s]
         # print(indices)
-        y = indices[3]
+        y = indices[-1]
         file_name = []
         if client == 1:
             z = file[y + 1]
@@ -669,6 +669,12 @@ class HardRoam(Realm):
                             file_name = "./pcap/" + str(file_name_)
                             print("pcap file name", file_name)
 
+                            self.stop_debug_(mac_list=mac_list)
+
+                            time.sleep(60)
+                            trace = self.get_file_name(client=self.num_sta)
+                            log_file.append(trace)
+
                             # cx_list = self.get_cx_list()
                             # print("quiece layer3")
                             # self.local_realm.drain_stop_cx(cx_name=cx_list[0])
@@ -706,31 +712,31 @@ class HardRoam(Realm):
                             result = all(element == bssid_list_1[0] for element in bssid_list_1)
 
                             res = ""
-                            if result:
-                                station_after = bssid_list_1[0].lower()
-                                if station_after == station_before or station_after == "na":
+                            station_before_ = bssid_list
+                            print("station before", station_before_)
+                            for i,x in zip( mac_list, range(len(bssid_list))):
+                                print("mac ", i)
+                                print(x)
+                                station_after = bssid_list_1[x].lower()
+                                if station_after == station_before_[x] or station_after == "na":
                                     print("station did not roamed")
                                     res = "FAIL"
-                                elif station_after != station_before:
+                                elif station_after != station_before_[x]:
                                     print("client performed roam")
                                     res = "PASS"
                                 if res == "FAIL":
                                     res = "FAIL"
 
-                            self.stop_debug_(mac_list=mac_list)
-
-                            time.sleep(60)
-                            trace = self.get_file_name(client=self.num_sta)
-                            log_file.append(trace)
 
 
-                            if res == "PASS":
-                                for i in mac_list:
+
+                                if res == "PASS":
+
                                     query_reasso_response = self.get_wlan_mgt_status(file_name=file_name,
                                                                                      filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
                                                                                          str(i)))
                                     print(query_reasso_response)
-                                    if len(query_reasso_response) != 0:
+                                    if len(query_reasso_response) != 0 and query_reasso_response != "empty":
                                         if query_reasso_response == "Successful":
                                             print("re-association status is successful")
                                             reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
@@ -783,13 +789,12 @@ class HardRoam(Realm):
                                         for a in range(len(row_list)):
                                             remark.append("No Reasso response")
                                         print("row list", row_list)
-                            else:
-                                for i in mac_list:
+                                else:
                                     query_reasso_response = self.get_wlan_mgt_status(file_name=file_name,
                                                                                      filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
                                                                                          str(i)))
                                     print(query_reasso_response)
-                                    if len(query_reasso_response) != 0:
+                                    if len(query_reasso_response) != 0 and query_reasso_response != 'empty':
                                         if query_reasso_response == "Successful":
                                             print("re-association status is successful")
                                             reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
@@ -871,6 +876,7 @@ class HardRoam(Realm):
 
 
                         else:
+
                             message = "all stations are not connected to same ap for iteration " + str(iter)
                             print("all stations are not connected to same ap")
                             bssid_list2 = []
@@ -889,16 +895,20 @@ class HardRoam(Realm):
                             for i, x in zip(row_list, bssid_list2):
                                 i.append(x)
                             print("row list", row_list)
-                            for i in range(len(row_list)):
-                                pass_fail_list.append("No Roam Time")
-                            # for i in range(len(row_list)):
-                            #     pass_fail_list.append("N/A")
                             for i in row_list:
-                                i.append("FAIL")
+                                i.append("No Roam Time")
                             print("row list", row_list)
+                            for a in row_list:
+                                a.append("FAIL")
+                            print("row list", row_list)
+                            # pcap
                             for i in row_list:
-                                i.append("no roam performed all stations are not connected to same ap")
-
+                                i.append("N/A")
+                            print("row list", row_list)
+                            self.stop_debug_(mac_list=mac_list)
+                            time.sleep(60)
+                            trace = self.get_file_name(client=self.num_sta)
+                            log_file.append(trace)
                             print("log file", log_file)
                             my_unnested_list = list(chain(*log_file))
                             print(my_unnested_list)
@@ -1127,9 +1137,10 @@ def main():
     # obj.stop_debug_()
     # obj.get_file_name()
     # obj.delete_trace_file()
-    lst = obj.journal_ctl_logs(file="nik")
-    file = []
-    obj.generate_report(csv_list=file, kernel_lst=lst)
+    # lst = obj.journal_ctl_logs(file="nik")
+    # file = []
+    # obj.generate_report(csv_list=file, kernel_lst=lst)
+    obj.get_file_name(client=1)
 
 
 if __name__ == '__main__':
