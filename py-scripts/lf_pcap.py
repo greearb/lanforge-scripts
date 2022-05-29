@@ -144,17 +144,19 @@ class LfPcap(Realm):
             if pcap_file is not None:
                 cap = self.read_pcap(pcap_file=pcap_file, apply_filter=filter)
                 packet_count = 0
-                value, data = '', []
+                value, data = '', None
                 for pkt in cap:
                     # print(pkt)
                     if 'wlan.mgt' in pkt:
                         value = pkt['wlan.mgt'].get_field_value('wlan_fixed_status_code')
                         if value == '0x0000' or value == '0':
-                            data.append('Successful')
+                            data = 'Successful'
                         else:
-                            data.append('failed')
+                            data = 'failed'
                         packet_count += 1
                 print("Total Packets: ", packet_count)
+                if packet_count == 0:
+                    return "empty"
                 if packet_count != 0:
                     return data
                 else:
@@ -339,6 +341,8 @@ class LfPcap(Realm):
                      report_location=current_path,
                      report_dir=updated_path)
 
+
+
     def get_destination_add(self, pcap_file, filter='(wlan.fc.type_subtype==3 && wlan.tag.number==55)'):
         """ To get status code of each packet in WLAN MGT Layer """
         print("pcap file path:  %s" % pcap_file)
@@ -400,8 +404,7 @@ see: /py-scritps/lf_pcap.py
     # pcap_obj.check_beamformer_beacon_frame(pcap_file=pcap_obj.pcap_file)
     # pcap_obj.get_wlan_mgt_status_code(pcap_file=pcap_obj.pcap_file)
     # pcap_obj.get_packet_info(pcap_obj.pcap_file)
-    pcap_obj.read_time(pcap_file="roam_11r_ota_iteration_0_2022-05-25-09-31.pcap")
-    # pcap_obj.get_destination_add(pcap_file="roam_11r_ota_iteration_0_2022-05-25-09-31.pcap")
+    pcap_obj.read_time(pcap_file="roam_11r_ota_iteration_0_2022-05-05-22-20.pcap")
 
 if __name__ == "__main__":
     main()
