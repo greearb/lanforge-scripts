@@ -51,6 +51,7 @@ class IPVariableTime(Realm):
                  use_existing_sta=False,
                  name_prefix=None,
                  upstream=None,
+                 upstream_resource=1,
                  radio=None,
                  host="localhost",
                  port=8080,
@@ -100,6 +101,7 @@ class IPVariableTime(Realm):
         self.number_template = number_template
         self.debug = _debug_on
         self.timeout_sec = 60
+        self.upstream_resource = upstream_resource
         # self.json_post("/cli-json/set_resource", {
         #     "shelf":1,
         #     "resource":all,
@@ -205,9 +207,8 @@ class IPVariableTime(Realm):
             print("Creating stations")
             self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
             self._pass("PASS: Station build finished")
-
         self.cx_profile.create(endp_type=self.traffic_type, side_a=self.sta_list,
-                               side_b=self.upstream,
+                               side_b="%d.%s" % (int(self.upstream_resource), self.upstream),
                                sleep_time=0)
 
     def run(self):
