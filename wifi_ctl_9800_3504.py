@@ -2129,8 +2129,8 @@ def main():
             # Timeout - try to exit
             if i == 8:
                 logg.info("9800 expect timeout loop_count: {}".format(loop_count))
-                egg.sendline("exit")
-                logged_out_9800 = True
+                # egg.sendline("exit")
+                # logged_out_9800 = True
 
 
         if(logged_out_9800 == False):
