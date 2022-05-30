@@ -151,13 +151,14 @@ class LfPcap(Realm):
                         value = pkt['wlan.mgt'].get_field_value('wlan_vht_group_id_management')
                         if value is not None:
                             print("Group ID Management: ", value)
+                            value = f"Group ID Management: {value}"
                             packet_count += 1
                         if packet_count == 1:
                             break
                 if packet_count >= 1:
-                    return f"Wireless Management - Group ID Management: {value}"
+                    return f"{value}"
                 else:
-                    return f"Wireless Management - Group ID Management: {value}"
+                    return f"{value}"
         except ValueError:
             raise "pcap file is required"
 
@@ -176,16 +177,16 @@ class LfPcap(Realm):
                             print(value)
                             packet_count += 1
                             if value == 0:
-                                value = "Not Supported"
+                                value = "MU Beamformee Capable: Not Supported"
                             if value == 1:
-                                value = "Supported"
+                                value = "MU Beamformee Capable: Supported"
                             if packet_count == 1:
                                 break
                 print(packet_count)
                 if packet_count >= 1:
-                    return f"Association Request - MU Beamformee Capable: {value}"
+                    return f"{value}"
                 else:
-                    return f"Association Request - MU Beamformee Capable: {value}"
+                    return f"{value}"
         except ValueError:
             raise "pcap file is required"
 
@@ -203,22 +204,23 @@ class LfPcap(Realm):
                             print(value)
                             packet_count += 1
                             if value == 0:
-                                value = "Not Supported"
+                                value = "MU Beamformer Capable: Not Supported"
                             if value == 1:
-                                value = "Supported"
+                                value = "MU Beamformer Capable: Supported"
                             if packet_count == 1:
                                 break
                 if packet_count >= 1:
-                    return f"Association Response - MU Beamformer Capable : {value}"
+                    return f"{value}"
                 else:
-                    return f"Association Response - MU Beamformer Capable: {value}"
+                    return f"{value}"
         except ValueError:
             raise "pcap file is required"
 
     def check_beamformer_beacon_frame(self, pcap_file):
         try:
             if pcap_file is not None:
-                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype == 8')
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.vht.capabilities.mubeamformer == 1 && '
+                                                                       'wlan.fc.type_subtype == 8')
                 packet_count = 0
                 value = "Packet Not Found"
                 for pkt in cap:
@@ -228,36 +230,40 @@ class LfPcap(Realm):
                             print(value)
                             packet_count += 1
                             if value == 0:
-                                value = "Not Supported"
+                                value = "MU Beamformer Capable: Not Supported"
                             if value == 1:
-                                value = "Supported"
+                                value = "MU Beamformer Capable: Supported"
                             if packet_count == 1:
                                 break
                 if packet_count >= 1:
-                    return f"Beacon Frame - MU Beamformer Capable: {value}"
+                    return f"{value}"
                 else:
-                    return f"Beacon Frame - MU Beamformer Capable: {value}"
+                    return f"{value}"
         except ValueError:
             raise "pcap file is required."
 
-    def check_beamformer_report_poll(self, pcap_file):
+    def check_beamformer_probe_response(self, pcap_file):
         try:
             if pcap_file is not None:
-                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.fc.type_subtype == 20')
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter='wlan.vht.capabilities.mubeamformer == 1 && wlan.fc.type_subtype==5')
                 packet_count = 0
                 value = "Packet Not Found"
                 for pkt in cap:
                     if 'wlan' in pkt:
-                        value = pkt['wlan'].get_field_value('fc_type_subtype')
+                        value = pkt['wlan'].get_field_value('wlan_vht_capabilities_mubeamformer')
                         if value is not None:
                             print(value)
+                            if value == 0:
+                                value = "MU Beamformer Capable: Not Supported"
+                            if value == 1:
+                                value = "MU Beamformer Capable: Supported"
                             packet_count += 1
                             if packet_count == 1:
                                 break
                 if packet_count >= 1:
-                    return f"Beamforming Report Poll : {value}"
+                    return f"{value}"
                 else:
-                    return f"Beamforming Report Poll : {value}"
+                    return f"{value}"
         except ValueError:
             raise "pcap file is required."
 
