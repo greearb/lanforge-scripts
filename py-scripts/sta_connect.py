@@ -585,8 +585,6 @@ Example:
 
     print(staConnect.get_all_message())
 
-    # TODO:  Do proper exit codes.
-
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
