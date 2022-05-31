@@ -155,19 +155,11 @@ class we_can_wifi_capacity((Realm)):
             }, index=[phone_name[i] for i in range(len(phone_name))])
 
             # Plotting Graph  05 (User Name)
-            udp_avg_rate = []
-            tcp_avg_rate = []
-            for i in range(len(udp_download_rate)):
-                udp_avg_rate.append(float("{:.2f}".format((udp_upload_rate[i] + udp_download_rate[i]) / 2)))
-                tcp_avg_rate.append(float("{:.2f}".format((tcp_upload_rate[i] + tcp_download_rate[i]) / 2)))
-            # Creating DataFrames
             user_name_df = pd.DataFrame({
                 "udp download": udp_download_rate,
                 "udp upload": udp_upload_rate,
-                "udp average ": udp_avg_rate,
                 "tcp upload": tcp_upload_rate,
                 "tcp download": tcp_download_rate,
-                "tcp average ": tcp_avg_rate,
             }, index=[user_name[i] for i in range(len(tcp_download_rate))])
 
         elif self.protocol[0] == "TCP-IPv4" or self.protocol[0] == "UDP-IPv4":
@@ -527,8 +519,8 @@ def main():
                                 influx_port=8086,
                                 local_lf_report_dir=args.local_lf_report_dir,
                                 )
-    # WFC_Test.setup()
-    # WFC_Test.run()
+    WFC_Test.setup()
+    WFC_Test.run()
     wifi_capacity = we_can_wifi_capacity(host=args.mgr, port=args.port, protocol=args.protocol)
     wifi_capacity.get_data()
     # WFC_Test.check_influx_kpi(args)
