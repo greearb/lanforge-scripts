@@ -1,26 +1,30 @@
 #!/usr/bin/env python3
 '''
-This will create a station, create TCP and UDP traffic, run it a short amount of time, and verify whether traffic
- was sent and received.  It also verifies the station connected to the requested BSSID if bssid is specified
- as an argument. The script will clean up the station and connections at the end of the test.
+NAME: sta_connect2.py
 
-CLI Example:
-./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2
---upstream_port eth1 --radio wiphy1
+Purpose:
+    This will create a station, create TCP and UDP traffic, run it a short amount of time, 
+    and verify whether traffic was sent and received.  It also verifies the station connected
+    to the requested BSSID if bssid is specified as an argument. 
+    The script will clean up the station and connections at the end of the test.
 
-CLI Example for kpi.csv report output:
-./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2
---upstream_port eth2  --csv_outfile sta_connect2.csv --test_rig LF-Lab --test_tag L3 --dut_hw_version Linux
---dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234
+EXAMPLE:
+    ./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2 --upstream_port eth1 --radio wiphy1
 
-CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
-./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2
---upstream_port eth2  --download_bps 768000 --upload_bps 256000 --side_a_pdu 300 --side_b_pdu 750
---csv_outfile sta_connect2.csv --test_rig LF-Lab --test_tag L3 --dut_hw_version Linux --dut_model_num 1
---dut_sw_version 5.4.5 --dut_serial_num 1234
+    CLI Example for kpi.csv report output:
+        ./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2
+        --upstream_port eth2  --csv_outfile sta_connect2.csv --test_rig LF-Lab --test_tag L3 --dut_hw_version Linux
+        --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234
 
-Copyright 2021 Candela Technologies Inc
-License: Free to distribute and modify. LANforge systems must be licensed.
+    CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
+        ./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2
+        --upstream_port eth2  --download_bps 768000 --upload_bps 256000 --side_a_pdu 300 --side_b_pdu 750
+        --csv_outfile sta_connect2.csv --test_rig LF-Lab --test_tag L3 --dut_hw_version Linux --dut_model_num 1
+        --dut_sw_version 5.4.5 --dut_serial_num 1234
+
+COPYRIGHT:
+    Copyright 2021 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
 '''
 
 import sys
