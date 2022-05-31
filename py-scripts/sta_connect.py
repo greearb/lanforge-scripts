@@ -133,7 +133,6 @@ class StaConnect(Realm):
         else:
             self._fail("Not all ports disappeared")
 
-
     def num_associated(self, bssid):
         counter = 0
         # print("there are %d results" % len(self.station_results))
@@ -168,7 +167,7 @@ class StaConnect(Realm):
         if not self.finish_test():
             self._fail("finish_test stage failed")
             return False, "finish_test"
-        
+
         # remove all endpoints and cxs
         if self.cleanup_on_exit:
             if not self.cleanup():
@@ -208,7 +207,7 @@ class StaConnect(Realm):
             self._fail("Warning: %s lacks ip address" % self.get_upstream_url())
             return False
 
-        # Pre-cleanup of stations being used        
+        # Pre-cleanup of stations being used
         self.remove_stations()
 
         # Create stations and turn dhcp on
@@ -379,7 +378,7 @@ class StaConnect(Realm):
             self._pass("All cxs appeared")
         else:
             self._fail("Not all cxs appeared")
-            
+
         return True
 
     def start(self):
@@ -450,12 +449,12 @@ class StaConnect(Realm):
                 ptest_b_tx = ptest['endpoint']['tx bytes']
                 ptest_b_rx = ptest['endpoint']['rx bytes']
 
-                if (self.compare_vals("testTCP-A TX", ptest_a_tx) & self.compare_vals("testTCP-A RX", ptest_a_rx) & 
-                    self.compare_vals("testTCP-B TX", ptest_b_tx) & self.compare_vals("testTCP-B RX", ptest_b_rx)):
+                if (self.compare_vals("testTCP-A TX", ptest_a_tx) & self.compare_vals("testTCP-A RX", ptest_a_rx) &
+                        self.compare_vals("testTCP-B TX", ptest_b_tx) & self.compare_vals("testTCP-B RX", ptest_b_rx)):
                     return True
                 else:
                     return False
-                
+
             except Exception as e:
                 self.error(e)
 
@@ -497,7 +496,7 @@ class StaConnect(Realm):
             kpi_csv.kpi_dict['Units'] = "bps"
             kpi_csv.kpi_dict['Graph-Group'] = "Endpoint RX bytes"
             kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)
-                    
+
             if csv_outfile is not None:
                 current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
                 csv_outfile = "{}_{}-sta_connect.csv".format(
@@ -559,18 +558,16 @@ Example:
                             _dut_bssid=args.dut_bssid, _dut_ssid=args.ssid, _dut_security=args.security,
                             _sta_name=["sta0000"])
 
-
     success, method = staConnect.run()
     if not success:
         print("FAIL: staConnect.run method failed at stage \"{method}\"".format(method=method))
     else:
         print("PASS: staConnect tests finished successfully")
 
-
     staConnect.get_result_list()
     staConnect.generate_report(test_rig=args.test_rig, test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
-                          dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
-                          dut_serial_num=args.dut_serial_num, test_id=args.test_id, csv_outfile=args.csv_outfile)
+                               dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
+                               dut_serial_num=args.dut_serial_num, test_id=args.test_id, csv_outfile=args.csv_outfile)
     if not staConnect.passes():
         print("FAIL:  Some tests failed")
     else:
