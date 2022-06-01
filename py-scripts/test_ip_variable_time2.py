@@ -2,8 +2,8 @@
 """
 NAME: test_ip_variable_time2.py
 
-Note: This script can be used to create multiple layer3 traffic. If you want to create multiple layer3 traffic without
-    disturbing existing layer3 traffic then this script can be used.
+Note: If you want to create multiple layer3 traffic without disturbing existing layer3 traffic then this script can
+ be used. for multiple layer3 on same time run this script on multiple terminals.
 
 PURPOSE:
 test_ip_variable_time2.py will create stations and endpoints to generate and verify layer-3 traffic over ipv4 or ipv6.
