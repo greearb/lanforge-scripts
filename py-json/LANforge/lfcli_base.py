@@ -26,6 +26,10 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 Logg = importlib.import_module("lanforge_client.logg")
 logger = logging.getLogger(__name__)
 
+"""
+To enable lanforge_api in this code, set the environmental variable LF_USE_AUTOGEN=1:
+$ LF_USE_AUTOGEN=1 python3 jbr_jag_test.py --test set_port --host ct521a-lion
+"""
 if os.environ.get("LF_USE_AUTOGEN") == 1:
     lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
     LFSession = lanforge_api.LFSession

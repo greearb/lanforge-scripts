@@ -7,9 +7,6 @@ PURPOSE: exercises the LANforge/lf_json_autogen.py library
 EXAMPLE:
 $ ./jbr_jag_test.py --host ct521a-jana --test set_port
 
-To enable using lf_json_autogen in other parts of the codebase, set LF_USE_AUTOGEN=1:
-$ LF_USE_AUTOGEN=1 ./jbr_jag_test.py --test set_port --host ct521a-lion
-
 NOTES:
     this has not been worked on in a while, many parameters have changed
 
