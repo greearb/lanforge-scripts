@@ -104,6 +104,21 @@ class lf_json_api():
         logger.info("radio request.text: {text}".format(text=lanforge_radio_text))
         return lanforge_radio_json, lanforge_radio_text
 
+    def post_wifi_cli_cmd(self, wifi_cli_cmd):
+
+        # request_command = 'http://{lfmgr}:{port}/{wifi_cli_cmd}'.format(lfmgr=self.lf_mgr, port=self.lf_port, wifi_cli_cmd=json.dumps(wifi_cli_cmd).encode("utf-8"))
+        request_command = 'http://{lfmgr}:{port}/{wifi_cli_cmd}'.format(lfmgr=self.lf_mgr, port=self.lf_port, wifi_cli_cmd=wifi_cli_cmd)
+        # request_command = 'http://{lfmgr}:{port}/set_wifi_radio 1 1 wiphy1 NA NA NA NA NA NA NA NA NA 4'.format(lfmgr=self.lf_mgr, port=self.lf_port)
+        request = requests.post(request_command, auth=(self.lf_user, self.lf_passwd))
+        logger.info(
+            "wifi_cli_cmd request command: {request_command}".format(
+                request_command=request_command))
+        logger.info(
+            "wifi_cli_cmd request status_code {status}".format(
+                status=request.status_code))
+        lanforge_wifi_cli_cmd_json = request.json()
+        logger.info("radio request.json: {json}".format(json=lanforge_wifi_cli_cmd_json))
+
 
 # unit test
 def main():
@@ -123,6 +138,7 @@ def main():
     parser.add_argument("--lf_user", type=str, help="user: lanforge")
     parser.add_argument("--lf_passwd", type=str, help="passwd: lanforge")
     parser.add_argument("--port", type=str, help=" port : wlan3")
+    parser.add_argument("--radio", type=str, help=" --radio wiphy0")
     parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1", default=1)
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     # logging configuration
@@ -131,6 +147,9 @@ def main():
         help="--lf_logger_config_json <json file> , json configuration of logger")
     # TODO check command
     parser.add_argument("--get_requests", type=str, help="perform get request may be a list:  port | radio | port_rssi")
+    parser.add_argument("--post_requests", type=str, help="perform set request may be a list:  nss ")
+    parser.add_argument("--nss", type=str, help="--nss 4  set the number of spatial streams for a speific antenna ")
+
 
     args = parser.parse_args()
 
@@ -154,35 +173,59 @@ def main():
                             args.resource,
                             args.port)
 
-    get_requests = args.get_requests.split()
 
-    for get_request in get_requests:
-        if get_request == "radio":
-            lf_json.get_request_radio_information()
 
-        if get_request == "port":
-            lanforge_port_json, lanforge_port_text, lanforge_port_json_formatted = lf_json.get_request_port_information()
+    if args.get_requests:
+        get_requests = args.get_requests.split()
 
-            logger.info("lanforge_port_json = {lanforge_port_json}".format(lanforge_port_json=lanforge_port_json))
-            logger.info("lanforge_port_text = {lanforge_port_text}".format(lanforge_port_text=lanforge_port_text))
-            logger.info("lanforge_port_text = {lanforge_port_text}".format(lanforge_port_text=lanforge_port_text))
+        for get_request in get_requests:
+            if get_request == "radio":
+                lf_json.get_request_radio_information()
 
-        if get_request == "port_rssi":
-            lanforge_port_json, lanforge_port_text, lanforge_port_json_formatted = lf_json.get_request_port_information()
-            logger.info("lanforge_port_json = {lanforge_port_json}".format(lanforge_port_json=lanforge_port_json))
-            logger.info("lanforge_port_json_formatted = {lanforge_port_json_formatted}".format(lanforge_port_json_formatted=lanforge_port_json_formatted))
+            if get_request == "port":
+                lanforge_port_json, lanforge_port_text, lanforge_port_json_formatted = lf_json.get_request_port_information()
 
-            for key in lanforge_port_json:
-                if 'interface' in key:
-                    avg_chain_rssi = lanforge_port_json[key]['avg chain rssi']
-                    logger.info("avg chain rssi = {avg_chain_rssi}".format(avg_chain_rssi=avg_chain_rssi))
-                    chain_rssi = lanforge_port_json[key]['chain rssi']
-                    logger.info("chain rssi = {chain_rssi}".format(chain_rssi=chain_rssi))
-                    signal = lanforge_port_json[key]['signal']
-                    logger.info("signal = {signal}".format(signal=signal))
+                logger.info("lanforge_port_json = {lanforge_port_json}".format(lanforge_port_json=lanforge_port_json))
+                logger.info("lanforge_port_text = {lanforge_port_text}".format(lanforge_port_text=lanforge_port_text))
+                logger.info("lanforge_port_text = {lanforge_port_text}".format(lanforge_port_text=lanforge_port_text))
 
-        if get_request == "alerts":
-            lanforge_alerts_json = lf_json.get_alerts_information()
+            if get_request == "port_rssi":
+                lanforge_port_json, lanforge_port_text, lanforge_port_json_formatted = lf_json.get_request_port_information()
+                logger.info("lanforge_port_json = {lanforge_port_json}".format(lanforge_port_json=lanforge_port_json))
+                logger.info("lanforge_port_json_formatted = {lanforge_port_json_formatted}".format(lanforge_port_json_formatted=lanforge_port_json_formatted))
+
+                for key in lanforge_port_json:
+                    if 'interface' in key:
+                        avg_chain_rssi = lanforge_port_json[key]['avg chain rssi']
+                        logger.info("avg chain rssi = {avg_chain_rssi}".format(avg_chain_rssi=avg_chain_rssi))
+                        chain_rssi = lanforge_port_json[key]['chain rssi']
+                        logger.info("chain rssi = {chain_rssi}".format(chain_rssi=chain_rssi))
+                        signal = lanforge_port_json[key]['signal']
+                        logger.info("signal = {signal}".format(signal=signal))
+
+            if get_request == "alerts":
+                lanforge_alerts_json = lf_json.get_alerts_information()
+
+
+    if args.post_requests:
+        post_requests = args.post_requests.split()
+
+        for post_request in post_requests:
+            if post_request == "nss":
+                nss = int(args.nss)
+                if (nss == 1):
+                    antennas_set = 1
+                if (nss == 2):
+                    antennas_set = 4
+                if (nss == 3):
+                    antennas_set = 7
+                if (nss == 4):
+                    antennas_set = 8
+
+                wifi_cli_cmd = 'set_wifi_radio 1 {resource} {radio} NA NA NA NA NA NA NA NA NA {antennas}'.format(
+                    resource=args.resource, radio=args.radio,antennas=antennas_set)
+                lf_json.post_wifi_cli_cmd(wifi_cli_cmd=wifi_cli_cmd)
+         
 
     # sample of creating layer 3 
 
