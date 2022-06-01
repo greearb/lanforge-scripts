@@ -120,16 +120,15 @@ def print_diagnostics(url_: str = None,
                       error_list_: list = None,
                       debug_: bool = False,
                       die_on_error_: bool = False):
-    if debug_:
-        print("::print_diagnostics: error_.__class__: %s" % error_.__class__)
-        pprint(error_)
+    LOGGER.error("::print_diagnostics: error_.__class__: %s" % error_.__class__)
+    LOGGER.error(pformat(error_))
 
     if url_ is None:
-        print("WARNING:print_diagnostics: url_ is None")
+        LOGGER.error("WARNING:print_diagnostics: url_ is None")
     if request_ is None:
-        print("WARNING:print_diagnostics: request_ is None")
+        LOGGER.error("WARNING:print_diagnostics: request_ is None")
     if error_ is None:
-        print("WARNING:print_diagnostics: error_ is None")
+        LOGGER.error("WARNING:print_diagnostics: error_ is None")
 
     method = 'NA'
     if hasattr(request_, 'method'):
@@ -158,49 +157,47 @@ def print_diagnostics(url_: str = None,
             print(" = = LANforge Error Messages = =")
             print(" = = URL: %s" % err_full_url)
             for xerr in xerrors:
-                print(xerr)
+                LOGGER.error(xerr)
                 if (error_list_ is not None) and isinstance(error_list_, list):
                     error_list_.append(xerr)
             print(" = = = = = = = = = = = = = = = =")
 
     if error_.__class__ is urllib.error.HTTPError:
-        if debug_:
-            print("----- HTTPError: ------------------------------------ print_diagnostics:")
-            print("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
+        LOGGER.debug("----- HTTPError: ------------------------------------ print_diagnostics:")
+        LOGGER.debug("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
 
         if err_code == 404:
             if (error_list_ is not None) and isinstance(error_list_, list):
                 error_list_.append("[%s HTTP %s] <%s> : %s" % (method, err_code, err_full_url, err_reason))
         else:
-            if debug_:
-                print("  Content-type:[%s] Accept[%s]" % (
-                    request_.get_header('Content-type'), request_.get_header('Accept')))
+            LOGGER.debug("  Content-type:[%s] Accept[%s]" % (
+                request_.get_header('Content-type'), request_.get_header('Accept')))
 
             if hasattr(request_, "data") and (request_.data is not None):
-                print("  Data:")
-                pprint(request_.data)
+                LOGGER.debug("  Data:")
+                LOGGER.debug(request_.data)
             elif debug_:
-                print("    <no request data>")
+                LOGGER.debug("    <no request data>")
 
-        if debug_ and (len(err_headers) > 0):
+        if len(err_headers) > 0:
             # the HTTPError is of type HTTPMessage a subclass of email.message
-            print("  Response Headers: ")
+            LOGGER.debug("  Response Headers: ")
             for headername in sorted(err_headers.keys()):
-                print("    %s: %s" % (headername, err_headers.get(headername)))
+                LOGGER.debug("    %s: %s" % (headername, err_headers.get(headername)))
 
         if len(responses_) > 0:
-            print("----- Response: --------------------------------------------------------")
-            pprint(responses_[0].reason)
-        if debug_:
-            print("------------------------------------------------------------------------")
+            LOGGER.warning("----- Response: --------------------------------------------------------")
+            LOGGER.warning(responses_[0].reason)
+
+            LOGGER.warning("------------------------------------------------------------------------")
         if die_on_error_:
             exit(1)
         return
 
     if error_.__class__ is urllib.error.URLError:
-        print("----- URLError: ---------------------------------------------")
-        print("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
-        print("------------------------------------------------------------------------")
+        LOGGER.error("----- URLError: ---------------------------------------------")
+        LOGGER.error("%s <%s> HTTP %s: %s" % (method, err_full_url, err_code, err_reason))
+        LOGGER.error("------------------------------------------------------------------------")
     if die_on_error_:
         exit(1)
 
@@ -495,7 +492,7 @@ class BaseLFJsonRequest:
                     self.logger.warning(__name__ +
                                         " ----- json_post: %d debug: --------------------------------------------" %
                                         attempt)
-                    self.logger.warning("URL: %s :%d " % (url, response.status))
+                    self.logger.warning("URL: <%s> status:%d " % (url, response.status))
                     self.logger.warning(__name__ + " ----- headers -------------------------------------------------")
                     if response.status != 200:
                         self.logger.error(pformat(response.getheaders()))
@@ -773,9 +770,8 @@ class BaseLFJsonRequest:
                                                  request_timeout_sec=request_timeout_sec,
                                                  max_timeout_sec=max_timeout_sec,
                                                  errors_warnings=errors_warnings)
-                if debug:
-                    self.logger.debug("[%s] json_get: URL[%s]" % (attempt_counter, url))
-                    self.logger.debug(pformat(json_response))
+                self.logger.warning("[%s] json_get: URL[%s]" % (attempt_counter, url))
+                self.logger.debug(pformat(json_response))
                 if json_response is None:
                     if errors_warnings:
                         errors_warnings.append("No json_response")
@@ -2575,18 +2571,19 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(AddL4EndpProxyAuthType0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-        BASIC = 0x1                          # 1 Basic authentication
-        BIND_DNS = 0x200                     # 512 Make DNS requests go out endpoints Port.
-        DIGEST = 0x2                         # 2 Digest (MD5) authentication
-        DISABLE_EPSV = 0x1000                # 4096 Disable FTP EPSV option
-        DISABLE_PASV = 0x800                 # 2048 Disable FTP PASV option (will use PORT command)
-        GSSNEGOTIATE = 0x4                   # 4 GSS authentication
-        INCLUDE_HEADERS = 0x100              # 256 especially for IMAP
-        NTLM = 0x8                           # 8 NTLM authentication
-        USE_DEFLATE_COMPRESSION = 0x80       # 128 Use deflate compression
-        USE_GZIP_COMPRESSION = 0x40          # 64 Use gzip compression
-        USE_IPV6 = 0x400                     # 1024 Resolve URL is IPv6. Will use IPv4 if not selected.
-        USE_PROXY_CACHE = 0x20               # 32 Use proxy cache
+        BASIC = 0x1                           # 1 Basic authentication
+        BIND_DNS = 0x200                      # 512 Make DNS requests go out endpoints Port.
+        DIGEST = 0x2                          # 2 Digest (MD5) authentication
+        DISABLE_EPSV = 0x1000                 # 4096 Disable FTP EPSV option
+        DISABLE_PASV = 0x800                  # 2048 Disable FTP PASV option (will use PORT command)
+        GSSNEGOTIATE = 0x4                    # 4 GSS authentication
+        INCLUDE_HEADERS = 0x100               # 256 especially for IMAP
+        LF_L4_REAL_BROWSER_TEST = 0x2000      # 8192 Enable Real Browser Test
+        NTLM = 0x8                            # 8 NTLM authentication
+        USE_DEFLATE_COMPRESSION = 0x80        # 128 Use deflate compression
+        USE_GZIP_COMPRESSION = 0x40           # 64 Use gzip compression
+        USE_IPV6 = 0x400                      # 1024 Resolve URL is IPv6. Will use IPv4 if not selected.
+        USE_PROXY_CACHE = 0x20                # 32 Use proxy cache
 
         # use to get in value of flag
         @classmethod
@@ -2929,18 +2926,19 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(AddProfileProfileFlags0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-        p_11r = 0x40               # Use 802.11r roaming setup.
-        ALLOW_11W = 0x800          # Set 11w (MFP/PMF) to optional.
-        BSS_TRANS = 0x400          # Enable BSS Transition logic
-        DHCP_SERVER = 0x1          # This should provide DHCP server.
-        EAP_PEAP = 0x200           # Enable EAP-PEAP
-        EAP_TTLS = 0x80            # Use 802.1x EAP-TTLS
-        NAT = 0x100                # Enable NAT if this object is in a virtual router
-        SKIP_DHCP_ROAM = 0x10      # Ask station to not re-do DHCP on roam.
-        WEP = 0x2                  # Use WEP encryption
-        WPA = 0x4                  # Use WPA encryption
-        WPA2 = 0x8                 # Use WPA2 encryption
-        WPA3 = 0x20                # Use WPA3 encryption
+        p_11r = 0x40                   # Use 802.11r roaming setup.
+        ALLOW_11W = 0x800              # Set 11w (MFP/PMF) to optional.
+        BSS_TRANS = 0x400              # Enable BSS Transition logic
+        DHCP_SERVER = 0x1              # This should provide DHCP server.
+        EAP_PEAP = 0x200               # Enable EAP-PEAP
+        EAP_TTLS = 0x80                # Use 802.1x EAP-TTLS
+        ENABLE_POWERSAVE = 0x1000      # Enable power-save when creating stations.
+        NAT = 0x100                    # Enable NAT if this object is in a virtual router
+        SKIP_DHCP_ROAM = 0x10          # Ask station to not re-do DHCP on roam.
+        WEP = 0x2                      # Use WEP encryption
+        WPA = 0x4                      # Use WPA encryption
+        WPA2 = 0x8                     # Use WPA2 encryption
+        WPA3 = 0x20                    # Use WPA3 encryption
 
         # use to get in value of flag
         @classmethod
@@ -3739,6 +3737,8 @@ class LFJsonCommand(JsonCommand):
         hostapd_config = 0x20                     # Use Custom hostapd config file.
         hs20_enable = 0x800000                    # Enable Hotspot 2.0 (HS20) feature. Requires WPA-2.
         ht160_enable = 0x100000000                # Enable HT160 mode.
+        mcast_to_ucast = 0x80000000               # Request AP to translate multicats to unicast before sending
+        # +to STAs
         osen_enable = 0x40000000                  # Enable OSEN protocol (OSU Server-only Authentication)
         pri_sec_ch_enable = 0x100                 # Enable Primary/Secondary channel switch.
         short_preamble = 0x80                     # Allow short-preamble
@@ -4434,13 +4434,21 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_vrcx2
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_vrcx2(self, 
-                       local_dev: str = None,  # Name of port A for the connection. [W]
-                       nexthop6: str = None,   # The IPv6 next-hop to use when routing packets out this interface.
-                       resource: int = None,   # Resource number. [W]
-                       shelf: int = 1,         # Shelf name/id. [R][D:1]
-                       subnets6: str = None,   # IPv6 Subnets associated with this link, format:
+                       dhcp_ignore1: str = None,  # MAC address and per 65535 chance MAC should be ignored by DHCPd,
+                       # format: MAC-prcnt, example: 00:11:22:33:44:55-65535
+                       dhcp_ignore2: str = None,  # MAC address and per 65535 chance MAC should be ignored by DHCPd,
+                       # format: MAC-prcnt, example: 00:11:22:33:44:55-65535
+                       dhcp_ignore3: str = None,  # MAC address and per 65535 chance MAC should be ignored by DHCPd,
+                       # format: MAC-prcnt, example: 00:11:22:33:44:55-65535
+                       dhcp_ignore4: str = None,  # MAC address and per 65535 chance MAC should be ignored by DHCPd,
+                       # format: MAC-prcnt, example: 00:11:22:33:44:55-65535
+                       local_dev: str = None,     # Name of port A for the connection. [W]
+                       nexthop6: str = None,      # The IPv6 next-hop to use when routing packets out this interface.
+                       resource: int = None,      # Resource number. [W]
+                       shelf: int = 1,            # Shelf name/id. [R][D:1]
+                       subnets6: str = None,      # IPv6 Subnets associated with this link, format:
                        # aaaa:bbbb::0/64,cccc:dddd:eeee::0/64...
-                       vr_name: str = None,    # Virtual Router this endpoint belongs to. Use 'FREE_LIST' to add a
+                       vr_name: str = None,       # Virtual Router this endpoint belongs to. Use 'FREE_LIST' to add a
                        # stand-alone endpoint. [W][D:FREE_LIST]
                        debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -4450,6 +4458,14 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
+        if dhcp_ignore1 is not None:
+            data["dhcp_ignore1"] = dhcp_ignore1
+        if dhcp_ignore2 is not None:
+            data["dhcp_ignore2"] = dhcp_ignore2
+        if dhcp_ignore3 is not None:
+            data["dhcp_ignore3"] = dhcp_ignore3
+        if dhcp_ignore4 is not None:
+            data["dhcp_ignore4"] = dhcp_ignore4
         if local_dev is not None:
             data["local_dev"] = local_dev
         if nexthop6 is not None:
@@ -5190,12 +5206,22 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#file
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    class FileFileFlags(Enum):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        UNLINK_WHEN_DL_COMPLETE = 1      # Remove the file once it has been downloaded.
+
     def post_file(self, 
-                  card: int = None,      # Resource ID [W]
-                  cmd: str = None,       # Only 'Download' supported for now, 'Upload' reserved for future use.
+                  card: int = None,       # Resource ID [W]
+                  client_id: str = None,  # Internal use only.
+                  cmd: str = None,        # Only 'Download' supported for now, 'Upload' reserved for future use.
                   # [W][D:Download]
-                  filename: str = None,  # File to transfer. [W]
-                  shelf: int = 1,        # Shelf ID [R][D:1]
+                  filename: str = None,   # File to transfer. [W]
+                  flags: str = None,      # Options for the file operation, see above.
+                  req_id: str = None,     # Request identifier, uint32. Will be passed back in response frames.
+                  shelf: int = 1,         # Shelf ID [R][D:1]
                   debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -5206,10 +5232,16 @@ class LFJsonCommand(JsonCommand):
         data = {}
         if card is not None:
             data["card"] = card
+        if client_id is not None:
+            data["client_id"] = client_id
         if cmd is not None:
             data["cmd"] = cmd
         if filename is not None:
             data["filename"] = filename
+        if flags is not None:
+            data["flags"] = flags
+        if req_id is not None:
+            data["req_id"] = req_id
         if shelf is not None:
             data["shelf"] = shelf
         if len(data) < 1:
@@ -5759,6 +5791,48 @@ class LFJsonCommand(JsonCommand):
         if len(data) < 1:
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/load",
+                                  post_data=data,
+                                  die_on_error=self.die_on_error,
+                                  debug=debug)
+        return response
+    #
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/LOG_CAPTURE> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#log_capture
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_log_capture(self, 
+                         destination: str = None,  # Where to save the file to on the LANforge resource.
+                         duration: str = None,     # For journalctl, seconds of logs to gather, or NA if not used.
+                         identifier: str = None,   # port name or other identifier needed for some types, NA if not
+                         # used.
+                         resource: int = None,     # The number of the resource in question. [W]
+                         shelf: int = 1,           # The number of the shelf in question. [R][D:1]
+                         p_type: str = None,       # journalctl, supplicant, lflogs
+                         debug=False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                result = post_log_capture(param=value ...)
+                pprint.pprint( result )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if destination is not None:
+            data["destination"] = destination
+        if duration is not None:
+            data["duration"] = duration
+        if identifier is not None:
+            data["identifier"] = identifier
+        if resource is not None:
+            data["resource"] = resource
+        if shelf is not None:
+            data["shelf"] = shelf
+        if p_type is not None:
+            data["type"] = p_type
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/log_capture",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
                                   debug=debug)
@@ -7679,7 +7753,11 @@ class LFJsonCommand(JsonCommand):
         p_1 = "1"    # Pulse mode (API Tech 4205A modules directly connected via USB only)
 
     def post_set_attenuator(self, 
+                            atten_count: str = None,        # For cases where we are creating/setting a phantom
+                            # attenuator.
                             atten_idx: str = None,          # Attenuator index, or 'all'. [W]
+                            ip_addr: str = None,            # IP address, in case this Attenuator is to be managed over
+                            # TCP.
                             mode: str = None,               # 0 == normal attenuator, 1 == pulse mode (API Tech 4205A
                             # modules directly connected via USB only)
                             pulse_count: str = None,        # Number of pulses (0-255)
@@ -7700,8 +7778,12 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
+        if atten_count is not None:
+            data["atten_count"] = atten_count
         if atten_idx is not None:
             data["atten_idx"] = atten_idx
+        if ip_addr is not None:
+            data["ip_addr"] = ip_addr
         if mode is not None:
             data["mode"] = mode
         if pulse_count is not None:
@@ -9225,6 +9307,42 @@ class LFJsonCommand(JsonCommand):
     #
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/SET_PORT2> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#set_port2
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_set_port2(self, 
+                       dhclient_50: str = None,  # Set DHCP Client option-50 text. DEFAULT means do not use this
+                       # option.
+                       port: str = None,         # Port identifier. [R]
+                       resource: int = None,     # Resource number for the port to be modified. [W]
+                       shelf: int = 1,           # Shelf number for the port to be modified. [R][D:1]
+                       debug=False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                result = post_set_port2(param=value ...)
+                pprint.pprint( result )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if dhclient_50 is not None:
+            data["dhclient_50"] = dhclient_50
+        if port is not None:
+            data["port"] = port
+        if resource is not None:
+            data["resource"] = resource
+        if shelf is not None:
+            data["shelf"] = shelf
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/set_port2",
+                                  post_data=data,
+                                  die_on_error=self.die_on_error,
+                                  debug=debug)
+        return response
+    #
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_PORT_ALIAS> type requests
 
         https://www.candelatech.com/lfcli_ug.php#set_port_alias
@@ -9327,6 +9445,8 @@ class LFJsonCommand(JsonCommand):
                           shelf: int = 1,                   # Name of the Shelf, or <tt>all</tt>. [R][D:1]
                           top_left_x: str = None,           # X Location for Chamber View.
                           top_left_y: str = None,           # X Location for Chamber View.
+                          user_name: str = None,            # Store user-name configured for this Resource. Only
+                          # settable during DB load.
                           debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -9357,6 +9477,8 @@ class LFJsonCommand(JsonCommand):
             data["top_left_x"] = top_left_x
         if top_left_y is not None:
             data["top_left_y"] = top_left_y
+        if user_name is not None:
+            data["user_name"] = user_name
         if len(data) < 1:
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_resource",
@@ -9572,6 +9694,38 @@ class LFJsonCommand(JsonCommand):
         if len(data) < 1:
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_sec_ip",
+                                  post_data=data,
+                                  die_on_error=self.die_on_error,
+                                  debug=debug)
+        return response
+    #
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/SET_TEST_ID> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#set_test_id
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_set_test_id(self, 
+                         resource: int = None,  # Number of the Resource, or <tt>all</tt>. [W]
+                         shelf: int = 1,        # Name of the Shelf, or <tt>all</tt>. [R][D:1]
+                         test_id: str = None,   # Up to 15 character identifier.
+                         debug=False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                result = post_set_test_id(param=value ...)
+                pprint.pprint( result )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if resource is not None:
+            data["resource"] = resource
+        if shelf is not None:
+            data["shelf"] = shelf
+        if test_id is not None:
+            data["test_id"] = test_id
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/set_test_id",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
                                   debug=debug)
@@ -10362,16 +10516,24 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(SetWifiRadioFlags0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-        ct_sta_mode = 0x40000         # Enable CT-STA mode if radio supports it. Efficiently replaces sw-crypt in
-        # +some firmware.
-        firmware_cfg = 0x80000        # Apply firmware config.
-        hw_sim = 0x1                  # Create hw-sim virtual radio if radio does not already exist.
-        ignore_radar = 0x100000       # Ignore RADAR events reported by firmware.
-        no_scan_share = 0x40          # Disable sharing scan results.
-        no_sw_crypt = 0x20000         # Disable software-crypt for this radio. Disables some virtual-station
+        allow_all_mcs = 0x400000         # Enable MCS otherwise disabled by firmware (ath10k only).
+        ct_sta_mode = 0x40000            # Enable CT-STA mode if radio supports it. Efficiently replaces sw-crypt
+        # +in some firmware.
+        extra_rxstatus = 0x2000000       # Enable increased packet rx-stats. May decrease performance. MTK 7915
+        # +radio only.
+        extra_txstatus = 0x1000000       # Enable increased packet tx-stats. May decrease performance. MTK radios
+        # +only.
+        firmware_cfg = 0x80000           # Apply firmware config.
+        hw_sim = 0x1                     # Create hw-sim virtual radio if radio does not already exist.
+        ignore_radar = 0x200000          # Ignore RADAR events reported by firmware.
+        no_runtime_pm = 0x800000         # Disable runtime deep sleep mode (mtk7921k only at current)
+        no_scan_share = 0x40             # Disable sharing scan results.
+        no_sw_crypt = 0x20000            # Disable software-crypt for this radio. Disables some virtual-station
         # +features.
-        use_syslog = 0x20000000       # Put supplicant logs in syslog instead of a file.
-        verbose = 0x10000             # Verbose-Debug: Increase debug info in wpa-supplicant and hostapd logs.
+        ofdma_stats = 0x4000000          # Enable increased OFDMA statistics. May decrease performance. MTK 7915
+        # +radios only.
+        use_syslog = 0x20000000          # Put supplicant logs in syslog instead of a file.
+        verbose = 0x10000                # Verbose-Debug: Increase debug info in wpa-supplicant and hostapd logs.
 
         # use to get in value of flag
         @classmethod
@@ -11834,10 +11996,11 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(SniffPortFlags0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-        DUMPCAP = 0x2            # Use command-line dumpcap, more efficient than tshark
-        MATE_TERMINAL = 0x4      # Launch tshark/dumpcap in mate-terminal
-        MATE_XTERM = 0x8         # Launch tshark/dumpcap in xterm
-        TSHARK = 0x1             # Use command-line tshark instead of wireshark
+        DUMPCAP = 0x2                 # Use command-line dumpcap, more efficient than tshark
+        MATE_KILL_DUMPCAP = 0x10      # Kill last dumpcap
+        MATE_TERMINAL = 0x4           # Launch tshark/dumpcap in mate-terminal
+        MATE_XTERM = 0x8              # Launch tshark/dumpcap in xterm
+        TSHARK = 0x1                  # Use command-line tshark instead of wireshark
 
         # use to get in value of flag
         @classmethod
@@ -11858,6 +12021,7 @@ class LFJsonCommand(JsonCommand):
                         port: str = None,      # The port we are trying to run the packet sniffer on. [R]
                         resource: int = None,  # Resource number. [W]
                         shelf: int = 1,        # Shelf number. [R][D:1]
+                        snaplen: str = None,   # Amount of each packet to store. Default is to store all of it.
                         debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -11880,6 +12044,8 @@ class LFJsonCommand(JsonCommand):
             data["resource"] = resource
         if shelf is not None:
             data["shelf"] = shelf
+        if snaplen is not None:
+            data["snaplen"] = snaplen
         if len(data) < 1:
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/sniff_port",
@@ -12556,7 +12722,7 @@ class LFJsonQuery(JsonQuery):
         #
 
     def events_last_events(self,
-                           event_count: int = None,
+                           event_count: int = 1,
                            debug : bool = False,
                            wait_sec : float = None,
                            request_timeout_sec : float = None,
@@ -12991,16 +13157,18 @@ class LFJsonQuery(JsonQuery):
     The record returned will have these members: 
     {
         'api version':     # API Version
-        'bssid-1':         # WiFi BSSID for DUT.
-        'bssid-2':         # WiFi BSSID for DUT.
-        'bssid-3':         # WiFi BSSID for DUT.
-        'bssid-4':         # WiFi BSSID for DUT.
-        'bssid-5':         # WiFi BSSID for DUT.
-        'bssid-6':         # WiFi BSSID for DUT.
-        'bssid-7':         # WiFi BSSID for DUT.
-        'bssid-8':         # WiFi BSSID for DUT.
+        'bssid-1':         # WiFi BSSID for DUT. Empty BSSID fields default to '00:00:00:00:00:00'.
+        'bssid-2':         # WiFi BSSID for DUT. Empty BSSID fields default to '00:00:00:00:00:00'.
+        'bssid-3':         # WiFi BSSID for DUT. Empty BSSID fields default to '00:00:00:00:00:00'.
+        'bssid-4':         # WiFi BSSID for DUT. Empty BSSID fields default to '00:00:00:00:00:00'.
+        'bssid-5':         # WiFi BSSID for DUT. Empty BSSID fields default to '00:00:00:00:00:00'.
+        'bssid-6':         # WiFi BSSID for DUT. Empty BSSID fields default to '00:00:00:00:00:00'.
+        'bssid-7':         # WiFi BSSID for DUT. Empty BSSID fields default to '00:00:00:00:00:00'.
+        'bssid-8':         # WiFi BSSID for DUT. Empty BSSID fields default to '00:00:00:00:00:00'.
         'dut':             # Devices Under Test
-        'eap-id':          # EAP Identifier, only used when one of the EAP options are selected.
+        'eap-id':          # EAP Identity: only used when one of the EAP options are
+                           # selected.Remember to set the corresponding DUT&rarr;Password fields to
+                           # match the EAP-ID,NOT the SSID passphrase.
         'entity id':       # Entity ID
         'hw info':         # DUT Hardware Info
         'image file':      # Image file name. Relative paths assume directory /home/lanforge. Fully
@@ -13013,14 +13181,30 @@ class LFJsonQuery(JsonQuery):
         'num ant radio 1': # Antenna count for DUT radio(s).
         'num ant radio 2': # Antenna count for DUT radio(s).
         'num ant radio 3': # Antenna count for DUT radio(s).
-        'password-1':      # WiFi Password needed to connect to DUT.
-        'password-2':      # WiFi Password needed to connect to DUT.
-        'password-3':      # WiFi Password needed to connect to DUT.
-        'password-4':      # WiFi Password needed to connect to DUT.
-        'password-5':      # WiFi Password needed to connect to DUT.
-        'password-6':      # WiFi Password needed to connect to DUT.
-        'password-7':      # WiFi Password needed to connect to DUT.
-        'password-8':      # WiFi Password needed to connect to DUT.
+        'password-1':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
+                           # Identity in the EID-ID field below anduse the EAP Password in this
+                           # field.  
+        'password-2':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
+                           # Identity in the EID-ID field below anduse the EAP Password in this
+                           # field.  
+        'password-3':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
+                           # Identity in the EID-ID field below anduse the EAP Password in this
+                           # field.  
+        'password-4':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
+                           # Identity in the EID-ID field below anduse the EAP Password in this
+                           # field.  
+        'password-5':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
+                           # Identity in the EID-ID field below anduse the EAP Password in this
+                           # field.  
+        'password-6':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
+                           # Identity in the EID-ID field below anduse the EAP Password in this
+                           # field.  
+        'password-7':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
+                           # Identity in the EID-ID field below anduse the EAP Password in this
+                           # field.  
+        'password-8':      # WiFi Password needed to connect to DUT.If using EAP, use the EID
+                           # Identity in the EID-ID field below anduse the EAP Password in this
+                           # field.  
         'serial number':   # DUT Identifier (serial-number, or similar)
         'serial port':     # Resource and name of LANforge serial port that connects to this DUT.
                            # (1.1.ttyS0). Does not need to belong to lan_port or wan_port resource.
@@ -13752,12 +13936,12 @@ class LFJsonQuery(JsonQuery):
                                 # requests made in the last 30 seconds.
         'fb-min':               # Minimum time in milliseconds for receiving the first byte of the URLfor
                                 # requests made in the last 30 seconds.
-        'ftp-host':             # FTP HOST Error
-        'ftp-port':             # FTP PORT Error.
+        'ftp-host':             # FTP Host Error
+        'ftp-port':             # FTP Port Error.
         'ftp-stor':             # FTP STOR Error.
         'http-p':               # HTTP Post error.
-        'http-r':               # HTTP RANGE error.
-        'http-t':               # HTTP PORT Error.
+        'http-r':               # HTTP Range error.
+        'http-t':               # HTTP Port Error.
         'login-denied':         # Login attempt was denied.Probable cause is user-name or password errors.
         'name':                 # Endpoint's Name.
         'nf (4xx)':             # File not found.For HTTP, an HTTP 4XX error was returned.  This is only
@@ -13785,8 +13969,8 @@ class LFJsonQuery(JsonQuery):
                                 # restart as soon as resources are available.PHANTOMTest is stopped, and
                                 # is phantom, probably due to non-existent interface or resource.
         'timeout':              # Operation timed out.
-        'total-err':            # Total Errors.
-        'total-urls':           # URLs processed.
+        'total-err':            # Total Errors. This is also total failed URLs.
+        'total-urls':           # URLs processed and in process. This includes passed and failed URLs.
         'tx rate':              # Payload transmit rate (bps).
         'tx rate (1&nbsp;min)': # Payload transmit rate over the last minute (bps).
         'type':                 # The specific type of this Layer 4-7 Endpoint.
@@ -13931,16 +14115,16 @@ class LFJsonQuery(JsonQuery):
         /ports/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        4way+time+%28us%29, activity, alias, anqp+time+%28us%29, ap, beacon, bps+rx, bps+rx+ll, 
-        bps+tx, bps+tx+ll, bytes+rx+ll, bytes+tx+ll, channel, collisions, connections, 
-        crypt, cx+ago, cx+time+%28us%29, device, dhcp+%28ms%29, down, entity+id, gateway+ip, 
-        ip, ipv6+address, ipv6+gateway, key%2Fphrase, login-fail, login-ok, logout-fail, 
-        logout-ok, mac, mask, misc, mode, mtu, no+cx+%28us%29, noise, parent+dev, phantom, 
-        port, port+type, pps+rx, pps+tx, qlen, reset, retry+failed, rx+bytes, rx+crc, 
-        rx+drop, rx+errors, rx+fifo, rx+frame, rx+length, rx+miss, rx+over, rx+pkts, 
-        rx-rate, sec, signal, ssid, status, time-stamp, tx+abort, tx+bytes, tx+crr, 
-        tx+errors, tx+fifo, tx+hb, tx+pkts, tx+wind, tx-failed+%25, tx-rate, wifi+retries, 
-              # hidden columns:
+        4way+time+%28us%29, activity, alias, anqp+time+%28us%29, ap, avg+chain+rssi, beacon, 
+        bps+rx, bps+rx+ll, bps+tx, bps+tx+ll, bytes+rx+ll, bytes+tx+ll, chain+rssi, 
+        channel, collisions, connections, crypt, cx+ago, cx+time+%28us%29, device, dhcp+%28ms%29, 
+        down, entity+id, gateway+ip, ip, ipv6+address, ipv6+gateway, key%2Fphrase, 
+        login-fail, login-ok, logout-fail, logout-ok, mac, mask, misc, mode, mtu, 
+        no+cx+%28us%29, noise, parent+dev, phantom, port, port+type, pps+rx, pps+tx, 
+        qlen, reset, retry+failed, rx+bytes, rx+crc, rx+drop, rx+errors, rx+fifo, 
+        rx+frame, rx+length, rx+miss, rx+over, rx+pkts, rx-rate, sec, signal, ssid, 
+        status, time-stamp, tx+abort, tx+bytes, tx+crr, tx+errors, tx+fifo, tx+hb, 
+        tx+pkts, tx+wind, tx-failed+%25, tx-rate, wifi+retries        # hidden columns:
         beacon_rx_signal, port_cur_flags_h, port_cur_flags_l, port_supported_flags_h, 
         port_supported_flags_l, resource, rx_multicast, tx_dropped
     Example URL: /port?fields=4way+time+%28us%29,activity
@@ -13961,6 +14145,7 @@ class LFJsonQuery(JsonQuery):
         'anqp time (us)': # Time (in micro-seconds) it took to complete the last WiFi ANQP
                           # request/response session.
         'ap':             # BSSID of AP for connected stations.
+        'avg chain rssi': # Wireless signal Average per-chain RSSI.
         'beacon':         # Number of Wireless beacons from Cell or AP that have been missed.
         'bps rx':         # Average bits per second received for the last 30 seconds.
         'bps rx ll':      # Bits per second received, including low-level framing (Ethernet Only).
@@ -13969,6 +14154,7 @@ class LFJsonQuery(JsonQuery):
                           # Only).
         'bytes rx ll':    # Bytes received, including low-level framing (Ethernet Only).
         'bytes tx ll':    # Bytes transmitted, including low-level framing (Ethernet Only).
+        'chain rssi':     # Wireless signal per-chain RSSI.
         'channel':        # Channel at the device is currently on, if known.
         'collisions':     # Total number of collisions reported by this Interface.For WiFi devices,
                           # this is number of re-transmit attempts.
@@ -13977,11 +14163,12 @@ class LFJsonQuery(JsonQuery):
         'cx ago':         # How long ago was the last WiFi connection attempt started?This relates
                           # only to the network interface, not any higher level protocol traffic
                           # upon it.
-        'cx time (us)':   # Time (in micro-seconds) it took to complete the last WiFi connection to
-                          # the AP.
+        'cx time (us)':   # Time (in micro-seconds) it took to completethe last WiFi connection to
+                          # the AP.If the connection is encrypted, this measurement includesthe
+                          # value of 4way time (us)
         'device':         # Ethernet device name, as seen by the kernel.
-        'dhcp (ms)':      # Time (in miliseconds) it took to acquire DHCP lease,or to time out while
-                          # trying to acquire lease.
+        'dhcp (ms)':      # Time (in milliseconds) it took to acquire DHCP lease,or to time out
+                          # while trying to acquire lease.
         'down':           # The interface is configured DOWN.  It must be configured UP to be in
                           # active use.
         'entity id':      # Entity ID
@@ -14359,7 +14546,7 @@ class LFJsonQuery(JsonQuery):
         bps-rx-3s, bps-tx-3s, cli-port, cpu, ctrl-ip, ctrl-port, eid, entity+id, 
         free+mem, free+swap, gps, hostname, hw+version, load, max+if-up, max+staged, 
         mem, phantom, ports, rx+bytes, shelf, sta+up, sw+version, swap, tx+bytes, 
-              # hidden columns:
+        user        # hidden columns:
         timestamp
     Example URL: /resource?fields=bps-rx-3s,bps-tx-3s
 
@@ -14403,6 +14590,7 @@ class LFJsonQuery(JsonQuery):
         'swap':       # Total swap space (Kbytes) on the machine.
         'tx bytes':   # Total management TCP payload bytes sent from this resource to the
                       # manager process.
+        'user':       # The user-name for this resource.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
