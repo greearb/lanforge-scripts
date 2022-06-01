@@ -872,6 +872,8 @@ class JsonCommand(BaseLFJsonRequest):
             value = LFJsonPost.add_flags(SetPortMumble, 0, flag_names=['bridge', 'dhcp'])
             print('value now: '+value)
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        if not flag_class:
+            raise ValueError("flag_class should not be None")
         if starting_value is None:
             raise ValueError("starting_value should be an integer greater or equal than zero, not None")
         if not flag_names:
@@ -889,8 +891,9 @@ class JsonCommand(BaseLFJsonRequest):
                     if flag not in flag_class:
                         raise ValueError("%s lacks member:[%s]" %
                                          (flag_class.__class__.__name__, flag))
-                    selected_flags.extend([member.value
-                                           for member in flag_class.__members___ if member == flag])
+                    if flag_class.__members__:
+                        selected_flags.extend([member.value
+                                               for member in flag_class.__members__ if member == flag])
             selected_flags.append(starting_value)
             result_flags = 0
             for i in selected_flags:
