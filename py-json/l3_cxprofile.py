@@ -672,3 +672,74 @@ class L3CXProfile(LFCliBase):
             return False, these_endp
 
         return these_cx, these_endp
+
+    def monitor_without_disturbing_other_monitor(self,
+                duration_sec=60,
+                monitor_interval_ms=1,
+                sta_list=None,
+                layer3_cols=None,
+                port_mgr_cols=None,
+                created_cx=None,
+                script_name=None,
+                arguments=None,
+                compared_report=None,
+                debug=False):
+        if duration_sec:
+            duration_sec = self.parse_time(duration_sec).seconds
+        else:
+            logger.critical("L3CXProfile::monitor wants duration_sec > 1 second")
+            raise ValueError("L3CXProfile::monitor wants duration_sec > 1 second")
+        if duration_sec <= monitor_interval_ms:
+            logger.critical("L3CXProfile::monitor wants duration_sec > monitor_interval")
+            raise ValueError("L3CXProfile::monitor wants duration_sec > monitor_interval")
+        if created_cx is None:
+            logger.critical("Monitor needs a list of Layer 3 connections")
+            raise ValueError("Monitor needs a list of Layer 3 connections")
+        if (monitor_interval_ms is None) or (monitor_interval_ms < 1):
+            logger.critical("L3CXProfile::monitor wants monitor_interval >= 1 second")
+            raise ValueError("L3CXProfile::monitor wants monitor_interval >= 1 second")
+        if layer3_cols is None:
+            logger.critical("L3CXProfile::monitor wants a list of column names to monitor")
+            raise ValueError("L3CXProfile::monitor wants a list of column names to monitor")
+
+
+
+        # ================== Step 1, set column names and header row
+        layer3_cols = [self.replace_special_char(x) for x in layer3_cols]
+        layer3_fields = ",".join(layer3_cols)
+        default_cols = ['Timestamp', 'Timestamp milliseconds epoch', 'Timestamp seconds epoch', 'Duration elapsed']
+        default_cols.extend(layer3_cols)
+        # append alias to port_mgr_cols if not present needed later
+        if port_mgr_cols:
+            if 'alias' not in port_mgr_cols:
+                port_mgr_cols.append('alias')
+
+        if port_mgr_cols:
+            default_cols.extend(port_mgr_cols)
+        header_row = default_cols
+
+        if port_mgr_cols:
+            port_mgr_cols = [self.replace_special_char(x) for x in port_mgr_cols]
+            port_mgr_cols_labelled = []
+            for col_name in port_mgr_cols:
+                port_mgr_cols_labelled.append("port mgr - " + col_name)
+
+            port_mgr_fields = ",".join(port_mgr_cols)
+            header_row.extend(port_mgr_cols_labelled)
+        # create sys info file
+        systeminfo = self.json_get('/')
+        sysinfo = [str("LANforge GUI Build: " + systeminfo['VersionInfo']['BuildVersion']),
+                   str("Script Name: " + script_name), str("Argument input: " + str(arguments))]
+
+
+        # ================== Step 2, monitor columns
+        start_time = datetime.datetime.now()
+        end_time = start_time + datetime.timedelta(seconds=duration_sec)
+
+        # wait 10 seconds to get proper port data
+        time.sleep(10)
+        print("current time: ",datetime.datetime.now())
+        print("Expected End time: ",end_time)
+        while datetime.datetime.now() < end_time:
+            continue
+        print("End time: ",end_time)
