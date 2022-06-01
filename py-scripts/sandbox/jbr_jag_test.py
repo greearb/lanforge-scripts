@@ -237,8 +237,7 @@ def test_set_port(args=None,
     # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
     try:
         station_test = TestStation(host=args.host,
-                                   port=8080,
-                                   _debug_on=False)
+                                   port=8080)
         station_test.run(get_request=get_request, post_request=post_request)
 
     except Exception as x:
