@@ -216,6 +216,23 @@ class radio_information(Realm):
         
         return radio_list
 
+    # returns radio types installed on system:
+    def get_radio_type(self, wiphy_radio):
+        radio_types = self.lf_radio_df.get(["Radio", "WIFI-Radio Driver"])
+        logger.info(radio_types)
+
+        for row in radio_types.index:
+            if wiphy_radio == "1.1.wiphy0":
+                if radio_types.loc[row, "Radio"] == "1." + self.resource + ".wiphy0":
+                    type_radio = radio_types.loc[row, "WIFI-Radio Driver"]
+                    # logger.info(max_sta)
+            elif wiphy_radio == "1.1.wiphy1":
+                if radio_types.loc[row, "Radio"] == "1." + self.resource + ".wiphy1":
+                    type_radio = radio_types.loc[row, "WIFI-Radio Driver"]
+                    # logger.info(max_sta)
+
+        return type_radio
+
 # ~class
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -320,9 +337,13 @@ CLI Example:
     radio_capabilities = wiphy_radio_info.get_radio_capabilities(radio)
     logger.info(radio_capabilities)
 
-    # get 802.11 capabilities for specified radio:
+    # get wiphy radio list:
     system_radios = wiphy_radio_info.get_radios()
     logger.info(system_radios)
+
+    # get radio type:
+    system_radios_type = wiphy_radio_info.get_radio_type(radio)
+    logger.info(system_radios_type)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
