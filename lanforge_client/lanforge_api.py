@@ -1092,15 +1092,50 @@ class BaseSession:
         #         print("BaseSession _init_: proxies: ")
         #         pprint.pprint(self.proxies)
 
-        if not lfclient_url.startswith("http://") and not lfclient_url.startswith("https://"):
-            self.logger.warning("No http:// or https:// found, prepending http:// to " + lfclient_url)
-            lfclient_url = "http://" + lfclient_url
+        do_schema_work=True
+        is_https=False
+        has_port=False
+        port=8080
+        while do_schema_work:
+            # we do not want the lfclient_url to end with a slash
+            if lfclient_url.endswith('/'):
+                lfclient_url = lfclient_url[0: len(lfclient_url) - 1]
+            else:
+                break
 
-        # we do not want the lfclient_url to end with a slash
-        if lfclient_url.endswith('/'):
-            self.lfclient_url = lfclient_url[0: len(lfclient_url) - 1]
-        else:
-            self.lfclient_url = lfclient_url
+        for idx in range(len(lfclient_url) - 1, 0, -1):
+            if lfclient_url[idx].isalpha():
+                has_port = False
+                break
+            if lfclient_url[idx] is ".":
+                has_port = False
+                break
+            if (ord(lfclient_url[idx]) >= 48) and (ord(lfclient_url[idx]) <= 57):
+                has_port = True
+            if lfclient_url[idx] is ":":
+                if has_port:
+                    port = lfclient_url[idx + 1:]
+                    lfclient_url = lfclient_url[0: idx]
+                break
+
+        while do_schema_work:
+            # print("<%s>" % lfclient_url)
+            if lfclient_url.startswith("https:"):
+                is_https = True
+                lfclient_url = lfclient_url[6:]
+            elif lfclient_url.startswith("http:"):
+                lfclient_url = lfclient_url[5:]
+            elif lfclient_url.startswith(":"):
+                lfclient_url = lfclient_url[1:]
+            elif lfclient_url.startswith("/"):
+                lfclient_url = lfclient_url[1:]
+            else:
+                do_schema_work = False
+
+        self.lfclient_url = "%s//%s:%s" % (("http:", "https:")[is_https],
+                                           lfclient_url,
+                                           ("8080", port)[has_port])
+        # print("RESULTING URL: "+self.lfclient_url);
 
         # test connection with GUI to get a session id, then set our session ids in those instances
         # self.session_connection_check = self.command_instance.start_session(debug=debug)
