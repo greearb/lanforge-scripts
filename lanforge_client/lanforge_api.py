@@ -1276,6 +1276,28 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_arm_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_arm_endp(alias=param_map.get("alias"),
+                               cpu_id=param_map.get("cpu_id"),
+                               mx_pkt_sz=param_map.get("mx_pkt_sz"),
+                               pkt_sz=param_map.get("pkt_sz"),
+                               port=param_map.get("port"),
+                               pps=param_map.get("pps"),
+                               resource=param_map.get("resource"),
+                               shelf=param_map.get("shelf"),
+                               tos=param_map.get("tos"),
+                               type=param_map.get("type"),
+                               )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_BGP_PEER> type requests
 
@@ -1358,6 +1380,30 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_bgp_peer_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_bgp_peer(as=param_map.get("as"),
+                               delay_open_time=param_map.get("delay_open_time"),
+                               flags=param_map.get("flags"),
+                               holdtime=param_map.get("holdtime"),
+                               local_dev=param_map.get("local_dev"),
+                               nexthop=param_map.get("nexthop"),
+                               nexthop6=param_map.get("nexthop6"),
+                               peer_id=param_map.get("peer_id"),
+                               peer_index=param_map.get("peer_index"),
+                               resource=param_map.get("resource"),
+                               shelf=param_map.get("shelf"),
+                               vr_id=param_map.get("vr_id"),
+                               )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_BOND> type requests
 
@@ -1392,6 +1438,22 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_bond_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_bond(network_devs=param_map.get("network_devs"),
+                           port=param_map.get("port"),
+                           resource=param_map.get("resource"),
+                           shelf=param_map.get("shelf"),
+                           )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_BR> type requests
@@ -1454,6 +1516,28 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_br_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_br(br_aging_time=param_map.get("br_aging_time"),
+                         br_flags=param_map.get("br_flags"),
+                         br_forwarding_delay=param_map.get("br_forwarding_delay"),
+                         br_hello_time=param_map.get("br_hello_time"),
+                         br_max_age=param_map.get("br_max_age"),
+                         br_priority=param_map.get("br_priority"),
+                         network_devs=param_map.get("network_devs"),
+                         port=param_map.get("port"),
+                         resource=param_map.get("resource"),
+                         shelf=param_map.get("shelf"),
+                         )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_CD> type requests
 
@@ -1510,6 +1594,26 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_cd_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_cd(alias=param_map.get("alias"),
+                         bps=param_map.get("bps"),
+                         flags=param_map.get("flags"),
+                         report_timer=param_map.get("report_timer"),
+                         resource=param_map.get("resource"),
+                         shelf=param_map.get("shelf"),
+                         state=param_map.get("state"),
+                         type=param_map.get("type"),
+                         )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_CD_ENDP> type requests
 
@@ -1539,6 +1643,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_cd_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_cd_endp(cd=param_map.get("cd"),
+                              endp=param_map.get("endp"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_CD_VR> type requests
 
@@ -1567,6 +1685,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_cd_vr_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_cd_vr(cd=param_map.get("cd"),
+                            vr=param_map.get("vr"),
+                            )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_CHAMBER> type requests
@@ -1695,6 +1827,38 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_chamber_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_chamber(chamber_type=param_map.get("chamber_type"),
+                              dut_name1=param_map.get("dut_name1"),
+                              dut_name2=param_map.get("dut_name2"),
+                              dut_name3=param_map.get("dut_name3"),
+                              dut_name4=param_map.get("dut_name4"),
+                              flags=param_map.get("flags"),
+                              flags_mask=param_map.get("flags_mask"),
+                              height=param_map.get("height"),
+                              isolation=param_map.get("isolation"),
+                              lanforge1=param_map.get("lanforge1"),
+                              lanforge2=param_map.get("lanforge2"),
+                              lanforge3=param_map.get("lanforge3"),
+                              lanforge4=param_map.get("lanforge4"),
+                              name=param_map.get("name"),
+                              resource=param_map.get("resource"),
+                              sma_count=param_map.get("sma_count"),
+                              turntable_type=param_map.get("turntable_type"),
+                              width=param_map.get("width"),
+                              x=param_map.get("x"),
+                              y=param_map.get("y"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_CHAMBER_CX> type requests
 
@@ -1766,6 +1930,29 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_chamber_cx_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_chamber_cx(a_id=param_map.get("a_id"),
+                                 atten_id=param_map.get("atten_id"),
+                                 b_id=param_map.get("b_id"),
+                                 connection_idx=param_map.get("connection_idx"),
+                                 flags=param_map.get("flags"),
+                                 flags_mask=param_map.get("flags_mask"),
+                                 internal=param_map.get("internal"),
+                                 min_atten=param_map.get("min_atten"),
+                                 name=param_map.get("name"),
+                                 zrssi2=param_map.get("zrssi2"),
+                                 zrssi5=param_map.get("zrssi5"),
+                                 )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_CHAMBER_PATH> type requests
 
@@ -1798,6 +1985,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_chamber_path_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_chamber_path(chamber=param_map.get("chamber"),
+                                   content=param_map.get("content"),
+                                   path=param_map.get("path"),
+                                   )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_CHANNEL_GROUP> type requests
@@ -1867,6 +2069,26 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_channel_group_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_channel_group(alias=param_map.get("alias"),
+                                    channels=param_map.get("channels"),
+                                    idle_flag=param_map.get("idle_flag"),
+                                    mtu=param_map.get("mtu"),
+                                    resource=param_map.get("resource"),
+                                    shelf=param_map.get("shelf"),
+                                    span_num=param_map.get("span_num"),
+                                    type=param_map.get("type"),
+                                    )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_CX> type requests
 
@@ -1901,6 +2123,22 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_cx_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_cx(alias=param_map.get("alias"),
+                         rx_endp=param_map.get("rx_endp"),
+                         test_mgr=param_map.get("test_mgr"),
+                         tx_endp=param_map.get("tx_endp"),
+                         )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_DUT> type requests
@@ -2042,6 +2280,46 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_dut_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_dut(antenna_count1=param_map.get("antenna_count1"),
+                          antenna_count2=param_map.get("antenna_count2"),
+                          antenna_count3=param_map.get("antenna_count3"),
+                          api_id=param_map.get("api_id"),
+                          bssid1=param_map.get("bssid1"),
+                          bssid2=param_map.get("bssid2"),
+                          bssid3=param_map.get("bssid3"),
+                          eap_id=param_map.get("eap_id"),
+                          flags=param_map.get("flags"),
+                          flags_mask=param_map.get("flags_mask"),
+                          hw_version=param_map.get("hw_version"),
+                          img_file=param_map.get("img_file"),
+                          lan_port=param_map.get("lan_port"),
+                          mgt_ip=param_map.get("mgt_ip"),
+                          model_num=param_map.get("model_num"),
+                          name=param_map.get("name"),
+                          passwd1=param_map.get("passwd1"),
+                          passwd2=param_map.get("passwd2"),
+                          passwd3=param_map.get("passwd3"),
+                          serial_num=param_map.get("serial_num"),
+                          serial_port=param_map.get("serial_port"),
+                          ssid1=param_map.get("ssid1"),
+                          ssid2=param_map.get("ssid2"),
+                          ssid3=param_map.get("ssid3"),
+                          sw_version=param_map.get("sw_version"),
+                          top_left_x=param_map.get("top_left_x"),
+                          top_left_y=param_map.get("top_left_y"),
+                          wan_port=param_map.get("wan_port"),
+                          )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_DUT_NOTES> type requests
 
@@ -2071,6 +2349,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_dut_notes_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_dut_notes(dut=param_map.get("dut"),
+                                text=param_map.get("text"),
+                                )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_DUT_SSID> type requests
@@ -2141,6 +2433,25 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_dut_ssid_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_dut_ssid(bssid=param_map.get("bssid"),
+                               name=param_map.get("name"),
+                               passwd=param_map.get("passwd"),
+                               ssid=param_map.get("ssid"),
+                               ssid_flags=param_map.get("ssid_flags"),
+                               ssid_flags_mask=param_map.get("ssid_flags_mask"),
+                               ssid_idx=param_map.get("ssid_idx"),
+                               )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_ENDP> type requests
@@ -2256,6 +2567,35 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_endp(alias=param_map.get("alias"),
+                           ip_port=param_map.get("ip_port"),
+                           is_pkt_sz_random=param_map.get("is_pkt_sz_random"),
+                           is_rate_bursty=param_map.get("is_rate_bursty"),
+                           max_pkt=param_map.get("max_pkt"),
+                           max_rate=param_map.get("max_rate"),
+                           min_pkt=param_map.get("min_pkt"),
+                           min_rate=param_map.get("min_rate"),
+                           multi_conn=param_map.get("multi_conn"),
+                           payload_pattern=param_map.get("payload_pattern"),
+                           port=param_map.get("port"),
+                           resource=param_map.get("resource"),
+                           send_bad_crc_per_million=param_map.get("send_bad_crc_per_million"),
+                           shelf=param_map.get("shelf"),
+                           ttl=param_map.get("ttl"),
+                           type=param_map.get("type"),
+                           use_checksum=param_map.get("use_checksum"),
+                           )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_EVENT> type requests
 
@@ -2291,6 +2631,22 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_event_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_event(details=param_map.get("details"),
+                            event_id=param_map.get("event_id"),
+                            name=param_map.get("name"),
+                            priority=param_map.get("priority"),
+                            )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_FILE_ENDP> type requests
@@ -2441,6 +2797,36 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_file_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_file_endp(alias=param_map.get("alias"),
+                                directory=param_map.get("directory"),
+                                fio_flags=param_map.get("fio_flags"),
+                                max_read_rate=param_map.get("max_read_rate"),
+                                max_write_rate=param_map.get("max_write_rate"),
+                                min_read_rate=param_map.get("min_read_rate"),
+                                min_write_rate=param_map.get("min_write_rate"),
+                                mount_dir=param_map.get("mount_dir"),
+                                mount_options=param_map.get("mount_options"),
+                                payload_pattern=param_map.get("payload_pattern"),
+                                port=param_map.get("port"),
+                                prefix=param_map.get("prefix"),
+                                resource=param_map.get("resource"),
+                                retry_timer=param_map.get("retry_timer"),
+                                server_mount=param_map.get("server_mount"),
+                                shelf=param_map.get("shelf"),
+                                type=param_map.get("type"),
+                                volume=param_map.get("volume"),
+                                )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_GEN_ENDP> type requests
 
@@ -2478,6 +2864,23 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_gen_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_gen_endp(alias=param_map.get("alias"),
+                               port=param_map.get("port"),
+                               resource=param_map.get("resource"),
+                               shelf=param_map.get("shelf"),
+                               type=param_map.get("type"),
+                               )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_GRE> type requests
@@ -2519,6 +2922,24 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_gre_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_gre(local_lower_ip=param_map.get("local_lower_ip"),
+                          port=param_map.get("port"),
+                          remote_lower_ip=param_map.get("remote_lower_ip"),
+                          report_timer=param_map.get("report_timer"),
+                          resource=param_map.get("resource"),
+                          shelf=param_map.get("shelf"),
+                          )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_GROUP> type requests
@@ -2572,6 +2993,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_group_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_group(flags=param_map.get("flags"),
+                            flags_mask=param_map.get("flags_mask"),
+                            name=param_map.get("name"),
+                            )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_L4_ENDP> type requests
@@ -2738,6 +3174,39 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_l4_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_l4_endp(alias=param_map.get("alias"),
+                              block_size=param_map.get("block_size"),
+                              dns_cache_timeout=param_map.get("dns_cache_timeout"),
+                              http_auth_type=param_map.get("http_auth_type"),
+                              ip_addr=param_map.get("ip_addr"),
+                              max_speed=param_map.get("max_speed"),
+                              port=param_map.get("port"),
+                              proxy_auth_type=param_map.get("proxy_auth_type"),
+                              proxy_port=param_map.get("proxy_port"),
+                              proxy_server=param_map.get("proxy_server"),
+                              proxy_userpwd=param_map.get("proxy_userpwd"),
+                              quiesce_after=param_map.get("quiesce_after"),
+                              resource=param_map.get("resource"),
+                              shelf=param_map.get("shelf"),
+                              smtp_from=param_map.get("smtp_from"),
+                              ssl_cert_fname=param_map.get("ssl_cert_fname"),
+                              timeout=param_map.get("timeout"),
+                              type=param_map.get("type"),
+                              url=param_map.get("url"),
+                              url_rate=param_map.get("url_rate"),
+                              user_agent=param_map.get("user_agent"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_MONITOR> type requests
 
@@ -2807,6 +3276,26 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_monitor_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_monitor(aid=param_map.get("aid"),
+                              ap_name=param_map.get("ap_name"),
+                              bssid=param_map.get("bssid"),
+                              flags=param_map.get("flags"),
+                              flags_mask=param_map.get("flags_mask"),
+                              radio=param_map.get("radio"),
+                              resource=param_map.get("resource"),
+                              shelf=param_map.get("shelf"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_MVLAN> type requests
 
@@ -2855,6 +3344,26 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_mvlan_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_mvlan(flags=param_map.get("flags"),
+                            index=param_map.get("index"),
+                            mac=param_map.get("mac"),
+                            old_name=param_map.get("old_name"),
+                            port=param_map.get("port"),
+                            report_timer=param_map.get("report_timer"),
+                            resource=param_map.get("resource"),
+                            shelf=param_map.get("shelf"),
+                            )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_PPP_LINK> type requests
@@ -2949,6 +3458,39 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_ppp_link_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_ppp_link(auth=param_map.get("auth"),
+                               channel_groups=param_map.get("channel_groups"),
+                               debug=param_map.get("debug"),
+                               down_time_max_ms=param_map.get("down_time_max_ms"),
+                               down_time_min_ms=param_map.get("down_time_min_ms"),
+                               dst_ip=param_map.get("dst_ip"),
+                               extra_args=param_map.get("extra_args"),
+                               holdoff=param_map.get("holdoff"),
+                               lcp_echo_failure=param_map.get("lcp_echo_failure"),
+                               lcp_echo_interval=param_map.get("lcp_echo_interval"),
+                               mlppp_descriptor=param_map.get("mlppp_descriptor"),
+                               persist=param_map.get("persist"),
+                               pppoe_transport_port=param_map.get("pppoe_transport_port"),
+                               resource=param_map.get("resource"),
+                               run_time_max_ms=param_map.get("run_time_max_ms"),
+                               run_time_min_ms=param_map.get("run_time_min_ms"),
+                               shelf=param_map.get("shelf"),
+                               src_ip=param_map.get("src_ip"),
+                               transport_type=param_map.get("transport_type"),
+                               tty_transport_device=param_map.get("tty_transport_device"),
+                               unit=param_map.get("unit"),
+                               )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_PROFILE> type requests
@@ -3087,6 +3629,33 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_profile_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_profile(alias_prefix=param_map.get("alias_prefix"),
+                              antenna=param_map.get("antenna"),
+                              bandwidth=param_map.get("bandwidth"),
+                              eap_id=param_map.get("eap_id"),
+                              flags_mask=param_map.get("flags_mask"),
+                              freq=param_map.get("freq"),
+                              instance_count=param_map.get("instance_count"),
+                              mac_pattern=param_map.get("mac_pattern"),
+                              name=param_map.get("name"),
+                              passwd=param_map.get("passwd"),
+                              profile_flags=param_map.get("profile_flags"),
+                              profile_type=param_map.get("profile_type"),
+                              ssid=param_map.get("ssid"),
+                              vid=param_map.get("vid"),
+                              wifi_mode=param_map.get("wifi_mode"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_PROFILE_NOTES> type requests
 
@@ -3116,6 +3685,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_profile_notes_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_profile_notes(dut=param_map.get("dut"),
+                                    text=param_map.get("text"),
+                                    )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_RDD> type requests
@@ -3155,6 +3738,23 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_rdd_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_rdd(peer_ifname=param_map.get("peer_ifname"),
+                          port=param_map.get("port"),
+                          report_timer=param_map.get("report_timer"),
+                          resource=param_map.get("resource"),
+                          shelf=param_map.get("shelf"),
+                          )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_SEC_IP> type requests
 
@@ -3190,6 +3790,22 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_sec_ip_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_sec_ip(ip_list=param_map.get("ip_list"),
+                             port=param_map.get("port"),
+                             resource=param_map.get("resource"),
+                             shelf=param_map.get("shelf"),
+                             )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_STA> type requests
@@ -3385,6 +4001,40 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_sta_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_sta(ampdu_density=param_map.get("ampdu_density"),
+                          ampdu_factor=param_map.get("ampdu_factor"),
+                          ap=param_map.get("ap"),
+                          flags=param_map.get("flags"),
+                          flags_mask=param_map.get("flags_mask"),
+                          ieee80211w=param_map.get("ieee80211w"),
+                          key=param_map.get("key"),
+                          mac=param_map.get("mac"),
+                          max_amsdu=param_map.get("max_amsdu"),
+                          mode=param_map.get("mode"),
+                          nickname=param_map.get("nickname"),
+                          radio=param_map.get("radio"),
+                          rate=param_map.get("rate"),
+                          resource=param_map.get("resource"),
+                          shelf=param_map.get("shelf"),
+                          ssid=param_map.get("ssid"),
+                          sta_br_ip=param_map.get("sta_br_ip"),
+                          sta_name=param_map.get("sta_name"),
+                          wpa_cfg_file=param_map.get("wpa_cfg_file"),
+                          x_coord=param_map.get("x_coord"),
+                          y_coord=param_map.get("y_coord"),
+                          z_coord=param_map.get("z_coord"),
+                          )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_T1_SPAN> type requests
 
@@ -3470,6 +4120,31 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_t1_span_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_t1_span(buildout=param_map.get("buildout"),
+                              coding=param_map.get("coding"),
+                              cpu_id=param_map.get("cpu_id"),
+                              first_channel=param_map.get("first_channel"),
+                              framing=param_map.get("framing"),
+                              mtu=param_map.get("mtu"),
+                              pci_bus=param_map.get("pci_bus"),
+                              pci_slot=param_map.get("pci_slot"),
+                              resource=param_map.get("resource"),
+                              shelf=param_map.get("shelf"),
+                              span_num=param_map.get("span_num"),
+                              timing=param_map.get("timing"),
+                              type=param_map.get("type"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_TEXT_BLOB> type requests
 
@@ -3503,6 +4178,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_text_blob_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_text_blob(name=param_map.get("name"),
+                                text=param_map.get("text"),
+                                type=param_map.get("type"),
+                                )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_TGCX> type requests
 
@@ -3531,6 +4221,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_tgcx_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_tgcx(cxname=param_map.get("cxname"),
+                           tgname=param_map.get("tgname"),
+                           )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_THRESHOLD> type requests
@@ -3593,6 +4297,23 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_threshold_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_threshold(endp=param_map.get("endp"),
+                                thresh_id=param_map.get("thresh_id"),
+                                thresh_max=param_map.get("thresh_max"),
+                                thresh_min=param_map.get("thresh_min"),
+                                thresh_type=param_map.get("thresh_type"),
+                                )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_TM> type requests
 
@@ -3618,6 +4339,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_tm_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_tm(name=param_map.get("name"),
+                         )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_TRAFFIC_PROFILE> type requests
@@ -3707,6 +4441,28 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_traffic_profile_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_traffic_profile(instance_count=param_map.get("instance_count"),
+                                      max_pdu=param_map.get("max_pdu"),
+                                      max_speed=param_map.get("max_speed"),
+                                      min_pdu=param_map.get("min_pdu"),
+                                      min_speed=param_map.get("min_speed"),
+                                      name=param_map.get("name"),
+                                      tos=param_map.get("tos"),
+                                      traffic_profile_flags=param_map.get("traffic_profile_flags"),
+                                      traffic_profile_flags_mask=param_map.get("traffic_profile_flags_mask"),
+                                      type=param_map.get("type"),
+                                      )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_TRAFFIC_PROFILE_NOTES> type requests
 
@@ -3737,6 +4493,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_traffic_profile_notes_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_traffic_profile_notes(dut=param_map.get("dut"),
+                                            text=param_map.get("text"),
+                                            )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_VAP> type requests
@@ -3901,6 +4671,38 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_vap_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_vap(ap_name=param_map.get("ap_name"),
+                          beacon=param_map.get("beacon"),
+                          custom_cfg=param_map.get("custom_cfg"),
+                          dtim_period=param_map.get("dtim_period"),
+                          flags=param_map.get("flags"),
+                          flags_mask=param_map.get("flags_mask"),
+                          frag_thresh=param_map.get("frag_thresh"),
+                          ieee80211w=param_map.get("ieee80211w"),
+                          key=param_map.get("key"),
+                          mac=param_map.get("mac"),
+                          max_sta=param_map.get("max_sta"),
+                          mode=param_map.get("mode"),
+                          radio=param_map.get("radio"),
+                          rate=param_map.get("rate"),
+                          resource=param_map.get("resource"),
+                          shelf=param_map.get("shelf"),
+                          ssid=param_map.get("ssid"),
+                          x_coord=param_map.get("x_coord"),
+                          y_coord=param_map.get("y_coord"),
+                          z_coord=param_map.get("z_coord"),
+                          )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_VENUE> type requests
 
@@ -4023,6 +4825,28 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_venue_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_venue(description=param_map.get("description"),
+                            freq_24=param_map.get("freq_24"),
+                            freq_5=param_map.get("freq_5"),
+                            resource=param_map.get("resource"),
+                            shelf=param_map.get("shelf"),
+                            venu_id=param_map.get("venu_id"),
+                            x1=param_map.get("x1"),
+                            x2=param_map.get("x2"),
+                            y1=param_map.get("y1"),
+                            y2=param_map.get("y2"),
+                            )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_VLAN> type requests
 
@@ -4063,6 +4887,24 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_vlan_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_vlan(old_name=param_map.get("old_name"),
+                           port=param_map.get("port"),
+                           report_timer=param_map.get("report_timer"),
+                           resource=param_map.get("resource"),
+                           shelf=param_map.get("shelf"),
+                           vid=param_map.get("vid"),
+                           )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_VOIP_ENDP> type requests
@@ -4142,6 +4984,35 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_voip_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_voip_endp(alias=param_map.get("alias"),
+                                auth_user_name=param_map.get("auth_user_name"),
+                                display_name=param_map.get("display_name"),
+                                gateway_port=param_map.get("gateway_port"),
+                                ip_addr=param_map.get("ip_addr"),
+                                peer_phone_num=param_map.get("peer_phone_num"),
+                                phone_num=param_map.get("phone_num"),
+                                port=param_map.get("port"),
+                                proxy_passwd=param_map.get("proxy_passwd"),
+                                resource=param_map.get("resource"),
+                                rtp_port=param_map.get("rtp_port"),
+                                rx_sound_file=param_map.get("rx_sound_file"),
+                                shelf=param_map.get("shelf"),
+                                sip_gateway=param_map.get("sip_gateway"),
+                                tx_sound_file=param_map.get("tx_sound_file"),
+                                vad_max_timer=param_map.get("vad_max_timer"),
+                                vad_timer=param_map.get("vad_timer"),
+                                )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_VR> type requests
@@ -4230,6 +5101,28 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_vr_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_vr(alias=param_map.get("alias"),
+                         flags=param_map.get("flags"),
+                         height=param_map.get("height"),
+                         notes=param_map.get("notes"),
+                         resource=param_map.get("resource"),
+                         shelf=param_map.get("shelf"),
+                         vr_id=param_map.get("vr_id"),
+                         width=param_map.get("width"),
+                         x=param_map.get("x"),
+                         y=param_map.get("y"),
+                         )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_VR_BGP> type requests
 
@@ -4312,6 +5205,30 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_vr_bgp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_vr_bgp(bgp_id=param_map.get("bgp_id"),
+                             cluster_id=param_map.get("cluster_id"),
+                             confed_id=param_map.get("confed_id"),
+                             flags=param_map.get("flags"),
+                             half_life=param_map.get("half_life"),
+                             local_as=param_map.get("local_as"),
+                             max_suppress=param_map.get("max_suppress"),
+                             resource=param_map.get("resource"),
+                             reuse=param_map.get("reuse"),
+                             shelf=param_map.get("shelf"),
+                             suppress=param_map.get("suppress"),
+                             vr_id=param_map.get("vr_id"),
+                             )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_VRCX> type requests
@@ -4466,6 +5383,49 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_vrcx_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_vrcx(dhcp_dns=param_map.get("dhcp_dns"),
+                           dhcp_dns6=param_map.get("dhcp_dns6"),
+                           dhcp_domain=param_map.get("dhcp_domain"),
+                           dhcp_lease_time=param_map.get("dhcp_lease_time"),
+                           dhcp_max=param_map.get("dhcp_max"),
+                           dhcp_max6=param_map.get("dhcp_max6"),
+                           dhcp_min=param_map.get("dhcp_min"),
+                           dhcp_min6=param_map.get("dhcp_min6"),
+                           flags=param_map.get("flags"),
+                           height=param_map.get("height"),
+                           interface_cost=param_map.get("interface_cost"),
+                           local_dev=param_map.get("local_dev"),
+                           local_dev_b=param_map.get("local_dev_b"),
+                           nexthop=param_map.get("nexthop"),
+                           ospf_area=param_map.get("ospf_area"),
+                           remote_dev=param_map.get("remote_dev"),
+                           remote_dev_b=param_map.get("remote_dev_b"),
+                           resource=param_map.get("resource"),
+                           rip_metric=param_map.get("rip_metric"),
+                           shelf=param_map.get("shelf"),
+                           subnets=param_map.get("subnets"),
+                           vr_name=param_map.get("vr_name"),
+                           vrrp_id=param_map.get("vrrp_id"),
+                           vrrp_interval=param_map.get("vrrp_interval"),
+                           vrrp_ip=param_map.get("vrrp_ip"),
+                           vrrp_ip_prefix=param_map.get("vrrp_ip_prefix"),
+                           vrrp_priority=param_map.get("vrrp_priority"),
+                           wanlink=param_map.get("wanlink"),
+                           width=param_map.get("width"),
+                           x=param_map.get("x"),
+                           y=param_map.get("y"),
+                           )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_VRCX2> type requests
 
@@ -4524,6 +5484,28 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_add_vrcx2_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_vrcx2(dhcp_ignore1=param_map.get("dhcp_ignore1"),
+                            dhcp_ignore2=param_map.get("dhcp_ignore2"),
+                            dhcp_ignore3=param_map.get("dhcp_ignore3"),
+                            dhcp_ignore4=param_map.get("dhcp_ignore4"),
+                            local_dev=param_map.get("local_dev"),
+                            nexthop6=param_map.get("nexthop6"),
+                            resource=param_map.get("resource"),
+                            shelf=param_map.get("shelf"),
+                            subnets6=param_map.get("subnets6"),
+                            vr_name=param_map.get("vr_name"),
+                            )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_WL_ENDP> type requests
@@ -4688,6 +5670,55 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_add_wl_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_wl_endp(alias=param_map.get("alias"),
+                              cpu_id=param_map.get("cpu_id"),
+                              description=param_map.get("description"),
+                              dest_ip=param_map.get("dest_ip"),
+                              dest_ip_mask=param_map.get("dest_ip_mask"),
+                              drop_every_xth_pkt=param_map.get("drop_every_xth_pkt"),
+                              drop_freq=param_map.get("drop_freq"),
+                              dup_every_xth_pkt=param_map.get("dup_every_xth_pkt"),
+                              dup_freq=param_map.get("dup_freq"),
+                              extra_buffer=param_map.get("extra_buffer"),
+                              ignore_bandwidth=param_map.get("ignore_bandwidth"),
+                              ignore_dup=param_map.get("ignore_dup"),
+                              ignore_latency=param_map.get("ignore_latency"),
+                              ignore_loss=param_map.get("ignore_loss"),
+                              jitter_freq=param_map.get("jitter_freq"),
+                              latency=param_map.get("latency"),
+                              max_drop_amt=param_map.get("max_drop_amt"),
+                              max_jitter=param_map.get("max_jitter"),
+                              max_lateness=param_map.get("max_lateness"),
+                              max_rate=param_map.get("max_rate"),
+                              max_reorder_amt=param_map.get("max_reorder_amt"),
+                              min_drop_amt=param_map.get("min_drop_amt"),
+                              min_reorder_amt=param_map.get("min_reorder_amt"),
+                              playback_capture=param_map.get("playback_capture"),
+                              playback_capture_file=param_map.get("playback_capture_file"),
+                              playback_loop=param_map.get("playback_loop"),
+                              port=param_map.get("port"),
+                              reorder_every_xth_pkt=param_map.get("reorder_every_xth_pkt"),
+                              reorder_freq=param_map.get("reorder_freq"),
+                              resource=param_map.get("resource"),
+                              shelf=param_map.get("shelf"),
+                              source_ip=param_map.get("source_ip"),
+                              source_ip_mask=param_map.get("source_ip_mask"),
+                              speed=param_map.get("speed"),
+                              test_mgr=param_map.get("test_mgr"),
+                              wanlink=param_map.get("wanlink"),
+                              wle_flags=param_map.get("wle_flags"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADMIN> type requests
 
@@ -4728,6 +5759,23 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_admin_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_admin(arg1=param_map.get("arg1"),
+                        arg2=param_map.get("arg2"),
+                        arg3=param_map.get("arg3"),
+                        arg5=param_map.get("arg5"),
+                        cmd=param_map.get("cmd"),
+                        )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/APPLY_VR_CFG> type requests
 
@@ -4756,6 +5804,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_apply_vr_cfg_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_apply_vr_cfg(resource=param_map.get("resource"),
+                               shelf=param_map.get("shelf"),
+                               )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/BLINK_ATTENUATOR> type requests
@@ -4788,6 +5850,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_blink_attenuator_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_blink_attenuator(resource=param_map.get("resource"),
+                                   serno=param_map.get("serno"),
+                                   shelf=param_map.get("shelf"),
+                                   )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/C_SHOW_PORTS> type requests
@@ -4851,6 +5928,22 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_c_show_ports_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_c_show_ports(port=param_map.get("port"),
+                               probe_flags=param_map.get("probe_flags"),
+                               resource=param_map.get("resource"),
+                               shelf=param_map.get("shelf"),
+                               )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/CANCEL_VR_CFG> type requests
 
@@ -4880,6 +5973,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_cancel_vr_cfg_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_cancel_vr_cfg(resource=param_map.get("resource"),
+                                shelf=param_map.get("shelf"),
+                                )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/CLEAR_CD_COUNTERS> type requests
 
@@ -4907,6 +6014,19 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_clear_cd_counters_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_clear_cd_counters(cd_name=param_map.get("cd_name"),
+                                    )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/CLEAR_CX_COUNTERS> type requests
 
@@ -4933,6 +6053,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_clear_cx_counters_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_clear_cx_counters(cx_name=param_map.get("cx_name"),
+                                    )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/CLEAR_ENDP_COUNTERS> type requests
@@ -4969,6 +6102,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_clear_endp_counters_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_clear_endp_counters(endp_name=param_map.get("endp_name"),
+                                      incr_seqno=param_map.get("incr_seqno"),
+                                      just_latency=param_map.get("just_latency"),
+                                      )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/CLEAR_GROUP> type requests
 
@@ -4994,6 +6142,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_clear_group_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_clear_group(name=param_map.get("name"),
+                              )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/CLEAR_PORT_COUNTERS> type requests
@@ -5040,6 +6201,22 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_clear_port_counters_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_clear_port_counters(extra=param_map.get("extra"),
+                                      port=param_map.get("port"),
+                                      resource=param_map.get("resource"),
+                                      shelf=param_map.get("shelf"),
+                                      )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/CLEAR_RESOURCE_COUNTERS> type requests
 
@@ -5070,6 +6247,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_clear_resource_counters_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_clear_resource_counters(resource=param_map.get("resource"),
+                                          shelf=param_map.get("shelf"),
+                                          )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/CLEAR_WP_COUNTERS> type requests
 
@@ -5098,6 +6289,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_clear_wp_counters_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_clear_wp_counters(endp_name=param_map.get("endp_name"),
+                                    wp_name=param_map.get("wp_name"),
+                                    )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/CREATE_CLIENT> type requests
@@ -5132,6 +6337,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_create_client_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_create_client(name=param_map.get("name"),
+                                password=param_map.get("password"),
+                                super_user=param_map.get("super_user"),
+                                )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/DIAG> type requests
@@ -5178,6 +6398,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_diag_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_diag(arg1=param_map.get("arg1"),
+                       type=param_map.get("type"),
+                       )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/DISCOVER> type requests
 
@@ -5210,6 +6444,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_discover_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_discover(disconnect=param_map.get("disconnect"),
+                           resource=param_map.get("resource"),
+                           shelf=param_map.get("shelf"),
+                           )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/DO_PESQ> type requests
 
@@ -5238,6 +6487,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_do_pesq_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_do_pesq(endp_name=param_map.get("endp_name"),
+                          result_file_name=param_map.get("result_file_name"),
+                          )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/FILE> type requests
@@ -5291,6 +6554,25 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_file_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_file(card=param_map.get("card"),
+                       client_id=param_map.get("client_id"),
+                       cmd=param_map.get("cmd"),
+                       filename=param_map.get("filename"),
+                       flags=param_map.get("flags"),
+                       req_id=param_map.get("req_id"),
+                       shelf=param_map.get("shelf"),
+                       )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/FLASH_ATTENUATOR> type requests
 
@@ -5326,6 +6608,22 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_flash_attenuator_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_flash_attenuator(filename=param_map.get("filename"),
+                                   resource=param_map.get("resource"),
+                                   serno=param_map.get("serno"),
+                                   shelf=param_map.get("shelf"),
+                                   )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/GETAVGLATENCY> type requests
 
@@ -5354,6 +6652,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_getavglatency_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_getavglatency(aorb=param_map.get("aorb"),
+                                cx=param_map.get("cx"),
+                                )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/GETINRXBPS> type requests
@@ -5384,6 +6696,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_getinrxbps_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_getinrxbps(aorb=param_map.get("aorb"),
+                             cx=param_map.get("cx"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/GETINRXRATE> type requests
 
@@ -5412,6 +6738,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_getinrxrate_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_getinrxrate(aorb=param_map.get("aorb"),
+                              cx=param_map.get("cx"),
+                              )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/GETINTXRATE> type requests
@@ -5442,6 +6782,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_getintxrate_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_getintxrate(aorb=param_map.get("aorb"),
+                              cx=param_map.get("cx"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/GETIPADD> type requests
 
@@ -5470,6 +6824,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_getipadd_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_getipadd(aorb=param_map.get("aorb"),
+                           cx=param_map.get("cx"),
+                           )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/GETMAC> type requests
@@ -5500,6 +6868,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_getmac_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_getmac(aorb=param_map.get("aorb"),
+                         cx=param_map.get("cx"),
+                         )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/GETMASK> type requests
 
@@ -5528,6 +6910,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_getmask_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_getmask(aorb=param_map.get("aorb"),
+                          cx=param_map.get("cx"),
+                          )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/GETPKTDROPS> type requests
@@ -5558,6 +6954,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_getpktdrops_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_getpktdrops(aorb=param_map.get("aorb"),
+                              cx=param_map.get("cx"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/GETRXENDPERRPKTS> type requests
 
@@ -5586,6 +6996,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_getrxendperrpkts_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_getrxendperrpkts(aorb=param_map.get("aorb"),
+                                   cx=param_map.get("cx"),
+                                   )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/GETRXPKTS> type requests
@@ -5616,6 +7040,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_getrxpkts_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_getrxpkts(aorb=param_map.get("aorb"),
+                            cx=param_map.get("cx"),
+                            )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/GETRXPORTERRPKTS> type requests
 
@@ -5644,6 +7082,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_getrxporterrpkts_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_getrxporterrpkts(aorb=param_map.get("aorb"),
+                                   cx=param_map.get("cx"),
+                                   )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/GETTXPKTS> type requests
@@ -5674,6 +7126,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_gettxpkts_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_gettxpkts(aorb=param_map.get("aorb"),
+                            cx=param_map.get("cx"),
+                            )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/GOSSIP> type requests
 
@@ -5701,6 +7167,19 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_gossip_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_gossip(message=param_map.get("message"),
+                         )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/HELP> type requests
 
@@ -5726,6 +7205,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_help_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_help(command=param_map.get("command"),
+                       )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/INIT_WISER> type requests
@@ -5764,6 +7256,22 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_init_wiser_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_init_wiser(file_name=param_map.get("file_name"),
+                             node_count=param_map.get("node_count"),
+                             resource=param_map.get("resource"),
+                             shelf=param_map.get("shelf"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/LICENSES> type requests
 
@@ -5793,6 +7301,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_licenses_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_licenses(popup=param_map.get("popup"),
+                           show_file=param_map.get("show_file"),
+                           )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/LOAD> type requests
@@ -5835,6 +7357,23 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_load_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_load(action=param_map.get("action"),
+                       clean_chambers=param_map.get("clean_chambers"),
+                       clean_dut=param_map.get("clean_dut"),
+                       clean_profiles=param_map.get("clean_profiles"),
+                       name=param_map.get("name"),
+                       )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/LOG_CAPTURE> type requests
 
@@ -5876,6 +7415,24 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_log_capture_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_log_capture(destination=param_map.get("destination"),
+                              duration=param_map.get("duration"),
+                              identifier=param_map.get("identifier"),
+                              resource=param_map.get("resource"),
+                              shelf=param_map.get("shelf"),
+                              type=param_map.get("type"),
+                              )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/LOG_LEVEL> type requests
@@ -5942,6 +7499,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_log_level_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_log_level(level=param_map.get("level"),
+                            target=param_map.get("target"),
+                            )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/LOG_MSG> type requests
 
@@ -5967,6 +7538,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_log_msg_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_log_msg(message=param_map.get("message"),
+                          )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/LOGIN> type requests
@@ -5998,6 +7582,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_login_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_login(name=param_map.get("name"),
+                        password=param_map.get("password"),
+                        )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/MOTD> type requests
 
@@ -6018,6 +7616,18 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_motd_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_motd()
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/NC_SHOW_CD> type requests
@@ -6051,6 +7661,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_nc_show_cd_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_nc_show_cd(collision_domain=param_map.get("collision_domain"),
+                             resource=param_map.get("resource"),
+                             shelf=param_map.get("shelf"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/NC_SHOW_CHANNEL_GROUPS> type requests
 
@@ -6083,6 +7708,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_nc_show_channel_groups_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_nc_show_channel_groups(channel_name=param_map.get("channel_name"),
+                                         resource=param_map.get("resource"),
+                                         shelf=param_map.get("shelf"),
+                                         )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/NC_SHOW_ENDPOINTS> type requests
 
@@ -6112,6 +7752,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_nc_show_endpoints_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_nc_show_endpoints(endpoint=param_map.get("endpoint"),
+                                    extra=param_map.get("extra"),
+                                    )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/NC_SHOW_PESQ> type requests
 
@@ -6137,6 +7791,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_nc_show_pesq_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_nc_show_pesq(endpoint=param_map.get("endpoint"),
+                               )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/NC_SHOW_PORTS> type requests
@@ -6200,6 +7867,22 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_nc_show_ports_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_nc_show_ports(port=param_map.get("port"),
+                                probe_flags=param_map.get("probe_flags"),
+                                resource=param_map.get("resource"),
+                                shelf=param_map.get("shelf"),
+                                )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/NC_SHOW_PPP_LINKS> type requests
 
@@ -6231,6 +7914,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_nc_show_ppp_links_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_nc_show_ppp_links(link_num=param_map.get("link_num"),
+                                    resource=param_map.get("resource"),
+                                    shelf=param_map.get("shelf"),
+                                    )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/NC_SHOW_SPANS> type requests
@@ -6264,6 +7962,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_nc_show_spans_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_nc_show_spans(resource=param_map.get("resource"),
+                                shelf=param_map.get("shelf"),
+                                span_number=param_map.get("span_number"),
+                                )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/NC_SHOW_VR> type requests
 
@@ -6296,6 +8009,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_nc_show_vr_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_nc_show_vr(resource=param_map.get("resource"),
+                             router=param_map.get("router"),
+                             shelf=param_map.get("shelf"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/NC_SHOW_VRCX> type requests
 
@@ -6327,6 +8055,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_nc_show_vrcx_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_nc_show_vrcx(cx_name=param_map.get("cx_name"),
+                               resource=param_map.get("resource"),
+                               shelf=param_map.get("shelf"),
+                               )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/NOTIFY_DHCP> type requests
@@ -6379,6 +8122,27 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_notify_dhcp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_notify_dhcp(cmd=param_map.get("cmd"),
+                              netmask=param_map.get("netmask"),
+                              new_dns=param_map.get("new_dns"),
+                              new_ip=param_map.get("new_ip"),
+                              new_ip6=param_map.get("new_ip6"),
+                              new_mtu=param_map.get("new_mtu"),
+                              new_router=param_map.get("new_router"),
+                              port=param_map.get("port"),
+                              reason=param_map.get("reason"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/PORT_RESET_COMPLETED> type requests
 
@@ -6411,6 +8175,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_port_reset_completed_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_port_reset_completed(extra=param_map.get("extra"),
+                                       port=param_map.get("port"),
+                                       type=param_map.get("type"),
+                                       )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/PROBE_PORT> type requests
@@ -6447,6 +8226,22 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_probe_port_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_probe_port(key=param_map.get("key"),
+                             port=param_map.get("port"),
+                             resource=param_map.get("resource"),
+                             shelf=param_map.get("shelf"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/PROBE_PORTS> type requests
 
@@ -6476,6 +8271,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_probe_ports_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_probe_ports(resource=param_map.get("resource"),
+                              shelf=param_map.get("shelf"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/QUIESCE_ENDP> type requests
 
@@ -6501,6 +8310,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_quiesce_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_quiesce_endp(endp_name=param_map.get("endp_name"),
+                               )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/QUIESCE_GROUP> type requests
@@ -6528,6 +8350,19 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_quiesce_group_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_quiesce_group(name=param_map.get("name"),
+                                )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/QUIT> type requests
 
@@ -6548,6 +8383,18 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_quit_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_quit()
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/REBOOT_OS> type requests
@@ -6577,6 +8424,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_reboot_os_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_reboot_os(resource=param_map.get("resource"),
+                            shelf=param_map.get("shelf"),
+                            )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/REPORT> type requests
@@ -6615,6 +8476,23 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_report_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_report(reporting_on=param_map.get("reporting_on"),
+                         rpt_dir=param_map.get("rpt_dir"),
+                         save_endps=param_map.get("save_endps"),
+                         save_ports=param_map.get("save_ports"),
+                         save_resource=param_map.get("save_resource"),
+                         )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RESET_PORT> type requests
@@ -6664,6 +8542,23 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_reset_port_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_reset_port(port=param_map.get("port"),
+                             pre_ifdown=param_map.get("pre_ifdown"),
+                             reset_ospf=param_map.get("reset_ospf"),
+                             resource=param_map.get("resource"),
+                             shelf=param_map.get("shelf"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RESET_SERIAL_SPAN> type requests
 
@@ -6695,6 +8590,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_reset_serial_span_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_reset_serial_span(resource=param_map.get("resource"),
+                                    shelf=param_map.get("shelf"),
+                                    span=param_map.get("span"),
+                                    )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_ATTENUATOR> type requests
@@ -6728,6 +8638,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_attenuator_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_attenuator(resource=param_map.get("resource"),
+                                serno=param_map.get("serno"),
+                                shelf=param_map.get("shelf"),
+                                )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_CD> type requests
 
@@ -6753,6 +8678,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rm_cd_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_cd(cd=param_map.get("cd"),
+                        )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_CD_ENDP> type requests
@@ -6783,6 +8721,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_cd_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_cd_endp(cd=param_map.get("cd"),
+                             endp=param_map.get("endp"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_CD_VR> type requests
 
@@ -6812,6 +8764,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_cd_vr_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_cd_vr(cd=param_map.get("cd"),
+                           endp=param_map.get("endp"),
+                           )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_CHAMBER> type requests
 
@@ -6837,6 +8803,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rm_chamber_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_chamber(chamber=param_map.get("chamber"),
+                             )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_CHAMBER_PATH> type requests
@@ -6866,6 +8845,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rm_chamber_path_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_chamber_path(chamber=param_map.get("chamber"),
+                                  path=param_map.get("path"),
+                                  )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_CHANNEL_GROUP> type requests
@@ -6899,6 +8892,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_channel_group_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_channel_group(channel_name=param_map.get("channel_name"),
+                                   resource=param_map.get("resource"),
+                                   shelf=param_map.get("shelf"),
+                                   )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_CLIENT> type requests
 
@@ -6927,6 +8935,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rm_client_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_client(client_name=param_map.get("client_name"),
+                            client_password=param_map.get("client_password"),
+                            )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_CX> type requests
@@ -6957,6 +8979,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_cx_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_cx(cx_name=param_map.get("cx_name"),
+                        test_mgr=param_map.get("test_mgr"),
+                        )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_DB> type requests
 
@@ -6982,6 +9018,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rm_db_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_db(db_name=param_map.get("db_name"),
+                        )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_DUT> type requests
@@ -7009,6 +9058,19 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_dut_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_dut(shelf=param_map.get("shelf"),
+                         )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_ENDP> type requests
 
@@ -7034,6 +9096,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rm_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_endp(endp_name=param_map.get("endp_name"),
+                          )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_EVENT> type requests
@@ -7061,6 +9136,19 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_event_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_event(event_id=param_map.get("event_id"),
+                           )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_GROUP> type requests
 
@@ -7086,6 +9174,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rm_group_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_group(name=param_map.get("name"),
+                           )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_PPP_LINK> type requests
@@ -7119,6 +9220,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_ppp_link_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_ppp_link(resource=param_map.get("resource"),
+                              shelf=param_map.get("shelf"),
+                              unit_num=param_map.get("unit_num"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_PROFILE> type requests
 
@@ -7144,6 +9260,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rm_profile_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_profile(name=param_map.get("name"),
+                             )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_RESOURCE> type requests
@@ -7174,6 +9303,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_resource_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_resource(resource=param_map.get("resource"),
+                              shelf=param_map.get("shelf"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_RFGEN> type requests
 
@@ -7202,6 +9345,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rm_rfgen_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_rfgen(resource=param_map.get("resource"),
+                           shelf=param_map.get("shelf"),
+                           )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_SEC_IP> type requests
@@ -7239,6 +9396,22 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_sec_ip_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_sec_ip(ip_list=param_map.get("ip_list"),
+                            port=param_map.get("port"),
+                            resource=param_map.get("resource"),
+                            shelf=param_map.get("shelf"),
+                            )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_SPAN> type requests
 
@@ -7271,6 +9444,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_span_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_span(resource=param_map.get("resource"),
+                          shelf=param_map.get("shelf"),
+                          span_num=param_map.get("span_num"),
+                          )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_TEST_MGR> type requests
 
@@ -7296,6 +9484,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rm_test_mgr_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_test_mgr(test_mgr=param_map.get("test_mgr"),
+                              )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_TEXT_BLOB> type requests
@@ -7326,6 +9527,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_text_blob_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_text_blob(name=param_map.get("name"),
+                               type=param_map.get("type"),
+                               )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_TGCX> type requests
 
@@ -7354,6 +9569,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rm_tgcx_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_tgcx(cxname=param_map.get("cxname"),
+                          tgname=param_map.get("tgname"),
+                          )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_THRESHOLD> type requests
@@ -7384,6 +9613,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_threshold_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_threshold(endp=param_map.get("endp"),
+                               thresh_id=param_map.get("thresh_id"),
+                               )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_TRAFFIC_PROFILE> type requests
 
@@ -7409,6 +9652,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rm_traffic_profile_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_traffic_profile(name=param_map.get("name"),
+                                     )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_VENUE> type requests
@@ -7443,6 +9699,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_venue_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_venue(resource=param_map.get("resource"),
+                           shelf=param_map.get("shelf"),
+                           venu_id=param_map.get("venu_id"),
+                           )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_VLAN> type requests
 
@@ -7475,6 +9746,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_vlan_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_vlan(port=param_map.get("port"),
+                          resource=param_map.get("resource"),
+                          shelf=param_map.get("shelf"),
+                          )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_VR> type requests
 
@@ -7506,6 +9792,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rm_vr_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_vr(resource=param_map.get("resource"),
+                        router_name=param_map.get("router_name"),
+                        shelf=param_map.get("shelf"),
+                        )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_VRCX> type requests
@@ -7547,6 +9848,23 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_rm_vrcx_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_vrcx(connection_name=param_map.get("connection_name"),
+                          resource=param_map.get("resource"),
+                          shelf=param_map.get("shelf"),
+                          vr_id=param_map.get("vr_id"),
+                          vrcx_only=param_map.get("vrcx_only"),
+                          )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_WANPATH> type requests
 
@@ -7575,6 +9893,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rm_wanpath_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_wanpath(endp_name=param_map.get("endp_name"),
+                             wp_name=param_map.get("wp_name"),
+                             )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RPT_SCRIPT> type requests
@@ -7619,6 +9951,25 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_rpt_script_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rpt_script(endp=param_map.get("endp"),
+                             flags=param_map.get("flags"),
+                             group_action=param_map.get("group_action"),
+                             loop_count=param_map.get("loop_count"),
+                             name=param_map.get("name"),
+                             private=param_map.get("private"),
+                             type=param_map.get("type"),
+                             )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SCAN_WIFI> type requests
@@ -7666,6 +10017,23 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_scan_wifi_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_scan_wifi(extra=param_map.get("extra"),
+                            key=param_map.get("key"),
+                            port=param_map.get("port"),
+                            resource=param_map.get("resource"),
+                            shelf=param_map.get("shelf"),
+                            )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_ARM_INFO> type requests
@@ -7777,6 +10145,37 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_arm_info_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_arm_info(arm_flags=param_map.get("arm_flags"),
+                               burst=param_map.get("burst"),
+                               dst_mac=param_map.get("dst_mac"),
+                               dst_mac_count=param_map.get("dst_mac_count"),
+                               ip_dst_max=param_map.get("ip_dst_max"),
+                               ip_dst_min=param_map.get("ip_dst_min"),
+                               ip_src_max=param_map.get("ip_src_max"),
+                               ip_src_min=param_map.get("ip_src_min"),
+                               max_pkt_size=param_map.get("max_pkt_size"),
+                               min_pkt_size=param_map.get("min_pkt_size"),
+                               multi_pkts=param_map.get("multi_pkts"),
+                               name=param_map.get("name"),
+                               pkts_to_send=param_map.get("pkts_to_send"),
+                               src_mac=param_map.get("src_mac"),
+                               src_mac_count=param_map.get("src_mac_count"),
+                               udp_dst_max=param_map.get("udp_dst_max"),
+                               udp_dst_min=param_map.get("udp_dst_min"),
+                               udp_src_max=param_map.get("udp_src_max"),
+                               udp_src_min=param_map.get("udp_src_min"),
+                               )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_ATTENUATOR> type requests
 
@@ -7849,6 +10248,30 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_attenuator_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_attenuator(atten_count=param_map.get("atten_count"),
+                                 atten_idx=param_map.get("atten_idx"),
+                                 ip_addr=param_map.get("ip_addr"),
+                                 mode=param_map.get("mode"),
+                                 pulse_count=param_map.get("pulse_count"),
+                                 pulse_interval_ms=param_map.get("pulse_interval_ms"),
+                                 pulse_time_ms=param_map.get("pulse_time_ms"),
+                                 pulse_width_us5=param_map.get("pulse_width_us5"),
+                                 resource=param_map.get("resource"),
+                                 serno=param_map.get("serno"),
+                                 shelf=param_map.get("shelf"),
+                                 val=param_map.get("val"),
+                                 )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_CHAMBER> type requests
 
@@ -7891,6 +10314,24 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_chamber_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_chamber(chamber=param_map.get("chamber"),
+                              cur_rotation=param_map.get("cur_rotation"),
+                              position=param_map.get("position"),
+                              speed_rpm=param_map.get("speed_rpm"),
+                              tilt=param_map.get("tilt"),
+                              turntable=param_map.get("turntable"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_CX_REPORT_TIMER> type requests
 
@@ -7926,6 +10367,22 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_cx_report_timer_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_cx_report_timer(cx_name=param_map.get("cx_name"),
+                                      cxonly=param_map.get("cxonly"),
+                                      milliseconds=param_map.get("milliseconds"),
+                                      test_mgr=param_map.get("test_mgr"),
+                                      )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_CX_STATE> type requests
@@ -7970,6 +10427,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_cx_state_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_cx_state(cx_name=param_map.get("cx_name"),
+                               cx_state=param_map.get("cx_state"),
+                               test_mgr=param_map.get("test_mgr"),
+                               )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_ENDP_ADDR> type requests
 
@@ -8007,6 +10479,23 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_endp_addr_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_endp_addr(ip=param_map.get("ip"),
+                                mac=param_map.get("mac"),
+                                max_port=param_map.get("max_port"),
+                                min_port=param_map.get("min_port"),
+                                name=param_map.get("name"),
+                                )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_ENDP_DETAILS> type requests
@@ -8093,6 +10582,35 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_endp_details_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_endp_details(conn_timeout=param_map.get("conn_timeout"),
+                                   dst_mac=param_map.get("dst_mac"),
+                                   max_conn_timer=param_map.get("max_conn_timer"),
+                                   max_ip_port=param_map.get("max_ip_port"),
+                                   max_reconn_pause=param_map.get("max_reconn_pause"),
+                                   mcast_src_ip=param_map.get("mcast_src_ip"),
+                                   mcast_src_port=param_map.get("mcast_src_port"),
+                                   min_conn_timer=param_map.get("min_conn_timer"),
+                                   min_reconn_pause=param_map.get("min_reconn_pause"),
+                                   name=param_map.get("name"),
+                                   pkts_to_send=param_map.get("pkts_to_send"),
+                                   rcvbuf_size=param_map.get("rcvbuf_size"),
+                                   sndbuf_size=param_map.get("sndbuf_size"),
+                                   tcp_delack_segs=param_map.get("tcp_delack_segs"),
+                                   tcp_max_delack=param_map.get("tcp_max_delack"),
+                                   tcp_min_delack=param_map.get("tcp_min_delack"),
+                                   tcp_mss=param_map.get("tcp_mss"),
+                                   )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_ENDP_FILE> type requests
 
@@ -8132,6 +10650,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_endp_file_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_endp_file(file=param_map.get("file"),
+                                name=param_map.get("name"),
+                                playback=param_map.get("playback"),
+                                )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_ENDP_FLAG> type requests
@@ -8183,6 +10716,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_endp_flag_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_endp_flag(flag=param_map.get("flag"),
+                                name=param_map.get("name"),
+                                val=param_map.get("val"),
+                                )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_ENDP_PAYLOAD> type requests
 
@@ -8233,6 +10781,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_endp_payload_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_endp_payload(name=param_map.get("name"),
+                                   payload=param_map.get("payload"),
+                                   payload_type=param_map.get("payload_type"),
+                                   )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_ENDP_PLD_BOUNDS> type requests
 
@@ -8271,6 +10834,23 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_endp_pld_bounds_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_endp_pld_bounds(is_random=param_map.get("is_random"),
+                                      max_pld_size=param_map.get("max_pld_size"),
+                                      min_pld_size=param_map.get("min_pld_size"),
+                                      name=param_map.get("name"),
+                                      use_checksum=param_map.get("use_checksum"),
+                                      )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_ENDP_PROXY> type requests
 
@@ -8306,6 +10886,22 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_endp_proxy_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_endp_proxy(enabled=param_map.get("enabled"),
+                                 endp_name=param_map.get("endp_name"),
+                                 proxy_ip=param_map.get("proxy_ip"),
+                                 proxy_ip_port=param_map.get("proxy_ip_port"),
+                                 )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_ENDP_QUIESCE> type requests
 
@@ -8336,6 +10932,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_endp_quiesce_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_endp_quiesce(name=param_map.get("name"),
+                                   quiesce=param_map.get("quiesce"),
+                                   )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_ENDP_REPORT_TIMER> type requests
 
@@ -8365,6 +10975,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_endp_report_timer_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_endp_report_timer(endp_name=param_map.get("endp_name"),
+                                        milliseconds=param_map.get("milliseconds"),
+                                        )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_ENDP_TOS> type requests
@@ -8408,6 +11032,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_endp_tos_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_endp_tos(name=param_map.get("name"),
+                               priority=param_map.get("priority"),
+                               tos=param_map.get("tos"),
+                               )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_ENDP_TX_BOUNDS> type requests
 
@@ -8442,6 +11081,22 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_endp_tx_bounds_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_endp_tx_bounds(is_bursty=param_map.get("is_bursty"),
+                                     max_tx_rate=param_map.get("max_tx_rate"),
+                                     min_tx_rate=param_map.get("min_tx_rate"),
+                                     name=param_map.get("name"),
+                                     )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_EVENT_INTEREST> type requests
@@ -8593,6 +11248,25 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_event_interest_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_event_interest(ei_flags=param_map.get("ei_flags"),
+                                     event_cnt=param_map.get("event_cnt"),
+                                     events1=param_map.get("events1"),
+                                     events2=param_map.get("events2"),
+                                     events3=param_map.get("events3"),
+                                     events4=param_map.get("events4"),
+                                     var1=param_map.get("var1"),
+                                     )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_EVENT_PRIORITY> type requests
 
@@ -8661,6 +11335,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_event_priority_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_event_priority(event=param_map.get("event"),
+                                     priority=param_map.get("priority"),
+                                     )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_FE_INFO> type requests
 
@@ -8715,6 +11403,28 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_fe_info_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_fe_info(directory=param_map.get("directory"),
+                              io_direction=param_map.get("io_direction"),
+                              max_file_size=param_map.get("max_file_size"),
+                              max_rw_sz=param_map.get("max_rw_sz"),
+                              min_file_size=param_map.get("min_file_size"),
+                              min_rw_sz=param_map.get("min_rw_sz"),
+                              name=param_map.get("name"),
+                              num_files=param_map.get("num_files"),
+                              prefix=param_map.get("prefix"),
+                              quiesce_after_files=param_map.get("quiesce_after_files"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_FLAG> type requests
 
@@ -8761,6 +11471,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_flag_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_flag(client=param_map.get("client"),
+                           flag=param_map.get("flag"),
+                           val=param_map.get("val"),
+                           )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_GEN_CMD> type requests
 
@@ -8790,6 +11515,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_gen_cmd_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_gen_cmd(command=param_map.get("command"),
+                              name=param_map.get("name"),
+                              )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_GPS_INFO> type requests
@@ -8835,6 +11574,25 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_gps_info_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_gps_info(altitude=param_map.get("altitude"),
+                               ew=param_map.get("ew"),
+                               lattitude=param_map.get("lattitude"),
+                               longitude=param_map.get("longitude"),
+                               ns=param_map.get("ns"),
+                               resource=param_map.get("resource"),
+                               shelf=param_map.get("shelf"),
+                               )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_IFUP_SCRIPT> type requests
 
@@ -8874,6 +11632,23 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_ifup_script_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_ifup_script(flags=param_map.get("flags"),
+                                  port=param_map.get("port"),
+                                  post_ifup_script=param_map.get("post_ifup_script"),
+                                  resource=param_map.get("resource"),
+                                  shelf=param_map.get("shelf"),
+                                  )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_LICENSE> type requests
 
@@ -8900,6 +11675,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_license_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_license(licenses=param_map.get("licenses"),
+                              )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_MC_ENDP> type requests
@@ -8939,6 +11727,23 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_mc_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_mc_endp(mcast_dest_port=param_map.get("mcast_dest_port"),
+                              mcast_group=param_map.get("mcast_group"),
+                              name=param_map.get("name"),
+                              rcv_mcast=param_map.get("rcv_mcast"),
+                              ttl=param_map.get("ttl"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_PASSWORD> type requests
 
@@ -8970,6 +11775,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_password_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_password(client=param_map.get("client"),
+                               new_password=param_map.get("new_password"),
+                               old_password=param_map.get("old_password"),
+                               )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_POLL_MODE> type requests
@@ -9004,6 +11824,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_poll_mode_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_poll_mode(mode=param_map.get("mode"),
+                                )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_PORT> type requests
@@ -9344,6 +12177,55 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_port_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_port(alias=param_map.get("alias"),
+                           br_aging_time=param_map.get("br_aging_time"),
+                           br_forwarding_delay=param_map.get("br_forwarding_delay"),
+                           br_hello_time=param_map.get("br_hello_time"),
+                           br_max_age=param_map.get("br_max_age"),
+                           br_port_cost=param_map.get("br_port_cost"),
+                           br_port_priority=param_map.get("br_port_priority"),
+                           br_priority=param_map.get("br_priority"),
+                           bypass_wdt=param_map.get("bypass_wdt"),
+                           cmd_flags=param_map.get("cmd_flags"),
+                           cpu_mask=param_map.get("cpu_mask"),
+                           current_flags=param_map.get("current_flags"),
+                           current_flags_msk=param_map.get("current_flags_msk"),
+                           dhcp_client_id=param_map.get("dhcp_client_id"),
+                           dhcp_hostname=param_map.get("dhcp_hostname"),
+                           dhcp_vendor_id=param_map.get("dhcp_vendor_id"),
+                           dns_servers=param_map.get("dns_servers"),
+                           flags2=param_map.get("flags2"),
+                           gateway=param_map.get("gateway"),
+                           interest=param_map.get("interest"),
+                           ip_addr=param_map.get("ip_addr"),
+                           ipsec_concentrator=param_map.get("ipsec_concentrator"),
+                           ipsec_local_id=param_map.get("ipsec_local_id"),
+                           ipsec_passwd=param_map.get("ipsec_passwd"),
+                           ipsec_remote_id=param_map.get("ipsec_remote_id"),
+                           ipv6_addr_global=param_map.get("ipv6_addr_global"),
+                           ipv6_addr_link=param_map.get("ipv6_addr_link"),
+                           ipv6_dflt_gw=param_map.get("ipv6_dflt_gw"),
+                           mac=param_map.get("mac"),
+                           mtu=param_map.get("mtu"),
+                           netmask=param_map.get("netmask"),
+                           port=param_map.get("port"),
+                           report_timer=param_map.get("report_timer"),
+                           resource=param_map.get("resource"),
+                           shelf=param_map.get("shelf"),
+                           sta_br_id=param_map.get("sta_br_id"),
+                           tx_queue_len=param_map.get("tx_queue_len"),
+                           )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_PORT2> type requests
 
@@ -9379,6 +12261,22 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_port2_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_port2(dhclient_50=param_map.get("dhclient_50"),
+                            port=param_map.get("port"),
+                            resource=param_map.get("resource"),
+                            shelf=param_map.get("shelf"),
+                            )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_PORT_ALIAS> type requests
@@ -9419,6 +12317,23 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_port_alias_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_port_alias(alias=param_map.get("alias"),
+                                 port=param_map.get("port"),
+                                 resource=param_map.get("resource"),
+                                 shelf=param_map.get("shelf"),
+                                 vport=param_map.get("vport"),
+                                 )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_PPP_LINK_STATE> type requests
 
@@ -9453,6 +12368,22 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_ppp_link_state_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_ppp_link_state(link=param_map.get("link"),
+                                     ppp_state=param_map.get("ppp_state"),
+                                     resource=param_map.get("resource"),
+                                     shelf=param_map.get("shelf"),
+                                     )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_RESOURCE> type requests
@@ -9525,6 +12456,30 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_resource_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_resource(device_profiles=param_map.get("device_profiles"),
+                               max_helper_count=param_map.get("max_helper_count"),
+                               max_staged_bringup=param_map.get("max_staged_bringup"),
+                               max_station_bringup=param_map.get("max_station_bringup"),
+                               max_trying_ifup=param_map.get("max_trying_ifup"),
+                               resource=param_map.get("resource"),
+                               resource_flags=param_map.get("resource_flags"),
+                               resource_flags_mask=param_map.get("resource_flags_mask"),
+                               shelf=param_map.get("shelf"),
+                               top_left_x=param_map.get("top_left_x"),
+                               top_left_y=param_map.get("top_left_y"),
+                               user_name=param_map.get("user_name"),
+                               )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_RFGEN> type requests
@@ -9609,6 +12564,31 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_rfgen_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_rfgen(bb_gain=param_map.get("bb_gain"),
+                            freq_khz=param_map.get("freq_khz"),
+                            gain=param_map.get("gain"),
+                            id=param_map.get("id"),
+                            if_gain=param_map.get("if_gain"),
+                            pulse_count=param_map.get("pulse_count"),
+                            pulse_interval_us=param_map.get("pulse_interval_us"),
+                            pulse_width_us=param_map.get("pulse_width_us"),
+                            resource=param_map.get("resource"),
+                            rfgen_flags=param_map.get("rfgen_flags"),
+                            rfgen_flags_mask=param_map.get("rfgen_flags_mask"),
+                            shelf=param_map.get("shelf"),
+                            sweep_time_ms=param_map.get("sweep_time_ms"),
+                            )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_SCRIPT> type requests
@@ -9702,6 +12682,25 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_script_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_script(endp=param_map.get("endp"),
+                             flags=param_map.get("flags"),
+                             group_action=param_map.get("group_action"),
+                             loop_count=param_map.get("loop_count"),
+                             name=param_map.get("name"),
+                             private=param_map.get("private"),
+                             type=param_map.get("type"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_SEC_IP> type requests
 
@@ -9738,6 +12737,22 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_sec_ip_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_sec_ip(ip_list=param_map.get("ip_list"),
+                             port=param_map.get("port"),
+                             resource=param_map.get("resource"),
+                             shelf=param_map.get("shelf"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_TEST_ID> type requests
 
@@ -9769,6 +12784,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_test_id_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_test_id(resource=param_map.get("resource"),
+                              shelf=param_map.get("shelf"),
+                              test_id=param_map.get("test_id"),
+                              )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_VOIP_INFO> type requests
@@ -9854,6 +12884,36 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_voip_info_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_voip_info(codec=param_map.get("codec"),
+                                first_call_delay=param_map.get("first_call_delay"),
+                                jitter_buffer_sz=param_map.get("jitter_buffer_sz"),
+                                local_sip_port=param_map.get("local_sip_port"),
+                                loop_call_count=param_map.get("loop_call_count"),
+                                loop_wavefile_count=param_map.get("loop_wavefile_count"),
+                                max_call_duration=param_map.get("max_call_duration"),
+                                max_inter_call_gap=param_map.get("max_inter_call_gap"),
+                                messaging_protocol=param_map.get("messaging_protocol"),
+                                min_call_duration=param_map.get("min_call_duration"),
+                                min_inter_call_gap=param_map.get("min_inter_call_gap"),
+                                name=param_map.get("name"),
+                                pesq_server_ip=param_map.get("pesq_server_ip"),
+                                pesq_server_passwd=param_map.get("pesq_server_passwd"),
+                                pesq_server_port=param_map.get("pesq_server_port"),
+                                reg_expire_timer=param_map.get("reg_expire_timer"),
+                                ringing_timer=param_map.get("ringing_timer"),
+                                sound_dev=param_map.get("sound_dev"),
+                                )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_VRCX_COST> type requests
 
@@ -9904,6 +12964,27 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_vrcx_cost_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_vrcx_cost(interface_cost=param_map.get("interface_cost"),
+                                local_dev=param_map.get("local_dev"),
+                                local_dev_b=param_map.get("local_dev_b"),
+                                remote_dev=param_map.get("remote_dev"),
+                                remote_dev_b=param_map.get("remote_dev_b"),
+                                resource=param_map.get("resource"),
+                                shelf=param_map.get("shelf"),
+                                vr_name=param_map.get("vr_name"),
+                                wanlink=param_map.get("wanlink"),
+                                )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_WANLINK_INFO> type requests
@@ -9986,6 +13067,33 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_wanlink_info_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_wanlink_info(drop_freq=param_map.get("drop_freq"),
+                                   dup_freq=param_map.get("dup_freq"),
+                                   extra_buffer=param_map.get("extra_buffer"),
+                                   jitter_freq=param_map.get("jitter_freq"),
+                                   latency=param_map.get("latency"),
+                                   max_drop_amt=param_map.get("max_drop_amt"),
+                                   max_jitter=param_map.get("max_jitter"),
+                                   max_lateness=param_map.get("max_lateness"),
+                                   max_reorder_amt=param_map.get("max_reorder_amt"),
+                                   min_drop_amt=param_map.get("min_drop_amt"),
+                                   min_reorder_amt=param_map.get("min_reorder_amt"),
+                                   name=param_map.get("name"),
+                                   playback_capture_file=param_map.get("playback_capture_file"),
+                                   reorder_freq=param_map.get("reorder_freq"),
+                                   speed=param_map.get("speed"),
+                                   )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_WANLINK_PCAP> type requests
 
@@ -10026,6 +13134,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_wanlink_pcap_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_wanlink_pcap(capture=param_map.get("capture"),
+                                   directory=param_map.get("directory"),
+                                   name=param_map.get("name"),
+                                   )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_WANPATH_CORRUPTION> type requests
@@ -10102,6 +13225,26 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_wanpath_corruption_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_wanpath_corruption(byte=param_map.get("byte"),
+                                         flags=param_map.get("flags"),
+                                         index=param_map.get("index"),
+                                         max_offset=param_map.get("max_offset"),
+                                         min_offset=param_map.get("min_offset"),
+                                         name=param_map.get("name"),
+                                         path=param_map.get("path"),
+                                         rate=param_map.get("rate"),
+                                         )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_WANPATH_FILTER> type requests
 
@@ -10153,6 +13296,26 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_wanpath_filter_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_wanpath_filter(defer_flush=param_map.get("defer_flush"),
+                                     dst_filter=param_map.get("dst_filter"),
+                                     filter_type=param_map.get("filter_type"),
+                                     passive=param_map.get("passive"),
+                                     reverse=param_map.get("reverse"),
+                                     src_filter=param_map.get("src_filter"),
+                                     wl_name=param_map.get("wl_name"),
+                                     wp_name=param_map.get("wp_name"),
+                                     )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_WANPATH_RUNNING> type requests
 
@@ -10193,6 +13356,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_wanpath_running_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_wanpath_running(running=param_map.get("running"),
+                                      wl_name=param_map.get("wl_name"),
+                                      wp_name=param_map.get("wp_name"),
+                                      )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_WIFI_CORRUPTIONS> type requests
@@ -10294,6 +13472,31 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_wifi_corruptions_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_wifi_corruptions(corrupt_flags=param_map.get("corrupt_flags"),
+                                       corrupt_per_mil=param_map.get("corrupt_per_mil"),
+                                       delay_flags=param_map.get("delay_flags"),
+                                       delay_max=param_map.get("delay_max"),
+                                       delay_min=param_map.get("delay_min"),
+                                       dup_flags=param_map.get("dup_flags"),
+                                       dup_per_65535=param_map.get("dup_per_65535"),
+                                       ignore_flags=param_map.get("ignore_flags"),
+                                       ignore_per_mil=param_map.get("ignore_per_mil"),
+                                       port=param_map.get("port"),
+                                       req_flush=param_map.get("req_flush"),
+                                       resource=param_map.get("resource"),
+                                       shelf=param_map.get("shelf"),
+                                       )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_WIFI_CUSTOM> type requests
 
@@ -10332,6 +13535,23 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_wifi_custom_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_wifi_custom(port=param_map.get("port"),
+                                  resource=param_map.get("resource"),
+                                  shelf=param_map.get("shelf"),
+                                  text=param_map.get("text"),
+                                  type=param_map.get("type"),
+                                  )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_WIFI_EXTRA> type requests
@@ -10462,6 +13682,50 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_wifi_extra_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_wifi_extra(anonymous_identity=param_map.get("anonymous_identity"),
+                                 anqp_3gpp_cell_net=param_map.get("anqp_3gpp_cell_net"),
+                                 ca_cert=param_map.get("ca_cert"),
+                                 client_cert=param_map.get("client_cert"),
+                                 domain=param_map.get("domain"),
+                                 eap=param_map.get("eap"),
+                                 group=param_map.get("group"),
+                                 hessid=param_map.get("hessid"),
+                                 identity=param_map.get("identity"),
+                                 imsi=param_map.get("imsi"),
+                                 ipaddr_type_avail=param_map.get("ipaddr_type_avail"),
+                                 key=param_map.get("key"),
+                                 key_mgmt=param_map.get("key_mgmt"),
+                                 milenage=param_map.get("milenage"),
+                                 network_auth_type=param_map.get("network_auth_type"),
+                                 network_type=param_map.get("network_type"),
+                                 pac_file=param_map.get("pac_file"),
+                                 pairwise=param_map.get("pairwise"),
+                                 password=param_map.get("password"),
+                                 phase1=param_map.get("phase1"),
+                                 phase2=param_map.get("phase2"),
+                                 pin=param_map.get("pin"),
+                                 pk_passwd=param_map.get("pk_passwd"),
+                                 port=param_map.get("port"),
+                                 private_key=param_map.get("private_key"),
+                                 psk=param_map.get("psk"),
+                                 realm=param_map.get("realm"),
+                                 resource=param_map.get("resource"),
+                                 roaming_consortium=param_map.get("roaming_consortium"),
+                                 shelf=param_map.get("shelf"),
+                                 venue_group=param_map.get("venue_group"),
+                                 venue_type=param_map.get("venue_type"),
+                                 )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_WIFI_EXTRA2> type requests
 
@@ -10539,6 +13803,35 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_wifi_extra2_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_wifi_extra2(corrupt_gtk_rekey_mic=param_map.get("corrupt_gtk_rekey_mic"),
+                                  freq_24=param_map.get("freq_24"),
+                                  freq_5=param_map.get("freq_5"),
+                                  ignore_assoc=param_map.get("ignore_assoc"),
+                                  ignore_auth=param_map.get("ignore_auth"),
+                                  ignore_probe=param_map.get("ignore_probe"),
+                                  ignore_reassoc=param_map.get("ignore_reassoc"),
+                                  ocsp=param_map.get("ocsp"),
+                                  port=param_map.get("port"),
+                                  post_ifup_script=param_map.get("post_ifup_script"),
+                                  radius_ip=param_map.get("radius_ip"),
+                                  radius_port=param_map.get("radius_port"),
+                                  req_flush=param_map.get("req_flush"),
+                                  resource=param_map.get("resource"),
+                                  sae_pwe=param_map.get("sae_pwe"),
+                                  shelf=param_map.get("shelf"),
+                                  venue_id=param_map.get("venue_id"),
+                                  )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_WIFI_RADIO> type requests
@@ -10732,6 +14025,51 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_wifi_radio_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_wifi_radio(active_peer_count=param_map.get("active_peer_count"),
+                                 ampdu_factor=param_map.get("ampdu_factor"),
+                                 antenna=param_map.get("antenna"),
+                                 channel=param_map.get("channel"),
+                                 const_tx=param_map.get("const_tx"),
+                                 country=param_map.get("country"),
+                                 flags=param_map.get("flags"),
+                                 flags_mask=param_map.get("flags_mask"),
+                                 frag_thresh=param_map.get("frag_thresh"),
+                                 frequency=param_map.get("frequency"),
+                                 fwname=param_map.get("fwname"),
+                                 fwver=param_map.get("fwver"),
+                                 mac=param_map.get("mac"),
+                                 max_amsdu=param_map.get("max_amsdu"),
+                                 mode=param_map.get("mode"),
+                                 peer_count=param_map.get("peer_count"),
+                                 pref_ap=param_map.get("pref_ap"),
+                                 pulse2_interval_us=param_map.get("pulse2_interval_us"),
+                                 pulse_interval=param_map.get("pulse_interval"),
+                                 pulse_width=param_map.get("pulse_width"),
+                                 radio=param_map.get("radio"),
+                                 rate=param_map.get("rate"),
+                                 rate_ctrl_count=param_map.get("rate_ctrl_count"),
+                                 resource=param_map.get("resource"),
+                                 rts=param_map.get("rts"),
+                                 shelf=param_map.get("shelf"),
+                                 skid_limit=param_map.get("skid_limit"),
+                                 stations_count=param_map.get("stations_count"),
+                                 tids_count=param_map.get("tids_count"),
+                                 tx_pulses=param_map.get("tx_pulses"),
+                                 txdesc_count=param_map.get("txdesc_count"),
+                                 txpower=param_map.get("txpower"),
+                                 vdev_count=param_map.get("vdev_count"),
+                                 )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_WIFI_TXO> type requests
 
@@ -10793,6 +14131,29 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_wifi_txo_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_wifi_txo(port=param_map.get("port"),
+                               resource=param_map.get("resource"),
+                               shelf=param_map.get("shelf"),
+                               txo_bw=param_map.get("txo_bw"),
+                               txo_enable=param_map.get("txo_enable"),
+                               txo_mcs=param_map.get("txo_mcs"),
+                               txo_nss=param_map.get("txo_nss"),
+                               txo_pream=param_map.get("txo_pream"),
+                               txo_retries=param_map.get("txo_retries"),
+                               txo_sgi=param_map.get("txo_sgi"),
+                               txo_txpower=param_map.get("txo_txpower"),
+                               )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_WL_CORRUPTION> type requests
@@ -10866,6 +14227,25 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_set_wl_corruption_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_wl_corruption(byte=param_map.get("byte"),
+                                    flags=param_map.get("flags"),
+                                    index=param_map.get("index"),
+                                    max_offset=param_map.get("max_offset"),
+                                    min_offset=param_map.get("min_offset"),
+                                    name=param_map.get("name"),
+                                    rate=param_map.get("rate"),
+                                    )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_WL_QDISC> type requests
 
@@ -10902,6 +14282,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_set_wl_qdisc_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_wl_qdisc(name=param_map.get("name"),
+                               qdisc=param_map.get("qdisc"),
+                               )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_ALERTS> type requests
@@ -10962,6 +14356,24 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_alerts_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_alerts(card=param_map.get("card"),
+                              endp=param_map.get("endp"),
+                              extra=param_map.get("extra"),
+                              port=param_map.get("port"),
+                              shelf=param_map.get("shelf"),
+                              type=param_map.get("type"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_ATTENUATORS> type requests
 
@@ -10993,6 +14405,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_show_attenuators_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_attenuators(resource=param_map.get("resource"),
+                                   serno=param_map.get("serno"),
+                                   shelf=param_map.get("shelf"),
+                                   )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_CD> type requests
@@ -11026,6 +14453,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_cd_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_cd(collision_domain=param_map.get("collision_domain"),
+                          resource=param_map.get("resource"),
+                          shelf=param_map.get("shelf"),
+                          )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_CHAMBER> type requests
 
@@ -11051,6 +14493,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_show_chamber_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_chamber(name=param_map.get("name"),
+                               )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_CHANNEL_GROUPS> type requests
@@ -11084,6 +14539,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_channel_groups_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_channel_groups(channel_name=param_map.get("channel_name"),
+                                      resource=param_map.get("resource"),
+                                      shelf=param_map.get("shelf"),
+                                      )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_CLIENTS> type requests
 
@@ -11104,6 +14574,18 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_show_clients_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_clients()
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_CX> type requests
@@ -11134,6 +14616,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_cx_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_cx(cross_connect=param_map.get("cross_connect"),
+                          test_mgr=param_map.get("test_mgr"),
+                          )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_CXE> type requests
 
@@ -11163,6 +14659,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_cxe_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_cxe(cross_connect=param_map.get("cross_connect"),
+                           test_mgr=param_map.get("test_mgr"),
+                           )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_DBS> type requests
 
@@ -11183,6 +14693,18 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_show_dbs_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_dbs()
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_DUT> type requests
@@ -11209,6 +14731,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_show_dut_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_dut(name=param_map.get("name"),
+                           )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_ENDP_PAYLOAD> type requests
@@ -11240,6 +14775,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_endp_payload_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_endp_payload(max_bytes=param_map.get("max_bytes"),
+                                    name=param_map.get("name"),
+                                    )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_ENDPOINTS> type requests
 
@@ -11269,6 +14818,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_endpoints_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_endpoints(endpoint=param_map.get("endpoint"),
+                                 extra=param_map.get("extra"),
+                                 )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_ERR> type requests
 
@@ -11296,6 +14859,19 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_err_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_err(message=param_map.get("message"),
+                           )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_EVENT_INTEREST> type requests
 
@@ -11316,6 +14892,18 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_show_event_interest_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_event_interest()
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_EVENTS> type requests
@@ -11376,6 +14964,24 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_events_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_events(card=param_map.get("card"),
+                              endp=param_map.get("endp"),
+                              extra=param_map.get("extra"),
+                              port=param_map.get("port"),
+                              shelf=param_map.get("shelf"),
+                              type=param_map.get("type"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_FILES> type requests
 
@@ -11418,6 +15024,24 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_files_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_files(dir_flags=param_map.get("dir_flags"),
+                             directory=param_map.get("directory"),
+                             filter=param_map.get("filter"),
+                             key=param_map.get("key"),
+                             resource=param_map.get("resource"),
+                             shelf=param_map.get("shelf"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_GROUP> type requests
 
@@ -11444,6 +15068,19 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_group_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_group(group=param_map.get("group"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_PESQ> type requests
 
@@ -11469,6 +15106,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_show_pesq_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_pesq(endpoint=param_map.get("endpoint"),
+                            )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_PORTS> type requests
@@ -11506,6 +15156,22 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_ports_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_ports(port=param_map.get("port"),
+                             probe_flags=param_map.get("probe_flags"),
+                             resource=param_map.get("resource"),
+                             shelf=param_map.get("shelf"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_PPP_LINKS> type requests
 
@@ -11538,6 +15204,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_ppp_links_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_ppp_links(link_num=param_map.get("link_num"),
+                                 resource=param_map.get("resource"),
+                                 shelf=param_map.get("shelf"),
+                                 )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_PROFILE> type requests
 
@@ -11563,6 +15244,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_show_profile_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_profile(name=param_map.get("name"),
+                               )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_RESOURCES> type requests
@@ -11593,6 +15287,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_resources_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_resources(resource=param_map.get("resource"),
+                                 shelf=param_map.get("shelf"),
+                                 )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_RFGEN> type requests
 
@@ -11621,6 +15329,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_show_rfgen_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_rfgen(resource=param_map.get("resource"),
+                             shelf=param_map.get("shelf"),
+                             )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_RT> type requests
@@ -11657,6 +15379,22 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_rt_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_rt(key=param_map.get("key"),
+                          resource=param_map.get("resource"),
+                          shelf=param_map.get("shelf"),
+                          virtual_router=param_map.get("virtual_router"),
+                          )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_SCRIPT_RESULTS> type requests
 
@@ -11685,6 +15423,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_show_script_results_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_script_results(endpoint=param_map.get("endpoint"),
+                                      key=param_map.get("key"),
+                                      )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_SPANS> type requests
@@ -11718,6 +15470,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_spans_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_spans(resource=param_map.get("resource"),
+                             shelf=param_map.get("shelf"),
+                             span_number=param_map.get("span_number"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_TEXT_BLOB> type requests
 
@@ -11750,6 +15517,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_text_blob_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_text_blob(brief=param_map.get("brief"),
+                                 name=param_map.get("name"),
+                                 type=param_map.get("type"),
+                                 )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_TM> type requests
 
@@ -11776,6 +15558,19 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_tm_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_tm(test_mgr=param_map.get("test_mgr"),
+                          )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_TRAFFIC_PROFILE> type requests
 
@@ -11801,6 +15596,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_show_traffic_profile_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_traffic_profile(name=param_map.get("name"),
+                                       )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_VENUE> type requests
@@ -11835,6 +15643,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_venue_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_venue(resource=param_map.get("resource"),
+                             shelf=param_map.get("shelf"),
+                             venu_id=param_map.get("venu_id"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_VR> type requests
 
@@ -11866,6 +15689,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_show_vr_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_vr(resource=param_map.get("resource"),
+                          router=param_map.get("router"),
+                          shelf=param_map.get("shelf"),
+                          )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_VRCX> type requests
@@ -11899,6 +15737,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_show_vrcx_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_vrcx(cx_name=param_map.get("cx_name"),
+                            resource=param_map.get("resource"),
+                            shelf=param_map.get("shelf"),
+                            )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_WANPATHS> type requests
 
@@ -11927,6 +15780,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_show_wanpaths_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_wanpaths(endpoint=param_map.get("endpoint"),
+                                wanpath=param_map.get("wanpath"),
+                                )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHUTDOWN> type requests
@@ -11962,6 +15829,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_shutdown_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_shutdown(chdir=param_map.get("chdir"),
+                           really=param_map.get("really"),
+                           serverctl=param_map.get("serverctl"),
+                           )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHUTDOWN_OS> type requests
 
@@ -11991,6 +15873,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_shutdown_os_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_shutdown_os(resource=param_map.get("resource"),
+                              shelf=param_map.get("shelf"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHUTDOWN_RESOURCE> type requests
 
@@ -12019,6 +15915,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_shutdown_resource_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_shutdown_resource(resource=param_map.get("resource"),
+                                    shelf=param_map.get("shelf"),
+                                    )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SNIFF_PORT> type requests
@@ -12093,6 +16003,26 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_sniff_port_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_sniff_port(display=param_map.get("display"),
+                             duration=param_map.get("duration"),
+                             flags=param_map.get("flags"),
+                             outfile=param_map.get("outfile"),
+                             port=param_map.get("port"),
+                             resource=param_map.get("resource"),
+                             shelf=param_map.get("shelf"),
+                             snaplen=param_map.get("snaplen"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/START_ENDP> type requests
 
@@ -12119,6 +16049,19 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_start_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_start_endp(endp_name=param_map.get("endp_name"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/START_GROUP> type requests
 
@@ -12144,6 +16087,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_start_group_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_start_group(name=param_map.get("name"),
+                              )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/START_PPP_LINK> type requests
@@ -12177,6 +16133,21 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_start_ppp_link_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_start_ppp_link(resource=param_map.get("resource"),
+                                 shelf=param_map.get("shelf"),
+                                 unit_num=param_map.get("unit_num"),
+                                 )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/STOP_ENDP> type requests
 
@@ -12203,6 +16174,19 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_stop_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_stop_endp(endp_name=param_map.get("endp_name"),
+                            )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/STOP_GROUP> type requests
 
@@ -12228,6 +16212,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_stop_group_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_stop_group(name=param_map.get("name"),
+                             )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/STOP_PPP_LINK> type requests
@@ -12260,6 +16257,21 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_stop_ppp_link_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_stop_ppp_link(resource=param_map.get("resource"),
+                                shelf=param_map.get("shelf"),
+                                unit_num=param_map.get("unit_num"),
+                                )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/TAIL> type requests
@@ -12300,6 +16312,23 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_tail_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_tail(cmd=param_map.get("cmd"),
+                       key=param_map.get("key"),
+                       message=param_map.get("message"),
+                       resource=param_map.get("resource"),
+                       shelf=param_map.get("shelf"),
+                       )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/TM_REGISTER> type requests
 
@@ -12328,6 +16357,20 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_tm_register_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_tm_register(client_name=param_map.get("client_name"),
+                              test_mgr=param_map.get("test_mgr"),
+                              )
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/TM_UNREGISTER> type requests
@@ -12359,6 +16402,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_tm_unregister_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_tm_unregister(client_name=param_map.get("client_name"),
+                                test_mgr=param_map.get("test_mgr"),
+                                )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/VERSION> type requests
 
@@ -12380,6 +16437,18 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_version_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_version()
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/WHO> type requests
 
@@ -12400,6 +16469,18 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_who_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_who()
+        """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/WIFI_CLI_CMD> type requests
@@ -12438,6 +16519,22 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_wifi_cli_cmd_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_wifi_cli_cmd(port=param_map.get("port"),
+                               resource=param_map.get("resource"),
+                               shelf=param_map.get("shelf"),
+                               wpa_cli_cmd=param_map.get("wpa_cli_cmd"),
+                               )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/WIFI_EVENT> type requests
 
@@ -12473,6 +16570,22 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_wifi_event_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_wifi_event(device=param_map.get("device"),
+                             event=param_map.get("event"),
+                             msg=param_map.get("msg"),
+                             status=param_map.get("status"),
+                             )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/WISER_RESET> type requests
 
@@ -12502,6 +16615,20 @@ class LFJsonCommand(JsonCommand):
         return response
     #
 
+    def post_wiser_reset_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_wiser_reset(resource=param_map.get("resource"),
+                              shelf=param_map.get("shelf"),
+                              )
+        """
+
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/WRITE> type requests
 
@@ -12527,6 +16654,19 @@ class LFJsonCommand(JsonCommand):
                                   debug=debug)
         return response
     #
+
+    def post_write_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_write(db_name=param_map.get("db_name"),
+                        )
+        """
 
 
 class LFJsonQuery(JsonQuery):
