@@ -2063,7 +2063,7 @@ def main():
             logg.info("command sent {}".format(command))
         logged_out_9800 = False
         loop_count = 0
-        while logged_out_9800 == False and loop_count <= 7:
+        while logged_out_9800 == False and loop_count <= 5:
             loop_count += 1
             i = egg.expect_exact([CCP, CCP_EN, CCP_CONFIG, CCP_CONFIG_WLAN, CCP_POLICY_TAG, CCP_CONFIG_LINE, "--More--", CCP_BAD_IP, pexpect.TIMEOUT], timeout=timeout)
             logg.info("expect index: %s" % i)
@@ -2129,6 +2129,7 @@ def main():
             # Timeout - try to exit
             if i == 8:
                 logg.info("9800 expect timeout loop_count: {}".format(loop_count))
+                # a timeout , tray again.
                 # egg.sendline("exit")
                 # logged_out_9800 = True
 
