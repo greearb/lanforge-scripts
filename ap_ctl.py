@@ -298,12 +298,23 @@ def main():
             egg.sendline(CR) 
             sleep(1)
 
-
+    if (args.action == "cmd"):
+        command = args.value
+        logg.info("execute: {command}".format(command=command))
+        egg.sendline(command)
+        egg.expect([pexpect.TIMEOUT], timeout=7)  # do not delete this for it allows for subprocess to see output
+        print(egg.before.decode('utf-8', 'ignore')) # do not delete this for it  allows for subprocess to see output
+        i = egg.expect_exact([AP_MORE,pexpect.TIMEOUT],timeout=5)
+        if i == 0:
+            egg.sendcontrol('c')
+        if i == 1:
+            logg.info("send cntl c anyway")
+            egg.sendcontrol('c')
 
     # include or i will include all lines that match the criteria
     # section or s will include entire sections that match
     # show controllers dot11Radio 2 powercfg | i T1
-    if (args.action == "powercfg"):
+    elif (args.action == "powercfg"):
         command = 'show controllers dot11Radio {slot} powercfg | i T1'.format(slot=args.radio_slot)
         logg.info("execute: {command}".format(command=command))
         egg.sendline(command)
