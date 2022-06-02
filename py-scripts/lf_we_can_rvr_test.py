@@ -7,9 +7,9 @@ PURPOSE: lf_we_can_rvr_test.py will measure the performance of stations over a c
         using programmable attenuators and throughput test is run at each distance/RSSI step.
 
 EXAMPLE:
-python3 rvr_test.py --mgr 192.168.200.21 --mgr_port 8080 --upstream eth1 --num_stations 15 --mode 9 --security wpa2 --ssid ct-523 --password ct-523-ps --radio wiphy3 --atten_serno 84 --atten_idx all --atten_val 10,20,30 --test_duration 1m --ap_model WAC505 --traffic 500
+python3 lf_we_can_rvr_test.py --mgr 192.168.200.21 --mgr_port 8080 --upstream eth1 --security wpa2 --ssid ct-523 --password ct-523-ps --radio wiphy3 --atten_serno 84 --atten_idx all --atten_val 10,20,30 --test_duration 1m --ap_model WAC505 --traffic 500
 
-Use './rvr_test.py --help' to see command line usage and options
+Use './lf_we_can_rvr_test.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 """
@@ -23,7 +23,7 @@ import parser
 
 
 if sys.version_info[0] != 3:
-    logging.error("This script requires Python 3")
+    print("This script requires Python 3")
     exit(1)
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
@@ -314,8 +314,8 @@ class RvR(Realm):
         report = lf_report(_output_pdf="rvr_test.pdf", _output_html="rvr_test.html", _results_dir_name="RvR_Test")
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
-        logger.log("path: {}".format(report_path))
-        logger.log("path_date_time: {}".format(report_path_date_time))
+        logger.info("path: {}".format(report_path))
+        logger.info("path_date_time: {}".format(report_path_date_time))
         report.set_title("WE-CAN Rate vs Range")
         report.build_banner()
         # objective title and description
@@ -471,7 +471,26 @@ def main():
     optional.add_argument('-av', '--atten_val',
                           help='Requested attenuation in dB ex:--> --atten_val 0, 10', default='0')
     optional.add_argument('--debug', help="to enable debug", default=False)
+    # logging configuration:
+    parser.add_argument('--log_level', default=None,
+        help='Set logging level: debug | info | warning | error | critical')
+
+    parser.add_argument("--lf_logger_config_json",
+                        help="--lf_logger_config_json <json file> , json configuration of logger")
     args = parser.parse_args()
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    # set the logger level to debug
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
+
+    # lf_logger_config_json will take presidence to changing debug levels
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
     test_start_time = datetime.now().strftime("%b %d %H:%M:%S")
     logger.info("Test started at ", test_start_time)
     logger.info(parser.parse_args())
