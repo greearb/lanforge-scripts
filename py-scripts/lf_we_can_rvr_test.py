@@ -17,17 +17,27 @@ License: Free to distribute and modify. LANforge systems must be licensed.
 import sys
 import os
 import pandas as pd
+import importlib
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-if 'py-json' not in sys.path:
-    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
+realm = importlib.import_module("py-json.realm")
+Realm = realm.Realm
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+
+cv_test_manager = importlib.import_module("py-json.cv_test_manager")
+cv_test = cv_test_manager.cv_test
+cv_add_base_parser = cv_test_manager.cv_add_base_parser
+cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
+lf_graph = importlib.import_module("py-scripts.lf_graph")
+lf_bar_graph = lf_graph.lf_bar_graph
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 import argparse
-from LANforge import LFUtils
-from realm import Realm
 from lf_report import lf_report
 from lf_graph import lf_bar_graph, lf_line_graph
 import time
@@ -332,10 +342,11 @@ class RvR(Realm):
                         "Resource id.")
         report.build_text()
         report.end_content_div()
-        print(res)
+        print("res:---->> ", res)
+        exit(0)
         for traffic_type in res["graph_df"]:
             report.set_obj_html(
-                _obj_title="Overall {} throughput for {} clients using {} traffic.".format(res["graph_df"]
+                _obj_title="Overall {} throughput for {} real clients using {} traffic.".format(res["graph_df"]
                                                                                            [traffic_type]["direction"],
                                                                                            len(self.list_of_data[0]),
                                                                                            traffic_type),
