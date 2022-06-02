@@ -70,7 +70,7 @@
     class which appends subclasses to it.
 
 ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-
+import os.path
 import sys
 
 if sys.version_info[0] != 3:
@@ -85,14 +85,16 @@ from http.client import HTTPResponse
 import json
 import logging
 from logging import Logger
-from .logg import Logg
-from .strutil import nott, iss
-from pprint import pprint, pformat
+from pprint import pformat
 import time
 import traceback
 from typing import Optional
 import urllib
 from urllib import request, error, parse
+
+# - - - - deployed import references - - - - -
+from .logg import Logg
+from .strutil import nott, iss
 
 SESSION_HEADER = 'X-LFJson-Session'
 LOGGER = Logger('json_api')
@@ -1107,12 +1109,12 @@ class BaseSession:
             if lfclient_url[idx].isalpha():
                 has_port = False
                 break
-            if lfclient_url[idx] is ".":
+            if lfclient_url[idx] == ".":
                 has_port = False
                 break
             if (ord(lfclient_url[idx]) >= 48) and (ord(lfclient_url[idx]) <= 57):
                 has_port = True
-            if lfclient_url[idx] is ":":
+            if lfclient_url[idx] == ":":
                 if has_port:
                     port = lfclient_url[idx + 1:]
                     lfclient_url = lfclient_url[0: idx]
@@ -19729,6 +19731,252 @@ class LFJsonQuery(JsonQuery):
         return self.extract_values(response=response,
                                    singular_key="router-connections",
                                    plural_key="router-connections")
+    #
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <WIFI-STATS> type requests
+
+    If you need to call the URL directly,
+    request one of these URLs:
+        /wifi-stats/
+        /wifi-stats/$shelf_id
+        /wifi-stats/$shelf_id/$resource_id
+        /wifi-stats/$shelf_id/$resource_id/$port_id
+
+    When requesting specific column names, they need to be URL encoded:
+        alias, ba_miss_count, entity+id, parent+dev, port, rx_ampdu_len_0_1, rx_ampdu_len_104_127, 
+        rx_ampdu_len_11_19, rx_ampdu_len_128_151, rx_ampdu_len_152_175, rx_ampdu_len_176_199, 
+        rx_ampdu_len_200_223, rx_ampdu_len_20_28, rx_ampdu_len_224_247, rx_ampdu_len_29_37, 
+        rx_ampdu_len_2_10, rx_ampdu_len_38_46, rx_ampdu_len_47_55, rx_ampdu_len_56_79, 
+        rx_ampdu_len_80_103, rx_cck, rx_he_2mu, rx_he_2ru, rx_he_3mu, rx_he_3ru, 
+        rx_he_4mu, rx_he_4ru, rx_he_5to8ru, rx_he_9to16ru, rx_he_ext_su, rx_he_gtr16ru, 
+        rx_he_su, rx_htgf, rx_htmix, rx_ofdm, rx_vht_2mu, rx_vht_3mu, rx_vht_4mu, 
+        rx_vht_su, tx_ampdu_len_0_1, tx_ampdu_len_104_127, tx_ampdu_len_11_19, tx_ampdu_len_128_151, 
+        tx_ampdu_len_152_175, tx_ampdu_len_176_199, tx_ampdu_len_200_223, tx_ampdu_len_20_28, 
+        tx_ampdu_len_224_247, tx_ampdu_len_29_37, tx_ampdu_len_2_10, tx_ampdu_len_38_46, 
+        tx_ampdu_len_47_55, tx_ampdu_len_56_79, tx_ampdu_len_80_103, tx_bf_ppdu_ebf, 
+        tx_bf_ppdu_ibf, tx_bf_rx_feedback_all, tx_bf_rx_feedback_he, tx_bf_rx_feedback_ht, 
+        tx_bf_rx_feedback_vht, tx_hetrig_2mu, tx_hetrig_2ru, tx_hetrig_3mu, tx_hetrig_3ru, 
+        tx_hetrig_4mu, tx_hetrig_4ru, tx_hetrig_5to8ru, tx_hetrig_9to16ru, tx_hetrig_gtr16ru, 
+        tx_hetrig_su, tx_msdu_pack_0, tx_msdu_pack_1, tx_msdu_pack_2, tx_msdu_pack_3, 
+        tx_msdu_pack_4, tx_msdu_pack_5, tx_msdu_pack_6, tx_msdu_pack_7, tx_pkt_ebf, 
+        tx_pkt_ibf, v_rx_bw_160, v_rx_bw_20, v_rx_bw_40, v_rx_bw_80, v_rx_bw_he_ru, 
+        v_rx_mcs_0, v_rx_mcs_1, v_rx_mcs_10, v_rx_mcs_11, v_rx_mcs_2, v_rx_mcs_3, 
+        v_rx_mcs_4, v_rx_mcs_5, v_rx_mcs_6, v_rx_mcs_7, v_rx_mcs_8, v_rx_mcs_9, v_rx_mode_cck, 
+        v_rx_mode_he_ext_su, v_rx_mode_he_mu, v_rx_mode_he_su, v_rx_mode_he_tb, v_rx_mode_ht, 
+        v_rx_mode_ht_gf, v_rx_mode_ofdm, v_rx_mode_vht, v_rx_nss_1, v_rx_nss_2, v_rx_nss_3, 
+        v_rx_nss_4, v_rx_ru_106, v_tx_bw_160, v_tx_bw_20, v_tx_bw_40, v_tx_bw_80, 
+        v_tx_mcs_0, v_tx_mcs_1, v_tx_mcs_10, v_tx_mcs_11, v_tx_mcs_2, v_tx_mcs_3, 
+        v_tx_mcs_4, v_tx_mcs_5, v_tx_mcs_6, v_tx_mcs_7, v_tx_mcs_8, v_tx_mcs_9, v_tx_mode_cck, 
+        v_tx_mode_he_ext_su, v_tx_mode_he_mu, v_tx_mode_he_su, v_tx_mode_he_tb, v_tx_mode_ht, 
+        v_tx_mode_ht_gf, v_tx_mode_ofdm, v_tx_mode_vht, v_tx_nss_1, v_tx_nss_2, v_tx_nss_3, 
+        v_tx_nss_4        # hidden columns:
+        resource
+    Example URL: /wifi-stats?fields=alias,ba_miss_count
+
+    Example py-json call (it knows the URL):
+        record = LFJsonGet.get_wifi_stats(eid_list=['1.234', '1.344'],
+                                          requested_col_names=['entity id'], 
+                                          debug=True)
+
+    The record returned will have these members: 
+    {
+        'alias':                 # User-specified alias for this Port.
+        'ba_miss_count':         # Radio level stat:  Beacon missed reported by firmware.
+        'entity id':             # 
+        'parent dev':            # Parent device or port of this port. Blank if this device is not a child
+                                 # of another device or port.
+        'port':                  # Entity ID
+        'rx_ampdu_len_0_1':      # Radio level stat:  RX AMPDU length of 0-1 frame.
+        'rx_ampdu_len_104_127':  # Radio level stat:  RX AMPDU length of 104-127 frames.
+        'rx_ampdu_len_11_19':    # Radio level stat:  RX AMPDU length of 11-19 frames.
+        'rx_ampdu_len_128_151':  # Radio level stat:  RX AMPDU length of 128-151 frames.
+        'rx_ampdu_len_152_175':  # Radio level stat:  RX AMPDU length of 152-175 frames.
+        'rx_ampdu_len_176_199':  # Radio level stat:  RX AMPDU length of 176-199 frames.
+        'rx_ampdu_len_200_223':  # Radio level stat:  RX AMPDU length of 200-223 frames.
+        'rx_ampdu_len_20_28':    # Radio level stat:  RX AMPDU length of 20-28 frames.
+        'rx_ampdu_len_224_247':  # Radio level stat:  RX AMPDU length of 224-247 frames.
+        'rx_ampdu_len_29_37':    # Radio level stat:  RX AMPDU length of 29-37 frames.
+        'rx_ampdu_len_2_10':     # Radio level stat:  RX AMPDU length of 2-10 frames.
+        'rx_ampdu_len_38_46':    # Radio level stat:  RX AMPDU length of 38-46 frames.
+        'rx_ampdu_len_47_55':    # Radio level stat:  RX AMPDU length of 47-55 frames.
+        'rx_ampdu_len_56_79':    # Radio level stat:  RX AMPDU length of 56-79 frames.
+        'rx_ampdu_len_80_103':   # Radio level stat:  RX AMPDU length of 80-103 frames.
+        'rx_cck':                # Radio level stat:  Received CCK (/b) encoded frames.
+        'rx_he_2mu':             # Radio level stat:  Received HE 2-MU (/ax MU-MIMO) encoded frames.
+        'rx_he_2ru':             # Radio level stat:  Received HE 2-RU (/ax OFDMA) encoded frames.
+        'rx_he_3mu':             # Radio level stat:  Received HE 3-MU (/ax MU-MIMO) encoded frames.
+        'rx_he_3ru':             # Radio level stat:  Received HE 3-RU (/ax OFDMA) encoded frames.
+        'rx_he_4mu':             # Radio level stat:  Received HE 4-MU (/ax MU-MIMO) encoded frames.
+        'rx_he_4ru':             # Radio level stat:  Received HE 4-RU (/ax OFDMA) encoded frames.
+        'rx_he_5to8ru':          # Radio level stat:  Received HE 5-8 RU (/ax OFDMA) encoded frames.
+        'rx_he_9to16ru':         # Radio level stat:  Received HE 9-16 RU (/ax OFDMA) encoded frames.
+        'rx_he_ext_su':          # Radio level stat:  Received HE Extended SU (/ax) encoded frames.
+        'rx_he_gtr16ru':         # Radio level stat:  Received HE greater than 16 RU (/ax OFDMA) encoded
+                                 # frames.
+        'rx_he_su':              # Radio level stat:  Received HE SU (/ax) encoded frames.
+        'rx_htgf':               # Radio level stat:  Received HT Greenfield (/n) encoded frames.
+        'rx_htmix':              # Radio level stat:  Received HT (/n) encoded frames.
+        'rx_ofdm':               # Radio level stat:  Received OFDM (a/g) encoded frames.
+        'rx_vht_2mu':            # Radio level stat:  Received VHT 2-MU (/ac) encoded frames.
+        'rx_vht_3mu':            # Radio level stat:  Received VHT 3-MU (/ac) encoded frames.
+        'rx_vht_4mu':            # Radio level stat:  Received VHT 4-MU (/ac) encoded frames.
+        'rx_vht_su':             # Radio level stat:  Received VHT SU (/ac) encoded frames.
+        'tx_ampdu_len_0_1':      # Radio level stat:  TX AMPDU length of 0-1 frame.
+        'tx_ampdu_len_104_127':  # Radio level stat:  TX AMPDU length of 104-127 frames.
+        'tx_ampdu_len_11_19':    # Radio level stat:  TX AMPDU length of 11-19 frames.
+        'tx_ampdu_len_128_151':  # Radio level stat:  TX AMPDU length of 128-151 frames.
+        'tx_ampdu_len_152_175':  # Radio level stat:  TX AMPDU length of 152-175 frames.
+        'tx_ampdu_len_176_199':  # Radio level stat:  TX AMPDU length of 176-199 frames.
+        'tx_ampdu_len_200_223':  # Radio level stat:  TX AMPDU length of 200-223 frames.
+        'tx_ampdu_len_20_28':    # Radio level stat:  TX AMPDU length of 20-28 frames.
+        'tx_ampdu_len_224_247':  # Radio level stat:  TX AMPDU length of 224-247 frames.
+        'tx_ampdu_len_29_37':    # Radio level stat:  TX AMPDU length of 29-37 frames.
+        'tx_ampdu_len_2_10':     # Radio level stat:  TX AMPDU length of 2-10 frames.
+        'tx_ampdu_len_38_46':    # Radio level stat:  TX AMPDU length of 38-46 frames.
+        'tx_ampdu_len_47_55':    # Radio level stat:  TX AMPDU length of 47-55 frames.
+        'tx_ampdu_len_56_79':    # Radio level stat:  TX AMPDU length of 56-79 frames.
+        'tx_ampdu_len_80_103':   # Radio level stat:  TX AMPDU length of 80-103 frames.
+        'tx_bf_ppdu_ebf':        # Radio level stat:  TX Beamformer PPDU count for Explicit Beam Forming.
+        'tx_bf_ppdu_ibf':        # Radio level stat:  TX Beamformer PPDU count for Implicit Beam Forming.
+        'tx_bf_rx_feedback_all': # Radio level stat:  RX beamformer feedback of all types.
+        'tx_bf_rx_feedback_he':  # Radio level stat:  RX beamformer feedback for HE types.
+        'tx_bf_rx_feedback_ht':  # Radio level stat:  RX beamformer feedback for HT types.
+        'tx_bf_rx_feedback_vht': # Radio level stat:  RX beamformer feedback for VHT types.
+        'tx_hetrig_2mu':         # Radio level stat:  Transmitted HE 2-MU Trigger (OFDMA/MU-MIMO) frames.
+        'tx_hetrig_2ru':         # Radio level stat:  Transmitted HE 2-RU Trigger (OFDMA) frames.
+        'tx_hetrig_3mu':         # Radio level stat:  Transmitted HE 3-MU Trigger (OFDMA/MU-MIMO) frames.
+        'tx_hetrig_3ru':         # Radio level stat:  Transmitted HE 3-RU Trigger (OFDMA) frames.
+        'tx_hetrig_4mu':         # Radio level stat:  Transmitted HE 4-MU Trigger (OFDMA/MU-MIMO) frames.
+        'tx_hetrig_4ru':         # Radio level stat:  Transmitted HE 4-RU Trigger (OFDMA) frames.
+        'tx_hetrig_5to8ru':      # Radio level stat:  Transmitted HE 5-8 RU Trigger (OFDMA) frames.
+        'tx_hetrig_9to16ru':     # Radio level stat:  Transmitted HE 9-16 RU Trigger (OFDMA) frames.
+        'tx_hetrig_gtr16ru':     # Radio level stat:  Transmitted HE greater than 16 RU Trigger (OFDMA)
+                                 # frames.
+        'tx_hetrig_su':          # Radio level stat:  Transmitted HE Trigger SU frames.
+        'tx_msdu_pack_0':        # Radio level stat:  TX MSDU packing of 1 frame.
+        'tx_msdu_pack_1':        # Radio level stat:  TX MSDU packing of 2 frames.
+        'tx_msdu_pack_2':        # Radio level stat:  TX MSDU packing of 3 frames.
+        'tx_msdu_pack_3':        # Radio level stat:  TX MSDU packing of 4 frames.
+        'tx_msdu_pack_4':        # Radio level stat:  TX MSDU packing of 5 frames.
+        'tx_msdu_pack_5':        # Radio level stat:  TX MSDU packing of 6 frames.
+        'tx_msdu_pack_6':        # Radio level stat:  TX MSDU packing of 7 frames.
+        'tx_msdu_pack_7':        # Radio level stat:  TX MSDU packing of 8 frames.
+        'tx_pkt_ebf':            # Radio level stat:  Explicit beamforming packet transmitted.
+        'tx_pkt_ibf':            # Radio level stat:  Implicit beamforming packet transmitted.
+        'v_rx_bw_160':           # Port level stat: Received packets with 160Mhz encoding.
+        'v_rx_bw_20':            # Port level stat: Received packets with 20Mhz encoding.
+        'v_rx_bw_40':            # Port level stat: Received packets with 40Mhz encoding.
+        'v_rx_bw_80':            # Port level stat: Received packets with 80Mhz encoding.
+        'v_rx_bw_he_ru':         # Port level stat: Received packets with HE RU (OFDMA) bandwidth encoding.
+        'v_rx_mcs_0':            # Port level stat: Received packets with MCS 0 encoding.
+        'v_rx_mcs_1':            # Port level stat: Received packets with MCS 1 encoding.
+        'v_rx_mcs_10':           # Port level stat: Received packets with MCS 10 encoding.
+        'v_rx_mcs_11':           # Port level stat: Received packets with MCS 11 encoding.
+        'v_rx_mcs_2':            # Port level stat: Received packets with MCS 2 encoding.
+        'v_rx_mcs_3':            # Port level stat: Received packets with MCS 3 encoding.
+        'v_rx_mcs_4':            # Port level stat: Received packets with MCS 4 encoding.
+        'v_rx_mcs_5':            # Port level stat: Received packets with MCS 5 encoding.
+        'v_rx_mcs_6':            # Port level stat: Received packets with MCS 6 encoding.
+        'v_rx_mcs_7':            # Port level stat: Received packets with MCS 7 encoding.
+        'v_rx_mcs_8':            # Port level stat: Received packets with MCS 8 encoding.
+        'v_rx_mcs_9':            # Port level stat: Received packets with MCS 9 encoding.
+        'v_rx_mode_cck':         # Port level stat: Received packets with CCK (/b) encoding.
+        'v_rx_mode_he_ext_su':   # Port level stat: Received packets with extended HE single-user (/ax)
+                                 # encoding.
+        'v_rx_mode_he_mu':       # Port level stat: Received packets with HE MU (/ax) encoding.
+        'v_rx_mode_he_su':       # Port level stat: Received packets with HE single-user (/ax) encoding.
+        'v_rx_mode_he_tb':       # Port level stat: Received packets with HE TB (/ax) encoding.
+        'v_rx_mode_ht':          # Port level stat: Received packets with HT (/n) encoding.
+        'v_rx_mode_ht_gf':       # Port level stat: Received packets with HT greenfield (/n) encoding.
+        'v_rx_mode_ofdm':        # Port level stat: Received packets with OFDM (a/g) encoding.
+        'v_rx_mode_vht':         # Port level stat: Received packets with VHT greenfield (/ac) encoding.
+        'v_rx_nss_1':            # Port level stat: Received packets with 1 spatial stream encoding.
+        'v_rx_nss_2':            # Port level stat: Received packets with 2 spatial streams encoding.
+        'v_rx_nss_3':            # Port level stat: Received packets with 3 spatial streams encoding.
+        'v_rx_nss_4':            # Port level stat: Received packets with 4 spatial streams encoding.
+        'v_rx_ru_106':           # Port level stat: Received packets with HE RU-106 (OFDMA) encoding.
+        'v_tx_bw_160':           # Port level stat: Transmitted packets with 160Mhz encoding.
+        'v_tx_bw_20':            # Port level stat: Transmitted packets with 20Mhz encoding.
+        'v_tx_bw_40':            # Port level stat: Transmitted packets with 40Mhz encoding.
+        'v_tx_bw_80':            # Port level stat: Transmitted packets with 80Mhz encoding.
+        'v_tx_mcs_0':            # Port level stat: Transmitted packets with MCS 0 encoding.
+        'v_tx_mcs_1':            # Port level stat: Transmitted packets with MCS 1 encoding.
+        'v_tx_mcs_10':           # Port level stat: Transmitted packets with MCS 10 encoding.
+        'v_tx_mcs_11':           # Port level stat: Transmitted packets with MCS 11 encoding.
+        'v_tx_mcs_2':            # Port level stat: Transmitted packets with MCS 2 encoding.
+        'v_tx_mcs_3':            # Port level stat: Transmitted packets with MCS 3 encoding.
+        'v_tx_mcs_4':            # Port level stat: Transmitted packets with MCS 4 encoding.
+        'v_tx_mcs_5':            # Port level stat: Transmitted packets with MCS 5 encoding.
+        'v_tx_mcs_6':            # Port level stat: Transmitted packets with MCS 6 encoding.
+        'v_tx_mcs_7':            # Port level stat: Transmitted packets with MCS 7 encoding.
+        'v_tx_mcs_8':            # Port level stat: Transmitted packets with MCS 8 encoding.
+        'v_tx_mcs_9':            # Port level stat: Transmitted packets with MCS 9 encoding.
+        'v_tx_mode_cck':         # Port level stat: Transmitted packets with CCK (/b) encoding.
+        'v_tx_mode_he_ext_su':   # Port level stat: Transmitted packets with extended HE single-user (/ax)
+                                 # encoding.
+        'v_tx_mode_he_mu':       # Port level stat: Transmitted packets with HE MU (/ax) encoding.
+        'v_tx_mode_he_su':       # Port level stat: Transmitted packets with HE single-user (/ax) encoding.
+        'v_tx_mode_he_tb':       # Port level stat: Transmitted packets with HE TB (/ax) encoding.
+        'v_tx_mode_ht':          # Port level stat: Transmitted packets with HT (/n) encoding.
+        'v_tx_mode_ht_gf':       # Port level stat: Transmitted packets with HT greenfield (/n) encoding.
+        'v_tx_mode_ofdm':        # Port level stat: Transmitted packets with OFDM (a/g) encoding.
+        'v_tx_mode_vht':         # Port level stat: Transmitted packets with VHT greenfield (/ac) encoding.
+        'v_tx_nss_1':            # Port level stat: Transmitted packets with 1 spatial stream encoding.
+        'v_tx_nss_2':            # Port level stat: Transmitted packets with 2 spatial streams encoding.
+        'v_tx_nss_3':            # Port level stat: Transmitted packets with 3 spatial streams encoding.
+        'v_tx_nss_4':            # Port level stat: Transmitted packets with 4 spatial streams encoding.
+    }
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    def get_wifi_stats(self, 
+                       eid_list: list = None,
+                       requested_col_names: list = None,
+                       wait_sec: float = 0.01,
+                       timeout_sec: float = 5.0,
+                       errors_warnings: list = None,
+                       debug: bool = False):
+        """
+        :param eid_list: list of entity IDs to query for
+        :param requested_col_names: list of column names to return
+        :param wait_sec: duration to wait between retries if no response or response is HTTP 404
+        :param timeout_sec: duration in which to keep querying before returning
+        :param errors_warnings: optional list to extend with errors and warnings from response
+        :param debug: print diagnostic info if true
+        :return: dictionary of results
+        """
+        debug |= self.debug_on
+        url = "/wifi-stats"
+        if (eid_list is None) or (len(eid_list) < 1):
+            raise ValueError("no entity id in request")
+        trimmed_fields = []
+        if isinstance(requested_col_names, str):
+            if not requested_col_names.strip():
+                raise ValueError("column name cannot be blank")
+            trimmed_fields.append(requested_col_names.strip())
+        if isinstance(requested_col_names, list):
+            for field in requested_col_names:
+                if not field.strip():
+                    raise ValueError("column names cannot be blank")
+                field = field.strip()
+                if field.find(" ") > -1:
+                    raise ValueError("field should be URL encoded: [%s]" % field)
+                trimmed_fields.append(field)
+        url += self.create_port_eid_url(eid_list=eid_list)
+
+        if len(trimmed_fields) > 0:
+            url += "?fields=%s" % (",".join(trimmed_fields))
+
+        response = self.json_get(url=url,
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=timeout_sec,
+                                 max_timeout_sec=timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if response is None:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="interface",
+                                   plural_key="interfaces")
     #
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <WL> type requests
