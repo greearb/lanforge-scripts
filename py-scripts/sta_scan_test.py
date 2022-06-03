@@ -99,37 +99,6 @@ class StaScan(Realm):
         if self.debug:
             print("ports are admin-up, initiating scan requests.")
 
-        # Request port-table info for stations on each resource.
-        #stations = [LFUtils.name_to_eid(x) for x in self.sta_list]
-        #stations = pd.DataFrame(stations)
-        #resources = stations[1].unique()
-        #interfaces = list()
-        #for resource in resources:
-        #    if self.debug:
-        #        print("Requesting port listing on resource: %s"%(resource))
-        #    shelf = stations[0][0]
-        #    resource_station = list(stations[stations[1] == resource][2])
-        #    url = '/port/%s/%s/%s' % (shelf, resource, ','.join(resource_station))
-        #    if self.debug:
-        #        print("Requesting station scan on resource with url: %s"%(url))
-        #    response = self.json_get(url)
-        #    if 'interface' in response.keys():
-        #        interface = response['interface']
-        #        interfaces.append(interface)
-        #    elif 'interfaces' in response.keys():
-        #        response_interfaces = response['interfaces']
-        #        for interface in response_interfaces:
-        #            for item in interface.values():
-        #                interfaces.append(item)
-
-        #df = pd.DataFrame(interfaces)
-        #stations = df[df['port type'] == 'WIFI-STA']
-        #stations = list(stations.drop_duplicates('parent dev')['alias'])
-        #stations = [station for station in stations if station in self.sta_list]
-
-        #if self.debug:
-        #    print("interfaces: %s\nstations: %s"%(interfaces, stations))
-
         # Start scan on all stations.
         for port in self.sta_list:
             port = LFUtils.name_to_eid(port)

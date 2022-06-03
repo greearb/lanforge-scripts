@@ -10,7 +10,6 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -108,7 +107,7 @@ class TTLSTest(Realm):
         self.hs20_enable = hs20_enable
         self.enable_pkc = enable_pkc
 
-        self.timeout = 120
+        self.timeout = 60
         self.number_template = number_template
         self.debug = _debug_on
         self.station_profile = self.new_station_profile()
@@ -175,8 +174,9 @@ class TTLSTest(Realm):
                                             eap=self.eap,
                                             identity=self.identity,
                                             passwd=self.ttls_passwd,
-                                            realm=self.ttls_realm,
-                                            domain=self.domain,
+                                            private_key=self.private_key,
+                                            pk_password=self.pk_passwd,
+                                            ca_cert=self.ca_cert,
                                             hessid=self.hessid)
         if self.ieee80211w:
             self.station_profile.set_command_param("add_sta", "ieee80211w", self.ieee80211w)
@@ -335,7 +335,7 @@ test_ipv4_ttls.py:
  --------------------
  Generic command layout:
  python ./test_ipv4_ttls.py
-    
+
     --upstream_port eth1
     --radio wiphy0 
     --num_stations 3

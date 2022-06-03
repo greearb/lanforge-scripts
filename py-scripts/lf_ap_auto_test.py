@@ -212,6 +212,7 @@ class ApAutoTest(cvtest):
                  sets=None,
                  graph_groups=None,
                  debug=False,
+                 test_tag=""
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port, debug_=debug)
 
@@ -253,6 +254,7 @@ class ApAutoTest(cvtest):
         self.graph_groups = graph_groups
         self.lf_report_dir = lf_report_dir
         self.local_lf_report_dir = local_lf_report_dir
+        self.test_tag = test_tag
 
     def setup(self):
         # Nothing to do at this time.
@@ -296,6 +298,8 @@ class ApAutoTest(cvtest):
             cfg_options.append("max_stations_5: " + str(self.max_stations_5))
         if self.max_stations_dual != -1:
             cfg_options.append("max_stations_dual: " + str(self.max_stations_dual))
+        if self.test_tag != "":
+            cfg_options.append("test_tag: " + self.test_tag)
 
         # We deleted the scenario earlier, now re-build new one line at a time.
         self.build_cfg(self.config_name, blob_test, cfg_options)

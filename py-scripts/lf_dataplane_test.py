@@ -137,7 +137,8 @@ class DataplaneTest(cv_test):
                  raw_lines_file="",
                  sets=None,
                  graph_groups=None,
-                 test_rig=""
+                 test_rig="",
+                 test_tag=""
                  ):
         super().__init__(lfclient_host=lf_host, lfclient_port=lf_port)
 
@@ -173,6 +174,7 @@ class DataplaneTest(cv_test):
         self.ssh_port = ssh_port
         self.local_lf_report_dir = local_lf_report_dir
         self.test_rig = test_rig
+        self.test_tag = test_tag
 
     def setup(self):
         # Nothing to do at this time.
@@ -211,6 +213,8 @@ class DataplaneTest(cv_test):
             cfg_options.append("selected_dut: " + self.dut)
         if self.test_rig != "":
             cfg_options.append("test_rig: " + self.test_rig)
+        if self.test_tag != "":
+            cfg_options.append("test_tag: " + self.test_tag)
 
         # We deleted the scenario earlier, now re-build new one line at a time.
 

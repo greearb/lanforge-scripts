@@ -60,6 +60,7 @@ class IPVariableTime(Realm):
                  use_existing_sta=False,
                  name_prefix=None,
                  upstream=None,
+                 upstream_resource=1,
                  radio=None,
                  host="localhost",
                  port=8080,
@@ -115,6 +116,8 @@ class IPVariableTime(Realm):
         self.side_b_min_rate = side_b_min_rate
         self.number_template = number_template
         self.debug = _debug_on
+        self.timeout_sec = 60
+        self.upstream_resource = upstream_resource
         # self.json_post("/cli-json/set_resource", {
         #     "shelf":1,
         #     "resource":all,
@@ -308,10 +311,11 @@ class IPVariableTime(Realm):
         temp_stas = self.station_profile.station_names.copy()
         # logger.info("temp_stas {temp_stas}".format(temp_stas=temp_stas))
         if self.wait_for_ip(temp_stas, ipv4=not self.ipv6, ipv6=self.ipv6, debug=self.debug):
+            loggger.debug("temp_stas {temp_stas}".format(temp_stas=temp_stas))
             self._pass("All stations got IPs")
         else:
             self._fail("Stations failed to get IPs")
-            self.exit_fail()
+            #self.exit_fail()
         self.cx_profile.start_cx()
 
     def stop(self):

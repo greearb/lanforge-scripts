@@ -42,7 +42,6 @@ if sys.version_info[0] != 3:
     logger.critical("This script requires Python 3")
     exit(1)
 
- 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
@@ -368,7 +367,7 @@ def main():
         "mac": "",
         "num_station": 1,
         "radio": "wiphy4"
-        },
+    },
         {
             "password": "lanforge2",
             "upstream": "eth2.200",
@@ -391,7 +390,7 @@ def main():
             "radio": "wiphy0"
         },
 
-        ]
+    ]
     multi_obj = MultiPsk(host=args.mgr,
                          port=args.mgr_port,
                          ssid=args.ssid,

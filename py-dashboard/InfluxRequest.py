@@ -67,13 +67,16 @@ class RecordInflux():
         self.write_api.write(bucket=self.influx_bucket, org=self.influx_org, record=p)
 
     def csv_to_influx(self, csv):
+        print("Sending data to influx")
         df = pd.read_csv(csv, sep='\t')
         df['Date'] = [datetime.datetime.utcfromtimestamp(int(date) / 1000).isoformat() for date in df['Date']]
         items = list(df.reset_index().transpose().to_dict().values())
         influx_variables = ['script', 'short-description', 'test_details', 'Graph-Group',
-                            'DUT-HW-version', 'DUT-SW-version', 'DUT-Serial-Num', 'testbed', 'Test Tag', 'Units']
+                            'DUT-HW-version', 'DUT-SW-version', "DUT-Model-Num", 'DUT-Serial-Num', 'testbed',
+                            'Test Tag', 'Units']
         csv_variables = ['test-id', 'short-description', 'test details', 'Graph-Group',
-                         'dut-hw-version', 'dut-sw-version', 'dut-serial-num', 'test-rig', 'test-tag', 'Units']
+                         'dut-hw-version', 'dut-sw-version', "dut-model-num", 'dut-serial-num', 'test-rig', 'test-tag',
+                         'Units']
         csv_vs_influx = dict(zip(csv_variables, influx_variables))
         columns = list(df.columns)
         for item in items:

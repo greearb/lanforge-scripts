@@ -11,11 +11,11 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description='''
         NAME: update_dependencies.py
-        
+
         PURPOSE:  Installs python3 script package dependencies
-        
+
         OUTPUT: List of successful and unsuccessful installs
-        
+
         NOTES: Install as root
         '''
     )
@@ -25,7 +25,8 @@ def main():
 
     print("Installing Script Python3 Dependencies")
     packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'pyarrow', 'websocket-client',
-                'xlsxwriter', 'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search', 'pyserial',
+                'xlsxwriter', 'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search',
+                'pyserial',
                 'pexpect-serial', 'scp', 'dash']
     if args.pyjwt:
         packages.append('pyjwt')
