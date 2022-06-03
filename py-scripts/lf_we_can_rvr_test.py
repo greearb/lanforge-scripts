@@ -6,7 +6,6 @@ NAME: rvr_test.py
 PURPOSE: lf_we_can_rvr_test.py will measure the performance of stations over a certain distance of the DUT. Distance is emulated
         using programmable attenuators and throughput test is run at each distance/RSSI step.
 
-EXAMPLE:
 python3 lf_we_can_rvr_test.py --mgr 192.168.200.21 --mgr_port 8080 --upstream eth1 --security wpa2 --ssid ct-523 --password ct-523-ps --radio wiphy3 --atten_serno 84 --atten_idx all --atten_val 10,20,30 --test_duration 1m --ap_model WAC505 --traffic 500
 
 Use './lf_we_can_rvr_test.py --help' to see command line usage and options
@@ -16,11 +15,9 @@ License: Free to distribute and modify. LANforge systems must be licensed.
 
 import sys
 import os
-import pandas as pd
 import importlib
 import logging
-import parser
-
+import pandas as pd
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -38,11 +35,16 @@ cv_add_base_parser = cv_test_manager.cv_add_base_parser
 cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_bar_graph = lf_graph.lf_bar_graph
+import time
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 import argparse
+if 'py-json' not in sys.path:
+    sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+
 from lf_report import lf_report
 from lf_graph import lf_bar_graph, lf_line_graph
 import time
@@ -153,6 +155,14 @@ class RvR(Realm):
             }
             self.json_post(clear_cx, data)
 
+    def cleanup(self):
+        self.cx_profile.cleanup()
+        if self.create_sta:
+            self.station_profile.cleanup()
+            LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url,
+                                               port_list=self.station_profile.station_names,
+                                               debug=self.debug)
+
     def build(self):
         throughput_dbm = {}
         if len(self.traffic_type) == 2:
@@ -161,7 +171,6 @@ class RvR(Realm):
             throughput_dbm = {f"{self.traffic_type[0]}": {}}
         self.list_of_data = self.get_resource_data()
         self.station_profile.station_names = self.list_of_data[5]
-        logger.info("self.station_profile.station_names = ", self.station_profile.station_names)
         for traffic in self.traffic_type:
             self.cx_profile.create(endp_type=traffic, side_a=self.station_profile.station_names,
                                    side_b=self.upstream,
@@ -248,12 +257,12 @@ class RvR(Realm):
             for i in range(len(throughput[key])):
                 upload[i].append(throughput[key][i][0])
                 download[i].append(throughput[key][i][1])
-        logger.info("Upload values", upload)
-        logger.info("Download Values", download)
+        print("Upload values", upload)
+        print("Download Values", download)
         upload_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in upload]
         download_throughput = [float(f"{(sum(i) / 1000000) / len(i): .2f}") for i in download]
-        logger.info("upload: ", upload_throughput)
-        logger.info("download: ", download_throughput)
+        print("upload: ", upload_throughput)
+        print("download: ", download_throughput)
         return upload_throughput, download_throughput
 
     def set_report_data(self, data):
@@ -310,13 +319,20 @@ class RvR(Realm):
         return res
 
     def generate_report(self, data, test_setup_info, input_setup_info):
+        print("data:-> ", data)
         res = self.set_report_data(data)
+        exit(0)
+        # for key, val in throughput_dbm.items():
+        #     print(key, val)
+        #     for key1, val1 in val.items():
+        #         print(key1, val1)
+        # exit(0)
         report = lf_report(_output_pdf="rvr_test.pdf", _output_html="rvr_test.html", _results_dir_name="RvR_Test")
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
         logger.info("path: {}".format(report_path))
         logger.info("path_date_time: {}".format(report_path_date_time))
-        report.set_title("WE-CAN Rate vs Range")
+        report.set_title("Lanforge Interop (WE-CAN) Rate vs Range")
         report.build_banner()
         # objective title and description
         report.set_obj_html(_obj_title="Objective",
@@ -326,7 +342,7 @@ class RvR(Realm):
         report.build_objective()
         report.test_setup_table(test_setup_data=test_setup_info, value="Device Under Test")
         report.end_content_div()
-        data = {
+        phone_info = {
             "Resource ID": self.list_of_data[0],
             "Phone Name": self.list_of_data[1],
             "MAC Address": self.list_of_data[2],
@@ -335,7 +351,7 @@ class RvR(Realm):
             "Rx link Rate (Mbps) ": self.list_of_data[6],
             "Tx link Rate (Mbps)": self.list_of_data[7],
         }
-        phone_details = pd.DataFrame(data)
+        phone_details = pd.DataFrame(phone_info)
         report.set_table_title("<h3>Phone Details")
         report.build_table_title()
         report.set_table_dataframe(phone_details)
@@ -492,8 +508,8 @@ def main():
         logger_config.load_lf_logger_config()
 
     test_start_time = datetime.now().strftime("%b %d %H:%M:%S")
-    logger.info("Test started at ", test_start_time)
-    logger.info(parser.parse_args())
+    print("Test started at ", test_start_time)
+    print(parser.parse_args())
     if args.test_duration.endswith('s') or args.test_duration.endswith('S'):
         args.test_duration = abs(int(float(args.test_duration[0:-1])))
     elif args.test_duration.endswith('m') or args.test_duration.endswith('M'):
@@ -548,6 +564,7 @@ def main():
                   _debug_on=args.debug)
 
     data = rvr_obj.build()
+    rvr_obj.stop_l3()
 
     test_end_time = datetime.now().strftime("%b %d %H:%M:%S")
     logger.info("Test ended at: ", test_end_time)
