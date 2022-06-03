@@ -127,7 +127,8 @@ class FileAdapter(object):
         # NOTE: data can be a partial line, multiple lines
         data = data.strip()  # ignore leading/trailing whitespace
         if data:  # non-blank
-            self.logger.info(data)
+            # 6/3/2022 set to debug 
+            self.logger.debug(data)
 
     def flush(self):
         pass  # leave it to logging to flush properly
