@@ -145,8 +145,8 @@ class create_controller_series_object:
             self.port = port
 
         if timeout is None:
-            logger.info("timeout not set default to 10 sec")
-            self.timeout = '10'
+            logger.info("timeout not set default to 3 sec")
+            self.timeout = '3'
         else:
             self.timeout = timeout
 
@@ -222,11 +222,13 @@ class create_controller_series_object:
             self.command = ["./wifi_ctl_9800_3504.py", "--scheme", self.scheme, "--dest", self.dest,
                             "--user", self.user, "--passwd", self.passwd, "--prompt", self.prompt,
                             "--series", self.series, "--ap", self.ap, "--ap_band_slot", self.ap_band_slot, "--band", self.band, "--port", self.port,
+                            "--timeout", self.timeout,
                             ]
         else:
             self.command = [str(str(self.pwd) + "/wifi_ctl_9800_3504.py"), "--scheme", self.scheme, "--dest", self.dest,
                             "--user", self.user, "--passwd", self.passwd, "--prompt", self.prompt,
                             "--series", self.series, "--ap", self.ap, "--ap_band_slot", self.ap_band_slot, "--band", self.band, "--port", self.port,
+                            "--timeout", self.timeout,
                             ]
 
         # Generate command
