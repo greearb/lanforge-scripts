@@ -127,7 +127,8 @@ class FileAdapter(object):
         # NOTE: data can be a partial line, multiple lines
         data = data.strip()  # ignore leading/trailing whitespace
         if data:  # non-blank
-            self.logger.info(data)
+            # 6/3/2022 set to debug 
+            self.logger.debug(data)
 
     def flush(self):
         pass  # leave it to logging to flush properly
@@ -221,6 +222,9 @@ def main():
     console_handler = logging.StreamHandler()
     formatter = logging.Formatter(FORMAT)
     logg = logging.getLogger(__name__)
+    
+    logg.info("wifi_ctl command timeout set to {timeout}".format(timeout=timeout))
+
     # TODO Refactor for script to work must have output go to console_handler
     # This does work since it is a subordinate to the root logger
     # logg.setLevel(logging.DEBUG)
