@@ -1016,7 +1016,7 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
     staConnect.bringup_time_sec = args.bringup_time
     staConnect.setup()
     staConnect.start()
-    logger.info("napping %f sec", staConnect.runtime_secs)
+    logger.info("running traffic for %f sec", staConnect.runtime_secs)
 
     time.sleep(staConnect.runtime_secs)
 
