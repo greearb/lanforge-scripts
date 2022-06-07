@@ -290,7 +290,7 @@ class VAPProfile(LFCliBase):
         self.add_vap_data["flags"] = self.add_named_flags(self.desired_add_vap_flags, add_vap.add_vap_flags)
         self.add_vap_data["flags_mask"] = self.add_named_flags(self.desired_add_vap_flags_mask, add_vap.add_vap_flags)
         self.add_vap_data["radio"] = radio
-
+        # TODO: add_vap_data should not hold shelf and resource; duplicate
         self.add_vap_data["resource"] = resource
         self.set_port_data["current_flags"] = self.add_named_flags(self.desired_set_port_current_flags,
                                                                    set_port.set_port_current_flags)
