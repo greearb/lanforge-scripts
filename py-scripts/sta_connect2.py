@@ -1051,7 +1051,7 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
         "SSID": args.dut_ssid,
     }
 
-    report.set_table_title("Test Setup Information")
+    report.set_table_title("Device Under Test Information")
     report.build_table_title()
     report.test_setup_table(value="Device under test", test_setup_data=test_setup_info)
 
@@ -1070,9 +1070,9 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
         "Test Duration": args.runtime_sec,
     }
 
-    report.set_table_title("Test basic Information")
+    report.set_table_title("Test Configuration")
     report.build_table_title()
-    report.test_setup_table(value="Test Information", test_setup_data=test_input_info)
+    report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
 
     report.set_table_title("L3 Stations Connect 2 Key Performance Indexes")
     report.build_table_title()
