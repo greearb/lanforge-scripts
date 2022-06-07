@@ -1074,7 +1074,7 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
     report.build_table_title()
     report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
 
-    report.set_table_title("L3 Stations Connect 2 Key Performance Indexes")
+    report.set_table_title("Layer 3 Stations Connect 2 Traffic Results")
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
     report.build_table()
@@ -1085,8 +1085,11 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
     # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
     # TODO install wkhtmltopdf on windows
+    # if platform.system() == 'Linux':
+    #    report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
     if platform.system() == 'Linux':
-        report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+        report.write_pdf_with_timestamp(_page_size='letter', _orientation='portrait')
+
 
     staConnect.stop()
     # exit(1)
