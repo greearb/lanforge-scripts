@@ -342,6 +342,21 @@ class VAPProfile(LFCliBase):
                 return True # We are not trying to admin them up
         else:
             return False # Ports did not appear
+            
+    def modify(self, radio):
+         self.add_vap_data["flags"] = self.add_named_flags(self.desired_add_vap_flags, add_vap.add_vap_flags)
+         self.add_vap_data["flags_mask"] = self.add_named_flags(self.desired_add_vap_flags_mask, add_vap.add_vap_flags)
+         self.add_vap_data["radio"] = radio
+         self.add_vap_data["ap_name"] = self.vap_name
+         self.add_vap_data["ssid"] = 'NA'
+         self.add_vap_data["key"] = 'NA'
+         self.add_vap_data['mac'] = 'NA'
+ 
+         add_vap_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_vap")
+         if self.debug:
+             print(self.add_vap_data)
+         add_vap_r.addPostData(self.add_vap_data)
+         json_response = add_vap_r.jsonPost(self.debug)
 
     def cleanup(self, resource):
         print("Cleaning up VAP")
