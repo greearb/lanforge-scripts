@@ -78,7 +78,7 @@ def main():
     # Realm requires a port to be passed in 
     parser.add_argument('-atten_serno', '--atten_serno', help='Serial number for requested Attenuator, or \'all\'', default=2222)
     parser.add_argument('-atten_idx', '--atten_idx', help='Attenuator index eg. For module 1 = 0,module 2 = 1', default=7)
-    parser.add_argument('-atten_val', '--atten_val', help='Requested attenution in 1/10ths of dB (ddB).', default=550)
+    parser.add_argument('-atten_val', '--atten_val', help='Requested attenuation in 1/10ths of dB (ddB).', default=550)
     args = parser.parse_args()
 
     # set up logger
