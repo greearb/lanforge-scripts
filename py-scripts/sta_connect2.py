@@ -1053,7 +1053,7 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
 
     report.set_table_title("Device Under Test Information")
     report.build_table_title()
-    report.test_setup_table(value="Device under test", test_setup_data=test_setup_info)
+    report.test_setup_table(value="Device Under Test", test_setup_data=test_setup_info)
 
     test_input_info = {
         "LANforge ip": args.mgr,
@@ -1074,7 +1074,7 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
     report.build_table_title()
     report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
 
-    report.set_table_title("Layer 3 Stations Connect 2 Traffic Results")
+    report.set_table_title("Layer 3 Station Connect 2 Traffic Results")
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
     report.build_table()
