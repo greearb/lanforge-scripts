@@ -1035,6 +1035,32 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
     # csv_results_file = kpi_path + "/" + kpi_filename
     report.set_title("L3 Station Connect 2")
     report.build_banner()
+
+    # test_setup_info = {
+    #    "DUT Name": self.dut_name,
+    #    "SSID": self.ssid_name,
+    #    "Test Duration": self.test_duration,
+    # }
+
+
+    test_input_info = {
+        "LANforge ip": args.mgr,
+        "LANforge port": args.port,
+        "LANforge resource": args.resource,
+        #"Bands": self.band,
+        "Upstream": args.upstream_port,
+        "Radio": args.radio,
+        # "Stations": self.num_sta,
+        # "Station Mode": args.stat_mode,
+        "SSID": args.dut_ssid,
+        "Security": args.dut_security,
+        ""
+    }
+
+    report.set_table_title("Test basic Information")
+    report.build_table_title()
+    report.test_setup_table(value="Information", test_setup_data=test_input_info)
+
     report.set_table_title("L3 Stations Connect 2 Key Performance Indexes")
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
