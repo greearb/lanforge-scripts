@@ -3,7 +3,7 @@
 NAME: sta_connect2.py
 
 Purpose:
-    This will create a station, create TCP and UDP traffic, run it a short amount of time, 
+    Test will create a station, create TCP and UDP traffic, run it a short amount of time, 
     and verify whether traffic was sent and received.  It also verifies the station connected
     to the requested BSSID if bssid is specified as an argument. 
     The script will clean up the station and connections at the end of the test.
@@ -845,8 +845,8 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
     parser.add_argument("--dut_security", type=str, help="DUT security: openLF, wpa, wpa2, wpa3")
     parser.add_argument("--dut_passwd", type=str, help="DUT PSK password.  Do not set for OPEN auth")
     parser.add_argument("--dut_bssid", type=str, help="DUT BSSID to which we expect to connect.")
-    parser.add_argument("--download_bps", type=int, help="Set the minimum bps value on test endpoint A. Default: 128000", default=128000)
-    parser.add_argument("--upload_bps", type=int, help="Set the minimum bps value on test endpoint B. Default: 128000", default=128000)
+    parser.add_argument("--download_bps", type=int, help="Set the minimum bps value on test endpoint A. Default: 25g000", default=256000)
+    parser.add_argument("--upload_bps", type=int, help="Set the minimum bps value on test endpoint B. Default: 256000", default=256000)
     parser.add_argument("--side_a_pdu", type=int, help="Set the minimum pdu value on test endpoint A. Default: 1200", default=1200)
     parser.add_argument("--side_b_pdu", type=int, help="Set the minimum pdu value on test endpoint B. Default: 1500", default=1500)
     parser.add_argument("--runtime_sec", type=int, help="Set test duration time. Default: 60 seconds", default=60)
@@ -896,7 +896,7 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
         help="dut model for kpi.csv,  test-priority is arbitrary number")
     parser.add_argument(
         "--test_id",
-        default="L3 Data",
+        default="Layer 3 Traffic",
         help="test-id for kpi.csv,  script or test name")
     parser.add_argument(
         '--csv_outfile',
@@ -1033,38 +1033,53 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
     csv_results_file = staConnect.get_csv_name()
     logger.info("csv_results_file: {}".format(csv_results_file))
     # csv_results_file = kpi_path + "/" + kpi_filename
-    report.set_title("L3 Station Connect 2")
-    report.build_banner()
+    report.set_title("Verify Layer 3 Throughput Over Time: sta_connect2.py")
+    report.build_banner_left()
+    report.start_content_div2()
 
-    # test_setup_info = {
-    #    "DUT Name": self.dut_name,
-    #    "SSID": self.ssid_name,
-    #    "Test Duration": self.test_duration,
-    # }
+    report.set_obj_html("Objective", "The Station Connection 2 Test is designed to test the performance of the "
+                                     "Access Point with running TCP and UDP traffic for an amount of time. "
+                                     "Verifies the station connected to the requested BSSID if bssid is specified."
+                                     )
+    report.build_objective()
 
+    test_setup_info = {
+        "DUT Name": args.dut_model_num,
+        "DUT Hardware Version": args.dut_hw_version,
+        "DUT Software Version": args.dut_sw_version,
+        "DUT Serial Number": args.dut_serial_num,
+        "SSID": args.dut_ssid,
+    }
+
+    report.set_table_title("Test Setup Information")
+    report.build_table_title()
+    report.test_setup_table(value="Device under test", test_setup_data=test_setup_info)
 
     test_input_info = {
         "LANforge ip": args.mgr,
         "LANforge port": args.port,
         "LANforge resource": args.resource,
-        #"Bands": self.band,
         "Upstream": args.upstream_port,
         "Radio": args.radio,
-        # "Stations": self.num_sta,
-        # "Station Mode": args.stat_mode,
         "SSID": args.dut_ssid,
         "Security": args.dut_security,
-        ""
+        "A side pdu": args.side_a_pdu,
+        "B side pdu": args.side_b_pdu,
+        "Download bps": args.download_bps,
+        "Upload bps": args.upload_bps,
+        "Test Duration": args.runtime_sec,
     }
 
     report.set_table_title("Test basic Information")
     report.build_table_title()
-    report.test_setup_table(value="Information", test_setup_data=test_input_info)
+    report.test_setup_table(value="Test Information", test_setup_data=test_input_info)
 
     report.set_table_title("L3 Stations Connect 2 Key Performance Indexes")
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
     report.build_table()
+    report.build_footer()
+
     report.write_html_with_timestamp()
     report.write_index_html()
     # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
