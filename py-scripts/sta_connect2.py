@@ -1106,6 +1106,13 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
     if not args.no_cleanup:
         staConnect.cleanup()
 
+    # Print path to results
+    logger.info("Test Results HTML located: {report}".format(report=report.write_output_html))
+
+    if platform.system() == 'Linux':
+        logger.info("Test Results PDF located: {report}".format(report=report.write_output_pdf))
+
+
     # Added Exit codes 
     if not is_passing:
         logger.info("FAIL:  Some tests failed")
