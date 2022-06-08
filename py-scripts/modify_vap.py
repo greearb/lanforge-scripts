@@ -19,6 +19,7 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 lfcli_base = importlib.import_module("py-json.LANforge.lfcli_base")
 LFCliBase = lfcli_base.LFCliBase
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -62,7 +63,7 @@ class ModifyVAP(Realm):
         self.debug = _debug_on
         self.dhcp = _dhcp
         self.vap_profile = self.new_vap_profile()
-        shelf, resource, port, *nil = self.name_to_eid(eid=self.vap_list, debug=self.debug)
+        shelf, resource, port, *nil = LFUtils.name_to_eid(self.vap_list)
         self.vap_profile.resource = resource      
         self.vap_profile.shelf = shelf
         self.vap_profile.add_vap_data["resource"] = resource      
