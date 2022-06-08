@@ -6,6 +6,9 @@ import sys
 import os
 import importlib
 import argparse
+import logging
+from pprint import pformat
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -19,7 +22,9 @@ LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
+logger = logging.getLogger(__name__)
 
 class ModifyVAP(Realm):
     def __init__(self,
@@ -39,8 +44,10 @@ class ModifyVAP(Realm):
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  _dhcp=True):
-        super().__init__(_host,
-                         _port)
+        super().__init__(lfclient_host=_host,
+                         lfclient_port=_port,
+                         debug_=_debug_on)
+
         self.host = _host
         self.port = _port
         self.ssid = _ssid
@@ -140,6 +147,17 @@ use-bss-transition   | 0x80000000000   # Enable BSS transition.
 
     args = parser.parse_args()
 
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    if (args.log_level):
+        logger_config.set_level(level=args.log_level)
+        
+    if args.lf_logger_config_json:
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
+
     modify_vap = ModifyVAP(_host=args.mgr,
                            _port=args.mgr_port,
                            _ssid=args.ssid,
@@ -152,7 +170,8 @@ use-bss-transition   | 0x80000000000   # Enable BSS transition.
                            _radio=args.radio,
                            _proxy_str=args.proxy,
                            _debug_on=args.debug)
-    modify_vap.set_vap()
+    json_response = modify_vap.set_vap()
+    logger.info("modify_vap.set_vap ")
 
 
 if __name__ == "__main__":

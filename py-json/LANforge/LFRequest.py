@@ -105,7 +105,7 @@ class LFRequest:
     def form_post(self, show_error=True, debug=False, die_on_error_=False):
         if self.die_on_error:
             die_on_error_ = True
-        if not debug and self.debug:
+        if debug or self.debug:
             debug = True
         responses = []
         urlenc_data = ""
@@ -160,7 +160,7 @@ class LFRequest:
                               response_json_list_=response_json_list_)
 
     def json_post(self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None, method_='POST'):
-        if not debug and self.debug:
+        if debug or self.debug:
             debug = True
         if self.die_on_error:
             die_on_error_ = True
@@ -185,7 +185,7 @@ class LFRequest:
         try:
             resp = urllib.request.urlopen(myrequest)
             resp_data = resp.read().decode('utf-8')
-            if debug and die_on_error_:
+            if debug or die_on_error_:
                 self.logger.debug("----- LFRequest::json_post:128 debug: --------------------------------------------")
                 self.logger.debug("URL: <%s>  status: %d " % (self.requested_url, resp.status))
                 if resp.status != 200:

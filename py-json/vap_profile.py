@@ -195,7 +195,7 @@ class VAPProfile(LFCliBase):
         if desired_list is None:
             raise ValueError("addNamedFlags wants a list of desired flag names")
         if len(desired_list) < 1:
-            print("addNamedFlags: empty desired list")
+            logger.info("addNamedFlags: empty desired list")
             return 0
         if (command_ref is None) or (len(command_ref) < 1):
             raise ValueError("addNamedFlags wants a maps of flag values")
@@ -344,19 +344,21 @@ class VAPProfile(LFCliBase):
             return False # Ports did not appear
             
     def modify(self, radio):
-         self.add_vap_data["flags"] = self.add_named_flags(self.desired_add_vap_flags, add_vap.add_vap_flags)
-         self.add_vap_data["flags_mask"] = self.add_named_flags(self.desired_add_vap_flags_mask, add_vap.add_vap_flags)
-         self.add_vap_data["radio"] = radio
-         self.add_vap_data["ap_name"] = self.vap_name
-         self.add_vap_data["ssid"] = 'NA'
-         self.add_vap_data["key"] = 'NA'
-         self.add_vap_data['mac'] = 'NA'
- 
-         add_vap_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_vap")
-         if self.debug:
-             print(self.add_vap_data)
-         add_vap_r.addPostData(self.add_vap_data)
-         json_response = add_vap_r.jsonPost(self.debug)
+        self.add_vap_data["flags"] = self.add_named_flags(self.desired_add_vap_flags, add_vap.add_vap_flags)
+        self.add_vap_data["flags_mask"] = self.add_named_flags(self.desired_add_vap_flags_mask, add_vap.add_vap_flags)
+        self.add_vap_data["radio"] = radio
+        self.add_vap_data["ap_name"] = self.vap_name
+        self.add_vap_data["ssid"] = 'NA'
+        self.add_vap_data["key"] = 'NA'
+        self.add_vap_data['mac'] = self.mac
+        # self.add_vap_data['mac'] = 'NA'
+
+        add_vap_r = LFRequest.LFRequest(self.lfclient_url + "/cli-json/add_vap", debug_=self.debug)
+        logger.debug(self.add_vap_data)
+        add_vap_r.addPostData(self.add_vap_data)
+        # inputs to jsonPost self, show_error=True, debug=False, die_on_error_=False, response_json_list_=None, method_='POST'
+        json_response = add_vap_r.jsonPost(show_error=True, debug=self.debug)
+        return json_response
 
     def cleanup(self, resource):
         print("Cleaning up VAP")
