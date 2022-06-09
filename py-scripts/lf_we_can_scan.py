@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-NAME: lf_we_can_scan.py
+NAME: lf_interop_scan.py
 
 
 PURPOSE:
@@ -9,10 +9,10 @@ PURPOSE:
     The program will generate an output directory based on date and time in the /home/lanforge/html-reports/  .
 
 
-EXAMPLE: ./python we_can_scan.py  --mgr 192.168.200.220 --mgr_port 8080 --ssid wecan --security wpa2 --radio wiphy0
+EXAMPLE: ./python lf_interop_scan.py  --mgr 192.168.200.220 --mgr_port 8080 --ssid Candela-Office --security wpa2 --radio wiphy0
 
 Note: To Run this script
-    WE-CAN app should be installed on the phone and should be Connected to lanforge server.
+    LANforge Interop app should be installed on the phone and should be Connected to lanforge server.
 
 LICENSE:
     Free to distribute and modify. LANforge systems must be licensed.
@@ -214,8 +214,8 @@ class WeCanStaScan(Realm):
 
         pie_chart = pd.DataFrame({'Pass/Fail': pass_fail_count}, index=['Success', 'Failed'])
 
-        report = lf_report(_output_html="we-can-scan.html", _output_pdf="we-can-scan.pdf",
-                           _results_dir_name="we-can scan result")
+        report = lf_report(_output_html="LANforge_Interop_scan.html", _output_pdf="LANforge_Interop_scan.pdf",
+                           _results_dir_name="LANforge Interop scan result")
 
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
@@ -223,14 +223,14 @@ class WeCanStaScan(Realm):
         print("path: {}".format(report_path))
         print("path_date_time: {}".format(report_path_date_time))
 
-        report.set_title("WE-CAN Real Client Scan ")
+        report.set_title("LANforge Interop Real Client Scan ")
         report.build_banner()
 
         report.start_content_div()
-        report.set_text("<h3>Objective:" + "<h4>The scan test in the WE-CAN APP is designed to scan the SSID of the "
-                                           "different Access Points in the particular network within its range so all "
-                                           "the connected clients in the LANforge WE-CAN server should scan the given "
-                                           "SSID within its range")
+        report.set_text("<h3>Objective:" + "<h4>The scan test in the LANforge Interop APP is designed to scan the SSID "
+                                           "of the different Access Points in the particular network within its range "
+                                           "so all the connected clients in the LANforge WLANforge Interop server "
+                                           "should scan the given SSID within its range")
         report.build_date_time()
         report.build_text()
 
@@ -271,15 +271,7 @@ class WeCanStaScan(Realm):
                 report.pass_failed_build_table()
                 report.end_content_div()
 
-        # if (all(dataset['Passed/Failed'])):
-        #     report.set_text("Description: All the phones are able to scan the given ssid  as we can see from the table")
-        # else:
-        #     report.set_text(
-        #         "Description: Some of the phones are not able to scan the given ssid as we can see from the table")
-        # report.start_content_div()
-        # report.build_text()
-
-        report.save_csv("we-can-scan.csv", save_to_csv)
+        report.save_csv("LANforge_Interop_scan.csv", save_to_csv)
 
         report.build_footer()
         html_file = report.write_html()
@@ -291,7 +283,7 @@ class WeCanStaScan(Realm):
 
 def main():
     parser = Realm.create_basic_argparse(
-        prog='we_can_scan.py',
+        prog='LANforge_Interop_scan.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
         Used to verify if a ssid is available in a scan of a real client(Mobile Phones)
@@ -301,8 +293,8 @@ def main():
         resouce id it performs a scan and compares if given ssid is present in the scan.
 
         Example:
-        ./we_can_scan.py --ssid ssid_for_test --security open --radio wiphy0
-        ./we_can_scan.py  --mgr 192.168.200.218 --mgr_port 8080 --ssid Candela-Office --security wpa2 --radio 2G
+        ./LANforge_Interop_scan.py --ssid ssid_for_test --security open --radio wiphy0
+        ./LANforge_Interop_scan.py  --mgr 192.168.200.218 --mgr_port 8080 --ssid Candela-Office --security wpa2 --radio 2G
         ''')
 
     # parser.add_argument('--mode', help='Used to force mode of stations')
