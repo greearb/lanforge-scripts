@@ -15,9 +15,6 @@ EXAMPLE:
 ./lf_test_max_association.py --mgr localhost --upstream_port <eth2> --wiphy0_ssid <ssid0> --wiphy1_ssid <ssid1>
     --security <security> --passwd <passwd> --traffic_type <lf_udp>
 
-TODO: add '--upstream_port <eth2>' argument and have the script create sta-to-eth Layer-3 cross-connections
-      for the overnight max-client test at 9.6Kbps bidirectional that system builders perform.
-
 '''
 
 import argparse
@@ -245,9 +242,7 @@ class max_associate(Realm):
                         logger.debug("endpoint: {item} value:\n".format(item=item))
                         logger.debug(endp_value)
 
-                        logger.info(endps)
-                        logger.info(len(endps))  # if this == 528, then use it to solve the avg for 'rx rate' below
-                        # logger.info("item {item}".format(item=item))
+                        # logger.info(endps)
 
                         for value_name, value in endp_value.items():
                             if value_name == 'rx bytes':
@@ -255,11 +250,11 @@ class max_associate(Realm):
                                 # logger.info("rx_bytes {value}".format(value=value))
                             if value_name == 'rx rate':
                                 endp_rx_map[item] = value
-                                logger.info("rx_rate {value}".format(value=value))
+                                # logger.info("rx_rate {value}".format(value=value))
                                 # This hack breaks for mcast or if someone names endpoints weirdly.
                                 # logger.info("item: ", item, " rx-bps: ", value_rx_bps)
                                 # info for upload test data
-                                logger.info(self.traffic_type)
+                                # logger.info(self.traffic_type)
                                 if item.endswith("-A"):
                                     total_ul_rate += int(value)
                                     # logger.info(udp_ul_rate_bps)
@@ -269,7 +264,7 @@ class max_associate(Realm):
 
                             if value_name == 'rx rate ll':
                                 endp_rx_map[item] = value
-                                logger.info("rx_rate_ll {value}".format(value=value))
+                                # logger.info("rx_rate_ll {value}".format(value=value))
                             if value_name == 'rx pkts ll':
                                 endp_rx_map[item] = value
 
@@ -295,24 +290,16 @@ class max_associate(Realm):
         # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endp_rx_drop_map, endps, total_ul_rate, total_dl_rate, total_dl_ll, total_ul_ll, total_ul_pkts_ll, total_dl_pkts_ll
 
-    def cleanup(self):
-        self.cx_profile.cleanup()
-        if not self.use_existing_sta:
-            self.station_profile.cleanup()
-            LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
-                                               debug=self.debug)
+    def pre_cleanup(self):
+        logger.info("Cleaning pre-existing l3-cx's and endps...")
+        self.cx_profile.cleanup_prefix()
 
     def build(self):
-        # query system radios
-        # if radio == wiphy0:
-        # query lf_radio_info.get_radio_max_station(wiphy_radio)
-        # build station amount that is returned
-        # list = self.lf_radio_info.RadioInfo.get_lanforge_radio_information()
-        # get_lanforge_radio_information
-        all_wiphy_data = self.wiphy_info.get_lanforge_radio_information()
-        logger.info(all_wiphy_data)
+        self.pre_cleanup()
+        # all_wiphy_data = self.wiphy_info.get_lanforge_radio_information()
+        # logger.info(all_wiphy_data)
         wiphy_radio_list = self.wiphy_info.get_radios()
-        logger.info(wiphy_radio_list)
+        # logger.info(wiphy_radio_list)
 
         for wiphy_radio in wiphy_radio_list:
 
@@ -320,16 +307,16 @@ class max_associate(Realm):
                 # TODO: smw
                 num_stations = self.wiphy_info.get_max_vifs(wiphy_radio)
                 # num_stations = 2
-                logger.info(num_stations)
+                # logger.info(num_stations)
                 station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0,
                                                       end_id_=int(num_stations) - 1,
                                                       padding_number_=10000,
                                                       radio=wiphy_radio)
 
-                logger.info(station_list)
+                # logger.info(station_list)
                 self.station_profile.lfclient_url = self.lfclient_url
                 self.station_profile.ssid = self.wiphy0_ssid
-                logger.info(self.password)
+                # logger.info(self.password)
                 self.station_profile.ssid_pass = self.password
                 self.station_profile.security = self.security
                 # self.station_profile.number_template_ = self.number_template
@@ -355,7 +342,7 @@ class max_associate(Realm):
                 # start_num_stations = 2
                 end_num_stations = self.wiphy_info.get_max_vifs(wiphy_radio)
                 # end_num_stations = 2
-                logger.info(num_stations)
+                # logger.info(num_stations)
                 # TODO: make start_id = end_id + 1 of wiphy0 created stations, make dynamic:
                 station_list = LFUtils.portNameSeries(prefix_="sta",
                                                       start_id_=int(start_num_stations),
@@ -363,7 +350,7 @@ class max_associate(Realm):
                                                       padding_number_=10000,
                                                       radio=wiphy_radio)
 
-                logger.info(station_list)
+                # logger.info(station_list)
                 self.station_profile.lfclient_url = self.lfclient_url
                 self.station_profile.ssid = self.wiphy1_ssid
                 self.station_profile.ssid_pass = self.password
@@ -405,7 +392,7 @@ class max_associate(Realm):
             self.csv_add_column_headers()
             station_names = []
             station_names.extend(self.station_profile.station_names.copy())
-            logger.info(station_names)
+            # logger.info(station_names)
             LFUtils.waitUntilPortsAdminUp(self.resource, self.lfclient_url, station_names)
 
         time.sleep(10)
@@ -432,7 +419,6 @@ class max_associate(Realm):
                 compared_rept = self.compared_report
 
         # remove endpoints from layer3connections that do not begin with 'MA' prefix:
-        logger.info(self.layer3connections)
         # convert layer3connections to list:
         split_l3_endps = self.layer3connections.split(",")
         # logger.info(split_l3_endps)
@@ -446,7 +432,7 @@ class max_associate(Realm):
                 layer3endps = ','.join(str(l3endps) for l3endps in new_l3_endps_list)
                 # logger.info(layer3endps)
 
-        logger.info(self.layer3_columns)
+        # logger.info(self.layer3_columns)
         self.cx_profile.monitor(layer3_cols=self.layer3_columns,
                                 # sta_list=self.sta_list,
                                 sta_list=station_names,
@@ -495,13 +481,12 @@ class max_associate(Realm):
             endp_rx_drop_map,
             endp_rx_map):
 
-        # the short description will allow for more data to show up in one test-tag graph
-
         sta_list_len = len(sta_list)
         # logger.info(sta_list_len)
         total_ul_dl_rate = total_ul_rate+total_dl_rate
 
         # logic for Subtest-Pass & Subtest-Fail columns
+        # 0 = FAIL, 1 = PASS (on kpi.csv output)
         subpass_udp_ul = 0
         subpass_udp_dl = 0
         subfail_udp_ul = 1
@@ -510,6 +495,21 @@ class max_associate(Realm):
         subpass_pkts_dl = 0
         subfail_pkts_ul = 1
         subfail_pkts_dl = 1
+        subpass_traffic_loss = 0
+        subfail_traffic_loss = 1
+
+        # logic for stations that experience > 1% traffic loss:
+        station_drops = []
+        drop_value_sum = 0.0
+        for endp_drop in endp_rx_drop_map.keys():
+            # logger.info(endp_rx_drop_map[endp_drop])
+            if endp_rx_drop_map[endp_drop] > 1.0:
+                drop_value_sum += endp_rx_drop_map[endp_drop]
+                station_drops.append(endp_drop)
+                total_sta_drops = len(station_drops)
+                avg_drop = drop_value_sum / total_sta_drops
+                # logger.info(avg_drop)
+        avg_drop_round = round(avg_drop, 2)
 
         if total_ul_rate > 0:
             subpass_udp_ul = 1
@@ -524,25 +524,19 @@ class max_associate(Realm):
             subpass_pkts_dl = 1
             subfail_pkts_dl = 0
 
+        # sub-test fails if sta amount that has > 1% traffic loss exceeds 3% of total created stations
+        station_loss = total_sta_drops / sta_list_len * 100
+        drop_tolerance = 3
+        if station_loss < drop_tolerance:
+            subpass_traffic_loss = 1
+            subfail_traffic_loss = 0
+
         # logic for pass/fail column
         # total_test & total_pass values from lfcli_base.py
         if total_test == total_pass:
             pass_fail = "PASS"
         else:
             pass_fail = "FAIL"
-
-        # logic for stations that drop > 1% traffic:
-        station_drops = []
-        drop_value_sum = 0.0
-        for endp_drop in endp_rx_drop_map.keys():
-            logger.info(endp_rx_drop_map[endp_drop])
-            if endp_rx_drop_map[endp_drop] > 1.0:
-                drop_value_sum += endp_rx_drop_map[endp_drop]
-                station_drops.append(endp_drop)
-                total_sta_drops = len(station_drops)
-                avg_drop = drop_value_sum / total_sta_drops
-                logger.info(avg_drop)
-        avg_drop_round = round(avg_drop, 2)
 
         results_dict = self.kpi_csv.kpi_csv_get_dict_update_time()
 
@@ -569,7 +563,6 @@ class max_associate(Realm):
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         # kpi data for total upload & download traffic rate
-        logger.info(endp_rx_drop_map)
         results_dict['Graph-Group'] = "Total UDP-UL/DL Rate"
         results_dict['pass/fail'] = pass_fail
         results_dict['Subtest-Pass'] = subpass_udp_ul
@@ -603,10 +596,10 @@ class max_associate(Realm):
         self.kpi_csv.kpi_csv_write_dict(results_dict)
 
         # kpi data for stations drop over 1%
-        results_dict['Graph-Group'] = "Avg Traffic Drop"
+        results_dict['Graph-Group'] = "Avg Traffic Loss"
         results_dict['pass/fail'] = pass_fail
-        results_dict['Subtest-Pass'] = subpass_udp_dl
-        results_dict['Subtest-Fail'] = subfail_udp_dl
+        results_dict['Subtest-Pass'] = subpass_traffic_loss
+        results_dict['Subtest-Fail'] = subfail_traffic_loss
         results_dict['short-description'] = "{total_sta_drops} of {sta_list_len} STA Over 1% Traffic Loss".format(
             total_sta_drops=total_sta_drops, sta_list_len=sta_list_len)
         results_dict['numeric-score'] = "{}".format(avg_drop_round)
