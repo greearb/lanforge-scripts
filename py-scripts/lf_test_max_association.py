@@ -3,17 +3,31 @@
 NAME: lf_test_max_association.py
 
 NOTE: Script still in progress. Requires modification to l3_cxprofile.py (ln 227) to alleviate url > 2048 bytes error.
+        Temporary workaround: replace l3_cxprofile.py ln 227 with:
+        layer_3_response = self.json_get("/endp/?fields=%s" % (layer3_fields))
+
+OBJECTIVE:
+The Maximum Client Association Test is designed to test the capability of a newly built
+    ct521a LANforge system. The objective of the test is to create the maximum number of
+    virtual interfaces per system installed WIFI radio, associate the stations to a
+    specified AP, and to run a long duration layer-3 UDP bidirectional traffic test.
 
 PURPOSE:
-
-This script will provide the following features for the ct521a system:
+This script will conduct a maximum client overnight test for the ct521a system:
 - create the maximum supported stations per installed radio.
 - associate the created stations to their prospective SSID's.
 - create sta-to-eth Layer-3 CX for 9.6Kbps bidirectional overnight maximum-client wifi test.
 
 EXAMPLE:
-./lf_test_max_association.py --mgr localhost --upstream_port <eth2> --wiphy0_ssid <ssid0> --wiphy1_ssid <ssid1>
-    --security <security> --passwd <passwd> --traffic_type <lf_udp>
+./lf_test_max_association.py --mgr <localhost> --upstream_port <1.1.eth1> --wiphy0_ssid <ssid0> --wiphy1_ssid <ssid1>
+    --security <security> --passwd <passwd>
+
+KPI.CSV:
+./lf_test_max_association.py --mgr <localhost> --upstream_port <1.1.eth1> --wiphy0_ssid <ssid0> --wiphy1_ssid <ssid1>
+    --passwd <passwd> --security <wpa2> --csv_outfile lf_test_max_association.csv --test_rig CT_01
+    --test_tag MAX_STA --dut_hw_version 1.0 --dut_model_num lf0350 --dut_serial_num 361c --dut_sw_version 5.4.5
+
+TODO: Add capability for MTK radios and ct523c systems.
 
 '''
 
@@ -62,7 +76,6 @@ class max_associate(Realm):
                  download_bps=9830,
                  upload_bps=9830,
                  wiphy_info=None,
-                 traffic_type=None,
                  name_prefix=None,
                  _test_duration="21600s",
                  monitor_interval='10s',
@@ -91,7 +104,6 @@ class max_associate(Realm):
         self.download_bps = download_bps
         self.wiphy_info = wiphy_info
         self.upload_bps = upload_bps
-        self.traffic_type = traffic_type
         self.name_prefix = name_prefix
         self.test_duration = _test_duration
         self.monitor_interval = monitor_interval
@@ -110,6 +122,7 @@ class max_associate(Realm):
         self.report_file_format = None
         self.layer3connections = None
         self.name_prefix = "MA"
+        self.traffic_type = "lf_udp"
 
         self.station_profile = self.new_station_profile()
         self.cx_profile = self.new_l3_cx_profile()
@@ -295,8 +308,8 @@ class max_associate(Realm):
         self.cx_profile.cleanup_prefix()
 
     def build(self):
-        self.pre_cleanup()
-        # all_wiphy_data = self.wiphy_info.get_lanforge_radio_information()
+        # self.pre_cleanup()
+        all_wiphy_data = self.wiphy_info.get_lanforge_radio_information()
         # logger.info(all_wiphy_data)
         wiphy_radio_list = self.wiphy_info.get_radios()
         # logger.info(wiphy_radio_list)
@@ -482,7 +495,7 @@ class max_associate(Realm):
             endp_rx_map):
 
         sta_list_len = len(sta_list)
-        # logger.info(sta_list_len)
+        endp_list_len = len(endp_rx_map)
         total_ul_dl_rate = total_ul_rate+total_dl_rate
 
         # logic for Subtest-Pass & Subtest-Fail columns
@@ -498,19 +511,6 @@ class max_associate(Realm):
         subpass_traffic_loss = 0
         subfail_traffic_loss = 1
 
-        # logic for stations that experience > 1% traffic loss:
-        station_drops = []
-        drop_value_sum = 0.0
-        for endp_drop in endp_rx_drop_map.keys():
-            # logger.info(endp_rx_drop_map[endp_drop])
-            if endp_rx_drop_map[endp_drop] > 1.0:
-                drop_value_sum += endp_rx_drop_map[endp_drop]
-                station_drops.append(endp_drop)
-                total_sta_drops = len(station_drops)
-                avg_drop = drop_value_sum / total_sta_drops
-                # logger.info(avg_drop)
-        avg_drop_round = round(avg_drop, 2)
-
         if total_ul_rate > 0:
             subpass_udp_ul = 1
             subfail_udp_ul = 0
@@ -524,19 +524,34 @@ class max_associate(Realm):
             subpass_pkts_dl = 1
             subfail_pkts_dl = 0
 
-        # sub-test fails if sta amount that has > 1% traffic loss exceeds 3% of total created stations
-        station_loss = total_sta_drops / sta_list_len * 100
-        drop_tolerance = 3
-        if station_loss < drop_tolerance:
-            subpass_traffic_loss = 1
-            subfail_traffic_loss = 0
-
         # logic for pass/fail column
         # total_test & total_pass values from lfcli_base.py
         if total_test == total_pass:
             pass_fail = "PASS"
         else:
             pass_fail = "FAIL"
+
+        # logic for stations that experience > 1% traffic loss:
+        l3_endp_drops = []
+        drop_value_sum = 0.0
+        total_endp_drops = 0
+        avg_drop = 0.0
+        for endp_drop in endp_rx_drop_map.keys():
+            logger.info(endp_rx_drop_map[endp_drop])
+            if endp_rx_drop_map[endp_drop] > 1.0:
+                drop_value_sum += endp_rx_drop_map[endp_drop]
+                l3_endp_drops.append(endp_drop)
+                total_endp_drops = len(l3_endp_drops)
+                avg_drop = drop_value_sum / total_endp_drops
+                # logger.info(avg_drop)
+        avg_drop_round = round(avg_drop, 2)
+
+        # sub-test fails if endp amount that has > 1% traffic loss exceeds 3% of total created endps
+        endp_loss = total_endp_drops / endp_list_len * 100
+        drop_tolerance = 3
+        if endp_loss < drop_tolerance:
+            subpass_traffic_loss = 1
+            subfail_traffic_loss = 0
 
         results_dict = self.kpi_csv.kpi_csv_get_dict_update_time()
 
@@ -600,8 +615,8 @@ class max_associate(Realm):
         results_dict['pass/fail'] = pass_fail
         results_dict['Subtest-Pass'] = subpass_traffic_loss
         results_dict['Subtest-Fail'] = subfail_traffic_loss
-        results_dict['short-description'] = "{total_sta_drops} of {sta_list_len} STA Over 1% Traffic Loss".format(
-            total_sta_drops=total_sta_drops, sta_list_len=sta_list_len)
+        results_dict['short-description'] = "{total_endp_drops} of {endp_list_len} ENDP Over 1% Traffic Loss".format(
+            total_endp_drops=total_endp_drops, endp_list_len=endp_list_len)
         results_dict['numeric-score'] = "{}".format(avg_drop_round)
         results_dict['Units'] = "percent"
         self.kpi_csv.kpi_csv_write_dict(results_dict)
@@ -690,7 +705,7 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
 ---------------------------
-LANforge Unit Test:  Create max stations per wihpy radio - lf_test_max_association.py
+LANforge Unit Test:  Create maximum stations per wiphy radio - lf_test_max_association.py
 ---------------------------
 Summary:
 This script will provide the following features for the ct521a system:
@@ -699,16 +714,13 @@ This script will provide the following features for the ct521a system:
 - create sta-to-eth Layer-3 CX for 9.6Kbps bidirectional overnight maximum-client wifi test.
 ---------------------------
 CLI Example:
-./lf_test_max_association.py --mgr localhost --upstream_port <eth2> --wiphy0_ssid <ssid0> --wiphy1_ssid <ssid1>
-    --security <security> --passwd <passwd> --traffic_type <lf_udp> --runtime <8hours>
+./lf_test_max_association.py --mgr <localhost> --upstream_port <1.1.eth1> --wiphy0_ssid <ssid0>
+    --wiphy1_ssid <ssid1> --security <security> --passwd <passwd>
 
 ---------------------------
 """)
     parser.add_argument("-m", "--mgr", type=str, help="address of the LANforge GUI machine (localhost is default)",
                         default='localhost')
-    parser.add_argument('--traffic_type', help='Select the Traffic Type [lf_udp, lf_tcp, udp, tcp], type will be '
-                                               'adjusted automatically between ipv4 and ipv6 based on use of --ipv6 flag',
-                        default="lf_udp")
     parser.add_argument("--port", type=str, help="LANforge Manager port", default='8080')
     parser.add_argument("--wiphy0_ssid", type=str, help="DUT SSID that the wiphy0 stations will associate with.")
     parser.add_argument("--wiphy1_ssid", type=str, help="DUT SSID that the wiphy1 stations will associate with.")
@@ -816,11 +828,6 @@ CLI Example:
     if args.debug:
         logger_config.set_level("debug")
 
-    CX_TYPES = ("tcp", "udp", "lf_tcp", "lf_udp")
-    if not args.traffic_type or (args.traffic_type not in CX_TYPES):
-        logger.error("cx_type needs to be lf_tcp, lf_udp, tcp, or udp, bye")
-        exit(1)
-
     # for kpi.csv generation
     local_lf_report_dir = args.local_lf_report_dir
     test_rig = args.test_rig
@@ -882,7 +889,6 @@ CLI Example:
                                     download_bps=args.download_bps,
                                     upload_bps=args.upload_bps,
                                     wiphy_info=wiphy_info,
-                                    traffic_type=args.traffic_type,
                                     name_prefix="sta",
                                     _test_duration=args.test_duration,
                                     monitor_interval=args.monitor_interval,
