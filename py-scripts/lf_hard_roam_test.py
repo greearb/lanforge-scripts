@@ -837,7 +837,7 @@ class HardRoam(Realm):
                                         elif number == "odd":
                                             ser_num = ser_2
                                             ser_num2 = ser_1
-                                        # logic to decrease c2 attenuation till 10 db
+                                        # logic to decrease c2 attenuation till 10 db using 1dbm steps
                                         status = None
                                         for atten_val2 in range(900, 100, -10):
                                             self.attenuator_modify(int(ser_num), "all", atten_val2)
@@ -1381,8 +1381,8 @@ def main():
     obj = HardRoam(lanforge_ip="192.168.100.131",
                    lanforge_port=8080,
                    lanforge_ssh_port=22,
-                   c1_bssid="10:f9:20:fd:f3:4d",
-                   c2_bssid="68:7d:b4:5f:5c:3d",
+                   c1_bssid="68:7d:b4:5f:5c:3a",
+                   c2_bssid="14:16:9d:53:58:ca",
                    fiveg_radio="1.1.wiphy1",
                    twog_radio=None,
                    sixg_radio=None,
@@ -1391,17 +1391,16 @@ def main():
                    num_sta=1,
                    security="wpa2",
                    security_key="something",
-                   ssid="RoamAP5g",
+                   ssid="ssid_5g",
                    upstream="eth2",
                    duration=None,
-                   iteration=2,
+                   iteration=1,
                    channel=40,
                    option="ota",
                    duration_based=False,
                    iteration_based=True,
-                   dut_name=["AP687D.B45C.1D1C", "AP687D.B45C.1D1C"],
+                   dut_name=["AP687D.B45C.1D1C","AP2C57.4152.385C"],
                    traffic_type="lf_udp",
-                   path= "../lanforge/lanforge-scripts",
                    scheme="ssh",
                    dest="localhost",
                    user="admin",
@@ -1413,9 +1412,17 @@ def main():
                    band_cc="5g",
                    timeout="10",
                    identity="testuser",
-                   ttls_pass="testpasswd"
+                   ttls_pass="testpasswd",
+                   soft_roam=True
                    )
-    # obj.stop_sniffer()
+    x = os.getcwd()
+    print(x)
+    file = obj.generate_csv()
+    kernel, message = obj.run(file_n=file)
+    report_dir_name = obj.generate_report(csv_list=file, kernel_lst=kernel, current_path=str(x) + "/tests")
+    print(report_dir_name)
+
+
     # file = obj.generate_csv()
     # obj.run(file_n=file)
     # obj.generate_report(csv_list=file)
@@ -1427,7 +1434,7 @@ def main():
     # lst = obj.journal_ctl_logs(file="nik")
     # file = []
     # obj.generate_report(csv_list=file, kernel_lst=lst)
-    obj.get_file_name(client=1)
+    # obj.get_file_name(client=1)
 
 
 if __name__ == '__main__':
