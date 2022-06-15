@@ -6,12 +6,6 @@ NOTE: Script still in progress. Requires modification to l3_cxprofile.py (ln 227
         Temporary workaround: replace l3_cxprofile.py ln 227 with:
         layer_3_response = self.json_get("/endp/?fields=%s" % (layer3_fields))
 
-OBJECTIVE:
-The Maximum Client Association Test is designed to test the capability of a newly built
-    ct521a LANforge system. The objective of the test is to create the maximum number of
-    virtual interfaces per system installed WIFI radio, associate the stations to a
-    specified AP, and to run a long duration layer-3 UDP bidirectional traffic test.
-
 PURPOSE:
 This script will conduct a maximum client overnight test for the ct521a system:
 - create the maximum supported stations per installed radio.
@@ -39,6 +33,7 @@ import importlib
 from pprint import pformat
 import time
 import csv
+import platform
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -411,6 +406,13 @@ class max_associate(Realm):
         time.sleep(10)
         self.cx_profile.start_cx()
 
+    def stop(self):
+        # stop cx traffic
+        logger.info("Stopping CX Traffic")
+        self.cx_profile.stop_cx()
+        end_time = time.ctime()
+        logger.info("Test End: %s",  end_time)
+
     # guide script during test run & collect data
     def run(self):
         self.start_cxs()
@@ -477,10 +479,6 @@ class max_associate(Realm):
         logger.info("Leaving existing stations...")
         logger.info("IP Variable Time Test Report Data: {}".format(self.report_path_format))
 
-        self.cx_profile.stop_cx()
-        end_time = time.ctime()
-        logger.info("Test End: %s",  end_time)
-
     # builds test data into kpi.csv report
     def record_kpi_csv(
             self,
@@ -531,7 +529,7 @@ class max_associate(Realm):
         else:
             pass_fail = "FAIL"
 
-        # logic for stations that experience > 1% traffic loss:
+        # logic for endpoints that experience > 1% traffic loss:
         l3_endp_drops = []
         drop_value_sum = 0.0
         total_endp_drops = 0
@@ -912,17 +910,69 @@ CLI Example:
     csv_results_file = max_association.get_csv_name()
     logger.info("csv_results_file: {}".format(csv_results_file))
     # csv_results_file = kpi_path + "/" + kpi_filename
-    report.set_title("L3 Test Max Association")
-    report.build_banner()
-    report.set_table_title("L3 Test Max Association Key Performance Indexes")
+    report.set_title("L3 Maximum Clients Test: lf_test_max_association.py")
+    # report.build_banner()
+    # report.set_table_title("L3 Test Max Association Key Performance Indexes")
+
+    report.build_banner_left()
+    report.start_content_div2()
+
+    report.set_obj_html("Objective", "The Maximum Client Association Test is designed to test the capability of a "
+                                     "newly built ct521a LANforge system. The objective of the test is to create "
+                                     "the maximum number of virtual interfaces per system installed WIFI radio, "
+                                     "associate the stations to aspecified AP, and to run a long duration layer-3 "
+                                     "UDP bidirectional traffic test."
+                                     )
+    report.build_objective()
+
+    test_setup_info = {
+        "DUT Name": args.dut_model_num,
+        "DUT Hardware Version": args.dut_hw_version,
+        "DUT Software Version": args.dut_sw_version,
+        "DUT Serial Number": args.dut_serial_num,
+        "2.4GHz SSID": args.wiphy0_ssid,
+        "5GHz SSID": args.wiphy1_ssid,
+    }
+
+    report.set_table_title("Device Under Test Information")
+    report.build_table_title()
+    report.test_setup_table(value="Device Under Test", test_setup_data=test_setup_info)
+
+    test_input_info = {
+        "LANforge ip": args.mgr,
+        "LANforge port": args.port,
+        "LANforge resource": args.resource,
+        "Upstream": args.upstream_port,
+        "2.4GHz Radio": "1."+ args.resource + ".wiphy0",
+        "2.4GHz SSID": args.wiphy0_ssid,
+        "5GHz Radio": "1."+ args.resource + ".wiphy1",
+        "5GHz SSID": args.wiphy1_ssid,
+        "Security": args.security,
+        # "A side pdu": args.side_a_pdu,
+        # "B side pdu": args.side_b_pdu,
+        "Download bps": args.download_bps,
+        "Upload bps": args.upload_bps,
+        "Test Duration": args.test_duration,
+    }
+
+    report.set_table_title("Test Configuration")
+    report.build_table_title()
+    report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
+
+    report.set_table_title("Layer 3 Overnight Maximum Association Traffic Results")
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
     report.build_table()
+    report.build_footer()
+
     report.write_html_with_timestamp()
     report.write_index_html()
     # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
     # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
-    report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+    if platform.system() == 'Linux':
+        report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+
+    max_association.stop()
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
