@@ -49,7 +49,7 @@ class LfPcap(Realm):
                  _debug_on=False,
                  _pcap_name=None
                  ):
-        super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on)
+        # super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on)
         self.pcap_name = _pcap_name
         self.host = host,
         self.port = port
@@ -64,7 +64,7 @@ class LfPcap(Realm):
         self.live_cap_timeout = _live_cap_timeout
         self.remote_cap_host = _live_remote_cap_host
         self.remote_cap_interface = _live_remote_cap_interface
-        self.wifi_monitor = WiFiMonitor(self.lfclient_url, local_realm=self, debug_=self.debug)
+        # self.wifi_monitor = WiFiMonitor(self.lfclient_url, local_realm=self, debug_=self.debug)
 
     def read_pcap(self, pcap_file, apply_filter=None):
         self.pcap_file = pcap_file
