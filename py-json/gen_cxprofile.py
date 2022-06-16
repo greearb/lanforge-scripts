@@ -74,7 +74,7 @@ class GenCXProfile(LFCliBase):
             raise ValueError("Unknown command type")
 
     def start_cx(self):
-        logger.info("Starting CXs: %s" %self.created_cx)
+        logger.info("Starting CXs: %s" % self.created_cx)
         logger.info("Created-Endp: %s" % self.created_endp)
         for cx_name in self.created_cx:
             self.json_post("/cli-json/set_cx_state", {
@@ -359,7 +359,7 @@ class GenCXProfile(LFCliBase):
             url = "/cli-json/add_cx"
             logger.info(pformat(data))
             self.local_realm.json_post(url, data, debug_=debug_, suppress_related_commands_=suppress_related_commands_)
-            #time.sleep(2)
+            # time.sleep(2)
         if sleep_time:
             time.sleep(sleep_time)
 
@@ -437,13 +437,13 @@ class GenCXProfile(LFCliBase):
     # TODO:  Can only monitor ports on a single resource.
     def monitor(self,
                 duration_sec=60,
-                monitor_interval=2, # seconds
+                monitor_interval=2,  # seconds
                 sta_list=None,
                 resource_id=1,
                 generic_cols=None,
                 port_mgr_cols=None,
                 must_increase_cols=None,
-                monitor_endps=None, # list of endpoints to monitor
+                monitor_endps=None,  # list of endpoints to monitor
                 monitor=True,
                 report_file=None,
                 systeminfopath=None,
@@ -526,11 +526,11 @@ class GenCXProfile(LFCliBase):
 
         fail_incr_count = 0
         pass_incr_count = 0
-        prev_results = {} # dict of dicts
+        prev_results = {}  # dict of dicts
         if must_increase_cols:
             for en in monitor_endps:
-                print("Monitoring Endpoint: %s" %(en))
-                prev_results[en] = {} # dict of col names to values
+                print("Monitoring Endpoint: %s" % (en))
+                prev_results[en] = {}  # dict of col names to values
                 for cn in must_increase_cols:
                     prev_results[en][cn] = 0
 
@@ -551,7 +551,7 @@ class GenCXProfile(LFCliBase):
             basecolumns = [timestamp, t_to_millisec_epoch, t_to_sec_epoch, time_elapsed]
 
             # get endp values
-            gen_url = "/generic/%s?fields=%s" % (",".join(monitor_endps), generic_fields);
+            gen_url = "/generic/%s?fields=%s" % (",".join(monitor_endps), generic_fields)
             #print("gen-url: %s" % (gen_url))
             generic_response = self.json_get(gen_url)
 
@@ -572,18 +572,18 @@ class GenCXProfile(LFCliBase):
                 logger.debug("Json port_mgr_response from LANforge... {port_mgr_response}".format(port_mgr_response=port_mgr_response))
 
             #print("generic response: ")
-            #pprint(generic_response)
+            # pprint(generic_response)
             endp_array = generic_response["endpoints"]
             #print("endp-array: ")
-            #pprint(endp_array)
+            # pprint(endp_array)
             for endpoint in endp_array:  # each endpoint is a dictionary
                 #print("endpoint: ")
-                #pprint(endpoint)
+                # pprint(endpoint)
                 #print("endpoint values: ")
-                #pprint(endpoint.values())
+                # pprint(endpoint.values())
 
                 endp_values_list = list(endpoint.values())
-                #for x in endp_values_list:
+                # for x in endp_values_list:
                 #    pprint(x)
 
                 # There is only one value in the endp_values_list, the key is the name,
@@ -591,7 +591,7 @@ class GenCXProfile(LFCliBase):
                 endp_values = endp_values_list[0]
 
                 endp_name = endp_values["name"]
-                temp_list = basecolumns.copy() # Must make a deep copy or we just keep appending to basecolumns object.
+                temp_list = basecolumns.copy()  # Must make a deep copy or we just keep appending to basecolumns object.
                 for columnname in generic_cols:
                     val = endp_values[columnname]
                     #print("column-name: %s val: %s must-increase-cols: %s" % (columnname, val, must_increase_cols))
@@ -633,11 +633,11 @@ class GenCXProfile(LFCliBase):
         if fail_incr_count == 0:
             if pass_incr_count > 0:
                 self._pass("Verified requested counters: %s increased each of %s monitor attempts" %
-                           (must_increase_cols, pass_incr_count));
+                           (must_increase_cols, pass_incr_count))
         else:
             if pass_incr_count > 0:
                 self._fail("Partial success: Verified requested counters: %s increased % of % attempts" %
-                           (must_increase_cols, pass_incr_count, (pass_incr_count + fail_incr_count)));
+                           (must_increase_cols, pass_incr_count, (pass_incr_count + fail_incr_count)))
 
         # TODO:  This looks broken, figure out intent and fix, or remove.
         # comparison to last report / report inputted
