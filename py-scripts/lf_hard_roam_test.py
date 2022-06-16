@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 Note : lf_hard_roam_test works on forced roaming specific to 11r
            - This script will give results of 11r forced roam test pdf along with all the packet captures genersted after the roam
@@ -256,7 +258,7 @@ class HardRoam(Realm):
             LFUtils.wait_until_ports_disappear(base_url=local_realm.lfclient_url,
                                                port_list=sta_list,
                                                debug=True)
-            time.sleep(2)
+            #time.sleep(2)
             print("pre cleanup done")
 
         station_list = LFUtils.portNameSeries(prefix_=sta_prefix, start_id_=start_id,
@@ -323,9 +325,29 @@ class HardRoam(Realm):
                                            passwd=self.ttls_pass,
                                            pin=""
                                            )
+        print("Creating stations.")
         station_profile.create(radio=radio, sta_names_=station_list)
+        print("Waiting for ports to appear")
         local_realm.wait_until_ports_appear(sta_list=station_list)
+
+        for sta_name in station_list:
+            sta = sta_name.split(".")[2] # TODO:  Use name_to_eid
+            # wpa_cmd = "roam " + str(checker2)
+
+            bgscan = {
+                "shelf": 1,
+                "resource": 1, # TODO:  Do not hard-code resource, get it from radio eid I think.
+                "port": str(sta),
+                "type": 'NA',
+                "text": 'bgscan="simple:30:-65:300"'
+                }
+
+            print(bgscan)
+            self.local_realm.json_post("/cli-json/set_wifi_custom", bgscan)
+            #time.sleep(2)
+        
         station_profile.admin_up()
+        print("Waiting for ports to admin up")
         if local_realm.wait_for_ip(station_list):
             print("All stations got IPs")
             return True
@@ -353,6 +375,7 @@ class HardRoam(Realm):
         self.cx_profile.side_b_min_pdu = side_b_min_pdu,
 
         # create
+        print("Creating endpoints")
         self.cx_profile.create(endp_type=traffic_type, side_a=sta_list,
                                side_b=self.upstream, sleep_time=0)
         self.cx_profile.start_cx()
@@ -409,6 +432,9 @@ class HardRoam(Realm):
         return y
 
     # start packet capture on lf
+    # TODO:  Check if other monitor ports exist on this radio already.  If so, delete those
+    # before adding new monitor port (or just use the existing monitor port without creating
+    # a new one. --Ben
     def start_sniffer(self, radio_channel=None, radio=None, test_name="sniff_radio", duration=60):
         self.pcap_name = test_name + str(datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':', '-') + ".pcap"
         self.pcap_obj_2 = sniff_radio.SniffRadio(lfclient_host=self.lanforge_ip, lfclient_port=self.lanforge_port,
@@ -421,6 +447,7 @@ class HardRoam(Realm):
 
     # stop packet capture and get file name
     def stop_sniffer(self):
+        print("in stop_sniffer")
         directory = None
         directory_name = "pcap"
         if directory_name:
@@ -506,6 +533,7 @@ class HardRoam(Realm):
         # get two bssids for roam
         self.final_bssid.extend([self.c1_bssid, self.c2_bssid])
         print("final bssid", self.final_bssid)
+        print("Calling precleanup.")
         self.precleanup()
         message = None, None
 
@@ -545,33 +573,19 @@ class HardRoam(Realm):
 
         # check if all stations have ip
         sta_list = self.get_station_list()
-        print("station list", sta_list)
+        print("checking for IP, station list", sta_list)
         if sta_list == "no response":
             print("no response")
         else:
             val = self.wait_for_ip(sta_list)
-            for sta_name in sta_list:
-                sta = sta_name.split(".")[2]
-                # wpa_cmd = "roam " + str(checker2)
-
-                bgscan = {
-                    "shelf": 1,
-                    "resource": 1,
-                    "port": str(sta),
-                    "type": 'NA',
-                    "text": 'bgscan="simple:30:-65:300"'
-                }
-
-                print(bgscan)
-                self.local_realm.json_post("/cli-json/set_wifi_custom", bgscan)
-                time.sleep(2)
 
             mac_list = []
             for sta_name in sta_list:
-                sta = sta_name.split(".")[2]
-                time.sleep(0.5)
+                sta = sta_name.split(".")[2] # use name_to_eid
+                #time.sleep(0.5)
                 mac = self.station_data_query(station_name=str(sta), query="mac")
                 mac_list.append(mac)
+
             print("mac address list of all stations", mac_list)
             self.mac_data = mac_list
 
@@ -638,12 +652,12 @@ class HardRoam(Realm):
                     print("new_sta_list", new_sta_list)
 
                     for sta_name in new_sta_list:
-                        sta = sta_name.split(".")[2]
+                        sta = sta_name.split(".")[2] # TODO: use name-to-eid
                         print(sta)
                         wpa_cmd = "roam " + str(checker2)
                         wifi_cli_cmd_data1 = {
                             "shelf": 1,
-                            "resource": 1,
+                            "resource": 1, # TODO: do not hard-code
                             "port": str(sta),
                             "wpa_cli_cmd": 'scan trigger freq 5180 5300'
                         }
@@ -655,8 +669,12 @@ class HardRoam(Realm):
                         }
                         print(wifi_cli_cmd_data)
                         self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
+                        # TODO:  LANforge sta on same radio will share scan results, so you only need to scan on one STA per
+                        # radio, and then sleep should be 5 seconds, then roam every station that needs to roam.
+                        # You do not need this sleep and scan for each STA.
                         time.sleep(2)
                         self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
+
                     # self.create_layer3(side_a_min_rate=1000000, side_a_max_rate=0, side_b_min_rate=1000000,
                     #                    side_b_max_rate=0,
                     #                    sta_list=sta_list, traffic_type=self.traffic_type, side_a_min_pdu=1250,
@@ -703,6 +721,8 @@ class HardRoam(Realm):
                             self.attenuator_modify(ser_1, "all", 950)
                             self.attenuator_modify(ser_2, "all", 100)
                         else:
+                            # TODO:  Are you sure it is already in expected state on every loop?  Maybe
+                            # set it to be sure?
                             print("odd,  c1 is already at  highest and c2 is at  lowest")
                             number = "odd"
                     try:
@@ -841,6 +861,8 @@ class HardRoam(Realm):
                                         status = None
                                         for atten_val2 in range(900, 100, -10):
                                             self.attenuator_modify(int(ser_num), "all", atten_val2)
+                                            # TODO:  You are changing in 1db increments.  So, sleep for only 4 seconds
+                                            # should be enough.
                                             print("wait for 30 secs")
                                             time.sleep(30)
                                             #  query bssid's of all stations
@@ -867,6 +889,9 @@ class HardRoam(Realm):
                                             for atten_val1 in (range(150, 950, 10)):
                                                 print(atten_val1)
                                                 self.attenuator_modify(int(ser_num2), "all", atten_val1)
+                                                # TODO:  You are changing in 1db increments.  So, sleep for only 4 seconds
+                                                # should be enough.
+                                                # TODO:  Add attenuation step to logs to make it more obvious what script is doing.
                                                 print("wait for 30 secs")
                                                 time.sleep(30)
                                                 bssid_check2 = []
@@ -915,6 +940,7 @@ class HardRoam(Realm):
                                                 }
                                                 print(wifi_cli_cmd_data)
                                                 self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
+                                                # TODO:  See note in similar code above about only needing to scan once per radio
                                                 time.sleep(2)
                                                 self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
                                                 time.sleep(2)
@@ -943,6 +969,7 @@ class HardRoam(Realm):
                                                 }
                                                 print(wifi_cli_cmd_data)
                                                 self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data1)
+                                                # TODO:  See note in similar code above about only needing to scan once per radio
                                                 time.sleep(2)
                                                 self.local_realm.json_post("/cli-json/wifi_cli_cmd", wifi_cli_cmd_data)
                                                 time.sleep(2)
