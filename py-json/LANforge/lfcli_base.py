@@ -503,7 +503,7 @@ class LFCliBase:
         pass_counter = 0
         fail_counter = 0
         if len(self.test_results) < 1:
-            logger.error("passes: zero test results")
+            logger.error("passes: zero test results, Chamberview tests will show zero test results so not an error")
         for result in self.test_results:
             logger.debug("test_result: %s" % result)
             if result.startswith("PASS"):
