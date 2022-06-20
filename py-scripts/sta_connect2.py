@@ -825,7 +825,14 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
 --dut_sw_version 5.4.5 --dut_serial_num 1234
 
 --------------------------- 
-""")
+""",
+    epilog="""
+---------------------------
+CLI Example: 
+./sta_connect2.py --mgr localhost --dut_ssid <ssid> --dut_passwd <passwd> --dut_security wpa2 
+--upstream_port eth2 --radio wiphy1
+"""
+)
     parser.add_argument("-m", "--mgr", type=str, help="address of the LANforge GUI machine (localhost is default)",
                         default='localhost')
     parser.add_argument("-o", "--port", type=int, help="IP Port the LANforge GUI is listening on (8080 is default)",
