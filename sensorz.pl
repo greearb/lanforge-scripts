@@ -15,7 +15,7 @@ for my $line (@sensor_lines) {
    chomp $line;
    if ($line =~ /^[^: ]+$/) {
       ($::device) = $line =~ /^(.*?-\d+)$/;
-      next if ($line !~ /^(ath10k_hwmon-pci|physical|coretemp|Core )/);
+      next if ($line !~ /^(mt7915_|ath10k_hwmon-pci|physical|coretemp|Core )/);
       if ( !defined $::sensor_readings{$::device}) {
          $::sensor_readings{$::device} = 0;
          push(@::sensor_devices, $::device);
@@ -23,7 +23,7 @@ for my $line (@sensor_lines) {
       next;
    }
 
-   next if ($line !~ /^(temp|physical|coretemp)/i);
+   next if ($line !~ /^(temp|physical|coretemp|Core )/i);
    my $t = 0;
    if ($line =~ m{.*?:\s+N/A}) {
       $t = 0;
