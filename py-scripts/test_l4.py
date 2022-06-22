@@ -530,8 +530,8 @@ Generic command example:
                         default=600)
     parser.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes',
                         default=1)
-    parser.add_argument('--url', help='--url specifies upload/download, <ap_ip_address> (Access Point IP), and dest',
-                        default="dl http://10.40.0.1 /dev/null")
+    parser.add_argument('--url', help='--url specifies upload/download, IP of eth port connected to Access Point , /dev/null to discard the data',
+                        default="dl http://192.168.50.217 /dev/null")
     parser.add_argument('--test_duration', help='duration of test', default="2m")
     parser.add_argument('--target_per_ten',
                         help='--target_per_ten target number of request per ten minutes. test will check for 90 percent this value',
@@ -745,8 +745,50 @@ Generic command example:
     csv_results_file = ip_test.get_csv_name()
     logger.info("csv_results_file: %s", csv_results_file)
     # csv_results_file = kpi_path + "/" + kpi_filename
-    report.set_title("L4 Test")
-    report.build_banner()
+    report_title = "Layer 4-7 Traffic Generation "
+    report.set_title("Layer 4-7 Traffic Generation: test_l4.py")
+    report.build_banner_left()
+    report.start_content_div2()
+    report.set_obj_html("Objective", "The Layer 4-7 Traffic Generation Test is designed to test the performance of the "
+                                    "Access Point by running layer 4-7 Traffic.  The test can monitor the urls/s, "
+                                    "bytes-rd, and bytes-rd attribute of the endpoints. The attributes may also be tested over FTP. "
+                                    "Pass / Fail criteria is based on the monitored value increasing")
+
+    report.build_objective()
+
+    test_setup_info = {
+        "DUT Name": args.dut_model_num,
+        "DUT Hardware Version": args.dut_hw_version,
+        "DUT Software Version": args.dut_sw_version,
+        "DUT Serial Number": args.dut_serial_num,
+        "SSID": args.ssid,
+    }
+
+    report.set_table_title("Device Under Test Information")
+    report.build_table_title()
+    report.test_setup_table(value="Device Under Test", test_setup_data=test_setup_info)
+
+    test_input_info = {
+        "LANforge ip": args.mgr,
+        "LANforge port": args.mgr_port,
+        "Upstream": args.upstream_port,
+        "Radio": args.radio,
+        "SSID": args.ssid,
+        "Security": args.security,
+        "Requests per 10 minutes": args.requests_per_ten,
+        "Target Requests per 10 minutes": args.target_per_ten,
+        "Upload / Download url": args.url,
+        "Test Duration": args.test_duration,
+        "Test Type": args.test_type
+    }
+
+    report.set_table_title("Test Configuration")
+    report.build_table_title()
+    report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
+
+
+
+
     report.set_table_title("L4 Test Key Performance Indexes")
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
@@ -754,8 +796,8 @@ Generic command example:
     report.write_html_with_timestamp()
     report.write_index_html()
     # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
-    # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
-    report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+    report.write_pdf_with_timestamp(_page_size='letter', _orientation='Portrait')
+    #report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
     is_passing = ip_test.passes()
 
