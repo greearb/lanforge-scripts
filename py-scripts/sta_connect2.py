@@ -68,7 +68,7 @@ MODE_AUTO = 0
 
 class StaConnect2(Realm):
     def __init__(self, host, port, _dut_ssid="jedway-open-1", _dut_passwd="NA", _dut_bssid="",
-                 _user="", _passwd="", _sta_mode="0", _radio="wiphy0",
+                 _user="", _passwd="",  _radio="wiphy0", _sta_mode=0,
                  _influx_host=None, _influx_db=None, _influx_user=None,
                  _influx_passwd=None,
                  _resource=1, _upstream_resource=1, _upstream_port="eth1",
@@ -323,6 +323,7 @@ class StaConnect2(Realm):
         # Create stations and turn dhcp on
         self.station_profile = self.new_station_profile()
         self.station_profile.sta_prefix = self.sta_prefix
+        self.station_profile.mode = self.sta_mode
 
         if self.dut_security == WPA2:
             self.station_profile.use_security(security_type="wpa2", ssid=self.dut_ssid, passwd=self.dut_passwd)
@@ -823,6 +824,27 @@ CLI Example for kpi.csv, variable tx/rx rates, and pdu size:
 --upstream_port eth2  --download_bps 768000 --upload_bps 256000 --side_a_pdu 300 --side_b_pdu 750 
 --csv_outfile sta_connect2.csv --test_rig LF-Lab --test_tag L3 --dut_hw_version Linux --dut_model_num 1 
 --dut_sw_version 5.4.5 --dut_serial_num 1234
+
+Note: --sta_mode use values in second column
+
+        AUTO        |  0        #  802.11g
+        802.11a     |  1        #  802.11a
+        b           |  2        #  802.11b
+        g           |  3        #  802.11g
+        abg         |  4        #  802.11abg
+        abgn        |  5        #  802.11abgn
+        bgn         |  6        #  802.11bgn
+        bg          |  7        #  802.11bg
+        abgnAC      |  8        #  802.11abgn-AC
+        anAC        |  9        #  802.11an-AC
+        an          | 10        #  802.11an
+        bgnAC       | 11        #  802.11bgn-AC
+        abgnAX      | 12        #  802.11abgn-AX
+                                #     a/b/g/n/AC/AX (dual-band AX) support
+        bgnAX       | 13        #  802.11bgn-AX
+        anAX        | 14        #  802.11an-AX
+        aAX         | 15        #  802.11a-AX (6E disables /n and /ac)
+
 
 --------------------------- 
 """,
