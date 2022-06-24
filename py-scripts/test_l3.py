@@ -47,26 +47,26 @@ Example using wifi_settings
      --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000
      --test_rig CT-US-001 --test_tag 'test_L3'
 
-NOTES: 
-command composer : <lanforge ip>:8080/help 
+NOTES:
+command composer : <lanforge ip>:8080/help
 
 Drop RX - in port manager is not the same are layer 3 cx Rx Drop %
 Notes from Ben Greear
 
 Port Mgr Drop Rx
 unlikely you will see rx drop on port mgr
-layer-3 rx drop is related to gaps in rx sequence numbers, 
+layer-3 rx drop is related to gaps in rx sequence numbers,
 which means network under test dropped frames somehow and/or re-ordered them.
 
 Layer 3 cx Rx Drop %
-cx mgr drop% is based on number peer inpoint transmitted vs what we received.  
-It would ignore reodering problem, and also detect complete path loss 
-(where rx drop based on seq numbers would not since there is no gap).  
-But, packets in-flight through network under test may be counted as dropped 
+cx mgr drop% is based on number peer inpoint transmitted vs what we received.
+It would ignore reodering problem, and also detect complete path loss
+(where rx drop based on seq numbers would not since there is no gap).
+But, packets in-flight through network under test may be counted as dropped
 when really they are probably not dropped.
 
-you can quiesce a test at the end, which means stop transmitter 
-but leave received going to drain packets from the network and get better drop% calculations.  
+you can quiesce a test at the end, which means stop transmitter
+but leave received going to drain packets from the network and get better drop% calculations.
 Stopping a test would record packets in flight at the moment it is stopped as dropped.
 
 
@@ -399,13 +399,13 @@ class L3VariableTime(Realm):
                     total_dl_rate += int(endp["rx rate"])
                     total_dl_rate_ll += int(endp["rx rate ll"])
                     total_dl_pkts_ll += int(endp["rx pkts ll"])
-                    dl_rx_drop_percent = round(endp["rx drop %"],2)
+                    dl_rx_drop_percent = round(endp["rx drop %"], 2)
                 # -B upload side
                 else:
                     total_ul_rate += int(endp["rx rate"])
                     total_ul_rate_ll += int(endp["rx rate ll"])
                     total_ul_pkts_ll += int(endp["rx pkts ll"])
-                    ul_rx_drop_percent = round(endp["rx drop %"],2)
+                    ul_rx_drop_percent = round(endp["rx drop %"], 2)
 
         return lat, jit, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent
 
@@ -643,7 +643,6 @@ class L3VariableTime(Realm):
     # sta_json = super().json_get(
     #   "port/1/{resource}/list?field=alias".format(resource=self.resource))['interfaces']
 
-
     def start(self, print_pass=False):
         logger.info("Bringing up stations")
         self.admin_up(self.side_b)
@@ -861,7 +860,7 @@ class L3VariableTime(Realm):
                     self.multicast_profile.stop_mc()
                     # TODO the passes and expected_passes are not checking anything
                     if passes == expected_passes:
-                        # Sets the pass indication 
+                        # Sets the pass indication
                         self._pass(
                             "PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" %
                             (ul, dl, ul_pdu, dl_pdu), print_pass)
@@ -1023,13 +1022,13 @@ class L3VariableTime(Realm):
 
             self.csv_results_writer.writerow(row)
             self.csv_results_file.flush()
-    
-    # quiesce the cx : quiesce a test at the end, which means stop transmitter 
-    # but leave received going to drain packets from the network and get better drop% calculations.  
+
+    # quiesce the cx : quiesce a test at the end, which means stop transmitter
+    # but leave received going to drain packets from the network and get better drop% calculations.
     # Stopping a test would record packets in flight at the moment it is stopped as dropped.
     def quiesce_cx(self):
         self.cx_profile.quiesce_cx()
-    
+
     # Stop traffic and admin down stations.
     def stop(self):
         self.cx_profile.stop_cx()
@@ -1632,9 +1631,9 @@ Setting wifi_settings per radio
         '--debug',
         help='--debug this will enable debugging in py-json method',
         action='store_true')
-    parser.add_argument('--log_level', 
-        default=None, 
-        help='Set logging level: debug | info | warning | error | critical')
+    parser.add_argument('--log_level',
+                        default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument(
         '-t',
         '--endp_type',
@@ -1908,7 +1907,7 @@ Setting wifi_settings per radio
                     exit(1)
                 wifi_mode_list.append(radio_info_dict['wifi_mode'])
                 enable_flags_str = radio_info_dict['enable_flags'].replace(
-                    '(', '').replace(')', '').replace('|', ',').replace('&&',',')
+                    '(', '').replace(')', '').replace('|', ',').replace('&&', ',')
                 enable_flags_list = list(enable_flags_str.split(","))
                 wifi_enable_flags_list.append(enable_flags_list)
             else:
@@ -2065,9 +2064,9 @@ Setting wifi_settings per radio
     report.start_content_div2()
 
     report.set_obj_html("Objective", "The Layer 3 Traffic Generation Test is designed to test the performance of the "
-                                    "Access Point by running layer 3 Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream "
-                                    "of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints, "
-                                    "each of which is associated with a particular Port (physical or virtual interface).")
+                        "Access Point by running layer 3 Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream "
+                        "of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints, "
+                        "each of which is associated with a particular Port (physical or virtual interface).")
 
     report.build_objective()
 
@@ -2098,45 +2097,44 @@ Setting wifi_settings per radio
     report.build_table_title()
 
     wifi_mode_dict = {
-        0 : 'AUTO',         #  802.11g
-        1 : '802.11a',      #  802.11a
-        2 : '802.11b',      #  802.11b
-        3 : '802.11g',      #  802.11g
-        4 : '802.11abg',    #  802.11abg
-        5 : '802.11abgn',   #  802.11abgn
-        6 : '802.11bgn',    #  802.11bgn
-        7 : '802.11bg',     #  802.11bg
-        8 : '802.11abgnAC', #  802.11abgn-AC
-        9 : '802.11anAC',   #  802.11an-AC
-        10: '802.11an',     #  802.11an
-        11: '802.11bgnAC',  #  802.11bgn-AC
-        12: '802.11abgnAX', #  802.11abgn-AX
-                                #     a/b/g/n/AC/AX (dual-band AX) support
-        13: '802.11bgnAX',  #  802.11bgn-AX
-        14: '802.11anAX',   #  802.11an-AX
-        15: '802.11aAX'     #  802.11a-AX (6E disables /n and /ac)
+        0: 'AUTO',  # 802.11g
+        1: '802.11a',  # 802.11a
+        2: '802.11b',  # 802.11b
+        3: '802.11g',  # 802.11g
+        4: '802.11abg',  # 802.11abg
+        5: '802.11abgn',  # 802.11abgn
+        6: '802.11bgn',  # 802.11bgn
+        7: '802.11bg',  # 802.11bg
+        8: '802.11abgnAC',  # 802.11abgn-AC
+        9: '802.11anAC',  # 802.11an-AC
+        10: '802.11an',  # 802.11an
+        11: '802.11bgnAC',  # 802.11bgn-AC
+        12: '802.11abgnAX',  # 802.11abgn-AX
+        #     a/b/g/n/AC/AX (dual-band AX) support
+        13: '802.11bgnAX',  # 802.11bgn-AX
+        14: '802.11anAX',  # 802.11an-AX
+        15: '802.11aAX'  # 802.11a-AX (6E disables /n and /ac)
     }
 
-
     for (
-        radio_,
-        ssid_,
-        ssid_password_,
-        ssid_security_,
-        mode_,
-        wifi_enable_flags_list_,
-        reset_port_enable_,
-        reset_port_time_min_,
-        reset_port_time_max_) in zip(
-        radio_name_list,
-        ssid_list,
-        ssid_password_list,
-        ssid_security_list,
-        wifi_mode_list,
-        wifi_enable_flags_list,
-        reset_port_enable_list,
-        reset_port_time_min_list,
-        reset_port_time_max_list):
+            radio_,
+            ssid_,
+            ssid_password_,
+            ssid_security_,
+            mode_,
+            wifi_enable_flags_list_,
+            reset_port_enable_,
+            reset_port_time_min_,
+            reset_port_time_max_) in zip(
+            radio_name_list,
+            ssid_list,
+            ssid_password_list,
+            ssid_security_list,
+            wifi_mode_list,
+            wifi_enable_flags_list,
+            reset_port_enable_list,
+            reset_port_time_min_list,
+            reset_port_time_max_list):
 
         mode_value = wifi_mode_dict[int(mode_)]
 
