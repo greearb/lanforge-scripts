@@ -494,8 +494,6 @@ http://{hostname}/{report}
 QA Report Dashboard:
 http://{ip_qa}/{qa_url}
 
-QA Report Dashboard Local:
-file:///{qa_url_local}
 
 NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url, qa_url_local=qa_url)
 
