@@ -680,7 +680,7 @@ class L3VariableTime(Realm):
         port_eids = self.gather_port_eids()
         for eid_name in port_eids:
             self.csv_add_port_column_headers(
-                eid_name, self.csv_generate_port_column_headers())
+                eid_name, self.csv_generate_dl_port_column_headers())
 
         # TODO test with LANforge VAP
         # ul -ports (this if AP is present)
@@ -1052,11 +1052,11 @@ class L3VariableTime(Realm):
                           "average_rx_data_bytes"]
         return csv_rx_headers
 
-    def csv_generate_port_column_headers(self):
+    def csv_generate_dl_port_column_headers(self):
         csv_rx_headers = [
             'Time epoch',
             'Time',
-            'Station-Count',
+            'Total-Station-Count',
             'UL-Min-Requested',
             'UL-Max-Requested',
             'DL-Min-Requested',
@@ -1095,7 +1095,7 @@ class L3VariableTime(Realm):
         csv_ul_rx_headers = [
             'Time epoch',
             'Time',
-            'Station-Count',
+            'Total-Station-Count',
             'UL-Min-Requested',
             'UL-Max-Requested',
             'DL-Min-Requested',
@@ -1249,9 +1249,13 @@ test_l3.py:
 
 Summary :
 ----------
-create stations, create traffic between upstream port and stations,  run traffic.
-The traffic on the stations will be checked once per minute to verify that traffic is transmitted
-and received.
+The Layer 3 Traffic Generation Test is designed to test the performance of the
+Access Point by running layer 3 Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream
+of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints,
+each of which is associated with a particular Port (physical or virtual interface).
+
+The test will create stations, create cx traffic between upstream port and stations,  run traffic.
+Verify the traffic is being transmitted and received
 
 Generic command layout:
 -----------------------
@@ -1610,6 +1614,13 @@ Setting wifi_settings per radio
         help='--lfmgr <hostname for where LANforge GUI is running>',
         default='localhost')
     parser.add_argument(
+        '--mgr_port',
+        '--lfmgr_port',
+        dest='lfmgr_port',
+        help='--lfmgr_port <port LANforge GUI HTTP service is running on>',
+        default=8080)
+
+    parser.add_argument(
         '--test_duration',
         help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',
         default='3m')
@@ -1766,6 +1777,9 @@ Setting wifi_settings per radio
     if args.lfmgr:
         lfjson_host = args.lfmgr
 
+    if args.lfmgr:
+        lfjson_port = args.lfmgr_port
+
     if args.upstream_port:
         side_b = args.upstream_port
 
@@ -1894,7 +1908,7 @@ Setting wifi_settings per radio
                     exit(1)
                 wifi_mode_list.append(radio_info_dict['wifi_mode'])
                 enable_flags_str = radio_info_dict['enable_flags'].replace(
-                    '(', '').replace(')', '').replace('|', ',')
+                    '(', '').replace(')', '').replace('|', ',').replace('&&',',')
                 enable_flags_list = list(enable_flags_str.split(","))
                 wifi_enable_flags_list.append(enable_flags_list)
             else:
@@ -2046,9 +2060,95 @@ Setting wifi_settings per radio
 
     # Results
     csv_results_file = ip_var_test.get_results_csv()
-    report.set_title("Test L3 ")
-    report.build_banner()
-    report.set_table_title("Test L3 Key Performance Indexes")
+    report.set_title("Test Layer 3 Cross-Connect Traffic: test_l3.py ")
+    report.build_banner_left()
+    report.start_content_div2()
+
+    report.set_obj_html("Objective", "The Layer 3 Traffic Generation Test is designed to test the performance of the "
+                                    "Access Point by running layer 3 Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream "
+                                    "of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints, "
+                                    "each of which is associated with a particular Port (physical or virtual interface).")
+
+    report.build_objective()
+
+    test_setup_info = {
+        "DUT Name": args.dut_model_num,
+        "DUT Hardware Version": args.dut_hw_version,
+        "DUT Software Version": args.dut_sw_version,
+        "DUT Serial Number": args.dut_serial_num,
+    }
+
+    report.set_table_title("Device Under Test Information")
+    report.build_table_title()
+    report.test_setup_table(value="Device Under Test", test_setup_data=test_setup_info)
+
+    test_input_info = {
+        "LANforge ip": args.lfmgr,
+        "LANforge port": args.lfmgr_port,
+        "Upstream": args.upstream_port,
+        "Test Duration": args.test_duration,
+        "Polling Interval": args.polling_interval,
+    }
+
+    report.set_table_title("Test Configuration")
+    report.build_table_title()
+    report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
+
+    report.set_table_title("Radio Configuration")
+    report.build_table_title()
+
+    wifi_mode_dict = {
+        0 : 'AUTO',         #  802.11g
+        1 : '802.11a',      #  802.11a
+        2 : '802.11b',      #  802.11b
+        3 : '802.11g',      #  802.11g
+        4 : '802.11abg',    #  802.11abg
+        5 : '802.11abgn',   #  802.11abgn
+        6 : '802.11bgn',    #  802.11bgn
+        7 : '802.11bg',     #  802.11bg
+        8 : '802.11abgnAC', #  802.11abgn-AC
+        9 : '802.11anAC',   #  802.11an-AC
+        10: '802.11an',     #  802.11an
+        11: '802.11bgnAC',  #  802.11bgn-AC
+        12: '802.11abgnAX', #  802.11abgn-AX
+                                #     a/b/g/n/AC/AX (dual-band AX) support
+        13: '802.11bgnAX',  #  802.11bgn-AX
+        14: '802.11anAX',   #  802.11an-AX
+        15: '802.11aAX'     #  802.11a-AX (6E disables /n and /ac)
+    }
+
+
+    for (
+        radio_,
+        ssid_,
+        ssid_password_,
+        ssid_security_,
+        mode_,
+        wifi_enable_flags_list_,
+        reset_port_enable_,
+        reset_port_time_min_,
+        reset_port_time_max_) in zip(
+        radio_name_list,
+        ssid_list,
+        ssid_password_list,
+        ssid_security_list,
+        wifi_mode_list,
+        wifi_enable_flags_list,
+        reset_port_enable_list,
+        reset_port_time_min_list,
+        reset_port_time_max_list):
+
+        mode_value = wifi_mode_dict[int(mode_)]
+
+        radio_info = {
+            "SSID": ssid_,
+            "Security": ssid_security_,
+            "Wifi mode set": mode_value,
+            'Wifi Enable Flags': wifi_enable_flags_list_
+        }
+        report.test_setup_table(value=radio_, test_setup_data=radio_info)
+
+    report.set_table_title("Total Layer 3 Cross-Connect Traffic across all Stations")
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
     report.build_table()
