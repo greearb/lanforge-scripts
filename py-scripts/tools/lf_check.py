@@ -1373,8 +1373,8 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     for self.iteration in range(self.test_iterations):
                         self.iteration += 1
 
-                    # Runs the scripts
-                    self.run_script()
+                        # Runs the scripts
+                        self.run_script()
 
             else:
                 self.logger.warning(
