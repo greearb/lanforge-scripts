@@ -60,7 +60,7 @@ class IPVariableTime(Realm):
                  use_existing_sta=False,
                  name_prefix=None,
                  upstream=None,
-                 upstream_resource=1,
+                 resource=1,
                  radio=None,
                  host="localhost",
                  port=8080,
@@ -117,7 +117,7 @@ class IPVariableTime(Realm):
         self.number_template = number_template
         self.debug = _debug_on
         self.timeout_sec = 60
-        self.upstream_resource = upstream_resource
+        self.resource = resource
         # self.json_post("/cli-json/set_resource", {
         #     "shelf":1,
         #     "resource":all,
@@ -1072,6 +1072,7 @@ python3 ./test_ip_variable_time.py
     parser.add_argument('--local_lf_report_dir',
                         help='--local_lf_report_dir override the report path, primary use when running test in test suite',
                         default="")
+    parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1", default="1")
 
     # kpi_csv arguments:
     parser.add_argument(
@@ -1245,6 +1246,7 @@ python3 ./test_ip_variable_time.py
                                  compared_report=args.compared_report,
                                  ipv6=args.ipv6,
                                  traffic_type=args.traffic_type,
+                                 resource=args.resource,
                                  _debug_on=args.debug)
     # work in progress - may delete in the future
     # ip_var_test.set_wifi_radio(radio=args.radio)
@@ -1254,9 +1256,52 @@ python3 ./test_ip_variable_time.py
     csv_results_file = ip_var_test.get_csv_name()
     logger.info("csv_results_file: {}".format(csv_results_file))
     # csv_results_file = kpi_path + "/" + kpi_filename
-    report.set_title("L3 IP Variable Time")
-    report.build_banner()
-    report.set_table_title("L3 IP Variable Time Key Performance Indexes")
+    report.set_title("L3 Test IP Variable Time")
+    # report.build_banner()
+    # report.set_table_title("L3 IP Variable Time Key Performance Indexes")
+
+    report.build_banner_left()
+    report.start_content_div2()
+
+    report.set_obj_html("Objective", "The IP Variable Time Test is designed to test the performance of the "
+                                     "Access Point by createing a variable number of stations with layer 3 "
+                                     "cross-connects and enpoints. The test will then monitor for increased "
+                                     "traffic at regular intervals, and if all stations increase traffic "
+                                     "over the full test duration, the test will pass."
+                                     )
+    report.build_objective()
+
+    test_setup_info = {
+        "DUT Name": args.dut_model_num,
+        "DUT Hardware Version": args.dut_hw_version,
+        "DUT Software Version": args.dut_sw_version,
+        "DUT Serial Number": args.dut_serial_num,
+        "SSID": args.ssid,
+    }
+
+    report.set_table_title("Device Under Test Information")
+    report.build_table_title()
+    report.test_setup_table(value="Device Under Test", test_setup_data=test_setup_info)
+
+    test_input_info = {
+        "LANforge ip": args.mgr,
+        "LANforge port": "8080",
+        "LANforge resource": args.resource,
+        "Upstream": args.upstream_port,
+        "Radio": args.radio,
+        "SSID": args.ssid,
+        "Security": args.security,
+        "Traffic Type": args.traffic_type,
+        "Download bps": args.b_min,
+        "Upload bps": args.a_min,
+        "Test Duration": args.test_duration,
+    }
+
+    report.set_table_title("Test Configuration")
+    report.build_table_title()
+    report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
+
+    report.set_table_title("IP Variable Time Test Results")
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
     report.build_table()
