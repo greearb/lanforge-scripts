@@ -17,6 +17,7 @@ import sys
 import os
 import importlib
 import logging
+import time
 import pandas as pd
 
 if sys.version_info[0] != 3:
@@ -46,9 +47,8 @@ import argparse
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
 
-from lf_graph import lf_bar_graph, lf_line_graph
-import time
-from datetime import datetime, timedelta
+# from lf_graph import lf_bar_graph, lf_line_graph
+# from datetime import datetime, timedelta
 
 
 class RvR(Realm):
@@ -164,6 +164,7 @@ class RvR(Realm):
     def build(self):
         throughput_dbm = {}
         throughput_phone = {}
+        phone_signal = {}
         if len(self.traffic_type) == 2:
             throughput_dbm = {f"{self.traffic_type[0]}": {}, f"{self.traffic_type[1]}": {}}
             throughput_phone = {f"{self.traffic_type[0]}": {}, f"{self.traffic_type[1]}": {}}
@@ -181,6 +182,7 @@ class RvR(Realm):
             for val in self.atten_values:
                 self.attenuator_db_signal.append(f"{val} dB")
                 throughput = {'upload': [], 'download': []}
+                signal = []
                 self.set_attenuation(value=val)
                 self.start_l3()
                 time.sleep(20)
@@ -189,13 +191,23 @@ class RvR(Realm):
                 self.reset_l3()
                 throughput['upload'] = upload
                 throughput['download'] = download
+                throughput['signal'] = signal
+                eid_data = self.json_get("ports?fields=alias,signal")
+                for alias in eid_data["interfaces"]:
+                    for i in alias:
+                        if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
+                            # resource_hw_data = self.json_get("/resource/" + i.split(".")[0] + "/" + i.split(".")[1])
+                            signal.append(int(alias[i]["signal"]))
+
                 for i in range(len(phone_list)):
                     if throughput_phone[''.join(traffic)].get(phone_list[i]) is None:
                         throughput_phone[''.join(traffic)][phone_list[i]] = {"upload": [upload[i]],
-                                                                             "download": [download[i]]}
+                                                                             "download": [download[i]],
+                                                                             "Signal Strength": [signal[i]]}
                     else:
                         throughput_phone[''.join(traffic)][phone_list[i]]["upload"].append(upload[i])
                         throughput_phone[''.join(traffic)][phone_list[i]]["download"].append(download[i])
+                        throughput_phone[''.join(traffic)][phone_list[i]]["Signal Strength"].append(signal[i])
                 throughput_dbm[''.join(traffic)][f"{val} dB"] = throughput
         self.throughput_phone = throughput_phone
         logger.info(throughput_dbm)
@@ -210,7 +222,8 @@ class RvR(Realm):
         rx_rate = []
         tx_rate = []
         station_name = []
-        eid_data = self.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate")
+        ssid = []
+        eid_data = self.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate,ssid,signal")
         for alias in eid_data["interfaces"]:
             for i in alias:
                 if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
@@ -222,6 +235,7 @@ class RvR(Realm):
 
                     rx = "Unknown" if alias[i]["rx-rate"] == 0 else alias[i]["rx-rate"]
                     tx = "Unknown" if alias[i]["tx-rate"] == 0 else alias[i]["tx-rate"]
+                    ssid.append(alias[i]["ssid"])
                     rx_rate.append(rx)
                     tx_rate.append(tx)
                     # Getting username
@@ -241,7 +255,7 @@ class RvR(Realm):
                         phone_radio.append("AUTO")
                     else:
                         phone_radio.append('2G/5G')
-        return [resource_id_list, phone_name_list, mac_address, user_name, phone_radio, station_name, rx_rate, tx_rate]
+        return [resource_id_list, phone_name_list, mac_address, user_name, phone_radio, station_name, rx_rate, tx_rate, ssid]
 
     def monitor(self):
         throughput, upload, download = {}, [], []
@@ -339,10 +353,10 @@ class RvR(Realm):
         report_path_date_time = report.get_path_date_time()
         logger.info("path: {}".format(report_path))
         logger.info("path_date_time: {}".format(report_path_date_time))
-        report.set_title("Lanforge Interop Rate vs Range")
+        report.set_title("LANforge InterOp Rate vs Range")
         report.build_banner()
         # objective title and description
-        report.set_obj_html(_obj_title="Objective", _obj="Through this test LANforge Interop measure the performance "
+        report.set_obj_html(_obj_title="Objective", _obj="Through this test LANforge InterOp measure the performance "
                                                          "of each real client over a certain distance of the DUT, "
                                                          "Distance is emulated using programmable attenuators and "
                                                          "throughput test is run at each distance/RSSI step")
@@ -350,23 +364,17 @@ class RvR(Realm):
         report.test_setup_table(test_setup_data=test_setup_info, value="Device Under Test")
         report.end_content_div()
         phone_info = {
-            "Resource ID": self.list_of_data[0],
+            # "Resource ID": self.list_of_data[0],
             "Phone Name": self.list_of_data[1],
             "MAC Address": self.list_of_data[2],
             "User Name": self.list_of_data[3],
             "Phone Radio": self.list_of_data[4],
-            "Rx link Rate (Mbps) ": self.list_of_data[6],
-            "Tx link Rate (Mbps)": self.list_of_data[7],
+            "Rx Rate (Mbps) ": self.list_of_data[6],
+            "Tx Rate (Mbps)": self.list_of_data[7],
+            "SSID": self.list_of_data[8],
         }
         phone_details = pd.DataFrame(phone_info)
-        report.set_table_title("<h3>Phone Details")
-        report.build_table_title()
-        report.set_table_dataframe(phone_details)
-        report.build_table()
-        report.set_text("<h5> The above table shows a list of all the Real clients which are connected to LANForge "
-                        "server in the tabular format which also show the various details of the real-client (phones) "
-                        "such as phone name, MAC address, Username, Phone Radio, Rx link rate, Tx link rate and "
-                        "Resource id.")
+
         report.build_text()
         report.end_content_div()
         for traffic_type in res["graph_df"]:
@@ -376,7 +384,7 @@ class RvR(Realm):
                 _obj="The below graph represents overall {} throughput for different attenuation (RSSI) ".format(
                     res["graph_df"][traffic_type]["direction"]))
             report.build_objective()
-            graph = lf_line_graph(_data_set=res["graph_df"][traffic_type]["dataset"],
+            graph = lf_graph.lf_line_graph(_data_set=res["graph_df"][traffic_type]["dataset"],
                                   _xaxis_name="Attenuation",
                                   _yaxis_name="Throughput(in Mbps)",
                                   _xaxis_categories=[str(traffic_type) for traffic_type in res[traffic_type].keys()],
@@ -389,7 +397,7 @@ class RvR(Realm):
                                   _figsize=(18, 6),
                                   _legend_loc="best",
                                   _legend_box=(1.0, 1.0),
-                                  _dpi=96,
+                                  _dpi=200,
                                   _enable_csv=True)
             graph_png = graph.build_line_graph()
 
@@ -403,6 +411,14 @@ class RvR(Realm):
             report.build_graph()
         self.generate_individual_graphs(report, res, each_phone_data)
         report.test_setup_table(test_setup_data=input_setup_info, value="Information")
+        report.set_table_title("<h3>Supported Device information:")
+        report.build_table_title()
+        report.set_table_dataframe(phone_details)
+        report.build_table()
+        report.set_text("<h5> The above table shows a list of all the Real clients which are connected to LANForge "
+                        "server in the tabular format which also show the various details of the real-client (phones) "
+                        "such as phone name, MAC address, Username, Phone Radio, Rx link rate, Tx link rate and "
+                        "Resource id.")
         report.build_custom()
         report.build_footer()
         report.write_html()
@@ -418,25 +434,26 @@ class RvR(Realm):
         for traffic_type in phone_x:
             for phone in phone_x[traffic_type]:
                 for direction in phone_x[traffic_type][phone]:
+                    traffic_name = "TCP" if (traffic_type == "lf_tcp") else "UDP" if (traffic_type == "lf_udp") else "TCP and UDP"
                     report.set_obj_html(_obj_title=f"Individual {direction} Throughput for {len(self.list_of_data[0])} "
-                                                   f"clients using {traffic_type} traffic over {phone} attenuation",
+                                                   f"clients using {traffic_name} traffic over {phone} attenuation",
                                         _obj=f"The below graph represents Individual {direction} throughput of all "
                                              f"stations when attenuation (RSSI) set to {phone}")
                     report.build_objective()
-                    line_graph = lf_line_graph(_data_set=[phone_x[traffic_type][phone][direction]],
+                    line_graph = lf_graph.lf_line_graph(_data_set=[phone_x[traffic_type][phone][direction]],
                                                _xaxis_name="Attenuation",
-                                               _yaxis_name="Throughput(in Mbps)",
+                                               _yaxis_name='Throughput(in Mbps)' if (direction == 'upload' or direction == 'download') else 'RSSI Strength(in dBm)',
                                                _xaxis_categories=self.attenuator_db_signal,
                                                _graph_image_name=f"rvr_{traffic_type}_{phone}_{direction}",
-                                               _label=['upload' if direction == 'upload' else 'download'],
-                                               _color=['olivedrab' if direction == 'upload' else 'orangered'],
+                                               _label=['upload' if direction == 'upload' else 'download' if direction == "download" else 'RSSI Strength'],
+                                               _color=['olivedrab' if direction == 'upload' else 'orangered' if direction == 'download' else 'mediumblue'],
                                                _xaxis_step=1,
-                                               _graph_title="Overall throughput vs attenuation",
+                                               _graph_title="Overall throughput vs attenuation" if (direction == 'upload' or direction == 'download') else "RSSI Signal Strength(in dBm)",
                                                _title_size=16,
                                                _figsize=(18, 6),
                                                _legend_loc="best",
                                                _legend_box=(1.0, 1.0),
-                                               _dpi=96,
+                                               _dpi=200,
                                                _enable_csv=True)
                     line_graph_png = line_graph.build_line_graph()
 
@@ -452,39 +469,40 @@ class RvR(Realm):
         for traffic_type in res:
             for attenuation in res[traffic_type]:
                 for direction in res[traffic_type][attenuation]:
-                    report.set_obj_html(
-                        _obj_title=f"Individual {direction} Throughput for {len(self.list_of_data[0])} clients using {traffic_type} traffic over {attenuation} attenuation",
-                        _obj=f"The below graph represents Individual {direction} throughput of all stations when attenuation (RSSI) set to {attenuation}")
-                    report.build_objective()
-                    graph = lf_bar_graph(_data_set=[res[traffic_type][attenuation][direction]],
-                                         _xaxis_name="No.of Stations",
-                                         _yaxis_name="Throughput(in Mbps)",
-                                         _xaxis_categories=self.list_of_data[1],
-                                         _graph_image_name=f"rvr_{traffic_type}_{attenuation}_{direction}",
-                                         _label=['upload' if direction == 'upload' else
-                                                 'download'],
-                                         _color=['olivedrab' if direction == 'upload' else 'orangered'],
-                                         _color_edge='grey',
-                                         _xaxis_step=1,
-                                         _graph_title=f"Individual throughput with {attenuation} attenuation",
-                                         _title_size=16,
-                                         _bar_width=0.15,
-                                         _figsize=(18, 6),
-                                         _legend_loc="best",
-                                         _legend_box=(1.0, 1.0),
-                                         _dpi=96,
-                                         _show_bar_value=True,
-                                         _enable_csv=True)
-                    graph_png = graph.build_bar_graph()
+                    if direction == "upload" or direction == "download":
+                        report.set_obj_html(
+                            _obj_title=f"Individual {direction} Throughput for {len(self.list_of_data[0])} clients using {traffic_type} traffic over {attenuation} attenuation",
+                            _obj=f"The below graph represents Individual {direction} throughput of all stations when attenuation (RSSI) set to {attenuation}")
+                        report.build_objective()
+                        graph = lf_bar_graph(_data_set=[res[traffic_type][attenuation][direction]],
+                                             _xaxis_name="No.of Stations",
+                                             _yaxis_name="Throughput(in Mbps)",
+                                             _xaxis_categories=self.list_of_data[1],
+                                             _graph_image_name=f"rvr_{traffic_type}_{attenuation}_{direction}",
+                                             _label=['upload' if direction == 'upload' else
+                                                     'download'],
+                                             _color=['olivedrab' if direction == 'upload' else 'orangered'],
+                                             _color_edge='grey',
+                                             _xaxis_step=1,
+                                             _graph_title=f"Individual throughput with {attenuation} attenuation",
+                                             _title_size=16,
+                                             _bar_width=0.15,
+                                             _figsize=(18, 6),
+                                             _legend_loc="best",
+                                             _legend_box=(1.0, 1.0),
+                                             _dpi=96,
+                                             _show_bar_value=True,
+                                             _enable_csv=True)
+                        graph_png = graph.build_bar_graph()
 
-                    logger.info("graph name {}".format(graph_png))
+                        logger.info("graph name {}".format(graph_png))
 
-                    report.set_graph_image(graph_png)
-                    # need to move the graph image to the results directory
-                    report.move_graph_image()
-                    report.set_csv_filename(graph_png)
-                    report.move_csv_file()
-                    report.build_graph()
+                        report.set_graph_image(graph_png)
+                        # need to move the graph image to the results directory
+                        report.move_graph_image()
+                        report.set_csv_filename(graph_png)
+                        report.move_csv_file()
+                        report.build_graph()
 
 
 def main():
@@ -613,9 +631,9 @@ def main():
 
     test_setup_info = {
         "AP Model": rvr_obj.ap_model,
-        "Number of Stations": rvr_obj.num_stations,
+        "Number of Real Stations": len(rvr_obj.list_of_data[0]),
         "SSID": rvr_obj.ssid,
-        "Intended traffic": f"{rvr_obj.traffic} Mbps",
+        "Traffic Pumped for each Station": f"{rvr_obj.traffic} Mbps",
         "Test Duration": datetime.strptime(test_end_time, "%b %d %H:%M:%S") - datetime.strptime(
             test_start_time, "%b %d %H:%M:%S")
     }
