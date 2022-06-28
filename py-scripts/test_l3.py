@@ -1660,7 +1660,7 @@ Setting wifi_settings per radio
         action='append',
         nargs=1,
         help=(' --radio'
-              ' "radio==<number_of_wiphy stations=<=number of stations>'
+              ' "radio==<number_of_wiphy stations==<number of stations>'
               ' ssid==<ssid> ssid_pw==<ssid password> security==<security> '
               ' wifi_settings==True wifi_mode==<wifi_mode>'
               ' enable_flags==<enable_flags> '

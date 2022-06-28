@@ -40,7 +40,7 @@ class lf_create_rig_json():
 {{
     "{file}":{{
         "Notes":[
-            "This json file describes LANforge system and test run configuration"
+            "This json file describes LANforge system used as input for --dut_json for lf_check.py"
         ]
     }},
     "test_rig_parameters":{{
