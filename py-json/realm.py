@@ -735,7 +735,7 @@ class Realm(LFCliBase):
                 if len(stas_without_ip6s) > 0:
                     logger.info('%s did not acquire IPv6 addresses' % stas_without_ip6s.keys())
                 port_info = self.dump_all_port_info()
-                logger.debug(pformat(self.dump_all_port_info()))
+                logger.debug(pformat(port_info))
             return False
         else:
             if debug:
