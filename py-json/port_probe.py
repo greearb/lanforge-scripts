@@ -6,6 +6,7 @@ import sys
 import os
 from pprint import pformat
 import logging
+import traceback
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -75,90 +76,96 @@ class ProbePort(LFCliBase):
             logger.debug("signals values: {values}".format(values=values))
         self.signals = dict(zip(keys, values))
 
-        tx_bitrate = [x for x in text if 'tx bitrate' in x][0].replace('\t', ' ')
-        # if 'HE' in tx_bitrate:
-        #    logger.info("HE not supported ")
-        logger.debug("tx_bitrate {tx_bitrate}".format(tx_bitrate=tx_bitrate))
-        self.tx_bitrate = tx_bitrate.split(':')[-1].strip(' ')
-        if 'MHz' in tx_bitrate:
-            self.tx_mhz = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('MHz')[0].rsplit(' ')[-1].strip(
-                ' ')
-            logger.debug("tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
-        else:
-            self.tx_mhz = 20
-            logger.debug("HT: tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
-        tx_mcs = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split(':')[1].strip('\t')
-        if 'MCS' in tx_mcs:
-            self.tx_mcs = int(tx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
-            logger.debug("self.tx_mcs {tx_mcs}".format(tx_mcs=self.tx_mcs))
-            if 'NSS' in text:
-                self.tx_nss = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('NSS')[1].strip(' ')
+        try:
+            tx_bitrate = [x for x in text if 'tx bitrate' in x][0].replace('\t', ' ')
+            # if 'HE' in tx_bitrate:
+            #    logger.info("HE not supported ")
+            logger.debug("tx_bitrate {tx_bitrate}".format(tx_bitrate=tx_bitrate))
+            self.tx_bitrate = tx_bitrate.split(':')[-1].strip(' ')
+            if 'MHz' in tx_bitrate:
+                self.tx_mhz = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('MHz')[0].rsplit(' ')[-1].strip(
+                    ' ')
+                logger.debug("tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
             else:
-                # nss is not present need to derive from MCS for HT
-                if 0 <= self.tx_mcs <= 7:
-                    self.tx_nss = 1
-                elif 8 <= self.tx_mcs <= 15:
-                    self.tx_nss = 2
-                elif 16 <= self.tx_mcs <= 23:
-                    self.tx_nss = 3
-                elif 24 <= self.tx_mcs <= 31:
-                    self.tx_nss = 4
-            logger.debug("tx_nss {tx_nss}".format(tx_nss=self.tx_nss))
-            self.tx_mbit = float(self.tx_bitrate.split(' ')[0])
-            logger.debug("tx_mbit {tx_mbit}".format(tx_mbit=self.tx_mbit))
-            if 'HE' in tx_bitrate:
-                self.calculated_data_rate_tx_HE()
-            elif 'VHT' in tx_bitrate:
-                self.calculated_data_rate_tx_VHT()
+                self.tx_mhz = 20
+                logger.debug("HT: tx_mhz {tx_mhz}".format(tx_mhz=self.tx_mhz))
+            tx_mcs = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split(':')[1].strip('\t')
+            if 'MCS' in tx_mcs:
+                self.tx_mcs = int(tx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
+                logger.debug("self.tx_mcs {tx_mcs}".format(tx_mcs=self.tx_mcs))
+                if 'NSS' in text:
+                    self.tx_nss = [x.strip('\t') for x in text if 'tx bitrate' in x][0].split('NSS')[1].strip(' ')
+                else:
+                    # nss is not present need to derive from MCS for HT
+                    if 0 <= self.tx_mcs <= 7:
+                        self.tx_nss = 1
+                    elif 8 <= self.tx_mcs <= 15:
+                        self.tx_nss = 2
+                    elif 16 <= self.tx_mcs <= 23:
+                        self.tx_nss = 3
+                    elif 24 <= self.tx_mcs <= 31:
+                        self.tx_nss = 4
+                logger.debug("tx_nss {tx_nss}".format(tx_nss=self.tx_nss))
+                self.tx_mbit = float(self.tx_bitrate.split(' ')[0])
+                logger.debug("tx_mbit {tx_mbit}".format(tx_mbit=self.tx_mbit))
+                if 'HE' in tx_bitrate:
+                    self.calculated_data_rate_tx_HE()
+                elif 'VHT' in tx_bitrate:
+                    self.calculated_data_rate_tx_VHT()
+                else:
+                    self.calculated_data_rate_tx_HT()
             else:
-                self.calculated_data_rate_tx_HT()
-        else:
-            logger.debug("No tx MCS value:{tx_bitrate}".format(tx_bitrate=tx_bitrate))
+                logger.debug("No tx MCS value:{tx_bitrate}".format(tx_bitrate=tx_bitrate))
 
-        rx_bitrate = [x for x in text if 'rx bitrate' in x][0].replace('\t', ' ')
-        logger.debug("rx_bitrate {rx_bitrate}".format(rx_bitrate=rx_bitrate))
-        self.rx_bitrate = rx_bitrate.split(':')[-1].strip(' ')
-        logger.debug("self.rx_bitrate {rx_bitrate}".format(rx_bitrate=self.rx_bitrate))
-        # rx will received : 6Mbps encoding is legacy frame
-        # for 24g - MHz is 20
-        # try:
-        if 'MHz' in rx_bitrate:
-            self.rx_mhz = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('MHz')[0].rsplit(' ')[
-                -1].strip(' ')
-            logger.debug("rx_mhz {rx_mhz}".format(rx_mhz=self.rx_mhz))
-        else:
-            self.rx_mhz = 20
-
-        rx_mcs = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split(':')[1].strip('\t')
-        # MCS is not in the 6.0MBit/s frame
-        if 'MCS' in rx_mcs:
-            self.rx_mcs = int(rx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
-            logger.debug("self.rx_mcs {rx_mcs}".format(rx_mcs=self.rx_mcs))
-            if 'NSS' in text:
-                self.rx_nss = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('NSS')[1].strip(' ')
+            rx_bitrate = [x for x in text if 'rx bitrate' in x][0].replace('\t', ' ')
+            logger.debug("rx_bitrate {rx_bitrate}".format(rx_bitrate=rx_bitrate))
+            self.rx_bitrate = rx_bitrate.split(':')[-1].strip(' ')
+            logger.debug("self.rx_bitrate {rx_bitrate}".format(rx_bitrate=self.rx_bitrate))
+            # rx will received : 6Mbps encoding is legacy frame
+            # for 24g - MHz is 20
+            # try:
+            if 'MHz' in rx_bitrate:
+                self.rx_mhz = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('MHz')[0].rsplit(' ')[
+                    -1].strip(' ')
+                logger.debug("rx_mhz {rx_mhz}".format(rx_mhz=self.rx_mhz))
             else:
-                # nss is not present need to derive from MCS for HT
-                if 0 <= self.rx_mcs <= 7:
-                    self.rx_nss = 1
-                elif 8 <= self.rx_mcs <= 15:
-                    self.rx_nss = 2
-                elif 16 <= self.rx_mcs <= 23:
-                    self.rx_nss = 3
-                elif 24 <= self.rx_mcs <= 31:
-                    self.rx_nss = 4
+                self.rx_mhz = 20
 
-            self.rx_mbit = self.rx_bitrate.split(' ')[0]
-            logger.debug("rx_nss {rx_nss}".format(rx_nss=self.rx_nss))
-            self.rx_mbit = float(self.rx_bitrate.split(' ')[0])
-            logger.debug("rx_mbit {rx_mbit}".format(rx_mbit=self.rx_mbit))
-            if 'HE' in rx_bitrate:
-                self.calculated_data_rate_rx_HE()
-            elif 'VHT' in rx_bitrate:
-                self.calculated_data_rate_rx_VHT()
+            rx_mcs = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split(':')[1].strip('\t')
+            # MCS is not in the 6.0MBit/s frame
+            if 'MCS' in rx_mcs:
+                self.rx_mcs = int(rx_mcs.split('MCS')[1].strip(' ').split(' ')[0])
+                logger.debug("self.rx_mcs {rx_mcs}".format(rx_mcs=self.rx_mcs))
+                if 'NSS' in text:
+                    self.rx_nss = [x.strip('\t') for x in text if 'rx bitrate' in x][0].split('NSS')[1].strip(' ')
+                else:
+                    # nss is not present need to derive from MCS for HT
+                    if 0 <= self.rx_mcs <= 7:
+                        self.rx_nss = 1
+                    elif 8 <= self.rx_mcs <= 15:
+                        self.rx_nss = 2
+                    elif 16 <= self.rx_mcs <= 23:
+                        self.rx_nss = 3
+                    elif 24 <= self.rx_mcs <= 31:
+                        self.rx_nss = 4
+
+                self.rx_mbit = self.rx_bitrate.split(' ')[0]
+                logger.debug("rx_nss {rx_nss}".format(rx_nss=self.rx_nss))
+                self.rx_mbit = float(self.rx_bitrate.split(' ')[0])
+                logger.debug("rx_mbit {rx_mbit}".format(rx_mbit=self.rx_mbit))
+                if 'HE' in rx_bitrate:
+                    self.calculated_data_rate_rx_HE()
+                elif 'VHT' in rx_bitrate:
+                    self.calculated_data_rate_rx_VHT()
+                else:
+                    self.calculated_data_rate_rx_HT()
             else:
-                self.calculated_data_rate_rx_HT()
-        else:
-            logger.debug("No rx MCS value:{rx_bitrate}".format(rx_bitrate=rx_bitrate))
+                logger.debug("No rx MCS value:{rx_bitrate}".format(rx_bitrate=rx_bitrate))
+            return True
+        except Exception as x:
+            logger.warning("Probe response list was empty.")
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            return False
 
     def getSignalAvgCombined(self):
         return self.signals['signal avg'].split(' ')[0]
