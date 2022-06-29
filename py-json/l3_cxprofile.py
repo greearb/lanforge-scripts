@@ -297,67 +297,72 @@ class L3CXProfile(LFCliBase):
                                        eid_str=station,
                                        debug=self.debug)
                 probe_results = dict()
-                probe_port.refreshProbe()
-                probe_results['Signal Avg Combined'] = probe_port.getSignalAvgCombined()
-                probe_results['Signal Avg per Chain'] = probe_port.getSignalAvgPerChain()
-                probe_results['Signal Combined'] = probe_port.getSignalCombined()
-                probe_results['Signal per Chain'] = probe_port.getSignalPerChain()
-                if 'Beacon Av Signal' in probe_results.keys():
-                    probe_results['Beacon Avg Signal'] = probe_port.getBeaconSignalAvg()
-                else:
-                    probe_results['Beacon Avg Signal'] = "0"
-                # probe_results['HE status'] = probe_port.he
-                probe_results['TX Bitrate'] = probe_port.tx_bitrate
-                probe_results['TX Mbps'] = probe_port.tx_mbit
-                probe_results['TX MCS ACTUAL'] = probe_port.tx_mcs
-                if probe_port.tx_mcs:
-                    probe_results['TX MCS'] = int(probe_port.tx_mcs) % 8
-                else:
-                    probe_results['TX MCS'] = probe_port.tx_mcs
-                probe_results['TX NSS'] = probe_port.tx_nss
-                probe_results['TX MHz'] = probe_port.tx_mhz
-                if probe_port.tx_gi:
-                    probe_results['TX GI ns'] = (probe_port.tx_gi * 10**9)
-                else:
-                    probe_results['TX GI ns'] = probe_port.tx_gi
-                probe_results['TX Mbps Calc'] = probe_port.tx_mbit_calc
-                probe_results['TX GI'] = probe_port.tx_gi
-                probe_results['TX Mbps short GI'] = probe_port.tx_data_rate_gi_short_Mbps
-                probe_results['TX Mbps long GI'] = probe_port.tx_data_rate_gi_long_Mbps
-                probe_results['RX Bitrate'] = probe_port.rx_bitrate
-                probe_results['RX Mbps'] = probe_port.rx_mbit
-                probe_results['RX MCS ACTUAL'] = probe_port.rx_mcs
-                if probe_port.rx_mcs:
-                    probe_results['RX MCS'] = int(probe_port.rx_mcs) % 8
-                else:
-                    probe_results['RX MCS'] = probe_port.rx_mcs
-                probe_results['RX NSS'] = probe_port.rx_nss
-                probe_results['RX MHz'] = probe_port.rx_mhz
-                if probe_port.rx_gi:
-                    probe_results['RX GI ns'] = (probe_port.rx_gi * 10**9)
-                else:
-                    probe_results['RX GI ns'] = probe_port.rx_gi
-                probe_results['RX Mbps Calc'] = probe_port.rx_mbit_calc
-                probe_results['RX GI'] = probe_port.rx_gi
-                probe_results['RX Mbps short GI'] = probe_port.rx_data_rate_gi_short_Mbps
-                probe_results['RX Mbps long GI'] = probe_port.rx_data_rate_gi_long_Mbps
+                if (probe_port.refreshProbe()):
+                    probe_results['Signal Avg Combined'] = probe_port.getSignalAvgCombined()
+                    probe_results['Signal Avg per Chain'] = probe_port.getSignalAvgPerChain()
+                    probe_results['Signal Combined'] = probe_port.getSignalCombined()
+                    probe_results['Signal per Chain'] = probe_port.getSignalPerChain()
+                    if 'Beacon Av Signal' in probe_results.keys():
+                        probe_results['Beacon Avg Signal'] = probe_port.getBeaconSignalAvg()
+                    else:
+                        probe_results['Beacon Avg Signal'] = "0"
+                    # probe_results['HE status'] = probe_port.he
+                    probe_results['TX Bitrate'] = probe_port.tx_bitrate
+                    probe_results['TX Mbps'] = probe_port.tx_mbit
+                    probe_results['TX MCS ACTUAL'] = probe_port.tx_mcs
+                    if probe_port.tx_mcs:
+                        probe_results['TX MCS'] = int(probe_port.tx_mcs) % 8
+                    else:
+                        probe_results['TX MCS'] = probe_port.tx_mcs
+                    probe_results['TX NSS'] = probe_port.tx_nss
+                    probe_results['TX MHz'] = probe_port.tx_mhz
+                    if probe_port.tx_gi:
+                        probe_results['TX GI ns'] = (probe_port.tx_gi * 10**9)
+                    else:
+                        probe_results['TX GI ns'] = probe_port.tx_gi
+                    probe_results['TX Mbps Calc'] = probe_port.tx_mbit_calc
+                    probe_results['TX GI'] = probe_port.tx_gi
+                    probe_results['TX Mbps short GI'] = probe_port.tx_data_rate_gi_short_Mbps
+                    probe_results['TX Mbps long GI'] = probe_port.tx_data_rate_gi_long_Mbps
+                    probe_results['RX Bitrate'] = probe_port.rx_bitrate
+                    probe_results['RX Mbps'] = probe_port.rx_mbit
+                    probe_results['RX MCS ACTUAL'] = probe_port.rx_mcs
+                    if probe_port.rx_mcs:
+                        probe_results['RX MCS'] = int(probe_port.rx_mcs) % 8
+                    else:
+                        probe_results['RX MCS'] = probe_port.rx_mcs
+                    probe_results['RX NSS'] = probe_port.rx_nss
+                    probe_results['RX MHz'] = probe_port.rx_mhz
+                    if probe_port.rx_gi:
+                        probe_results['RX GI ns'] = (probe_port.rx_gi * 10**9)
+                    else:
+                        probe_results['RX GI ns'] = probe_port.rx_gi
+                    probe_results['RX Mbps Calc'] = probe_port.rx_mbit_calc
+                    probe_results['RX GI'] = probe_port.rx_gi
+                    probe_results['RX Mbps short GI'] = probe_port.rx_data_rate_gi_short_Mbps
+                    probe_results['RX Mbps long GI'] = probe_port.rx_data_rate_gi_long_Mbps
 
-                probe_df_initial = pd.DataFrame(probe_results.values()).transpose()
-                probe_df_initial.columns = probe_results.keys()
-                probe_df_initial.columns = ['probe ' + x for x in probe_df_initial.columns]
-                probe_df_initial['alias'] = station.split('.')[-1]
-                probe_port_df_list.append(probe_df_initial)
-            probe_port_df = pd.concat(probe_port_df_list)
-            timestamp_df = pd.merge(timestamp_df, probe_port_df, on='alias')
-            timestamp_df['Timestamp'] = timestamp
-            timestamp_df['Timestamp milliseconds epoch'] = t_to_millisec_epoch
-            timestamp_df['Timestamp seconds epoch'] = t_to_sec_epoch
-            timestamp_df['Duration elapsed'] = time_elapsed
-            timestamp_data.append(timestamp_df)
-            time.sleep(monitor_interval_ms)
-        df = pd.concat(timestamp_data)
-        df = df.drop('alias', axis=1)
-        df.to_csv(str(report_file), index=False)
+                    probe_df_initial = pd.DataFrame(probe_results.values()).transpose()
+                    probe_df_initial.columns = probe_results.keys()
+                    probe_df_initial.columns = ['probe ' + x for x in probe_df_initial.columns]
+                    probe_df_initial['alias'] = station.split('.')[-1]
+                    probe_port_df_list.append(probe_df_initial)
+            if len(probe_port_df_list) > 0:
+                probe_port_df = pd.concat(probe_port_df_list)
+                timestamp_df = pd.merge(timestamp_df, probe_port_df, on='alias')
+                timestamp_df['Timestamp'] = timestamp
+                timestamp_df['Timestamp milliseconds epoch'] = t_to_millisec_epoch
+                timestamp_df['Timestamp seconds epoch'] = t_to_sec_epoch
+                timestamp_df['Duration elapsed'] = time_elapsed
+                timestamp_data.append(timestamp_df)
+                time.sleep(monitor_interval_ms)
+            else:
+                logger.info("port probe dataframe list is empty.")
+        if len(timestamp_data) > 0:
+            df = pd.concat(timestamp_data)
+            df = df.drop('alias', axis=1)
+            df.to_csv(str(report_file), index=False)
+            logger.critical("No csv generated. Check test input configuration (ssid, ssid-passwd, did stations get ip?)")
 
         # comparison to last report / report inputted
         if compared_report:
