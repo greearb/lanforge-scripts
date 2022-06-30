@@ -130,6 +130,7 @@ class L3CXProfile(LFCliBase):
                 script_name=None,
                 arguments=None,
                 compared_report=None,
+                adjust_cx_json=False,  # used for lf_test_max_association.py (removes created_cx from json get to alleviate url > 2048 bytes error)
                 debug=False):
         if duration_sec:
             duration_sec = self.parse_time(duration_sec).seconds
@@ -224,7 +225,12 @@ class L3CXProfile(LFCliBase):
             if port_mgr_cols:
                 port_mgr_response = self.json_get("/port/1/1/%s?fields=%s" % (stations, port_mgr_fields))
 
-            layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
+            # if True, removes created_cx from json get to alleviate url > 2048 bytes error
+            if adjust_cx_json:
+                layer_3_response = self.json_get("/endp/?fields=%s" % (layer3_fields))
+            else:
+                layer_3_response = self.json_get("/endp/%s?fields=%s" % (created_cx, layer3_fields))
+            # logger.info(layer_3_response)
 
             new_cx_rx_values = self.__get_rx_values()
             if debug:
