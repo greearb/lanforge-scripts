@@ -49,7 +49,8 @@ Realm = realm.Realm
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
-lf_radio_info = importlib.import_module("py-scripts.smw_lf_radio_info")
+lf_radio_info = importlib.import_module("py-scripts.lf_radio_info")
+lf_cleanup = importlib.import_module("py-scripts.lf_cleanup")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 logger = logging.getLogger(__name__)
@@ -82,6 +83,7 @@ class max_associate(Realm):
                  port_mgr_columns=None,
                  compared_report=None,
                  outfile=None,
+                 clean_profile=None,
                  debug_=False,
                  _exit_on_fail=False):
         if layer3_columns is None:
@@ -98,6 +100,7 @@ class max_associate(Realm):
         self.upstream_port = upstream_port
         self.download_bps = download_bps
         self.wiphy_info = wiphy_info
+        self.clean_profile = clean_profile
         self.upload_bps = upload_bps
         self.name_prefix = name_prefix
         self.test_duration = _test_duration
@@ -298,12 +301,17 @@ class max_associate(Realm):
         # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endp_rx_drop_map, endps, total_ul_rate, total_dl_rate, total_dl_ll, total_ul_ll, total_ul_pkts_ll, total_dl_pkts_ll
 
-    def pre_cleanup(self):
-        logger.info("Cleaning pre-existing l3-cx's and endps...")
-        self.cx_profile.cleanup_prefix()
+    def cleanup(self):
+        logger.info("Cleaning pre-existing l3-cx's, endps, and stations...")
+        self.clean_profile.cxs_clean()
+        self.clean_profile.endp_clean()
+        self.clean_profile.sta_clean()
+        LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=self.station_profile.station_names,
+                                           debug=self.debug)
 
     def build(self):
-        # self.pre_cleanup()
+        self.cleanup()
+        # used to store data in memory:
         all_wiphy_data = self.wiphy_info.get_lanforge_radio_information()
         # logger.info(all_wiphy_data)
         wiphy_radio_list = self.wiphy_info.get_radios()
@@ -460,6 +468,7 @@ class max_associate(Realm):
                                 output_format=self.report_file_format,
                                 compared_report=compared_rept,
                                 script_name='lf_test_max_association',
+                                adjust_cx_json=True,
                                 debug=self.debug)
 
         # fill out data kpi.csv and results reports
@@ -876,6 +885,12 @@ CLI Example:
                                                  debug_=args.debug,
                                                  _exit_on_fail=True)
 
+    clean_profile = lf_cleanup.lf_clean(args.mgr,
+                                        resource=args.resource,
+                                        clean_cxs=True,
+                                        clean_endp=True,
+                                        clean_sta=True)
+
     # add: ssid, passwd, wifi settings, enabled flags
     max_association = max_associate(args.mgr, args.port,
                                     wiphy0_ssid=args.wiphy0_ssid,
@@ -898,6 +913,7 @@ CLI Example:
                                     port_mgr_columns=args.port_mgr_cols,
                                     compared_report=args.compared_report,
                                     outfile=args.csv_outfile,
+                                    clean_profile=clean_profile,
                                     debug_=args.debug,
                                     _exit_on_fail=True)
 
