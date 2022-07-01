@@ -5,6 +5,22 @@ Usage: lf_create_rig_json.py --lf_mgr <lanforge ip> --lf_mgr_port <lanforge port
 '''
 
 import argparse
+import logging
+import importlib
+import os
+import sys
+
+if sys.version_info[0] != 3:
+    print("This script requires Python 3")
+    exit(1)
+
+
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../../")))
+
+
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
 
 
 class lf_create_rig_json():
@@ -99,7 +115,31 @@ Usage: lf_create_rig_json.py ----lf_mgr <lanforge ip> --lf_mgr_port <lanforge po
     parser.add_argument('--upstream_port', help='--upstream_port <1.1.eth2> need to include self and resource', default='1.1.eth2')
     parser.add_argument('--test_timeout', help='--test_timeout 600', default='600')
 
+    parser.add_argument('--log_level',
+                        default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
+
+    # logging configuration
+    parser.add_argument(
+        "--lf_logger_config_json",
+        help="--lf_logger_config_json <json file> , json configuration of logger")
+
+
     args = parser.parse_args()
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    # set the logger level to debug
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
+
+    # lf_logger_config_json will take presidence to changing debug levels
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
 
     if args.test_server is None:
         _test_server = args.lf_mgr
@@ -129,6 +169,8 @@ Usage: lf_create_rig_json.py ----lf_mgr <lanforge ip> --lf_mgr_port <lanforge po
                                   _upstream_port=_upstream_port,
                                   _test_timeout=_test_timeout)
     rig_json.create()
+
+    logger.info("created {file}".format(file=_file))
 
 
 if __name__ == '__main__':
