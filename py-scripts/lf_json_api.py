@@ -24,7 +24,6 @@ import importlib
 import requests
 import pandas as pd
 import json
-# from pprint import pformat
 
 
 if sys.version_info[0] != 3:
@@ -35,6 +34,7 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
 
 
 class lf_json_api():
@@ -80,6 +80,36 @@ class lf_json_api():
         logger.debug("lanforge_port_json_formatted: {json}".format(json=lanforge_port_json_formatted))
 
         return lanforge_port_json, lanforge_port_text, lanforge_port_json_formatted
+
+    def get_request_wifi_stats_information(self):
+        # https://docs.python-requests.org/en/latest/
+        # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
+        # station command
+        # curl -H 'Accept: application/json' 'http://localhost:8080/wifi-stats/1/1/wlan4' | json_pp
+        # a radio command
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json'
+        # http://192.168.100.116:8080/wifi-stats/1/1/wlan4 | json_pp  , where --user
+        # "USERNAME:PASSWORD"
+        request_command = 'http://{lfmgr}:{lfport}/wifi-stats/1/{resource}/{port}'.format(
+            lfmgr=self.lf_mgr, lfport=self.lf_port, resource=self.resource, port=self.port)
+        request = requests.get(
+            request_command, auth=(
+                self.lf_user, self.lf_passwd))
+        logger.info(
+            "wifi-stats request command: {request_command}".format(
+                request_command=request_command))
+        logger.info(
+            "wifi-stats request status_code {status}".format(
+                status=request.status_code))
+        lanforge_wifi_stats_json = request.json()
+        logger.debug("wifi-stats request.json: {json}".format(json=lanforge_wifi_stats_json))
+        lanforge_wifi_stats_text = request.text
+        logger.debug("wifi-stats request.text: {text}".format(text=lanforge_wifi_stats_text))
+        lanforge_wifi_stats_json_formatted = json.dumps(lanforge_wifi_stats_json, indent=4)
+        logger.debug("lanforge_wifi_stats_json_formatted: {json}".format(json=lanforge_wifi_stats_json_formatted))
+        # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
+        return lanforge_wifi_stats_json, lanforge_wifi_stats_text, lanforge_wifi_stats_json_formatted
+
 
     # TODO This method is left in for an example it was taken from
     def get_request_radio_information(self):
@@ -145,8 +175,9 @@ def main():
     parser.add_argument(
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
-    # TODO check command
-    parser.add_argument("--get_requests", type=str, help="perform get request may be a list:  port | radio | port_rssi")
+    # TODO check command 
+    # TODO make generic so any request may be passed in
+    parser.add_argument("--get_requests", type=str, help="perform get request may be a list:  port | radio | port_rssi | wifi-stats")
     parser.add_argument("--post_requests", type=str, help="perform set request may be a list:  nss ")
     parser.add_argument("--nss", type=str, help="--nss 4  set the number of spatial streams for a speific antenna ")
 
@@ -205,6 +236,15 @@ def main():
 
             if get_request == "alerts":
                 lanforge_alerts_json = lf_json.get_alerts_information()
+
+            if get_request == "wifi-stats":
+                lanforge_wifi_stats_json, lanforge_wifi_stats_text, lanforge_wifi_stats_json_formatted = lf_json.get_request_wifi_stats_information()
+
+                logger.info("lanforge_wifi_stats_json = {lanforge_wifi_stats_json}".format(lanforge_wifi_stats_json=lanforge_wifi_stats_json))
+                logger.info("lanforge_wifi_stats_text = {lanforge_wifi_stats_text}".format(lanforge_wifi_stats_text=lanforge_wifi_stats_text))
+                logger.info("lanforge_wifi_stats_json_formatted = {lanforge_wifi_stats_json_formatted}".format(lanforge_wifi_stats_json_formatted=lanforge_wifi_stats_json_formatted))
+
+
 
 
     if args.post_requests:
