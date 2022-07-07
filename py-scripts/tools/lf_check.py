@@ -1441,7 +1441,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         '--suite',
         help="--suite <suite name> ",
         required=True)
-    parser.add_argument('--flat_dir', help="--flat_dir",action='store_true')
+    parser.add_argument('--flat_dir', help="--flat_dir , will place the results in the top directory",action='store_true')
     parser.add_argument(
         '--server_override',
         help="--server_override http://<server ip>/  example: http://192.168.95.6/",
