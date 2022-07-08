@@ -559,7 +559,7 @@ class GenCXProfile(LFCliBase):
                 # get info from port manager with list of values from cx_a_side_list
                 port_mgr_response = self.json_get("/port/1/%s/%s?fields=%s" % (resource_id, sta_list, port_mgr_fields))
 
-            if "endpoints" not in generic_response or not generic_response:
+            if ("endpoints" not in generic_response and "endpoint" not in generic_response) or not generic_response:
                 logger.critical(generic_response)
                 logger.critical("Json generic_response from LANforge... {generic_response}".format(generic_response=generic_response))
                 logger.critical("Cannot find columns requested to be searched. Exiting script, please retry.")
@@ -573,7 +573,13 @@ class GenCXProfile(LFCliBase):
 
             #print("generic response: ")
             # pprint(generic_response)
-            endp_array = generic_response["endpoints"]
+            if "endpoints" in generic_response:
+                endp_array = generic_response["endpoints"]
+            elif "endpoint" in generic_response:
+                endp_array = generic_response["endpoint"]
+                # Second assignment to endp_array makes it consistent with the layout of multi-endpoint endp_array
+                endp_array = [{endp_array['name'] : endp_array}]
+
             #print("endp-array: ")
             # pprint(endp_array)
             for endpoint in endp_array:  # each endpoint is a dictionary
