@@ -51,6 +51,9 @@ class lf_json_api():
         self.lf_passwd = lf_passwd
         self.resource = resource
         self.port = port
+        # the request can change
+        self.request = ''
+
 
     def get_request_port_information(self):
         # https://docs.python-requests.org/en/latest/
@@ -109,6 +112,36 @@ class lf_json_api():
         logger.debug("lanforge_wifi_stats_json_formatted: {json}".format(json=lanforge_wifi_stats_json_formatted))
         # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
         return lanforge_wifi_stats_json, lanforge_wifi_stats_text, lanforge_wifi_stats_json_formatted
+
+    # TODO this is a generic one.
+    def get_request_information(self):
+        # https://docs.python-requests.org/en/latest/
+        # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
+        # station command
+        # curl -H 'Accept: application/json' 'http://localhost:8080/{request}/1/1/wlan4' | json_pp
+        # a radio command
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json'
+        # http://192.168.100.116:8080//1/1/wlan4 | json_pp  , where --user
+        # "USERNAME:PASSWORD"
+        request_command = 'http://{lfmgr}:{lfport}/{request}/1/{resource}/{port}'.format(
+            lfmgr=self.lf_mgr, lfport=self.lf_port,request=self.request, resource=self.resource, port=self.port)
+        request = requests.get(
+            request_command, auth=(
+                self.lf_user, self.lf_passwd))
+        logger.info(
+            "{request} request command: {request_command}".format(request=self.request,
+                request_command=request_command))
+        logger.info(
+            "{request} request status_code {status}".format(request=self.request,
+                status=request.status_code))
+        lanforge_json = request.json()
+        logger.debug("{request} request.json: {json}".format(request=self.request,json=lanforge_json))
+        lanforge_text = request.text
+        logger.debug("{request} request.text: {text}".format(request=self.request,text=lanforge_text))
+        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
+        logger.debug("lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
+        # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
+        return lanforge_json, lanforge_text, lanforge_json_formatted
 
 
     # TODO This method is left in for an example it was taken from
@@ -169,7 +202,8 @@ def main():
     parser.add_argument("--lf_passwd", type=str, help="passwd: lanforge")
     parser.add_argument("--port", type=str, help=" port : wlan3")
     parser.add_argument("--radio", type=str, help=" --radio wiphy0")
-    parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1", default=1)
+    # TODO should be parsed from EID
+    parser.add_argument("--resource", type=str, help="--resource LANforge, Station resource ID to use, default is 1", default=1)
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     # logging configuration
     parser.add_argument(
@@ -243,6 +277,15 @@ def main():
                 logger.info("lanforge_wifi_stats_json = {lanforge_wifi_stats_json}".format(lanforge_wifi_stats_json=lanforge_wifi_stats_json))
                 logger.info("lanforge_wifi_stats_text = {lanforge_wifi_stats_text}".format(lanforge_wifi_stats_text=lanforge_wifi_stats_text))
                 logger.info("lanforge_wifi_stats_json_formatted = {lanforge_wifi_stats_json_formatted}".format(lanforge_wifi_stats_json_formatted=lanforge_wifi_stats_json_formatted))
+
+            # Generic so can do any query
+            else:
+                # set the generic request
+                lf_json.request = get_request
+                lanforge_json, lanforge_text, lanforge_json_formatted = lf_json.get_request_information()
+                logger.info("{request} : lanforge_json = {lanforge_json}".format(request=get_request,lanforge_json=lanforge_json))
+                logger.info("{request} : lanforge__text = {lanforge_text}".format(request=get_request,lanforge_text=lanforge_text))
+                logger.info("{request} : lanforge_json_formatted = {lanforge_json_formatted}".format(request=get_request,lanforge_json_formatted=lanforge_json_formatted))
 
 
 
