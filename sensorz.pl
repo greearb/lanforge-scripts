@@ -14,8 +14,11 @@ for my $line (@sensor_lines) {
    next if ($line =~ /^\s*$/);
    chomp $line;
    if ($line =~ /^[^: ]+$/) {
-      ($::device) = $line =~ /^(.*?-\d+)$/;
-      next if ($line !~ /^(mt7915_|ath10k_hwmon-pci|physical|coretemp|Core )/);
+      ($::device) = $line =~ /^(.*?-[\da-f]+)$/;
+      if (!(defined $::device)) {
+         print STDOUT "not a device? [$line]\n";
+      }
+      next if ($line !~ /^(k10temp-pci|mt7915_|ath10k_hwmon-pci|physical|coretemp|Core )/);
       if ( !defined $::sensor_readings{$::device}) {
          $::sensor_readings{$::device} = 0;
          push(@::sensor_devices, $::device);
