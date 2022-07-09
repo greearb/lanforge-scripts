@@ -31,6 +31,9 @@ if sys.version_info[0] != 3:
     exit(1)
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+# used for conversion from eid to shelf, resource , port
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+
 
 logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -43,16 +46,35 @@ class lf_json_api():
                 lf_port,
                 lf_user,
                 lf_passwd,
-                resource,
-                port):                
+                port,
+                non_port = False):                
         self.lf_mgr = lf_mgr
-        self.lf_port = lf_port
+        self.lf_port = lf_port 
         self.lf_user = lf_user
         self.lf_passwd = lf_passwd
-        self.resource = resource
+        # this port is the Port like 1.1.sta000 , or 1.2.wiphy2
         self.port = port
-        # the request can change
+        self.shelf = ''
+        self.resource = ''
+        self.port_name = ''
+        self.non_port = non_port
+        # TODO support qvlan
+        self.qval = ''
         self.request = ''
+        # since the port may change we will initially us update_port_info to set initial values
+        self.update_port_info()
+
+    # 
+    def update_port_info(self):
+        # TODO add support for non-port
+        # TODO add support for qvan or attenuator
+        # rv short for return value
+        rv = LFUtils.name_to_eid(self.port,non_port=self.non_port)
+        self.shelf = rv[0]
+        self.resource = rv[1]
+        self.port_name = rv[2]
+        logger.debug("shelf : {shelf} , resource : {resource}, port_name : {port_name}".format(shelf=self.shelf,resource=self.resource,port_name=self.port_name))
+        # the request can change
 
 
     def get_request_port_information(self):
@@ -200,10 +222,9 @@ def main():
                         default=8080)
     parser.add_argument("--lf_user", type=str, help="user: lanforge")
     parser.add_argument("--lf_passwd", type=str, help="passwd: lanforge")
-    parser.add_argument("--port", type=str, help=" port : wlan3")
+    parser.add_argument("--port", type=str, help=" port : 1.2.wlan3  provide full eid  (endpoint id")
     parser.add_argument("--radio", type=str, help=" --radio wiphy0")
     # TODO should be parsed from EID
-    parser.add_argument("--resource", type=str, help="--resource LANforge, Station resource ID to use, default is 1", default=1)
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     # logging configuration
     parser.add_argument(
@@ -235,7 +256,6 @@ def main():
                             args.lf_port,
                             args.lf_user,
                             args.lf_passwd,
-                            args.resource,
                             args.port)
 
 
