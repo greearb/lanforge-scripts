@@ -116,9 +116,9 @@ class StaScan(Realm):
         time.sleep(self.scan_time)
 
         # Get results for all stations.
-        fmt = "%08s\t%015s\t%023s\t%07s\t%020s\t%07s\t%09s\t%07s"
+        fmt = "%08s\t%015s\t%023s\t%07s\t%020s\t%07s\t%09s\t%07s\t%020s"
         if not self.csv_output:
-            print(fmt % ("Resource", "Station", "BSS", "Signal", "SSID", "Channel", "Frequency", "Age"))
+            print(fmt % ("Resource", "Station", "BSS", "Signal", "SSID", "Channel", "Frequency", "Age", "Country"))
 
         for p in self.sta_list:
             port = LFUtils.name_to_eid(p)
@@ -139,10 +139,12 @@ class StaScan(Realm):
                 df.to_csv(self.csv_output)
                 print('CSV output saved at %s' % self.csv_output)
             else:
+                
                 for result in scan_results['scan-results']:
+                    
                     for name, info in result.items():
                         print(fmt % (port[1], port[2], info['bss'], info['signal'], info['ssid'],
-                                     info['channel'], info['frequency'], info['age']))
+                                     info['channel'], info['frequency'], info['age'], info['country']))
 
     def pre_cleanup(self):
         self.station_profile.cleanup(self.sta_list)
