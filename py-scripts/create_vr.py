@@ -196,7 +196,7 @@ Command example:
                          debug=args.debug,
                          _exit_on_error=True,
                          _exit_on_fail=True)
-    create_vr.clean()
+    # create_vr.clean()
     create_vr.build()
     create_vr.start()
     create_vr.monitor()
