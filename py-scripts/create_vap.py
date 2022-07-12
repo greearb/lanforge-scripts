@@ -77,9 +77,9 @@ class CreateVAP(Realm):
         self.vap_profile.dhcp = self.dhcp
         self.vap_profile.mode = self.mode
         self.vap_profile.desired_add_vap_flags = self.vap_flags + \
-            ["wpa2_enable", "80211u_enable", "create_admin_down"]
+            ["80211u_enable", "create_admin_down"]
         self.vap_profile.desired_add_vap_flags_mask = self.vap_flags + \
-            ["wpa2_enable", "80211u_enable", "create_admin_down"]
+            ["80211u_enable", "create_admin_down"]
         if self.debug:
             print("----- VAP List ----- ----- ----- ----- ----- ----- \n")
             pprint.pprint(self.vap_list)
@@ -111,6 +111,7 @@ class CreateVAP(Realm):
 
 
 def main():
+    # /home/lanforge-scripts/py-json/LANforge/lfcli_base.py - for base args parser
     parser = LFCliBase.create_basic_argparse(
         prog='create_vap.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -123,6 +124,8 @@ def main():
 --------------------
 Command example:
 ./create_vap.py
+    --lfmgr <lanforge ip>
+    --port <lanforge port 8080>
     --upstream_port eth1
     --radio wiphy0
     --num_vaps 3

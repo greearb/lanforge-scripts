@@ -91,6 +91,7 @@ class CreateBridge(Realm):
             self._fail("Ports NOT successfully cleaned up.")
 
 def main():
+    # /home/lanforge-scripts/py-json/LANforge/lfcli_base.py - for base args parser
     parser = LFCliBase.create_basic_argparse(
         prog='create_bridge.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -103,6 +104,8 @@ def main():
 --------------------
 Command example:
 ./create_bridge.py
+    --lfmgr <lanforge ip>
+    --port <lanforge port 8080>
     --bridge_name br0
     --target_device eth1,eth2
     --debug
