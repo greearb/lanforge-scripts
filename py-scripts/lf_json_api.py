@@ -10,7 +10,7 @@ PURPOSE:
 EXAMPLE:
 
     This will run through the module test:
-    ./lf_json_api.py --lf_mgr 192.168.100.178 --lf_port 8080 --resource 1 --log_level debug --port wlan3 --lf_user lanforge --lf_passwd lanforge --get_request 'port radio
+    ./lf_json_api.py --lf_mgr 192.168.100.178 --lf_port 8080 --resource 1 --log_level debug --port wlan3 --lf_user lanforge --lf_passwd lanforge --get_request 'port radio'
 
 NOTE:
     LANforge GUI , click on info -> API Help  look under GET Requests  use similiar format to what is being done below.
@@ -119,20 +119,34 @@ class lf_json_api():
         request = requests.get(
             request_command, auth=(
                 self.lf_user, self.lf_passwd))
+
         logger.info(
             "wifi-stats request command: {request_command}".format(
                 request_command=request_command))
         logger.info(
             "wifi-stats request status_code {status}".format(
                 status=request.status_code))
-        lanforge_wifi_stats_json = request.json()
-        logger.debug("wifi-stats request.json: {json}".format(json=lanforge_wifi_stats_json))
-        lanforge_wifi_stats_text = request.text
-        logger.debug("wifi-stats request.text: {text}".format(text=lanforge_wifi_stats_text))
-        lanforge_wifi_stats_json_formatted = json.dumps(lanforge_wifi_stats_json, indent=4)
-        logger.debug("lanforge_wifi_stats_json_formatted: {json}".format(json=lanforge_wifi_stats_json_formatted))
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
+            lf_mgr=self.lf_mgr,lf_port=self.lf_port,request=self.request,shelf=self.shelf,resource=self.resource,port_name=self.port_name
+        ))
+
+        lanforge_json = request.json()
+        logger.debug("wifi-stats request.json: {json}".format(json=lanforge_json))
+        lanforge_text = request.text
+        logger.debug("wifi-stats request.text: {text}".format(text=lanforge_text))
+        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
+        logger.debug("wifi-stats lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
+
+        try:
+            key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf,resource=self.resource,port_name=self.port_name)
+            df = json_normalize(lanforge_json[key])
+            df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf,resource=self.resource,port_name=self.port_name,request=self.request), index=False)
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+
         # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
-        return lanforge_wifi_stats_json, lanforge_wifi_stats_text, lanforge_wifi_stats_json_formatted
+        return lanforge_json, lanforge_text, lanforge_json_formatted
 
     def get_request_stations_information(self):
         # https://docs.python-requests.org/en/latest/
@@ -161,6 +175,10 @@ class lf_json_api():
         logger.info(
             "{request} request status_code {status}".format(request=self.request,
                 status=request.status_code))
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name}/{mac} | json_pp  ".format(
+            lf_mgr=self.lf_mgr,lf_port=self.lf_port,request=self.request,shelf=self.shelf,resource=self.resource,port_name=self.port_name,mac=self.mac
+        ))
+
         lanforge_json = request.json()
         logger.debug("{request} request.json: {json}".format(request=self.request,json=lanforge_json))
         lanforge_text = request.text
@@ -206,6 +224,9 @@ class lf_json_api():
         logger.info(
             "{request} request status_code {status}".format(request=self.request,
                 status=request.status_code))
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
+            lf_mgr=self.lf_mgr,lf_port=self.lf_port,request=self.request,shelf=self.shelf,resource=self.resource,port_name=self.port_name
+        ))
         lanforge_json = request.json()
         logger.debug("{request} request.json: {json}".format(request=self.request,json=lanforge_json))
         lanforge_text = request.text
@@ -225,9 +246,6 @@ class lf_json_api():
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
-        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
-            lf_mgr=self.lf_mgr,lf_port=self.lf_port,request=self.request,shelf=self.shelf,resource=self.resource,port_name=self.port_name
-        ))
 
         logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf,resource=self.resource,port_name=self.port_name,request=self.request ))
 
@@ -281,7 +299,7 @@ def main():
         prog="lf_json_api.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
-        example
+        The script will read column data from lanforge GUI using request
         """)
 
     parser.add_argument("--lf_mgr", type=str, help="address of the LANforge GUI machine (localhost is default)",
@@ -341,9 +359,9 @@ def main():
                 lf_json.request = get_request
                 lanforge_port_json, lanforge_port_text, lanforge_port_json_formatted = lf_json.get_request_port_information()
 
-                logger.info("lanforge_port_json = {lanforge_port_json}".format(lanforge_port_json=lanforge_port_json))
-                logger.info("lanforge_port_text = {lanforge_port_text}".format(lanforge_port_text=lanforge_port_text))
-                logger.info("lanforge_port_text = {lanforge_port_text}".format(lanforge_port_text=lanforge_port_text))
+                logger.debug("lanforge_port_json = {lanforge_port_json}".format(lanforge_port_json=lanforge_port_json))
+                logger.debug("lanforge_port_text = {lanforge_port_text}".format(lanforge_port_text=lanforge_port_text))
+                logger.debug("lanforge_port_json_formatted = {lanforge_port_json_formatted}".format(lanforge_port_json_formatted=lanforge_port_json_formatted))
 
             elif get_request == "port_rssi":
                 lf_json.request = get_request
@@ -368,18 +386,18 @@ def main():
                 lf_json.request = get_request
                 lanforge_wifi_stats_json, lanforge_wifi_stats_text, lanforge_wifi_stats_json_formatted = lf_json.get_request_wifi_stats_information()
 
-                logger.info("lanforge_wifi_stats_json = {lanforge_wifi_stats_json}".format(lanforge_wifi_stats_json=lanforge_wifi_stats_json))
-                logger.info("lanforge_wifi_stats_text = {lanforge_wifi_stats_text}".format(lanforge_wifi_stats_text=lanforge_wifi_stats_text))
-                logger.info("lanforge_wifi_stats_json_formatted = {lanforge_wifi_stats_json_formatted}".format(lanforge_wifi_stats_json_formatted=lanforge_wifi_stats_json_formatted))
+                logger.debug("lanforge_wifi_stats_json = {lanforge_wifi_stats_json}".format(lanforge_wifi_stats_json=lanforge_wifi_stats_json))
+                logger.debug("lanforge_wifi_stats_text = {lanforge_wifi_stats_text}".format(lanforge_wifi_stats_text=lanforge_wifi_stats_text))
+                logger.debug("lanforge_wifi_stats_json_formatted = {lanforge_wifi_stats_json_formatted}".format(lanforge_wifi_stats_json_formatted=lanforge_wifi_stats_json_formatted))
 
             elif "stations" in get_request:
                 lf_json.request, mac = get_request.split(',')
                 lf_json.mac = mac
                 lanforge_wifi_stats_json, lanforge_wifi_stats_text, lanforge_wifi_stats_json_formatted = lf_json.get_request_stations_information()
 
-                logger.info("lanforge_wifi_stats_json = {lanforge_wifi_stats_json}".format(lanforge_wifi_stats_json=lanforge_wifi_stats_json))
-                logger.info("lanforge_wifi_stats_text = {lanforge_wifi_stats_text}".format(lanforge_wifi_stats_text=lanforge_wifi_stats_text))
-                logger.info("lanforge_wifi_stats_json_formatted = {lanforge_wifi_stats_json_formatted}".format(lanforge_wifi_stats_json_formatted=lanforge_wifi_stats_json_formatted))
+                logger.debug("lanforge_wifi_stats_json = {lanforge_wifi_stats_json}".format(lanforge_wifi_stats_json=lanforge_wifi_stats_json))
+                logger.debug("lanforge_wifi_stats_text = {lanforge_wifi_stats_text}".format(lanforge_wifi_stats_text=lanforge_wifi_stats_text))
+                logger.debug("lanforge_wifi_stats_json_formatted = {lanforge_wifi_stats_json_formatted}".format(lanforge_wifi_stats_json_formatted=lanforge_wifi_stats_json_formatted))
 
 
             # Generic so can do any query
