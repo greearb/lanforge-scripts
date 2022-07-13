@@ -26,7 +26,7 @@ import os
 import logging
 import importlib
 import requests
-from pandas.io.json import json_normalize
+from pandas  import json_normalize
 import json
 import traceback
 
@@ -379,8 +379,8 @@ def main():
             elif get_request == "port_rssi":
                 lf_json.request = get_request
                 lanforge_port_json, lanforge_port_text, lanforge_port_json_formatted = lf_json.get_request_port_information()
-                logger.info("lanforge_port_json = {lanforge_port_json}".format(lanforge_port_json=lanforge_port_json))
-                logger.info("lanforge_port_json_formatted = {lanforge_port_json_formatted}".format(lanforge_port_json_formatted=lanforge_port_json_formatted))
+                logger.debug("lanforge_port_json = {lanforge_port_json}".format(lanforge_port_json=lanforge_port_json))
+                logger.debug("lanforge_port_json_formatted = {lanforge_port_json_formatted}".format(lanforge_port_json_formatted=lanforge_port_json_formatted))
 
                 for key in lanforge_port_json:
                     if 'interface' in key:
