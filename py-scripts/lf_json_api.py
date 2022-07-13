@@ -9,8 +9,12 @@ PURPOSE:
 
 EXAMPLE:
 
-    This will run through the module test:
-    ./lf_json_api.py --lf_mgr 192.168.100.178 --lf_port 8080 --resource 1 --log_level debug --port wlan3 --lf_user lanforge --lf_passwd lanforge --get_request 'port radio'
+    ./lf_json_api.py --lf_mgr 192.168.100.116 --lf_port 8080 --log_level debug --port wlan3 --lf_user lanforge --lf_passwd lanforge  
+        --port 1.1.vap0000 --get_request 'stations,04:f0:21:c5:33:97 stations,d8:f8:83:36:6c:44'
+
+    ./lf_json_api.py --lf_mgr 192.168.100.116 --lf_port 8080 --log_level debug --port wlan3 --lf_user lanforge --lf_passwd lanforge  
+        --port 1.1.vap0000 --get_request 'wifi-stats'
+    
 
 NOTE:
     LANforge GUI , click on info -> API Help  look under GET Requests  use similiar format to what is being done below.
@@ -300,6 +304,15 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
         The script will read column data from lanforge GUI using request
+    
+    EXAMPLE:
+
+    ./lf_json_api.py --lf_mgr 192.168.100.116 --lf_port 8080 --log_level debug --port wlan3 --lf_user lanforge --lf_passwd lanforge  
+        --port 1.1.vap0000 --get_request 'stations,04:f0:21:c5:33:97 stations,d8:f8:83:36:6c:44'
+
+    ./lf_json_api.py --lf_mgr 192.168.100.116 --lf_port 8080 --log_level debug --port wlan3 --lf_user lanforge --lf_passwd lanforge  
+        --port 1.1.vap0000 --get_request 'wifi-stats'
+
         """)
 
     parser.add_argument("--lf_mgr", type=str, help="address of the LANforge GUI machine (localhost is default)",
