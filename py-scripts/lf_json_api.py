@@ -130,16 +130,18 @@ class lf_json_api():
         logger.info(
             "wifi-stats request status_code {status}".format(
                 status=request.status_code))
-        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
-            lf_mgr=self.lf_mgr,lf_port=self.lf_port,request=self.request,shelf=self.shelf,resource=self.resource,port_name=self.port_name
-        ))
 
         lanforge_json = request.json()
         logger.debug("wifi-stats request.json: {json}".format(json=lanforge_json))
         lanforge_text = request.text
         logger.debug("wifi-stats request.text: {text}".format(text=lanforge_text))
         lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
-        logger.debug("wifi-stats lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
+        logger.info("wifi-stats lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
+
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
+            lf_mgr=self.lf_mgr,lf_port=self.lf_port,request=self.request,shelf=self.shelf,resource=self.resource,port_name=self.port_name
+        ))
+
 
         try:
             key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf,resource=self.resource,port_name=self.port_name)
@@ -179,16 +181,18 @@ class lf_json_api():
         logger.info(
             "{request} request status_code {status}".format(request=self.request,
                 status=request.status_code))
-        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name}/{mac} | json_pp  ".format(
-            lf_mgr=self.lf_mgr,lf_port=self.lf_port,request=self.request,shelf=self.shelf,resource=self.resource,port_name=self.port_name,mac=self.mac
-        ))
 
         lanforge_json = request.json()
         logger.debug("{request} request.json: {json}".format(request=self.request,json=lanforge_json))
         lanforge_text = request.text
         logger.debug("{request} request.text: {text}".format(request=self.request,text=lanforge_text))
         lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
-        logger.debug("lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
+        logger.info("lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
+
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name}/{mac} | json_pp  ".format(
+            lf_mgr=self.lf_mgr,lf_port=self.lf_port,request=self.request,shelf=self.shelf,resource=self.resource,port_name=self.port_name,mac=self.mac
+        ))
+
         # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
         # TODO check for "status": "NOT_FOUND"
 
@@ -199,9 +203,6 @@ class lf_json_api():
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
-        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name}/{mac} | json_pp  ".format(
-            lf_mgr=self.lf_mgr,lf_port=self.lf_port,request=self.request,shelf=self.shelf,resource=self.resource,port_name=self.port_name,mac=self.mac
-        ))
 
         logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf,resource=self.resource,port_name=self.port_name,request=self.request ))
 
