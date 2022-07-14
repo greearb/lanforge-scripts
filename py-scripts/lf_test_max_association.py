@@ -2,10 +2,6 @@
 '''
 NAME: lf_test_max_association.py
 
-NOTE: Script still in progress. Requires modification to l3_cxprofile.py (ln 227) to alleviate url > 2048 bytes error.
-        Temporary workaround: replace l3_cxprofile.py ln 227 with:
-        layer_3_response = self.json_get("/endp/?fields=%s" % (layer3_fields))
-
 PURPOSE:
 This script will conduct a maximum client overnight test for the ct521a system:
 - create the maximum supported stations per installed radio.
@@ -156,16 +152,8 @@ class max_associate(Realm):
             # new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':','-') + '_test_ip_variable_time'
             # create path name
             new_file_path = self.kpi_path
-            if os.path.exists('/home/lanforge/report-data'):
-                path = os.path.join('/home/lanforge/report-data/', new_file_path)
-                os.mkdir(path)
-            else:
-                logger.info(new_file_path)
-                # curr_dir_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                # curr_dir_path += '/py-scripts'
-                # path = os.path.join(curr_dir_path, new_file_path)
-                # os.mkdir(path)
-            # systeminfopath = str(path) + '/systeminfo.txt'
+            logger.info(new_file_path)
+
             self.systeminfopath = str(new_file_path) + '/systeminfo.txt'
 
             if self.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'parquet',
