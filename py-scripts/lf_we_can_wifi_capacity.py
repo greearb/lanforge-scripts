@@ -56,7 +56,7 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 from lf_wifi_capacity_test import WiFiCapacityTest
 
 
-class we_can_wifi_capacity((Realm)):
+class LfInteropWifiCapacity((Realm)):
     def __init__(self,
                  ssid=None,
                  security=None,
@@ -101,7 +101,8 @@ class we_can_wifi_capacity((Realm)):
         return latest_file
 
     def get_data(self):
-        resource_id_real, phone_name, mac_address, user_name, phone_radio, rx_rate, tx_rate = self.get_resource_data()
+        resource_id_real, phone_name, mac_address, user_name, phone_radio, rx_rate, tx_rate, signal, ssid, channel \
+            = self.get_resource_data()
         folder_directory = self.get_folder_name()
         rx_rate = [(i.split(" ")[0]) if (i.split(" ")[0]) != '' else '0' for i in rx_rate]
         tx_rate = [(i.split(" ")[0]) if (i.split(" ")[0]) != '' else '0' for i in tx_rate]
@@ -135,11 +136,9 @@ class we_can_wifi_capacity((Realm)):
             }, index=[i for i in phone_name])
 
             # Plotting Graph 03
-            Band_2G_5G_df = pd.DataFrame({
-                "udp download": udp_download_rate,
-                "tcp download": tcp_download_rate,
-                "udp upload": udp_upload_rate,
-                "tcp upload": tcp_upload_rate,
+            ap_signal_df = pd.DataFrame({
+                "Signal ": signal,
+                "Device": phone_name,
             }, index=[str("( " + phone_radio[i] + " )") for i in range(len(phone_name))])
 
             udp_actual_rate = [float("{:.2f}".format(udp_download_rate[i] + udp_upload_rate[i])) for i in
@@ -174,50 +173,17 @@ class we_can_wifi_capacity((Realm)):
                 "download": download_rate,
             }, index=[i for i in phone_name])
 
-            # Plotting Graph 03
-            # Creating DataFrames
-            Band_2G_5G_df = pd.DataFrame({
-                "upload": upload_rate,
-                "download": download_rate,
-            }, index=[str("( " + phone_radio[i] + " )") for i in range(len(phone_name))])
-
-            # Plotting Graph 04
-            # Creating DataFrames
             print(rx_rate, tx_rate)
             link_rate_df = pd.DataFrame({
-                "Link Rx": [int(i) for i in rx_rate],
-                "Actual Rx": download_rate,
-                "Link Tx": [int(i) for i in tx_rate],
-                "Actual Tx": upload_rate,
+                "Link rate Rx": [int(i) for i in rx_rate],
+                "Link rate Tx": [int(i) for i in tx_rate],
             }, index=[phone_name[i] for i in range(len(upload_rate))])
 
-            # Plotting Graph  05 (User Name)
-            avg_rate = []
-            for i in range(len(upload_rate)):
-                avg_rate.append(float("{:.2f}".format((upload_rate[i] + download_rate[i]) / 2)))
-            # Creating DataFrames
-            user_name_df = pd.DataFrame({
-                "upload": upload_rate,
-                "download": download_rate,
-                "Average": avg_rate,
-            }, index=[user_name[i] for i in range(len(upload_rate))])
-        #
-        phone_data = [resource_id_real, phone_name, mac_address, user_name, phone_radio, rx_rate, tx_rate]
-        self.generate_report(folder_directory, phone_data, rx_tx_df, Band_2G_5G_df, link_rate_df, user_name_df)
+        phone_data = [resource_id_real, phone_name, mac_address, user_name, phone_radio, rx_rate, tx_rate, signal,
+                      ssid, channel]
+        self.generate_report(folder_directory, phone_data, rx_tx_df, link_rate_df)
 
-        # Getting Resource id, phone name, mac address, username, phone radio
-        # resource_id, phone_name, mac_address, user_name, phone_radio = self.get_resource_data()
-        # resource_id_phone_company_dict_map = {}
-        # resource_id_phone_radio_dict_map = {}
-        # for i in range(len(phone_name)):
-        #     resource_id_phone_company_dict_map[resource_id[i]] = phone_name[i]
-        #     resource_id_phone_radio_dict_map[resource_id[i]] = phone_radio[i]
-        # print("Company Name: ", resource_id_phone_company_dict_map)
-        # print("Radio Name: ", resource_id_phone_radio_dict_map)
-        #
-        # print(self.get_resource_data())
-
-    def generate_report(self, file_derectory, get_data, rx_tx_df, Band_2G_5G_df, link_rate_df, user_name_df):
+    def generate_report(self, file_derectory, get_data, rx_tx_df, link_rate_df):
 
         resource_id = get_data[0]
         phone_name = get_data[1]
@@ -226,6 +192,9 @@ class we_can_wifi_capacity((Realm)):
         phone_radio = get_data[4]
         rx_rate = get_data[5]
         tx_rate = get_data[6]
+        signal = get_data[7]
+        ssid = get_data[8]
+        channel = get_data[9]
 
         report = lf_report(_output_html="we-can-wifi-capacity.html", _output_pdf="we-can-wifi-capacity.pdf",
                            _results_dir_name="we-can wifi-capacity result")
@@ -233,15 +202,6 @@ class we_can_wifi_capacity((Realm)):
         report_time_file = report.get_path_date_time()
         shutil.copy(file_derectory + "/chart-0-print.png", report_time_file)
         shutil.copy(file_derectory + "/kpi-chart-1-print.png", report_time_file)
-        shutil.copy(file_derectory + "/chart-2-print.png", report_time_file)
-        shutil.copy(file_derectory + "/chart-3-print.png", report_time_file)
-        shutil.copy(file_derectory + "/chart-4-print.png", report_time_file)
-        shutil.copy(file_derectory + "/chart-5-print.png", report_time_file)
-        shutil.copy(file_derectory + "/chart-6-print.png", report_time_file)
-        shutil.copy(file_derectory + "/chart-7-print.png", report_time_file)
-        shutil.copy(file_derectory + "/chart-8-print.png", report_time_file)
-        shutil.copy(file_derectory + "/chart-9-print.png", report_time_file)
-        # print("Report Date time: ", report_time_file)
 
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
@@ -250,26 +210,47 @@ class we_can_wifi_capacity((Realm)):
         print("path: {}".format(report_path))
         print("path_date_time: {}".format(report_path_date_time))
 
-        report.set_title("WE-CAN Wi-Fi Capacity test for Real Clients")
+        report.set_title("Lanforge Interop Wi-Fi Capacity Test report for Wi-Fi Client Devices")
         report.build_banner()
 
         report.start_content_div()
         report.set_text(
-            "<h3>Objective:" + "<h5>The WE-CAN wifi-capacity Test is designed to measure the performance of an Access "
-                               "Point when handling different types of real clients. The test allows the user to "
-                               "increase the number of stations in user defined steps for each test iteration and "
-                               "measure the per station and the overall throughput for each trial. Along with throughput"
-                               "other measurements made are client connection times, Fairness, % packet loss, DHCP "
-                               "times and more. The expected behavior is for the AP to be able to handle several "
-                               "stations (within the limitations of the AP specs) and make sure all stations get a fair"
-                               " amount of airtime both in the upstream and downstream. An AP that scales well will not"
-                               " show a significant over-all throughput decrease as more stations are added. ")
+            "<h3>Objective:" + "<h5 style='text-align: justify;'>The LANforge Interop Wi-Fi capacity Test is designed "
+                               "to measure the performance of an Access Point when handling different types of real "
+                               "clients. The test allows the user to increase the number of stations in user defined "
+                               "steps for each test iteration  and measure the per station and the overall throughput,"
+                               " signal and link rates for each "
+                               "trial. The expected behaviour is for the AP to be able to handle several stations "
+                               "(within the limitations of the AP specs) and make sure all stations get a fair amount "
+                               "of upstream and downstream throughput. An AP that scales well will not show a "
+                               "significant over-all throughput decrease as more stations are added.")
         report.build_date_time()
         report.build_text()
+        report.end_content_div()
+        twog_count = 0
+        fiveg_count = 0
+        for i in phone_radio:
+            if phone_radio == "2G":
+                twog_count += 1
+            else:
+                fiveg_count += 1
+        twog_fiveg_count = "5G " + str(fiveg_count) + "2G " + str(twog_count)
+        device_data = {
+            "Total no.of stations(2G & 5G)": [twog_fiveg_count],
+            "Traffic rate per client (Mbps)": [""],
+            "Connected clients": [len(phone_name)],
+            "Failed clients": ["NA"],
 
-        # report.start_content_div()
-        # report.set_text("<h3>Phone Details:" + "<h4>All the Phone Details are provided in the table below.")
-        # report.build_text()
+        }
+        device_data = pd.DataFrame(device_data)
+        report.start_content_div()
+        report.set_table_title("<h3>Real-Time UDP Throughput Chart\n" + "<h5>Below chart shows the intended and "
+                                                                        "achieved throughput for station increments"
+                                                                        " w.r.t time for " + str(self.protocol).strip())
+        report.build_table_title()
+        report.set_table_dataframe(device_data)
+        report.build_table()
+        report.end_content_div()
 
         data = {
             "Resource ID": resource_id,
@@ -280,44 +261,54 @@ class we_can_wifi_capacity((Realm)):
             "Rx link Rate (Mbps) ": rx_rate,
             "Tx link Rate (Mbps)": tx_rate,
         }
-        phone_details = pd.DataFrame(data)
-
-        report.start_content_div()
-        report.set_table_title("<h3>Phone Details")
-        report.build_table_title()
-        report.set_table_dataframe(phone_details)
-        report.build_table()
-        report.set_text("<h5> The above table shows a list of all the Real clients which are connected to LANForge "
-                        "server in the tabular format which also show the various details of the real-client (phones) "
-                        "such as phone name, MAC address, Username, Phone Radio, Rx link rate, Tx link rate and "
-                        "Resource id.")
-        report.build_text()
-
+        # Real time chart
         report.start_content_div()
         report.build_chart_title("Real Time Chart")
         report.build_chart("chart-0-print.png")
-        report.set_text("<h5> Total Megabits-per-second transferred. This only counts the protocol payload, so it will"
-                        " not count the Ethernet, IP, UDP, TCP or other header overhead. A well behaving system will "
-                        "show about the same rate as stations increase. If the rate decreases significantly as stations"
-                        " increase, then it is not scaling we")
-        report.build_text()
+        report.end_content_div()
 
-        report.save_bar_chart("Real Client", "Rx/Tx (Mbps)", rx_tx_df, "Upload and Download")
-        report.start_content_div()
-        report.build_chart_title("Upload/Download (Rx VS Tx) Chart")
-        report.build_chart("Upload and Download.png")
-        report.set_text("<h5> The Total average Upload and Download rate for TCP and UDP traffic for each phone along"
-                        " with Name.")
-        report.build_text()
+        device_performance = {
+            "Device Name": phone_name,
+            "Signal": signal,
+            "Connected SSID": ssid,
+            "Security": ["WPA2" for i in range(len(ssid))],
+            "Channel": channel,
+            "Mode": phone_radio,
+            "Direction": ["Upload" for i in range(len(ssid))],
+            "Traffic": ["UDP" for i in range(len(ssid))],
 
-        report.save_bar_chart("Band of Real Client", "Rx/Tx (Mbps)", Band_2G_5G_df, "2G-5G")
+        }
+        phone_details_pd = pd.DataFrame(data)
+        device_performance_pd = pd.DataFrame(device_performance)
+
         report.start_content_div()
-        report.build_chart_title("2G Phones vs 5G Phones")
-        report.build_chart("2G-5G.png")
-        report.set_text("<h5> The Total average Upload and Download rate for TCP and UDP traffic classified with phone"
-                        " radios. The 2G represents that the phone only have 2G radios and 2G/5G the represents that "
-                        "the phone have both 2G and 5G radios. ")
-        report.build_text()
+        report.set_table_title("<h3>Individual Device Performance Chart:")
+        report.build_table_title()
+        report.set_table_dataframe(device_performance_pd)
+        report.build_table()
+        report.end_content_div()
+
+
+        # TODO Change from BAR chart to Line chart
+        graph = lf_graph.lf_line_graph(_data_set=[[int(i) for i in signal]],
+                                       _xaxis_name="Phone Names ",
+                                       _yaxis_name="Signal(dbm)",
+                                       _xaxis_categories=phone_name,
+                                       _graph_image_name="rssi_signal",
+                                       _label=['RSSI Strength'],
+                                       _color=['blue'],
+                                       _xaxis_step=1,
+                                       _graph_title="Device to AP Signal Values",
+                                       _title_size=16,
+                                       _figsize=(18, 6),
+                                       _marker='o',
+                                       _legend_loc="best",
+                                       _legend_box=None,
+                                       _dpi=200)
+        graph_png = graph.build_line_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
 
         report.save_bar_chart("Real Client", "Rx/Tx (Mbps)", link_rate_df, "link_rate")
         report.start_content_div()
@@ -327,106 +318,21 @@ class we_can_wifi_capacity((Realm)):
                         "UDP traffic versus the real traffic we got for each phone in Mbps.")
         report.build_text()
 
-        report.save_bar_chart("Real client Username", "Rx/Tx (Mbps)", user_name_df, "user_name")
         report.start_content_div()
-        report.build_chart_title("Username based phone details")
-        report.build_chart("user_name.png")
-        report.set_text("<h5> The Total average Upload and Download rate for TCP and UDP traffic classified with "
-                        " username. This chart shows udp download, udp upload, udp average, tcp upload, tcp download "
-                        "and tcp average in Mbps.")
-        report.build_text()
-
-
-
-        report.start_content_div()
-        report.build_chart_title("Real Time Chart")
-        report.build_chart("kpi-chart-1-print.png")
-        report.set_text("<h5> Protocol-Data-Units received. For TCP, this does not mean much, but for UDP connections, "
-                        "this correlates to packet size. If the PDU size is larger than what fits into a single frame, "
-                        "then the network stack will segment it accordingly. A well behaving system will show about the"
-                        " same rate as stations increase. If the rate decreases significantly as stations increase, "
-                        "then it is not scaling well. ")
-        report.build_text()
-
-        report.start_content_div()
-        report.build_chart_title("Total Mbps Received vs Number of Stations Active")
-        report.build_chart("chart-2-print.png")
-        report.set_text("<h5> Station disconnect stats. These will be only for the last iteration. If the 'Clear Reset"
-                        " Counters' option is selected, the stats are cleared after the initial association. Any "
-                        "re-connects reported indicate a potential stability issue. Can be used for long-term stability"
-                        " testing in cases where you bring up all stations in one iteration and then run the test for a"
-                        " longer duration. ")
-        report.build_text()
-
-        report.start_content_div()
-        report.build_chart_title("Port Reset Totals")
-        report.build_chart("chart-3-print.png")
-        report.set_text("<h5> Station connect time is calculated from the initial Authenticate message through the "
-                        "completion of Open or RSN association/authentication. ")
-        report.build_text()
-
-
-        report.start_content_div()
-        report.build_chart_title("Station Connect Times")
-        report.build_chart("chart-4-print.png")
-        # report.set_text("<h5> Total Megabits-per-second transferred. This only counts the protocol payload, so it will"
-        #                 " not count the Ethernet, IP, UDP, TCP or other header overhead. A well behaving system will "
-        #                 "show about the same rate as stations increase. If the rate decreases significantly as stations"
-        #                 " increase, then it is not scaling we")
-        # report.build_text()
-
-        report.start_content_div()
-        report.build_chart_title("Data for Combined Mbps, 60 second running average")
-        report.build_chart("chart-5-print.png")
-        # report.set_text("<h5> Total Megabits-per-second transferred. This only counts the protocol payload, so it will"
-        #                 " not count the Ethernet, IP, UDP, TCP or other header overhead. A well behaving system will "
-        #                 "show about the same rate as stations increase. If the rate decreases significantly as stations"
-        #                 " increase, then it is not scaling we")
-        # report.build_text()
-
-        report.start_content_div()
-        report.build_chart_title("Combined Received Megabytes, for entire 1 m run")
-        report.build_chart("chart-6-print.png")
-        report.set_text("<h5> This graph shows fairness. On a fair system, each station should get about the same "
-                        "throughput.In the download direction, it is mostly the device-under-test that is responsible "
-                        "for this behavior, but in the upload direction, LANforge itself would be the source of most "
-                        "fairness issues unless the device-under-test takes specific actions to ensure fairness")
-        report.build_text()
-
-        report.start_content_div()
-        report.build_chart_title("Station Maximums")
-        report.build_chart("chart-7-print.png")
-        # report.set_text("<h5> RF stats give an indication of how well how congested is the RF environment. Channel "
-        #                 "activity is what the wifi radio reports as the busy-time for the RF environment. It is "
-        #                 "expected that this be near 100% when LANforge is running at max speed, but at lower speeds, "
-        #                 "this should be a lower percentage unless the RF environment is busy with other systems.")
-        # report.build_text()
-
-        report.start_content_div()
-        report.build_chart_title("RF Stats for Stations")
-        report.build_chart("chart-8-print.png")
-        report.set_text("<h5> RF stats give an indication of how well how congested is the RF environment. Channel "
-                        "activity is what the wifi radio reports as the busy-time for the RF environment. It is "
-                        "expected that this be near 100% when LANforge is running at max speed, but at lower speeds, "
-                        "this should be a lower percentage unless the RF environment is busy with other systems.")
-        report.build_text()
-
-        report.start_content_div()
-        report.build_chart_title("Link Rate for Stations")
-        report.build_chart("chart-9-print.png")
-        report.set_text("<h5> Link rate stats give an indication of how well the rate-control is working. For "
-                        "rate-control, the 'RX' link rate corresponds to what the device-under-test is transmitting. "
-                        "If all of the stations are on the same radio, then the TX and RX encoding rates should be "
-                        "similar for all stations. If there is a definite pattern where some stations do not get good "
-                        "RX rate, then probably the device-under-test has rate-control problems. The TX rate is what "
-                        "LANforge is transmitting at.")
+        report.set_table_title("<h3>Device Details")
+        report.build_table_title()
+        report.set_table_dataframe(phone_details_pd)
+        report.build_table()
+        report.set_text("<h5> The above table shows a list of all the Real clients which are connected to LANForge "
+                        "server in the tabular format which also show the various details of the real-client (phones) "
+                        "such as phone name, MAC address, Username, Phone Radio, Rx link rate, Tx link rate and "
+                        "Resource id.")
         report.build_text()
 
         report.build_footer()
         html_file = report.write_html()
         print("returned file {}".format(html_file))
         print(html_file)
-
         report.write_pdf(_page_size='Legal', _orientation='Portrait')
 
     def get_resource_data(self):
@@ -437,7 +343,10 @@ class we_can_wifi_capacity((Realm)):
         phone_radio = []
         rx_rate = []
         tx_rate = []
-        eid_data = self.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate")
+        signal = []
+        ssid = []
+        channel = []
+        eid_data = self.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate,signal,ssid,channel")
         for alias in eid_data["interfaces"]:
             for i in alias:
                 if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0':
@@ -450,6 +359,9 @@ class we_can_wifi_capacity((Realm)):
                     tx = alias[i]["tx-rate"]
                     rx_rate.append(rx)
                     tx_rate.append(tx)
+                    signal.append(alias[i]["signal"])
+                    ssid.append(alias[i]["ssid"])
+                    channel.append(alias[i]["channel"])
                     # Getting username
                     user = resource_hw_data['resource']['user']
                     user_name.append(user)
@@ -467,7 +379,7 @@ class we_can_wifi_capacity((Realm)):
                         phone_radio.append("AUTO")
                     else:
                         phone_radio.append('2G/5G')
-        return resource_id_list, phone_name_list, mac_address, user_name, phone_radio, rx_rate, tx_rate
+        return resource_id_list, phone_name_list, mac_address, user_name, phone_radio, rx_rate, tx_rate, signal, ssid, channel
 
 
 def main():
@@ -491,11 +403,11 @@ def main():
     parser.add_argument("--protocol", type=str, default="", help="Protocol ex.TCP-IPv4")
     parser.add_argument("--lf_user", type=str, default="", help="lanforge user name ex. root,lanforge")
     parser.add_argument("--lf_password", type=str, default="", help="lanforge user password ex. root,lanforge")
-    parser.add_argument("--duration", type=str, default="", help="duration in ms. ex. 5000")
-    parser.add_argument("--download_rate", type=str, default="10Mbps",
-                        help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 10Mbps")
-    parser.add_argument("--upload_rate", type=str, default="10Mbps",
-                        help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 10Mbps")
+    parser.add_argument("--duration", type=str, default="60000", help="duration in ms. ex. 5000")
+    parser.add_argument("--download_rate", type=str, default="0Kbps",
+                        help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 0Kbps")
+    parser.add_argument("--upload_rate", type=str, default="0Kbps",
+                        help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 0Kbps")
     parser.add_argument("--influx_host", type=str, default="localhost", help="NA")
     parser.add_argument("--local_lf_report_dir",
                         help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",
@@ -521,7 +433,7 @@ def main():
                                 )
     WFC_Test.setup()
     WFC_Test.run()
-    wifi_capacity = we_can_wifi_capacity(host=args.mgr, port=args.port, protocol=args.protocol)
+    wifi_capacity = LfInteropWifiCapacity(host=args.mgr, port=args.port, protocol=args.protocol)
     wifi_capacity.get_data()
     # WFC_Test.check_influx_kpi(args)
 

@@ -356,10 +356,12 @@ class RvR(Realm):
         report.set_title("LANforge InterOp Rate vs Range")
         report.build_banner()
         # objective title and description
-        report.set_obj_html(_obj_title="Objective", _obj="Through this test LANforge InterOp measure the performance "
-                                                         "of each real client over a certain distance of the DUT, "
-                                                         "Distance is emulated using programmable attenuators and "
-                                                         "throughput test is run at each distance/RSSI step")
+        report.set_obj_html(_obj_title="Objective", _obj="This test measures the performance over distance of the"
+                                                         " Device Under Test. Distance is emulated using programmable"
+                                                         " attenuation and a throughput test is run at each "
+                                                         "distance/RSSI step and plotted on a chart. The test allows "
+                                                         "the user to plot RSSI curves both upstream and downstream for"
+                                                         " different types of traffic and different station types.")
         report.build_objective()
         report.test_setup_table(test_setup_data=test_setup_info, value="Device Under Test")
         report.end_content_div()
@@ -381,7 +383,7 @@ class RvR(Realm):
             report.set_obj_html(
                 _obj_title="Overall {} throughput for {} real clients using {} traffic."
                 .format(res["graph_df"][traffic_type]["direction"], len(self.list_of_data[0]), traffic_type),
-                _obj="The below graph represents overall {} throughput for different attenuation (RSSI) ".format(
+                _obj="The below graph represents overall {} throughput for different attenuation ".format(
                     res["graph_df"][traffic_type]["direction"]))
             report.build_objective()
             graph = lf_graph.lf_line_graph(_data_set=res["graph_df"][traffic_type]["dataset"],
@@ -395,8 +397,10 @@ class RvR(Realm):
                                   _graph_title="Overall throughput vs attenuation",
                                   _title_size=16,
                                   _figsize=(18, 6),
+                                  _marker=['o', '+', '*', '.', 'x', '_', '|', 's', 'd', '^', 'v', '>',
+                                           '<', 'p', 'h'],
                                   _legend_loc="best",
-                                  _legend_box=(1.0, 1.0),
+                                  _legend_box=None,
                                   _dpi=200,
                                   _enable_csv=True)
             graph_png = graph.build_line_graph()
@@ -435,10 +439,7 @@ class RvR(Realm):
             for phone in phone_x[traffic_type]:
                 for direction in phone_x[traffic_type][phone]:
                     traffic_name = "TCP" if (traffic_type == "lf_tcp") else "UDP" if (traffic_type == "lf_udp") else "TCP and UDP"
-                    report.set_obj_html(_obj_title=f"Individual {direction} Throughput for {len(self.list_of_data[0])} "
-                                                   f"clients using {traffic_name} traffic over {phone} attenuation",
-                                        _obj=f"The below graph represents Individual {direction} throughput of all "
-                                             f"stations when attenuation (RSSI) set to {phone}")
+                    report.set_obj_html(_obj_title=f"{phone} : {traffic_name} {direction}", _obj="")
                     report.build_objective()
                     line_graph = lf_graph.lf_line_graph(_data_set=[phone_x[traffic_type][phone][direction]],
                                                _xaxis_name="Attenuation",
@@ -448,11 +449,13 @@ class RvR(Realm):
                                                _label=['upload' if direction == 'upload' else 'download' if direction == "download" else 'RSSI Strength'],
                                                _color=['olivedrab' if direction == 'upload' else 'orangered' if direction == 'download' else 'mediumblue'],
                                                _xaxis_step=1,
-                                               _graph_title="Overall throughput vs attenuation" if (direction == 'upload' or direction == 'download') else "RSSI Signal Strength(in dBm)",
+                                               _graph_title="Throughput vs Attenuation" if (direction == 'upload' or direction == 'download') else "RSSI Signal Strength(in dBm)",
                                                _title_size=16,
                                                _figsize=(18, 6),
                                                _legend_loc="best",
-                                               _legend_box=(1.0, 1.0),
+                                               _marker=['o', '+', '*', '.', 'x', '_', '|', 's', 'd', '^', 'v', '>',
+                                                        '<', 'p', 'h'],
+                                               _legend_box=None,
                                                _dpi=200,
                                                _enable_csv=True)
                     line_graph_png = line_graph.build_line_graph()
@@ -472,7 +475,7 @@ class RvR(Realm):
                     if direction == "upload" or direction == "download":
                         report.set_obj_html(
                             _obj_title=f"Individual {direction} Throughput for {len(self.list_of_data[0])} clients using {traffic_type} traffic over {attenuation} attenuation",
-                            _obj=f"The below graph represents Individual {direction} throughput of all stations when attenuation (RSSI) set to {attenuation}")
+                            _obj=f"The below graph represents Individual {direction} throughput of all stations when attenuation set to {attenuation}")
                         report.build_objective()
                         graph = lf_bar_graph(_data_set=[res[traffic_type][attenuation][direction]],
                                              _xaxis_name="No.of Stations",
@@ -489,7 +492,7 @@ class RvR(Realm):
                                              _bar_width=0.15,
                                              _figsize=(18, 6),
                                              _legend_loc="best",
-                                             _legend_box=(1.0, 1.0),
+                                             _legend_box=None,
                                              _dpi=96,
                                              _show_bar_value=True,
                                              _enable_csv=True)
