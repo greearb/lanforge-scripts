@@ -1358,18 +1358,16 @@ def main():
 
 
                     # Down station
-                    # port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
-                    #                              "--set_ifstate", "down"])
-                    # CMR TODO this looks to be an issue
-                    command = ["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
-                                                  "--set_ifstate", "down"]
-                    summary_output = ''
-                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                    for line in iter(summary.stdout.readline, ''):
-                        logger.debug(line)
-                        summary_output += line
-                    summary.wait()
-                    logger.info(summary_output)  
+                    # CMR TODO this looks to be an issue  7/15/2022
+                    # command = ["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
+                    #                               "--set_ifstate", "down"]
+                    # summary_output = ''
+                    # summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    # for line in iter(summary.stdout.readline, ''):
+                    #     logger.debug(line)
+                    #     summary_output += line
+                    # summary.wait()
+                    # logger.info(summary_output)  
 
                     cs.show_ap_summary()
 
