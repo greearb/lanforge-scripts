@@ -73,7 +73,11 @@ class lf_json_api():
         # TODO add support for non-port
         # TODO add support for qvan or attenuator
         # rv short for return value
-        rv = LFUtils.name_to_eid(self.port,non_port=self.non_port)
+        if not self.port:
+            return
+
+        #logger.error("update-port-info, port: %s  non-port: %s"%(self.port, self.non_port));
+        rv = LFUtils.name_to_eid(self.port, non_port=self.non_port)
         self.shelf = rv[0]
         self.resource = rv[1]
         self.port_name = rv[2]
