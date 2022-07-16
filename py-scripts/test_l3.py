@@ -86,6 +86,7 @@ import time
 from pprint import pprint
 import logging
 import platform
+import itertools
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -688,18 +689,17 @@ class L3VariableTime(Realm):
         #    self.csv_add_ul_port_column_headers(
         #        eid_name, self.csv_generate_ul_port_column_headers())
 
+        # looping though both A and B together,  upload direction will select A, download direction will select B
         # For each rate
-        rate_idx = 0
-        for ul in self.side_a_min_rate:
-            dl = self.side_b_min_rate[rate_idx]
-            rate_idx += 1
+        for ul, dl in itertools.zip_longest(
+            self.side_a_min_rate, 
+            self.side_b_min_rate, fillvalue=256000):
 
             # For each pdu size
-            pdu_idx = 0
-            for ul_pdu in self.side_a_min_pdu:
-                dl_pdu = self.side_b_min_pdu[pdu_idx]
-                pdu_idx += 1
-
+            for ul_pdu, dl_pdu in itertools.zip_longest(
+                self.side_a_min_pdu,
+                self.side_b_min_pdu, fillvalue='AUTO'
+            ):
                 # Adjust rate to take into account the number of connections we
                 # have.
                 if self.cx_count > 1 and self.rates_are_totals:
@@ -826,6 +826,8 @@ class L3VariableTime(Realm):
                                     total_dl_rate_ll,
                                     total_dl_pkts_ll,
                                     dl_rx_drop_percent)
+
+                    # TODO make all port csv files into one concatinated csv files
 
                     # At end of test step, record KPI into kpi.csv
                     self.record_kpi_csv(
@@ -1955,7 +1957,6 @@ Setting wifi_settings per radio
             index += 1
 
     # logger.info("endp-types: %s"%(endp_types))
-    # TODO replace(',',' ').split() to allow slitting on space and comma
     ul_rates = args.side_a_min_bps.replace(',',' ').split()
     dl_rates = args.side_b_min_bps.replace(',',' ').split()
     ul_pdus = args.side_a_min_pdu.replace(',',' ').split()
@@ -1970,12 +1971,13 @@ Setting wifi_settings per radio
         atten_vals = args.atten_vals.split(",")
 
     if len(ul_rates) != len(dl_rates):
-        logger.error(
-            "ERROR:  ul_rates %s and dl_rates %s arrays must be same length\n" %
+        # todo make fill assignable
+        logger.info(
+            "ul_rates %s and dl_rates %s arrays are of different length will fill shorter list with 256000\n" %
             (len(ul_rates), len(dl_rates)))
     if len(ul_pdus) != len(dl_pdus):
-        logger.error(
-            "ERROR:  ul_pdus %s and dl_pdus %s arrays must be same length\n" %
+        logger.info(
+            "ul_pdus %s and dl_pdus %s arrays are of different lengths will fill shorter list with size AUTO \n" %
             (len(ul_rates), len(dl_rates)))
 
     logger.info("configure and create test object")
