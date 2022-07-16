@@ -16,6 +16,7 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 base_profile = importlib.import_module("py-json.base_profile")
 BaseProfile = base_profile.BaseProfile
 
+# cli command https://www.candelatech.com/lfcli_ug.php#add_vrcx
 
 class VRProfile(BaseProfile):
     Default_Margin = 15 # margin between routers and router connections
