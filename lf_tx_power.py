@@ -1359,16 +1359,15 @@ def main():
 
                     # Down station
                     # CMR TODO this looks to be an issue  7/15/2022
-                    # command = ["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
-                    #                               "--set_ifstate", "down"]
-                    # summary_output = ''
-                    # summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-                    # for line in iter(summary.stdout.readline, ''):
-                    #     logger.debug(line)
-                    #     summary_output += line
-                    # summary.wait()
-                    # logger.info(summary_output)  
-
+                    command = ["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
+                                                  "--set_ifstate", "down"]
+                    summary_output = ''
+                    summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                    for line in iter(summary.stdout.readline, ''):
+                        logger.debug(line)
+                        summary_output += line
+                    summary.wait()
+                    logger.info(summary_output) 
                     cs.show_ap_summary()
 
                     # when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .
@@ -1857,6 +1856,10 @@ def main():
                     # Up station
                     subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
                                     "--set_ifstate", "up"])
+                    # subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
+                    #             "--cmd", "reset","--amt_resets","2","--min_sleep","10","--max_sleep","10"])
+                    # sleep(12)
+
 
                     i = 0
                     wait_ip_print = False
@@ -1875,6 +1878,7 @@ def main():
                         port_stats = subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
                                                      "--show_port", "AP,IP,Mode,NSS,Bandwidth,Channel,Signal,Noise,Status,RX-Rate"], capture_output=True, check=True)
                         pss = port_stats.stdout.decode('utf-8', 'ignore')
+
 
                         _status = None
                         _ip = None
