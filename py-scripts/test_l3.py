@@ -1204,7 +1204,7 @@ class L3VariableTime(Realm):
 
 
 def valid_endp_types(_endp_type):
-    etypes = _endp_type.split('','')
+    etypes = _endp_type.split(',')
     for endp_type in etypes:
         valid_endp_type = [
             'lf',
