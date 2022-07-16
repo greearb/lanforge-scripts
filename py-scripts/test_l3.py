@@ -1204,7 +1204,7 @@ class L3VariableTime(Realm):
 
 
 def valid_endp_types(_endp_type):
-    etypes = _endp_type.split(',')
+    etypes = _endp_type.split('','')
     for endp_type in etypes:
         valid_endp_type = [
             'lf',
@@ -1215,7 +1215,7 @@ def valid_endp_types(_endp_type):
             'mc_udp',
             'mc_udp6']
         if not (str(endp_type) in valid_endp_type):
-            logger.debug(
+            logger.error(
                 'invalid endp_type: %s. Valid types lf, lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6' %
                 endp_type)
             exit(1)
@@ -1330,9 +1330,9 @@ Example #1  running traffic with two radios
 6. Create connections with TOS of BK and VI
 
 Command: (remove carriage returns)
-python3 ./test_l3.py --test_duration 30s --endp_type "lf_tcp lf_udp" --tos "BK VI" --upstream_port eth2 
---radio "radio==wiphy0 stations==1 ssid==ssid_2g ssid_pw==ssid_pw_2g security==wpa2" 
---radio "radio==wiphy1 stations==2 ssid==ssid_5g ssid_pw==BLANK security==open" \
+python3 ./test_l3.py --lfmgr 192.168.0.102 --test_duration 30s --endp_type "lf_tcp lf_udp" --tos "BK VI" --upstream_port 1.1.eth2 
+--radio "radio==1.1.wiphy0 stations==1 ssid==ssid_2g ssid_pw==ssid_pw_2g security==wpa2" 
+--radio "radio==1.1.wiphy1 stations==2 ssid==ssid_5g ssid_pw==BLANK security==open" \
 
 Setting wifi_settings per radio
 ./test_l3.py --lfmgr 192.168.100.116 --local_lf_report_dir /home/lanforge/html-reports/ --test_duration 15s
@@ -1776,7 +1776,7 @@ Setting wifi_settings per radio
     if args.lfmgr:
         lfjson_host = args.lfmgr
 
-    if args.lfmgr:
+    if args.lfmgr_port:
         lfjson_port = args.lfmgr_port
 
     if args.upstream_port:
@@ -1955,11 +1955,11 @@ Setting wifi_settings per radio
             index += 1
 
     # logger.info("endp-types: %s"%(endp_types))
-
-    ul_rates = args.side_a_min_bps.split(",")
-    dl_rates = args.side_b_min_bps.split(",")
-    ul_pdus = args.side_a_min_pdu.split(",")
-    dl_pdus = args.side_b_min_pdu.split(",")
+    # TODO replace(',',' ').split() to allow slitting on space and comma
+    ul_rates = args.side_a_min_bps.replace(',',' ').split()
+    dl_rates = args.side_b_min_bps.replace(',',' ').split()
+    ul_pdus = args.side_a_min_pdu.replace(',',' ').split()
+    dl_pdus = args.side_b_min_pdu.replace(',',' ').split()
     if args.attenuators == "":
         attenuators = []
     else:
@@ -2119,7 +2119,7 @@ Setting wifi_settings per radio
     for (
             radio_,
             ssid_,
-            ssid_password_,
+            ssid_password_, # do not print password 
             ssid_security_,
             mode_,
             wifi_enable_flags_list_,
