@@ -174,7 +174,7 @@ Command example:
 
     vap_list = LFUtils.port_name_series(prefix="vap",
                                         start_id=int(args.start_id),
-                                        end_id=num_vap - 1,
+                                        end_id=int(args.start_id) + num_vap - 1,
                                         padding_number=10000,
                                         radio=args.radio)
     # print(args.passwd)
