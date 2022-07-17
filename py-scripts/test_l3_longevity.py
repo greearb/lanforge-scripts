@@ -67,6 +67,7 @@ import sys
 import time
 from pprint import pformat
 import logging
+import itertools
 
 import pexpect
 import serial
@@ -986,17 +987,19 @@ class L3VariableTime(Realm):
             self.csv_add_ul_port_column_headers(
                 eid_name, self.csv_generate_ul_port_column_headers())
 
+        # looping though both A and B together,  upload direction will select A, download direction will select B
         # For each rate
-        rate_idx = 0
-        for ul in self.side_a_min_rate:
-            dl = self.side_b_min_rate[rate_idx]
-            rate_idx += 1
+        for ul, dl in itertools.zip_longest(
+            self.side_a_min_rate, 
+            self.side_b_min_rate, fillvalue=256000):
+
 
             # For each pdu size
-            pdu_idx = 0
-            for ul_pdu in self.side_a_min_pdu:
-                dl_pdu = self.side_b_min_pdu[pdu_idx]
-                pdu_idx += 1
+            for ul_pdu, dl_pdu in itertools.zip_longest(
+                self.side_a_min_pdu,
+                self.side_b_min_pdu, fillvalue='AUTO'
+            ):
+
 
                 # Adjust rate to take into account the number of connections we
                 # have.
