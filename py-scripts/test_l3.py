@@ -87,6 +87,7 @@ from pprint import pprint
 import logging
 import platform
 import itertools
+import pandas as pd
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -828,6 +829,24 @@ class L3VariableTime(Realm):
                                     dl_rx_drop_percent)
 
                     # TODO make all port csv files into one concatinated csv files
+                    # Create empty dataframe
+                    all_dl_ports_df = pd.DataFrame()
+                    port_eids = self.gather_port_eids()
+                    for eid_name in port_eids:
+                        logger.debug("port files: {port_file}".format(port_file=self.port_csv_files[eid_name]))
+                        name = self.port_csv_files[eid_name].name
+                        logger.debug("name : {name}".format(name=name))
+                        df_dl_tmp = pd.read_csv(name)
+                        all_dl_ports_df = pd.concat([all_dl_ports_df, df_dl_tmp], axis=0)
+
+                    all_dl_ports_file_name = self.outfile[:-4]
+                    all_dl_port_file_name = all_dl_ports_file_name +"-dl-all-eids.csv"
+                    all_dl_ports_df.to_csv(all_dl_port_file_name)   
+
+                    # if there are multiple loops then delete the df   
+                    del all_dl_ports_df    
+
+
 
                     # At end of test step, record KPI into kpi.csv
                     self.record_kpi_csv(
