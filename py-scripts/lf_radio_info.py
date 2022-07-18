@@ -10,7 +10,7 @@ PURPOSE:
 EXAMPLE:
 
  This will run through the module test:
- ./lf_radio_info.py --mgr 192.168.30.12
+ ./lf_radio_info.py --mgr 192.168.30.22
 
 '''
 
@@ -121,12 +121,7 @@ class radio_information(Realm):
         # logger.info(max_station)
 
         for row in max_station.index:
-            if wiphy_radio == "1.1.wiphy0":
-                if max_station.loc[row, "Radio"] == "1." + self.resource + ".wiphy0":
-                    max_sta = max_station.loc[row, "max_sta"]
-                    # logger.info(max_sta)
-            elif wiphy_radio == "1.1.wiphy1":
-                if max_station.loc[row, "Radio"] == "1." + self.resource + ".wiphy1":
+            if max_station.loc[row, "Radio"] == wiphy_radio:
                     max_sta = max_station.loc[row, "max_sta"]
                     # logger.info(max_sta)
 
@@ -138,14 +133,9 @@ class radio_information(Realm):
         # logger.info(max_vaps)
 
         for row in max_vaps.index:
-            if wiphy_radio == "1.1.wiphy0":
-                if max_vaps.loc[row, "Radio"] == "1." + self.resource + ".wiphy0":
+            if max_vaps.loc[row, "Radio"] == wiphy_radio:
                     wiphy_max_vaps = max_vaps.loc[row, "max_vap"]
-                    # logger.info(max_sta)
-            elif wiphy_radio == "1.1.wiphy1":
-                if max_vaps.loc[row, "Radio"] == "1." + self.resource + ".wiphy1":
-                    wiphy_max_vaps = max_vaps.loc[row, "max_vap"]
-                    # logger.info(max_sta)
+                    # logger.info(wiphy_max_vaps)
 
         return wiphy_max_vaps
 
@@ -155,18 +145,11 @@ class radio_information(Realm):
         # logger.info(max_vif)
 
         for row in max_vif.index:
-            if wiphy_radio == "1.1.wiphy0":
-                if max_vif.loc[row, "Radio"] == "1." + self.resource + ".wiphy0":
-                    wiphy_max_vif = max_vif.loc[row, "max_vifs"]
-                    # logger.info(wiphy_max_vif)
-                    if int(wiphy_max_vif) > 200:
-                        wiphy_max_vif = "200"
-            elif wiphy_radio == "1.1.wiphy1":
-                if max_vif.loc[row, "Radio"] == "1." + self.resource + ".wiphy1":
-                    wiphy_max_vif = max_vif.loc[row, "max_vifs"]
-                    # logger.info(wiphy_max_vif)
-                    if int(wiphy_max_vif) > 200:
-                        wiphy_max_vif = "200"
+            if max_vif.loc[row, "Radio"] == wiphy_radio:
+                wiphy_max_vif = max_vif.loc[row, "max_vifs"]
+                # logger.info(wiphy_max_vif)
+                if int(wiphy_max_vif) > 200:
+                    wiphy_max_vif = "200"
 
         return wiphy_max_vif
 
@@ -176,31 +159,21 @@ class radio_information(Realm):
         # logger.info(radio_driver)
 
         for row in radio_driver.index:
-            if wiphy_radio == "1.1.wiphy0":
-                if radio_driver.loc[row, "Radio"] == "1." + self.resource + ".wiphy0":
-                    wiphy_driver = radio_driver.loc[row, "WIFI-Radio Driver"]
-                    # logger.info(max_sta)
-            elif wiphy_radio == "1.1.wiphy1":
-                if radio_driver.loc[row, "Radio"] == "1." + self.resource + ".wiphy1":
-                    wiphy_driver = radio_driver.loc[row, "WIFI-Radio Driver"]
-                    # logger.info(max_sta)
+            if radio_driver.loc[row, "Radio"] == wiphy_radio:
+                wiphy_driver = radio_driver.loc[row, "WIFI-Radio Driver"]
+                # logger.info(wiphy_driver)
 
         return wiphy_driver
 
     # returns specific radio 802.11 wifi capabilities:
     def get_radio_capabilities(self, wiphy_radio):
         radio_caps = self.lf_radio_df.get(["Radio", "Radio Capabilities"])
-        # logger.info(radio_capabilities)
+        # logger.info(radio_caps)
 
         for row in radio_caps.index:
-            if wiphy_radio == "1.1.wiphy0":
-                if radio_caps.loc[row, "Radio"] == "1." + self.resource + ".wiphy0":
+            if radio_caps.loc[row, "Radio"] == wiphy_radio:
                     wiphy_capability = radio_caps.loc[row, "Radio Capabilities"]
-                    # logger.info(max_sta)
-            elif wiphy_radio == "1.1.wiphy1":
-                if radio_caps.loc[row, "Radio"] == "1." + self.resource + ".wiphy1":
-                    wiphy_capability = radio_caps.loc[row, "Radio Capabilities"]
-                    # logger.info(max_sta)
+                    # logger.info(wiphy_capability)
 
         return wiphy_capability
 
@@ -219,17 +192,12 @@ class radio_information(Realm):
     # returns radio types installed on system:
     def get_radio_type(self, wiphy_radio):
         radio_types = self.lf_radio_df.get(["Radio", "WIFI-Radio Driver"])
-        logger.info(radio_types)
+        # logger.info(radio_types)
 
         for row in radio_types.index:
-            if wiphy_radio == "1.1.wiphy0":
-                if radio_types.loc[row, "Radio"] == "1." + self.resource + ".wiphy0":
+            if radio_types.loc[row, "Radio"] == wiphy_radio:
                     type_radio = radio_types.loc[row, "WIFI-Radio Driver"]
-                    # logger.info(max_sta)
-            elif wiphy_radio == "1.1.wiphy1":
-                if radio_types.loc[row, "Radio"] == "1." + self.resource + ".wiphy1":
-                    type_radio = radio_types.loc[row, "WIFI-Radio Driver"]
-                    # logger.info(max_sta)
+                    # logger.info(type_radio)
 
         return type_radio
 
@@ -306,7 +274,7 @@ CLI Example:
 
     # basic unit module test:
 
-    radio = "1.1.wiphy1"
+    radio = "1.1.wiphy7"
 
     # get all system radio information:
     all_radio_info = wiphy_radio_info.get_lanforge_radio_information()
