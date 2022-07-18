@@ -1226,6 +1226,184 @@ class LFJsonCommand(JsonCommand):
     # Auto generated methods follow: 
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/ADB> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#adb
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_adb(self, 
+                 adb_cmd: str = None,   # All remaining text after adb_id will be sent to the adb command.
+                 adb_id: str = None,    # Android device identifier, use NA if it should not be used/specified.
+                 resource: int = None,  # Resource number. [W]
+                 shelf: int = 1,        # Shelf name/id. Required. [R][D:1]
+                 debug=False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                result = post_adb(param=value ...)
+                pprint.pprint( result )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if adb_cmd is not None:
+            data["adb_cmd"] = adb_cmd
+        if adb_id is not None:
+            data["adb_id"] = adb_id
+        if resource is not None:
+            data["resource"] = resource
+        if shelf is not None:
+            data["shelf"] = shelf
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/adb",
+                                  post_data=data,
+                                  die_on_error=self.die_on_error,
+                                  debug=debug)
+        return response
+    #
+
+    def post_adb_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_adb(adb_cmd=param_map.get("adb_cmd"),
+                      adb_id=param_map.get("adb_id"),
+                      resource=param_map.get("resource"),
+                      shelf=param_map.get("shelf"),
+                      )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/ADB_GUI> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#adb_gui
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_adb_gui(self, 
+                     adb_id: str = None,             # Android device identifier.
+                     display: str = None,            # The DISPLAY option, for example: 192.168.1.5:0.0. Will guess if
+                     # left blank.
+                     resource: int = None,           # Resource number. [W]
+                     screen_size_prcnt: str = None,  # 0.1 to 1.0, screen size percentage for the Android display.
+                     shelf: int = 1,                 # Shelf name/id. Required. [R][D:1]
+                     debug=False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                result = post_adb_gui(param=value ...)
+                pprint.pprint( result )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if adb_id is not None:
+            data["adb_id"] = adb_id
+        if display is not None:
+            data["display"] = display
+        if resource is not None:
+            data["resource"] = resource
+        if screen_size_prcnt is not None:
+            data["screen_size_prcnt"] = screen_size_prcnt
+        if shelf is not None:
+            data["shelf"] = shelf
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/adb_gui",
+                                  post_data=data,
+                                  die_on_error=self.die_on_error,
+                                  debug=debug)
+        return response
+    #
+
+    def post_adb_gui_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_adb_gui(adb_id=param_map.get("adb_id"),
+                          display=param_map.get("display"),
+                          resource=param_map.get("resource"),
+                          screen_size_prcnt=param_map.get("screen_size_prcnt"),
+                          shelf=param_map.get("shelf"),
+                          )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/ADD_ADB> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#add_adb
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_add_adb(self, 
+                     adb_device: str = None,   # Android device device ID
+                     adb_id: str = None,       # Android device identifier (serial number).
+                     adb_model: str = None,    # Android device model ID
+                     adb_product: str = None,  # Android device product ID
+                     lf_username: str = None,  # LANforge Interop app user-name
+                     resource: int = None,     # Resource number. [W]
+                     sdk_release: str = None,  # Android sdk release (example: 4.4.2)
+                     sdk_version: str = None,  # Android sdk version (example: 19)
+                     shelf: int = 1,           # Shelf name/id. Required. [R][D:1]
+                     debug=False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                result = post_add_adb(param=value ...)
+                pprint.pprint( result )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if adb_device is not None:
+            data["adb_device"] = adb_device
+        if adb_id is not None:
+            data["adb_id"] = adb_id
+        if adb_model is not None:
+            data["adb_model"] = adb_model
+        if adb_product is not None:
+            data["adb_product"] = adb_product
+        if lf_username is not None:
+            data["lf_username"] = lf_username
+        if resource is not None:
+            data["resource"] = resource
+        if sdk_release is not None:
+            data["sdk_release"] = sdk_release
+        if sdk_version is not None:
+            data["sdk_version"] = sdk_version
+        if shelf is not None:
+            data["shelf"] = shelf
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/add_adb",
+                                  post_data=data,
+                                  die_on_error=self.die_on_error,
+                                  debug=debug)
+        return response
+    #
+
+    def post_add_adb_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_adb(adb_device=param_map.get("adb_device"),
+                          adb_id=param_map.get("adb_id"),
+                          adb_model=param_map.get("adb_model"),
+                          adb_product=param_map.get("adb_product"),
+                          lf_username=param_map.get("lf_username"),
+                          resource=param_map.get("resource"),
+                          sdk_release=param_map.get("sdk_release"),
+                          sdk_version=param_map.get("sdk_version"),
+                          shelf=param_map.get("shelf"),
+                          )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_ARM_ENDP> type requests
 
         https://www.candelatech.com/lfcli_ug.php#add_arm_endp
@@ -5728,7 +5906,7 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_admin(self, 
                    arg1: str = None,  # Argument 1: xorp-port | scan-rslts-file | iface-name | iface-eid |
-                   # rfgen-message | id
+                   # rfgen-message | id | log_file_name
                    arg2: str = None,  # Argument 2: scan key | message | angle | dest-radio
                    arg3: str = None,  # Argument 3: noprobe | migrate-sta-mac-pattern
                    arg5: str = None,  # Argument 4: table-speed
@@ -6420,9 +6598,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#discover
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_discover(self, 
-                      disconnect: str = None,  # Set to 'disconnect' to force disconnect to remote resource process.
-                      resource: int = None,    # Resource ID. Use if discovering Attenuators. [W]
-                      shelf: int = 1,          # Shelf-ID, only used if discovering Attenuators. [R][D:1]
+                      option: str = None,    # See above.
+                      resource: int = None,  # Resource ID. Use if discovering Attenuators or ADB devices. [W]
+                      shelf: int = 1,        # Shelf-ID, only used if discovering Attenuators. [R][D:1]
                       debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -6431,8 +6609,8 @@ class LFJsonCommand(JsonCommand):
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
-        if disconnect is not None:
-            data["disconnect"] = disconnect
+        if option is not None:
+            data["option"] = option
         if resource is not None:
             data["resource"] = resource
         if shelf is not None:
@@ -6455,7 +6633,7 @@ class LFJsonCommand(JsonCommand):
         """
         TODO: check for default argument values
         TODO: fix comma counting
-        self.post_discover(disconnect=param_map.get("disconnect"),
+        self.post_discover(option=param_map.get("option"),
                            resource=param_map.get("resource"),
                            shelf=param_map.get("shelf"),
                            )
@@ -7382,13 +7560,17 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#log_capture
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_log_capture(self, 
-                         destination: str = None,  # Where to save the file to on the LANforge resource.
+                         destination: str = None,  # Where to save the file to on the LANforge resource. If
+                         # 'stdout', then content will be passed back as a keyed text
+                         # message.
                          duration: str = None,     # For journalctl, seconds of logs to gather, or NA if not used.
                          identifier: str = None,   # port name or other identifier needed for some types, NA if not
                          # used.
                          resource: int = None,     # The number of the resource in question. [W]
                          shelf: int = 1,           # The number of the shelf in question. [R][D:1]
-                         p_type: str = None,       # journalctl, supplicant, lflogs
+                         p_type: str = None,       # journalctl, supplicant, lflogs, adb
+                         user_key: str = None,     # Key to use for keyed-text-message response when using stdout
+                         # destination
                          debug=False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
@@ -7409,6 +7591,8 @@ class LFJsonCommand(JsonCommand):
             data["shelf"] = shelf
         if p_type is not None:
             data["type"] = p_type
+        if user_key is not None:
+            data["user_key"] = user_key
         if len(data) < 1:
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/log_capture",
@@ -7433,6 +7617,7 @@ class LFJsonCommand(JsonCommand):
                               resource=param_map.get("resource"),
                               shelf=param_map.get("shelf"),
                               type=param_map.get("type"),
+                              user_key=param_map.get("user_key"),
                               )
         """
 
@@ -14300,6 +14485,53 @@ class LFJsonCommand(JsonCommand):
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/SHOW_ADB> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#show_adb
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_show_adb(self, 
+                      resource: int = None,  # Resource number, or 'all'. [W]
+                      serno: str = None,     # Serial number for requested ADB device, or 'all'. [W]
+                      shelf: int = 1,        # Shelf number or alias, can be 'all'. [R][D:1]
+                      debug=False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                result = post_show_adb(param=value ...)
+                pprint.pprint( result )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if resource is not None:
+            data["resource"] = resource
+        if serno is not None:
+            data["serno"] = serno
+        if shelf is not None:
+            data["shelf"] = shelf
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/show_adb",
+                                  post_data=data,
+                                  die_on_error=self.die_on_error,
+                                  debug=debug)
+        return response
+    #
+
+    def post_show_adb_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_show_adb(resource=param_map.get("resource"),
+                           serno=param_map.get("serno"),
+                           shelf=param_map.get("shelf"),
+                           )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SHOW_ALERTS> type requests
 
         https://www.candelatech.com/lfcli_ug.php#show_alerts
@@ -16687,6 +16919,89 @@ class LFJsonQuery(JsonQuery):
     # Auto generated methods follow: 
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <ADB> type requests
+
+    If you need to call the URL directly,
+    request one of these URLs:
+        /adb/
+        /adb/$shelf_id
+        /adb/$shelf_id/$resource_id
+        /adb/$shelf_id/$resource_id/$port_id
+
+    When requesting specific column names, they need to be URL encoded:
+        api, device, model, name, phantom, product, release, user-name
+    Example URL: /adb?fields=api,device
+
+    Example py-json call (it knows the URL):
+        record = LFJsonGet.get_adb(eid_list=['1.234', '1.344'],
+                                   requested_col_names=['device'], 
+                                   debug=True)
+
+    The record returned will have these members: 
+    {
+        'api':       # Android SDK API Version
+        'device':    # Android device identifier.
+        'model':     # Android device model identifier.
+        'name':      # Adb device's name
+        'phantom':   # If the device is phantom, that means we cannot find it (maybe it was
+                     # unplugged?).
+        'product':   # Android device product identifier.
+        'release':   # Android SDK Release
+        'user-name': # LANforge interop app username for this ADB device.
+    }
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    def get_adb(self, 
+                eid_list: list = None,
+                requested_col_names: list = None,
+                wait_sec: float = 0.01,
+                timeout_sec: float = 5.0,
+                errors_warnings: list = None,
+                debug: bool = False):
+        """
+        :param eid_list: list of entity IDs to query for
+        :param requested_col_names: list of column names to return
+        :param wait_sec: duration to wait between retries if no response or response is HTTP 404
+        :param timeout_sec: duration in which to keep querying before returning
+        :param errors_warnings: optional list to extend with errors and warnings from response
+        :param debug: print diagnostic info if true
+        :return: dictionary of results
+        """
+        debug |= self.debug_on
+        url = "/adb"
+        if (eid_list is None) or (len(eid_list) < 1):
+            raise ValueError("no entity id in request")
+        trimmed_fields = []
+        if isinstance(requested_col_names, str):
+            if not requested_col_names.strip():
+                raise ValueError("column name cannot be blank")
+            trimmed_fields.append(requested_col_names.strip())
+        if isinstance(requested_col_names, list):
+            for field in requested_col_names:
+                if not field.strip():
+                    raise ValueError("column names cannot be blank")
+                field = field.strip()
+                if field.find(" ") > -1:
+                    raise ValueError("field should be URL encoded: [%s]" % field)
+                trimmed_fields.append(field)
+        url += self.create_port_eid_url(eid_list=eid_list)
+
+        if len(trimmed_fields) > 0:
+            url += "?fields=%s" % (",".join(trimmed_fields))
+
+        response = self.json_get(url=url,
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=timeout_sec,
+                                 max_timeout_sec=timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if response is None:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="device",
+                                   plural_key="devices")
+    #
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <ALERTS> type requests
 
     If you need to call the URL directly,
@@ -18305,7 +18620,7 @@ class LFJsonQuery(JsonQuery):
         rx+frame, rx+length, rx+miss, rx+over, rx+pkts, rx-rate, sec, signal, ssid, 
         status, time-stamp, tx+abort, tx+bytes, tx+crr, tx+errors, tx+fifo, tx+hb, 
         tx+pkts, tx+wind, tx-failed+%25, tx-rate, wifi+retries        # hidden columns:
-        beacon_rx_signal, port_cur_flags_h, port_cur_flags_l, port_supported_flags_h, 
+        antenna_count, beacon_rx_signal, port_cur_flags_h, port_cur_flags_l, port_supported_flags_h, 
         port_supported_flags_l, resource, rx_multicast, tx_dropped
     Example URL: /port?fields=4way+time+%28us%29,activity
 
@@ -18904,9 +19219,9 @@ class LFJsonQuery(JsonQuery):
         /stations/$mac
 
     When requesting specific column names, they need to be URL encoded:
-        ap, auth-for, capabilities, entity+id, idle, roam-duration, rx+bytes, rx+pkts, 
-        rx+rate, signal, station+bssid, tx+bytes, tx+pkts, tx+rate, tx+retries, tx-failed, 
-      
+        ap, auth-for, capabilities, chain+rssi, entity+id, idle, roam-duration, rx+bytes, 
+        rx+pkts, rx+rate, signal, signal+avg, station+bssid, tx+bytes, tx+pkts, tx+rate, 
+        tx+retries, tx-failed
     Example URL: /stations?fields=ap,auth-for
 
     Example py-json call (it knows the URL):
@@ -18919,6 +19234,7 @@ class LFJsonQuery(JsonQuery):
         'ap':            # The Port that owns this station.
         'auth-for':      # Duration in seconds this station has been authenticated.
         'capabilities':  # Station's negotiated capabilities.
+        'chain rssi':    # Chain RSSI
         'entity id':     # Entity ID
         'idle':          # Miliseconds since this station last received a frame from the peer.
         'roam-duration': # The difference between the authenticate-time on the new APand the last
@@ -18928,11 +19244,12 @@ class LFJsonQuery(JsonQuery):
         'rx bytes':      # RX Byte counter for this station.
         'rx pkts':       # RX Packets counter for this station.
         'rx rate':       # Station last received encoding rate.
-        'signal':        # Station signal quality.
+        'signal':        # Station last signal quality.
+        'signal avg':    # Station last signal quality.
         'station bssid': # Station's MAC address (BSSID).
         'tx bytes':      # TX Byte counter for this station.
         'tx pkts':       # TX Packets counter for this station.
-        'tx rate':       # Station transmit encoding rate.
+        'tx rate':       # Station last transmit encoding rate.
         'tx retries':    # TX Retries counter for this station.This counts retries at the driver
                          # level.Retries made by the WiFi hardware and/or firmware is not counted.
         'tx-failed':     # TX Failed counter for this station.This counts TX failures at the driver
