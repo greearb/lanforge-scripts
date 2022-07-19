@@ -60,9 +60,19 @@ MODE_AUTO = 0
 
 
 class max_associate(Realm):
-    def __init__(self, _host, _port, wiphy0_ssid, wiphy1_ssid,
-                 passwd="NA",
-                 security=OPEN,
+    def __init__(self, _host, _port, 
+                 # wiphy0_ssid,
+                 # wiphy1_ssid,
+                 # passwd="NA",
+                 # security=OPEN,
+                 #
+                 radio_name_list,
+                 ssid_list,
+                 ssid_password_list,
+                 ssid_security_list,
+                 wifi_mode_list,
+                 enable_flags_list,
+                 #
                  resource=1,
                  upstream_port="eth1",
                  download_bps=9830,
@@ -88,10 +98,18 @@ class max_associate(Realm):
         self.host = _host
         self.port = _port
         self.debug = debug_
-        self.security = security
-        self.wiphy0_ssid = wiphy0_ssid
-        self.wiphy1_ssid = wiphy1_ssid
-        self.password = passwd
+        # self.security = security
+        # self.wiphy0_ssid = wiphy0_ssid
+        # self.wiphy1_ssid = wiphy1_ssid
+        # self.password = passwd
+        #
+        self.radio_name_list = radio_name_list,
+        self.ssid_list = ssid_list,
+        self.ssid_password_list = ssid_password_list,
+        self.ssid_security_list = ssid_security_list,
+        self.wifi_mode_list = wifi_mode_list,
+        self.enable_flags_list = enable_flags_list,
+        #
         self.resource = resource
         self.upstream_port = upstream_port
         self.download_bps = download_bps
@@ -305,27 +323,44 @@ class max_associate(Realm):
         wiphy_radio_list = self.wiphy_info.get_radios()
         # logger.info(wiphy_radio_list)
 
+        track_num_stations = 0
+        start_num_stations = 0
+        end_num_stations = 0
         for wiphy_radio in wiphy_radio_list:
 
+            wiphy_radio_split = wiphy_radio.split('.')
+            # get last character in wiphy_radio_split[2] [ex: 1.1.wiphy0]
+            if len(wiphy_radio_split[2]) == 6:
+                wiphy_alias = wiphy_radio_split[2][-1]
+            # get last two characters in wiphy_radio_split[2] [ex: 1.1.wiphy11]
+            elif len(wiphy_radio_split[2]) == 7:
+                wiphy_alias = wiphy_radio_split[2][-2:]
+
+            # build stations for wiphy0 radio:
             if wiphy_radio == "1." + self.resource + ".wiphy0":
-                # TODO: smw
                 num_stations = self.wiphy_info.get_max_vifs(wiphy_radio)
-                # num_stations = 2
-                # logger.info(num_stations)
-                station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0,
-                                                      end_id_=int(num_stations) - 1,
+                track_num_stations += int(num_stations)
+                end_num_stations += int(num_stations)
+                station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=start_num_stations,
+                                                      end_id_=end_num_stations - 1,
                                                       padding_number_=10000,
                                                       radio=wiphy_radio)
+                start_num_stations += end_num_stations
 
-                # logger.info(station_list)
+                wiphy_int = int(wiphy_alias)
+                
+                wiphy0_ssid = self.ssid_list[0][wiphy_int]
+                wiphy0_password = self.ssid_password_list[0][wiphy_int]
+                wiphy0_security = self.ssid_security_list[0][wiphy_int]
+
                 self.station_profile.lfclient_url = self.lfclient_url
-                self.station_profile.ssid = self.wiphy0_ssid
+                self.station_profile.ssid = wiphy0_ssid
                 # logger.info(self.password)
-                self.station_profile.ssid_pass = self.password
-                self.station_profile.security = self.security
+                self.station_profile.ssid_pass = wiphy0_password
+                self.station_profile.security = wiphy0_security
                 # self.station_profile.number_template_ = self.number_template
                 self.station_profile.debug = self.debug
-                self.station_profile.use_security(self.security, self.wiphy0_ssid, self.password)
+                self.station_profile.use_security(wiphy0_security, wiphy0_ssid, wiphy0_password)
                 # self.station_profile.set_number_template(self.number_template)
                 self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
                 self.station_profile.set_command_param("set_port", "report_timer", 1500)
@@ -340,28 +375,32 @@ class max_associate(Realm):
                                        side_b=self.upstream_port,
                                        sleep_time=0)
 
-            if wiphy_radio == "1." + self.resource + ".wiphy1":
-                # TODO: smw
-                start_num_stations = self.wiphy_info.get_max_vifs("1.1.wiphy0")
-                # start_num_stations = 2
-                end_num_stations = self.wiphy_info.get_max_vifs(wiphy_radio)
-                # end_num_stations = 2
-                # logger.info(num_stations)
-                # TODO: make start_id = end_id + 1 of wiphy0 created stations, make dynamic:
+            # build stations for remaining wiphy radios:
+            elif wiphy_radio == self.radio_name_list[0][int(wiphy_alias)]:
+                num_stations = self.wiphy_info.get_max_vifs(wiphy_radio)
+                end_num_stations += int(num_stations)
+
                 station_list = LFUtils.portNameSeries(prefix_="sta",
-                                                      start_id_=int(start_num_stations),
-                                                      end_id_=int(end_num_stations) + int(start_num_stations) - 1,
+                                                      start_id_=start_num_stations,
+                                                      end_id_=end_num_stations - 1,
                                                       padding_number_=10000,
                                                       radio=wiphy_radio)
 
-                # logger.info(station_list)
+                start_num_stations = end_num_stations
+                
+                wiphy_int = int(wiphy_alias)
+
+                wiphy_ssid= self.ssid_list[0][wiphy_int]
+                wiphy_password = self.ssid_password_list[0][wiphy_int]
+                wiphy_security = self.ssid_security_list[0][wiphy_int]
+
                 self.station_profile.lfclient_url = self.lfclient_url
-                self.station_profile.ssid = self.wiphy1_ssid
-                self.station_profile.ssid_pass = self.password
-                self.station_profile.security = self.security
+                self.station_profile.ssid = wiphy_ssid
+                self.station_profile.ssid_pass = wiphy_password
+                self.station_profile.security = wiphy_security
                 # self.station_profile.number_template_ = self.number_template
                 self.station_profile.debug = self.debug
-                self.station_profile.use_security(self.security, self.wiphy1_ssid, self.password)
+                self.station_profile.use_security(wiphy_security, wiphy_ssid, wiphy_password)
                 # self.station_profile.set_number_template(self.number_template)
                 self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
                 self.station_profile.set_command_param("set_port", "report_timer", 1500)
@@ -375,6 +414,8 @@ class max_associate(Realm):
                                        side_a=station_list,
                                        side_b=self.upstream_port,
                                        sleep_time=0)
+            else:
+                logger.info("Skipping: %s", wiphy_radio)
 
     def start_cxs(self):
         if self.station_profile is None:
@@ -799,7 +840,7 @@ CLI Example:
         action='append',
         nargs=1,
         help=(' --radio'
-              ' "radio==<number_of_wiphy stations=<=number of stations>'
+              ' "radio==<number_of_wiphy'
               ' ssid==<ssid> ssid_pw==<ssid password> security==<security> '
               ' wifi_settings==True wifi_mode==<wifi_mode>'
               ' enable_flags==<enable_flags> '
@@ -822,6 +863,11 @@ CLI Example:
 
     if args.debug:
         logger_config.set_level("debug")
+    
+    if args.radio:
+        radios = args.radio
+    else:
+        radios = None
 
     # for kpi.csv generation
     local_lf_report_dir = args.local_lf_report_dir
@@ -867,6 +913,111 @@ CLI Example:
         csv_outfile = report.file_add_path(csv_outfile)
         logger.info("csv output file : {}".format(csv_outfile))
 
+    MAX_NUMBER_OF_STATIONS = 1000
+    # Lists to help with station creation
+    radio_name_list = []
+    ssid_list = []
+    ssid_password_list = []
+    ssid_security_list = []
+
+    # wifi settings configuration
+    wifi_mode_list = []
+    wifi_enable_flags_list = []
+
+    # optional radio configuration
+    reset_port_enable_list = []
+    reset_port_time_min_list = []
+    reset_port_time_max_list = []
+
+    logger.info("parse radio arguments used for station configuration")
+    if radios is not None:
+        logger.info("radios {}".format(radios))
+        for radio_ in radios:
+            radio_keys = ['radio', 'ssid', 'ssid_pw', 'security']
+            logger.info("radio_dict before format {}".format(radio_))
+            radio_info_dict = dict(
+                map(
+                    lambda x: x.split('=='),
+                    str(radio_).replace(
+                        '"',
+                        '').replace(
+                        '[',
+                        '').replace(
+                        ']',
+                        '').replace(
+                        "'",
+                        "").replace(
+                            ",",
+                        " ").split()))
+            # radio_info_dict = dict(map(lambda x: x.split('=='), str(radio_).replace('"', '').split()))
+
+            logger.debug("radio_dict {}".format(radio_info_dict))
+            logger.info("radio_dict {}".format(radio_info_dict))
+
+            for key in radio_keys:
+                if key not in radio_info_dict:
+                    logger.critical(
+                        "missing config, for the {}, all of the following need to be present {} ".format(
+                            key, radio_keys))
+                    exit(1)
+
+            radio_name_list.append(radio_info_dict['radio'])
+            ssid_list.append(radio_info_dict['ssid'])
+            ssid_password_list.append(radio_info_dict['ssid_pw'])
+            ssid_security_list.append(radio_info_dict['security'])
+
+            # check for wifi_settings
+            wifi_settings_keys = ['wifi_settings']
+            wifi_settings_found = True
+            for key in wifi_settings_keys:
+                if key not in radio_info_dict:
+                    logger.info("wifi_settings_keys not enabled")
+                    wifi_settings_found = False
+                    break
+
+            if wifi_settings_found:
+                # Check for additional flags
+                if {'wifi_mode', 'enable_flags'}.issubset(
+                        radio_info_dict.keys()):
+                    logger.info("wifi_settings flags set")
+                else:
+                    logger.info(
+                        "wifi_settings is present wifi_mode, enable_flags need to be set")
+                    logger.info(
+                        "or remove the wifi_settings or set wifi_settings==False flag on the radio for defaults")
+                    exit(1)
+                wifi_mode_list.append(radio_info_dict['wifi_mode'])
+                enable_flags_str = radio_info_dict['enable_flags'].replace(
+                    '(', '').replace(')', '').replace('|', ',').replace('&&', ',')
+                enable_flags_list = list(enable_flags_str.split(","))
+                wifi_enable_flags_list.append(enable_flags_list)
+            else:
+                wifi_mode_list.append(0)
+                wifi_enable_flags_list.append(
+                    ["wpa2_enable", "80211u_enable", "create_admin_down"])
+
+            # check for optional radio key , currently only reset is enabled
+            # update for checking for reset_port_time_min, reset_port_time_max
+            optional_radio_reset_keys = ['reset_port_enable']
+            radio_reset_found = True
+            for key in optional_radio_reset_keys:
+                if key not in radio_info_dict:
+                    # logger.debug("port reset test not enabled")
+                    radio_reset_found = False
+                    break
+
+            if radio_reset_found:
+                reset_port_enable_list.append(
+                    radio_info_dict['reset_port_enable'])
+                reset_port_time_min_list.append(
+                    radio_info_dict['reset_port_time_min'])
+                reset_port_time_max_list.append(
+                    radio_info_dict['reset_port_time_max'])
+            else:
+                reset_port_enable_list.append(False)
+                reset_port_time_min_list.append('0s')
+                reset_port_time_max_list.append('0s')
+
     # create here & pass in w/ MaxAssociate, or
     wiphy_info = lf_radio_info.radio_information(args.mgr,
                                                  _resource=args.resource,
@@ -881,10 +1032,16 @@ CLI Example:
 
     # add: ssid, passwd, wifi settings, enabled flags
     max_association = max_associate(args.mgr, args.port,
-                                    wiphy0_ssid=args.wiphy0_ssid,
-                                    wiphy1_ssid=args.wiphy1_ssid,
-                                    passwd=args.passwd,
-                                    security=args.security,
+                                    # wiphy0_ssid=args.wiphy0_ssid,
+                                    # wiphy1_ssid=args.wiphy1_ssid,
+                                    # passwd=args.passwd,
+                                    # security=args.security,
+                                    radio_name_list=radio_name_list,
+                                    ssid_list=ssid_list,
+                                    ssid_password_list=ssid_password_list,
+                                    ssid_security_list=ssid_security_list,
+                                    wifi_mode_list=wifi_mode_list,
+                                    enable_flags_list=wifi_enable_flags_list,
                                     resource=args.resource,
                                     upstream_port=args.upstream_port,
                                     download_bps=args.download_bps,
