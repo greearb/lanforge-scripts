@@ -60,7 +60,7 @@ MODE_AUTO = 0
 
 
 class max_associate(Realm):
-    def __init__(self, _host, _port, 
+    def __init__(self, _host, _port,
                  # wiphy0_ssid,
                  # wiphy1_ssid,
                  # passwd="NA",
@@ -348,7 +348,7 @@ class max_associate(Realm):
                 start_num_stations += end_num_stations
 
                 wiphy_int = int(wiphy_alias)
-                
+
                 wiphy0_ssid = self.ssid_list[0][wiphy_int]
                 wiphy0_password = self.ssid_password_list[0][wiphy_int]
                 wiphy0_security = self.ssid_security_list[0][wiphy_int]
@@ -387,10 +387,10 @@ class max_associate(Realm):
                                                       radio=wiphy_radio)
 
                 start_num_stations = end_num_stations
-                
+
                 wiphy_int = int(wiphy_alias)
 
-                wiphy_ssid= self.ssid_list[0][wiphy_int]
+                wiphy_ssid = self.ssid_list[0][wiphy_int]
                 wiphy_password = self.ssid_password_list[0][wiphy_int]
                 wiphy_security = self.ssid_security_list[0][wiphy_int]
 
@@ -863,7 +863,7 @@ CLI Example:
 
     if args.debug:
         logger_config.set_level("debug")
-    
+
     if args.radio:
         radios = args.radio
     else:
@@ -913,7 +913,6 @@ CLI Example:
         csv_outfile = report.file_add_path(csv_outfile)
         logger.info("csv output file : {}".format(csv_outfile))
 
-    MAX_NUMBER_OF_STATIONS = 1000
     # Lists to help with station creation
     radio_name_list = []
     ssid_list = []
@@ -1082,8 +1081,7 @@ CLI Example:
                                      "newly built ct521a LANforge system. The objective of the test is to create "
                                      "the maximum number of virtual interfaces per system installed WIFI radio, "
                                      "associate the stations to aspecified AP, and to run a long duration layer-3 "
-                                     "UDP bidirectional traffic test."
-                                     )
+                                     "UDP bidirectional traffic test.")
     report.build_objective()
 
     test_setup_info = {
@@ -1104,9 +1102,9 @@ CLI Example:
         "LANforge port": args.port,
         "LANforge resource": args.resource,
         "Upstream": args.upstream_port,
-        "2.4GHz Radio": "1."+ args.resource + ".wiphy0",
+        "2.4GHz Radio": "1." + args.resource + ".wiphy0",
         "2.4GHz SSID": args.wiphy0_ssid,
-        "5GHz Radio": "1."+ args.resource + ".wiphy1",
+        "5GHz Radio": "1." + args.resource + ".wiphy1",
         "5GHz SSID": args.wiphy1_ssid,
         "Security": args.security,
         # "A side pdu": args.side_a_pdu,
