@@ -1089,8 +1089,6 @@ CLI Example:
         "DUT Hardware Version": args.dut_hw_version,
         "DUT Software Version": args.dut_sw_version,
         "DUT Serial Number": args.dut_serial_num,
-        "2.4GHz SSID": args.wiphy0_ssid,
-        "5GHz SSID": args.wiphy1_ssid,
     }
 
     report.set_table_title("Device Under Test Information")
@@ -1102,10 +1100,6 @@ CLI Example:
         "LANforge port": args.port,
         "LANforge resource": args.resource,
         "Upstream": args.upstream_port,
-        "2.4GHz Radio": "1." + args.resource + ".wiphy0",
-        "2.4GHz SSID": args.wiphy0_ssid,
-        "5GHz Radio": "1." + args.resource + ".wiphy1",
-        "5GHz SSID": args.wiphy1_ssid,
         "Security": args.security,
         # "A side pdu": args.side_a_pdu,
         # "B side pdu": args.side_b_pdu,
@@ -1117,6 +1111,59 @@ CLI Example:
     report.set_table_title("Test Configuration")
     report.build_table_title()
     report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
+
+    report.set_table_title("Radio Configuration")
+    report.build_table_title()
+
+    wifi_mode_dict = {
+        0: 'AUTO',  # 802.11g
+        1: '802.11a',  # 802.11a
+        2: '802.11b',  # 802.11b
+        3: '802.11g',  # 802.11g
+        4: '802.11abg',  # 802.11abg
+        5: '802.11abgn',  # 802.11abgn
+        6: '802.11bgn',  # 802.11bgn
+        7: '802.11bg',  # 802.11bg
+        8: '802.11abgnAC',  # 802.11abgn-AC
+        9: '802.11anAC',  # 802.11an-AC
+        10: '802.11an',  # 802.11an
+        11: '802.11bgnAC',  # 802.11bgn-AC
+        12: '802.11abgnAX',  # 802.11abgn-AX
+        #     a/b/g/n/AC/AX (dual-band AX) support
+        13: '802.11bgnAX',  # 802.11bgn-AX
+        14: '802.11anAX',  # 802.11an-AX
+        15: '802.11aAX'  # 802.11a-AX (6E disables /n and /ac)
+    }
+
+    for (
+            radio_,
+            ssid_,
+            ssid_password_, # do not print password
+            ssid_security_,
+            mode_,
+            wifi_enable_flags_list_,
+            reset_port_enable_,
+            reset_port_time_min_,
+            reset_port_time_max_) in zip(
+            radio_name_list,
+            ssid_list,
+            ssid_password_list,
+            ssid_security_list,
+            wifi_mode_list,
+            wifi_enable_flags_list,
+            reset_port_enable_list,
+            reset_port_time_min_list,
+            reset_port_time_max_list):
+
+        mode_value = wifi_mode_dict[int(mode_)]
+
+        radio_info = {
+            "SSID": ssid_,
+            "Security": ssid_security_,
+            "Wifi mode set": mode_value,
+            'Wifi Enable Flags': wifi_enable_flags_list_
+        }
+        report.test_setup_table(value=radio_, test_setup_data=radio_info)
 
     report.set_table_title("Layer 3 Overnight Maximum Association Traffic Results")
     report.build_table_title()
