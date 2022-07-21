@@ -530,10 +530,10 @@ class lf_report:
         plt.savefig(str(self.path_date_time) + '/pie-chart.png')
 
     def save_bar_chart(self, xlabel, ylabel, bar_chart_data, name):
-        plot = bar_chart_data.plot.bar(alpha=0.9, rot=0, width=0.9, linewidth=0.9)
+        plot = bar_chart_data.plot.bar(alpha=0.9, rot=0, width=0.9, linewidth=0.9, figsize=(10, 6))
         plot.legend(bbox_to_anchor=(1.0, 1.0))
-        plot.spines['right'].set_visible(False)
-        plot.spines['top'].set_visible(False)
+        # plot.spines['right'].set_visible(False)
+        # plot.spines['top'].set_visible(False)
         # plot.set_title(name)
         for p in plot.patches:
             height = p.get_height()
@@ -545,7 +545,7 @@ class lf_report:
                           annotation_clip=False,
                           ha='center', va='bottom')
         # plt.xlabel(xlabel)
-        plt.xticks(rotation=45, horizontalalignment='right', fontweight='light', fontsize='small', )
+        plt.xticks(rotation=0, horizontalalignment='right', fontweight='light', fontsize='small', )
         plt.ylabel(ylabel)
         plt.tight_layout()
         plt.savefig(str(self.path_date_time) + '/' + name + '.png')
