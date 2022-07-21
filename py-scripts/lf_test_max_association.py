@@ -9,15 +9,11 @@ This script will conduct a maximum client overnight test for the ct521a system:
 - create sta-to-eth Layer-3 CX for 9.6Kbps bidirectional overnight maximum-client wifi test.
 
 EXAMPLE:
-./lf_test_max_association.py --mgr <localhost> --upstream_port <1.1.eth1> --wiphy0_ssid <ssid0> --wiphy1_ssid <ssid1>
-    --security <security> --passwd <passwd>
-
-KPI.CSV:
-./lf_test_max_association.py --mgr <localhost> --upstream_port <1.1.eth1> --wiphy0_ssid <ssid0> --wiphy1_ssid <ssid1>
-    --passwd <passwd> --security <wpa2> --csv_outfile lf_test_max_association.csv --test_rig CT_01
-    --test_tag MAX_STA --dut_hw_version 1.0 --dut_model_num lf0350 --dut_serial_num 361c --dut_sw_version 5.4.5
-
-TODO: Add capability for MTK radios and ct523c systems.
+./lf_test_max_association.py --mgr <localhost>
+    --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+    --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+    --csv_outfile lf_test_max_association.csv --test_rig CT_01 --test_tag MAX_STA
+    --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
 
 '''
 
@@ -61,18 +57,12 @@ MODE_AUTO = 0
 
 class max_associate(Realm):
     def __init__(self, _host, _port,
-                 # wiphy0_ssid,
-                 # wiphy1_ssid,
-                 # passwd="NA",
-                 # security=OPEN,
-                 #
                  radio_name_list,
                  ssid_list,
                  ssid_password_list,
                  ssid_security_list,
                  wifi_mode_list,
                  enable_flags_list,
-                 #
                  resource=1,
                  upstream_port="eth1",
                  download_bps=9830,
@@ -98,18 +88,12 @@ class max_associate(Realm):
         self.host = _host
         self.port = _port
         self.debug = debug_
-        # self.security = security
-        # self.wiphy0_ssid = wiphy0_ssid
-        # self.wiphy1_ssid = wiphy1_ssid
-        # self.password = passwd
-        #
         self.radio_name_list = radio_name_list,
         self.ssid_list = ssid_list,
         self.ssid_password_list = ssid_password_list,
         self.ssid_security_list = ssid_security_list,
         self.wifi_mode_list = wifi_mode_list,
         self.enable_flags_list = enable_flags_list,
-        #
         self.resource = resource
         self.upstream_port = upstream_port
         self.download_bps = download_bps
@@ -338,6 +322,7 @@ class max_associate(Realm):
 
             # build stations for wiphy0 radio:
             if wiphy_radio == "1." + self.resource + ".wiphy0":
+                start_num_stations = 0
                 num_stations = self.wiphy_info.get_max_vifs(wiphy_radio)
                 track_num_stations += int(num_stations)
                 end_num_stations += int(num_stations)
@@ -750,18 +735,18 @@ This script will provide the following features for the ct521a system:
 - create sta-to-eth Layer-3 CX for 9.6Kbps bidirectional overnight maximum-client wifi test.
 ---------------------------
 CLI Example:
-./lf_test_max_association.py --mgr <localhost> --upstream_port <1.1.eth1> --wiphy0_ssid <ssid0>
-    --wiphy1_ssid <ssid1> --security <security> --passwd <passwd>
+
+./lf_test_max_association.py --mgr <localhost>
+    --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+    --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+    --csv_outfile lf_test_max_association.csv --test_rig CT_01 --test_tag MAX_STA
+    --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
 
 ---------------------------
 """)
     parser.add_argument("-m", "--mgr", type=str, help="address of the LANforge GUI machine (localhost is default)",
                         default='localhost')
     parser.add_argument("--port", type=str, help="LANforge Manager port", default='8080')
-    parser.add_argument("--wiphy0_ssid", type=str, help="DUT SSID that the wiphy0 stations will associate with.")
-    parser.add_argument("--wiphy1_ssid", type=str, help="DUT SSID that the wiphy1 stations will associate with.")
-    parser.add_argument("--security", type=str, help="DUT security: openLF, wpa, wpa2, wpa3")
-    parser.add_argument("--passwd", type=str, help="DUT PSK password.  Do not set for OPEN auth")
     parser.add_argument("--download_bps", type=int, help="Set the minimum bps value on test endpoint A. Default: 9.6Kbps", default=9830)
     parser.add_argument("--upload_bps", type=int, help="Set the minimum bps value on test endpoint B. Default: 9.6Kbps", default=9830)
     parser.add_argument('--test_duration', help='--test_duration sets the duration of the test, default is 8 hours', default="28800s")
@@ -834,7 +819,6 @@ CLI Example:
                         default=None,
                         help='Set logging level: debug | info | warning | error | critical')
 
-    # TODO: Try to start with: --radio 'radio==wiphy4,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2':
     parser.add_argument(
         '-r', '--radio',
         action='append',
@@ -1031,10 +1015,6 @@ CLI Example:
 
     # add: ssid, passwd, wifi settings, enabled flags
     max_association = max_associate(args.mgr, args.port,
-                                    # wiphy0_ssid=args.wiphy0_ssid,
-                                    # wiphy1_ssid=args.wiphy1_ssid,
-                                    # passwd=args.passwd,
-                                    # security=args.security,
                                     radio_name_list=radio_name_list,
                                     ssid_list=ssid_list,
                                     ssid_password_list=ssid_password_list,
@@ -1100,7 +1080,6 @@ CLI Example:
         "LANforge port": args.port,
         "LANforge resource": args.resource,
         "Upstream": args.upstream_port,
-        "Security": args.security,
         # "A side pdu": args.side_a_pdu,
         # "B side pdu": args.side_b_pdu,
         "Download bps": args.download_bps,
