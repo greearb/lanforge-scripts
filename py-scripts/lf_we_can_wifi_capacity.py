@@ -69,6 +69,8 @@ class LfInteropWifiCapacity((Realm)):
                  port=8080,
                  inp_download_rate=None,
                  inp_upload_rate=None,
+                 batch_size=[],
+                 duration=None,
                  resource=1,
                  use_ht160=False,
                  _debug_on=False,
@@ -89,6 +91,8 @@ class LfInteropWifiCapacity((Realm)):
         self.radio = radio
         self.inp_download_rate = inp_download_rate
         self.inp_upload_rate = inp_upload_rate
+        self.batch_size = batch_size
+        self.duration = duration
         self.debug = _debug_on
         self.station_profile = self.new_station_profile()
         self.station_profile.lfclient_url = self.lfclient_url
@@ -233,12 +237,13 @@ class LfInteropWifiCapacity((Realm)):
         report.end_content_div()
         twog_count = 0
         fiveg_count = 0
+        print(phone_radio)
         for i in phone_radio:
             if phone_radio == "2G":
                 twog_count += 1
             else:
                 fiveg_count += 1
-        twog_fiveg_count = "5G " + str(fiveg_count) + " ,2G " + str(twog_count)
+        twog_fiveg_count = "5G-" + str(fiveg_count) + " 2G-" + str(twog_count)
         device_data = {
             "Total no.of stations(2G & 5G)": [twog_fiveg_count],
             "Traffic rate ": ["Upload: " + self.inp_upload_rate + ", Download: " + self.inp_download_rate],
@@ -300,7 +305,9 @@ class LfInteropWifiCapacity((Realm)):
                         "UDP traffic versus the real traffic we got for each phone in Mbps.")
         report.build_text()
 
-        # TODO Change from BAR chart to Line chart
+        report.build_chart_title("Signal Strength reported by the clients:")
+        report.set_text("<h5>Chart shows the individual signal level for each connected device, measured from device to AP.")
+        report.build_text()
         graph = lf_graph.lf_line_graph(_data_set=[[int(i) for i in signal]],
                                        _xaxis_name="Phone Names ",
                                        _yaxis_name="Signal(dbm)",
@@ -350,6 +357,21 @@ class LfInteropWifiCapacity((Realm)):
         #          _legend_fontsize=None,
         #          _dpi=96,
         #          _enable_csv=False)
+        test_info_df = pd.DataFrame({
+            "Data": ["DUT Model", "2.4 Ghz SSID", "2.4 Ghz BSSID", "5 Ghz SSID", "5 Ghz BSSID", "6 Ghz SSID",
+                     "6 Ghz BSSID", "Intended Rate", "No of Stations", "No of loops", "Traffic duration",
+                     "Test duration"],
+            "Value": ["Netgear WAC510", "Netgear_2G", "78:d2:94:4f:20:c5", "Netgear_5G", "78:d2:94:4f:20:f3", "NA",
+                      "NA", str(" ".split(self.inp_download_rate)[0] + " ".split(self.inp_upload_rate)[0]) + "Mbps",
+                      len(phone_name), len(self.batch_size), str((int(self.duration) / 1000)) + " Sec", "2 Min"],
+        })
+
+        report.start_content_div()
+        report.set_table_title("<h3>Test Information:")
+        report.build_table_title()
+        report.set_table_dataframe(test_info_df)
+        report.build_table()
+        report.end_content_div()
 
         report.start_content_div()
         report.set_table_title("<h3>Device Details")
@@ -361,6 +383,7 @@ class LfInteropWifiCapacity((Realm)):
                         "such as phone name, MAC address, Username, Phone Radio, Rx link rate, Tx link rate and "
                         "Resource id.")
         report.build_text()
+        report.end_content_div()
 
         report.build_footer()
         html_file = report.write_html()
@@ -467,6 +490,7 @@ def main():
     WFC_Test.setup()
     WFC_Test.run()
     wifi_capacity = LfInteropWifiCapacity(host=args.mgr, port=args.port, protocol=args.protocol,
+                                          batch_size=args.batch_size, duration=args.duration,
                                           inp_download_rate=args.download_rate, inp_upload_rate=args.upload_rate)
     wifi_capacity.get_data()
     # WFC_Test.check_influx_kpi(args)
