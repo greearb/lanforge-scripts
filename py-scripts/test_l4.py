@@ -95,6 +95,12 @@ import argparse
 import datetime
 import logging
 
+import requests
+from pandas import json_normalize
+import json
+import traceback
+
+
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
@@ -530,8 +536,12 @@ Generic command example:
                         default=600)
     parser.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes',
                         default=1)
-    parser.add_argument('--url', help='--url specifies upload/download, IP of eth port connected to Access Point , /dev/null to discard the data',
-                        default="dl http://192.168.50.217 /dev/null")
+    parser.add_argument('--url', help='''
+                        --url specifies upload/download, IP of upstream eth port connected to Access Point
+                        /dev/null to discard the data example: 
+                        Example 'dl http://upstream_port_ip /dev/null'  if the upsteam_port_ip is the string
+                        'upstream_port_ip' then the upstream port ip will be read at run time ''',
+                        default=None)
     parser.add_argument('--test_duration', help='duration of test', default="2m")
     parser.add_argument('--target_per_ten',
                         help='--target_per_ten target number of request per ten minutes. test will check for 90 percent this value',
@@ -554,6 +564,9 @@ Generic command example:
     parser.add_argument('--local_lf_report_dir',
                         help='--local_lf_report_dir override the report path, primary use when running test in test suite',
                         default="")
+    parser.add_argument("--lf_user", type=str, help="--lf_user lanforge user name ",)
+    parser.add_argument("--lf_passwd", type=str, help="--lf_passwd lanforge password ")
+
 
 
     # kpi_csv arguments
@@ -589,6 +602,8 @@ Generic command example:
         '--csv_outfile',
         help="--csv_outfile <Output file for csv data>",
         default="")
+
+
 
     args = parser.parse_args()
 
@@ -646,6 +661,34 @@ Generic command example:
             args.csv_outfile, current_time)
         csv_outfile = report.file_add_path(csv_outfile)
         logger.info("csv output file : {}".format(csv_outfile))
+
+    # TODO either use Realm or create a port to IP method in realm
+    if 'upstream_port_ip' in args.url:
+        # get ip upstream port
+        rv = LFUtils.name_to_eid(args.upstream_port)
+        shelf = rv[0]
+        resource = rv[1]
+        port_name = rv[2]
+        request_command = 'http://{lfmgr}:{lfport}/port/1/{resource}/{port_name}'.format(
+        lfmgr=args.mgr, lfport=args.mgr_port, resource=resource, port_name=port_name)
+        logger.info("port request command: {request_command}".format(request_command=request_command))
+
+        request = requests.get(request_command, auth=(args.lf_user, args.lf_passwd))
+        logger.info("port request status_code {status}".format(status=request.status_code))
+
+        lanforge_json = request.json()
+        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)        
+        try: 
+            key = 'interface'
+            df = json_normalize(lanforge_json[key])
+            upstream_port_ip = df['ip'].iloc[0]
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+
+        args.url = args.url.replace('upstream_port_ip',upstream_port_ip)
+        logger.info("url: {url}".format(url=args.url))
+
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
