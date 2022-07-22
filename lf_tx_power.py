@@ -858,6 +858,8 @@ def main():
 
     row = 1
     col = 0
+    worksheet.write(row, col, 'Country\nCode', dblue_bold)
+    col += 1
     worksheet.write(row, col, 'Regulatory\nDomain', dblue_bold)
     col += 1
     worksheet.set_column(col, col, 16)  # Set width
@@ -1108,7 +1110,8 @@ def main():
 
     # 5ghz speeds 
 
-    myrd = ""
+    myrd = "NA"
+    mycc = ""
     # The script supports both the 9800 series controller and the 3504 series controller ,  the controllers have different interfaces
     if args.series == "9800":
 
@@ -1136,7 +1139,22 @@ def main():
             m = re.search(pat, line)
             if (m is not None):
                 myrd = m.group(1)
-                logger.info("Regulatory Domain from show AP Summary : {domain}".format(domain=myrd))
+                logger.info("Regulatory Domain in AP Summary : {domain}".format(domain=myrd))
+    #Try for new formatting  
+    searchap = False              
+    if myrd == "":
+        for line in pss.splitlines():
+            if (line.startswith("---------")):
+                searchap = True
+                continue
+            if (searchap):
+                pat = "%s\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+(\\S+)\s+(\\S+)" % (args.ap)
+                m = re.search(pat, line)
+                if (m is not None):
+                    mycc = m.group(1)
+                    myrd = m.group(2)
+                    logger.info("Regulatory Domain in show AP Summary : {domain} Country Code {cc}".format(domain=myrd, cc=mycc))
+
 
     if myrd == "":
         logger.error("Regulatory domain is blank: --testbed_location <show ap summary Location> : location entered {location}".format(location=args.testbed_location))
@@ -2610,8 +2628,8 @@ def main():
                     time_stamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]
 
                     # This line writes the data to the CSV
-                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
-                        myrd, pathloss, antenna_gain, ch, n, bw, tx, beacon_sig, sig,
+                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
+                        mycc, myrd, pathloss, antenna_gain, ch, n, bw, tx, beacon_sig, sig,
                         antstr, _ap, _bw, _ch, _mode, _nss, _noise, _rxrate,
                         cc_mac, cc_ch, cc_power, cc_dbm,
                         calc_dbm, diff_dbm, calc_ant1, calc_ant2, calc_ant3, calc_ant4,
@@ -2694,8 +2712,8 @@ def main():
                     kpi_csv.kpi_csv_write_dict(results_dict)
 
                     # Start xlsx reporting - report as reported from ap summary
-                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
-                        myrd, pathloss, antenna_gain, _ch, _nss, _bw, cc_power, cc_dbm, allowed_per_path,
+                    ln = "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s" % (
+                        mycc, myrd, pathloss, antenna_gain, _ch, _nss, _bw, cc_power, cc_dbm, allowed_per_path,
                         antstr,
                         calc_ant1, calc_ant2, calc_ant3, calc_ant4,
                         diff_a1, diff_a2, diff_a3, diff_a4, pfs, time_stamp, run_duration, total_run_duration_str
@@ -2704,6 +2722,8 @@ def main():
                     csvs.write("\t")
 
                     col = 0
+                    worksheet.write(row, col, mycc, center_blue)
+                    col += 1
                     worksheet.write(row, col, myrd, center_blue)
                     col += 1
                     worksheet.write(row, col, args.series, center_blue)
