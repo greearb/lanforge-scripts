@@ -41,6 +41,11 @@ import time
 import datetime
 import logging
 
+import requests
+from pandas import json_normalize
+import json
+import traceback
+
 logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
@@ -181,7 +186,7 @@ def main():
     optional.append({'name': '--monitor_interval',
                      'help': 'how frequently do you want your monitor function to take measurements; 250ms, 35s, 2h',
                      'default': '2s'})
-
+    # definition of create_basic_argparse  in lanforge-scripts/py-json/LANforge/lfcli_base.py around line 700
     parser = Realm.create_basic_argparse(
         prog='test_generic.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -225,7 +230,7 @@ python3 ./test_generic.py
     parser.add_argument('--type', help='type of command to run: generic, lfping, iperf3-client, iperf3-server, lfcurl',
                         default="lfping")
     parser.add_argument('--cmd', help='specifies command to be run by generic type endp', default='')
-    parser.add_argument('--dest', help='destination IP for command', default="10.40.0.1")
+    parser.add_argument('--dest', help='destination IP for command', default=None)
     parser.add_argument('--test_duration', help='duration of the test eg: 30s, 2m, 4h', default="2m")
     parser.add_argument('--interval', help='interval to use when running lfping (1s, 1m)', default=1)
     parser.add_argument('--speedtest_min_up', help='sets the minimum upload threshold for the speedtest type',
@@ -239,6 +244,9 @@ python3 ./test_generic.py
                         default=None)
     parser.add_argument('--loop_count', help='determines the number of loops to use in lf_curl', default=None)
 
+    parser.add_argument("--lf_user", type=str, help="user: lanforge")
+    parser.add_argument("--lf_passwd", type=str, help="passwd: lanforge")
+
     args = parser.parse_args()
 
     logger_config = lf_logger_config.lf_logger_config()
@@ -246,7 +254,7 @@ python3 ./test_generic.py
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    num_sta = 2
+    # num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
@@ -256,6 +264,31 @@ python3 ./test_generic.py
         # if file path with output file extension is not given...
         # check if home/lanforge/report-data exists. if not, save
         # in new folder based in current file's directory
+
+    # TODO either use Realm or create a port to IP method in realm
+    if args.dest is None:
+        # get ip upstream port
+        rv = LFUtils.name_to_eid(args.upstream_port)
+        shelf = rv[0]
+        resource = rv[1]
+        port_name = rv[2]
+        request_command = 'http://{lfmgr}:{lfport}/port/1/{resource}/{port_name}'.format(
+        lfmgr=args.mgr, lfport=args.mgr_port, resource=resource, port_name=port_name)
+        logger.info("port request command: {request_command}".format(request_command=request_command))
+
+        request = requests.get(request_command, auth=(args.lf_user, args.lf_passwd))
+        logger.info("port request status_code {status}".format(status=request.status_code))
+
+        lanforge_json = request.json()
+        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)        
+        try: 
+            key = 'interface'
+            df = json_normalize(lanforge_json[key])
+            args.dest = df['ip'].iloc[0]
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+
     systeminfopath = None
     if args.report_file is None:
         new_file_path = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-h-%M-m-%S-s")).replace(':',
