@@ -2138,9 +2138,9 @@ Setting wifi_settings per radio
     ip_var_test.start(False)
 
     logger.info(
-        "Pausing {} seconds for manual inspection before conclusion of test",
+        "Pausing {wait} seconds for manual inspection before conclusion of test",
         " and possible stopping of traffic and station cleanup".format(
-            args.wait))
+            wait=args.wait))
     time.sleep(int(args.wait))
 
 
