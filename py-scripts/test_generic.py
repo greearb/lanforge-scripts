@@ -254,7 +254,11 @@ python3 ./test_generic.py
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    # num_sta = 2
+    if args.type != "speedtest" and args.dest is None:
+        logger.error("Destination is not set. Use --dest [ip_address] to specify destination")
+        raise ValueError("Error received from GUI, please ensure generic tab is enabled")
+
+    num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
