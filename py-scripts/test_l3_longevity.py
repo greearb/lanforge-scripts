@@ -68,6 +68,7 @@ import time
 from pprint import pformat
 import logging
 import itertools
+import pandas as pd
 
 import pexpect
 import serial
@@ -292,7 +293,7 @@ class L3VariableTime(Realm):
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
 
-        # TODO:  cmd-line arg to enable/disable these stats.
+        # the --ap_read will use these headers 
         self.ap_stats_col_titles = [
             "Station Address",
             "Dl-PHY-Mbps",
@@ -982,10 +983,13 @@ class L3VariableTime(Realm):
             self.csv_add_port_column_headers(
                 eid_name, self.csv_generate_port_column_headers())
 
-        port_eids = self.gather_port_eids()
-        for eid_name in port_eids:
-            self.csv_add_ul_port_column_headers(
-                eid_name, self.csv_generate_ul_port_column_headers())
+        # ul -ports the csv will only be filled out if the
+        # ap is read
+        if self.ap_read:
+            port_eids = self.gather_port_eids()
+            for eid_name in port_eids:
+                self.csv_add_ul_port_column_headers(
+                    eid_name, self.csv_generate_ul_port_column_headers())
 
         # looping though both A and B together,  upload direction will select A, download direction will select B
         # For each rate
@@ -1835,6 +1839,25 @@ class L3VariableTime(Realm):
                                         total_dl_pkts_ll,
                                         ap_row)
 
+                    # Create empty dataframe
+                    all_dl_ports_df = pd.DataFrame()
+                    port_eids = self.gather_port_eids()
+                    for eid_name in port_eids:
+                        logger.debug("port files: {port_file}".format(port_file=self.port_csv_files[eid_name]))
+                        name = self.port_csv_files[eid_name].name
+                        logger.debug("name : {name}".format(name=name))
+                        df_dl_tmp = pd.read_csv(name)
+                        all_dl_ports_df = pd.concat([all_dl_ports_df, df_dl_tmp], axis=0)
+
+                    all_dl_ports_file_name = self.outfile[:-4]
+                    all_dl_port_file_name = all_dl_ports_file_name +"-dl-all-eids.csv"
+                    all_dl_ports_df.to_csv(all_dl_port_file_name)   
+
+                    # if there are multiple loops then delete the df   
+                    del all_dl_ports_df    
+                    
+                    
+                    
                     # At end of test step, record KPI into kpi.csv
                     self.record_kpi_csv(
                         len(temp_stations_list),
@@ -1947,14 +1970,15 @@ class L3VariableTime(Realm):
                      total_dl_rate_ll,
                      total_dl_pkts_ll]
 
-        # Add in info queried from AP.
         # print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
         # print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
-        if len(ap_row) == len(self.ap_stats_col_titles):
-            # print("ap_row {}".format(ap_row))
-            for col in ap_row:
-                # print("col {}".format(col))
-                row.append(col)
+        # Add in info queried from AP.
+        if self.ap_read:
+            if len(ap_row) == len(self.ap_stats_col_titles):
+                # print("ap_row {}".format(ap_row))
+                for col in ap_row:
+                    # print("col {}".format(col))
+                    row.append(col)
 
         writer = self.port_csv_writers[eid_name]
         writer.writerow(row)
@@ -2000,17 +2024,17 @@ class L3VariableTime(Realm):
                      total_dl_rate_ll,
                      total_dl_pkts_ll]
 
-        # Add in info queried from AP.
         # print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
         # print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
-
-        print("ap_ul_row len {} ap_stats_ul_col_titles len {} ap_ul_row {}".format(
-            len(ap_ul_row), len(self.ap_stats_ul_col_titles), ap_ul_row))
-        if len(ap_ul_row) == len(self.ap_stats_ul_col_titles):
-            print("ap_ul_row {}".format(ap_ul_row))
-            for col in ap_ul_row:
-                print("col {}".format(col))
-                row.append(col)
+        # Add in info queried from AP.
+        if self.ap_read:
+            logger.debug("ap_ul_row len {} ap_stats_ul_col_titles len {} ap_ul_row {}".format(
+                len(ap_ul_row), len(self.ap_stats_ul_col_titles), ap_ul_row))
+            if len(ap_ul_row) == len(self.ap_stats_ul_col_titles):
+                logger.debug("ap_ul_row {}".format(ap_ul_row))
+                for col in ap_ul_row:
+                    logger.debug("col {}".format(col))
+                    row.append(col)
 
         writer = self.ul_port_csv_writers[eid_name]
         writer.writerow(row)
@@ -2196,8 +2220,9 @@ class L3VariableTime(Realm):
             'Dl-Rx-Rate-ll',
             'Dl-Rx-Pkts-ll']
         # Add in columns we are going to query from the AP
-        for col in self.ap_stats_col_titles:
-            csv_rx_headers.append(col)
+        if self.ap_read:
+            for col in self.ap_stats_col_titles:
+                csv_rx_headers.append(col)
 
         return csv_rx_headers
 
@@ -2232,8 +2257,9 @@ class L3VariableTime(Realm):
             'Dl-Rx-Rate-ll',
             'Dl-Rx-Pkts-ll']
         # Add in columns we are going to query from the AP
-        for col in self.ap_stats_ul_col_titles:
-            csv_ul_rx_headers.append(col)
+        if self.ap_read:
+            for col in self.ap_stats_ul_col_titles:
+                csv_ul_rx_headers.append(col)
 
         return csv_ul_rx_headers
 
