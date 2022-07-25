@@ -363,7 +363,8 @@
                 "enabled":"TRUE",
                 "command":"create_bridge.py",
                 "args":"",
-                "args_list":["--mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT --target_device sta0000 --debug"
+                "args_list":["--mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT --target_device sta0000 --debug",
+                    "--bridge_name","br0"
                 ]
             },
             "create_l3_stations":{
