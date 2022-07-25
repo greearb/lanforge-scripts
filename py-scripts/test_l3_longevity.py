@@ -2467,17 +2467,16 @@ BK, BE, VI, VO:  Optional wifi related Tos Settings.  Or, use your preferred num
 # Examples
 # #######################################
 Example #1  running traffic with two radios
-1. Test duration 4 minutes
-2. Traffic IPv4 TCP
-3. Upstream-port eth1
-4. Shelf 1 Resource 1 Radio wiphy0 has 32 stations, ssid = candelaTech-wpa2-x2048-4-1, ssid password = candelaTech-wpa2-x2048-4-1
-5. Shelf 1 Resource 2 Radio wiphy1 has 64 stations, ssid = candelaTech-wpa2-x2048-5-3, ssid password = candelaTech-wpa2-x2048-5-3
-6. Create connections with TOS of BK and VI
+1. Test duration 30 minutes
+2. Traffic IPv4 TCP, UDP
+3. Upstream-port eth2
+4. Radio #0 wiphy0 has 1 station, ssid = ssid_2g, ssid password = ssid_pw_2g  security = wpa2
+5. Radio #1 wiphy1 has 2 stations, ssid = ssid_5g, ssid password = BLANK security = open
 
 Command:
-./test_l3_longevity.py --test_duration 4m --endp_type \"lf_tcp lf_udp mc_udp\" --tos \"BK VI\" --upstream_port 1.1.eth1
---radio "radio==1.1.wiphy0 stations==32 ssid==candelaTech-wpa2-x2048-4-1 ssid_pw==candelaTech-wpa2-x2048-4-1 security==wpa2"
---radio "radio==1.2.wiphy1 stations==64 ssid==candelaTech-wpa2-x2048-5-3 ssid_pw==candelaTech-wpa2-x2048-5-3 security==wpa2"
+python3 ./test_l3_longevity.py --test_duration 30s --endp_type "lf_tcp lf_udp" --tos "BK VI" --upstream_port eth2 
+--radio "radio==wiphy0 stations==1 ssid==ssid_2g ssid_pw==ssid_pw_2g security==wpa2" 
+--radio "radio==wiphy1 stations==2 ssid==ssid_5g ssid_pw==BLANK security==open"
 
 Setting wifi_settings per radio
 ./test_l3_longevity.py  --lfmgr 192.168.100.116 --local_lf_report_dir /home/lanforge/html-reports/ --test_duration 15s
