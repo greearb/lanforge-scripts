@@ -4,6 +4,14 @@ import csv
 from functools import reduce
 import operator
 import argparse
+import os
+import sys
+
+# Exit Codes
+# 0: Success
+# 1: Python Error
+# 2: CSV file not found
+# 3: Radio disconnected before -80 expected RSSI; PNG will still be generated
 
 parser = argparse.ArgumentParser(description='Input and output files.')
 parser.add_argument('--csv', metavar='i', type=str, help='../output.csv')
@@ -20,6 +28,8 @@ channel = args.channel
 antenna = args.antenna
 BASE_PATH_LOSS=36
 TX_POWER=20
+CHECK_RADIOS=[0,1,2,3,4,5,6]
+EXIT_THRESHOLD=-85.
 
 # helper functions
 def filt(lst):
@@ -35,8 +45,20 @@ def dev(lst):
 def expected_signal(attenuation):
     return TX_POWER - (BASE_PATH_LOSS + attenuation)
 
+def check_data(signal, signal_exp):
+    if channel==6:
+        CHECK_RADIOS.remove(1)
+    if channel==36:
+        CHECK_RADIOS.remove(0)
+    threshold_ind = np.where(signal_exp==EXIT_THRESHOLD)[0][0]
+    isnans = np.concatenate([np.isnan(e) for e in signal[0:threshold_ind, CHECK_RADIOS]])
+    if (any(isnans)):
+        sys.exit(3)
+
 # read data from file
 data=[]
+if not os.path.exists(CSV_FILE):
+    sys.exit(2)
 with open(CSV_FILE, 'r') as filename:
     reader=csv.reader(filename)
     for row in reader:
@@ -135,3 +157,6 @@ ax.set_xticks(range(20, 100, 5))
 plt.grid(color=COLORS['dark_gray'], linestyle='-', linewidth=1)
 plt.legend()
 plt.savefig(F'{PNG_OUTPUT_DIR}/{channel}_{antenna}_{bandwidth}_signal_deviation_atten.png')
+
+check_data(signal, signal_exp)
+sys.exit(0)

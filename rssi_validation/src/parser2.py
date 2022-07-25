@@ -5,6 +5,7 @@ import glob
 import csv
 import argparse
 import re
+import sys
 
 parser = argparse.ArgumentParser(description='Test specification.')
 parser.add_argument('--test_dir', metavar='i', type=str, help='../json')
@@ -107,3 +108,4 @@ def build_table(test_dir):
 write_to_csv(build_table(TEST_DIR), OUTPUT_CSV)
 replacetext(OUTPUT_CSV, " dBm","")
 replacetext(OUTPUT_CSV, "sta000","")
+sys.exit(0)
