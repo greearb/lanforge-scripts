@@ -157,8 +157,10 @@ class L3VariableTime(Realm):
                  _exit_on_error=False,
                  _exit_on_fail=False,
                  _proxy_str=None,
-                 _capture_signal_list=None):
-
+                 _capture_signal_list=None,
+                 no_cleanup=False,
+                 use_existing_station_lists=False,
+                 existing_station_lists=None):
         self.eth_endps = []
         self.total_stas = 0
         if side_a_min_rate is None:
@@ -246,6 +248,11 @@ class L3VariableTime(Realm):
         self.rates_are_totals = rates_are_totals
         self.cx_count = 0
         self.station_count = 0
+
+        self.no_cleanup = no_cleanup
+        self.use_existing_station_lists = use_existing_station_lists
+        self.existing_station_lists = existing_station_lists
+
 
         self.attenuators = attenuators
         self.atten_vals = atten_vals
@@ -425,7 +432,7 @@ class L3VariableTime(Realm):
         return self.csv_results_file.name
 
     # Find avg latency, jitter for connections using specified port.
-    def get_endp_stats_for_port(self, eid_name, endps):
+    def get_endp_stats_for_port(self, port_eid, endps):
         lat = 0
         jit = 0
         total_dl_rate = 0
@@ -437,11 +444,11 @@ class L3VariableTime(Realm):
         count = 0
         sta_name = 'no_station'
 
-        # logger.debug("endp-stats-for-port, port-eid: {}".format(eid_name))
-        eid = self.name_to_eid(eid_name)
+        # logger.debug("endp-stats-for-port, port-eid: {}".format(port_eid))
+        eid = self.name_to_eid(port_eid)
         logger.info(
-            "eid_name: {eid_name} eid: {eid}".format(
-                eid_name=eid_name,
+            "port_eid: {port_eid} eid: {eid}".format(
+                port_eid=port_eid,
                 eid=eid))
 
         # Convert all eid elements to strings
@@ -454,8 +461,8 @@ class L3VariableTime(Realm):
             eid_endp = endp["eid"].split(".")
             logger.info(
                 "Comparing eid:{eid} to endp-id {eid_endp}".format(eid=eid, eid_endp=eid_endp))
-            # Look through all the endpoints (endps), to find the port the eid_name is using.
-            # The eid_name that has the same Shelf, Resource, and Port as the eid_endp (looking at all the endps)
+            # Look through all the endpoints (endps), to find the port the port_eid is using.
+            # The port_eid that has the same Shelf, Resource, and Port as the eid_endp (looking at all the endps)
             # Then read the eid_endp to get the delay, jitter and rx rate
             # Note: the endp eid is shelf.resource.port.endp-id, the eid can be treated somewhat as
             # child class of port-eid , and look up the port the eid is using.
@@ -954,10 +961,20 @@ class L3VariableTime(Realm):
                 print("Bringing up station %s" % sta)
                 self.admin_up(sta)
 
+        # Admin up existing stations
+        if self.use_existing_station_lists:
+            for existing_station in self.existing_station_lists:
+                logger.info("Bringing up existing stations %s" % existing_station)
+                self.admin_up(existing_station)
+
         temp_stations_list = []
         # temp_stations_list.append(self.side_b)
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
+
+        if self.use_existing_station_lists:
+            # for existing_station in self.existing_station_lists:
+            temp_stations_list.extend(self.existing_station_lists.copy())
 
         temp_stations_list_with_side_b = temp_stations_list.copy()
         # wait for b side to get IP
@@ -979,17 +996,22 @@ class L3VariableTime(Realm):
 
         # dl - ports
         port_eids = self.gather_port_eids()
-        for eid_name in port_eids:
+        if self.use_existing_station_lists:
+            port_eids.extend(self.existing_station_lists.copy())        
+        for port_eid in port_eids:
             self.csv_add_port_column_headers(
-                eid_name, self.csv_generate_port_column_headers())
+                port_eid, self.csv_generate_port_column_headers())
 
         # ul -ports the csv will only be filled out if the
         # ap is read
         if self.ap_read:
             port_eids = self.gather_port_eids()
-            for eid_name in port_eids:
+            if self.use_existing_station_lists:
+                port_eids.extend(self.existing_station_lists.copy())
+
+            for port_eid in port_eids:
                 self.csv_add_ul_port_column_headers(
-                    eid_name, self.csv_generate_ul_port_column_headers())
+                    port_eid, self.csv_generate_ul_port_column_headers())
 
         # looping though both A and B together,  upload direction will select A, download direction will select B
         # For each rate
@@ -1144,9 +1166,14 @@ class L3VariableTime(Realm):
                             # Note: the endp eid is the
                             # shelf.resource.port.endp-id
                             port_eids = self.gather_port_eids()
+
+                            # Add in the existing ports
+                            if self.use_existing_station_lists:
+                                port_eids.extend(self.existing_station_lists.copy())
+
                             # read find the bs_data
-                            for eid_name in port_eids:
-                                eid = self.name_to_eid(eid_name)
+                            for port_eid in port_eids:
+                                eid = self.name_to_eid(port_eid)
                                 url = "/port/%s/%s/%s" % (eid[0],
                                                           eid[1], eid[2])
                                 # read LANforge to get the mac
@@ -1243,8 +1270,8 @@ class L3VariableTime(Realm):
                                         ap_row.append(str(channel_utilization))
 
                             # work though the ul rx_data 6G
-                            for eid_name in port_eids:
-                                eid = self.name_to_eid(eid_name)
+                            for port_eid in port_eids:
+                                eid = self.name_to_eid(port_eid)
                                 url = "/port/%s/%s/%s" % (eid[0],
                                                           eid[1], eid[2])
                                 # read LANforge to get the mac
@@ -1311,7 +1338,7 @@ class L3VariableTime(Realm):
                                             ul_pdu_str,
                                             dl_pdu_str,
                                             atten_val,
-                                            eid_name,
+                                            port_eid,
                                             port_data,
                                             latency,
                                             jitter,
@@ -1353,8 +1380,11 @@ class L3VariableTime(Realm):
                             # Note: the endp eid is the shelf.resource.port.endp-id
                             # reading the data for bs_data
                             port_eids = self.gather_port_eids()
-                            for eid_name in port_eids:
-                                eid = self.name_to_eid(eid_name)
+                            if self.use_existing_station_lists:
+                                port_eids.extend(self.existing_station_lists.copy())
+
+                            for port_eid in port_eids:
+                                eid = self.name_to_eid(port_eid)
                                 url = "/port/%s/%s/%s" % (eid[0],
                                                           eid[1], eid[2])
                                 # read LANforge to get the mac
@@ -1470,7 +1500,7 @@ class L3VariableTime(Realm):
                                             ul_pdu_str,
                                             dl_pdu_str,
                                             atten_val,
-                                            eid_name,
+                                            port_eid,
                                             port_data,
                                             latency,
                                             jitter,
@@ -1483,8 +1513,8 @@ class L3VariableTime(Realm):
                                             ap_row)
 
                             # work though the ul rx_data 5G
-                            for eid_name in port_eids:
-                                eid = self.name_to_eid(eid_name)
+                            for port_eid in port_eids:
+                                eid = self.name_to_eid(port_eid)
                                 url = "/port/%s/%s/%s" % (eid[0],
                                                           eid[1], eid[2])
                                 # read LANforge to get the mac
@@ -1550,7 +1580,7 @@ class L3VariableTime(Realm):
                                             ul_pdu_str,
                                             dl_pdu_str,
                                             atten_val,
-                                            eid_name,
+                                            port_eid,
                                             port_data,
                                             latency,
                                             jitter,
@@ -1592,8 +1622,11 @@ class L3VariableTime(Realm):
                             # Note: the endp eid is the
                             # shelf.resource.port.endp-id
                             port_eids = self.gather_port_eids()
-                            for eid_name in port_eids:
-                                eid = self.name_to_eid(eid_name)
+                            if self.use_existing_station_lists:
+                                port_eids.extend(self.existing_station_lists.copy())
+
+                            for port_eid in port_eids:
+                                eid = self.name_to_eid(port_eid)
                                 url = "/port/%s/%s/%s" % (eid[0],
                                                           eid[1], eid[2])
                                 # read LANforge to get the mac
@@ -1709,7 +1742,7 @@ class L3VariableTime(Realm):
                                             ul_pdu_str,
                                             dl_pdu_str,
                                             atten_val,
-                                            eid_name,
+                                            port_eid,
                                             port_data,
                                             latency,
                                             jitter,
@@ -1721,8 +1754,8 @@ class L3VariableTime(Realm):
                                             total_dl_pkts_ll,
                                             ap_row)
                             # work though the ul rx_data 5G
-                            for eid_name in port_eids:
-                                eid = self.name_to_eid(eid_name)
+                            for port_eid in port_eids:
+                                eid = self.name_to_eid(port_eid)
                                 url = "/port/%s/%s/%s" % (eid[0],
                                                           eid[1], eid[2])
                                 # read LANforge to get the mac
@@ -1788,7 +1821,7 @@ class L3VariableTime(Realm):
                                             ul_pdu_str,
                                             dl_pdu_str,
                                             atten_val,
-                                            eid_name,
+                                            port_eid,
                                             port_data,
                                             latency,
                                             jitter,
@@ -1805,8 +1838,11 @@ class L3VariableTime(Realm):
                             # Note: the endp eid is the
                             # shelf.resource.port.endp-id
                             port_eids = self.gather_port_eids()
-                            for eid_name in port_eids:
-                                eid = self.name_to_eid(eid_name)
+                            if self.use_existing_station_lists:
+                                port_eids.extend(self.existing_station_lists.copy())
+
+                            for port_eid in port_eids:
+                                eid = self.name_to_eid(port_eid)
                                 url = "/port/%s/%s/%s" % (eid[0],
                                                           eid[1], eid[2])
                                 response = self.json_get(url)
@@ -1827,7 +1863,7 @@ class L3VariableTime(Realm):
                                         ul_pdu_str,
                                         dl_pdu_str,
                                         atten_val,
-                                        eid_name,
+                                        port_eid,
                                         port_data,
                                         latency,
                                         jitter,
@@ -1840,12 +1876,15 @@ class L3VariableTime(Realm):
                                         ap_row)
                                         
                     # Consolidate all the dl ports into one file
-                    # Create empty dataframe
+                    # Create empty da                    
                     all_dl_ports_df = pd.DataFrame()
                     port_eids = self.gather_port_eids()
-                    for eid_name in port_eids:
-                        logger.debug("port files: {port_file}".format(port_file=self.port_csv_files[eid_name]))
-                        name = self.port_csv_files[eid_name].name
+                    if self.use_existing_station_lists:
+                        port_eids.extend(self.existing_station_lists.copy())
+
+                    for port_eid in port_eids:
+                        logger.debug("port files: {port_file}".format(port_file=self.port_csv_files[port_eid]))
+                        name = self.port_csv_files[port_eid].name
                         logger.debug("name : {name}".format(name=name))
                         df_dl_tmp = pd.read_csv(name)
                         all_dl_ports_df = pd.concat([all_dl_ports_df, df_dl_tmp], axis=0)
@@ -1863,9 +1902,12 @@ class L3VariableTime(Realm):
                         # Create empty dataframe
                         all_ul_ports_df = pd.DataFrame()
                         port_eids = self.gather_port_eids()
-                        for eid_name in port_eids:
-                            logger.debug("ul port files: {port_file}".format(port_file=self.ul_port_csv_files[eid_name]))
-                            name = self.ul_port_csv_files[eid_name].name
+                        if self.use_existing_station_lists:
+                            port_eids.extend(self.existing_station_lists.copy())
+
+                        for port_eid in port_eids:
+                            logger.debug("ul port files: {port_file}".format(port_file=self.ul_port_csv_files[port_eid]))
+                            name = self.ul_port_csv_files[port_eid].name
                             logger.debug("name : {name}".format(name=name))
                             df_ul_tmp = pd.read_csv(name)
                             all_ul_ports_df = pd.concat([all_ul_ports_df, df_ul_tmp], axis=0)
@@ -1943,9 +1985,10 @@ class L3VariableTime(Realm):
                         self.ap_ofdma_24g += self.ap_custom_cmd(
                             'wl -i wl0 muinfo -v')
 
+                    # TODO there is a specific stop method
                     # Stop connections.
-                    self.cx_profile.stop_cx()
-                    self.multicast_profile.stop_mc()
+                    # self.cx_profile.stop_cx()
+                    # self.multicast_profile.stop_mc()
 
                     if passes == expected_passes:
                         self._pass(
@@ -1960,7 +2003,7 @@ class L3VariableTime(Realm):
             ul_pdu,
             dl_pdu,
             atten,
-            eid_name,
+            port_eid,
             port_data,
             latency,
             jitter,
@@ -1973,7 +2016,7 @@ class L3VariableTime(Realm):
             ap_row):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
-               atten, eid_name
+               atten, port_eid
                ]
 
         row = row + [port_data['bps rx'],
@@ -2002,9 +2045,9 @@ class L3VariableTime(Realm):
                     # print("col {}".format(col))
                     row.append(col)
 
-        writer = self.port_csv_writers[eid_name]
+        writer = self.port_csv_writers[port_eid]
         writer.writerow(row)
-        self.port_csv_files[eid_name].flush()
+        self.port_csv_files[port_eid].flush()
 
     def write_ul_port_csv(
             self,
@@ -2014,7 +2057,7 @@ class L3VariableTime(Realm):
             ul_pdu,
             dl_pdu,
             atten,
-            eid_name,
+            port_eid,
             port_data,
             latency,
             jitter,
@@ -2027,7 +2070,7 @@ class L3VariableTime(Realm):
             ap_ul_row):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
-               atten, eid_name
+               atten, port_eid
                ]
 
         row = row + [port_data['bps rx'],
@@ -2058,9 +2101,9 @@ class L3VariableTime(Realm):
                     logger.debug("col {}".format(col))
                     row.append(col)
 
-        writer = self.ul_port_csv_writers[eid_name]
+        writer = self.ul_port_csv_writers[port_eid]
         writer.writerow(row)
-        self.ul_port_csv_files[eid_name].flush()
+        self.ul_port_csv_files[port_eid].flush()
 
     def record_kpi_csv(
             self,
@@ -2318,26 +2361,26 @@ class L3VariableTime(Realm):
             self.csv_results_file.flush()
 
     # Write initial headers to port csv file.
-    def csv_add_port_column_headers(self, eid_name, headers):
+    def csv_add_port_column_headers(self, port_eid, headers):
         # if self.csv_file is not None:
         fname = self.outfile[:-4]  # Strip '.csv' from file name
-        fname = fname + "-dl-" + eid_name + ".csv"
+        fname = fname + "-dl-" + port_eid + ".csv"
         pfile = open(fname, "w")
         port_csv_writer = csv.writer(pfile, delimiter=",")
-        self.port_csv_files[eid_name] = pfile
-        self.port_csv_writers[eid_name] = port_csv_writer
+        self.port_csv_files[port_eid] = pfile
+        self.port_csv_writers[port_eid] = port_csv_writer
 
         port_csv_writer.writerow(headers)
         pfile.flush()
 
-    def csv_add_ul_port_column_headers(self, eid_name, headers):
+    def csv_add_ul_port_column_headers(self, port_eid, headers):
         # if self.csv_file is not None:
         fname = self.outfile[:-4]  # Strip '.csv' from file name
-        fname = fname + "-ul-" + eid_name + ".csv"
+        fname = fname + "-ul-" + port_eid + ".csv"
         pfile = open(fname, "w")
         ul_port_csv_writer = csv.writer(pfile, delimiter=",")
-        self.ul_port_csv_files[eid_name] = pfile
-        self.ul_port_csv_writers[eid_name] = ul_port_csv_writer
+        self.ul_port_csv_files[port_eid] = pfile
+        self.ul_port_csv_writers[port_eid] = ul_port_csv_writer
 
         ul_port_csv_writer.writerow(headers)
         pfile.flush()
@@ -2477,6 +2520,29 @@ Command:
 python3 ./test_l3_longevity.py --test_duration 30s --endp_type "lf_tcp lf_udp" --tos "BK VI" --upstream_port eth2 
 --radio "radio==wiphy0 stations==1 ssid==ssid_2g ssid_pw==ssid_pw_2g security==wpa2" 
 --radio "radio==wiphy1 stations==2 ssid==ssid_5g ssid_pw==BLANK security==open"
+
+Example : Have the stations continue to run after the completion of the script
+    ./test_l3.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
+        --radio 'radio==wiphy1 stations==2 ssid==asus_2g ssid_pw==lf_asus_2g security==wpa2'
+        --test_duration 30s --polling_interval 5s 
+        --side_a_min_bps 256000 --side_b_min_bps 102400000
+        --no_stop_traffic
+
+Example : Have script use existing stations from previous run where traffic was not stopped and also create new stations and
+        leave traffic running
+        ./test_l3.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
+        --radio 'radio==wiphy0 stations==2 ssid==asus_5g ssid_pw==lf_asus_5g security==wpa2'
+        --sta_start_offset 1000
+        --test_duration 30s --polling_interval 5s 
+        --side_a_min_bps 256000 --side_b_min_bps 102400000
+        --use_existing_station_list
+        --existing_station_list '1.1.sta0000,1.1.sta0001'
+        --no_stop_traffic
+
+
+
+
+
 
 Setting wifi_settings per radio
 ./test_l3_longevity.py  --lfmgr 192.168.100.116 --local_lf_report_dir /home/lanforge/html-reports/ --test_duration 15s
@@ -2940,6 +3006,22 @@ Setting wifi_settings per radio
     parser.add_argument('--no_cleanup', help='Do not cleanup before exit',
                         action='store_true')
 
+    parser.add_argument('--no_stop_traffic', help='leave traffic running',
+                         action='store_true')
+
+
+    parser.add_argument('--use_existing_station_list', help='--use_station_list ,full eid must be given,'
+                    'the script will use stations from the list, no configuration on the list, also prevents pre_cleanup',
+                        action='store_true')
+
+    # pass in the station list
+    parser.add_argument('--existing_station_list', 
+        action='append',
+        nargs=1,
+        help='--station_list [list of stations] , use the stations in the list , multiple station lists may be entered')
+
+
+
     parser.add_argument('--log_level',
                               default=None,
                               help='Set logging level: debug | info | warning | error | critical')
@@ -3107,6 +3189,7 @@ Setting wifi_settings per radio
     ssid_password_list = []
     ssid_security_list = []
     station_lists = []
+    existing_station_lists = []
 
     # wifi settings configuration
     wifi_mode_list = []
@@ -3222,6 +3305,32 @@ Setting wifi_settings per radio
                 radio=radio_name_)
             station_lists.append(station_list)
             index += 1
+    # create a secondary station_list
+    if args.use_existing_station_list:
+        if args.existing_station_list is not None:
+            # these are entered stations
+            for existing_sta_list in args.existing_station_list:
+                existing_stations = str(existing_sta_list).replace(
+                    '"',
+                    '').replace(
+                    '[',
+                    '').replace(
+                    ']',
+                    '').replace(
+                    "'",
+                    "").replace(
+                        ",",
+                    " ").split()
+
+                for existing_sta in existing_stations:
+                    existing_station_lists.append(existing_sta)
+        else:
+            logger.error("--use_station_list set true, --station_list is None Exiting")
+            raise Exception("--use_station_list is used in conjunction with a --station_list")                
+            
+ 
+    logger.info("existing_station_lists: {sta}".format(sta=existing_station_lists))
+
 
     # print("endp-types: %s"%(endp_types))
 
@@ -3289,6 +3398,9 @@ Setting wifi_settings per radio
         debug=args.debug,
         influxdb=influxdb,
         kpi_csv=kpi_csv,  # kpi.csv object
+        no_cleanup=args.no_cleanup,
+        use_existing_station_lists = args.use_existing_station_list,
+        existing_station_lists = existing_station_lists,        
         ap_scheduler_stats=ap_scheduler_stats,
         ap_ofdma_stats=ap_ofdma_stats,
         ap_read=ap_read,
@@ -3305,11 +3417,13 @@ Setting wifi_settings per radio
         ap_chanim_cmd_2g=ap_chanim_cmd_2g,
         ap_test_mode=ap_test_mode)
 
-    if args.no_pre_cleanup:
+    if args.no_pre_cleanup or args.use_existing_station_list:
         logger.info("No station pre clean up any existing cxs on LANforge")
     else:
         logger.info("clean up any existing cxs on LANforge")
         ip_var_test.pre_cleanup()
+
+    logger.info("create stations or use passed in station_list, build the test")
 
     ip_var_test.build()
     if not ip_var_test.passes():
@@ -3317,7 +3431,17 @@ Setting wifi_settings per radio
         logger.critical(ip_var_test.get_fail_message())
         exit(1)
     ip_var_test.start(False)
-    ip_var_test.stop()
+
+    logger.info(
+        "Pausing {} seconds for manual inspection before conclusion of test",
+        " and possible stopping of traffic and station cleanup".format(
+            args.wait))
+    time.sleep(int(args.wait))    
+
+    if args.no_stop_traffic:
+        logger.info("--no_stop_traffic set so traffic will continue to run")
+    else:
+        ip_var_test.stop()
     if not ip_var_test.passes():
         logger.error("Test Ended: There were Failures")
         logger.error(ip_var_test.get_fail_message())
@@ -3327,8 +3451,8 @@ Setting wifi_settings per radio
             args.wait))
     time.sleep(int(args.wait))
 
-    if args.no_cleanup:
-        logger.info("--no_cleanup set stations will be left intack")
+    if args.no_cleanup or args.no_stop_traffic:
+        logger.info("--no_cleanup or --no_stop_traffic set stations will be left intack")
     else:
         ip_var_test.cleanup()
 

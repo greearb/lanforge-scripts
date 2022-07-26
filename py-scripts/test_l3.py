@@ -874,6 +874,9 @@ class L3VariableTime(Realm):
                     # Create empty dataframe
                     all_dl_ports_df = pd.DataFrame()
                     port_eids = self.gather_port_eids()
+                    if self.use_existing_station_lists:
+                        port_eids.extend(self.existing_station_lists.copy())
+
                     for port_eid in port_eids:
                         logger.debug("port files: {port_file}".format(port_file=self.port_csv_files[port_eid]))
                         name = self.port_csv_files[port_eid].name
@@ -887,7 +890,6 @@ class L3VariableTime(Realm):
 
                     # if there are multiple loops then delete the df   
                     del all_dl_ports_df    
-
 
 
                     # At end of test step, record KPI into kpi.csv
