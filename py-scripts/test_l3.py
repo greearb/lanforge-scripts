@@ -50,7 +50,7 @@ Example using wifi_settings
 Example : Have the stations continue to run after the completion of the script
     ./test_l3.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
         --radio 'radio==wiphy1 stations==2 ssid==asus_2g ssid_pw==lf_asus_2g security==wpa2'
-        --test_duration 30s --polling_interval 5s 
+        --test_duration 30s --polling_interval 5s
         --side_a_min_bps 256000 --side_b_min_bps 102400000
         --no_stop_traffic
 
@@ -59,7 +59,7 @@ Example : Have script use existing stations from previous run where traffic was 
         ./test_l3.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
         --radio 'radio==wiphy0 stations==2 ssid==asus_5g ssid_pw==lf_asus_5g security==wpa2'
         --sta_start_offset 1000
-        --test_duration 30s --polling_interval 5s 
+        --test_duration 30s --polling_interval 5s
         --side_a_min_bps 256000 --side_b_min_bps 102400000
         --use_existing_station_list
         --existing_station_list '1.1.sta0000,1.1.sta0001'
@@ -378,7 +378,6 @@ class L3VariableTime(Realm):
         eid = self.name_to_eid(port_eid)
         logger.debug(
             "eid: {eid}".format(eid=eid))
-
 
         # Convert all eid elements to strings
         eid[0] = str(eid[0])
@@ -731,8 +730,8 @@ class L3VariableTime(Realm):
         # looping though both A and B together,  upload direction will select A, download direction will select B
         # For each rate
         for ul, dl in itertools.zip_longest(
-            self.side_a_min_rate, 
-            self.side_b_min_rate, fillvalue=256000):
+                self.side_a_min_rate,
+                self.side_b_min_rate, fillvalue=256000):
 
             # For each pdu size
             for ul_pdu, dl_pdu in itertools.zip_longest(
@@ -885,12 +884,11 @@ class L3VariableTime(Realm):
                         all_dl_ports_df = pd.concat([all_dl_ports_df, df_dl_tmp], axis=0)
 
                     all_dl_ports_file_name = self.outfile[:-4]
-                    all_dl_port_file_name = all_dl_ports_file_name +"-dl-all-eids.csv"
-                    all_dl_ports_df.to_csv(all_dl_port_file_name)   
+                    all_dl_port_file_name = all_dl_ports_file_name + "-dl-all-eids.csv"
+                    all_dl_ports_df.to_csv(all_dl_port_file_name)
 
-                    # if there are multiple loops then delete the df   
-                    del all_dl_ports_df    
-
+                    # if there are multiple loops then delete the df
+                    del all_dl_ports_df
 
                     # At end of test step, record KPI into kpi.csv
                     self.record_kpi_csv(
@@ -924,7 +922,7 @@ class L3VariableTime(Realm):
                     # Stop connections.
                     # if self.no_cleanup:
                     #    logger.info("--no_cleanup set leave stations running")
-                    #else:
+                    # else:
                     #    self.cx_profile.stop_cx()
                     #    self.multicast_profile.stop_mc()
                     # TODO the passes and expected_passes are not checking anything
@@ -1399,8 +1397,8 @@ Example #1  running traffic with two radios
 6. Create connections with TOS of BK and VI
 
 Command: (remove carriage returns)
-python3 ./test_l3.py --lfmgr 192.168.0.102 --test_duration 30s --endp_type "lf_tcp lf_udp" --tos "BK VI" --upstream_port 1.1.eth2 
---radio "radio==1.1.wiphy0 stations==1 ssid==ssid_2g ssid_pw==ssid_pw_2g security==wpa2" 
+python3 ./test_l3.py --lfmgr 192.168.0.102 --test_duration 30s --endp_type "lf_tcp lf_udp" --tos "BK VI" --upstream_port 1.1.eth2
+--radio "radio==1.1.wiphy0 stations==1 ssid==ssid_2g ssid_pw==ssid_pw_2g security==wpa2"
 --radio "radio==1.1.wiphy1 stations==2 ssid==ssid_5g ssid_pw==BLANK security==open" \
 
 Setting wifi_settings per radio
@@ -1796,14 +1794,14 @@ Setting wifi_settings per radio
                         action='store_true')
 
     parser.add_argument('--use_existing_station_list', help='--use_station_list ,full eid must be given,'
-                    'the script will use stations from the list, no configuration on the list, also prevents pre_cleanup',
+                        'the script will use stations from the list, no configuration on the list, also prevents pre_cleanup',
                         action='store_true')
 
     # TODO pass in the station list
-    parser.add_argument('--existing_station_list', 
-        action='append',
-        nargs=1,
-        help='--station_list [list of stations] , use the stations in the list , multiple station lists may be entered')
+    parser.add_argument('--existing_station_list',
+                        action='append',
+                        nargs=1,
+                        help='--station_list [list of stations] , use the stations in the list , multiple station lists may be entered')
 
     # logging configuration
     parser.add_argument(
@@ -2055,16 +2053,15 @@ Setting wifi_settings per radio
                     existing_station_lists.append(existing_sta)
         else:
             logger.error("--use_station_list set true, --station_list is None Exiting")
-            raise Exception("--use_station_list is used in conjunction with a --station_list")                
-            
- 
+            raise Exception("--use_station_list is used in conjunction with a --station_list")
+
     logger.info("existing_station_lists: {sta}".format(sta=existing_station_lists))
 
     # logger.info("endp-types: %s"%(endp_types))
-    ul_rates = args.side_a_min_bps.replace(',',' ').split()
-    dl_rates = args.side_b_min_bps.replace(',',' ').split()
-    ul_pdus = args.side_a_min_pdu.replace(',',' ').split()
-    dl_pdus = args.side_b_min_pdu.replace(',',' ').split()
+    ul_rates = args.side_a_min_bps.replace(',', ' ').split()
+    dl_rates = args.side_b_min_bps.replace(',', ' ').split()
+    ul_pdus = args.side_a_min_pdu.replace(',', ' ').split()
+    dl_pdus = args.side_b_min_pdu.replace(',', ' ').split()
     if args.attenuators == "":
         attenuators = []
     else:
@@ -2120,8 +2117,8 @@ Setting wifi_settings per radio
         debug=debug,
         kpi_csv=kpi_csv,
         no_cleanup=args.no_cleanup,
-        use_existing_station_lists = args.use_existing_station_list,
-        existing_station_lists = existing_station_lists)
+        use_existing_station_lists=args.use_existing_station_list,
+        existing_station_lists=existing_station_lists)
 
     if args.no_pre_cleanup or args.use_existing_station_list:
         logger.info("No station pre clean up any existing cxs on LANforge")
@@ -2143,7 +2140,6 @@ Setting wifi_settings per radio
         "Pausing {wait} seconds for manual inspection before conclusion of test and possible stopping of traffic and station cleanup".format(
             wait=args.wait))
     time.sleep(int(args.wait))
-
 
     # Admin down the stations
     if args.no_stop_traffic:
@@ -2230,7 +2226,7 @@ Setting wifi_settings per radio
     for (
             radio_,
             ssid_,
-            ssid_password_, # do not print password 
+            ssid_password_,  # do not print password
             ssid_security_,
             mode_,
             wifi_enable_flags_list_,
