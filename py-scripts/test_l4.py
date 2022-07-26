@@ -48,21 +48,21 @@ test_ipv4_l4_ftp_wifi.py, test_ipv4_l4_urls_per_ten.py, test_ipv4_l4_urls_per_te
 EXAMPLE (urls/s):
     ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
                  --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
-                 --url "dl http://192.168.50.217/ /dev/null" --requests_per_ten 600 --test_type 'urls'
+                 --url "dl http://upstream_port_ip/ /dev/null" --requests_per_ten 600 --test_type 'urls'
                  --csv_outfile test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
                  --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
 
 EXAMPLE (bytes-rd):
     ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
                  --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 2m
-                 --url "dl http://192.168.50.217/ /dev/null" --requests_per_ten 600 --test_type bytes-rd
+                 --url "dl http://upstream_port_ip/ /dev/null" --requests_per_ten 600 --test_type bytes-rd
                  --csv_outfile test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
                  --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
 
 EXAMPLE (ftp urls/s):
     ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
                  --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
-                 --url "ul ftp://lanforge:lanforge@192.168.1.101/large-file.bin /home/lanforge/large-file.bin"
+                 --url "ul ftp://lanforge:lanforge@upstream_port_ip/large-file.bin /home/lanforge/large-file.bin"
                  --requests_per_ten 600 --test_type 'urls' --csv_outfile test_l4.csv --test_rig Test-Lab
                  --test_tag L4 --dut_hw_version Linux --dut_model_num 1 --dut_sw_version 5.4.5
                  --dut_serial_num 1234 --test_id "L4 data"
@@ -70,7 +70,7 @@ EXAMPLE (ftp urls/s):
 EXAMPLE (ftp bytes-wr):
     ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
                  --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
-                 --url "ul ftp://lanforge:lanforge@192.168.1.101/large-file.bin /home/lanforge/large-file.bin"
+                 --url "ul ftp://lanforge:lanforge@upstream_port_ip/large-file.bin /home/lanforge/large-file.bin"
                  --requests_per_ten 600 --test_type bytes-wr --csv_outfile test_l4.csv --test_rig Test-Lab
                  --test_tag L4 --dut_hw_version Linux --dut_model_num 1 --dut_sw_version 5.4.5
                  --dut_serial_num 1234 --test_id "L4 data"
@@ -78,7 +78,7 @@ EXAMPLE (ftp bytes-wr):
 EXAMPLE (ftp bytes-rd):
     ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
                  --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
-                 --url "dl ftp://192.168.1.101 /dev/null" --requests_per_ten 600 --test_type bytes-rd
+                 --url "dl ftp://upstream_port_ip /dev/null" --requests_per_ten 600 --test_type bytes-rd
                  --csv_outfile test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
                  --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
 
@@ -94,6 +94,7 @@ import time
 import argparse
 import datetime
 import logging
+import traceback
 
 import requests
 from pandas import json_normalize
@@ -527,7 +528,7 @@ This script will create stations and endpoints to generate and verify layer-4 tr
 ---------------------------
 Generic command example:
 ./test_l4.py --mgr <ip_address> --upstream_port eth1 --radio wiphy0 --num_stations 3 --security wpa2 
---ssid <ssid> --passwd <password> --test_duration 2m --url "ul http://<ap_ip_address> /dev/null" 
+--ssid <ssid> --passwd <password> --test_duration 2m --url "ul http://upstream_port_ip /dev/null" 
 --requests_per_ten 600 --test_type bytes-wr --debug
 ---------------------------
 
@@ -710,21 +711,32 @@ Generic command example:
 
     # Create directory
     if args.report_file is None:
-        if os.path.isdir('/home/lanforge/report-data'):
-            homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")).replace(':', '-') + 'test_l4'
-            path = os.path.join('/home/lanforge/report-data/', homedir)
-            logger.info(path)
-            os.mkdir(path)
-        else:
-            path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            logger.info('Saving file to local directory')
+        try:
+            report_data_dir_file = ""
+            if os.path.isdir('/home/lanforge/report-data'):
+                homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':', '-') + '_test_l4'
+                path = os.path.join('/home/lanforge/report-data/', homedir)
+                logger.info(path)
+                os.mkdir(path)
+                if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
+                                      'xlsx']:
+                    report_data_dir_file = path + '/data.' + args.output_format
+                    logger.info(report_data_dir_file)
+                else:
+                    logger.info('Defaulting data file output type to Excel')
+                    report_data_dir_file = path + '/data.xlsx'
+                    logger.info(report_data_dir_file)
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+
+        rpt_path = report.get_report_path()
         if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
-                                  'xlsx']:
-            rpt_file = path + '/data.' + args.output_format
+                                    'xlsx']:
+            rpt_file = rpt_path + '/data.' + args.output_format
             logger.info(rpt_file)
         else:
             logger.info('Defaulting data file output type to Excel')
-            rpt_file = path + '/data.xlsx'
+            rpt_file = rpt_path + '/data.xlsx'
             logger.info(rpt_file)
     else:
         rpt_file = args.report_file
@@ -762,6 +774,17 @@ Generic command example:
     l4_cx_results = {}
 
     layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.json_get('layer4')['endpoint']])
+    # output data.xlsx to /home/lanforge/report-data/ for backward compatibility with legacy code
+    if report_data_dir_file != "":
+        ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
+                               report_file=report_data_dir_file,
+                               duration_sec=args.test_duration,
+                               created_cx=layer4traffic,
+                               output_format=output_form,
+                               script_name='test_l4',
+                               arguments=args,
+                               debug=args.debug)
+    # output data.xlsx to /home/lanforge/html-reports/ along with all other test reports
     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
                                report_file=rpt_file,
                                duration_sec=args.test_duration,
