@@ -1401,6 +1401,26 @@ python3 ./test_l3.py --lfmgr 192.168.0.102 --test_duration 30s --endp_type "lf_t
 --radio "radio==1.1.wiphy0 stations==1 ssid==ssid_2g ssid_pw==ssid_pw_2g security==wpa2"
 --radio "radio==1.1.wiphy1 stations==2 ssid==ssid_5g ssid_pw==BLANK security==open" \
 
+Example : Have the stations continue to run after the completion of the script
+    ./test_l3.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
+        --radio 'radio==wiphy1 stations==2 ssid==asus_2g ssid_pw==lf_asus_2g security==wpa2'
+        --test_duration 30s --polling_interval 5s
+        --side_a_min_bps 256000 --side_b_min_bps 102400000
+        --no_stop_traffic
+
+Example : Have script use existing stations from previous run where traffic was not stopped and also create new stations and
+        leave traffic running
+        ./test_l3.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
+        --radio 'radio==wiphy0 stations==2 ssid==asus_5g ssid_pw==lf_asus_5g security==wpa2'
+        --sta_start_offset 1000
+        --test_duration 30s --polling_interval 5s
+        --side_a_min_bps 256000 --side_b_min_bps 102400000
+        --use_existing_station_list
+        --existing_station_list '1.1.sta0000,1.1.sta0001'
+        --no_stop_traffic
+
+
+
 Setting wifi_settings per radio
 ./test_l3.py --lfmgr 192.168.100.116 --local_lf_report_dir /home/lanforge/html-reports/ --test_duration 15s
 --polling_interval 5s --upstream_port eth2

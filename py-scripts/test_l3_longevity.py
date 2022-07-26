@@ -52,6 +52,24 @@
      --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000
      --test_rig CT-US-001 --test_tag 'l3_longevity'
 
+Example : Have the stations continue to run after the completion of the script
+    ./test_l3_longevity.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
+        --radio 'radio==wiphy1 stations==2 ssid==asus_2g ssid_pw==lf_asus_2g security==wpa2'
+        --test_duration 30s --polling_interval 5s
+        --side_a_min_bps 256000 --side_b_min_bps 102400000
+        --no_stop_traffic
+
+Example : Have script use existing stations from previous run where traffic was not stopped and also create new stations and
+        leave traffic running
+        ./test_l3_longevity.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
+        --radio 'radio==wiphy0 stations==2 ssid==asus_5g ssid_pw==lf_asus_5g security==wpa2'
+        --sta_start_offset 1000
+        --test_duration 30s --polling_interval 5s
+        --side_a_min_bps 256000 --side_b_min_bps 102400000
+        --use_existing_station_list
+        --existing_station_list '1.1.sta0000,1.1.sta0001'
+        --no_stop_traffic     
+
 ## COPYRIGHT:
 Copyright 2021 Candela Technologies Inc
 
@@ -2516,7 +2534,7 @@ python3 ./test_l3_longevity.py --test_duration 30s --endp_type "lf_tcp lf_udp" -
 --radio "radio==wiphy1 stations==2 ssid==ssid_5g ssid_pw==BLANK security==open"
 
 Example : Have the stations continue to run after the completion of the script
-    ./test_l3.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
+    ./test_l3_longevity.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
         --radio 'radio==wiphy1 stations==2 ssid==asus_2g ssid_pw==lf_asus_2g security==wpa2'
         --test_duration 30s --polling_interval 5s
         --side_a_min_bps 256000 --side_b_min_bps 102400000
@@ -2524,7 +2542,7 @@ Example : Have the stations continue to run after the completion of the script
 
 Example : Have script use existing stations from previous run where traffic was not stopped and also create new stations and
         leave traffic running
-        ./test_l3.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
+        ./test_l3_longevity.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
         --radio 'radio==wiphy0 stations==2 ssid==asus_5g ssid_pw==lf_asus_5g security==wpa2'
         --sta_start_offset 1000
         --test_duration 30s --polling_interval 5s
