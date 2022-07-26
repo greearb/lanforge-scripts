@@ -253,7 +253,6 @@ class L3VariableTime(Realm):
         self.use_existing_station_lists = use_existing_station_lists
         self.existing_station_lists = existing_station_lists
 
-
         self.attenuators = attenuators
         self.atten_vals = atten_vals
         if ((len(self.atten_vals) > 0) and (
@@ -300,7 +299,7 @@ class L3VariableTime(Realm):
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
 
-        # the --ap_read will use these headers 
+        # the --ap_read will use these headers
         self.ap_stats_col_titles = [
             "Station Address",
             "Dl-PHY-Mbps",
@@ -997,7 +996,7 @@ class L3VariableTime(Realm):
         # dl - ports
         port_eids = self.gather_port_eids()
         if self.use_existing_station_lists:
-            port_eids.extend(self.existing_station_lists.copy())        
+            port_eids.extend(self.existing_station_lists.copy())
         for port_eid in port_eids:
             self.csv_add_port_column_headers(
                 port_eid, self.csv_generate_port_column_headers())
@@ -1016,16 +1015,14 @@ class L3VariableTime(Realm):
         # looping though both A and B together,  upload direction will select A, download direction will select B
         # For each rate
         for ul, dl in itertools.zip_longest(
-            self.side_a_min_rate, 
-            self.side_b_min_rate, fillvalue=256000):
-
+                self.side_a_min_rate,
+                self.side_b_min_rate, fillvalue=256000):
 
             # For each pdu size
             for ul_pdu, dl_pdu in itertools.zip_longest(
                 self.side_a_min_pdu,
                 self.side_b_min_pdu, fillvalue='AUTO'
             ):
-
 
                 # Adjust rate to take into account the number of connections we
                 # have.
@@ -1133,7 +1130,7 @@ class L3VariableTime(Realm):
                             total_ul_ll_bps)
 
                         # AP OUTPUT
-                        # rx_report command gives OFDMA and airtime fro the Uplink
+                        # rx_report command gives OFDMA and airtime for the Uplink
                         # bs_data command shows the OFDMA and MU-MIMO on the
                         # downlink
                         if self.ap_read:
@@ -1874,9 +1871,9 @@ class L3VariableTime(Realm):
                                         total_dl_rate_ll,
                                         total_dl_pkts_ll,
                                         ap_row)
-                                        
+
                     # Consolidate all the dl ports into one file
-                    # Create empty da                    
+                    # Create empty da
                     all_dl_ports_df = pd.DataFrame()
                     port_eids = self.gather_port_eids()
                     if self.use_existing_station_lists:
@@ -1890,13 +1887,13 @@ class L3VariableTime(Realm):
                         all_dl_ports_df = pd.concat([all_dl_ports_df, df_dl_tmp], axis=0)
 
                     all_dl_ports_file_name = self.outfile[:-4]
-                    all_dl_port_file_name = all_dl_ports_file_name +"-dl-all-eids.csv"
-                    all_dl_ports_df.to_csv(all_dl_port_file_name)   
+                    all_dl_port_file_name = all_dl_ports_file_name + "-dl-all-eids.csv"
+                    all_dl_ports_df.to_csv(all_dl_port_file_name)
 
-                    # if there are multiple loops then delete the df   
-                    del all_dl_ports_df    
+                    # if there are multiple loops then delete the df
+                    del all_dl_ports_df
 
-                    # consolidate all the 
+                    # consolidate all the
                     if self.ap_read:
                         # Consolidate all the dl ports into one file
                         # Create empty dataframe
@@ -1913,15 +1910,12 @@ class L3VariableTime(Realm):
                             all_ul_ports_df = pd.concat([all_ul_ports_df, df_ul_tmp], axis=0)
 
                         all_ul_ports_file_name = self.outfile[:-4]
-                        all_ul_port_file_name = all_ul_ports_file_name +"-ul-all-eids.csv"
-                        all_ul_ports_df.to_csv(all_ul_port_file_name)   
+                        all_ul_port_file_name = all_ul_ports_file_name + "-ul-all-eids.csv"
+                        all_ul_ports_df.to_csv(all_ul_port_file_name)
 
-                        # if there are multiple loops then delete the df   
-                        del all_ul_ports_df    
+                        # if there are multiple loops then delete the df
+                        del all_ul_ports_df
 
-                    
-                    
-                    
                     # At end of test step, record KPI into kpi.csv
                     self.record_kpi_csv(
                         len(temp_stations_list),
@@ -2517,14 +2511,14 @@ Example #1  running traffic with two radios
 5. Radio #1 wiphy1 has 2 stations, ssid = ssid_5g, ssid password = BLANK security = open
 
 Command:
-python3 ./test_l3_longevity.py --test_duration 30s --endp_type "lf_tcp lf_udp" --tos "BK VI" --upstream_port eth2 
---radio "radio==wiphy0 stations==1 ssid==ssid_2g ssid_pw==ssid_pw_2g security==wpa2" 
+python3 ./test_l3_longevity.py --test_duration 30s --endp_type "lf_tcp lf_udp" --tos "BK VI" --upstream_port eth2
+--radio "radio==wiphy0 stations==1 ssid==ssid_2g ssid_pw==ssid_pw_2g security==wpa2"
 --radio "radio==wiphy1 stations==2 ssid==ssid_5g ssid_pw==BLANK security==open"
 
 Example : Have the stations continue to run after the completion of the script
     ./test_l3.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
         --radio 'radio==wiphy1 stations==2 ssid==asus_2g ssid_pw==lf_asus_2g security==wpa2'
-        --test_duration 30s --polling_interval 5s 
+        --test_duration 30s --polling_interval 5s
         --side_a_min_bps 256000 --side_b_min_bps 102400000
         --no_stop_traffic
 
@@ -2533,7 +2527,7 @@ Example : Have script use existing stations from previous run where traffic was 
         ./test_l3.py --lfmgr 192.168.0.101 --endp_type 'lf_udp,lf_tcp' --tos BK --upstream_port 1.1.eth2
         --radio 'radio==wiphy0 stations==2 ssid==asus_5g ssid_pw==lf_asus_5g security==wpa2'
         --sta_start_offset 1000
-        --test_duration 30s --polling_interval 5s 
+        --test_duration 30s --polling_interval 5s
         --side_a_min_bps 256000 --side_b_min_bps 102400000
         --use_existing_station_list
         --existing_station_list '1.1.sta0000,1.1.sta0001'
@@ -2827,7 +2821,7 @@ Setting wifi_settings per radio
         '--lfmgr_port',
         dest='lfmgr_port',
         help='--lfmgr_port <port LANforge GUI HTTP service is running on>',
-        default=8080)        
+        default=8080)
     parser.add_argument(
         '--test_duration',
         help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',
@@ -3007,25 +3001,21 @@ Setting wifi_settings per radio
                         action='store_true')
 
     parser.add_argument('--no_stop_traffic', help='leave traffic running',
-                         action='store_true')
-
+                        action='store_true')
 
     parser.add_argument('--use_existing_station_list', help='--use_station_list ,full eid must be given,'
-                    'the script will use stations from the list, no configuration on the list, also prevents pre_cleanup',
+                        'the script will use stations from the list, no configuration on the list, also prevents pre_cleanup',
                         action='store_true')
 
     # pass in the station list
-    parser.add_argument('--existing_station_list', 
-        action='append',
-        nargs=1,
-        help='--station_list [list of stations] , use the stations in the list , multiple station lists may be entered')
-
-
+    parser.add_argument('--existing_station_list',
+                        action='append',
+                        nargs=1,
+                        help='--station_list [list of stations] , use the stations in the list , multiple station lists may be entered')
 
     parser.add_argument('--log_level',
-                              default=None,
-                              help='Set logging level: debug | info | warning | error | critical')
-
+                        default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
 
     # logging configuration
     parser.add_argument(
@@ -3039,7 +3029,7 @@ Setting wifi_settings per radio
 
     if (args.log_level):
         logger_config.set_level(level=args.log_level)
-        
+
     if args.lf_logger_config_json:
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
@@ -3259,7 +3249,7 @@ Setting wifi_settings per radio
                     exit(1)
                 wifi_mode_list.append(radio_info_dict['wifi_mode'])
                 enable_flags_str = radio_info_dict['enable_flags'].replace(
-                    '(', '').replace(')', '').replace('|', ',').replace('&&',',')
+                    '(', '').replace(')', '').replace('|', ',').replace('&&', ',')
                 enable_flags_list = list(enable_flags_str.split(","))
                 wifi_enable_flags_list.append(enable_flags_list)
             else:
@@ -3326,11 +3316,9 @@ Setting wifi_settings per radio
                     existing_station_lists.append(existing_sta)
         else:
             logger.error("--use_station_list set true, --station_list is None Exiting")
-            raise Exception("--use_station_list is used in conjunction with a --station_list")                
-            
- 
-    logger.info("existing_station_lists: {sta}".format(sta=existing_station_lists))
+            raise Exception("--use_station_list is used in conjunction with a --station_list")
 
+    logger.info("existing_station_lists: {sta}".format(sta=existing_station_lists))
 
     # print("endp-types: %s"%(endp_types))
 
@@ -3399,8 +3387,8 @@ Setting wifi_settings per radio
         influxdb=influxdb,
         kpi_csv=kpi_csv,  # kpi.csv object
         no_cleanup=args.no_cleanup,
-        use_existing_station_lists = args.use_existing_station_list,
-        existing_station_lists = existing_station_lists,        
+        use_existing_station_lists=args.use_existing_station_list,
+        existing_station_lists=existing_station_lists,
         ap_scheduler_stats=ap_scheduler_stats,
         ap_ofdma_stats=ap_ofdma_stats,
         ap_read=ap_read,
@@ -3436,7 +3424,7 @@ Setting wifi_settings per radio
         "Pausing {} seconds for manual inspection before conclusion of test",
         " and possible stopping of traffic and station cleanup".format(
             args.wait))
-    time.sleep(int(args.wait))    
+    time.sleep(int(args.wait))
 
     if args.no_stop_traffic:
         logger.info("--no_stop_traffic set so traffic will continue to run")
@@ -3466,9 +3454,9 @@ Setting wifi_settings per radio
     report.start_content_div2()
 
     report.set_obj_html("Objective", "The Layer 3 Traffic Generation Test is designed to test the performance of the "
-                                    "Access Point by running layer 3 Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream "
-                                    "of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints, "
-                                    "each of which is associated with a particular Port (physical or virtual interface).")
+                        "Access Point by running layer 3 Cross-Connect Traffic.  Layer-3 Cross-Connects represent a stream "
+                        "of data flowing through the system under test. A Cross-Connect (CX) is composed of two Endpoints, "
+                        "each of which is associated with a particular Port (physical or virtual interface).")
 
     report.build_objective()
 
@@ -3499,45 +3487,44 @@ Setting wifi_settings per radio
     report.build_table_title()
 
     wifi_mode_dict = {
-        0 : 'AUTO',         #  802.11g
-        1 : '802.11a',      #  802.11a
-        2 : '802.11b',      #  802.11b
-        3 : '802.11g',      #  802.11g
-        4 : '802.11abg',    #  802.11abg
-        5 : '802.11abgn',   #  802.11abgn
-        6 : '802.11bgn',    #  802.11bgn
-        7 : '802.11bg',     #  802.11bg
-        8 : '802.11abgnAC', #  802.11abgn-AC
-        9 : '802.11anAC',   #  802.11an-AC
-        10: '802.11an',     #  802.11an
-        11: '802.11bgnAC',  #  802.11bgn-AC
-        12: '802.11abgnAX', #  802.11abgn-AX
-                                #     a/b/g/n/AC/AX (dual-band AX) support
-        13: '802.11bgnAX',  #  802.11bgn-AX
-        14: '802.11anAX',   #  802.11an-AX
-        15: '802.11aAX'     #  802.11a-AX (6E disables /n and /ac)
+        0: 'AUTO',  # 802.11g
+        1: '802.11a',  # 802.11a
+        2: '802.11b',  # 802.11b
+        3: '802.11g',  # 802.11g
+        4: '802.11abg',  # 802.11abg
+        5: '802.11abgn',  # 802.11abgn
+        6: '802.11bgn',  # 802.11bgn
+        7: '802.11bg',  # 802.11bg
+        8: '802.11abgnAC',  # 802.11abgn-AC
+        9: '802.11anAC',  # 802.11an-AC
+        10: '802.11an',  # 802.11an
+        11: '802.11bgnAC',  # 802.11bgn-AC
+        12: '802.11abgnAX',  # 802.11abgn-AX
+        #     a/b/g/n/AC/AX (dual-band AX) support
+        13: '802.11bgnAX',  # 802.11bgn-AX
+        14: '802.11anAX',  # 802.11an-AX
+        15: '802.11aAX'  # 802.11a-AX (6E disables /n and /ac)
     }
 
-
     for (
-        radio_,
-        ssid_,
-        ssid_password_,
-        ssid_security_,
-        mode_,
-        wifi_enable_flags_list_,
-        reset_port_enable_,
-        reset_port_time_min_,
-        reset_port_time_max_) in zip(
-        radio_name_list,
-        ssid_list,
-        ssid_password_list,
-        ssid_security_list,
-        wifi_mode_list,
-        wifi_enable_flags_list,
-        reset_port_enable_list,
-        reset_port_time_min_list,
-        reset_port_time_max_list):
+            radio_,
+            ssid_,
+            ssid_password_,
+            ssid_security_,
+            mode_,
+            wifi_enable_flags_list_,
+            reset_port_enable_,
+            reset_port_time_min_,
+            reset_port_time_max_) in zip(
+            radio_name_list,
+            ssid_list,
+            ssid_password_list,
+            ssid_security_list,
+            wifi_mode_list,
+            wifi_enable_flags_list,
+            reset_port_enable_list,
+            reset_port_time_min_list,
+            reset_port_time_max_list):
 
         mode_value = wifi_mode_dict[int(mode_)]
 
@@ -3549,7 +3536,7 @@ Setting wifi_settings per radio
         }
         report.test_setup_table(value=radio_, test_setup_data=radio_info)
 
-    report.set_table_title("Total Layer 3 Cross-Connect Traffic across all Stations")    
+    report.set_table_title("Total Layer 3 Cross-Connect Traffic across all Stations")
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
     report.build_table()
