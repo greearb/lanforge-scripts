@@ -30,6 +30,7 @@ import requests
 from pandas import json_normalize
 import json
 import traceback
+import csv
 
 
 if sys.version_info[0] != 3:
@@ -174,22 +175,20 @@ class lf_json_api():
         # https://docs.python-requests.org/en/latest/
         # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
         #
-        # curl -H 'Accept: application/json' http://localhost:8080/{request}/{shelf}/{resourse}/{port_name} | json_pp
+        # curl -H 'Accept: application/json' http://localhost:8080/stations/all | json_pp
         # request  command,  to see commands <lanforge ip>:8080
-        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/{request}/1/1/wlan4 | json_pp
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json' http://192.168.100.116:8080/stations/all | json_pp
         # where --user "USERNAME:PASSWORD"
-        # request_command = 'http://{lfmgr}:{lfport}/{request}/1/{resource}/{port_name}/{mac}'.format(
-        request_command = 'http://{lfmgr}:{lfport}/{request}/{mac}'.format(
-            lfmgr=self.lf_mgr, lfport=self.lf_port, request=self.request, mac=self.mac)
+        request_command = 'http://{lfmgr}:{lfport}/{request}/all'.format(
+            lfmgr=self.lf_mgr, lfport=self.lf_port, request=self.request)
         #    lfmgr=self.lf_mgr, lfport=self.lf_port,request=self.request, resource=self.resource, port_name=self.port_name, mac=self.mac)
         logger.debug("request_command: {request_command}".format(request_command=request_command))
         request = requests.get(
             request_command, auth=(
                 self.lf_user, self.lf_passwd))
 
-        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name}/{mac} | json_pp  ".format(
-            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name, mac=self.mac
-        ))
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/all | json_pp  ".format(
+            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request ))
 
         logger.info(
             "{request} request command: {request_command}".format(request=self.request,
@@ -205,21 +204,30 @@ class lf_json_api():
         lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
         logger.info("lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
 
-        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name}/{mac} | json_pp  ".format(
-            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name, mac=self.mac
-        ))
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/all | json_pp  ".format(
+            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request ))
 
         # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
         # TODO check for "status": "NOT_FOUND"
         try:
-            key = "station"
-            df = json_normalize(lanforge_json[key])
-            df.to_csv("{shelf}.{resource}.{port_name}.{mac}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request, mac=self.mac), index=False)
+            # key = "stations"
+            # df = json_normalize(lanforge_json[key])
+            # df.to_csv("{request}.csv".format(request=self.request), index=False)
+            lines = []
+            key = "stations"
+            for i in json_data[key]:
+                inner_data = i[list(i.keys())[0]]  # getting the data under each device/port/object name in list
+                lines.append(pandas.json_normalize(inner_data))
+            return pandas.concat(lines, ignore_index=True)
+
+            df = self.reformat_json(lanforge_json)
+            df.to_csv("{request}.csv".format(request=self.request), index=False)
+
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
 
-        logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request))
+        logger.info("csv output: {request}.csv".format(request=self.request))
 
         return lanforge_json, lanforge_text, lanforge_json_formatted
 
@@ -388,8 +396,8 @@ def main():
         help="--lf_logger_config_json <json file> , json configuration of logger")
     # TODO check command
     # TODO make generic so any request may be passed in
-    parser.add_argument("--get_requests", type=str, help="perform get request may be a list:  port | radio | port_rssi | wifi-stats | adb")
-    parser.add_argument("--mac", type=str, help="--mac <station bssid> for vap stations")
+    parser.add_argument("--get_requests", type=str, help="perform get request may be a list:  port | radio | port_rssi | wifi-stats | stations | adb")
+    # parser.add_argument("--mac", type=str, help="--mac <station bssid> for vap stations")
     parser.add_argument("--post_requests", type=str, help="perform set request may be a list:  nss , in development")
     parser.add_argument("--nss", type=str, help="--nss 4  set the number of spatial streams for a speific antenna ")
 
@@ -464,9 +472,9 @@ def main():
                 logger.debug("lanforge_adb_text = {lanforge_adb_text}".format(lanforge_adb_text=lanforge_adb_text))
                 logger.debug("lanforge_adb_json_formatted = {lanforge_adb_json_formatted}".format(lanforge_adb_json_formatted=lanforge_adb_json_formatted))
 
-            elif "stations" in get_request:
-                lf_json.request, mac = get_request.split(',')
-                lf_json.mac = mac
+            elif get_request == "stations":
+                lf_json.request = get_request
+
                 lanforge_wifi_stats_json, lanforge_wifi_stats_text, lanforge_wifi_stats_json_formatted = lf_json.get_request_stations_information()
 
                 logger.debug("lanforge_wifi_stats_json = {lanforge_wifi_stats_json}".format(lanforge_wifi_stats_json=lanforge_wifi_stats_json))
