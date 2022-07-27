@@ -486,7 +486,7 @@
                 "command":"test_l4.py",
                 "args":"",
                 "args_list":[
-                    "--mgr LF_MGR_IP --radio wiphy1 ",
+                    "--mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT",
                     " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED ",
                     " --test_duration 30s",
                     " --url 'dl http://upstream_port_ip /dev/null'"
