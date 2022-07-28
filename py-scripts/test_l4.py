@@ -212,8 +212,6 @@ class IPV4L4(Realm):
             raise ValueError(
                 "Unknown test type: %s\nValid test types are urls, bytes-rd, or bytes-wr" % self.test_type)
 
-        self.report = lf_report.lf_report(_results_dir_name="test_l4", _output_html="ftp_test.html", _output_pdf="ftp_test.pdf")
-
     def get_csv_name(self):
         logger.info("self.csv_results_file {}".format(self.csv_results_file.name))
         return self.csv_results_file.name
