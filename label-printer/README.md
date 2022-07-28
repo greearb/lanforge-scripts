@@ -40,9 +40,9 @@ traffic to port 8082:
 **Using kinstall to print labels:**
 
 Dymo LabelWriter:
-    `$ ./lf_kinstall.pl --print-label http://192.168.9.1:8082/ --printer LabelWriter-450`
+    `$ ./lf_kinstall.pl --do_print_label --print_host http://192.168.9.1:8082/ --print_queue LabelWriter-450`
 
 Brother QL-800:
-    `$ ./lf_kinstall.pl --print-label http://192.168.9.1:8082/ --printer QL-800`
+    `$ ./lf_kinstall.pl --do_print_label --print_host http://192.168.9.1:8082/ --print_queue QL-800`
 
 Note that the QL-800 printer driver installs an *example* printer queue named **QL800** which is misleading. Please ignore that. When the printer is plugged in, a **QL-800** printer queue will be created, which is the true queue to print to.
