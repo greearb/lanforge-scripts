@@ -11,7 +11,7 @@ import sys
 # 0: Success
 # 1: Python Error
 # 2: CSV file not found
-# 3: Radio disconnected before -80 expected RSSI; PNG will still be generated
+# 3: Radio disconnected before -85 expected RSSI; PNG will still be generated
 
 parser = argparse.ArgumentParser(description='Input and output files.')
 parser.add_argument('--csv', metavar='i', type=str, help='../output.csv')
@@ -21,37 +21,38 @@ parser.add_argument('--channel', metavar='c', type=int, help='6, 36')
 parser.add_argument('--antenna', metavar='a', type=int, help='0, 1, 4, 7, 8')
 
 args = parser.parse_args()
-CSV_FILE=args.csv
-PNG_OUTPUT_DIR=args.png_dir
-bandwidth = args.bandwidth
-channel = args.channel
-antenna = args.antenna
-BASE_PATH_LOSS=36
-TX_POWER=20
-CHECK_RADIOS=[0,1,2,3,4,5,6]
-EXIT_THRESHOLD=-85.
+CSV_FILE = args.csv
+PNG_OUTPUT_DIR = args.png_dir
+BANDWIDTH = args.bandwidth
+CHANNEL = args.channel
+ANTENNA = args.antenna 
+BASE_PATH_LOSS = 36 # depends on test bed: 12 (attenuator) + 2*12 (splitter combiners)
+TX_POWER = 20
+CHECK_RADIOS = [0,1,2,3,4,5,6] # radios to check during early exit
+EXIT_THRESHOLD = -85. # expected-signal cutoff for radio-disconnect exit code
 
 # helper functions
-def filt(lst):
+def filt(lst): # filter out all instances of nan
     return lst[~(np.isnan(lst))]
 
-def avg(lst):
+def avg(lst): # mean
     lst = filt(lst)
     return sum(lst)/len(lst) if len(lst) else np.nan
 
-def dev(lst):
+def dev(lst): # element-wise deviation from mean (not standard deviation)
     return np.abs(avg(lst) - lst)
 
-def expected_signal(attenuation):
+def expected_signal(attenuation): # mathematically expected signal
     return TX_POWER - (BASE_PATH_LOSS + attenuation)
 
+# early exit for disconnected radio before threshold expected RSSI
 def check_data(signal, signal_exp):
-    if channel==6:
-        CHECK_RADIOS.remove(1)
-    if channel==36:
-        CHECK_RADIOS.remove(0)
-    threshold_ind = np.where(signal_exp==EXIT_THRESHOLD)[0][0]
-    isnans = np.concatenate([np.isnan(e) for e in signal[0:threshold_ind, CHECK_RADIOS]])
+    if CHANNEL==6:
+        CHECK_RADIOS.remove(1) # TODO: Make generic
+    if CHANNEL==36:
+        CHECK_RADIOS.remove(0) # TODO: Make geneirc
+    threshold_ind = np.where(signal_exp==EXIT_THRESHOLD)[0][0] # the first index where exit threshold is reached
+    isnans = np.concatenate([np.isnan(e) for e in signal[0:threshold_ind, CHECK_RADIOS]]) # array of booleans
     if (any(isnans)):
         sys.exit(3)
 
@@ -113,10 +114,10 @@ plt.style.use('dark_background')
 fig = plt.figure(figsize=(8,8),dpi=100)
 ax = fig.add_axes([0.1,0.1,0.8,0.8])
 ax.plot(atten[:,0],signal_exp,  color=COLORS['gray'],  alpha=1.0, label='Expected')
-if channel==6:
-    ax.plot(atten[:,0],signal[:,0], color=COLORS['red'],    alpha=1.0, label=legend['sta0000'])
-if channel==36:
-    ax.plot(atten[:,1],signal[:,1], color=COLORS['orange'], alpha=1.0, label=legend['sta0001'])
+if CHANNEL==6:
+    ax.plot(atten[:,0],signal[:,0], color=COLORS['red'],    alpha=1.0, label=legend['sta0000']) # TODO: Make generic
+if CHANNEL==36:
+    ax.plot(atten[:,1],signal[:,1], color=COLORS['orange'], alpha=1.0, label=legend['sta0001']) # TODO: Make generic
 ax.plot(atten[:,2],signal[:,2], color=COLORS['yellow'], alpha=1.0, label=legend['sta0002'])
 ax.plot(atten[:,3],signal[:,3], color=COLORS['green'],  alpha=1.0, label=legend['sta0003'])
 ax.plot(atten[:,4],signal[:,4], color=COLORS['cyan'],   alpha=1.0, label=legend['sta0004'])
@@ -124,7 +125,7 @@ ax.plot(atten[:,5],signal[:,5], color=COLORS['blue'],   alpha=1.0, label=legend[
 ax.plot(atten[:,6],signal[:,6], color=COLORS['violet'], alpha=1.0, label=legend['sta0006'])
 ax.set_title(F'Attenuation vs. Signal:\n'
              + F'SSID={data[1][14]}, '
-             + F'Channel={channel}, '
+             + F'Channel={CHANNEL}, '
              + F'Mode={data[1][11]}')
 ax.set_xlabel('Attenuation (dB)')
 ax.set_ylabel('RSSI (dBm)')
@@ -132,14 +133,14 @@ ax.set_yticks(range(-30, -110, -5))
 ax.set_xticks(range(20, 100, 5))
 plt.grid(color=COLORS['dark_gray'], linestyle='-', linewidth=1)
 plt.legend()
-plt.savefig(F'{PNG_OUTPUT_DIR}/{channel}_{antenna}_{bandwidth}_signal_atten.png')
+plt.savefig(F'{PNG_OUTPUT_DIR}/{CHANNEL}_{ANTENNA}_{BANDWIDTH}_signal_atten.png')
 
 plt.style.use('dark_background')
 fig = plt.figure(figsize=(8,8),dpi=100)
 ax = fig.add_axes([0.1,0.1,0.8,0.8])
-if channel==6:
+if CHANNEL==6:
     ax.plot(atten[:,0],signal_dev[:,0], color=COLORS['red'],     label=legend['sta0000'])
-if channel==36:
+if CHANNEL==36:
     ax.plot(atten[:,1],signal_dev[:,1], color=COLORS['orange'],  label=legend['sta0001'])
 ax.plot(atten[:,2],signal_dev[:,2], color=COLORS['yellow'],  label=legend['sta0002'])
 ax.plot(atten[:,2],signal_dev[:,3], color=COLORS['green'],   label=legend['sta0003'])
@@ -148,7 +149,7 @@ ax.plot(atten[:,2],signal_dev[:,5], color=COLORS['blue'],    label=legend['sta00
 ax.plot(atten[:,2],signal_dev[:,6], color=COLORS['violet'],  label=legend['sta0006'])
 ax.set_title(F'Atteunuation vs. Signal Deviation:\n'
              + F'SSID={data[1][14]}, '
-             + F'Channel={channel}, '
+             + F'Channel={CHANNEL}, '
              + F'Mode={data[1][11]}')
 ax.set_xlabel('Attenuation (dB)')
 ax.set_ylabel('RSSI (dBm)')
@@ -156,7 +157,7 @@ ax.set_yticks(range(-5, 30, 5))
 ax.set_xticks(range(20, 100, 5))
 plt.grid(color=COLORS['dark_gray'], linestyle='-', linewidth=1)
 plt.legend()
-plt.savefig(F'{PNG_OUTPUT_DIR}/{channel}_{antenna}_{bandwidth}_signal_deviation_atten.png')
+plt.savefig(F'{PNG_OUTPUT_DIR}/{CHANNEL}_{ANTENNA}_{BANDWIDTH}_signal_deviation_atten.png')
 
 check_data(signal, signal_exp)
 sys.exit(0)
