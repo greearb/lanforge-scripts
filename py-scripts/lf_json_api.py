@@ -126,6 +126,11 @@ class lf_json_api():
         logger.debug("port request.text: {text}".format(text=lanforge_port_text))
         lanforge_port_json_formatted = json.dumps(lanforge_port_json, indent=4)
         logger.debug("lanforge_port_json_formatted: {json}".format(json=lanforge_port_json_formatted))
+        
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
+            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
+        ))
+
 
         return lanforge_port_json, lanforge_port_text, lanforge_port_json_formatted
 
