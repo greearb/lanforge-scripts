@@ -920,11 +920,9 @@ class L3VariableTime(Realm):
                     # stats  TODO add for AP
                     # there is a specifi stop() method
                     # Stop connections.
-                    # if self.no_cleanup:
-                    #    logger.info("--no_cleanup set leave stations running")
-                    # else:
-                    #    self.cx_profile.stop_cx()
-                    #    self.multicast_profile.stop_mc()
+                    # There is a specific stop
+                    # self.cx_profile.stop_cx()
+                    # self.multicast_profile.stop_mc()
                     # TODO the passes and expected_passes are not checking anything
                     if passes == expected_passes:
                         # Sets the pass indication
