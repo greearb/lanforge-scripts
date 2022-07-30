@@ -1142,7 +1142,7 @@ def main():
                 logger.info("Regulatory Domain in AP Summary : {domain}".format(domain=myrd))
     #Try for new formatting  
     searchap = False              
-    if myrd == "":
+    if myrd == "NA":
         for line in pss.splitlines():
             if (line.startswith("---------")):
                 searchap = True
