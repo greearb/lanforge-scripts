@@ -20,6 +20,7 @@ LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+# vr_profile2 = importlib.import_module("py-json.vr_profile2")
 
 
 class CreateVR(Realm):
@@ -161,6 +162,7 @@ class CreateVR(Realm):
 
 
 def main():
+    # /home/lanforge-scripts/py-json/LANforge/lfcli_base.py - for bare args parser    
     parser = LFCliBase.create_bare_argparse(
         prog=__file__,
         description="""\
@@ -168,7 +170,7 @@ def main():
 --------------------
 Command example:
 {f} --vr_name 1.vr0 --ports 1.br0,1.rdd0a --services 1.br0=dhcp,nat --services 1.vr0=radvd
-{f} --vr_name 2.vr0 --ports 2.br0,2.vap2 --services
+{f} --vr_name 2.vr0 --ports 2.br0,2.vap2 --services 
 
     --debug
 """.format(f=__file__))

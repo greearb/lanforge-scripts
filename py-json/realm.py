@@ -62,8 +62,8 @@ port_utils = importlib.import_module("py-json.port_utils")
 PortUtils = port_utils.PortUtils
 lfdata = importlib.import_module("py-json.lfdata")
 LFDataCollection = lfdata.LFDataCollection
-# vr_profile2 = importlib.import_module("py-json.vr_profile2")
-# VRProfile = vr_profile2.VRProfile
+vr_profile2 = importlib.import_module("py-json.vr_profile2")
+VRProfile = vr_profile2.VRProfile
 
 
 

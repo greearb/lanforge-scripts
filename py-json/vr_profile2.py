@@ -6,10 +6,15 @@ import importlib
 import time
 from pprint import pprint
 from random import randint
-from geometry import Rect,Group
+import traceback
 
+try:
+    from geometry import Rect,Group
 
- 
+except Exception as x:
+    print("Info:  Geometry package not installed, Needed for creating virtual routers, try 'pip install Geometry'  ")
+    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
