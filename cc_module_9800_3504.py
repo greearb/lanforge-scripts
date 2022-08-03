@@ -315,6 +315,7 @@ class create_controller_series_object:
                              "enable_ft_akm_ftsae", "enable_ft_wpa3_dot1x", "enable_ft_wpa3_dot1x_sha256",
                              "show_wireless_client_sumry", "show_client_macadd_detail", 'debug_wieless_mac',
                              'no_debug_wieless_mac', 'get_ra_trace_files','get_data_ra_trace_files','del_ra_trace_file',
+                             "show_ap_status"
                              ]:
 
             self.command_extend = ["--action", self.action]
@@ -423,6 +424,12 @@ class create_controller_series_object:
     def show_ap_summary(self):
         logger.info("show ap summary")
         self.action = "summary"
+        summary = self.send_command()
+        return summary
+
+    def show_ap_status(self):
+        logger.info("show ap status")
+        self.action = "show_ap_status"
         summary = self.send_command()
         return summary
 
