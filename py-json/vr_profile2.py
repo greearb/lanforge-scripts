@@ -444,10 +444,9 @@ class VRProfile(BaseProfile):
         :param upper_left_y: integer value for specific y
         :return:
         """
-        debug |= self.debug
         used_vrcx_area = self.get_occupied_area(resource=self.vr_eid[1])
 
-    def sync_netsmith(self, resource=0, delay=0.1, debug=False):
+    def sync_netsmith(self, resource=0, delay=0.1):
         """
         This syncs the netsmith window. Doing a sync could destroy any move changes you just did.
         :param resource:
@@ -455,11 +454,10 @@ class VRProfile(BaseProfile):
         :param debug:
         :return:
         """
-        debug |= self.debug
         if (resource is None) or (resource < 1):
             raise ValueError("sync_netsmith: resource must be > 0")
 
-        self.json_post("/vr/1/%s/0" % resource, { "action": "sync" }, debug_=True)
+        self.json_post("/vr/1/%s/0" % resource, { "action": "sync" }, debug_=self.debug)
         time.sleep(delay)
 
     def apply_netsmith(self, resource=0, delay=2, timeout=30):
@@ -562,8 +560,6 @@ class VRProfile(BaseProfile):
                debug=False,
                suppress_related_commands=True):
         # Create vr
-        debug |= self.debug
-
         if vr_name is None:
             raise ValueError("vr_name must be set. Current name: %s" % vr_name)
 

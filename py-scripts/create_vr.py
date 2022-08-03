@@ -117,7 +117,7 @@ class CreateVR(Realm):
         self.vr_profile.vrcx_list(
             resource=self.vr_name[1],
             do_sync=True)  # do_sync
-        self.vr_profile.create(vr_name=self.vr_name, debug=self.debug)
+        self.vr_profile.create(vr_name=self.vr_name)
         self.vr_profile.sync_netsmith(
             resource=self.vr_name[1], debug=self.debug)
         self._pass("created router")
@@ -146,7 +146,7 @@ class CreateVR(Realm):
             resource=self.vr_name[1], do_refresh=True)
         router = self.vr_profile.find_cached_router(
             resource=self.vr_name[1], router_name=self.vr_name[2])
-        pprint(("cached router 120: ", router))
+        logger.info("cached router 120: {router}".format(router=router))
         router_eid = LFUtils.name_to_eid(router["eid"])
         pprint(("router eid 122: ", router_eid))
         full_router = self.json_get(
