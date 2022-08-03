@@ -26,7 +26,41 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
+# TODO - script under development
+'''
 
+Notes:
+start with crafting the flags for the virtual router using AddVrFlags,
+my_vr_flags = LFPost.set_flags(AddVrFlags, 0, [ "USE_IPV6", "USE_IPV6_RADVD" ])
+post_request = new LFPost()
+post_request.post_add_vr(alias=myalias, flags=my_vr_flags, height=100, width=100, resource=1, x=100, y=100)
+
+but don't use xorp unless you know you want to ("USE_XORP_MULTICAST")
+
+so adding the vAP and eth port to the virt router is that an virt router command or need to look for something else?
+
+add_vrcx will add a virtual-router-connection, which is effectively a port in a vr
+
+you can build it manually, look at what is saved in DB/DFLT/*
+
+FREE_LIST means it is out in the wild and not inside a virtual router, btw
+note grep for the router name
+
+cli commands
+add_vr
+add_vr_bgp
+add_bgp_peer
+add_vrcx
+add_vrcx2
+ 
+Adding vap to virtual router
+./ports.db.1.1:122:add_vrcx 1 1 vr_router_0 vap4 NA NA NA NA 737 188 10 10 0 NA 0.0.0.0 43200 0.0.0.0 0.0.0.0 0.0.0.0 NA 1 0.0.0.0 1 0.0.0.0 24 1 100 1 'NA' 'NA' 'NA'
+./ports.db.1.1:123:add_vrcx2 1 1 vr_router_0 vap4 NA NA 00:00:00:00:00:00-0 00:00:00:00:00:00-0 00:00:00:00:00:00-0 00:00:00:00:00:00-0
+
+Adding dhcp
+
+
+'''
 
 class CreateVR(Realm):
     def __init__(self,
@@ -118,8 +152,8 @@ class CreateVR(Realm):
             resource=self.vr_name[1],
             do_sync=True)  # do_sync
         self.vr_profile.create(vr_name=self.vr_name)
-        self.vr_profile.sync_netsmith(
-            resource=self.vr_name[1], debug=self.debug)
+
+        self.vr_profile.sync_netsmith(resource=self.vr_name[1])
         self._pass("created router")
 
     def start(self):
@@ -148,14 +182,14 @@ class CreateVR(Realm):
             resource=self.vr_name[1], router_name=self.vr_name[2])
         logger.info("cached router 120: {router}".format(router=router))
         router_eid = LFUtils.name_to_eid(router["eid"])
-        pprint(("router eid 122: ", router_eid))
+        logger.info(pformat("router eid 122: {router_eid}".format(router_eid=router_eid)))
         full_router = self.json_get(
             "/vr/1/%s/%s/%s" %
             (router_eid[0],
              router_eid[1],
              self.vr_name[2]),
             debug_=self.debug)
-        pprint(("full router: ", full_router))
+        logger.info(pformat("full router: {full_router}".format(full_router=full_router)))
         time.sleep(5)
         if router is None:
             self._fail("Unable to find router after vrcx move " + self.vr_name)
