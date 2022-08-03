@@ -55,15 +55,16 @@ class CreateVR(Realm):
         self.services_list = services_list
         self.vr_profile = self.new_vr_profile()
 
+    # TODO this was hardcoded as an example
     def clean(self):
         if (self.vr_name is None) or (self.vr_profile.vr_eid is None) and (
                 self.vr_profile.vr_eid) == "":
             print("No vr_eid to clean")
             return
-        self.rm_port("1.1.rd90a", debug_=self.debug)
-        self.rm_port("1.1.rd90b", debug_=self.debug)
-        self.wait_until_ports_disappear(sta_list=["1.1.rd90a", "1.1.rd90b"],
-                                        debug_=self.debug)
+        # self.rm_port("1.1.rd90a", debug_=self.debug)
+        # self.rm_port("1.1.rd90b", debug_=self.debug)
+        # self.wait_until_ports_disappear(sta_list=["1.1.rd90a", "1.1.rd90b"],
+        #                                debug_=self.debug)
 
         if (self.vr_profile.vr_eid is not None) \
                 and (self.vr_profile.vr_eid[1] is not None) \
@@ -127,18 +128,18 @@ class CreateVR(Realm):
         :return: void
         """
         # move rd90a into router
-        self.vr_profile.refresh_netsmith(
-            resource=self.vr_name[1])
-        logger.info(pformat(("vr_eid", self.vr_name)))
-        self.vr_profile.wait_until_vrcx_appear(
-            resource=self.vr_name[1], name_list=[
-                "rd90a", "rd90b"])
-        self.vr_profile.add_vrcx(
-            vr_eid=self.vr_name,
-            connection_name_list="rd90a")
+        # self.vr_profile.refresh_netsmith(
+        #     resource=self.vr_name[1])
+        # logger.info(pformat(("vr_eid", self.vr_name)))
+        # self.vr_profile.wait_until_vrcx_appear(
+        #     resource=self.vr_name[1], name_list=[
+        #         "rd90a", "rd90b"])
+        # self.vr_profile.add_vrcx(
+        #     vr_eid=self.vr_name,
+        #     connection_name_list="rd90a")
 
-        self.vr_profile.refresh_netsmith(
-            resource=self.vr_name[1])
+        # self.vr_profile.refresh_netsmith(
+        #     resource=self.vr_name[1])
         # test to make sure that vrcx is inside vr we expect
         self.vr_profile.vrcx_list(resource=self.vr_name[1], do_sync=True)
         vr_list = self.vr_profile.router_list(
