@@ -178,7 +178,8 @@ def main():
                                  "enable_ft_akm_ftsae","enable_ft_wpa3_dot1x","enable_ft_wpa3_dot1x_sha256",
                                  "ap_dot11_dot11ax_mcs_tx_index_spatial_stream", "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream",
                                  "show_wireless_client_sumry", 'show_client_macadd_detail','debug_wieless_mac',
-                                 'no_debug_wieless_mac','get_ra_trace_files','get_data_ra_trace_files', 'del_ra_trace_file'
+                                 'no_debug_wieless_mac','get_ra_trace_files','get_data_ra_trace_files', 'del_ra_trace_file',
+                                 "show_ap_status"
                                  ])
     parser.add_argument("--value", type=str, help="set value")
     # logging configuration
@@ -1061,6 +1062,10 @@ def main():
 
     if (args.action == "summary"):
         command = "show ap summary"
+
+    if (args.action == "show_ap_status"):
+        command = "show ap status"
+
 
     if (args.action == "advanced"):
         if args.series == "9800":
