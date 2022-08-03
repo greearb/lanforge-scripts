@@ -6,7 +6,11 @@ import sys
 import os
 import importlib
 import time
-from pprint import pprint
+from pprint import pformat
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -20,7 +24,8 @@ LFCliBase = lfcli_base.LFCliBase
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-# vr_profile2 = importlib.import_module("py-json.vr_profile2")
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
 
 
 class CreateVR(Realm):
@@ -88,26 +93,26 @@ class CreateVR(Realm):
 
     def build(self):
         self.vr_profile.apply_netsmith(
-            self.vr_name[1], delay=5, debug=self.debug)
-        self.json_post("/cli-json/add_rdd", {
-            "shelf": 1,
-            "resource": self.vr_name[1],
-            "port": "rd90a",
-            "peer_ifname": "rd90b",
-            "report_timer": "3000"
-        })
-        self.json_post("/cli-json/add_rdd", {
-            "shelf": 1,
-            "resource": self.vr_name[1],
-            "port": "rd90b",
-            "peer_ifname": "rd90a",
-            "report_timer": "3000"
-        })
-        self.wait_until_ports_appear(
-            sta_list=[
-                "1.1.rd90a",
-                "1.1.rd90b"],
-            debug_=self.debug)
+            self.vr_name[1], delay=5)
+        # self.json_post("/cli-json/add_rdd", {
+        #     "shelf": 1,
+        #     "resource": self.vr_name[1],
+        #     "port": "rd90a",
+        #     "peer_ifname": "rd90b",
+        #     "report_timer": "3000"
+        # })
+        # self.json_post("/cli-json/add_rdd", {
+        #     "shelf": 1,
+        #     "resource": self.vr_name[1],
+        #     "port": "rd90b",
+        #     "peer_ifname": "rd90a",
+        #     "report_timer": "3000"
+        # })
+        # self.wait_until_ports_appear(
+        #     sta_list=[
+        #         "1.1.rd90a",
+        #         "1.1.rd90b"],
+        #     debug_=self.debug)
         self.vr_profile.vrcx_list(
             resource=self.vr_name[1],
             do_sync=True)  # do_sync
@@ -123,19 +128,17 @@ class CreateVR(Realm):
         """
         # move rd90a into router
         self.vr_profile.refresh_netsmith(
-            resource=self.vr_name[1], debug=self.debug)
-        if self.debug:
-            pprint(("vr_eid", self.vr_name))
+            resource=self.vr_name[1])
+        logger.info(pformat(("vr_eid", self.vr_name)))
         self.vr_profile.wait_until_vrcx_appear(
             resource=self.vr_name[1], name_list=[
                 "rd90a", "rd90b"])
         self.vr_profile.add_vrcx(
             vr_eid=self.vr_name,
-            connection_name_list="rd90a",
-            debug=self.debug)
+            connection_name_list="rd90a")
 
         self.vr_profile.refresh_netsmith(
-            resource=self.vr_name[1], debug=self.debug)
+            resource=self.vr_name[1])
         # test to make sure that vrcx is inside vr we expect
         self.vr_profile.vrcx_list(resource=self.vr_name[1], do_sync=True)
         vr_list = self.vr_profile.router_list(
@@ -189,6 +192,11 @@ Command example:
                           help='Add router services to a port, "br0=nat,dhcp"')
 
     args = parser.parse_args()
+
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
 
     create_vr = CreateVR(lfclient_host=args.mgr,
                          lfclient_port=args.mgr_port,
