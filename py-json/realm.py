@@ -934,9 +934,9 @@ class Realm(LFCliBase):
         return VAPProfile(lfclient_host=self.lfclient_host, lfclient_port=self.lfclient_port, local_realm=self,
                           debug_=self.debug)
 
-    # def new_vr_profile(self):
-    #    return VRProfile(local_realm=self,
-    #    debug=self.debug)
+    def new_vr_profile(self):
+       return VRProfile(local_realm=self,
+       debug=self.debug)
 
     def new_http_profile(self):
         return HTTPProfile(self.lfclient_host, self.lfclient_port, local_realm=self, debug_=self.debug)
