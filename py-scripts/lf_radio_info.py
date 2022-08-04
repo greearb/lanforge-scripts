@@ -226,28 +226,11 @@ CLI Example:
                         default='localhost')
     parser.add_argument("--debug", help="enable debugging", action="store_true")
     parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1", default="1")
-    # parser.add_argument('--radio_list', default=None, help="Specify a file to send debug output to")
-    # parser.add_argument('--index_list', default=None, help="Specify a file to send debug output to")
-    parser.add_argument('--debug_log', default=None, help="Specify a file to send debug output to")
     # logging configuration:
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument('--log_level', default=None,
                         help='Set logging level: debug | info | warning | error | critical')
-
-    # TODO: Try to start with: --radio 'radio==wiphy4,stations==1,ssid==asus11ax-2,ssid_pw==hello123,security==wpa2':
-    parser.add_argument(
-        '-r', '--radio',
-        action='append',
-        nargs=1,
-        help=(' --radio'
-              ' "radio==<number_of_wiphy stations=<=number of stations>'
-              ' ssid==<ssid> ssid_pw==<ssid password> security==<security> '
-              ' wifi_settings==True wifi_mode==<wifi_mode>'
-              ' enable_flags==<enable_flags> '
-              ' reset_port_enable==True reset_port_time_min==<min>s'
-              ' reset_port_time_max==<max>s" ')
-    )
 
     args = parser.parse_args()
 
