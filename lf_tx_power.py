@@ -1158,49 +1158,6 @@ def main():
 
     myrd = cs.regulatory_domain
     mycc = cs.country_code
-    '''
-    pss = cs.show_ap_summary()
-    logg.info(pss)
-
-    # Find our current regulatory domain so we can report it properly
-    searchap = False
-    for line in pss.splitlines():
-        if (line.startswith("---------")):
-            searchap = True
-            continue
-        # the summaries are different between the 9800 series controller and the 3504 series
-        # if the output changes then the following pattern/regular expression parcing needs to be changed
-        # this site may help: https://regex101.com/
-        # when using https://regex101.com/ for tool beginning of string begins with ^
-        if (searchap):
-            if args.series == "9800":
-                pat = "%s\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+%s\\s+(\\S+)" % (args.ap, args.testbed_location)
-            else:
-                pat = "%s\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+.*  (\\S+)\\s+\\S+\\s*\\S+\\s+\\[" % (args.ap)
-            m = re.search(pat, line)
-            if (m is not None):
-                myrd = m.group(1)
-                logger.info("Regulatory Domain in AP Summary : {domain}".format(domain=myrd))
-    #Try for new formatting  
-    searchap = False              
-    if myrd == "NA":
-        for line in pss.splitlines():
-            if (line.startswith("---------")):
-                searchap = True
-                continue
-            if (searchap):
-                pat = "%s\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+(\\S+)\s+(\\S+)" % (args.ap)
-                m = re.search(pat, line)
-                if (m is not None):
-                    mycc = m.group(1)
-                    myrd = m.group(2)
-                    logger.info("Regulatory Domain in show AP Summary : {domain} Country Code {cc}".format(domain=myrd, cc=mycc))
-
-
-    if myrd == "":
-        logger.error("Regulatory domain is blank: --testbed_location <show ap summary Location> : location entered {location}".format(location=args.testbed_location))
-
-    '''
     # these are set to configure the number of spatial streams and MCS values
     # 5g has 8 spatial streams , MCS is 7, 9, 11
     # ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 1 << - turn on
@@ -1429,6 +1386,8 @@ def main():
                     summary.wait()
                     logger.info(summary_output) 
                     cs.show_ap_summary()
+
+                    # TODO 
 
                     # when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .
                     # 5g slot 1 will used the 5g channels to 64,  the 5g dual-band will use channels 100 -> 165.
@@ -2813,18 +2772,18 @@ def main():
                     col += 1
                     worksheet.write(row, col, antenna_gain, center_tan)
                     col += 1
-                    worksheet.write(row, col, _noise, center_tan)
+                    worksheet.write(row, col, _noise, center_peach)
                     col += 1
-                    worksheet.write(row, col, rssi_adj, center_tan)
+                    worksheet.write(row, col, rssi_adj, center_peach)
                     col += 1
                     if (args.adjust_nf):
-                        worksheet.write(row, col, rssi_adj, center_tan)
+                        worksheet.write(row, col, rssi_adj, center_peach)
                         col += 1
-                    worksheet.write(row, col, _rxrate, center_tan)
+                    worksheet.write(row, col, _rxrate, center_peach)
                     col += 1
-                    worksheet.write(row, col, beacon_sig, center_tan)
+                    worksheet.write(row, col, beacon_sig, center_peach)
                     col += 1
-                    worksheet.write(row, col, sig, center_tan)
+                    worksheet.write(row, col, sig, center_peach)
                     col += 1
                     for x in range(4):
                         if (x < int(n)):
