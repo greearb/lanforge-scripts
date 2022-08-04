@@ -43,6 +43,7 @@ import argparse
 import logging
 import importlib
 import os
+import re
 import subprocess
 from pprint import pformat
 
@@ -171,6 +172,11 @@ class create_controller_series_object:
         self.dtim = None
         self.spatial_stream = None  # default cannot be NONE for send command
         self.mcs_tx_index = None    # default cannot be NONE for send command
+        self.regulatory_domain = 'NA'
+        self.country_code = 'NA'
+        self.series = 'NA'
+        self.testbed_location = 'NA'
+
 
     # TODO update the wifi_ctl_9800_3504 to use 24g, 5g, 6g
 
@@ -1183,6 +1189,60 @@ class create_controller_series_object:
         summary = self.send_command()
         return summary
 
+    # todo have the series passed in 
+    # if args.series == "9800":
+    def console_setup(self):
+        self.no_logging_console()
+        self.line_console_0()
+        
+
+    def read_country_code_and_regulatory_domain(self):
+        logger.info("read_conutry_code_and_regulatory_domain")
+
+        self.regulatory_domain = "NA"
+        self.country_code = "NA"
+        
+        pss = self.show_ap_summary()
+        logger.info(pss)
+
+        # Find our current regulatory domain so we can report it properly
+        searchap = False
+        for line in pss.splitlines():
+            if (line.startswith("---------")):
+                searchap = True
+                continue
+            # the summaries are different between the 9800 series controller and the 3504 series
+            # if the output changes then the following pattern/regular expression parcing needs to be changed
+            # this site may help: https://regex101.com/
+            # when using https://regex101.com/ for tool beginning of string begins with ^
+            if (searchap):
+                if self.series == "9800":
+                    pat = "%s\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+%s\\s+(\\S+)" % (self.ap, self.testbed_location)
+                else:
+                    pat = "%s\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+.*  (\\S+)\\s+\\S+\\s*\\S+\\s+\\[" % (self.ap)
+                m = re.search(pat, line)
+                if (m is not None):
+                    self.regulatory_domain = m.group(1)
+                    logger.info("Regulatory Domain in AP Summary : {domain}".format(domain=myrd))
+                    break
+        #Try for new formatting  
+        searchap = False              
+        if self.regulatory_domain == "NA":
+            for line in pss.splitlines():
+                if (line.startswith("---------")):
+                    searchap = True
+                    continue
+                if (searchap):
+                    pat = "%s\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+(\\S+)\s+(\\S+)" % (self.ap)
+                    m = re.search(pat, line)
+                    if (m is not None):
+                        self.country_code = m.group(1)
+                        self.regulatory_domain = m.group(2)
+                        logger.info("Regulatory Domain in show AP Summary : Regulatory {domain} Country Code {cc}".format(domain=self.regulatory_domain, cc=self.country_code))
+                        break
+
+        if self.regulatory_domain == "NA":
+            logger.error("Regulatory domain is blank: --testbed_location <show ap summary Location> : location entered {location}".format(location=args.testbed_location))
 
 
 # This next section is to allow for tests to be created without

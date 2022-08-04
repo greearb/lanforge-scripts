@@ -553,62 +553,7 @@ def main():
     # test_priority = args.test_priority  # this may need to be set per test
     test_id = args.test_id
 
-    # put in test information in title name
-    # this only works for single test passed in.
-    if args.tx_power_adjust_6E and args.band == '6g':
-        txpowers = args.txpower.split()
-        if args.bandwidth == '20':
-            if '8' in txpowers:
-                txpowers.remove('8')
-            if '7' in txpowers:
-                txpowers.remove('7')
-        elif args.bandwidth == '40':
-            if '8' in txpowers:
-                txpowers.remove('8')
-        txpowers_str = '_'.join(txpowers)
 
-        results_dir_name = ("tx_power"
-                            + '_band_' + args.band
-                            + '_ch_' + args.channel.replace(' ', '_')
-                            + '_nss_' + args.nss.replace(' ', '_')
-                            + '_bw_' + args.bandwidth.replace(' ', '_')
-                            + '_txpw_' + txpowers_str)
-
-    else:
-        results_dir_name = ("tx_power"
-                            + '_band_' + args.band
-                            + '_ch_' + args.channel.replace(' ', '_')
-                            + '_nss_' + args.nss.replace(' ', '_')
-                            + '_bw_' + args.bandwidth.replace(' ', '_')
-                            + '_txpw_' + args.txpower.replace(' ', '_'))
-
-    if local_lf_report_dir != "":
-        report = lf_report.lf_report(
-            _path=local_lf_report_dir,
-            _results_dir_name=results_dir_name,
-            _output_html="{results_dir}.html".format(results_dir=results_dir_name),
-            _output_pdf="{results_dir}.pdf".format(results_dir=results_dir_name))
-    else:
-        report = lf_report.lf_report(
-            _results_dir_name=results_dir_name,
-            _output_html="{results_dir}.html".format(results_dir=results_dir_name),
-            _output_pdf="{results_dir}.pdf".format(results_dir=results_dir_name))
-
-    kpi_path = report.get_report_path()
-    # kpi_filename = "kpi.csv"
-    logg.info("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
-
-    # create kpi_csv object and record the common data
-    # TX power is not a class so access kpi directly in function
-    kpi_csv = lf_kpi_csv.lf_kpi_csv(
-        _kpi_path=kpi_path,
-        _kpi_test_rig=test_rig,
-        _kpi_test_tag=test_tag,
-        _kpi_dut_hw_version=dut_hw_version,
-        _kpi_dut_sw_version=dut_sw_version,
-        _kpi_dut_model_num=dut_model_num,
-        _kpi_dut_serial_num=dut_serial_num,
-        _kpi_test_id=test_id)
 
     lfstation = args.station
     upstream_port = args.upstream_port
@@ -618,44 +563,6 @@ def main():
         lfresource = args.lfresource
     if (args.lfresource2 is not None):
         lfresource2 = args.lfresource2
-
-    outfile_path = report.get_report_path()
-    current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
-    if (args.outfile):
-        test_name = ('Tx Power:' + args.outfile  + 'AP: ' + args.ap + ', Band: ' + args.band + ', Channel: ' + args.channel
-                 + ', NSS: ' + args.nss
-                 + ', BW: ' + args.bandwidth
-                 + ', Tx Power: ' + args.txpower)
-
-        outfile_tmp = (outfile_path + '/' + current_time + '_' + args.outfile
-                       + '_AP_' + args.ap
-                       + '_band_' + args.band
-                       + '_ch_' + args.channel.replace(' ', '_')
-                       + '_nss_' + args.nss.replace(' ', '_')
-                       + '_bw_' + args.bandwidth.replace(' ', '_')
-                       + '_tx_pw_' + args.txpower.replace(' ', '_'))
-    else:
-        test_name = ('Tx Power:' + 'AP: ' + args.ap + ', Band: ' + args.band + ', Channel: ' + args.channel
-                 + ', NSS: ' + args.nss
-                 + ', BW: ' + args.bandwidth
-                 + ', Tx Power: ' + args.txpower)
-
-        outfile_tmp = (outfile_path + '/' + current_time + '_' + 'tx_power'
-                       + '_AP_' + args.ap
-                       + '_band_' + args.band
-                       + '_ch_' + args.channel.replace(' ', '_')
-                       + '_nss_' + args.nss.replace(' ', '_')
-                       + '_bw_' + args.bandwidth.replace(' ', '_')
-                       + '_tx_pw_' + args.txpower.replace(' ', '_'))
-    print("outfile_tmp {outfile_tmp}".format(outfile_tmp=outfile_tmp))
-
-    # note: there would always be an args.outfile due to the default
-    full_outfile = "{}_full.txt".format(outfile_tmp)
-    outfile_xlsx = "{}.xlsx".format(outfile_tmp)
-    outfile = "{}.txt".format(outfile_tmp)
-    print("output file: {}".format(outfile))
-    print("output file full: {}".format(full_outfile))
-    print("output file xlsx: {}".format(outfile_xlsx))
 
     if (args.pf_dbm is not None):
         pf_dbm = int(args.pf_dbm)
@@ -712,6 +619,128 @@ def main():
     cs.wlanSSID = args.wlanSSID
     # TODO change to use args.security_key
     cs.security_key = args.ssidpw
+    cs.series = args.series
+
+    # Need to get regulatory domain for title
+        # Read the country code and regulatory domain
+    # 
+    cs.console_setup()
+
+    cs.read_country_code_and_regulatory_domain()
+
+    myrd = cs.regulatory_domain
+    mycc = cs.country_code
+
+    # setup Logging and Paths
+
+    # end setup logging and paths
+    # put in test information in title name
+    # this only works for single test passed in.
+    if args.tx_power_adjust_6E and args.band == '6g':
+        txpowers = args.txpower.split()
+        if args.bandwidth == '20':
+            if '8' in txpowers:
+                txpowers.remove('8')
+            if '7' in txpowers:
+                txpowers.remove('7')
+        elif args.bandwidth == '40':
+            if '8' in txpowers:
+                txpowers.remove('8')
+        txpowers_str = '_'.join(txpowers)
+
+        results_dir_name = ("tx_power"
+                            + '_cc_' + mycc
+                            + '_rd_' + myrd
+                            + '_band_' + args.band
+                            + '_ch_' + args.channel.replace(' ', '_')
+                            + '_nss_' + args.nss.replace(' ', '_')
+                            + '_bw_' + args.bandwidth.replace(' ', '_')
+                            + '_txpw_' + txpowers_str)
+
+    else:
+        results_dir_name = ("tx_power"
+                            + '_cc_' + mycc
+                            + '_rd_' + myrd
+                            + '_band_' + args.band
+                            + '_ch_' + args.channel.replace(' ', '_')
+                            + '_nss_' + args.nss.replace(' ', '_')
+                            + '_bw_' + args.bandwidth.replace(' ', '_')
+                            + '_txpw_' + args.txpower.replace(' ', '_'))
+
+    if local_lf_report_dir != "":
+        report = lf_report.lf_report(
+            _path=local_lf_report_dir,
+            _results_dir_name=results_dir_name,
+            _output_html="{results_dir}.html".format(results_dir=results_dir_name),
+            _output_pdf="{results_dir}.pdf".format(results_dir=results_dir_name))
+    else:
+        report = lf_report.lf_report(
+            _results_dir_name=results_dir_name,
+            _output_html="{results_dir}.html".format(results_dir=results_dir_name),
+            _output_pdf="{results_dir}.pdf".format(results_dir=results_dir_name))
+
+    kpi_path = report.get_report_path()
+    # kpi_filename = "kpi.csv"
+    logg.info("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
+
+    # create kpi_csv object and record the common data
+    # TX power is not a class so access kpi directly in function
+    kpi_csv = lf_kpi_csv.lf_kpi_csv(
+        _kpi_path=kpi_path,
+        _kpi_test_rig=test_rig,
+        _kpi_test_tag=test_tag,
+        _kpi_dut_hw_version=dut_hw_version,
+        _kpi_dut_sw_version=dut_sw_version,
+        _kpi_dut_model_num=dut_model_num,
+        _kpi_dut_serial_num=dut_serial_num,
+        _kpi_test_id=test_id)
+
+    outfile_path = report.get_report_path()
+    current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
+    if (args.outfile):
+        test_name = ('Tx Power:' + args.outfile  + ', AP: ' + args.ap + ', CC: ' + mycc + ', RD ' + myrd
+                 + ', Band: ' + args.band + ', Channel: ' + args.channel
+                 + ', NSS: ' + args.nss
+                 + ', BW: ' + args.bandwidth
+                 + ', Tx Power: ' + args.txpower)
+
+        outfile_tmp = (outfile_path + '/' + current_time + '_' + args.outfile
+                       + '_AP_' + args.ap
+                       + '_CC_' + mycc
+                       + '_RD_' + myrd
+                       + '_band_' + args.band
+                       + '_ch_' + args.channel.replace(' ', '_')
+                       + '_nss_' + args.nss.replace(' ', '_')
+                       + '_bw_' + args.bandwidth.replace(' ', '_')
+                       + '_tx_pw_' + args.txpower.replace(' ', '_'))
+    else:
+        test_name = ('Tx Power:' + 'AP: ' + args.ap + ', CC: ' + mycc + ', RD ' + myrd
+                 + ', Band: ' + args.band + ', Channel: ' + args.channel
+                 + ', NSS: ' + args.nss
+                 + ', BW: ' + args.bandwidth
+                 + ', Tx Power: ' + args.txpower)
+
+        outfile_tmp = (outfile_path + '/' + current_time + '_' + 'tx_power'
+                       + '_AP_' + args.ap
+                       + '_CC_' + mycc
+                       + '_RD_' + myrd
+                       + '_band_' + args.band
+                       + '_ch_' + args.channel.replace(' ', '_')
+                       + '_nss_' + args.nss.replace(' ', '_')
+                       + '_bw_' + args.bandwidth.replace(' ', '_')
+                       + '_tx_pw_' + args.txpower.replace(' ', '_'))
+    print("outfile_tmp {outfile_tmp}".format(outfile_tmp=outfile_tmp))
+
+
+    # note: there would always be an args.outfile due to the default
+    full_outfile = "{}_full.txt".format(outfile_tmp)
+    outfile_xlsx = "{}.xlsx".format(outfile_tmp)
+    outfile = "{}.txt".format(outfile_tmp)
+    print("output file: {}".format(outfile))
+    print("output file full: {}".format(full_outfile))
+    print("output file xlsx: {}".format(outfile_xlsx))
+
+
 
     if args.create_wlan:
         cs.tag_policy = args.tag_policy
@@ -1110,14 +1139,23 @@ def main():
 
     # 5ghz speeds 
 
-    myrd = "NA"
-    mycc = ""
+    # myrd = "NA"
+    # mycc = ""
     # The script supports both the 9800 series controller and the 3504 series controller ,  the controllers have different interfaces
-    if args.series == "9800":
+    # if args.series == "9800":
+    #
+    #   cs.no_logging_console()
+    #   cs.line_console_0()
 
-        cs.no_logging_console()
-        cs.line_console_0()
-    # TODO
+    cs.series = "9800"
+    cs.testbed_location = args.testbed_location
+    cs.console_setup()
+
+    cs.read_country_code_and_regulatory_domain()
+
+    myrd = cs.regulatory_domain
+    mycc = cs.country_code
+    '''
     pss = cs.show_ap_summary()
     logg.info(pss)
 
@@ -1159,6 +1197,7 @@ def main():
     if myrd == "":
         logger.error("Regulatory domain is blank: --testbed_location <show ap summary Location> : location entered {location}".format(location=args.testbed_location))
 
+    '''
     # these are set to configure the number of spatial streams and MCS values
     # 5g has 8 spatial streams , MCS is 7, 9, 11
     # ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 1 << - turn on
