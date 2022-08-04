@@ -841,6 +841,9 @@ def main():
     center_pink = workbook.add_format({'align': 'center'})
     center_pink.set_bg_color("ffd2d3")
     center_pink.set_border(1)
+    center_red = workbook.add_format({'align': 'center'})
+    center_red.set_bg_color("fc5555")
+    center_red.set_border(1)
     red = workbook.add_format({'color': 'red', 'align': 'center'})
     red.set_bg_color("#e0efda")
     red.set_border(1)
@@ -2760,11 +2763,28 @@ def main():
                     csvs.write(ln)
                     csvs.write("\t")
 
+                    # Save the configurations
+                    center_blue_tmp = center_blue
+                    center_tan_tmp = center_tan
+                    center_peach_tmp = center_peach
+                    center_pink_tmp = center_pink
+                    center_yel_red_tmp = center_yel_red
+
+                    # TODO refactor this is a quick fix to allow the fail's to be better indicated
+                    if (pfs == "FAIL") or (_bw != bw) or (_nss != n ) or (e_tot != ""):
+                        center_blue = center_red
+                        center_tan = center_red
+                        center_peach = center_red
+                        center_pink = center_red
+                        center_yel_red = center_red
+                    
+                    # Start report line
                     col = 0
                     worksheet.write(row, col, mycc, center_blue)
                     col += 1
                     worksheet.write(row, col, myrd, center_blue)
                     col += 1
+
                     worksheet.write(row, col, args.series, center_blue)
                     col += 1
                     worksheet.write(row, col, cc_ch, center_blue)
@@ -2788,7 +2808,6 @@ def main():
                     if(bool(ap_dict)):
                         col += 1
                         worksheet.write(row, col, ap_per_path_power, center_tan)
-
                     col += 1
                     worksheet.write(row, col, pathloss, center_tan)
                     col += 1
@@ -2822,7 +2841,6 @@ def main():
                     col += 1
                     worksheet.write(row, col, calc_ant4, center_pink)
                     col += 1
-
                     if (diff_a1 != "" and abs(diff_a1) > pfrange):
                         worksheet.write(row, col, diff_a1, center_yel_red)
                         col += 1
@@ -2857,7 +2875,6 @@ def main():
                     col += 1
                     worksheet.write(row, col, diff_dbm, center_blue)
                     col += 1
-
                     if (pfs == "FAIL"):
                         worksheet.write(row, col, pfs, red)
                         col += 1
@@ -2870,7 +2887,6 @@ def main():
                     col += 1
                     worksheet.write(row, col, total_run_duration_str, green)
                     col += 1
-
                     if (_bw != bw):
                         err = "WARNING: Known Issue with AX210 Requested bandwidth: %s != station's reported bandwidth: %s.  " % (bw, _bw)
                         e_tot += err
@@ -2883,7 +2899,6 @@ def main():
                         csv.write(err)
                         csvs.write(err)
                         e_tot += err
-
                     if (e_tot == ""):
                         e_w_tot = e_tot + w_tot + i_tot
                         if(w_tot == ""):
@@ -2897,6 +2912,14 @@ def main():
                         worksheet.write(row, col, e_w_tot, red_left)
                         col += 1
                     row += 1
+                    
+                    # reset colors in case of failure
+                    center_blue = center_blue_tmp
+                    center_tan = center_tan_tmp
+                    center_peach = center_peach_tmp
+                    center_pink = center_pink_tmp
+                    center_yel_red = center_yel_red_tmp
+
 
                     csv.write("\n")
                     csv.flush()
