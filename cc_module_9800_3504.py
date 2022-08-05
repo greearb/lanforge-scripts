@@ -176,6 +176,7 @@ class create_controller_series_object:
         self.country_code = 'NA'
         self.series = 'NA'
         self.testbed_location = 'NA'
+        self.ap_config_radio_role = 'NA'
 
 
     # TODO update the wifi_ctl_9800_3504 to use 24g, 5g, 6g
@@ -311,6 +312,7 @@ class create_controller_series_object:
 
         # possible need to look for exact command
         elif self.action in ["summary", "show_radio", "no_logging_console", "line_console_0", "show_ap_wlan_summary", "show_wlan_summary", "show_wlan_id",
+                             "show_ap_name_config_role",
                              "advanced", "disable_operation_status",
                              "disable_network_dual_band_6ghz", "disable_network_dual_band_5ghz", "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
                              "show_ap_bssid_dual_band_6g", "show_ap_bssid_dual_band_5g", "show_ap_bssid_6g", "show_ap_bssid_5g", "show_ap_bssid_24g",
@@ -438,6 +440,12 @@ class create_controller_series_object:
         self.action = "show_ap_status"
         summary = self.send_command()
         return summary
+
+    def show_ap_name_config_role(self):
+        logger.info("show ap name config role")
+        self.action = "show_ap_name_config_role"
+        summary = self.send_command()
+        return summary       
 
     def show_ap_bssid_dual_band_6ghz(self):
         logger.info("show ap name  wlan dot11 dual-band")
@@ -1194,7 +1202,20 @@ class create_controller_series_object:
     def console_setup(self):
         self.no_logging_console()
         self.line_console_0()
-        
+
+    def read_ap_config_radio_role(self):
+        logger.info("read the AP if in Manual ") 
+        pss = self.show_ap_name_config_role()
+
+        for line in pss.splitlines():
+            if 'Ridio Role Op' in line: 
+                if 'Manual' in line:
+                    self.ap_config_radio_role = 'Manual'
+    
+                elif 'Auto' in line:
+                    self.ap_config_radio_role = 'Auto'
+        logger.info("ap config radio role: {role}".format(role=self.ap_config_radio_role))
+
 
     def read_country_code_and_regulatory_domain(self):
         logger.info("read_conutry_code_and_regulatory_domain")

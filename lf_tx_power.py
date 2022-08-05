@@ -1158,6 +1158,14 @@ def main():
 
     myrd = cs.regulatory_domain
     mycc = cs.country_code
+
+    cs.read_ap_config_radio_role()
+    
+    # this reads if the radio role is 'Manual' or 'Auto'
+    # A Manual role has the channel, channel width and tx_power 
+    # stay on the settings that are set in the AP or controller
+    ap_config_radio_role = cs.ap_config_radio_role
+
     # these are set to configure the number of spatial streams and MCS values
     # 5g has 8 spatial streams , MCS is 7, 9, 11
     # ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 1 << - turn on
@@ -1387,8 +1395,6 @@ def main():
                     logger.info(summary_output) 
                     cs.show_ap_summary()
 
-                    # TODO 
-
                     # when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .
                     # 5g slot 1 will used the 5g channels to 64,  the 5g dual-band will use channels 100 -> 165.
                     # When 5g (slot 1) and dual-band 6g (slot 2) is enabled then 5g (slot 1) has all bands.
@@ -1561,9 +1567,6 @@ def main():
                                 logg.info(pss)
                                 pss = cs.show_ap_bssid_24ghz()
                                 logg.info(pss)
-
-
-                            
                         else:
                             # Verify that a wlan does not exist on wlanID
                             # delete the wlan if already exists

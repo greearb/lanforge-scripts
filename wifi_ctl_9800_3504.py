@@ -172,6 +172,7 @@ def main():
                                  "disable_network_dual_band_6ghz","disable_network_dual_band_5ghz","disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
                                  "enable_network_dual_band_6ghz","enable_network_dual_band_5ghz","enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
                                  "wireless_tag_policy", "no_wlan_wireless_tag_policy", "delete_wlan",
+                                 "show_ap_name_config_role",
                                  "show_ap_bssid_dual_band_6g", "show_ap_bssid_dual_band_5g", "show_ap_bssid_6g", "show_ap_bssid_5g", "show_ap_bssid_24g",  
                                  "11r_logs", "enable_ft_akm_ftpsk", "enable_ftotd_akm_ftpsk",
                                  "config_dual_band_mode","dual_band_no_mode_shutdown","dual_band_mode_shutdown",
@@ -1066,6 +1067,8 @@ def main():
     if (args.action == "show_ap_status"):
         command = "show ap status"
 
+    if (args.action == "show_ap_name_config_role"):
+        command = "show ap name %s config slot %s | inc Role" % (args.ap, args.ap_band_slot)
 
     if (args.action == "advanced"):
         if args.series == "9800":
