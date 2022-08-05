@@ -16,6 +16,8 @@ from datetime import datetime
 import pandas as pd
 import paramiko
 from itertools import chain
+import argparse
+
 
 logger = logging.getLogger(__name__)
 if sys.version_info[0] != 3:
@@ -1405,6 +1407,21 @@ class HardRoam(Realm):
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        prog='lf_hard_roam_test.py',
+        # formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog='''\
+            lf_hard_roam_test.py
+            ''',
+
+        description='''\
+            lf_hard_roam_test.py - under development
+            '''
+    )
+    args = parser.parse_args()
+
+
     obj = HardRoam(lanforge_ip="192.168.100.131",
                    lanforge_port=8080,
                    lanforge_ssh_port=22,
