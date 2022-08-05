@@ -476,6 +476,12 @@ def main():
     parser.add_argument("-n", "--nss", type=str, help="[test configuration] --nss '2' List of spatial streams to test.  NA means no change")
 
 
+    parser.add_argument("--tx_pw_cmp_to_prev", help='''
+    [test configuration] --tx_pw_cmp_to_prev  validated that there was 3 dBm difference for each power step between runs
+                            tx pwr 1 (20 dBm) to tx_pwr 2 (17 dBm) the pwr difference is 3 dBm
+                            tx_power of 1 has no comparison", action='store_true'
+                            ''')
+    
     parser.add_argument("--nss_4x4_override", help="[test configuration] --nss_4x4_override  controller nss is 4 client nss is 2, set expected power to 1/4", action='store_true')
     parser.add_argument("--nss_4x4_ap_adjust", help="[test configuration] --nss_4x4_ap_adjust read ap to know number of spatial stream to take into account", action='store_true')
     parser.add_argument("--set_nss", help="[test configuration] --set_nss  configure controller to spatial streams to test", action='store_true')
