@@ -2741,6 +2741,7 @@ def main():
                     center_peach_tmp = center_peach
                     center_pink_tmp = center_pink
                     center_yel_red_tmp = center_yel_red
+                    center_yel_tmp = center_yel
 
                     # TODO refactor this is a quick fix to allow the fail's to be better indicated
                     if (pfs == "FAIL") or (_bw != bw) or (_nss != n ) or (e_tot != "") or (int(cc_dbm) != int(ap_dbm)) or (cc_power != ap_power):
@@ -2749,6 +2750,8 @@ def main():
                         center_peach = center_red
                         center_pink = center_red
                         center_yel_red = center_red
+                        center_yel = center_red
+
                     
                     # Start report line
                     col = 0
@@ -2908,6 +2911,7 @@ def main():
                     center_peach = center_peach_tmp
                     center_pink = center_pink_tmp
                     center_yel_red = center_yel_red_tmp
+                    center_yel = center_yel_tmp
 
 
                     csv.write("\n")
