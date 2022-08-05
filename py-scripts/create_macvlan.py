@@ -159,12 +159,6 @@ Generic command layout:
         help='list of cxs to add/remove depending on use of --add_to_group or --del_from_group',
         default=None)
 
-    # TODO:  Use lfcli_base for common arguments.
-    parser.add_argument('--log_level',
-                        default=None,
-                        help='Set logging level: debug | info | warning | error | critical')
-    parser.add_argument('--lf_logger_config_json',
-                        help="--lf_logger_config_json <json file> , json configuration of logger")
     args = parser.parse_args()
 
     logger_config = lf_logger_config.lf_logger_config()
