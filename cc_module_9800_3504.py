@@ -1208,10 +1208,10 @@ class create_controller_series_object:
         pss = self.show_ap_name_config_role()
 
         for line in pss.splitlines():
-            if 'Ridio Role Op' in line: 
+            if 'Radio Role Op' in line: 
                 if 'Manual' in line:
                     self.ap_config_radio_role = 'Manual'
-    
+
                 elif 'Auto' in line:
                     self.ap_config_radio_role = 'Auto'
         logger.info("ap config radio role: {role}".format(role=self.ap_config_radio_role))
