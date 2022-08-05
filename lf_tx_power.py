@@ -913,10 +913,10 @@ def main():
     col += 1
     worksheet.write(row, col, 'Tx\nPower\nSetting', dtan_bold)
     col += 1
+    worksheet.write(row, col, 'AP Tx\nPower\nSetting', dtan_bold)
+    col += 1
     worksheet.set_column(col, col, 20)  # Set width
     worksheet.write(row, col, 'Controller Reported\nTotal\nTx Power dBm\nFrom AP Summary', dtan_bold)
-    col += 1
-    worksheet.write(row, col, 'AP Tx\nPower\nSetting', dtan_bold)
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
     worksheet.write(row, col, 'AP Reported\nTotal\nTx Power dBm\n', dtan_bold)
@@ -1882,7 +1882,7 @@ def main():
 
                     # read the AP Tx Power
                     cs.get_ap_tx_power_config()
-                    ap_tx_power_dbm = cs.ap_tx_power
+                    ap_dbm = cs.ap_tx_power_dbm
                     ap_power = "{pw} of {pw_levels}".format(pw=cs.ap_current_tx_power_level,pw_levels=cs.ap_num_power_levels)
 
                     # Up station
@@ -2743,7 +2743,7 @@ def main():
                     center_yel_red_tmp = center_yel_red
 
                     # TODO refactor this is a quick fix to allow the fail's to be better indicated
-                    if (pfs == "FAIL") or (_bw != bw) or (_nss != n ) or (e_tot != ""):
+                    if (pfs == "FAIL") or (_bw != bw) or (_nss != n ) or (e_tot != "") or (int(cc_dbm) != int(ap_dbm)) or (cc_power != ap_power):
                         center_blue = center_red
                         center_tan = center_red
                         center_peach = center_red
@@ -2771,11 +2771,11 @@ def main():
                     col += 1
                     worksheet.write(row, col, cc_power, center_tan)
                     col += 1
-                    worksheet.write(row, col, cc_dbm, center_tan)
-                    col += 1
                     worksheet.write(row, col, ap_power, center_tan)
                     col += 1
-                    worksheet.write(row, col, ap_tx_power_dbm, center_tan)
+                    worksheet.write(row, col, cc_dbm, center_tan)
+                    col += 1
+                    worksheet.write(row, col, ap_dbm, center_tan)
                     if(bool(ap_dict)):
                         col += 1
                         worksheet.write(row, col, ap_total_power, center_tan)
@@ -2863,6 +2863,19 @@ def main():
                     col += 1
                     worksheet.write(row, col, total_run_duration_str, green)
                     col += 1
+                    if (int(cc_dbm) != int (ap_dbm)):
+                        err = "ERROR:  Controller dBm : %s != AP dBm: %s.  " % (cc_dbm, ap_dbm)
+                        logg.info(err)
+                        csv.write(err)
+                        csvs.write(err)
+                        e_tot += err
+                    if (cc_power != ap_power):
+                        err = "ERROR:  Controller Power : %s != AP Power: %s.  " % (cc_power, ap_power)
+                        logg.info(err)
+                        csv.write(err)
+                        csvs.write(err)
+                        e_tot += err
+
                     if (_bw != bw):
                         err = "WARNING: Known Issue with AX210 Requested bandwidth: %s != station's reported bandwidth: %s.  " % (bw, _bw)
                         e_tot += err

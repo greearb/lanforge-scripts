@@ -163,7 +163,7 @@ class create_controller_series_object:
         self.tx_power = None
         self.ap_num_power_levels = 'NA'
         self.ap_current_tx_power_level = 'NA'
-        self.ap_tx_power = 'NA'
+        self.ap_tx_power_dbm = 'NA'
         self.channel = None
         self.bandwidth = None
         self.action = None
@@ -1229,7 +1229,7 @@ class create_controller_series_object:
     def get_ap_tx_power_config(self):
         summary = self.show_ap_tx_power_config()
         self.ap_current_tx_power_level = 'NA'
-        self.ap_tx_power = 'NA'
+        self.ap_tx_power_dbm = 'NA'
         self.ap_num_power_levels = 'NA'
         for line in summary.splitlines():
             pat = "Number of Supported Power Levels\\s+\\S+\\s+(\\S+)"
@@ -1247,11 +1247,11 @@ class create_controller_series_object:
                 pat = 'Tx Power Level %s\\s+\\S+\\s+(\\S+)' % (self.ap_current_tx_power_level)
                 m = re.search(pat, line)
                 if (m is not None):
-                    self.ap_tx_power = m.group(1)
+                    self.ap_tx_power_dbm = m.group(1)
                     break
 
         logger.info("Total Power Levels: {levels} Current Power Level: {level} Current Tx Power: {tx_power}".
-            format(levels=self.ap_num_power_levels,level=self.ap_current_tx_power_level,tx_power=self.ap_tx_power))
+            format(levels=self.ap_num_power_levels,level=self.ap_current_tx_power_level,tx_power=self.ap_tx_power_dbm))
 
     def read_country_code_and_regulatory_domain(self):
         logger.info("read_conutry_code_and_regulatory_domain")
