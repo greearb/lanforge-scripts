@@ -915,6 +915,11 @@ def main():
     col += 1
     worksheet.set_column(col, col, 20)  # Set width
     worksheet.write(row, col, 'Controller Reported\nTotal\nTx Power dBm\nFrom AP Summary', dtan_bold)
+    col += 1
+    worksheet.write(row, col, 'AP Tx\nPower\nSetting', dtan_bold)
+    col += 1
+    worksheet.set_column(col, col, 20)  # Set width
+    worksheet.write(row, col, 'AP Reported\nTotal\nTx Power dBm\n', dtan_bold)
     if (bool(ap_dict)):
         col += 1
         worksheet.set_column(col, col, 20)  # Set width
@@ -1875,6 +1880,11 @@ def main():
                         logg.info("3504 test_parameters cc_dbm: read : {}".format(cc_dbm))
                         logg.info("3504 test_parameters cc_ch: read : {}".format(cc_ch))
 
+                    # read the AP Tx Power
+                    cs.get_ap_tx_power_config()
+                    ap_tx_power_dbm = cs.ap_tx_power
+                    ap_power = "{pw} of {pw_levels}".format(pw=cs.ap_current_tx_power_level,pw_levels=cs.ap_num_power_levels)
+
                     # Up station
                     subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
                                     "--set_ifstate", "up"])
@@ -2762,6 +2772,10 @@ def main():
                     worksheet.write(row, col, cc_power, center_tan)
                     col += 1
                     worksheet.write(row, col, cc_dbm, center_tan)
+                    col += 1
+                    worksheet.write(row, col, ap_power, center_tan)
+                    col += 1
+                    worksheet.write(row, col, ap_tx_power_dbm, center_tan)
                     if(bool(ap_dict)):
                         col += 1
                         worksheet.write(row, col, ap_total_power, center_tan)

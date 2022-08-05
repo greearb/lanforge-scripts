@@ -161,6 +161,9 @@ class create_controller_series_object:
         self.policy_profile = None
         self.ap_band_slot = None
         self.tx_power = None
+        self.ap_num_power_levels = 'NA'
+        self.ap_current_tx_power_level = 'NA'
+        self.ap_tx_power = 'NA'
         self.channel = None
         self.bandwidth = None
         self.action = None
@@ -323,7 +326,7 @@ class create_controller_series_object:
                              "enable_ft_akm_ftsae", "enable_ft_wpa3_dot1x", "enable_ft_wpa3_dot1x_sha256",
                              "show_wireless_client_sumry", "show_client_macadd_detail", 'debug_wieless_mac',
                              'no_debug_wieless_mac', 'get_ra_trace_files','get_data_ra_trace_files','del_ra_trace_file',
-                             "show_ap_status"
+                             "show_ap_status","show_ap_tx_power_config"
                              ]:
 
             self.command_extend = ["--action", self.action]
@@ -1216,6 +1219,39 @@ class create_controller_series_object:
                     self.ap_config_radio_role = 'Auto'
         logger.info("ap config radio role: {role}".format(role=self.ap_config_radio_role))
 
+    # read AP txpower values
+    def show_ap_tx_power_config(self):
+        logger.info("show ap tx power levels, show ap name <ap> config dot 11 <band>")
+        self.action = "show_ap_tx_power_config"
+        summary = self.send_command()
+        return summary
+
+    def get_ap_tx_power_config(self):
+        summary = self.show_ap_tx_power_config()
+        self.ap_current_tx_power_level = 'NA'
+        self.ap_tx_power = 'NA'
+        self.ap_num_power_levels = 'NA'
+        for line in summary.splitlines():
+            pat = "Number of Supported Power Levels\\s+\\S+\\s+(\\S+)"
+            m = re.search(pat, line)
+            if (m is not None):
+                self.ap_num_power_levels = m.group(1)
+        for line in summary.splitlines():
+            pat = "Current Tx Power Level\\s+\\S+\\s+(\\S)"
+            m = re.search(pat, line)
+            if (m is not None):
+                self.ap_current_tx_power_level = m.group(1)
+                break
+        if self.ap_current_tx_power_level is not None:
+            for line in summary.splitlines():
+                pat = 'Tx Power Level %s\\s+\\S+\\s+(\\S+)' % (self.ap_current_tx_power_level)
+                m = re.search(pat, line)
+                if (m is not None):
+                    self.ap_tx_power = m.group(1)
+                    break
+
+        logger.info("Total Power Levels: {levels} Current Power Level: {level} Current Tx Power: {tx_power}".
+            format(levels=self.ap_num_power_levels,level=self.ap_current_tx_power_level,tx_power=self.ap_tx_power))
 
     def read_country_code_and_regulatory_domain(self):
         logger.info("read_conutry_code_and_regulatory_domain")
@@ -1264,6 +1300,7 @@ class create_controller_series_object:
 
         if self.regulatory_domain == "NA":
             logger.error("Regulatory domain is blank: --testbed_location <show ap summary Location> : location entered {location}".format(location=args.testbed_location))
+
 
 
 # This next section is to allow for tests to be created without

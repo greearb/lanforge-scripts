@@ -134,6 +134,8 @@ class FileAdapter(object):
         pass  # leave it to logging to flush properly
 
 
+
+# TODO make OO
 def main():
     parser = argparse.ArgumentParser(description="Cisco AP Control Script")
     parser.add_argument("-d", "--dest", type=str, help="address of the cisco controller")
@@ -180,7 +182,7 @@ def main():
                                  "ap_dot11_dot11ax_mcs_tx_index_spatial_stream", "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream",
                                  "show_wireless_client_sumry", 'show_client_macadd_detail','debug_wieless_mac',
                                  'no_debug_wieless_mac','get_ra_trace_files','get_data_ra_trace_files', 'del_ra_trace_file',
-                                 "show_ap_status"
+                                 "show_ap_status","show_ap_tx_power_config"
                                  ])
     parser.add_argument("--value", type=str, help="set value")
     # logging configuration
@@ -207,6 +209,22 @@ def main():
     except Exception as e:
         logging.exception(e)
         exit(2)
+
+    # configuation band confersion
+    if band == '24g':
+        config_band = '24ghz'
+    elif band == '5g':
+        config_band = '5ghz'
+    elif band == '6g':
+        config_band = '6ghz'
+    elif band == 'dual_band_5g':
+        config_band = 'dual-band'
+    elif band == 'dual_band_6g':
+        config_band = 'dual-band'
+    else:
+        logger.critical("band needs to be set 24g 5g 6g dual_band_5g, dual_band_6g")
+        raise ValueError("band needs to be set 24g 5g 6g dual_band_5g or dual_band_6g")
+
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
@@ -1069,6 +1087,10 @@ def main():
 
     if (args.action == "show_ap_name_config_role"):
         command = "show ap name %s config slot %s | inc Role" % (args.ap, args.ap_band_slot)
+
+    if (args.action == "show_ap_tx_power_config"):
+        command = "show ap name %s config dot11 %s | sec Tx" % (args.ap, config_band)
+
 
     if (args.action == "advanced"):
         if args.series == "9800":
