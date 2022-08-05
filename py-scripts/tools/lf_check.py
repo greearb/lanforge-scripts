@@ -299,7 +299,7 @@ class lf_check():
             ["git", "rev-parse", "HEAD"], stdout=subprocess.PIPE)
         (commit_hash, err) = process.communicate()
         exit_code = process.wait()
-        print(
+        self.logger.info(
             "get_scripts_get_sha exit_code: {exit_code}".format(
                 exit_code=exit_code))
         scripts_git_sha = commit_hash.decode('utf-8', 'ignore')
@@ -324,16 +324,16 @@ class lf_check():
         request = requests.get(
             request_command, auth=(
                 self.lf_mgr_user, self.lf_mgr_pass))
-        print(
+        self.logger.info(
             "radio request command: {request_command}".format(
                 request_command=request_command))
-        print(
+        self.logger.info(
             "radio request status_code {status}".format(
                 status=request.status_code))
         lanforge_radio_json = request.json()
-        print("radio request.json: {json}".format(json=lanforge_radio_json))
+        self.logger.info("radio request.json: {json}".format(json=lanforge_radio_json))
         lanforge_radio_text = request.text
-        print("radio request.test: {text}".format(text=lanforge_radio_text))
+        self.logger.info("radio request.test: {text}".format(text=lanforge_radio_text))
         return lanforge_radio_json, lanforge_radio_text
 
     def get_lanforge_system_node_version(self):
@@ -393,12 +393,12 @@ class lf_check():
         self.lanforge_server_version_full = stdout.readlines()
         self.lanforge_server_version_full = [line.replace(
             '\n', '') for line in self.lanforge_server_version_full]
-        print("lanforge_server_version_full: {lanforge_server_version_full}".format(
+        self.logger.info("lanforge_server_version_full: {lanforge_server_version_full}".format(
             lanforge_server_version_full=self.lanforge_server_version_full))
         self.lanforge_server_version = self.lanforge_server_version_full[0].split(
             'Version:', maxsplit=1)[-1].split(maxsplit=1)[0]
         self.lanforge_server_version = self.lanforge_server_version.strip()
-        print("lanforge_server_version: {lanforge_server_version}".format(
+        self.logger.info("lanforge_server_version: {lanforge_server_version}".format(
             lanforge_server_version=self.lanforge_server_version))
         ssh.close()
         time.sleep(1)
@@ -414,27 +414,27 @@ class lf_check():
         stdin, stdout, stderr = ssh.exec_command(
             'curl -H "Accept: application/json" http://{lanforge_ip}:8080 | json_pp  | grep -A 7 "VersionInfo"'.format(lanforge_ip=self.lf_mgr_ip))
         self.lanforge_gui_version_full = stdout.readlines()
-        # print("lanforge_gui_version_full pre: {lanforge_gui_version_full}".format(lanforge_gui_version_full=self.lanforge_gui_version_full))
+        # self.logger.info("lanforge_gui_version_full pre: {lanforge_gui_version_full}".format(lanforge_gui_version_full=self.lanforge_gui_version_full))
         self.lanforge_gui_version_full = [line.replace(
             '\n', '') for line in self.lanforge_gui_version_full]
-        # print("lanforge_gui_version_full: {lanforge_gui_version_full}".format(lanforge_gui_version_full=self.lanforge_gui_version_full))
+        # self.logger.info("lanforge_gui_version_full: {lanforge_gui_version_full}".format(lanforge_gui_version_full=self.lanforge_gui_version_full))
         for element in self.lanforge_gui_version_full:
             if "BuildVersion" in element:
                 ver_str = str(element)
                 self.lanforge_gui_version = ver_str.split(
                     ':', maxsplit=1)[-1].replace(',', '')
                 self.lanforge_gui_version = self.lanforge_gui_version.strip().replace('"', '')
-                print("BuildVersion {}".format(self.lanforge_gui_version))
+                self.logger.info("BuildVersion {}".format(self.lanforge_gui_version))
             if "BuildDate" in element:
                 gui_str = str(element)
                 self.lanforge_gui_build_date = gui_str.split(
                     ':', maxsplit=1)[-1].replace(',', '')
-                print("BuildDate {}".format(self.lanforge_gui_build_date))
+                self.logger.info("BuildDate {}".format(self.lanforge_gui_build_date))
             if "GitVersion" in element:
                 git_sha_str = str(element)
                 self.lanforge_gui_git_sha = git_sha_str.split(
                     ':', maxsplit=1)[-1].replace(',', '')
-                print("GitVersion {}".format(self.lanforge_gui_git_sha))
+                self.logger.info("GitVersion {}".format(self.lanforge_gui_git_sha))
 
         ssh.close()
         time.sleep(1)
@@ -442,7 +442,7 @@ class lf_check():
 
     def send_results_email(self, report_file=None):
         if (report_file is None):
-            print("No report file, not sending email.")
+            self.logger.info("No report file, not sending email.")
             return
         report_url = report_file.replace('/home/lanforge/', '')
         if report_url.startswith('/'):
@@ -523,17 +523,17 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     subject=mail_subject,
                     address=self.email_list_test)
 
-            print("running:[{}]".format(command))
+            self.logger.info("running:[{}]".format(command))
             process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                        universal_newlines=True)
             # have email on separate timeout
             process.wait(timeout=int(self.test_timeout))
         except subprocess.TimeoutExpired:
-            print("send email timed out")
+            self.logger.info("send email timed out")
             process.terminate()
 
     def start_csv_results(self):
-        print("self.csv_results")
+        self.logger.info("self.csv_results")
         self.csv_results_file = open(self.csv_results, "w")
         self.csv_results_writer = csv.writer(
             self.csv_results_file, delimiter=",")
@@ -691,7 +691,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 "EMAIL_LIST_PRODUCTION not in test_rig_parameters json")
         if "EMAIL_LIST_TEST" in self.json_rig["test_rig_parameters"]:
             self.email_list_test = self.json_rig["test_rig_parameters"]["EMAIL_LIST_TEST"]
-            print(self.email_list_test)
+            self.logger.info(self.email_list_test)
         else:
             self.logger.info("EMAIL_LIST_TEST not in test_rig_parameters json")
         if "EMAIL_TITLE_TXT" in self.json_rig["test_rig_parameters"]:
@@ -759,14 +759,14 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         #    .format(mgr=self.lf_mgr_ip),"--load {db}".format(db=custom_db),"--action {action}".format(action="overwrite"))
         command = "./{cmd} --mgr {mgr} --load {db} --action {action}".format(
             cmd="scenario.py", mgr=self.lf_mgr_ip, db=custom_db, action="overwrite")
-        print("command: {command}".format(command=command))
+        self.logger.info("command: {command}".format(command=command))
 
         process = subprocess.Popen((command).split(' '), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    universal_newlines=True)
         # wait for the process to terminate
         out, err = process.communicate()
         errcode = process.returncode
-        print(
+        self.logger.info(
             "load_custom_database out: {out}  errcode: {errcode} err: {err}".format(
                 out=out,
                 errcode=errcode,
@@ -783,15 +783,15 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
             # Note the elements used by ssid_idx need to be on same line in json
             if 'ssid_idx=' in args_list_element:
-                # print("args_list_element {}".format(args_list_element))
+                # self.logger.info("args_list_element {}".format(args_list_element))
                 # get ssid_idx used in the test as an index for the
                 # dictionary
                 ssid_idx_number = args_list_element.split(
                     'ssid_idx=')[-1].split()[0]
-                print("ssid_idx_number: {}".format(ssid_idx_number))
+                self.logger.info("ssid_idx_number: {}".format(ssid_idx_number))
                 # index into the DUT network index
                 idx = "ssid_idx={}".format(ssid_idx_number)
-                print("idx: {}".format(idx))
+                self.logger.info("idx: {}".format(idx))
                 if 'SSID_USED' in args_list_element:
                     self.test_dict[self.test]['args_list'][index] = self.test_dict[self.test]['args_list'][index].replace(
                         'SSID_USED', self.wireless_network_dict[idx]['SSID_USED'])
@@ -815,7 +815,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     self.test_dict[self.test]['args_list'][index] = self.test_dict[self.test]['args_list'][index].replace(
                         tmp_idx, '')
                 # leave in for checking the command line arguments
-                print(
+                self.logger.info(
                     "self.test_dict[self.test]['args_list']: {}".format(
                         self.test_dict[self.test]['args_list']))
         # Walk all the args in the args list then construct the arguments
@@ -900,7 +900,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'USE_BATCH_TX_POWER', self.tx_power)
 
-        print("self.test_dict[self.test]['args']: {}".format(self.test_dict[self.test]['args']))
+        self.logger.info("self.test_dict[self.test]['args']: {}".format(self.test_dict[self.test]['args']))
 
         # END of command line arg processing
         # if self.test_dict[self.test]['args'] == "":
@@ -1198,7 +1198,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             for line in line_list:
                 if 'html report:' in line:
                     self.qa_report_html = line
-                    print(
+                    self.logger.info(
                         "html_report: {report}".format(
                             report=self.qa_report_html))
                     break
@@ -1441,6 +1441,13 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         '--suite',
         help="--suite <suite name> ",
         required=True)
+    parser.add_argument(
+        '--tests',
+        help='''
+            --tests <tests list>  use this switch to run only certain tests in a suite,
+            a comma separated list
+        '''
+        )
     parser.add_argument('--flat_dir', help="--flat_dir , will place the results in the top directory",action='store_true')
     parser.add_argument(
         '--server_override',
@@ -1478,29 +1485,29 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # load test config file information either <config>.json
     json_rig = ""
     try:
-        print("reading json_rig: {rig}".format(rig=args.json_rig))
+        logger.info("reading json_rig: {rig}".format(rig=args.json_rig))
         with open(args.json_rig, 'r') as json_rig_config:
             json_rig = json.load(json_rig_config)
     except json.JSONDecodeError as err:
-        print("ERROR reading {json}, ERROR: {error} ".format(json=args.json_rig, error=err))
+        logger.error("ERROR reading {json}, ERROR: {error} ".format(json=args.json_rig, error=err))
         exit(1)
 
     json_dut = ""
     try:
-        print("reading json_dut: {dut}".format(dut=args.json_dut))
+        logger.info("reading json_dut: {dut}".format(dut=args.json_dut))
         with open(args.json_dut, 'r') as json_dut_config:
             json_dut = json.load(json_dut_config)
     except json.JSONDecodeError as err:
-        print("ERROR reading {json}, ERROR: {error} ".format(json=args.json_dut, error=err))
+        logger.error("ERROR reading {json}, ERROR: {error} ".format(json=args.json_dut, error=err))
         exit(1)
 
     json_test = ""
     try:
-        print("reading json_test:  {}".format(args.json_test))
+        logger.info("reading json_test:  {}".format(args.json_test))
         with open(args.json_test, 'r') as json_test_config:
             json_test = json.load(json_test_config)
     except json.JSONDecodeError as err:
-        print("ERROR reading {json}, ERROR: {error} ".format(json=args.json_test, error=err))
+        logger.error("ERROR reading {json}, ERROR: {error} ".format(json=args.json_test, error=err))
         exit(1)
 
     # Test-rig information information
@@ -1523,10 +1530,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
     if args.production:
         production = True
-        print("Email to production list")
+        logger.info("Email to production list")
     else:
         production = False
-        print("Email to email list")
+        logger.info("Email to email list")
 
     # create report class for reporting
     report = lf_report.lf_report(_path=__path,
@@ -1562,10 +1569,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
     # set up logging
     logfile = args.logfile[:-4]
-    print("logfile: {}".format(logfile))
+    logger.info("logfile: {}".format(logfile))
     logfile = "{}-{}.log".format(logfile, current_time)
     logfile = report.file_add_path(logfile)
-    print("logfile {}".format(logfile))
+    logger.info("logfile {}".format(logfile))
 
     # read config and run tests
     check.read_json_rig()  # check.read_config
@@ -1576,54 +1583,54 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # Need to do this after reading the configuration
     try:
         scripts_git_sha = check.get_scripts_git_sha()
-        print("git_sha {sha}".format(sha=scripts_git_sha))
+        logger.info("git_sha {sha}".format(sha=scripts_git_sha))
     except BaseException:
-        print("WARNING: git_sha read exception unable to read")
+        logger.warning("WARNING: git_sha read exception unable to read")
 
     try:
         lanforge_system_node_version = check.get_lanforge_system_node_version()
-        print("lanforge_system_node_version {system_node_ver}".format(
+        logger.info("lanforge_system_node_version {system_node_ver}".format(
             system_node_ver=lanforge_system_node_version))
     except BaseException:
-        print("WARNING: lanforge_system_node_version exception")
+        logger.warning("WARNING: lanforge_system_node_version exception")
 
     try:
         lanforge_fedora_version = check.get_lanforge_fedora_version()
-        print("lanforge_fedora_version {fedora_ver}".format(
+        logger.info("lanforge_fedora_version {fedora_ver}".format(
             fedora_ver=lanforge_fedora_version))
     except BaseException:
-        print("ERROR: lanforge_fedora_version exception, tests aborted check lanforge ip")
+        logger.error("ERROR: lanforge_fedora_version exception, tests aborted check lanforge ip")
         exit(1)
 
     try:
         lanforge_kernel_version = check.get_lanforge_kernel_version()
-        print("lanforge_kernel_version {kernel_ver}".format(
+        logger.info("lanforge_kernel_version {kernel_ver}".format(
             kernel_ver=lanforge_kernel_version))
     except BaseException:
-        print("ERROR: lanforge_kernel_version exception, tests aborted check lanforge ip")
+        logger.error("ERROR: lanforge_kernel_version exception, tests aborted check lanforge ip")
         exit(1)
 
     try:
         lanforge_server_version_full = check.get_lanforge_server_version()
-        print("lanforge_server_version_full {lanforge_server_version_full}".format(
+        logger.info("lanforge_server_version_full {lanforge_server_version_full}".format(
             lanforge_server_version_full=lanforge_server_version_full))
     except BaseException:
-        print("ERROR: lanforge_server_version exception, tests aborted check lanforge ip")
+        logger.error("ERROR: lanforge_server_version exception, tests aborted check lanforge ip")
         exit(1)
 
     try:
         lanforge_gui_version_full, lanforge_gui_version, lanforge_gui_build_date, lanforge_gui_git_sha = check.get_lanforge_gui_version()
-        print("lanforge_gui_version_full {lanforge_gui_version_full}".format(
+        logger.info("lanforge_gui_version_full {lanforge_gui_version_full}".format(
             lanforge_gui_version_full=lanforge_gui_version_full))
     except BaseException:
-        print("ERROR: lanforge_gui_version exception, tests aborted check lanforge ip")
+        logger.error("ERROR: lanforge_gui_version exception, tests aborted check lanforge ip")
         exit(1)
 
     try:
         lanforge_radio_json, lanforge_radio_text = check.get_lanforge_radio_information()
         lanforge_radio_formatted_str = json.dumps(
             lanforge_radio_json, indent=2)
-        print("lanforge_radio_json: {lanforge_radio_json}".format(
+        logger.info("lanforge_radio_json: {lanforge_radio_json}".format(
             lanforge_radio_json=lanforge_radio_formatted_str))
 
         # note put into the meta data
@@ -1639,14 +1646,14 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
         for key in lanforge_radio_json:
             if 'wiphy' in key:
-                # print("key {}".format(key))
-                # print("lanforge_radio_json[{}]: {}".format(key,lanforge_radio_json[key]))
+                # self.logger.info("key {}".format(key))
+                # self.logger.info("lanforge_radio_json[{}]: {}".format(key,lanforge_radio_json[key]))
                 driver = lanforge_radio_json[key]['driver'].split(
                     'Driver:', maxsplit=1)[-1].split(maxsplit=1)[0]
                 try:
                     firmware_version = lanforge_radio_json[key]['firmware version']
                 except BaseException:
-                    print("5.4.3 radio fw version not in /radiostatus/all ")
+                    logger.info("5.4.3 radio fw version not in /radiostatus/all ")
                     firmware_version = "5.4.3 N/A"
 
                 lf_radio_df = lf_radio_df.append(
@@ -1657,13 +1664,13 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                      'max_sta': lanforge_radio_json[key]['max_sta'],
                      'max_vap': lanforge_radio_json[key]['max_vap'],
                      'max_vifs': lanforge_radio_json[key]['max_vifs']}, ignore_index=True)
-        print("lf_radio_df:: {lf_radio_df}".format(lf_radio_df=lf_radio_df))
+        logger.info("lf_radio_df:: {lf_radio_df}".format(lf_radio_df=lf_radio_df))
 
     except Exception as error:
-        print("print_exc(): {error}".format(error=error))
+        logger.error("print_exc(): {error}".format(error=error))
         traceback.print_exc(file=sys.stdout)
         lf_radio_df = pd.DataFrame()
-        print("get_lanforge_radio_json exception, no radio data, check for LANforge GUI running")
+        self.logger.info("get_lanforge_radio_json exception, no radio data, check for LANforge GUI running")
         exit(1)
 
     # LANforge and scripts config for results
@@ -1735,7 +1742,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         qa_url = qa_report_html.replace('/home/lanforge', '')
         report.set_table_title("LF Check QA ")
         report.build_table_title()
-        print("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
+        logger.info("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
         report.build_link("QA Test Results", qa_url)
 
     report.set_table_title("LF Check Suite Summary: {suite}".format(suite=test_suite))
@@ -1750,15 +1757,15 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     report.build_footer()
     report.copy_js()
     html_report = report.write_html_with_timestamp()
-    print("html report: {}".format(html_report))
+    logger.info("html report: {}".format(html_report))
     try:
         report.write_pdf_with_timestamp()
     except BaseException:
-        print("exception write_pdf_with_timestamp()")
+        logger.info("exception write_pdf_with_timestamp()")
 
-    print("lf_check_html_report: " + html_report)
+    logger.info("lf_check_html_report: " + html_report)
     if args.no_send_email or check.email_list_test == "":
-        print("send email not set or email_list_test not set")
+        logger.info("send email not set or email_list_test not set")
     else:
         check.send_results_email(report_file=html_report)
     #
@@ -1796,8 +1803,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         try:
             shutil.copyfile(html_report, html_report_latest)
         except BaseException:
-            print("unable to copy results from {html} to {html_latest}".format(html=html_report, html_latest=html_report_latest))
-            print("check permissions on {html_report_latest}".format(html_report_latest=html_report_latest))
+            logger.info("unable to copy results from {html} to {html_latest}".format(html=html_report, html_latest=html_report_latest))
+            logger.info("check permissions on {html_report_latest}".format(html_report_latest=html_report_latest))
 
         # copy banner and logo up one directory,
         shutil.copyfile(banner_src_png, banner_dest_png)
@@ -1808,7 +1815,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         shutil.copyfile(CandelaLogo_small_src_png, CandelaLogo_small_dest_png)
 
         # print out locations of results
-        print("html_report_latest: {latest}".format(latest=html_report_latest))
+        logger.info("html_report_latest: {latest}".format(latest=html_report_latest))
 
 
 if __name__ == '__main__':
