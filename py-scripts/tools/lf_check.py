@@ -29,14 +29,22 @@ Starting LANforge:
 
 
 NOTES: getting radio information:
-1. (Using Curl) curl -H 'Accept: application/json' http://localhost:8080/radiostatus/all | json_pp
-2.  , where --user "USERNAME:PASSWORD"
-# https://itnext.io/curls-just-want-to-have-fun-9267432c4b55
-3. (using Python) response = self.json_get("/radiostatus/all"), Currently lf_check.py is independent of py-json libraries
+1. Using curl
+ https://docs.python-requests.org/en/latest/
+ https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
+ curl --user "lanforge:lanforge" -H 'Accept: application/json'
+ http://192.168.100.116:8080/radiostatus/all | json_pp  , where --user
+ "USERNAME:PASSWORD"
 
-4. if the connection to 8080 is rejected check : pgrep -af java  , to see the number of GUI instances running
+2. (using Python) 
+    request_command = 'http://{lfmgr}:{port}/radiostatus/all'.format(lfmgr=self.lf_mgr, port=self.lf_port)
+    request = requests.get( request_command, auth=(self.lf_user, self.lf_passwd))
+    lanforge_radio_json = request.json()
 
-5. getting the lanforge GUI version
+
+3. if the connection to 8080 is rejected check : pgrep -af java  , to see the number of GUI instances running
+
+4. getting the lanforge GUI version
 curl -H 'Accept: application/json' http://localhost:8080/ | json_pp
 {
    "VersionInfo" : {
@@ -65,7 +73,7 @@ user@user:~/git/lf-scripts/py-json/LANforge$
 
 curl -u 'user:pass' -H 'Accept: application/json' http://<lanforge ip>:8080 | json_pp  | grep -A 7 "VersionInfo"
 
-6. for Fedora you can do a:  dnf group list  , to see what all is installed
+5. for Fedora you can do a:  dnf group list  , to see what all is installed
     dnf group install "Development Tools" for example,  to install a group
 
 GENERIC NOTES:
