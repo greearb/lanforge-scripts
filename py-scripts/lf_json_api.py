@@ -132,6 +132,7 @@ class lf_json_api():
         ))
 
         try:
+            # TODO re-evalute this if port
             if self.request == "port":
                 key = "interface"
             else:
