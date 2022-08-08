@@ -405,6 +405,7 @@ class L3VariableTime(Realm):
                     reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),
                     reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
                 self.station_profiles.append(self.station_profile)
+            # Use existing station list is similiar to no rebuild
             if self.use_existing_station_lists:
                 for existing_station_list in self.existing_station_lists:
                     self.station_profile = self.new_station_profile()
@@ -984,19 +985,19 @@ class L3VariableTime(Realm):
                 self.admin_up(sta)
 
         # Admin up existing stations
-        if self.use_existing_station_lists:
-            for existing_station in self.existing_station_lists:
-                logger.info("Bringing up existing stations %s" % existing_station)
-                self.admin_up(existing_station)
+        # if self.use_existing_station_lists:
+        #    for existing_station in self.existing_station_lists:
+        #        logger.info("Bringing up existing stations %s" % existing_station)
+        #        self.admin_up(existing_station)
 
         temp_stations_list = []
         # temp_stations_list.append(self.side_b)
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
 
-        if self.use_existing_station_lists:
-            # for existing_station in self.existing_station_lists:
-            temp_stations_list.extend(self.existing_station_lists.copy())
+        #if self.use_existing_station_lists:
+        #    # for existing_station in self.existing_station_lists:
+        #    temp_stations_list.extend(self.existing_station_lists.copy())
 
         temp_stations_list_with_side_b = temp_stations_list.copy()
         # wait for b side to get IP
@@ -1018,8 +1019,8 @@ class L3VariableTime(Realm):
 
         # dl - ports
         port_eids = self.gather_port_eids()
-        if self.use_existing_station_lists:
-            port_eids.extend(self.existing_station_lists.copy())
+        #if self.use_existing_station_lists:
+        #    port_eids.extend(self.existing_station_lists.copy())
         for port_eid in port_eids:
             self.csv_add_port_column_headers(
                 port_eid, self.csv_generate_port_column_headers())
@@ -1028,8 +1029,8 @@ class L3VariableTime(Realm):
         # ap is read
         if self.ap_read:
             port_eids = self.gather_port_eids()
-            if self.use_existing_station_lists:
-                port_eids.extend(self.existing_station_lists.copy())
+            #if self.use_existing_station_lists:
+            #    port_eids.extend(self.existing_station_lists.copy())
 
             for port_eid in port_eids:
                 self.csv_add_ul_port_column_headers(
@@ -1188,8 +1189,8 @@ class L3VariableTime(Realm):
                             port_eids = self.gather_port_eids()
 
                             # Add in the existing ports
-                            if self.use_existing_station_lists:
-                                port_eids.extend(self.existing_station_lists.copy())
+                            #if self.use_existing_station_lists:
+                            #    port_eids.extend(self.existing_station_lists.copy())
 
                             # read find the bs_data
                             for port_eid in port_eids:
@@ -1400,8 +1401,8 @@ class L3VariableTime(Realm):
                             # Note: the endp eid is the shelf.resource.port.endp-id
                             # reading the data for bs_data
                             port_eids = self.gather_port_eids()
-                            if self.use_existing_station_lists:
-                                port_eids.extend(self.existing_station_lists.copy())
+                            #if self.use_existing_station_lists:
+                            #    port_eids.extend(self.existing_station_lists.copy())
 
                             for port_eid in port_eids:
                                 eid = self.name_to_eid(port_eid)
@@ -1642,8 +1643,8 @@ class L3VariableTime(Realm):
                             # Note: the endp eid is the
                             # shelf.resource.port.endp-id
                             port_eids = self.gather_port_eids()
-                            if self.use_existing_station_lists:
-                                port_eids.extend(self.existing_station_lists.copy())
+                            #if self.use_existing_station_lists:
+                            #    port_eids.extend(self.existing_station_lists.copy())
 
                             for port_eid in port_eids:
                                 eid = self.name_to_eid(port_eid)
@@ -1858,8 +1859,8 @@ class L3VariableTime(Realm):
                             # Note: the endp eid is the
                             # shelf.resource.port.endp-id
                             port_eids = self.gather_port_eids()
-                            if self.use_existing_station_lists:
-                                port_eids.extend(self.existing_station_lists.copy())
+                            #if self.use_existing_station_lists:
+                            #    port_eids.extend(self.existing_station_lists.copy())
 
                             for port_eid in port_eids:
                                 eid = self.name_to_eid(port_eid)
@@ -1899,8 +1900,8 @@ class L3VariableTime(Realm):
                     # Create empty da
                     all_dl_ports_df = pd.DataFrame()
                     port_eids = self.gather_port_eids()
-                    if self.use_existing_station_lists:
-                        port_eids.extend(self.existing_station_lists.copy())
+                    #if self.use_existing_station_lists:
+                    #    port_eids.extend(self.existing_station_lists.copy())
 
                     for port_eid in port_eids:
                         logger.debug("port files: {port_file}".format(port_file=self.port_csv_files[port_eid]))
@@ -1922,8 +1923,8 @@ class L3VariableTime(Realm):
                         # Create empty dataframe
                         all_ul_ports_df = pd.DataFrame()
                         port_eids = self.gather_port_eids()
-                        if self.use_existing_station_lists:
-                            port_eids.extend(self.existing_station_lists.copy())
+                        #if self.use_existing_station_lists:
+                        #    port_eids.extend(self.existing_station_lists.copy())
 
                         for port_eid in port_eids:
                             logger.debug("ul port files: {port_file}".format(port_file=self.ul_port_csv_files[port_eid]))
