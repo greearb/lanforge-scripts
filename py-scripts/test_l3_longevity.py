@@ -405,6 +405,11 @@ class L3VariableTime(Realm):
                     reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),
                     reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
                 self.station_profiles.append(self.station_profile)
+            if self.use_existing_station_lists:
+                for existing_station_list in self.existing_station_lists:
+                    self.station_profile = self.new_station_profile()
+                    self.station_profile.station_names.append(existing_station_list)
+                    self.station_profiles.append(self.station_profile)
         else:
             pass
 
@@ -696,7 +701,7 @@ class L3VariableTime(Realm):
 
         else:
             for station_profile in self.station_profiles:
-                if not rebuild:
+                if not rebuild and not self.use_existing_station_lists:
                     station_profile.use_security(
                         station_profile.security,
                         station_profile.ssid,
