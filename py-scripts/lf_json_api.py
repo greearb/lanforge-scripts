@@ -120,19 +120,32 @@ class lf_json_api():
         logger.info(
             "port request status_code {status}".format(
                 status=request.status_code))
-        lanforge_port_json = request.json()
-        logger.debug("port request.json: {json}".format(json=lanforge_port_json))
-        lanforge_port_text = request.text
-        logger.debug("port request.text: {text}".format(text=lanforge_port_text))
-        lanforge_port_json_formatted = json.dumps(lanforge_port_json, indent=4)
-        logger.debug("lanforge_port_json_formatted: {json}".format(json=lanforge_port_json_formatted))
+        lanforge_json = request.json()
+        logger.debug("port request.json: {json}".format(json=lanforge_json))
+        lanforge_text = request.text
+        logger.debug("port request.text: {text}".format(text=lanforge_text))
+        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
+        logger.debug("port request lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
         
         logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
             lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
         ))
 
+        try:
+            if self.request == "port":
+                key = "interface"
+            else:
+                key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
+            df = json_normalize(lanforge_json[key])
+            df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request), index=False)
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
 
-        return lanforge_port_json, lanforge_port_text, lanforge_port_json_formatted
+        logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request))
+
+
+        return lanforge_json, lanforge_text, lanforge_json_formatted
 
     def get_request_wifi_stats_information(self):
         # https://docs.python-requests.org/en/latest/
