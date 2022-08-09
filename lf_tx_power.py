@@ -1406,6 +1406,8 @@ def main():
                     logger.info(summary_output) 
                     cs.show_ap_summary()
 
+
+                    # CMR Begin setting client Serving mode
                     # when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .
                     # 5g slot 1 will used the 5g channels to 64,  the 5g dual-band will use channels 100 -> 165.
                     # When 5g (slot 1) and dual-band 6g (slot 2) is enabled then 5g (slot 1) has all bands.
@@ -1495,6 +1497,9 @@ def main():
                         cs.ap_dot11_5ghz_shutdown()
                         cs.ap_dot11_24ghz_shutdown()
 
+
+                    # CMR TODO the channel , bw and tx power do not require a s
+                    '''                    
                     logg.info("9800/3504 test_parameters_summary: set : tx: {tx_power} ch: {channel} bw: {bandwidth}".format(
                         tx_power=tx, channel=ch, bandwidth=bw))
                     if (tx != "NA"):
@@ -1541,7 +1546,7 @@ def main():
                         elif args.band == '24g':
                             # 24g can only be 20 Mhz
                             pass
-
+                    '''
                     # only create the wlan the first time
                     if args.series == "9800":
                         if args.create_wlan is False:
@@ -1632,6 +1637,7 @@ def main():
                         # enable_wlan
                         cs.config_enable_wlan_send_no_shutdown()
 
+                    
                     # enable transmission for the entier 802.11z network
                     # the wlan may not care about dual_band
                     # enable_network_6ghz or enable_network_5ghz or enable_network_24ghz
@@ -1700,6 +1706,58 @@ def main():
                         # enable 24ghz operation status
                         cs.config_ap_no_dot11_24ghz_shutdown()
                         logg.info(pss)
+
+                    # End of enable 
+
+                    # set tx_power channel bw
+                    # CMR TODO the channel , bw and tx power do not require a s
+                    logg.info("9800/3504 test_parameters_summary: set : tx: {tx_power} ch: {channel} bw: {bandwidth}".format(
+                        tx_power=tx, channel=ch, bandwidth=bw))
+                    if (tx != "NA"):
+                        logg.info("9800/3504 test_parameters: set txPower: {tx_power}".format(tx_power=tx))
+                        cs.tx_power = tx
+
+                        if args.band == 'dual_band_6g':
+                            cs.config_dot11_dual_band_6ghz_tx_power()
+                        elif args.band == 'dual_band_5g':
+                            cs.config_dot11_dual_band_5ghz_tx_power()
+                        elif args.band == '6g':
+                            cs.config_dot11_6ghz_tx_power()
+                        elif args.band == '5g':
+                            cs.config_dot11_5ghz_tx_power()
+                        elif args.band == '24g':
+                            cs.config_dot11_24ghz_tx_power()
+
+                    # NSS is set on the station earlier...
+                    if (ch != "NA"):
+                        logg.info("9800/3504 test_parameters set channel: {}".format(ch))
+                        cs.channel = ch
+                        if args.band == 'dual_band_6g':
+                            cs.config_dot11_dual_band_6ghz_channel()
+                        elif args.band == 'dual_band_5g':
+                            cs.config_dot11_dual_band_5ghz_channel()
+                        elif args.band == '6g':
+                            cs.config_dot11_6ghz_channel()
+                        elif args.band == '5g':
+                            cs.config_dot11_5ghz_channel()
+                        elif args.band == '24g':
+                            cs.config_dot11_24ghz_channel()
+
+                    if (bw != "NA"):
+                        logg.info("9800/3504 test_parameters bandwidth: set : {}".format(bw))
+                        cs.bandwidth = bw
+                        if args.band == 'dual_band_6g':
+                            cs.config_dot11_dual_band_6ghz_channel_width()
+                        elif args.band == 'dual_band_5g':
+                            cs.config_dot11_dual_band_5ghz_channel_width()
+                        elif args.band == '6g':
+                            cs.config_dot11_6ghz_channel_width()
+                        elif args.band == '5g':
+                            cs.config_dot11_5ghz_channel_width()
+                        elif args.band == '24g':
+                            # 24g can only be 20 Mhz
+                            pass
+
 
                     # Wait a bit for AP to come back up
                     time.sleep(3)
