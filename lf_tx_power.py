@@ -1498,54 +1498,10 @@ def main():
                         cs.ap_dot11_24ghz_shutdown()
 
 
-                    # CMR TODO the channel , bw and tx power do not require a s
+                    # Original location of setting the channel, bw and tx power
                     '''                    
                     logg.info("9800/3504 test_parameters_summary: set : tx: {tx_power} ch: {channel} bw: {bandwidth}".format(
                         tx_power=tx, channel=ch, bandwidth=bw))
-                    if (tx != "NA"):
-                        logg.info("9800/3504 test_parameters: set txPower: {tx_power}".format(tx_power=tx))
-                        cs.tx_power = tx
-
-                        if args.band == 'dual_band_6g':
-                            cs.config_dot11_dual_band_6ghz_tx_power()
-                        elif args.band == 'dual_band_5g':
-                            cs.config_dot11_dual_band_5ghz_tx_power()
-                        elif args.band == '6g':
-                            cs.config_dot11_6ghz_tx_power()
-                        elif args.band == '5g':
-                            cs.config_dot11_5ghz_tx_power()
-                        elif args.band == '24g':
-                            cs.config_dot11_24ghz_tx_power()
-
-                    # NSS is set on the station earlier...
-                    if (ch != "NA"):
-                        logg.info("9800/3504 test_parameters set channel: {}".format(ch))
-                        cs.channel = ch
-                        if args.band == 'dual_band_6g':
-                            cs.config_dot11_dual_band_6ghz_channel()
-                        elif args.band == 'dual_band_5g':
-                            cs.config_dot11_dual_band_5ghz_channel()
-                        elif args.band == '6g':
-                            cs.config_dot11_6ghz_channel()
-                        elif args.band == '5g':
-                            cs.config_dot11_5ghz_channel()
-                        elif args.band == '24g':
-                            cs.config_dot11_24ghz_channel()
-
-                    if (bw != "NA"):
-                        logg.info("9800/3504 test_parameters bandwidth: set : {}".format(bw))
-                        cs.bandwidth = bw
-                        if args.band == 'dual_band_6g':
-                            cs.config_dot11_dual_band_6ghz_channel_width()
-                        elif args.band == 'dual_band_5g':
-                            cs.config_dot11_dual_band_5ghz_channel_width()
-                        elif args.band == '6g':
-                            cs.config_dot11_6ghz_channel_width()
-                        elif args.band == '5g':
-                            cs.config_dot11_5ghz_channel_width()
-                        elif args.band == '24g':
-                            # 24g can only be 20 Mhz
-                            pass
                     '''
                     # only create the wlan the first time
                     if args.series == "9800":
