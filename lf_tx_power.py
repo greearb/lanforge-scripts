@@ -59,15 +59,15 @@ lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 EPILOG = '''\
 
 #############################################################################################
-# RSSI adjust 
+# RSSI adjust
 
-be root  
+be root
 sudo -s
 
-manually disable it run-time by echo-ing a zero to the debugfs file, like: 
+manually disable it run-time by echo-ing a zero to the debugfs file, like:
 echo 0 > /debug/ieee80211/wiphy0/ath10k/ofdm_peak_power_rssi
 
-manually enable 
+manually enable
 echo 1 > /debug/ieee80211/wiphy0/ath10k/ofdm_peak_power_rssi
 
 /* QCA seems to report a max-power average over the bandwidth, where mtk and intel radios
@@ -92,7 +92,7 @@ const int adjust_24[4] = {8, 4, 3, 3};
 const int adjust_5[4] = {12, 12, 10, 10};
 const int adjust_zero[4] = {0, 0, 0, 0};
 
-note the second collumn, that is what we calculate from actual received peak OFDM power, 
+note the second collumn, that is what we calculate from actual received peak OFDM power,
 but I was not sure we'd want to go that far, so intead I tried to make it match ax210 and mtk7915
 
 ##############################################################################################
@@ -390,6 +390,7 @@ def close_workbook(workbook):
     workbook.close()
     sleep(0.5)
 
+
 def main():
     global lfmgr
     global lfstation
@@ -475,13 +476,12 @@ def main():
     parser.add_argument("-b", "--bandwidth", type=str, help="[test configuration] --bandwidth '20 40 80 160' List of bandwidths to test. NA means no change")
     parser.add_argument("-n", "--nss", type=str, help="[test configuration] --nss '2' List of spatial streams to test.  NA means no change")
 
-
     parser.add_argument("--tx_pw_cmp_to_prev", help='''
     [test configuration] --tx_pw_cmp_to_prev  validated that there was 3 dBm difference for each power step between runs
                             tx pwr 1 (20 dBm) to tx_pwr 2 (17 dBm) the pwr difference is 3 dBm
                             tx_power of 1 has no comparison", action='store_true'
                             ''')
-    
+
     parser.add_argument("--nss_4x4_override", help="[test configuration] --nss_4x4_override  controller nss is 4 client nss is 2, set expected power to 1/4", action='store_true')
     parser.add_argument("--nss_4x4_ap_adjust", help="[test configuration] --nss_4x4_ap_adjust read ap to know number of spatial stream to take into account", action='store_true')
     parser.add_argument("--set_nss", help="[test configuration] --set_nss  configure controller to spatial streams to test", action='store_true')
@@ -520,7 +520,7 @@ def main():
     parser.add_argument("--exit_on_fail", action='store_true', help="[debug configuration] --exit_on_fail,  exit on test failure")
     parser.add_argument("--exit_on_error", action='store_true', help="[debug configuration] --exit_on_error, exit on test error, test mechanics failed")
 
-    # logg information 
+    # logg information
     parser.add_argument("--lf_logger_config_json", help="[log configuration] --lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument("--log_level", help="[log configuration] --log_level  debug info warning error critical")
 
@@ -539,9 +539,9 @@ def main():
         logger_config.set_level(level=args.log_level)
 
     if args.lf_logger_config_json:
-          # logger_config.lf_logger_config_json = "lf_logger_config.json"
-          logger_config.lf_logger_config_json = args.lf_logger_config_json
-          logger_config.load_lf_logger_config()
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
 
     # TODO refactor to be logger for consistency
     logg = logging.getLogger(__name__)
@@ -558,8 +558,6 @@ def main():
     dut_serial_num = args.dut_serial_num
     # test_priority = args.test_priority  # this may need to be set per test
     test_id = args.test_id
-
-
 
     lfstation = args.station
     upstream_port = args.upstream_port
@@ -628,8 +626,8 @@ def main():
     cs.series = args.series
 
     # Need to get regulatory domain for title
-        # Read the country code and regulatory domain
-    # 
+    # Read the country code and regulatory domain
+    #
     cs.console_setup()
 
     cs.read_country_code_and_regulatory_domain()
@@ -704,11 +702,11 @@ def main():
     outfile_path = report.get_report_path()
     current_time = time.strftime("%m_%d_%Y_%H_%M_%S", time.localtime())
     if (args.outfile):
-        test_name = ('Tx Power:' + args.outfile  + ', AP: ' + args.ap + ', CC: ' + mycc + ', RD ' + myrd
-                 + ', Band: ' + args.band + ', Channel: ' + args.channel
-                 + ', NSS: ' + args.nss
-                 + ', BW: ' + args.bandwidth
-                 + ', Tx Power: ' + args.txpower)
+        test_name = ('Tx Power:' + args.outfile + ', AP: ' + args.ap + ', CC: ' + mycc + ', RD ' + myrd
+                     + ', Band: ' + args.band + ', Channel: ' + args.channel
+                     + ', NSS: ' + args.nss
+                     + ', BW: ' + args.bandwidth
+                     + ', Tx Power: ' + args.txpower)
 
         outfile_tmp = (outfile_path + '/' + current_time + '_' + args.outfile
                        + '_AP_' + args.ap
@@ -721,10 +719,10 @@ def main():
                        + '_tx_pw_' + args.txpower.replace(' ', '_'))
     else:
         test_name = ('Tx Power:' + 'AP: ' + args.ap + ', CC: ' + mycc + ', RD ' + myrd
-                 + ', Band: ' + args.band + ', Channel: ' + args.channel
-                 + ', NSS: ' + args.nss
-                 + ', BW: ' + args.bandwidth
-                 + ', Tx Power: ' + args.txpower)
+                     + ', Band: ' + args.band + ', Channel: ' + args.channel
+                     + ', NSS: ' + args.nss
+                     + ', BW: ' + args.bandwidth
+                     + ', Tx Power: ' + args.txpower)
 
         outfile_tmp = (outfile_path + '/' + current_time + '_' + 'tx_power'
                        + '_AP_' + args.ap
@@ -737,7 +735,6 @@ def main():
                        + '_tx_pw_' + args.txpower.replace(' ', '_'))
     print("outfile_tmp {outfile_tmp}".format(outfile_tmp=outfile_tmp))
 
-
     # note: there would always be an args.outfile due to the default
     full_outfile = "{}_full.txt".format(outfile_tmp)
     outfile_xlsx = "{}.xlsx".format(outfile_tmp)
@@ -745,8 +742,6 @@ def main():
     print("output file: {}".format(outfile))
     print("output file full: {}".format(full_outfile))
     print("output file xlsx: {}".format(outfile_xlsx))
-
-
 
     if args.create_wlan:
         cs.tag_policy = args.tag_policy
@@ -886,10 +881,9 @@ def main():
     # parameters  merge_range(first_row, first_col, last_row, last_col, data[, cell_format])
 
     # Can only write simple types to merged ranges so write a blank string
-    test_notes =  '                          Pass / Fail criteria based on Offset per spatial stream being greater then {pf_dbm} dBm'.format(pf_dbm=pf_dbm)
+    test_notes = '                          Pass / Fail criteria based on Offset per spatial stream being greater then {pf_dbm} dBm'.format(pf_dbm=pf_dbm)
     worksheet.merge_range(0, 0, 0, 38, ' ', title_format)
     worksheet.write_rich_string(0, 0, dark_green, '      Candela Technologies : ', black, '{test_name} '.format(test_name=test_name), black_not_bold, '\n{test_notes}'.format(test_notes=test_notes), title_format)
-
 
     worksheet.set_row(1, 75)  # Set height
     worksheet.set_column(0, 0, 10)  # Set width
@@ -1099,11 +1093,11 @@ def main():
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
                     "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "0", "--report_timer", "1000"], capture_output=False)
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
-                "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "100000000", "--report_timer", "1000"], capture_output=False)
+                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "100000000", "--report_timer", "1000"], capture_output=False)
     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
                     "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000"], capture_output=False)
     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_endp", "--port_name", lfstation,
-                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "9600", "--report_timer", "1000"]    
+               "--endp_type", "lf_udp", "--endp_name", "c-udp-power-A", "--speed", "9600", "--report_timer", "1000"]
     logg.info("command: {command}".format(command=command))
     summary_output = ''
     summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -1111,10 +1105,10 @@ def main():
         logger.debug(line)
         summary_output += line
     summary.wait()
-    logger.info(summary_output)  
+    logger.info(summary_output)
 
     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource2, "--action", "create_endp", "--port_name", upstream_port,
-                    "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "100000000", "--report_timer", "1000"]
+               "--endp_type", "lf_udp", "--endp_name", "c-udp-power-B", "--speed", "100000000", "--report_timer", "1000"]
     logg.info("command: {command}".format(command=command))
     summary_output = ''
     summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -1122,11 +1116,11 @@ def main():
         logger.debug(line)
         summary_output += line
     summary.wait()
-    logger.info(summary_output)  
+    logger.info(summary_output)
     # ./lf_firemod.pl --manager 192.168.100.178 --resource 1 --action create_cx --cx_name c-udp-power --cx_endps c-udp-power-A,c-udp-power-B --report_timer 1000 --endp_type lf_udp --port_name sta0003 --use_speeds 0,1000000
     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "create_cx", "--cx_name", "c-udp-power",
-                    "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000", "--endp_type", "lf_udp", "--port_name", lfstation,
-                    "--use_speeds","9600,100000000"]
+               "--cx_endps", "c-udp-power-A,c-udp-power-B", "--report_timer", "1000", "--endp_type", "lf_udp", "--port_name", lfstation,
+               "--use_speeds", "9600,100000000"]
     logg.info("command: {command}".format(command=command))
     summary_output = ''
     summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -1134,8 +1128,7 @@ def main():
         logger.debug(line)
         summary_output += line
     summary.wait()
-    logger.info(summary_output)  
-
+    logger.info(summary_output)
 
     # Notes:
     # These need to be verified with test_ip_variable_time.py - which calculates the speeds
@@ -1151,7 +1144,7 @@ def main():
 
     # ./lf_firemod.pl --manager 192.168.100.178 --resource 1 --action create_cx --cx_name c-udp-power --cx_endps c-udp-power-A,c-udp-power-B --report_timer 1000 --endp_type udp --port_name sta0000 --speed 1000000
 
-    # 5ghz speeds 
+    # 5ghz speeds
 
     # myrd = "NA"
     # mycc = ""
@@ -1171,28 +1164,27 @@ def main():
     mycc = cs.country_code
 
     cs.read_ap_config_radio_role()
-    
+
     # this reads if the radio role is 'Manual' or 'Auto'
-    # A Manual role has the channel, channel width and tx_power 
+    # A Manual role has the channel, channel width and tx_power
     # stay on the settings that are set in the AP or controller
     ap_config_radio_role = cs.ap_config_radio_role
     # Set Manual mode, set dual band, and creating wlan outside of main loop
 
-    # if the AP radio role is not Manual  
-    #   or creating a wlan 
+    # if the AP radio role is not Manual
+    #   or creating a wlan
     #   or setting up a dual-band slot
-    # Then need to 
+    # Then need to
     #    take the AP operation state down
     #    take the radio down
     #       perform setting up Manual mode, or dual band or create wlan
     #    take the AP opweraion state up
-    #    take the radio up 
-    # 
-    if (ap_config_radio_role != 'Manual' or args.create_wlan is True 
-        or args.band == "dual_band_6g"  or args.band == "dual_band_5g"):
+    #    take the radio up
+    #
+    if (ap_config_radio_role != 'Manual' or args.create_wlan is True
+            or args.band == "dual_band_6g" or args.band == "dual_band_5g"):
 
-
-        # Begin setting client Serving mode , Dual band and creating dual-band 
+        # Begin setting client Serving mode , Dual band and creating dual-band
         # when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .
         # 5g slot 1 will used the 5g channels to 64,  the 5g dual-band will use channels 100 -> 165.
         # When 5g (slot 1) and dual-band 6g (slot 2) is enabled then 5g (slot 1) has all ban
@@ -1217,7 +1209,7 @@ def main():
         # if dual band : disable dual-band mode, config mode, enable dual-band mode
         # disable dual-band m
         # set the radio role selection
-        if ap_config_radio_role != 'Manual':        
+        if ap_config_radio_role != 'Manual':
             if args.band == 'dual_band_6g':
                 logg.info("ap_dot11_dual_band_6ghz_radio_role_manual_client_serving")
                 cs.ap_dot11_dual_band_6ghz_radio_role_manual_client_serving()
@@ -1244,7 +1236,6 @@ def main():
                 cs.ap_dot11_dual_band_no_mode_shutdown_6ghz()
             elif args.band == "dual_band_5g":
                 cs.ap_dot11_dual_band_no_mode_shutdown_5gh
-
 
             # Disable AP, apply settings, enable AP
             if args.band == "dual_band_6g":
@@ -1274,7 +1265,7 @@ def main():
             else:
                 cs.ap_dot11_5ghz_shutdown()
                 cs.ap_dot11_24ghz_shutdow
-            
+
             # only create the wlan the first time
             wlan_created = False
 
@@ -1282,7 +1273,7 @@ def main():
                 if args.create_wlan is False:
                     wlan_created = True
                 # wlan already created no need to create a wlan
-                if wlan_created:            
+                if wlan_created:
                     pss = cs.show_wlan_summary()
                     logg.info(pss)
                     logg.info(
@@ -1302,7 +1293,7 @@ def main():
                         pss = cs.show_ap_dot11_6gz_summary()
                         logg.info(pss)
                         pss = cs.show_ap_bssid_6ghz()
-                        logg.info(pss)   
+                        logg.info(pss)
                     elif args.band == '5g':
                         pss = cs.show_ap_dot11_5gz_summary()
                         logg.info(pss)
@@ -1313,7 +1304,7 @@ def main():
                         logg.info(pss)
                         pss = cs.show_ap_bssid_24ghz()
                         logg.info(pss)
-                # create wlan                
+                # create wlan
                 else:
                     # Verify that a wlan does not exist on wlanID
                     # delete the wlan if already exists
@@ -1363,7 +1354,7 @@ def main():
                     cs.config_wireless_tag_policy_and_policy_profile()
                 # enable_wlan
                 cs.config_enable_wlan_send_no_shutdown()
-            
+
             # enable transmission for the entier 802.11z network
             # the wlan may not care about dual_band
             # enable_network_6ghz or enable_network_5ghz or enable_network_24ghz
@@ -1374,7 +1365,7 @@ def main():
                 # enable 6g operation status
                 pss = cs.config_ap_no_dot11_dual_band_6ghz_shutdown()
                 logg.info(pss)
-                
+
                 # enable 6g wlan
                 pss = cs.config_no_ap_dot11_6ghz_shutdown()
                 logg.info(pss)
@@ -1388,7 +1379,7 @@ def main():
                 pss = cs.config_ap_no_dot11_5ghz_shutdown()
                 logger.info(pss)
             elif args.band == 'dual_band_5g':
-                # enable 5g wlan - dual band 
+                # enable 5g wlan - dual band
                 pss = cs.config_no_ap_dot11_dual_band_5ghz_shutdown()
                 logg.info(pss)
                 # enable 5g operation status
@@ -1428,8 +1419,7 @@ def main():
                 # enable 24ghz operation status
                 pss = cs.config_ap_no_dot11_24ghz_shutdown()
                 logg.info(pss)
-            # End of enable 
-
+            # End of enable
 
     # Set dual-band outside of main loop
 
@@ -1470,7 +1460,7 @@ def main():
                     cs.ap_dot11_5ghz_shutdown()
                 elif args.band == "24g":
                     cs.ap_dot11_24ghz_shutdown()
-                
+
                 # the band will be set
                 num_spatial_streams = int(n)
                 # set the spatial streams for   - need to disable the wlan and re-enable
@@ -1638,15 +1628,14 @@ def main():
                     subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
                                     "--cmd", "set_cx_state all c-udp-power STOPPED"], capture_output=True)
                     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                                     "--cmd", "set_cx_state all c-udp-power STOPPED"]
+                               "--cmd", "set_cx_state all c-udp-power STOPPED"]
                     summary_output = ''
                     summary = subprocess.Popen(command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                     for line in iter(summary.stdout.readline, ''):
                         logger.debug(line)
                         summary_output += line
                     summary.wait()
-                    logger.info(summary_output)  
-
+                    logger.info(summary_output)
 
                     # Down station
                     # CMR TODO this looks to be an issue  7/15/2022
@@ -1658,11 +1647,11 @@ def main():
                         logger.debug(line)
                         summary_output += line
                     summary.wait()
-                    logger.info(summary_output) 
+                    logger.info(summary_output)
                     cs.show_ap_summary()
 
                     '''
-                    # Begin setting client Serving mode , Dual band and creating dual-band 
+                    # Begin setting client Serving mode , Dual band and creating dual-band
                     # when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .
                     # 5g slot 1 will used the 5g channels to 64,  the 5g dual-band will use channels 100 -> 165.
                     # When 5g (slot 1) and dual-band 6g (slot 2) is enabled then 5g (slot 1) has all bands.
@@ -1754,10 +1743,10 @@ def main():
 
 
                     # Original location of setting the channel, bw and tx power
-                                        
+
                     # logg.info("9800/3504 test_parameters_summary: set : tx: {tx_power} ch: {channel} bw: {bandwidth}".format(
                     #    tx_power=tx, channel=ch, bandwidth=bw))
-                    
+
                     # only create the wlan the first time
                     if args.series == "9800":
                         if args.create_wlan is False:
@@ -1783,7 +1772,7 @@ def main():
                                 pss = cs.show_ap_dot11_6gz_summary()
                                 logg.info(pss)
                                 pss = cs.show_ap_bssid_6ghz()
-                                logg.info(pss)   
+                                logg.info(pss)
                             elif args.band == '5g':
                                 pss = cs.show_ap_dot11_5gz_summary()
                                 logg.info(pss)
@@ -1810,7 +1799,7 @@ def main():
                             elif args.band == '24g':
                                 cs.show_ap_dot11_24gz_summary()
 
-                            #  "number of WLANs:\s+(\S+)"
+                            #  "number of WLANs:\\s+(\\S+)"
                             # https://regex101.com/
                             search_wlan = False
                             for line in pss.splitlines():
@@ -1848,7 +1837,7 @@ def main():
                         # enable_wlan
                         cs.config_enable_wlan_send_no_shutdown()
 
-                    
+
                     # enable transmission for the entier 802.11z network
                     # the wlan may not care about dual_band
                     # enable_network_6ghz or enable_network_5ghz or enable_network_24ghz
@@ -1859,7 +1848,7 @@ def main():
                         # enable 6g operation status
                         pss = cs.config_ap_no_dot11_dual_band_6ghz_shutdown()
                         logg.info(pss)
-                        
+
                         # enable 6g wlan
                         pss = cs.config_no_ap_dot11_6ghz_shutdown()
                         logg.info(pss)
@@ -1875,7 +1864,7 @@ def main():
                         logger.info(pss)
 
                     elif args.band == 'dual_band_5g':
-                        # enable 5g wlan - dual band 
+                        # enable 5g wlan - dual band
                         pss = cs.config_no_ap_dot11_dual_band_5ghz_shutdown()
                         logg.info(pss)
                         # enable 5g operation status
@@ -1918,7 +1907,7 @@ def main():
                         cs.config_ap_no_dot11_24ghz_shutdown()
                         logg.info(pss)
 
-                    # End of enable 
+                    # End of enable
                     '''
 
                     # set tx_power channel bw
@@ -1969,7 +1958,6 @@ def main():
                         elif args.band == '24g':
                             # 24g can only be 20 Mhz
                             pass
-
 
                     # Wait a bit for AP to come back up
                     time.sleep(3)
@@ -2159,7 +2147,7 @@ def main():
                     # read the AP Tx Power
                     cs.get_ap_tx_power_config()
                     ap_dbm = cs.ap_tx_power_dbm
-                    ap_power = "{pw} of {pw_levels}".format(pw=cs.ap_current_tx_power_level,pw_levels=cs.ap_num_power_levels)
+                    ap_power = "{pw} of {pw_levels}".format(pw=cs.ap_current_tx_power_level, pw_levels=cs.ap_num_power_levels)
 
                     # Up station
                     subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
@@ -2167,7 +2155,6 @@ def main():
                     # subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
                     #             "--cmd", "reset","--amt_resets","2","--min_sleep","10","--max_sleep","10"])
                     # sleep(12)
-
 
                     i = 0
                     wait_ip_print = False
@@ -2187,7 +2174,6 @@ def main():
                                                      "--show_port", "AP,IP,Mode,NSS,Bandwidth,Channel,Signal,Noise,Status,RX-Rate"], capture_output=True, check=True)
                         pss = port_stats.stdout.decode('utf-8', 'ignore')
 
-
                         _status = None
                         _ip = None
 
@@ -2199,7 +2185,7 @@ def main():
                             if (m is not None):
                                 _ip = m.group(1)
 
-                        if (i % 3) == 0 :
+                        if (i % 3) == 0:
                             logg.info("IP %s  Status %s" % (_ip, _status))
 
                         if (_status == "Authorized"):
@@ -2217,7 +2203,7 @@ def main():
 
                         i += 1
                         # We wait a fairly long time since AP will take a long time to start on a CAC channel.
-                        if (i > int(args.wait_time)):  
+                        if (i > int(args.wait_time)):
                             err = "ERROR:  Station did not connect within 180 seconds."
                             logg.info(err)
                             e_tot += err
@@ -2247,7 +2233,7 @@ def main():
                             pss = cs.show_ap_dot11_6gz_summary()
                             logg.info(pss)
                             pss = cs.show_ap_bssid_6ghz()
-                            logg.info(pss)                                
+                            logg.info(pss)
                         elif args.band == '5g':
                             pss = cs.show_ap_dot11_5gz_summary()
                             logg.info(pss)
@@ -2259,15 +2245,14 @@ def main():
                             pss = cs.show_ap_bssid_24ghz()
                             logg.info(pss)
 
-
                     # Start traffic
                     # subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                    #                 "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=False)   
-                    # 
+                    #                 "--cmd", "set_cx_state all c-udp-power RUNNING"], capture_output=True, check=False)
+                    #
                     logg.info("Start Running traffic cx")
-                    
+
                     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                                     "--cmd", "set_cx_state all c-udp-power RUNNING"]
+                               "--cmd", "set_cx_state all c-udp-power RUNNING"]
 
                     logg.info("command: {command}".format(command=command))
 
@@ -2277,7 +2262,7 @@ def main():
                         logger.debug(line)
                         summary_output += line
                     summary.wait()
-                    logger.info(summary_output)  
+                    logger.info(summary_output)
 
                     # Wait configured number of seconds more seconds
                     logg.info("Waiting {} seconds to let traffic run for a bit, Channel {} NSS {} BW {} TX-Power {}".format(args.duration, ch, n, bw, tx))
@@ -2317,7 +2302,6 @@ def main():
                             summary = "empty_process_error"
                             summary_output = summary
 
-                        
                         ap_ant_gain = ''
                         ap_legal_ant_gain = ''
                         ap_total_power = ''
@@ -2328,15 +2312,15 @@ def main():
                         print(summary_output_split)
                         for line in summary_output.splitlines():
                             if 'Configured Antenna Gain(dBi):' in line:
-                                pat = "Configured Antenna Gain\\(dBi\\)\\:\\s+(\\d+)"  
+                                pat = "Configured Antenna Gain\\(dBi\\)\\:\\s+(\\d+)"
                                 match = re.search(pat, line)
-                                if match is not None :
+                                if match is not None:
                                     ap_ant_gain = match.group(1)
                                     logger.info("AP antenna gain: {gain}".format(gain=ap_ant_gain))
                             if 'Legal Antenna Gain in use(dBi):' in line:
                                 pat = "Legal Antenna Gain in use\\(dBi\\):\\s+(\\S+)"
                                 match = re.search(pat, line)
-                                if match is not None :
+                                if match is not None:
                                     ap_legal_ant_gain = match.group(1)
                                     logger.info("AP Legal antenna gain: {gain}".format(gain=ap_legal_ant_gain))
                             # /Allowed total powers\S+\Sn(\d+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)
@@ -2352,7 +2336,7 @@ def main():
                                         pat = "(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)"
                                     else:
                                         pat = "(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)"
-                                else:                                        
+                                else:
                                     pat = "(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)"
 
                                 match = re.search(pat, line)
@@ -2375,13 +2359,13 @@ def main():
                                     else:
                                         # pat = "Allowed per-path powers\\S+\\Sn(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)"
                                         pat = "(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)"
-                                else:                                        
+                                else:
                                     pat = "(\\d+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)\\s+(\\S+)"
 
                                 match = re.search(pat, line)
                                 if match is not None:
                                     ap_per_path_power = match.group(int(tx))
-                                    
+
                         logg.info("ap_ant_gain: {ap_ant_gain}".format(ap_ant_gain=ap_ant_gain))
                         logg.info("ap_legal_ant_gain: {ap_legal_ant_gain}".format(ap_legal_ant_gain=ap_legal_ant_gain))
                         logg.info("ap_total_power: {ap_total_power}".format(ap_total_power=ap_total_power))
@@ -2458,8 +2442,6 @@ def main():
                     endp_stats = subprocess.run(["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--endp_vals", "rx_bps",
                                                  "--cx_name", "c-udp-power"], capture_output=True, check=True)
 
-                                                 
-
                     pss = endp_stats.stdout.decode('utf-8', 'ignore')
                     logg.info(pss)
 
@@ -2480,7 +2462,7 @@ def main():
                     #                "--cmd", "set_cx_state all c-udp-power STOPPED"], capture_output=True, check=True)
 
                     command = ["./lf_firemod.pl", "--manager", lfmgr, "--resource", lfresource, "--action", "do_cmd",
-                                     "--cmd", "set_cx_state all c-udp-power STOPPED"]
+                               "--cmd", "set_cx_state all c-udp-power STOPPED"]
 
                     logg.info("command: {command}".format(command=command))
 
@@ -2490,8 +2472,7 @@ def main():
                         logger.debug(line)
                         summary_output += line
                     summary.wait()
-                    logger.info(summary_output)  
-
+                    logger.info(summary_output)
 
                     antstr = ""
                     for x in range(4):
@@ -2685,7 +2666,7 @@ def main():
                         # if args.per_ss:
                         if ((abs(diff_a1) > pfrange) or
                             (abs(diff_a2) > pfrange) or
-                            (abs(diff_a3) > pfrange)):
+                                (abs(diff_a3) > pfrange)):
                             pf = 0
                     if (int(_nss) == 4):
                         # NSS of 4 means each chain should transmit at 1/4 total power, thus the '- 6'
@@ -2741,7 +2722,7 @@ def main():
                         DAA_Pwr = None
                         DAA_N_TX = None
                         DAA_Total_pwr = None
-                        if(bool(ap_dict)  and args.nss_4x4_ap_adjust):
+                        if(bool(ap_dict) and args.nss_4x4_ap_adjust):
                             logg.info("ap_dict {}".format(ap_dict))
                             logg.info("Read AP ap_scheme: {} ap_ip: {} ap_port: {} ap_user: {} ap_pw: {}".format(ap_dict['ap_scheme'], ap_dict['ap_ip'], ap_dict["ap_port"],
                                                                                                                  ap_dict['ap_user'], ap_dict['ap_pw']))
@@ -2763,7 +2744,7 @@ def main():
                                     # sys.stdout.flush() # please see comments regarding the necessity of this line
                                 summary.wait()
                                 logger.info(summary_output)  # .decode('utf-8', 'ignore'))
-# 
+#
                                 # ap_info = subprocess.run(["./ap_ctl.py", "--scheme", ap_dict['ap_scheme'], "--prompt", ap_dict['ap_prompt'], "--dest", ap_dict['ap_ip'], "--port", ap_dict["ap_port"],
                                 #                          "--user", ap_dict['ap_user'], "--passwd", ap_dict['ap_pw'], "--action", "powercfg"], stdout=subprocess.PIPE)
                                 # try:
@@ -2836,7 +2817,6 @@ def main():
                         if bool(ap_dict) and failed_low > failed_low_threshold:
                             logg.info("failed_low: {} > failed_low_threshold: {}".format(failed_low, failed_low_threshold))
                             pf = 0
-
 
                         # this allows for a larger offset for specific spatial streams
                         if(pf_ignore_offset != 0):
@@ -3020,7 +3000,7 @@ def main():
                     center_yel_tmp = center_yel
 
                     # TODO refactor this is a quick fix to allow the fail's to be better indicated
-                    if (pfs == "FAIL") or (_bw != bw) or (_nss != n ) or (e_tot != "") or (int(cc_dbm) != int(ap_dbm)) or (cc_power != ap_power):
+                    if (pfs == "FAIL") or (_bw != bw) or (_nss != n) or (e_tot != "") or (int(cc_dbm) != int(ap_dbm)) or (cc_power != ap_power):
                         center_blue = center_red
                         center_tan = center_red
                         center_peach = center_red
@@ -3028,7 +3008,6 @@ def main():
                         center_yel_red = center_red
                         center_yel = center_red
 
-                    
                     # Start report line
                     col = 0
                     worksheet.write(row, col, mycc, center_blue)
@@ -3142,7 +3121,7 @@ def main():
                     col += 1
                     worksheet.write(row, col, total_run_duration_str, green)
                     col += 1
-                    if (int(cc_dbm) != int (ap_dbm)):
+                    if (int(cc_dbm) != int(ap_dbm)):
                         err = "ERROR:  Controller dBm : %s != AP dBm: %s.  " % (cc_dbm, ap_dbm)
                         logg.info(err)
                         csv.write(err)
@@ -3180,7 +3159,7 @@ def main():
                         worksheet.write(row, col, e_w_tot, red_left)
                         col += 1
                     row += 1
-                    
+
                     # reset colors in case of failure
                     center_blue = center_blue_tmp
                     center_tan = center_tan_tmp
@@ -3188,7 +3167,6 @@ def main():
                     center_pink = center_pink_tmp
                     center_yel_red = center_yel_red_tmp
                     center_yel = center_yel_tmp
-
 
                     csv.write("\n")
                     csv.flush()
@@ -3251,7 +3229,7 @@ def main():
             pss = cs.show_ap_dot11_6gz_summary()
             logg.info(pss)
             pss = cs.show_ap_bssid_6ghz()
-            logg.info(pss)                                
+            logg.info(pss)
         pss = cs.show_ap_dot11_5gz_summary()
         logg.info(pss)
         pss = cs.show_ap_dot11_24gz_summary()
@@ -3404,7 +3382,7 @@ def main():
         pss = cs.show_ap_dot11_6gz_summary()
         logg.info(pss)
         pss = cs.show_ap_bssid_6ghz()
-        logg.info(pss)                                
+        logg.info(pss)
 
     pss = cs.show_ap_dot11_5gz_summary()
     logg.info(pss)
@@ -3415,7 +3393,7 @@ def main():
     report.build_banner()
     report.set_table_title("Tx Power")
 
-    # close the workbook 
+    # close the workbook
     close_workbook(workbook)
 
     if args.html_report:
@@ -3434,9 +3412,8 @@ def main():
             # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Portrait')
             # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
         except BaseException:
-             traceback.print_exc()
+            traceback.print_exc()
 
-    
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 if __name__ == '__main__':
