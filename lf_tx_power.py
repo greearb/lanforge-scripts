@@ -1263,10 +1263,13 @@ def main():
         tx_power=tx, channel=ch, bandwidth=bw))
     '''
     # only create the wlan the first time
+    wlan_created = False
+
     if args.series == "9800":
         if args.create_wlan is False:
             wlan_created = True
-        if wlan_created:
+        # wlan already created no need to create a wlan
+        if wlan_created:            
             pss = cs.show_wlan_summary()
             logg.info(pss)
             logg.info(
@@ -1297,6 +1300,7 @@ def main():
                 logg.info(pss)
                 pss = cs.show_ap_bssid_24ghz()
                 logg.info(pss)
+        # create wlan                
         else:
             # Verify that a wlan does not exist on wlanID
             # delete the wlan if already exists
@@ -1330,7 +1334,7 @@ def main():
                         logg.info("###############################################################################")
                         logg.info("Need to remove wlanID: {} cc_wlan: {} cc_wlan_ssid: {}".format(args.wlanID, cc_wlan, cc_wlan_ssid))
                         logg.info("###############################################################################")
-                        cs.config_no_wla
+                        cs.config_no_wlan()
             # Create wlan
             wlan_created = True
             logg.info("create wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port))
@@ -1343,7 +1347,7 @@ def main():
                 cs.config_wlan_wpa2()
             elif args.security == 'wpa3':
                 cs.config_wlan_wpa
-            cs.config_wireless_tag_policy_and_policy_profil
+            cs.config_wireless_tag_policy_and_policy_profile()
         # enable_wlan
         cs.config_enable_wlan_send_no_shutdown()
     
@@ -1416,10 +1420,6 @@ def main():
 
     # Set dual-band outside of main loop
 
-
-
-
-
     # these are set to configure the number of spatial streams and MCS values
     # 5g has 8 spatial streams , MCS is 7, 9, 11
     # ap dot11 6ghz dot11ax mcs tx index 7 spatial-stream 1 << - turn on
@@ -1428,7 +1428,6 @@ def main():
     # Loop through all iterations and run txpower tests.
     # The is the main loop of loops:   Channels, spatial streams (nss), bandwidth (bw), txpowers (tx)
     # Note: supports 9800 and 3504 controllers
-    wlan_created = False
     # create blank time stamp
     total_run_duration = datetime.timedelta(0)
     run_start_time = datetime.datetime.now()
