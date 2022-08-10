@@ -1169,325 +1169,6 @@ def main():
     # A Manual role has the channel, channel width and tx_power
     # stay on the settings that are set in the AP or controller
     ap_config_radio_role = cs.ap_config_radio_role
-    # Set Manual mode, set dual band, and creating wlan outside of main loop
-
-    # if the AP radio role is not Manual
-    #   or creating a wlan
-    #   or setting up a dual-band slot
-    # Then need to
-    #    take the AP operation state down
-    #    take the radio down
-    #       perform setting up Manual mode, or dual band or create wlan
-    #    take the AP opweraion state up
-    #    take the radio up
-    #
-    if (ap_config_radio_role != 'Manual' or args.create_wlan is True
-            or args.band == "dual_band_6g" or args.band == "dual_band_5g"):
-
-        # Begin setting client Serving mode , Dual band and creating dual-band
-        # when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .
-        # 5g slot 1 will used the 5g channels to 64,  the 5g dual-band will use channels 100 -> 165.
-        # When 5g (slot 1) and dual-band 6g (slot 2) is enabled then 5g (slot 1) has all ban
-        # if dual band : disable dual-band mode, config mode, enable dual-band mode
-        # disable dual-band mode
-        # for other bands just disable the radio
-        if args.band == "dual_band_6g":
-            logg.info("ap_dot11_dual_band_mode_shutdown_6ghz")
-            cs.ap_dot11_dual_band_mode_shutdown_6ghz()
-        elif args.band == "dual_band_5g":
-            logg.info("ap_dot11_dual_band_mode_shutdown_5ghz")
-            cs.ap_dot11_dual_band_mode_shutdown_5ghz()
-        elif args.band == "6g":
-            logg.info("ap_dot11_shutdown_6ghz")
-            cs.show_ap_dot11_6gz_shutdown()
-        elif args.band == "5g":
-            logg.info("ap_dot11_shutdown_5ghz")
-            cs.show_ap_dot11_5gz_shutdown()
-        elif args.band == "24g":
-            logg.info("ap_dot11_shutdown_24ghz")
-            cs.show_ap_dot11_24gz_shutdow
-        # if dual band : disable dual-band mode, config mode, enable dual-band mode
-        # disable dual-band m
-        # set the radio role selection
-        if ap_config_radio_role != 'Manual':
-            if args.band == 'dual_band_6g':
-                logg.info("ap_dot11_dual_band_6ghz_radio_role_manual_client_serving")
-                cs.ap_dot11_dual_band_6ghz_radio_role_manual_client_serving()
-            elif args.band == 'dual_band_5g':
-                logg.info("ap_dot11_dual_band_5ghz_radio_role_manual_client_serving")
-                cs.ap_dot11_dual_band_5ghz_radio_role_manual_client_serving()
-            elif args.band == '6g':
-                cs.ap_dot11_6ghz_radio_role_manual_client_serving()
-                logg.info("ap_dot11_6ghz_radio_role_manual_client_serving")
-            elif args.band == '5g':
-                cs.ap_dot11_5ghz_radio_role_manual_client_serving()
-                logg.info("ap_dot11_5ghz_radio_role_manual_client_serving")
-            elif args.band == '24g':
-                cs.ap_dot11_24ghz_radio_role_manual_client_serving()
-                logg.info("ap_dot11_24ghz_radio_role_manual_client_serving")
-
-            # config dual-band mode
-            if args.band == "dual_band_6g":
-                cs.config_ap_dot11_dual_band_to_6ghz()
-            elif args.band == "dual_band_5g":
-                cs.config_ap_dot11_dual_band_to_5gh
-            # enable  dual-band mode
-            if args.band == "dual_band_6g":
-                cs.ap_dot11_dual_band_no_mode_shutdown_6ghz()
-            elif args.band == "dual_band_5g":
-                cs.ap_dot11_dual_band_no_mode_shutdown_5gh
-
-            # Disable AP, apply settings, enable AP
-            if args.band == "dual_band_6g":
-                cs.ap_dot11_dual_band_6ghz_shutdown()
-            elif args.band == "dual_band_5g":
-                cs.ap_dot11_dual_band_5ghz_shutdown()
-            elif args.band == "6g":
-                cs.ap_dot11_6ghz_shutdown()
-            elif args.band == "5g":
-                cs.ap_dot11_5ghz_shutdown()
-            elif args.band == "24g":
-                cs.ap_dot11_24ghz_shutdow
-            if args.series == "9800":
-                # 9800 series need to  "Configure radio for manual channel assignment"
-                logg.info("9800 Configure radio for manual channel assignment")
-                cs.wlan_shutdown()
-                if args.band == 'dual_band_6g':
-                    cs.ap_dot11_dual_band_6ghz_shutdown()
-                elif args.band == 'dual_band_5g':
-                    cs.ap_dot11_dual_band_5ghz_shutdown()
-                elif args.band == '6g':
-                    cs.ap_dot11_6ghz_shutdown()
-                elif args.band == '5g':
-                    cs.ap_dot11_5ghz_shutdown()
-                elif args.band == '24g':
-                    cs.ap_dot11_24ghz_shutdow
-            else:
-                cs.ap_dot11_5ghz_shutdown()
-                cs.ap_dot11_24ghz_shutdow
-
-            # only create the wlan the first time
-            wlan_created = False
-
-            if args.series == "9800":
-                if args.create_wlan is False:
-                    wlan_created = True
-                # wlan already created no need to create a wlan
-                if wlan_created:
-                    pss = cs.show_wlan_summary()
-                    logg.info(pss)
-                    logg.info(
-                        "wlan already present, no need to create wlanID {} wlan {} wlanSSID {} port {}".format(
-                            args.wlanID, args.wlan, args.wlanSSID, args.port))
-                    if args.band == 'dual_band_6g':
-                        pss = cs.show_ap_dot11_dual_band_6gz_summary()
-                        logg.info(pss)
-                        pss = cs.show_ap_bssid_dual_band_6ghz()
-                        logg.info(pss)
-                    elif args.band == 'dual_band_5g':
-                        pss = cs.show_ap_dot11_dual_band_5gz_summary()
-                        logg.info(pss)
-                        pss = cs.show_ap_bssid_dual_band_5ghz()
-                        logg.info(pss)
-                    elif args.band == '6g':
-                        pss = cs.show_ap_dot11_6gz_summary()
-                        logg.info(pss)
-                        pss = cs.show_ap_bssid_6ghz()
-                        logg.info(pss)
-                    elif args.band == '5g':
-                        pss = cs.show_ap_dot11_5gz_summary()
-                        logg.info(pss)
-                        pss = cs.show_ap_bssid_5ghz()
-                        logg.info(pss)
-                    elif args.band == '24g':
-                        pss = cs.show_ap_dot11_24gz_summary()
-                        logg.info(pss)
-                        pss = cs.show_ap_bssid_24ghz()
-                        logg.info(pss)
-                # create wlan
-                else:
-                    # Verify that a wlan does not exist on wlanID
-                    # delete the wlan if already exists
-                    pss = cs.show_wlan_summary()
-                    logg.info(pss)
-                    if args.band == 'dual_band_6g':
-                        cs.show_ap_dot11_dual_band_6gz_summary()
-                    elif args.band == 'dual_band_5g':
-                        cs.show_ap_dot11_dual_band_5gz_summary()
-                    elif args.band == '6g':
-                        cs.show_ap_dot11_6gz_summary()
-                    elif args.band == '5g':
-                        cs.show_ap_dot11_5gz_summary()
-                    elif args.band == '24g':
-                        cs.show_ap_dot11_24gz_summar
-                    #  "number of WLANs:\s+(\S+)"
-                    # https://regex101.com/
-                    search_wlan = False
-                    for line in pss.splitlines():
-                        logg.info(line)
-                        if (line.startswith("---------")):
-                            search_wlan = True
-                            continue
-                        if (search_wlan):
-                            pat = "{}\\s+(\\S+)\\s+(\\S+)".format(args.wlanID)
-                            m = re.search(pat, line)
-                            if (m is not None):
-                                cc_wlan = m.group(1)
-                                cc_wlan_ssid = m.group(2)
-                                # wlanID is in use
-                                logg.info("###############################################################################")
-                                logg.info("Need to remove wlanID: {} cc_wlan: {} cc_wlan_ssid: {}".format(args.wlanID, cc_wlan, cc_wlan_ssid))
-                                logg.info("###############################################################################")
-                                cs.config_no_wlan()
-                    # Create wlan
-                    wlan_created = True
-                    logg.info("create wlan {} wlanID {} port {}".format(args.wlan, args.wlanID, args.port))
-                    # TODO be able to do for WPA2 , WPA3
-                    # TODO check for failure to close cookbook
-                    # this needs to be configurable
-                    if args.security == 'open':
-                        cs.config_wlan_open()
-                    elif args.security == 'wpa2':
-                        cs.config_wlan_wpa2()
-                    elif args.security == 'wpa3':
-                        cs.config_wlan_wpa
-                    cs.config_wireless_tag_policy_and_policy_profile()
-                # enable_wlan
-                cs.config_enable_wlan_send_no_shutdown()
-
-            # enable transmission for the entier 802.11z network
-            # the wlan may not care about dual_band
-            # enable_network_6ghz or enable_network_5ghz or enable_network_24ghz
-            if args.band == 'dual_band_6g':
-                # enable 6g wlan
-                pss = cs.config_no_ap_dot11_dual_band_6ghz_shutdown()
-                logg.info(pss)
-                # enable 6g operation status
-                pss = cs.config_ap_no_dot11_dual_band_6ghz_shutdown()
-                logg.info(pss)
-
-                # enable 6g wlan
-                pss = cs.config_no_ap_dot11_6ghz_shutdown()
-                logg.info(pss)
-                # enable 6g operation status
-                pss = cs.config_ap_no_dot11_6ghz_shutdown()
-                logg.info(pss)
-                # enable 5g wlan to show scans
-                pss = cs.config_no_ap_dot11_5ghz_shutdown()
-                logger.info(pss)
-                # enable 5g operation status
-                pss = cs.config_ap_no_dot11_5ghz_shutdown()
-                logger.info(pss)
-            elif args.band == 'dual_band_5g':
-                # enable 5g wlan - dual band
-                pss = cs.config_no_ap_dot11_dual_band_5ghz_shutdown()
-                logg.info(pss)
-                # enable 5g operation status
-                pss = cs.config_ap_no_dot11_dual_band_5ghz_shutdown()
-                logg.info(pss)
-                # enable 5g wlan
-                pss = cs.config_no_ap_dot11_5ghz_shutdown()
-                logger.info(pss)
-                # enable 5g operation status
-                pss = cs.config_ap_no_dot11_5ghz_shutdown()
-                logger.info(pss)
-            elif args.band == '6g':
-                # enable 6g wlan
-                pss = cs.config_no_ap_dot11_6ghz_shutdown()
-                logg.info(pss)
-                # enable 6g operation status
-                pss = cs.config_ap_no_dot11_6ghz_shutdown()
-                logg.info(pss)
-                # 6g needs to see the 5g bands
-                # enable 5g wlan
-                pss = cs.config_no_ap_dot11_5ghz_shutdown()
-                logger.info(pss)
-                # enable 5g operation status
-                pss = cs.config_ap_no_dot11_5ghz_shutdown()
-                logger.info(pss)
-            elif args.band == '5g':
-                # enable 5g wlan
-                pss = cs.config_no_ap_dot11_5ghz_shutdown()
-                logg.info(pss)
-                # enable 5g operation status
-                pss = cs.config_ap_no_dot11_5ghz_shutdown()
-                logg.info(pss)
-            elif args.band == '24g':
-                # enable wlan 24ghz
-                pss = cs.config_no_ap_dot11_24ghz_shutdown()
-                logg.info(pss)
-                # enable 24ghz operation status
-                pss = cs.config_ap_no_dot11_24ghz_shutdown()
-                logg.info(pss)
-            # End of enable
-
-    # Enable the network at the beginning of the test
-    # enable transmission for the entier 802.11z network
-    # the wlan may not care about dual_band
-    # enable_network_6ghz or enable_network_5ghz or enable_network_24ghz
-    if args.band == 'dual_band_6g':
-        # enable 6g wlan
-        pss = cs.config_no_ap_dot11_dual_band_6ghz_shutdown()
-        logg.info(pss)
-        # enable 6g operation status
-        pss = cs.config_ap_no_dot11_dual_band_6ghz_shutdown()
-        logg.info(pss)
-
-        # enable 6g wlan
-        pss = cs.config_no_ap_dot11_6ghz_shutdown()
-        logg.info(pss)
-        # enable 6g operation status
-        pss = cs.config_ap_no_dot11_6ghz_shutdown()
-        logg.info(pss)
-        # enable 5g wlan to show scans
-        pss = cs.config_no_ap_dot11_5ghz_shutdown()
-        logger.info(pss)
-        # enable 5g operation status
-        pss = cs.config_ap_no_dot11_5ghz_shutdown()
-        logger.info(pss)
-    elif args.band == 'dual_band_5g':
-        # enable 5g wlan - dual band
-        pss = cs.config_no_ap_dot11_dual_band_5ghz_shutdown()
-        logg.info(pss)
-        # enable 5g operation status
-        pss = cs.config_ap_no_dot11_dual_band_5ghz_shutdown()
-        logg.info(pss)
-        # enable 5g wlan
-        pss = cs.config_no_ap_dot11_5ghz_shutdown()
-        logger.info(pss)
-        # enable 5g operation status
-        pss = cs.config_ap_no_dot11_5ghz_shutdown()
-        logger.info(pss)
-    elif args.band == '6g':
-        # enable 6g wlan
-        pss = cs.config_no_ap_dot11_6ghz_shutdown()
-        logg.info(pss)
-        # enable 6g operation status
-        pss = cs.config_ap_no_dot11_6ghz_shutdown()
-        logg.info(pss)
-        # 6g needs to see the 5g bands
-        # enable 5g wlan
-        pss = cs.config_no_ap_dot11_5ghz_shutdown()
-        logger.info(pss)
-        # enable 5g operation status
-        pss = cs.config_ap_no_dot11_5ghz_shutdown()
-        logger.info(pss)
-    elif args.band == '5g':
-        # enable 5g wlan
-        pss = cs.config_no_ap_dot11_5ghz_shutdown()
-        logg.info(pss)
-        # enable 5g operation status
-        pss = cs.config_ap_no_dot11_5ghz_shutdown()
-        logg.info(pss)
-    elif args.band == '24g':
-        # enable wlan 24ghz
-        pss = cs.config_no_ap_dot11_24ghz_shutdown()
-        logg.info(pss)
-        # enable 24ghz operation status
-        pss = cs.config_ap_no_dot11_24ghz_shutdown()
-        logg.info(pss)
-    # End of enable
-
 
     # these are set to configure the number of spatial streams and MCS values
     # 5g has 8 spatial streams , MCS is 7, 9, 11
@@ -1716,7 +1397,7 @@ def main():
                     logger.info(summary_output)
                     cs.show_ap_summary()
 
-                    '''
+                    
                     # Begin setting client Serving mode , Dual band and creating dual-band
                     # when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .
                     # 5g slot 1 will used the 5g channels to 64,  the 5g dual-band will use channels 100 -> 165.
@@ -1807,11 +1488,52 @@ def main():
                         cs.ap_dot11_5ghz_shutdown()
                         cs.ap_dot11_24ghz_shutdown()
 
+                    logg.info("9800/3504 test_parameters_summary: set : tx: {tx_power} ch: {channel} bw: {bandwidth}".format(
+                        tx_power=tx, channel=ch, bandwidth=bw))
+                    if (tx != "NA"):
+                        logg.info("9800/3504 test_parameters: set txPower: {tx_power}".format(tx_power=tx))
+                        cs.tx_power = tx
 
-                    # Original location of setting the channel, bw and tx power
+                        if args.band == 'dual_band_6g':
+                            cs.config_dot11_dual_band_6ghz_tx_power()
+                        elif args.band == 'dual_band_5g':
+                            cs.config_dot11_dual_band_5ghz_tx_power()
+                        elif args.band == '6g':
+                            cs.config_dot11_6ghz_tx_power()
+                        elif args.band == '5g':
+                            cs.config_dot11_5ghz_tx_power()
+                        elif args.band == '24g':
+                            cs.config_dot11_24ghz_tx_power()
 
-                    # logg.info("9800/3504 test_parameters_summary: set : tx: {tx_power} ch: {channel} bw: {bandwidth}".format(
-                    #    tx_power=tx, channel=ch, bandwidth=bw))
+                    # NSS is set on the station earlier...
+                    if (ch != "NA"):
+                        logg.info("9800/3504 test_parameters set channel: {}".format(ch))
+                        cs.channel = ch
+                        if args.band == 'dual_band_6g':
+                            cs.config_dot11_dual_band_6ghz_channel()
+                        elif args.band == 'dual_band_5g':
+                            cs.config_dot11_dual_band_5ghz_channel()
+                        elif args.band == '6g':
+                            cs.config_dot11_6ghz_channel()
+                        elif args.band == '5g':
+                            cs.config_dot11_5ghz_channel()
+                        elif args.band == '24g':
+                            cs.config_dot11_24ghz_channel()
+
+                    if (bw != "NA"):
+                        logg.info("9800/3504 test_parameters bandwidth: set : {}".format(bw))
+                        cs.bandwidth = bw
+                        if args.band == 'dual_band_6g':
+                            cs.config_dot11_dual_band_6ghz_channel_width()
+                        elif args.band == 'dual_band_5g':
+                            cs.config_dot11_dual_band_5ghz_channel_width()
+                        elif args.band == '6g':
+                            cs.config_dot11_6ghz_channel_width()
+                        elif args.band == '5g':
+                            cs.config_dot11_5ghz_channel_width()
+                        elif args.band == '24g':
+                            # 24g can only be 20 Mhz
+                            pass
 
                     # only create the wlan the first time
                     if args.series == "9800":
@@ -1972,126 +1694,6 @@ def main():
                         # enable 24ghz operation status
                         cs.config_ap_no_dot11_24ghz_shutdown()
                         logg.info(pss)
-
-                    # End of enable
-                    '''
-
-                    # Enable the network at the beginning of the test
-                    # enable transmission for the entier 802.11z network
-                    # the wlan may not care about dual_band
-                    # enable_network_6ghz or enable_network_5ghz or enable_network_24ghz
-                    if args.band == 'dual_band_6g':
-                        # enable 6g wlan
-                        pss = cs.config_no_ap_dot11_dual_band_6ghz_shutdown()
-                        logg.info(pss)
-                        # enable 6g operation status
-                        pss = cs.config_ap_no_dot11_dual_band_6ghz_shutdown()
-                        logg.info(pss)
-
-                        # enable 6g wlan
-                        pss = cs.config_no_ap_dot11_6ghz_shutdown()
-                        logg.info(pss)
-                        # enable 6g operation status
-                        pss = cs.config_ap_no_dot11_6ghz_shutdown()
-                        logg.info(pss)
-                        # enable 5g wlan to show scans
-                        pss = cs.config_no_ap_dot11_5ghz_shutdown()
-                        logger.info(pss)
-                        # enable 5g operation status
-                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
-                        logger.info(pss)
-                    elif args.band == 'dual_band_5g':
-                        # enable 5g wlan - dual band
-                        pss = cs.config_no_ap_dot11_dual_band_5ghz_shutdown()
-                        logg.info(pss)
-                        # enable 5g operation status
-                        pss = cs.config_ap_no_dot11_dual_band_5ghz_shutdown()
-                        logg.info(pss)
-                        # enable 5g wlan
-                        pss = cs.config_no_ap_dot11_5ghz_shutdown()
-                        logger.info(pss)
-                        # enable 5g operation status
-                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
-                        logger.info(pss)
-                    elif args.band == '6g':
-                        # enable 6g wlan
-                        pss = cs.config_no_ap_dot11_6ghz_shutdown()
-                        logg.info(pss)
-                        # enable 6g operation status
-                        pss = cs.config_ap_no_dot11_6ghz_shutdown()
-                        logg.info(pss)
-                        # 6g needs to see the 5g bands
-                        # enable 5g wlan
-                        pss = cs.config_no_ap_dot11_5ghz_shutdown()
-                        logger.info(pss)
-                        # enable 5g operation status
-                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
-                        logger.info(pss)
-                    elif args.band == '5g':
-                        # enable 5g wlan
-                        pss = cs.config_no_ap_dot11_5ghz_shutdown()
-                        logg.info(pss)
-                        # enable 5g operation status
-                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
-                        logg.info(pss)
-                    elif args.band == '24g':
-                        # enable wlan 24ghz
-                        pss = cs.config_no_ap_dot11_24ghz_shutdown()
-                        logg.info(pss)
-                        # enable 24ghz operation status
-                        pss = cs.config_ap_no_dot11_24ghz_shutdown()
-                        logg.info(pss)
-                    # End of enable
-
-
-                    # set tx_power channel bw
-                    # CMR TODO the channel , bw and tx power do not require a s
-                    logg.info("9800/3504 test_parameters_summary: set : tx: {tx_power} ch: {channel} bw: {bandwidth}".format(
-                        tx_power=tx, channel=ch, bandwidth=bw))
-                    if (tx != "NA"):
-                        logg.info("9800/3504 test_parameters: set txPower: {tx_power}".format(tx_power=tx))
-                        cs.tx_power = tx
-
-                        if args.band == 'dual_band_6g':
-                            cs.config_dot11_dual_band_6ghz_tx_power()
-                        elif args.band == 'dual_band_5g':
-                            cs.config_dot11_dual_band_5ghz_tx_power()
-                        elif args.band == '6g':
-                            cs.config_dot11_6ghz_tx_power()
-                        elif args.band == '5g':
-                            cs.config_dot11_5ghz_tx_power()
-                        elif args.band == '24g':
-                            cs.config_dot11_24ghz_tx_power()
-
-                    # NSS is set on the station earlier...
-                    if (ch != "NA"):
-                        logg.info("9800/3504 test_parameters set channel: {}".format(ch))
-                        cs.channel = ch
-                        if args.band == 'dual_band_6g':
-                            cs.config_dot11_dual_band_6ghz_channel()
-                        elif args.band == 'dual_band_5g':
-                            cs.config_dot11_dual_band_5ghz_channel()
-                        elif args.band == '6g':
-                            cs.config_dot11_6ghz_channel()
-                        elif args.band == '5g':
-                            cs.config_dot11_5ghz_channel()
-                        elif args.band == '24g':
-                            cs.config_dot11_24ghz_channel()
-
-                    if (bw != "NA"):
-                        logg.info("9800/3504 test_parameters bandwidth: set : {}".format(bw))
-                        cs.bandwidth = bw
-                        if args.band == 'dual_band_6g':
-                            cs.config_dot11_dual_band_6ghz_channel_width()
-                        elif args.band == 'dual_band_5g':
-                            cs.config_dot11_dual_band_5ghz_channel_width()
-                        elif args.band == '6g':
-                            cs.config_dot11_6ghz_channel_width()
-                        elif args.band == '5g':
-                            cs.config_dot11_5ghz_channel_width()
-                        elif args.band == '24g':
-                            # 24g can only be 20 Mhz
-                            pass
 
                     # Wait a bit for AP to come back up
                     time.sleep(3)
