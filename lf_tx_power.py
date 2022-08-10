@@ -1421,7 +1421,73 @@ def main():
                 logg.info(pss)
             # End of enable
 
-    # Set dual-band outside of main loop
+    # Enable the network at the beginning of the test
+    # enable transmission for the entier 802.11z network
+    # the wlan may not care about dual_band
+    # enable_network_6ghz or enable_network_5ghz or enable_network_24ghz
+    if args.band == 'dual_band_6g':
+        # enable 6g wlan
+        pss = cs.config_no_ap_dot11_dual_band_6ghz_shutdown()
+        logg.info(pss)
+        # enable 6g operation status
+        pss = cs.config_ap_no_dot11_dual_band_6ghz_shutdown()
+        logg.info(pss)
+
+        # enable 6g wlan
+        pss = cs.config_no_ap_dot11_6ghz_shutdown()
+        logg.info(pss)
+        # enable 6g operation status
+        pss = cs.config_ap_no_dot11_6ghz_shutdown()
+        logg.info(pss)
+        # enable 5g wlan to show scans
+        pss = cs.config_no_ap_dot11_5ghz_shutdown()
+        logger.info(pss)
+        # enable 5g operation status
+        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+        logger.info(pss)
+    elif args.band == 'dual_band_5g':
+        # enable 5g wlan - dual band
+        pss = cs.config_no_ap_dot11_dual_band_5ghz_shutdown()
+        logg.info(pss)
+        # enable 5g operation status
+        pss = cs.config_ap_no_dot11_dual_band_5ghz_shutdown()
+        logg.info(pss)
+        # enable 5g wlan
+        pss = cs.config_no_ap_dot11_5ghz_shutdown()
+        logger.info(pss)
+        # enable 5g operation status
+        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+        logger.info(pss)
+    elif args.band == '6g':
+        # enable 6g wlan
+        pss = cs.config_no_ap_dot11_6ghz_shutdown()
+        logg.info(pss)
+        # enable 6g operation status
+        pss = cs.config_ap_no_dot11_6ghz_shutdown()
+        logg.info(pss)
+        # 6g needs to see the 5g bands
+        # enable 5g wlan
+        pss = cs.config_no_ap_dot11_5ghz_shutdown()
+        logger.info(pss)
+        # enable 5g operation status
+        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+        logger.info(pss)
+    elif args.band == '5g':
+        # enable 5g wlan
+        pss = cs.config_no_ap_dot11_5ghz_shutdown()
+        logg.info(pss)
+        # enable 5g operation status
+        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+        logg.info(pss)
+    elif args.band == '24g':
+        # enable wlan 24ghz
+        pss = cs.config_no_ap_dot11_24ghz_shutdown()
+        logg.info(pss)
+        # enable 24ghz operation status
+        pss = cs.config_ap_no_dot11_24ghz_shutdown()
+        logg.info(pss)
+    # End of enable
+
 
     # these are set to configure the number of spatial streams and MCS values
     # 5g has 8 spatial streams , MCS is 7, 9, 11
@@ -1909,6 +1975,74 @@ def main():
 
                     # End of enable
                     '''
+
+                    # Enable the network at the beginning of the test
+                    # enable transmission for the entier 802.11z network
+                    # the wlan may not care about dual_band
+                    # enable_network_6ghz or enable_network_5ghz or enable_network_24ghz
+                    if args.band == 'dual_band_6g':
+                        # enable 6g wlan
+                        pss = cs.config_no_ap_dot11_dual_band_6ghz_shutdown()
+                        logg.info(pss)
+                        # enable 6g operation status
+                        pss = cs.config_ap_no_dot11_dual_band_6ghz_shutdown()
+                        logg.info(pss)
+
+                        # enable 6g wlan
+                        pss = cs.config_no_ap_dot11_6ghz_shutdown()
+                        logg.info(pss)
+                        # enable 6g operation status
+                        pss = cs.config_ap_no_dot11_6ghz_shutdown()
+                        logg.info(pss)
+                        # enable 5g wlan to show scans
+                        pss = cs.config_no_ap_dot11_5ghz_shutdown()
+                        logger.info(pss)
+                        # enable 5g operation status
+                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+                        logger.info(pss)
+                    elif args.band == 'dual_band_5g':
+                        # enable 5g wlan - dual band
+                        pss = cs.config_no_ap_dot11_dual_band_5ghz_shutdown()
+                        logg.info(pss)
+                        # enable 5g operation status
+                        pss = cs.config_ap_no_dot11_dual_band_5ghz_shutdown()
+                        logg.info(pss)
+                        # enable 5g wlan
+                        pss = cs.config_no_ap_dot11_5ghz_shutdown()
+                        logger.info(pss)
+                        # enable 5g operation status
+                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+                        logger.info(pss)
+                    elif args.band == '6g':
+                        # enable 6g wlan
+                        pss = cs.config_no_ap_dot11_6ghz_shutdown()
+                        logg.info(pss)
+                        # enable 6g operation status
+                        pss = cs.config_ap_no_dot11_6ghz_shutdown()
+                        logg.info(pss)
+                        # 6g needs to see the 5g bands
+                        # enable 5g wlan
+                        pss = cs.config_no_ap_dot11_5ghz_shutdown()
+                        logger.info(pss)
+                        # enable 5g operation status
+                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+                        logger.info(pss)
+                    elif args.band == '5g':
+                        # enable 5g wlan
+                        pss = cs.config_no_ap_dot11_5ghz_shutdown()
+                        logg.info(pss)
+                        # enable 5g operation status
+                        pss = cs.config_ap_no_dot11_5ghz_shutdown()
+                        logg.info(pss)
+                    elif args.band == '24g':
+                        # enable wlan 24ghz
+                        pss = cs.config_no_ap_dot11_24ghz_shutdown()
+                        logg.info(pss)
+                        # enable 24ghz operation status
+                        pss = cs.config_ap_no_dot11_24ghz_shutdown()
+                        logg.info(pss)
+                    # End of enable
+
 
                     # set tx_power channel bw
                     # CMR TODO the channel , bw and tx power do not require a s
