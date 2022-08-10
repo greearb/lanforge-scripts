@@ -708,9 +708,9 @@ Generic command example:
             output_form = args.output_format
 
     # Create directory
+    report_data_dir_file = ""
     if args.report_file is None:
         try:
-            report_data_dir_file = ""
             if os.path.isdir('/home/lanforge/report-data'):
                 homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':', '-') + '_test_l4'
                 path = os.path.join('/home/lanforge/report-data/', homedir)
