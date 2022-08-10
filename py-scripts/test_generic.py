@@ -16,15 +16,18 @@ Enable the generic tab in LANforge GUI
 EXAMPLE:
 
     LFPING:
-        ./test_generic.py --radio 1.1.wiphy0 --ssid j-wpa2-153 --passwd j-wpa2-153 --security wpa2 --num_stations 4 \
-        --type lfping --dest 10.40.0.1 --debug --mgr localhost --log_level info --report_file /tmp/ben.csv --test_duration 20s
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --ssid Logan-Test-Net --passwd Logan-Test-Net 
+        --security wpa2 --num_stations 4 --type lfping --dest 192.168.1.1 --debug --log_level info 
+        --report_file /home/lanforge/reports/LFPING.csv --test_duration 20s --upstream_port 1.1.eth2
     LFCURL (under construction):
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1  --num_stations 26 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type lfcurl --dest 10.40.0.1
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv 
+        --num_stations 2 --ssid Logan-Test-Net --passwd Logan-Test-Net --security wpa2 --type lfcurl --dest 192.168.1.1
     GENERIC:
-        ./test_generic.py --mgr localhost--mgr_port 4122 --radio wiphy1  --num_stations 2 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type generic
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --num_stations 2 --ssid Logan-Test-Net 
+        --report_file /home/lanforge/reports/GENERIC.csv --passwd Logan-Test-Net --security wpa2 --type generic
     SPEEDTEST:
-        ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy2 --num_stations 13 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type speedtest --speedtest_min_up 20
-        --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
+        ./test_generic.py --radio 1.1.wiphy0 --num_stations 2 --report_file /home/lanforge/reports/SPEEDTEST.csv 
+        --ssid Logan-Test-Net --passwd Logan-Test-Net --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
     IPERF3 (under construction):
         ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
 
@@ -201,10 +204,10 @@ python3 ./test_generic.py
     --upstream_port eth1 (optional)
     --radio wiphy0 (required)
     --num_stations 3 (optional)
-    --security {open|wep|wpa|wpa2|wpa3} (required)
+    --security {open | wep | wpa | wpa2 | wpa3} (required)
     --ssid netgear (required)
     --passwd admin123 (required)
-    --type lfping  {generic|lfping|iperf3-client | speedtest | lf_curl} (required)
+    --type lfping  {generic | lfping | iperf3-client | speedtest | lf_curl} (required)
     --dest 10.40.0.1 (required - also target for iperf3)
     --test_duration 2m 
     --interval 1s 
@@ -213,17 +216,20 @@ python3 ./test_generic.py
 
     Example commands: 
     LFPING:
-        ./test_generic.py --radio 1.1.wiphy0 --ssid j-wpa2-153 --passwd j-wpa2-153 --security wpa2 --num_stations 4 \\
-        --type lfping --dest 10.40.0.1 --debug --mgr localhost --log_level info --report_file /tmp/ben.csv --test_duration 20s
-    LFCURL (under construction):
-    ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1  --num_stations 26 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type lfcurl --dest 10.40.0.1
-    GENERIC: 
-    ./test_generic.py --mgr localhost--mgr_port 4122 --radio wiphy1  --num_stations 2 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type generic
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --ssid Logan-Test-Net --passwd Logan-Test-Net 
+        --security wpa2 --num_stations 4 --type lfping --dest 192.168.1.1 --debug --log_level info 
+        --report_file /home/lanforge/reports/LFPING.csv --test_duration 20s --upstream_port 1.1.eth2
+    LFCURL:
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --file_output /home/lanforge/reports/LFCURL.csv 
+        --num_stations 2 --ssid Logan-Test-Net --passwd Logan-Test-Net --security wpa2 --type lfcurl --dest 192.168.1.1
+    GENERIC:
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio 1.1.wiphy0 --num_stations 2 --ssid Logan-Test-Net 
+        --report_file /home/lanforge/reports/GENERIC.csv --passwd Logan-Test-Net --security wpa2 --type generic
     SPEEDTEST:
-  ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy2 --num_stations 13 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --type speedtest --speedtest_min_up 20 
-    --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
+        ./test_generic.py --radio 1.1.wiphy0 --num_stations 2 --report_file /home/lanforge/reports/SPEEDTEST.csv 
+        --ssid Logan-Test-Net --passwd Logan-Test-Net --type speedtest --speedtest_min_up 20 --speedtest_min_dl 20 --speedtest_max_ping 150 --security wpa2
     IPERF3 (under construction):
-   ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3 
+        ./test_generic.py --mgr localhost --mgr_port 4122 --radio wiphy1 --num_stations 3 --ssid jedway-wpa2-x2048-4-1 --passwd jedway-wpa2-x2048-4-1 --security wpa2 --type iperf3
 ''',
         more_optional=optional)
 
