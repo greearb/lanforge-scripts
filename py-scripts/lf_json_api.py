@@ -67,8 +67,10 @@ class lf_json_api():
         self.non_port = non_port
         if csv_mode == 'append':
             self.csv_mode = 'a'
+            self.csv_header = False
         else:
             self.csv_mode = 'w'
+            self.csv_header = True
         # TODO support qvlan
         self.qval = ''
         self.request = ''
@@ -144,7 +146,9 @@ class lf_json_api():
                 key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
             df = json_normalize(lanforge_json[key])
             # TODO defaulting to the normal behavior
-            df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request), mode = self.csv_mode, index=False)
+            df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".
+                format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request), 
+                    mode = self.csv_mode, header = self.csv_header, index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
@@ -190,7 +194,9 @@ class lf_json_api():
         try:
             key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
             df = json_normalize(lanforge_json[key])
-            df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request), mode = self.csv_mode, index=False)
+            df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".
+                format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request), 
+                    mode = self.csv_mode, header = self.csv_header, index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
@@ -243,7 +249,9 @@ class lf_json_api():
         try:
             key = "station"
             df = json_normalize(lanforge_json[key])
-            df.to_csv("{shelf}.{resource}.{port_name}.{mac}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request, mac=self.mac), mode = self.csv_mode, index=False)
+            df.to_csv("{shelf}.{resource}.{port_name}.{mac}_{request}.csv".
+                format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request, mac=self.mac), 
+                    mode = self.csv_mode, header = self.csv_header, index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
@@ -342,7 +350,9 @@ class lf_json_api():
 
         try:
             df = self.reformat_json(lanforge_json)
-            df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request), mode = self.csv_mode, index=False)
+            df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".
+                format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request), 
+                    mode = self.csv_mode, header = self.csv_header, index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
@@ -390,7 +400,9 @@ class lf_json_api():
             else:
                 key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
             df = json_normalize(lanforge_json[key])
-            df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request), mode = self.csv_mode, index=False)
+            df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".
+                format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request), 
+                    mode = self.csv_mode, header = self.csv_header, index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
