@@ -6,6 +6,12 @@ PURPOSE:
 
  This script will is an example of using LANforge JSON API to use GET Requests to LANforge.
 
+ADDITION INFORMATION:
+
+https://www.w3schools.com/python/module_requests.asp
+
+https://www.w3schools.com/PYTHON/ref_requests_post.asp
+
 
 EXAMPLE:
 
@@ -31,6 +37,7 @@ from pandas import json_normalize
 import json
 import traceback
 import csv
+import time
 
 
 if sys.version_info[0] != 3:
@@ -48,13 +55,14 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 class lf_json_api():
     def __init__(self,
-                 lf_mgr,
-                 lf_port,
-                 lf_user,
-                 lf_passwd,
-                 port,
-                 csv_mode,
+                 lf_mgr='localhost',
+                 lf_port=8080,
+                 lf_user='lanforge',
+                 lf_passwd='lanforge',
+                 port=None,
+                 csv_mode='write',
                  non_port=False):
+
         self.lf_mgr = lf_mgr
         self.lf_port = lf_port
         self.lf_user = lf_user
@@ -76,6 +84,7 @@ class lf_json_api():
         self.request = ''
         # since the port may change we will initially us update_port_info to set initial values
         self.update_port_info()
+        self.extra = '' # to be used for clearing ports
 
     def update_port_info(self):
         # TODO add support for non-port
@@ -421,20 +430,41 @@ class lf_json_api():
         # "USERNAME:PASSWORD"
         request_command = 'http://{lfmgr}:{port}/radiostatus/all'.format(lfmgr=self.lf_mgr, port=self.lf_port)
         request = requests.get(
-            request_command, auth=(
-                self.lf_user, self.lf_passwd))
-        logger.info(
-            "radio request command: {request_command}".format(
-                request_command=request_command))
-        logger.info(
-            "radio request status_code {status}".format(
-                status=request.status_code))
+            request_command, auth=(self.lf_user, self.lf_passwd))
+        logger.info("radio request command: {request_command}".format(request_command=request_command))
+        logger.info("radio request status_code {status}".format(status=request.status_code))
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
+            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
+        ))
+
         lanforge_radio_json = request.json()
         logger.info("radio request.json: {json}".format(json=lanforge_radio_json))
         lanforge_radio_text = request.text
         logger.info("radio request.text: {text}".format(text=lanforge_radio_text))
         return lanforge_radio_json, lanforge_radio_text
 
+    def post_clear_port_counters(self):
+        # Syntax
+        '''
+        echo "{'shelf':1,'resource':1,'port':'vap3','extra':'dhcp_leases'}' > /tmp/curl_data
+        curl --user "lanforge:lanforge"  -H 'Accept: application/json' -H "Content-type: application/json"
+           -X POST -d 'http://<lanforge ip>:8080/{request}/
+        where --user "USERNAME:PASSWORD"
+        '''
+        request_url = 'http://{lfmgr}:{port}/cli-json/clear_port_counters'.format(lfmgr=self.lf_mgr, port=self.lf_port)
+        json_data = "{{'shelf':{shelf},'resource':{resource},'port':{port_name}}}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
+        
+        request = requests.post(request_url, json = json_data, auth=(self.lf_user, self.lf_passwd))
+
+        logger.info("request url: {request_url}".format(request_url=request_url))
+        logger.info("request status_code {status}".format(status=request.status_code))
+
+        logger_msg =("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' -H 'Content-type: application/json' -X POST -d \"{json_data} http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
+            json_data=json_data,lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
+        ))
+        logger.info(logger_msg)
+
+    # TODO this method currently under development and not working.
     def post_wifi_cli_cmd(self, wifi_cli_cmd):
 
         # request_command = 'http://{lfmgr}:{port}/{wifi_cli_cmd}'.format(lfmgr=self.lf_mgr, port=self.lf_port, wifi_cli_cmd=json.dumps(wifi_cli_cmd).encode("utf-8"))
@@ -612,6 +642,9 @@ def main():
                 wifi_cli_cmd = 'set_wifi_radio 1 {resource} {radio} NA NA NA NA NA NA NA NA NA {antennas}'.format(
                     resource=args.resource, radio=args.radio, antennas=antennas_set)
                 lf_json.post_wifi_cli_cmd(wifi_cli_cmd=wifi_cli_cmd)
+
+            if post_request == "clear_port_counters":
+                lf_json.post_clear_port_counters()               
 
     # sample of creating layer 3
 
