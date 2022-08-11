@@ -47,14 +47,14 @@ def convert_dbm_to_mw(value):
     # P(mW) = 1W * 10(P(dBm) / 10)
     dbm = int(value)
     mw = 1 * 10 ** (dbm/10)
-    print(f"{dbm} dBm = {round(mw, 2)} mW")
+    print(f"{dbm} dBm = {round(mw, 8)} mW")
     return mw
 
 def convert_mw_to_dbm(value):
     # P(dBm) = 10 * log10( P(mW) / 1mW)
     mw = value
     dbm = 10 * math.log10(mw/1)
-    print(f"{round(mw,2)} mW = {round(dbm, 2)} dBm")
+    print(f"{round(mw,8)} mW = {round(dbm, 8)} dBm")
     return dbm
 
 def convert_per_ss_dbm_to_combined(ss_list):
@@ -63,13 +63,13 @@ def convert_per_ss_dbm_to_combined(ss_list):
         value = int(value)
         print("dbm value {value}".format(value=value))
         mw = convert_dbm_to_mw(value)
-        print("mw: {mw}".format(mw=round(mw,2)))
+        print("mw: {mw}".format(mw=round(mw,8)))
         total_mw += mw
     
-    print("total_mw: {total_mw}".format(total_mw=round(total_mw,2)))
+    print("total_mw: {total_mw}".format(total_mw=round(total_mw,8)))
 
     combined_dbm = convert_mw_to_dbm(total_mw)
-    print("combined_dbm = {combined_dbm}".format(combined_dbm=round(combined_dbm,2)))
+    print("combined_dbm = {combined_dbm}".format(combined_dbm=round(combined_dbm,8)))
 
     return combined_dbm
     
