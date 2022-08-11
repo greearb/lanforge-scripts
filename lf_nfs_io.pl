@@ -25,7 +25,7 @@ use Net::Ping;
 use Getopt::Long;
 use Time::HiRes ('sleep');
 use Socket;
-
+use Data::Dumper;
 use POSIX;
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 ##       package variables below
@@ -42,7 +42,7 @@ our $lfmgr_port      = 4001;
 our $resource        = 1;
 our $quiet           = 1;
 our $group           = undef;
-our $tmp_group       = undef;
+our $tmp_group       = "";
 our $tmp_group_min   = 0;
 our $tmp_group_max   = 0;
 our $action          = undef;
@@ -214,7 +214,10 @@ sub inttoaddr {
    return( join( ".", unpack( "C4", pack( "N", $_[0] ) ) ) );
 };
 
-
+sub show_test_groups {
+   my $cmd = "show_group all";
+   $::utils->doCmd($cmd);
+}
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 ##    Open connection to the LANforge server, configure our utils.
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -231,13 +234,24 @@ sub init {
    $::utils = new LANforge::Utils();
    $::utils->connect($lfmgr_host, $lfmgr_port);
 
-   if ($::group && $::group ne "") {
-      my $ra_bounds  = $::group_names{ $::group };
-      $::start       = @$ra_bounds[0];
-      $::stop        = @$ra_bounds[1];
+   # query for test group names
 
-      $::qty_mac_vlans = ($::stop - $::start) + 1;
-      print "group [$group] vlans: $::stop - $::start = $::qty_mac_vlans\n" if($::DEBUG);
+   if ($::action ne "list_groups") {
+      if (!(defined $::group_names) || keys(%$::group_names) < 1) {
+         die("No test group names appear to be specified.");
+      }
+      if ($::group && $::group ne "") {
+         print Dumper(\$::group_names);
+         my $ra_bounds  = $::group_names{ $::group };
+         if (!(defined $ra_bounds) || @$ra_bounds < 2) {
+            die("please specify test group name");
+         }
+         $::start       = @$ra_bounds[0];
+         $::stop        = @$ra_bounds[1];
+
+         $::qty_mac_vlans = ($::stop - $::start) + 1;
+         print "group [$group] vlans: $::stop - $::start = $::qty_mac_vlans\n" if($::DEBUG);
+      }
    }
 }
 
@@ -357,8 +371,8 @@ sub preparePorts {
    }
    if ($sleep_after > 10) {
      $sleep_after = $sleep_after / 2;
-   }   
-   
+   }
+
    if ($sleep_after) {
      print "\nSleeping: $sleep_after seconds to allow ports to be created and configured.\n";
      for $i (1..$sleep_after) { sleep(1); print "."; }
@@ -835,7 +849,7 @@ sub deleteGroup {
    }
 
    # I'm not getting output here for many seconds after polling for stop
-   foreach my $x (1..10) { sleep(1); print "."; } 
+   foreach my $x (1..10) { sleep(1); print "."; }
    print NL;
 
    # build endpoint names and find ports
@@ -864,7 +878,7 @@ sub deleteGroup {
       next if( $cx_name !~ /^CX_/);
       $cmd = $::utils->fmt_cmd("rm_cx", "all", $cx_name);
       print "** $cmd **".NL if ($::DEBUG);
-      
+
       $::utils->doCmd($cmd);
       print "0"; #$cx_name ";
       sleep(0.5);
@@ -1002,30 +1016,34 @@ if ((defined $tmp_group) && ($tmp_group ne "")) {
    do_err_exit("Please set --max when using tmp_group") if ($tmp_group_max <= 0);
    $group = $tmp_group;
 }
-elsif ( !(defined $group) || ("$group" eq "")) {
-   do_err_exit("Blank or unknown group. Cannot continue.");
+elsif ($action ne "list_groups") {
+   if (!(defined $group) || ("$group" eq "")) {
+      do_err_exit("Blank or unknown group. Cannot continue.");
+   }
+
+   if ( $group eq $tmp_group ) {
+      if ( !defined $parent_port || "$parent_port" eq "" ) {
+         do_err_exit("Undefined --parent_port value. Cannot continue.");
+      }
+      $group_names{ $tmp_group } = [ $tmp_group_min, $tmp_group_max, $parent_port ];
+      print "assigned values to group name [$group]\n" if ($::DEBUG);
+      my $ra = $group_names{ $tmp_group };
+      print "values: [".join(':', @$ra)."]\n" if ($::DEBUG);
+   }
+   if ( !defined $parent_port || "$parent_port" eq "" ) {
+      $parent_port = $group_names{ $group }[2];
+      if ( !defined $parent_port || "$parent_port" eq "" ) {
+         do_err_exit("Undefined --parent_port value. Cannot continue.");
+      }
+   }
+
 }
 
-if ( $group eq $tmp_group ) {
-   if ( !defined $parent_port || "$parent_port" eq "" ) {
-      do_err_exit("Undefined --parent_port value. Cannot continue.");
-   }
-   $group_names{ $tmp_group } = [ $tmp_group_min, $tmp_group_max, $parent_port ];
-   print "assigned values to group name [$group]\n" if ($::DEBUG);
-   my $ra = $group_names{ $tmp_group };
-   print "values: [".join(':', @$ra)."]\n" if ($::DEBUG);
-}
-
-if ( !defined $parent_port || "$parent_port" eq "" ) {
-   $parent_port = $group_names{ $group }[2];
-   if ( !defined $parent_port || "$parent_port" eq "" ) {
-      do_err_exit("Undefined --parent_port value. Cannot continue.");
-   }
-}
 
 init();
 
 if ( $action eq "list_groups" ) {
+   prepareTestGroups();
    showGroups();
    exit(0);
 }
