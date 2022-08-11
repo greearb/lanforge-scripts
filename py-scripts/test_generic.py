@@ -61,6 +61,9 @@ LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+lf_report = importlib.import_module("py-scripts.lf_report")
+lf_graph = importlib.import_module("py-scripts.lf_graph")
+lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 
 
 class GenTest(Realm):
@@ -115,6 +118,74 @@ class GenTest(Realm):
             return False
         else:
             return True
+
+    def generate_report(self, test_rig, test_tag, dut_hw_version, dut_sw_version, 
+                        dut_model_num, dut_serial_num, test_id, csv_outfile,
+                        monitor_endps, generic_cols):
+        report = lf_report.lf_report(_results_dir_name="test_generic_test")
+        kpi_path = report.get_report_path()
+        print("kpi_path :{kpi_path}".format(kpi_path=kpi_path))
+        kpi_csv = lf_kpi_csv.lf_kpi_csv(
+            _kpi_path=kpi_path,
+            _kpi_test_rig=test_rig,
+            _kpi_test_tag=test_tag,
+            _kpi_dut_hw_version=dut_hw_version,
+            _kpi_dut_sw_version=dut_sw_version,
+            _kpi_dut_model_num=dut_model_num,
+            _kpi_dut_serial_num=dut_serial_num,
+            _kpi_test_id=test_id)
+        kpi_csv.kpi_dict['Units'] = "Mbps"
+
+        generic_cols = [self.replace_special_char(x) for x in generic_cols]
+        generic_cols.append('last results')
+        generic_fields = ",".join(generic_cols)
+        
+        gen_url = "/generic/%s?fields=%s" % (",".join(monitor_endps), generic_fields)
+        endps = self.json_get(gen_url)
+
+        # protects against single endpoint field name being different
+        if 'endpoints' in endps:
+            endpoint_plural = 'endpoints'
+        else:
+            endpoint_plural = 'endpoint'
+
+        endps = endps[endpoint_plural]
+        data = {}
+        for endp in endps:
+            data[list(endp.keys())[0]] = list(endp.values())[0]
+
+        for endpoint in data:
+            # print(endpoint)
+            kpi_csv.kpi_csv_get_dict_update_time()
+            kpi_csv.kpi_dict['short-description'] = "{endp_name}".format(
+                endp_name=data[endpoint]['name'])
+            kpi_csv.kpi_dict['numeric-score'] = "{endp_tx}".format(
+                endp_tx=data[endpoint]['tx bytes'])
+            kpi_csv.kpi_dict['Units'] = "bps"
+            kpi_csv.kpi_dict['Graph-Group'] = "Endpoint TX bytes"
+            kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)
+
+            kpi_csv.kpi_dict['short-description'] = "{endp_name}".format(
+                endp_name=data[endpoint]['name'])
+            kpi_csv.kpi_dict['numeric-score'] = "{endp_rx}".format(
+                endp_rx=data[endpoint]['rx bytes'])
+            kpi_csv.kpi_dict['Units'] = "bps"
+            kpi_csv.kpi_dict['Graph-Group'] = "Endpoint RX bytes"
+
+            kpi_csv.kpi_dict['short-description'] = "{endp_name}".format(
+                endp_name=data[endpoint]['name'])
+            kpi_csv.kpi_dict['numeric-score'] = "{last_results}".format(
+                last_results=data[endpoint]['last results'])
+            kpi_csv.kpi_dict['Units'] = ""
+            kpi_csv.kpi_dict['Graph-Group'] = "Endpoint Last Results"
+            kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)
+
+        if csv_outfile is not None:
+            current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+            csv_outfile = "{}_{}-sta_connect.csv".format(
+                csv_outfile, current_time)
+            csv_outfile = report.file_add_path(csv_outfile)
+        print("csv output file : {}".format(csv_outfile))        
 
     def start(self):
         self.station_profile.admin_up()
@@ -252,6 +323,20 @@ python3 ./test_generic.py
 
     parser.add_argument("--lf_user", type=str, help="user: lanforge")
     parser.add_argument("--lf_passwd", type=str, help="passwd: lanforge")
+    
+    parser.add_argument("--test_rig", default="", help="test rig for kpi.csv, testbed that the tests are run on")
+    parser.add_argument("--test_tag", default="",
+                        help="test tag for kpi.csv,  test specific information to differentiate the test")
+    parser.add_argument("--dut_hw_version", default="",
+                        help="dut hw version for kpi.csv, hardware version of the device under test")
+    parser.add_argument("--dut_sw_version", default="",
+                        help="dut sw version for kpi.csv, software version of the device under test")
+    parser.add_argument("--dut_model_num", default="",
+                        help="dut model for kpi.csv,  model number / name of the device under test")
+    parser.add_argument("--dut_serial_num", default="",
+                        help="dut serial for kpi.csv, serial number / serial number of the device under test")
+    parser.add_argument("--test_priority", default="", help="dut model for kpi.csv,  test-priority is arbitrary number")
+    parser.add_argument('--csv_outfile', help="--csv_outfile <Output file for csv data>", default="test_generic_kpi")
 
     args = parser.parse_args()
 
@@ -381,8 +466,6 @@ python3 ./test_generic.py
         logger.error(generic_test.get_fail_message())
         generic_test.exit_fail()
 
-    mon_endp = generic_test.generic_endps_profile.created_endp;
-
     if type(args.gen_cols) is not list:
         generic_cols = list(args.gen_cols.split(","))
         # send col names here to file to reformat
@@ -413,7 +496,11 @@ python3 ./test_generic.py
     must_increase_cols = None
     if args.type == "lfping":
         must_increase_cols = ["rx bytes"]
-
+    mon_endp = generic_test.generic_endps_profile.created_endp
+    generic_test.generate_report(test_rig=args.test_rig, test_tag=args.test_tag, dut_hw_version=args.dut_hw_version,
+                               dut_sw_version=args.dut_sw_version, dut_model_num=args.dut_model_num,
+                               dut_serial_num=args.dut_serial_num, test_id=args.test_id, csv_outfile=args.csv_outfile,
+                               monitor_endps=mon_endp, generic_cols=generic_cols)
     generic_test.generic_endps_profile.monitor(generic_cols=generic_cols,
                                                must_increase_cols=must_increase_cols,
                                                sta_list=station_list,
