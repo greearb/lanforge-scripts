@@ -301,9 +301,7 @@ class max_associate(Realm):
 
     def build(self):
         self.cleanup()
-        # used to store data in memory:
-        all_wiphy_data = self.wiphy_info.get_lanforge_radio_information()
-        # logger.info(all_wiphy_data)
+
         wiphy_radio_list = self.wiphy_info.get_radios()
         # logger.info(wiphy_radio_list)
 
@@ -558,13 +556,13 @@ class max_associate(Realm):
         total_endp_drops = 0
         avg_drop = 0.0
         for endp_drop in endp_rx_drop_map.keys():
-            logger.info(endp_rx_drop_map[endp_drop])
+            # logger.info(endp_rx_drop_map[endp_drop])
             if endp_rx_drop_map[endp_drop] > 1.0:
                 drop_value_sum += endp_rx_drop_map[endp_drop]
                 l3_endp_drops.append(endp_drop)
                 total_endp_drops = len(l3_endp_drops)
                 avg_drop = drop_value_sum / total_endp_drops
-                # logger.info(avg_drop)
+                logger.info(avg_drop)
         avg_drop_round = round(avg_drop, 2)
 
         # sub-test fails if endp amount that has > 1% traffic loss exceeds 3% of total created endps
@@ -735,7 +733,6 @@ This script will provide the following features for the ct521a system:
 - create sta-to-eth Layer-3 CX for 9.6Kbps bidirectional overnight maximum-client wifi test.
 ---------------------------
 CLI Example:
-
 ./lf_test_max_association.py --mgr <localhost>
     --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
     --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
@@ -1006,6 +1003,8 @@ CLI Example:
                                                  _resource=args.resource,
                                                  debug_=args.debug,
                                                  _exit_on_fail=True)
+    all_wiphy_data = wiphy_info.get_lanforge_radio_information()
+    logger.info(all_wiphy_data)
 
     clean_profile = lf_cleanup.lf_clean(args.mgr,
                                         resource=args.resource,
@@ -1058,9 +1057,9 @@ CLI Example:
     report.start_content_div2()
 
     report.set_obj_html("Objective", "The Maximum Client Association Test is designed to test the capability of a "
-                                     "newly built ct521a LANforge system. The objective of the test is to create "
-                                     "the maximum number of virtual interfaces per system installed WIFI radio, "
-                                     "associate the stations to aspecified AP, and to run a long duration layer-3 "
+                                     "newly built LANforge system. The objective of the test is to create the "
+                                     "maximum number of virtual interfaces per system installed WIFI radio, "
+                                     "associate the stations to the specified AP, and to run a long duration layer-3 "
                                      "UDP bidirectional traffic test.")
     report.build_objective()
 
@@ -1086,6 +1085,11 @@ CLI Example:
         "Upload bps": args.upload_bps,
         "Test Duration": args.test_duration,
     }
+
+    report.set_table_title("LANForge Radios")
+    report.build_table_title()
+    report.set_table_dataframe(all_wiphy_data)
+    report.build_table()
 
     report.set_table_title("Test Configuration")
     report.build_table_title()
@@ -1141,6 +1145,7 @@ CLI Example:
             "Security": ssid_security_,
             "Wifi mode set": mode_value,
             'Wifi Enable Flags': wifi_enable_flags_list_
+            #"WIFI-Radio Driver": 
         }
         report.test_setup_table(value=radio_, test_setup_data=radio_info)
 
