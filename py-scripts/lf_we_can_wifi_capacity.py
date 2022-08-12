@@ -56,7 +56,7 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 from lf_wifi_capacity_test import WiFiCapacityTest
 
 
-class LfInteropWifiCapacity((Realm)):
+class LfInteropWifiCapacity(Realm):
     def __init__(self,
                  ssid=None,
                  security=None,
@@ -69,7 +69,9 @@ class LfInteropWifiCapacity((Realm)):
                  port=8080,
                  inp_download_rate=None,
                  inp_upload_rate=None,
-                 batch_size=[],
+                 batch_size=None,
+                 dut_model=None,
+                 ssid_ut=[],
                  duration=None,
                  resource=1,
                  use_ht160=False,
@@ -84,6 +86,8 @@ class LfInteropWifiCapacity((Realm)):
         self.host = host
         self.port = port
         self.ssid = ssid
+        self.ssid_ut = ssid_ut
+        self.dut_model = dut_model
         self.protocol = protocol,
         self.sta_list = sta_list
         self.security = security
@@ -181,28 +185,43 @@ class LfInteropWifiCapacity((Realm)):
                 "download": download_rate,
             }, index=[i for i in phone_name])
 
-            print(rx_rate, tx_rate)
+            print("rx_rate: ", rx_rate, "tx_rate: ",  tx_rate)
+
+            down_rate = float("{:.2f}".format(int("".join([i for i in [i for i in self.inp_download_rate] if i.isdigit()]))/len(phone_name)))
+            up_rate = float("{:.2f}".format(int("".join([i for i in [i for i in self.inp_upload_rate] if i.isdigit()]))/len(phone_name)))
             link_rate_df = pd.DataFrame({
-                "Link rate Rx": [int(i) for i in rx_rate],
-                "Link rate Tx": [int(i) for i in tx_rate],
-            }, index=[phone_name[i] for i in range(len(upload_rate))])
+                "Expected Link rate Rx": [down_rate for i in range(int(self.batch_size))],
+                "Expected Link rate Tx": [up_rate for i in range(int(self.batch_size))],
+                "Achieved Link rate Rx": [download_rate[i] for i in range(int(self.batch_size))],
+                "Achieved Link rate Tx": [upload_rate[i] for i in range(int(self.batch_size))],
+            }, index=[phone_name[i] for i in range(int(self.batch_size))])
+
+            link_rate_phone_df = pd.DataFrame({
+                "Max Link rate Rx": [int(rx_rate[int(i)]) for i in range(int(self.batch_size))],
+                "Max Link rate Tx": [int(tx_rate[int(i)]) for i in range(int(self.batch_size))],
+            }, index=[phone_name[i] for i in range(int(self.batch_size))])
 
         phone_data = [resource_id_real, phone_name, mac_address, user_name, phone_radio, rx_rate, tx_rate, signal,
                       ssid, channel]
-        self.generate_report(folder_directory, phone_data, rx_tx_df, link_rate_df)
+        self.generate_report(folder_directory, phone_data, rx_tx_df, link_rate_df, link_rate_phone_df)
 
-    def generate_report(self, file_derectory, get_data, rx_tx_df, link_rate_df):
+    def generate_report(self, file_derectory, get_data, rx_tx_df, link_rate_df, link_rate_phone_df):
 
-        resource_id = get_data[0]
-        phone_name = get_data[1]
-        mac_address = get_data[2]
-        user_name = get_data[3]
-        phone_radio = get_data[4]
-        rx_rate = get_data[5]
-        tx_rate = get_data[6]
-        signal = get_data[7]
-        ssid = get_data[8]
-        channel = get_data[9]
+        number_of_devices = len(get_data[1])
+        self.batch_size = int(self.batch_size[0])
+        if int(self.batch_size) > number_of_devices:
+            print("[INPUT] Wrong Batch Size should less than or equal to ", number_of_devices)
+            exit(0)
+        resource_id = [get_data[0][i] for i in range(self.batch_size)]
+        phone_name = [get_data[1][i] for i in range(self.batch_size)]
+        mac_address = [get_data[2][i] for i in range(self.batch_size)]
+        user_name = [get_data[3][i] for i in range(self.batch_size)]
+        phone_radio = [get_data[4][i] for i in range(self.batch_size)]
+        rx_rate = [get_data[5][i] for i in range(self.batch_size)]
+        tx_rate = [get_data[6][i] for i in range(self.batch_size)]
+        signal = [get_data[7][i] for i in range(self.batch_size)]
+        ssid = [get_data[8][i] for i in range(self.batch_size)]
+        channel = [get_data[9][i] for i in range(self.batch_size)]
 
         report = lf_report(_output_html="we-can-wifi-capacity.html", _output_pdf="we-can-wifi-capacity.pdf",
                            _results_dir_name="we-can wifi-capacity result")
@@ -239,7 +258,7 @@ class LfInteropWifiCapacity((Realm)):
         fiveg_count = 0
         print(phone_radio)
         for i in phone_radio:
-            if phone_radio == "2G":
+            if i == "2G":
                 twog_count += 1
             else:
                 fiveg_count += 1
@@ -254,8 +273,8 @@ class LfInteropWifiCapacity((Realm)):
         device_data = pd.DataFrame(device_data)
         report.start_content_div()
         report.set_table_title("<h3>Real-Time UDP Throughput Chart\n" + "<h5>Below chart shows the intended and "
-                                                                        "achieved throughput for station increments"
-                                                                        " w.r.t time for " + str(self.protocol).strip())
+                                "achieved throughput for station increments w.r.t time for " + str(self.protocol).
+                               replace(')',' ').replace('(',' ').replace("'",' ').strip())
         report.build_table_title()
         report.set_table_dataframe(device_data)
         report.build_table()
@@ -273,8 +292,16 @@ class LfInteropWifiCapacity((Realm)):
         # Real time chart
         report.start_content_div()
         report.build_chart_title("Real Time Chart")
-        report.build_chart("chart-0-print.png")
+        report.build_chart_custom("chart-0-print.png", align='left',padding='15px',margin='5px 5px 2em 5px',
+                                  width='800px', height='500px')
         report.end_content_div()
+        direction = ""
+        if self.inp_download_rate == '0Kbps' or self.inp_download_rate == '0Mbps' or self.inp_download_rate == '0Gbps':
+            direction = "Upload"
+        elif self.inp_upload_rate == '0Kbps' or self.inp_upload_rate == '0Mbps' or self.inp_upload_rate == '0Gbps':
+            direction = "Download"
+        else:
+            direction = "Upload and Download"
 
         device_performance = {
             "Device Name": phone_name,
@@ -283,8 +310,8 @@ class LfInteropWifiCapacity((Realm)):
             "Security": ["WPA2" for i in range(len(ssid))],
             "Channel": channel,
             "Mode": phone_radio,
-            "Direction": ["Upload" for i in range(len(ssid))],
-            "Traffic": ["UDP" for i in range(len(ssid))],
+            "Direction": [direction for i in range(len(ssid))],
+            "Traffic": [str(self.protocol).replace(')','').replace('(','').replace("'",'').strip() for i in range(len(ssid))],
 
         }
         phone_details_pd = pd.DataFrame(data)
@@ -300,10 +327,11 @@ class LfInteropWifiCapacity((Realm)):
         report.save_bar_chart("Real Client", "Rx/Tx (Mbps)", link_rate_df, "link_rate")
         report.start_content_div()
         report.build_chart_title("Link Rate Chart")
-        report.build_chart("link_rate.png")
-        report.set_text("<h5> This chart shows that the total Link rate we got during running the script for TCP and "
-                        "UDP traffic versus the real traffic we got for each phone in Mbps.")
-        report.build_text()
+        # report.set_text("<h5> This chart shows that the total Link rate we got during running the script for TCP and "
+        #                 "UDP traffic versus the real traffic we got for each phone in Mbps.")
+        report.build_chart_custom("link_rate.png", align='left', padding='15px', margin='0px 0px 0px 0px',
+                                  width='1200px', height='400px')
+        # report.build_text()
 
         report.build_chart_title("Signal Strength reported by the clients:")
         report.set_text("<h5>Chart shows the individual signal level for each connected device, measured from device to AP.")
@@ -328,6 +356,13 @@ class LfInteropWifiCapacity((Realm)):
         report.move_graph_image()
         report.build_graph()
 
+        report.save_bar_chart("Link Rate", "Rx/Tx (Mbps)", link_rate_phone_df, "link_rate_phone_df")
+        report.start_content_div()
+        report.build_chart_title("Link Rates (RX)")
+        report.set_text("<h5> Chart describing the RX rate for each device model")
+        report.build_chart_custom("link_rate_phone_df.png", align='left', padding='15px', margin='0px 0px 0px 0px',
+                                  width='800px', height='400px')
+        report.build_text()
         # graph1 = lf_graph.lf_bar_graph(_data_set=None,
         #          _xaxis_name="x-axis",
         #          _yaxis_name="y-axis",
@@ -361,9 +396,10 @@ class LfInteropWifiCapacity((Realm)):
             "Data": ["DUT Model", "2.4 Ghz SSID", "2.4 Ghz BSSID", "5 Ghz SSID", "5 Ghz BSSID", "6 Ghz SSID",
                      "6 Ghz BSSID", "Intended Rate", "No of Stations", "No of loops", "Traffic duration",
                      "Test duration"],
-            "Value": ["Netgear WAC510", "Netgear_2G", "78:d2:94:4f:20:c5", "Netgear_5G", "78:d2:94:4f:20:f3", "NA",
+            # need to make  the Netgear WAC510 dynamic
+            "Value": [self.dut_model, self.ssid_ut[0], "78:d2:94:4f:20:c5", self.ssid_ut[1], "78:d2:94:4f:20:f3", "NA",
                       "NA", str(" ".split(self.inp_download_rate)[0] + " ".split(self.inp_upload_rate)[0]) + "Mbps",
-                      len(phone_name), len(self.batch_size), str((int(self.duration) / 1000)) + " Sec", "2 Min"],
+                      len(phone_name), self.batch_size, str((int(self.duration) / 1000)) + " Sec", "2 Min"],
         })
 
         report.start_content_div()
@@ -464,6 +500,9 @@ def main():
                         help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 0Kbps")
     parser.add_argument("--upload_rate", type=str, default="0Kbps",
                         help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 0Kbps")
+    parser.add_argument("--dut_model", type=str, default="NA", help="AP name and Model ")
+    parser.add_argument("--ssid_ut", type=str, default="", nargs='+', help="ssid name to be tested Ex. Netgear_2G,Netgear_5G")
+
     parser.add_argument("--influx_host", type=str, default="localhost", help="NA")
     parser.add_argument("--local_lf_report_dir",
                         help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",
@@ -490,8 +529,9 @@ def main():
     WFC_Test.setup()
     WFC_Test.run()
     wifi_capacity = LfInteropWifiCapacity(host=args.mgr, port=args.port, protocol=args.protocol,
-                                          batch_size=args.batch_size, duration=args.duration,
-                                          inp_download_rate=args.download_rate, inp_upload_rate=args.upload_rate)
+                                          batch_size=args.batch_size, duration=args.duration,dut_model=args.dut_model,
+                                          inp_download_rate=args.download_rate, inp_upload_rate=args.upload_rate,
+                                          ssid_ut=args.ssid_ut)
     wifi_capacity.get_data()
     # WFC_Test.check_influx_kpi(args)
 
