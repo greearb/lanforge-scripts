@@ -676,11 +676,11 @@ function copyTextToClipboard(ele) {
             """.format(image=name)
         self.html += self.chart_html_obj
 
-    def build_chart_custom(self, name, align='center',padding='15px',margin='5px 5px 2em 5px',width='500px'):
+    def build_chart_custom(self, name, align='center',padding='15px',margin='5px 5px 2em 5px',width='500px',height='500px'):
         
         self.chart_html_obj = """
-              <img align='{align}' style='padding:{padding};margin:{margin};width:{width};' src='{image}'/>
-            """.format(image=name,align=align,padding=padding,margin=margin,width=width)
+              <img align='{align}' style='padding:{padding};margin:{margin};width:{width};height:{height};'
+              src='{image}'/> """.format(image=name,align=align,padding=padding,margin=margin,width=width, height=height)
         self.html += self.chart_html_obj
 
 # Unit Test
