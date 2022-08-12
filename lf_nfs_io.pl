@@ -128,7 +128,13 @@ my $first = ($::first_mvlan_ip) ? $::first_mvlan_ip : "0.0.0.0";
 my $usage = "$0   [--mgr               {host-name | IP}]
                   [--mgr_port          {ip port ($lfmgr_port)}]
                   [--resource          {resource ($resource)}]
-                  [--nfs_mnt           {[IP|host-name]:/path}]
+                  [--action      {list_groups|new_group|run_group|stop_group|del_group}]
+                     # list_groups: list test groups
+                     # new_group:   creates connections and places them in a new test group
+                     # run_group:   assemble and start writer then reader group
+                     # stop_group:  quiece writer then reader group
+                     # del_group:   delete reader then writer file endpoints
+                  [--nfs_mnt|nfs_mount {[IP|host-name]:/path}]
                      # 192.168.1.1:/foo
                      # filehost:/home/fileio
                   [--nfs_list          {local file}]\t# list of nfs mountpoints
@@ -140,13 +146,9 @@ my $usage = "$0   [--mgr               {host-name | IP}]
                      #     10.20.30.40:/a/b/c
                      #     filehost:/z/y
                   [--parent_port       {parent eth port}]\t# parent of mac vlans
-                  [--first-mvlan-ip    {ip ($first)}]\t# mvlan ips: ".ipSummary()."
+                  [--first_mvlan_ip    {ip ($first)}]\t# mvlan ips: ".ipSummary()."
                   [--netmask {mask ($netmask)}]\t#mac-vlan netmask
-                  [--action      {list_groups|run_group|stop_group|del_group}]
-                     # list_groups: list test groups
-                     # run_group:   assemble and start writer then reader group
-                     # stop_group:  quiece writer then reader group
-                     # del_group:   delete reader then writer file endpoints
+
                   [--group          {name}] # test group base name, creates:
                      # <group>_wo for writers and
                      # <group>_ro for readers
@@ -173,9 +175,16 @@ my $usage = "$0   [--mgr               {host-name | IP}]
 Examples:
  $0 --mgr 10.0.0.1 --resource 1 --action list_groups
 
+ $0 --mgr 10.0.0.1 --resource 1 --action new_group --group group1 \\
+         --parent_port eth2 --fio_prefix smallreads \\
+         --nfs_mnt 192.168.99.99:/fire
+
  $0 --mgr 10.0.0.1 --resource 1 --action run_group --group group1 \\
          --parent_port eth2 --netmask 255.255.0.0 \\
-         --nfs_mnt 192.168.99.99:/fire
+         --nfs_mnt 10.40.10.1:/fire \\
+         --num_files 20 --min_file_size 4096 --max_file_size 524288 \\
+         --min_write_bps 1000000 --max_write 900000000
+
 
  $0 --mgr 10.0.0.1 --resource 1 \\
          --action stop_group --group group1
@@ -235,20 +244,20 @@ sub init {
    $::utils->connect($lfmgr_host, $lfmgr_port);
 
    # query for test group names
-
+   # print Dumper(\%::group_names);
    if ($::action ne "list_groups") {
-      if (!(defined $::group_names) || keys(%$::group_names) < 1) {
+      if ( 1 > (keys %::group_names)) {
+         # print Dumper(\keys(%::group_names));
          die("No test group names appear to be specified.");
       }
       if ($::group && $::group ne "") {
-         print Dumper(\$::group_names);
+         # print Dumper(\$::group_names);
          my $ra_bounds  = $::group_names{ $::group };
          if (!(defined $ra_bounds) || @$ra_bounds < 2) {
             die("please specify test group name");
          }
          $::start       = @$ra_bounds[0];
          $::stop        = @$ra_bounds[1];
-
          $::qty_mac_vlans = ($::stop - $::start) + 1;
          print "group [$group] vlans: $::stop - $::start = $::qty_mac_vlans\n" if($::DEBUG);
       }
@@ -294,14 +303,21 @@ sub preparePorts {
    print "shelf_num $::shelf_num, resource $::resource\n" if ($::DEBUG);
    my @ports                        = $::utils->getPortListing( 1, $::resource +0);
 
+   #if ($::DEBUG) {
+   #   print Dumper(["ports:", \@ports]);
+   #   die("look!");
+   #}
    for my $rh_port (@ports) {
-      print "added port $rh_port->{'dev'}".NL if($::DEBUG);
+      print "Debug: discovered port $rh_port->{'dev'}".NL if($::DEBUG);
       $all_ports{ $rh_port->{'dev'} } = $rh_port;
       next unless ( $rh_port->{'dev'} eq $::parent_port );
    }
    do_err_exit("preparePorts: Failed to populate ports list, please debug.")
       unless (keys %all_ports > 0);
 
+   if (keys(%::group_names) < 1) {
+      do_err_exit("group_names is unpopulated");
+   }
    my $i;
    my %new_items                    = ();
    my $ra_bounds                    = $::group_names{ $group };
@@ -381,35 +397,38 @@ sub preparePorts {
    # check that the port is up by trying to run a ping from it
    if ( defined $::nfs_mnt && "$::nfs_mnt" ne "") {
       my ($nfs_name) = split(/:/, $::nfs_mnt );
-      print "Emitting one ping from each mvlan reduces failed mounts:";
-
-      foreach my $name (reverse sort keys %new_items) {
-         my $rh_p    = $::all_ports{ $name };
-         my $ip      = $rh_p->{'ip_addr'};
-         #my $ping    = "ping -n -c1 -w1 -W1 -I $ip $nfs_name";
-         print "ping $ip".NL if ($::DEBUG);
-         my $ping = Net::Ping->new('tcp', 1);
-         $ping->bind($ip);
-         $ping->port_number(scalar(getservbyname("nfs", "tcp")));
-         my $counter = 5;
-         while( $counter > 0 ) {
-            if ($ping->ping($nfs_name)) {
-               print ".";
-               $counter = 0;
+      if (($::lfmgr_host ne "localhost") ||($::lfmgr_host ne "127.0.0.1")) {
+         print "We suggest using this script local to the manager. We cannot tell remote mgr to ping nfs system.";
+      }
+      else {
+         print "Emitting one ping from each mvlan reduces failed mounts:";
+         foreach my $name (reverse sort keys %new_items) {
+            my $rh_p    = $::all_ports{ $name };
+            my $ip      = $rh_p->{'ip_addr'};
+            #my $ping    = "ping -n -c1 -w1 -W1 -I $ip $nfs_name";
+            print "ping $ip".NL if ($::DEBUG);
+            my $ping = Net::Ping->new('tcp', 1);
+            $ping->bind($ip);
+            $ping->port_number(scalar(getservbyname("nfs", "tcp")));
+            my $counter = 5;
+            while( $counter > 0 ) {
+               if ($ping->ping($nfs_name)) {
+                  print ".";
+                  $counter = 0;
+               }
+               else {
+                  print "$nfs_name did not ack nfs packet from $ip".NL;
+                  $counter --;
+                  sleep(0.2);
+               }
             }
-            else {
-               print "$nfs_name did not ack nfs packet from $ip".NL;
-               $counter --;
-               sleep(0.2);
-            }
+            $ping->close();
+            undef($ping);
+            #$ping->close();
          }
-         $ping->close();
-         undef($ping);
-         #$ping->close();
       }
    }
    print NL;
-
 } # ~preparePorts
 
 sub notBlank {
@@ -971,7 +990,7 @@ GetOptions
    'resource|r=i'          => \$resource,
    'quiet|q=s'             => \$quiet,
    'action|a=s'            => \$action,
-   'nfs_mnt|h=s'           => \$nfs_mnt,
+   'nfs_mnt|nfs_mount|h=s' => \$nfs_mnt,
    'nfs_list|e=s'          => \$nfs_list,
    'first_mvlan_ip|n=s'    => \$first_mvlan_ip,
    'group|g=s'             => \$group,
@@ -1002,11 +1021,14 @@ GetOptions
 if ((!defined $action) || ($action eq "")) {
   do_err_exit("Please specify an action to perform.\n$usage");
 }
-
-if ( ! ( $action eq "list_groups"
-    || $action eq "run_group"
-    || $action eq "stop_group"
-    || $action eq "del_group" )) {
+my %known_actions = (
+   "list_groups" => 1,
+   "new_group" => 1,
+   "run_group" => 1,
+   "stop_group" => 1,
+   "del_group" => 1
+);
+if ( ! exists $known_actions{$action}) {
   do_err_exit("Unknown action $action:\n$usage");
 }
 
@@ -1025,20 +1047,21 @@ elsif ($action ne "list_groups") {
       if ( !defined $parent_port || "$parent_port" eq "" ) {
          do_err_exit("Undefined --parent_port value. Cannot continue.");
       }
-      $group_names{ $tmp_group } = [ $tmp_group_min, $tmp_group_max, $parent_port ];
+      $::group_names{ $tmp_group } = [ $tmp_group_min, $tmp_group_max, $parent_port ];
       print "assigned values to group name [$group]\n" if ($::DEBUG);
-      my $ra = $group_names{ $tmp_group };
+      my $ra = $::group_names{ $tmp_group };
       print "values: [".join(':', @$ra)."]\n" if ($::DEBUG);
    }
    if ( !defined $parent_port || "$parent_port" eq "" ) {
-      $parent_port = $group_names{ $group }[2];
+      $parent_port = $::group_names{ $group }[2];
       if ( !defined $parent_port || "$parent_port" eq "" ) {
          do_err_exit("Undefined --parent_port value. Cannot continue.");
       }
    }
-
-}
-
+   if ($action eq "new_group") {
+      $::group_names{ $group } = [ $tmp_group_min, $tmp_group_max, $parent_port ];
+   }
+} # ~list groups
 
 init();
 
@@ -1047,6 +1070,7 @@ if ( $action eq "list_groups" ) {
    showGroups();
    exit(0);
 }
+
 
 print "checking group name [$group]\n" if ($::DEBUG);
 if ( !defined $group || $group eq "" || ! $group_names{ $group }) {
@@ -1059,6 +1083,12 @@ print "Using group [$group]\n";
 
 if ( $action eq "stop_group" ) {
    stopGroup();
+}
+elsif ( $action eq "new_group" ) {
+   prepareTestGroups();
+   preparePorts();
+   prepareExportList();
+   prepareFileEndpoints();
 }
 elsif ( $action eq "run_group" ) {
    prepareTestGroups();
@@ -1076,7 +1106,7 @@ elsif ( $action eq "del_group" ) {
    }
 }
 else {
-   die "Unknown action $action:\n$usage";
+   die "Action $action does not have a process:\n$usage";
 }
 
 #eof
