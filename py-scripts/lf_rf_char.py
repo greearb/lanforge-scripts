@@ -966,7 +966,7 @@ Example :
     report.set_table_dataframe(df_tx_ampdu)
     report.build_table()
 
-    # TX MCS encoding
+    # TX ampdu
     graph = lf_bar_graph(_data_set=[tx_ampdu_value_percent],
                         _xaxis_name="TX ampdu",
                         _yaxis_name="Percentage Received Packets ampdu",
@@ -993,6 +993,67 @@ Example :
     report.move_graph_image()
     report.build_graph()
 
+    # retrieve tx msdu value from json 
+    tx_msdu = []
+    tx_msdu_value_str = []
+    tx_msdu_value = []
+    tx_msdu_value_percent = []
+    tx_msdu_total_count = 0
+
+    for iterator in wifi_stats_json:
+        if 'tx_msdu' in iterator:
+            tx_msdu.append(iterator)
+            tx_msdu_value_str.append(str(wifi_stats_json[iterator]))
+            tx_msdu_value.append(wifi_stats_json[iterator])
+            tx_msdu_total_count += wifi_stats_json[iterator]
+
+    # calculate percentages
+    for tx_msdu_count in tx_msdu_value:
+        if tx_msdu_total_count == 0:
+            tx_msdu_value_percent.append(0)
+        else:
+            tx_msdu_value_percent.append(round((tx_msdu_count/tx_msdu_total_count)*100, 2)) 
+
+    # print(tx_msdu)
+    # print(tx_msdu_value)
+
+    # tx_msdu values
+    report.set_table_title("Tx msdu Histogram")
+    report.build_table_title()
+
+
+    df_tx_msdu = pd.DataFrame({" Tx msdu ": [k for k in tx_msdu], " Total Packets ": [i for i in tx_msdu_value],
+        " Percentage ": [j for j in tx_msdu_value_percent]})
+
+    report.set_table_dataframe(df_tx_msdu)
+    report.build_table()
+
+    # TX msdu
+    graph = lf_bar_graph(_data_set=[tx_msdu_value_percent],
+                        _xaxis_name="TX msdu",
+                        _yaxis_name="Percentage Received Packets ampdu",
+                        _xaxis_categories=tx_msdu,
+                        _graph_image_name="TX msdu",
+                        _label=["Percentage Total Packets"],
+                        _color=['blue'],
+                        _color_edge='black',
+                        _figsize=(16,7),
+                        _grp_title='TX msdu',
+                        _xaxis_step=1,
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=45,
+                        _xticks_font=7,
+                        _legend_loc="best",
+                        _legend_box=(1, 1),
+                        _legend_ncol=1,
+                        _legend_fontsize=None,
+                        _enable_csv=False)
+    
+    graph_png = graph.build_bar_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
 
 
 
