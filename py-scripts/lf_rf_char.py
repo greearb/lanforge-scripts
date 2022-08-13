@@ -86,6 +86,11 @@ class lf_rf_char(Realm):
         self.resource = ''
         self.duration = ''
         self.polling_interval = ''
+        self.tx_pkts = []
+        self.tx_retries = []
+        self.tx_failed = []
+        self.tx_interval = []
+
         # create api_json
         self.json_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
                                                 lf_port=self.lf_port,
@@ -141,15 +146,22 @@ class lf_rf_char(Realm):
             debug=self.debug)
 
     def start(self):
-        logger.info("clear port counters")
-        self.clear_port_counters()
         # first read with
         self.json_api.port=self.vap_port
         self.json_api.update_port_info()
         self.json_api.csv_mode='write'
         self.json_api.update_csv_mode()
         self.json_api.request = 'port'
-        self.json_api.get_request_port_information()
+
+        self.tx_interval = []
+        self.tx_pkts = []
+        self.tx_retries = []
+        self.tx_failed = []
+        logger.info("clear port counters")
+        self.clear_port_counters()
+        json_port_stats, *nil = self.json_api.get_request_port_information()
+        tx_pkts_previous = 0
+        tx_retries_previous = 0
 
         self.json_api.csv_mode='append'
         self.json_api.update_csv_mode()
@@ -157,6 +169,7 @@ class lf_rf_char(Realm):
         cur_time = datetime.datetime.now()
         end_time = self.parse_time(self.duration) + cur_time
         polling_interval_seconds = self.duration_time_to_seconds(self.polling_interval)
+        interval = 0
         while cur_time < end_time:
             interval_time = cur_time + datetime.timedelta(seconds=polling_interval_seconds)
 
@@ -164,6 +177,18 @@ class lf_rf_char(Realm):
                 cur_time = datetime.datetime.now()
                 time.sleep(.2)
             json_port_stats, *nil = self.json_api.get_request_port_information()
+
+            interval += int(polling_interval_seconds)
+            self.tx_interval.append(interval)
+            # print(json_port_stats["interface"]["tx pkts"])
+            self.tx_pkts.append(json_port_stats["interface"]["tx pkts"] - tx_pkts_previous)
+            tx_pkts_previous = json_port_stats["interface"]["tx pkts"]
+            self.tx_retries.append(json_port_stats["interface"]["wifi retries"] - tx_retries_previous )
+            tx_retries_previous = json_port_stats["interface"]["wifi retries"]
+            self.tx_failed.append(round(json_port_stats["interface"]["tx-failed %"],2))
+            # calculated the transmitted packets compared to number of retries
+
+
             # todo read the info from the data frame
 
         self.json_api.csv_mode='write'
@@ -1054,6 +1079,55 @@ Example :
     report.set_graph_image(graph_png)
     report.move_graph_image()
     report.build_graph()
+
+    # transmitted packets per polling interval
+    tx_pkts = rf_char.tx_pkts
+    tx_retries = rf_char.tx_retries
+    tx_failed = rf_char.tx_failed
+    tx_interval = rf_char.tx_interval
+
+
+    # print(tx_msdu)
+    # print(tx_msdu_value)
+
+    # tx_msdu values
+    report.set_table_title("Tx pkts , Tx retries")
+    report.build_table_title()
+
+
+    df_tx_info = pd.DataFrame({" Time ": [k for k in tx_interval], " Tx Packets ": [i for i in tx_pkts],
+        " Tx Retries ": [j for j in tx_retries], " Tx Failed % ": [m for m in tx_failed]})
+
+    report.set_table_dataframe(df_tx_info)
+    report.build_table()
+
+    # TX msdu
+    graph = lf_bar_graph(_data_set=[tx_pkts,tx_retries,tx_failed],
+                        _xaxis_name="Time Seconds",
+                        _yaxis_name="Tx Packets",
+                        _xaxis_categories=tx_interval,
+                        _graph_image_name="TX Info",
+                        _label=[" Tx Packets "," Tx Retries "," Tx Failed % "],
+                        _color=['blue','red','green'],
+                        _color_edge='black',
+                        _figsize=(16,7),
+                        _grp_title='TX ',
+                        _xaxis_step=1,
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=45,
+                        _xticks_font=7,
+                        _legend_loc="best",
+                        _legend_box=(1, 1),
+                        _legend_ncol=1,
+                        _legend_fontsize=None,
+                        _enable_csv=False)
+    
+    graph_png = graph.build_bar_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
+
 
 
 
