@@ -1101,14 +1101,14 @@ Example :
     report.set_table_dataframe(df_tx_info)
     report.build_table()
 
-    # TX msdu
-    graph = lf_bar_graph(_data_set=[tx_pkts,tx_retries,tx_failed],
+    # TX data tx retries
+    graph = lf_bar_graph(_data_set=[tx_pkts,tx_retries],
                         _xaxis_name="Time Seconds",
                         _yaxis_name="Tx Packets",
                         _xaxis_categories=tx_interval,
                         _graph_image_name="TX Info",
-                        _label=[" Tx Packets "," Tx Retries "," Tx Failed % "],
-                        _color=['blue','red','green'],
+                        _label=[" Tx Packets "," Tx Retries "],
+                        _color=['blue','red'],
                         _color_edge='black',
                         _figsize=(16,7),
                         _grp_title='TX ',
@@ -1128,6 +1128,32 @@ Example :
     report.move_graph_image()
     report.build_graph()
 
+    # failed %
+    graph = lf_bar_graph(_data_set=[tx_failed],
+                        _xaxis_name="Time Seconds",
+                        _yaxis_name="Tx Failed %",
+                        _xaxis_categories=tx_interval,
+                        _graph_image_name="Failed %",
+                        _label=[" Tx Failed % "],
+                        _color=['orange'],
+                        _color_edge='black',
+                        _figsize=(16,7),
+                        _grp_title='TX ',
+                        _xaxis_step=1,
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=45,
+                        _xticks_font=7,
+                        _legend_loc="best",
+                        _legend_box=(1, 1),
+                        _legend_ncol=1,
+                        _legend_fontsize=None,
+                        _enable_csv=False)
+    
+    graph_png = graph.build_bar_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
 
 
 
