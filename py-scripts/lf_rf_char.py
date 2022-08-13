@@ -372,6 +372,130 @@ Example :
     # get dataset for port
     wifi_stats_json = json_wifi_stats[args.vap_port]
 
+    # retrieve rx data from json for BW
+    rx_bw = []
+    rx_bw_value_str = []
+    rx_bw_value = []
+    rx_bw_value_percent = []
+    rx_bw_total_count = 0
+
+    # TODO change value to count
+    # retrieve each nss value from json 
+    for iterator in wifi_stats_json:
+        if 'rx_bw' in iterator:
+            rx_bw.append(iterator)
+            rx_bw_value_str.append(str(wifi_stats_json[iterator]))
+            rx_bw_value.append(wifi_stats_json[iterator])
+            rx_bw_total_count += wifi_stats_json[iterator]
+
+    # calculate percentages
+    for rx_bw_count in rx_bw_value:
+        rx_bw_value_percent.append(round((rx_bw_count/rx_bw_total_count)*100, 2)) 
+
+    print(rx_bw)
+    print(rx_bw_value)
+
+    # rx_bw values
+    report.set_table_title("Rx BW Histogram")
+    report.build_table_title()
+
+
+    df_rx_bw = pd.DataFrame({" Rx BW ": [k for k in rx_bw], " Total Packets ": [i for i in rx_bw_value],
+        " Percentage ": [j for j in rx_bw_value_percent]})
+
+    report.set_table_dataframe(df_rx_bw)
+    report.build_table()
+
+    # RX BW
+    graph = lf_bar_graph(_data_set=[rx_bw_value_percent],
+                        _xaxis_name="RX BW",
+                        _yaxis_name="Percentage BW",
+                        _xaxis_categories=rx_bw,
+                        _graph_image_name="RX BW",
+                        _label=["Percentage Total Packets"],
+                        _color=['blue'],
+                        _color_edge='black',
+                        _figsize=(16,7),
+                        _grp_title='RX BW',
+                        _xaxis_step=1,
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=45,
+                        _xticks_font=7,
+                        _legend_loc="best",
+                        _legend_box=(1, 1),
+                        _legend_ncol=1,
+                        _legend_fontsize=None,
+                        _enable_csv=False)
+    
+    graph_png = graph.build_bar_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
+
+    # retrieve tx data from json for BW
+    tx_bw = []
+    tx_bw_value_str = []
+    tx_bw_value = []
+    tx_bw_value_percent = []
+    tx_bw_total_count = 0
+
+    # TODO change value to count
+    # retrieve each nss value from json 
+    for iterator in wifi_stats_json:
+        if 'tx_bw' in iterator:
+            tx_bw.append(iterator)
+            tx_bw_value_str.append(str(wifi_stats_json[iterator]))
+            tx_bw_value.append(wifi_stats_json[iterator])
+            tx_bw_total_count += wifi_stats_json[iterator]
+
+    # calculate percentages
+    for tx_bw_count in tx_bw_value:
+        tx_bw_value_percent.append(round((tx_bw_count/tx_bw_total_count)*100, 2)) 
+
+    print(tx_bw)
+    print(tx_bw_value)
+
+    # tx_bw values
+    report.set_table_title("Tx BW Histogram")
+    report.build_table_title()
+
+
+    df_tx_bw = pd.DataFrame({" Tx BW ": [k for k in tx_bw], " Total Packets ": [i for i in tx_bw_value],
+        " Percentage ": [j for j in tx_bw_value_percent]})
+
+    report.set_table_dataframe(df_tx_bw)
+    report.build_table()
+
+    # TX BW
+    graph = lf_bar_graph(_data_set=[tx_bw_value_percent],
+                        _xaxis_name="TX BW",
+                        _yaxis_name="Percentage BW",
+                        _xaxis_categories=tx_bw,
+                        _graph_image_name="TX BW",
+                        _label=["Percentage Total Packets"],
+                        _color=['blue'],
+                        _color_edge='black',
+                        _figsize=(16,7),
+                        _grp_title='TX BW',
+                        _xaxis_step=1,
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=45,
+                        _xticks_font=7,
+                        _legend_loc="best",
+                        _legend_box=(1, 1),
+                        _legend_ncol=1,
+                        _legend_fontsize=None,
+                        _enable_csv=False)
+    
+    graph_png = graph.build_bar_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
+
+
+
     # retrieve rx data from json for NSS
     rx_nss = []
     rx_nss_value_str = []
