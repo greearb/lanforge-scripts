@@ -372,6 +372,130 @@ Example :
     # get dataset for port
     wifi_stats_json = json_wifi_stats[args.vap_port]
 
+    # retrieve rx data from json for MODE
+    rx_mode = []
+    rx_mode_value_str = []
+    rx_mode_value = []
+    rx_mode_value_percent = []
+    rx_mode_total_count = 0
+
+    # TODO change value to count
+    # retrieve each mode value from json 
+    for iterator in wifi_stats_json:
+        if 'rx_mode' in iterator:
+            rx_mode.append(iterator)
+            rx_mode_value_str.append(str(wifi_stats_json[iterator]))
+            rx_mode_value.append(wifi_stats_json[iterator])
+            rx_mode_total_count += wifi_stats_json[iterator]
+
+    # calculate percentages
+    for rx_mode_count in rx_mode_value:
+        rx_mode_value_percent.append(round((rx_mode_count/rx_mode_total_count)*100, 2)) 
+
+    print(rx_mode)
+    print(rx_mode_value)
+
+    # rx_mode values
+    report.set_table_title("Rx Mode Histogram")
+    report.build_table_title()
+
+
+    df_rx_mode = pd.DataFrame({" Rx Mode ": [k for k in rx_mode], " Total Packets ": [i for i in rx_mode_value],
+        " Percentage ": [j for j in rx_mode_value_percent]})
+
+    report.set_table_dataframe(df_rx_mode)
+    report.build_table()
+
+
+    # RX MODE
+    graph = lf_bar_graph(_data_set=[rx_mode_value_percent],
+                        _xaxis_name="RX Mode",
+                        _yaxis_name="Percentage Mode",
+                        _xaxis_categories=rx_mode,
+                        _graph_image_name="RX Mode",
+                        _label=["Percentage Total Packets"],
+                        _color=['blue'],
+                        _color_edge='black',
+                        _figsize=(16,7),
+                        _grp_title='RX Mode',
+                        _xaxis_step=1,
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=45,
+                        _xticks_font=7,
+                        _legend_loc="best",
+                        _legend_box=(1, 1),
+                        _legend_ncol=1,
+                        _legend_fontsize=None,
+                        _enable_csv=False)
+    
+    graph_png = graph.build_bar_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
+
+    # retrieve tx data from json for MODE
+    tx_mode = []
+    tx_mode_value_str = []
+    tx_mode_value = []
+    tx_mode_value_percent = []
+    tx_mode_total_count = 0
+
+    # TODO change value to count
+    # retrieve each mode value from json 
+    for iterator in wifi_stats_json:
+        if 'tx_mode' in iterator:
+            tx_mode.append(iterator)
+            tx_mode_value_str.append(str(wifi_stats_json[iterator]))
+            tx_mode_value.append(wifi_stats_json[iterator])
+            tx_mode_total_count += wifi_stats_json[iterator]
+
+    # calculate percentages
+    for tx_mode_count in tx_mode_value:
+        tx_mode_value_percent.append(round((tx_mode_count/tx_mode_total_count)*100, 2)) 
+
+    print(tx_mode)
+    print(tx_mode_value)
+
+    # tx_mode values
+    report.set_table_title("Tx Mode Histogram")
+    report.build_table_title()
+
+
+    df_tx_mode = pd.DataFrame({" Tx Mode ": [k for k in tx_mode], " Total Packets ": [i for i in tx_mode_value],
+        " Percentage ": [j for j in tx_mode_value_percent]})
+
+    report.set_table_dataframe(df_tx_mode)
+    report.build_table()
+
+
+    graph = lf_bar_graph(_data_set=[tx_mode_value_percent],
+                        _xaxis_name="TX Mode",
+                        _yaxis_name="Percentage Mode",
+                        _xaxis_categories=tx_mode,
+                        _graph_image_name="TX Mode",
+                        _label=["Percentage Total Packets"],
+                        _color=['blue'],
+                        _color_edge='black',
+                        _figsize=(16,7),
+                        _grp_title='RX Mode',
+                        _xaxis_step=1,
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=45,
+                        _xticks_font=7,
+                        _legend_loc="best",
+                        _legend_box=(1, 1),
+                        _legend_ncol=1,
+                        _legend_fontsize=None,
+                        _enable_csv=False)
+    
+    graph_png = graph.build_bar_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
+
+
     # retrieve rx data from json for BW
     rx_bw = []
     rx_bw_value_str = []
