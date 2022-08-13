@@ -393,8 +393,8 @@ Example :
     for rx_mode_count in rx_mode_value:
         rx_mode_value_percent.append(round((rx_mode_count/rx_mode_total_count)*100, 2)) 
 
-    print(rx_mode)
-    print(rx_mode_value)
+    # print(rx_mode)
+    # print(rx_mode_value)
 
     # rx_mode values
     report.set_table_title("Rx Mode Histogram")
@@ -455,8 +455,8 @@ Example :
     for tx_mode_count in tx_mode_value:
         tx_mode_value_percent.append(round((tx_mode_count/tx_mode_total_count)*100, 2)) 
 
-    print(tx_mode)
-    print(tx_mode_value)
+    # print(tx_mode)
+    # print(tx_mode_value)
 
     # tx_mode values
     report.set_table_title("Tx Mode Histogram")
@@ -517,8 +517,8 @@ Example :
     for rx_bw_count in rx_bw_value:
         rx_bw_value_percent.append(round((rx_bw_count/rx_bw_total_count)*100, 2)) 
 
-    print(rx_bw)
-    print(rx_bw_value)
+    # print(rx_bw)
+    # print(rx_bw_value)
 
     # rx_bw values
     report.set_table_title("Rx BW Histogram")
@@ -578,8 +578,8 @@ Example :
     for tx_bw_count in tx_bw_value:
         tx_bw_value_percent.append(round((tx_bw_count/tx_bw_total_count)*100, 2)) 
 
-    print(tx_bw)
-    print(tx_bw_value)
+    # print(tx_bw)
+    # print(tx_bw_value)
 
     # tx_bw values
     report.set_table_title("Tx BW Histogram")
@@ -641,8 +641,8 @@ Example :
     for rx_nss_count in rx_nss_value:
         rx_nss_value_percent.append(round((rx_nss_count/rx_nss_total_count)*100, 2)) 
 
-    print(rx_nss)
-    print(rx_nss_value)
+    # print(rx_nss)
+    # print(rx_nss_value)
 
     # rx_nss values
     report.set_table_title("Rx NSS Histogram")
@@ -703,8 +703,8 @@ Example :
     for tx_nss_count in tx_nss_value:
         tx_nss_value_percent.append(round((tx_nss_count/tx_nss_total_count)*100, 2)) 
 
-    print(tx_nss)
-    print(tx_nss_value)
+    # print(tx_nss)
+    # print(tx_nss_value)
 
     # tx_nss values
     report.set_table_title("Tx NSS Histogram")
@@ -767,8 +767,8 @@ Example :
     for rx_mcs_count in rx_mcs_value:
         rx_mcs_value_percent.append(round((rx_mcs_count/rx_mcs_total_count)*100, 2)) 
 
-    print(rx_mcs)
-    print(rx_mcs_value)
+    # print(rx_mcs)
+    # print(rx_mcs_value)
 
     # rx_mcs values
     report.set_table_title("Rx MCS Histogram")
@@ -829,8 +829,8 @@ Example :
         else:
             tx_mcs_value_percent.append(round((tx_mcs_count/tx_mcs_total_count)*100, 2)) 
 
-    print(tx_mcs)
-    print(tx_mcs_value)
+    # print(tx_mcs)
+    # print(tx_mcs_value)
 
     # tx_mcs values
     report.set_table_title("Tx MCS Histogram")
@@ -890,8 +890,8 @@ Example :
     for rx_ampdu_count in rx_ampdu_value:
         rx_ampdu_value_percent.append(round((rx_ampdu_count/rx_ampdu_total_count)*100, 2)) 
 
-    print(rx_ampdu)
-    print(rx_ampdu_value)
+    # print(rx_ampdu)
+    # print(rx_ampdu_value)
 
     # rx_ampdu values
     report.set_table_title("Rx ampdu Histogram")
@@ -952,8 +952,8 @@ Example :
         else:
             tx_ampdu_value_percent.append(round((tx_ampdu_count/tx_ampdu_total_count)*100, 2)) 
 
-    print(tx_ampdu)
-    print(tx_ampdu_value)
+    # print(tx_ampdu)
+    # print(tx_ampdu_value)
 
     # tx_ampdu values
     report.set_table_title("Tx ampdu Histogram")
