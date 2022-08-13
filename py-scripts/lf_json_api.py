@@ -164,7 +164,7 @@ class lf_json_api():
         logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request))
 
 
-        return csv_file_port, lanforge_json, lanforge_text, lanforge_json_formatted
+        return lanforge_json, csv_file_port, lanforge_text, lanforge_json_formatted
 
     def get_request_wifi_stats_information(self):
         # https://docs.python-requests.org/en/latest/
@@ -209,7 +209,7 @@ class lf_json_api():
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
 
         # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
-        return csv_file_wifi_stats, lanforge_json, lanforge_text, lanforge_json_formatted
+        return lanforge_json, csv_file_wifi_stats, lanforge_text, lanforge_json_formatted
 
     # give information on a single station if the mac is entered.
     def get_request_single_station_information(self):

@@ -163,16 +163,16 @@ class lf_rf_char(Realm):
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 time.sleep(.2)
-            csv_file_port, *nil = self.json_api.get_request_port_information()
+            json_port_stats, *nil = self.json_api.get_request_port_information()
             # todo read the info from the data frame
 
         self.json_api.csv_mode='write'
         self.json_api.update_csv_mode()
         # TODO make the get_request more generic just set the request
         self.json_api.request = 'wifi-stats'
-        csv_file_wifi_stats, json_wifi_stats, *nil = self.json_api.get_request_wifi_stats_information()
+        json_wifi_stats, *nil = self.json_api.get_request_wifi_stats_information()
 
-        return csv_file_port, csv_file_wifi_stats, json_wifi_stats
+        return json_port_stats, json_wifi_stats
 
             # gather interval samples read stations to get RX Bytes, TX Bytes, TX Retries, 
 
@@ -367,7 +367,7 @@ Example :
     rf_char.polling_interval = args.polling_interval
 
     # run the test
-    csv_file_port, csv_file_wifi_stats, json_wifi_stats, *nil = rf_char.start()
+    json_port_stats, json_wifi_stats, *nil = rf_char.start()
 
     
     # get dataset for port
