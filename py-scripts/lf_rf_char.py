@@ -312,7 +312,7 @@ Example :
     report.set_title("RF Characteristics Test")
     report.build_banner_left()
     report.start_content_div2()
-    report.set_obj_html("Objective", "RF Characteristics Test: Report maximum supported nss and show amount of retransmits")
+    report.set_obj_html("Objective", "RF Characteristics Test: Report Rx and Tx characteristics")
     report.build_objective()
 
     test_setup_info = {
