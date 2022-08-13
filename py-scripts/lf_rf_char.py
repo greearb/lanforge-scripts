@@ -747,6 +747,9 @@ Example :
 
 
     # Finish the report
+    report.build_footer()
+    report.copy_js()
+
     report.write_html_with_timestamp()
     report.write_index_html()
 
