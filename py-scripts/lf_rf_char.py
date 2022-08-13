@@ -368,9 +368,137 @@ Example :
     # run the test
     csv_file_port, csv_file_wifi_stats, json_wifi_stats, *nil = rf_char.start()
 
-    wifi_stats_json = json_wifi_stats[args.vap_port]
     
-    # retrieve data from json
+    # get dataset for port
+    wifi_stats_json = json_wifi_stats[args.vap_port]
+
+    # retrieve rx data from json for NSS
+    rx_nss = []
+    rx_nss_value_str = []
+    rx_nss_value = []
+    rx_nss_value_percent = []
+    rx_nss_total_count = 0
+
+    # TODO change value to count
+    # retrieve each nss value from json 
+    for iterator in wifi_stats_json:
+        if 'rx_nss' in iterator:
+            rx_nss.append(iterator)
+            rx_nss_value_str.append(str(wifi_stats_json[iterator]))
+            rx_nss_value.append(wifi_stats_json[iterator])
+            rx_nss_total_count += wifi_stats_json[iterator]
+
+    # calculate percentages
+    for rx_nss_count in rx_nss_value:
+        rx_nss_value_percent.append(round((rx_nss_count/rx_nss_total_count)*100, 2)) 
+
+    print(rx_nss)
+    print(rx_nss_value)
+
+    # rx_nss values
+    report.set_table_title("Rx NSS Histogram")
+    report.build_table_title()
+
+
+    df_rx_nss = pd.DataFrame({" Rx NSS ": [k for k in rx_nss], " Total Packets ": [i for i in rx_nss_value],
+        " Percentage ": [j for j in rx_nss_value_percent]})
+
+    report.set_table_dataframe(df_rx_nss)
+    report.build_table()
+
+    # RX NSS
+    graph = lf_bar_graph(_data_set=[rx_nss_value_percent],
+                        _xaxis_name="RX NSS",
+                        _yaxis_name="Percentage NSS",
+                        _xaxis_categories=rx_nss,
+                        _graph_image_name="RX NSS",
+                        _label=["Percentage Total Packets"],
+                        _color=['blue'],
+                        _color_edge='black',
+                        _figsize=(16,7),
+                        _grp_title='RX NSS',
+                        _xaxis_step=1,
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=45,
+                        _xticks_font=7,
+                        _legend_loc="best",
+                        _legend_box=(1, 1),
+                        _legend_ncol=1,
+                        _legend_fontsize=None,
+                        _enable_csv=False)
+    
+    graph_png = graph.build_bar_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
+
+
+    # retrieve tx data from json for NSS
+    tx_nss = []
+    tx_nss_value_str = []
+    tx_nss_value = []
+    tx_nss_value_percent = []
+    tx_nss_total_count = 0
+
+    # TODO change value to count
+    # retrieve each nss value from json 
+    for iterator in wifi_stats_json:
+        if 'tx_nss' in iterator:
+            tx_nss.append(iterator)
+            tx_nss_value_str.append(str(wifi_stats_json[iterator]))
+            tx_nss_value.append(wifi_stats_json[iterator])
+            tx_nss_total_count += wifi_stats_json[iterator]
+
+    # calculate percentages
+    for tx_nss_count in tx_nss_value:
+        tx_nss_value_percent.append(round((tx_nss_count/tx_nss_total_count)*100, 2)) 
+
+    print(tx_nss)
+    print(tx_nss_value)
+
+    # tx_nss values
+    report.set_table_title("Tx NSS Histogram")
+    report.build_table_title()
+
+
+    df_tx_nss = pd.DataFrame({" Tx NSS ": [k for k in tx_nss], " Total Packets ": [i for i in tx_nss_value],
+        " Percentage ": [j for j in tx_nss_value_percent]})
+
+    report.set_table_dataframe(df_tx_nss)
+    report.build_table()
+
+    # TX NSS
+    graph = lf_bar_graph(_data_set=[tx_nss_value_percent],
+                        _xaxis_name="TX NSS",
+                        _yaxis_name="Percentage NSS",
+                        _xaxis_categories=tx_nss,
+                        _graph_image_name="RX NSS",
+                        _label=["Percentage Total Packets"],
+                        _color=['blue'],
+                        _color_edge='black',
+                        _figsize=(16,7),
+                        _grp_title='TX NSS',
+                        _xaxis_step=1,
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=45,
+                        _xticks_font=7,
+                        _legend_loc="best",
+                        _legend_box=(1, 1),
+                        _legend_ncol=1,
+                        _legend_fontsize=None,
+                        _enable_csv=False)
+    
+    graph_png = graph.build_bar_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
+
+
+
+
+    # retrieve rx data from json for MCS
     rx_mcs = []
     rx_mcs_value_str = []
     rx_mcs_value = []
@@ -393,7 +521,7 @@ Example :
     print(rx_mcs)
     print(rx_mcs_value)
 
-    # tx_mcs values
+    # rx_mcs values
     report.set_table_title("Rx MCS Histogram")
     report.build_table_title()
 
@@ -430,6 +558,71 @@ Example :
     report.set_graph_image(graph_png)
     report.move_graph_image()
     report.build_graph()
+
+    # retrieve tx  mcs value from json 
+    tx_mcs = []
+    tx_mcs_value_str = []
+    tx_mcs_value = []
+    tx_mcs_value_percent = []
+    tx_mcs_total_count = 0
+
+    for iterator in wifi_stats_json:
+        if 'tx_mcs' in iterator:
+            tx_mcs.append(iterator)
+            tx_mcs_value_str.append(str(wifi_stats_json[iterator]))
+            tx_mcs_value.append(wifi_stats_json[iterator])
+            tx_mcs_total_count += wifi_stats_json[iterator]
+
+    # calculate percentages
+    for tx_mcs_count in tx_mcs_value:
+        if tx_mcs_total_count == 0:
+            tx_mcs_value_percent.append(0)
+        else:
+            tx_mcs_value_percent.append(round((tx_mcs_count/tx_mcs_total_count)*100, 2)) 
+
+    print(tx_mcs)
+    print(tx_mcs_value)
+
+    # tx_mcs values
+    report.set_table_title("Tx MCS Histogram")
+    report.build_table_title()
+
+
+    df_tx_mcs = pd.DataFrame({" Tx MCS ": [k for k in tx_mcs], " Total Packets ": [i for i in tx_mcs_value],
+        " Percentage ": [j for j in tx_mcs_value_percent]})
+
+    report.set_table_dataframe(df_tx_mcs)
+    report.build_table()
+
+    # TX MCS encoding
+    graph = lf_bar_graph(_data_set=[tx_mcs_value_percent],
+                        _xaxis_name="TX MCS encoding",
+                        _yaxis_name="Percentage Received Packets with MCS encoding",
+                        _xaxis_categories=tx_mcs,
+                        _graph_image_name="TX MCS encoding",
+                        _label=["Percentage Total Packets"],
+                        _color=['blue'],
+                        _color_edge='black',
+                        _figsize=(16,7),
+                        _grp_title='TX MCS encoding',
+                        _xaxis_step=1,
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=45,
+                        _xticks_font=7,
+                        _legend_loc="best",
+                        _legend_box=(1, 1),
+                        _legend_ncol=1,
+                        _legend_fontsize=None,
+                        _enable_csv=False)
+    
+    graph_png = graph.build_bar_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
+
+
+    # Finish the report
     report.write_html_with_timestamp()
     report.write_index_html()
 
