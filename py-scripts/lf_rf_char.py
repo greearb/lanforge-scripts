@@ -870,6 +870,131 @@ Example :
     report.move_graph_image()
     report.build_graph()
 
+    # retrieve rx data from json for ampdu
+    rx_ampdu = []
+    rx_ampdu_value_str = []
+    rx_ampdu_value = []
+    rx_ampdu_value_percent = []
+    rx_ampdu_total_count = 0
+
+    # TODO change value to count
+    # retrieve each mcs value from json 
+    for iterator in wifi_stats_json:
+        if 'rx_ampdu' in iterator:
+            rx_ampdu.append(iterator)
+            rx_ampdu_value_str.append(str(wifi_stats_json[iterator]))
+            rx_ampdu_value.append(wifi_stats_json[iterator])
+            rx_ampdu_total_count += wifi_stats_json[iterator]
+
+    # calculate percentages
+    for rx_ampdu_count in rx_ampdu_value:
+        rx_ampdu_value_percent.append(round((rx_ampdu_count/rx_ampdu_total_count)*100, 2)) 
+
+    print(rx_ampdu)
+    print(rx_ampdu_value)
+
+    # rx_ampdu values
+    report.set_table_title("Rx ampdu Histogram")
+    report.build_table_title()
+
+
+    df_rx_ampdu = pd.DataFrame({" Rx ampdu ": [k for k in rx_ampdu], " Total Packets ": [i for i in rx_ampdu_value],
+        " Percentage ": [j for j in rx_ampdu_value_percent]})
+
+    report.set_table_dataframe(df_rx_ampdu)
+    report.build_table()
+
+    # RX ampdu encoding
+    graph = lf_bar_graph(_data_set=[rx_ampdu_value_percent],
+                        _xaxis_name="RX ampdu",
+                        _yaxis_name="Percentage Received Packets ampdu",
+                        _xaxis_categories=rx_ampdu,
+                        _graph_image_name="RX ampdu encoding",
+                        _label=["Percentage Total Packets"],
+                        _color=['blue'],
+                        _color_edge='black',
+                        _figsize=(16,7),
+                        _grp_title='RX ampdu',
+                        _xaxis_step=1,
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=45,
+                        _xticks_font=7,
+                        _legend_loc="best",
+                        _legend_box=(1, 1),
+                        _legend_ncol=1,
+                        _legend_fontsize=None,
+                        _enable_csv=False)
+    
+    graph_png = graph.build_bar_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
+
+    # retrieve tx ampdu value from json 
+    tx_ampdu = []
+    tx_ampdu_value_str = []
+    tx_ampdu_value = []
+    tx_ampdu_value_percent = []
+    tx_ampdu_total_count = 0
+
+    for iterator in wifi_stats_json:
+        if 'tx_ampdu' in iterator:
+            tx_ampdu.append(iterator)
+            tx_ampdu_value_str.append(str(wifi_stats_json[iterator]))
+            tx_ampdu_value.append(wifi_stats_json[iterator])
+            tx_ampdu_total_count += wifi_stats_json[iterator]
+
+    # calculate percentages
+    for tx_ampdu_count in tx_ampdu_value:
+        if tx_ampdu_total_count == 0:
+            tx_ampdu_value_percent.append(0)
+        else:
+            tx_ampdu_value_percent.append(round((tx_ampdu_count/tx_ampdu_total_count)*100, 2)) 
+
+    print(tx_ampdu)
+    print(tx_ampdu_value)
+
+    # tx_ampdu values
+    report.set_table_title("Tx ampdu Histogram")
+    report.build_table_title()
+
+
+    df_tx_ampdu = pd.DataFrame({" Tx ampdu ": [k for k in tx_ampdu], " Total Packets ": [i for i in tx_ampdu_value],
+        " Percentage ": [j for j in tx_ampdu_value_percent]})
+
+    report.set_table_dataframe(df_tx_ampdu)
+    report.build_table()
+
+    # TX MCS encoding
+    graph = lf_bar_graph(_data_set=[tx_ampdu_value_percent],
+                        _xaxis_name="TX ampdu",
+                        _yaxis_name="Percentage Received Packets ampdu",
+                        _xaxis_categories=tx_ampdu,
+                        _graph_image_name="TX ampdu encoding",
+                        _label=["Percentage Total Packets"],
+                        _color=['blue'],
+                        _color_edge='black',
+                        _figsize=(16,7),
+                        _grp_title='TX ampdu',
+                        _xaxis_step=1,
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=45,
+                        _xticks_font=7,
+                        _legend_loc="best",
+                        _legend_box=(1, 1),
+                        _legend_ncol=1,
+                        _legend_fontsize=None,
+                        _enable_csv=False)
+    
+    graph_png = graph.build_bar_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
+
+
+
 
     # Finish the report
     report.build_footer()
