@@ -331,6 +331,7 @@ Example :
         "LANforge port": args.lf_port,
         "Test Duration": args.duration,
         "Polling Interval": args.polling_interval,
+        "vAP Channel": args.vap_channel
     }
 
     report.set_table_title("Test Configuration")
@@ -468,7 +469,7 @@ Example :
     report.set_table_dataframe(df_tx_mode)
     report.build_table()
 
-
+    # TX MODE
     graph = lf_bar_graph(_data_set=[tx_mode_value_percent],
                         _xaxis_name="TX Mode",
                         _yaxis_name="Percentage Mode",
@@ -478,7 +479,7 @@ Example :
                         _color=['blue'],
                         _color_edge='black',
                         _figsize=(16,7),
-                        _grp_title='RX Mode',
+                        _grp_title='TX Mode',
                         _xaxis_step=1,
                         _show_bar_value=True,
                         _text_font=7,
@@ -721,7 +722,7 @@ Example :
                         _xaxis_name="TX NSS",
                         _yaxis_name="Percentage NSS",
                         _xaxis_categories=tx_nss,
-                        _graph_image_name="RX NSS",
+                        _graph_image_name="TX NSS",
                         _label=["Percentage Total Packets"],
                         _color=['blue'],
                         _color_edge='black',
