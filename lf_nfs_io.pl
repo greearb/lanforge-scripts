@@ -34,6 +34,7 @@ use constant   NA    => "NA";
 use constant   AUTO  => "AUTO";
 use constant   READ  => "read";
 use constant   WRITE => "write";
+use constant   DHCP  => "DHCP";
 
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 our $report_timer    = 8000;       # Set report timer for all tests created in ms, i.e. 8 seconds
@@ -59,7 +60,7 @@ our $sleep_after_wo  = 15; # Second to sleep after starting writers (before star
 our $D_PAUSE         = 3;
 
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-# File-IO configuration constants
+# File-IO configuration defaults
 our $quiesce_after_files = 0;
 our $min_rw_size     = "512";
 our $max_rw_size     = "65536";
@@ -74,6 +75,7 @@ our $max_write_bps   = "4000000"; # 4Mbps
 our $mount_options   = "NONE";
 our $skip_writers    = 0;
 our $skip_readers    = 0;
+our $options         = "";
 
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 # below are sorted names and associated endpoints
@@ -147,8 +149,10 @@ my $usage = "$0   [--mgr               {host-name | IP}]
                      #     filehost:/z/y
                   [--parent_port       {parent eth port}]\t# parent of mac vlans
                   [--first_mvlan_ip    {ip ($first)}]\t# mvlan ips: ".ipSummary()."
+                     # dhcp: use this value to request dhcp
+                     # 1.2.3.4,a.b.c.d,w.x.y.z: use this set of IP addresses.
+                     # set length must match the --min/--max interval
                   [--netmask {mask ($netmask)}]\t#mac-vlan netmask
-
                   [--group          {name}] # test group base name, creates:
                      # <group>_wo for writers and
                      # <group>_ro for readers
@@ -159,8 +163,7 @@ my $usage = "$0   [--mgr               {host-name | IP}]
                   [--max_read_bps   ($max_read_bps)]\t# in bps, 2000000 = 2Mbps
                   [--num_files      ($num_files)]\t# files per writer
                   [--quiesce_after_files ($quiesce_after_files)]\t# files to read/write before stopping test.
-                          O == infinite (default)
-
+                     # O == infinite (default)
                   [--skip_readers   ($skip_readers)]\t# Should we not create reader connections: 0 | 1
                   [--skip_writers   ($skip_readers)]\t# Should we not create writer connections: 0 | 1
                   [--min_file_size  ($min_file_size)]\t# in bytes
@@ -171,13 +174,19 @@ my $usage = "$0   [--mgr               {host-name | IP}]
                   [--tmp_group      {name}]\t# for specifying ad-hoc group, you will see group <name>
                   [--min            1-n]\t first macvlan in tmp group
                   [--max            1-n]\t last macvlan in tmp group
+                  [--options {syncafter|syncbefore|direct|largefile|append|crc|unlink|verify|automount|unmount|lazyun|forceun|fstatfs}
 
 Examples:
  $0 --mgr 10.0.0.1 --resource 1 --action list_groups
 
  $0 --mgr 10.0.0.1 --resource 1 --action new_group --group group1 \\
          --parent_port eth2 --fio_prefix smallreads \\
-         --nfs_mnt 192.168.99.99:/fire
+         --nfs_mnt 192.168.48.5:/fire \\
+         --options direct,largefile,verify,automount,unmount \\
+         --ips 192.168.48.10,192.168.48.13,192.168.48.14,192.168.48.15,192.168.48.16,192.168.48.17 \\
+         --netmask 255.255.255.0 \\
+         --min_rw_size 1048576 --max_rw_size 1048576 \\
+         --mount_options='rsize=1048576,wsize=1048576,async'
 
  $0 --mgr 10.0.0.1 --resource 1 --action run_group --group group1 \\
          --parent_port eth2 --netmask 255.255.0.0 \\
@@ -321,9 +330,21 @@ sub preparePorts {
    my $i;
    my %new_items                    = ();
    my $ra_bounds                    = $::group_names{ $group };
-   my $start_str                    = $::first_mvlan_ip;
-   my $start_int                    = addrtoint($start_str);
+   my $ip_string                    = $::first_mvlan_ip;
+   my @ip_list                      = ();
+   my $start_int                    = 0;
    my $next_ip;
+   if ($ip_string =~ /dhcp/i ) {
+      $ip_string = DHCP;
+   }
+   elsif ($ip_string =~ /[,]/ ) {
+      @ip_list = split(',', $ip_string);
+      die("Please provide at least as many IP addresses as mvlans, bye.")
+         if (@ip_list < $main::qty_mac_vlans);
+   }
+   else {
+      $start_int                    = addrtoint($ip_string);
+   }
 
    if (($::qty_mac_vlans + $::start) < 1) {
       do_err_exit("preparePorts: expects a positive, non-zero number of mvlans to create. Cannot continue.");
@@ -331,8 +352,17 @@ sub preparePorts {
 
    for ($i = 0 + $::start; $i < $::qty_mac_vlans + $::start; $i++) {
       my $devname                   = $::parent_port."#".$i;
-      print "start_str[$start_str] start_int[$start_int] i[$i]\n" if ($::DEBUG);
-      my $next_ip                   = inttoaddr( $start_int + $i -1);
+      if ($ip_string eq DHCP) {
+         $next_ip                   = $ip_string;
+      }
+      if (@ip_list > 0) {
+         # print Dumper(["iplist:", \@ip_list]);
+         $next_ip                   = $ip_list[$i];
+      }
+      else {
+         print "start_str[$ip_string] start_int[$start_int] i[$i]\n" if ($::DEBUG);
+         $next_ip                   = inttoaddr( $start_int + $i -1);
+      }
       print "next_ip[$next_ip]\n" if ($::DEBUG);
       $::vlan_ips{ $devname }       = $next_ip;
       $::mac_vlans{ $devname }      = 0;
@@ -353,19 +383,28 @@ sub preparePorts {
 
    if ( keys %new_items > 0 ) {
       print "Creating ".(keys %new_items)." new ports:...";
-
+      my $report_timer = 2500;
       # set the port IP
       for my $new_item (keys(%new_items)) {
-         my $ip            = $::vlan_ips{ $new_item };
+         my $ip            = NA;
          my $cmd_flags     = 0x0;
          my $current       = 0x0;
          my $interesting   = 0x0 | 0x4 | 0x8;
 
+         if ($ip_string ne DHCP) {
+            $ip = $::vlan_ips{ $new_item };
+         }
+         else {
+            $current       = 0x80000000;
+            $interesting   = 0x2 | 0x4000;
+         }
+
+
          my $cmd = $::utils->fmt_cmd("set_port",
             $::shelf_num, $::resource, $new_item, $ip,
             $::netmask, NA, $cmd_flags, $current, NA,
-            NA, NA, NA, $interesting,
-            NA, NA, NA, NA, NA, NA, NA, NA, NA, NA,
+            NA, NA, NA, $interesting, $report_timer,
+            NA, NA, NA, NA, NA, NA, NA, NA, NA,
             NA, NA, NA, NA, NA, NA, NA);
 
          if ($::DEBUG) {
@@ -992,7 +1031,7 @@ GetOptions
    'action|a=s'            => \$action,
    'nfs_mnt|nfs_mount|h=s' => \$nfs_mnt,
    'nfs_list|e=s'          => \$nfs_list,
-   'first_mvlan_ip|n=s'    => \$first_mvlan_ip,
+   'first_mvlan_ip|ips|n=s' => \$first_mvlan_ip,
    'group|g=s'             => \$group,
    'debug'                 => \$DEBUG,
    'dbg_nap|dp=i'          => \$D_PAUSE,
@@ -1015,6 +1054,7 @@ GetOptions
    'tmp_group|tmp=s'       => \$tmp_group,
    'min|ga=i'              => \$tmp_group_min,
    'max|gb=i'              => \$tmp_group_max,
+   'options=s'             => \$options,
 ) || do_err_exit("$usage");
 
 
