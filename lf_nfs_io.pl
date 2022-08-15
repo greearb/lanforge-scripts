@@ -75,7 +75,9 @@ our $max_write_bps   = "4000000"; # 4Mbps
 our $mount_options   = "NONE";
 our $skip_writers    = 0;
 our $skip_readers    = 0;
-our $options         = "";
+our $endp_options    = "";
+our $default_fio_flags = 0x7;
+our $computed_fio_flags = $default_fio_flags;
 
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 # below are sorted names and associated endpoints
@@ -102,6 +104,49 @@ our %vlan_ips        = ();
 our $qty_mac_vlans   = 0;
 our $start           = 0; # First idx, inclusive
 our $stop            = 0; # Last idx
+our $fe_type         = "nfs4";
+our %fe_types = (
+   "generic"   => "fe_generic",
+   "nfs"       => "fe_nfs",
+   "nfs4"      => "fe_nfs4",
+   "cifs"      => "fe_cifs",
+   "iscsi"     => "fe_iscsi",
+   "cifs_v6"   => "fe_cifs/ip6",
+   "nfs_v6"    => "fe_nfs/ip6",
+   "nfs4_v6"   => "fe_nfs4/ip6",
+   "smb2"      => "fe_smb2",
+   "smb2_v6"   => "fe_smb2/ip6",
+   "smb21"     => "fe_smb21",
+   "smb21_v6"  => "fe_smb21/ip6",
+   "smb3"      => "fe_smb30",
+   "smb3_v6"   => "fe_smb30/ip6"
+);
+our %fio_flags = (
+   "CHECK_MOUNT"   => 0x1,
+   "AUTO_MOUNT"    => 0x2,
+   "AUTO_UNMOUNT"  => 0x4,
+   "O_DIRECT"      => 0x8,
+   "UNLINK_BW"     => 0x10,
+   "O_LARGEFILE"   => 0x20,
+   "UNMOUNT_FORCE" => 0x40,
+   "UNMOUNT_LAZY"  => 0x80,
+   "USE_FSTATFS"   => 0x100,
+   "O_APPEND"      => 0x200,
+
+   "syncwrite"    => 0x800,
+   "syncclose"    => 0x1000,
+   "direct"       => 0x8,
+   "largefile"    => 0x20,
+   "append"       => 0x200,
+   "crc"          => 0x400,
+   "unlink"       => 0x10,
+   "verify"       => 0x1,
+   "automount"    => 0x2,
+   "unmount"      => 0x4,
+   "lazyun"       => 0x80,
+   "forceun"      => 0x40,
+   "fstatfs"      => 0x100,
+);
 
 sub ipSummary {
    my $first;
@@ -172,9 +217,40 @@ my $usage = "$0   [--mgr               {host-name | IP}]
                   [--max_write_bps  ($max_write_bps)]\t# in bps, 4000000 = 4Mbps
                   [--mount_options  ($mount_options)]\t# as per nfs(1)
                   [--tmp_group      {name}]\t# for specifying ad-hoc group, you will see group <name>
-                  [--min            1-n]\t first macvlan in tmp group
-                  [--max            1-n]\t last macvlan in tmp group
-                  [--options {syncafter|syncbefore|direct|largefile|append|crc|unlink|verify|automount|unmount|lazyun|forceun|fstatfs}
+                  [--min            1-n]\t# first macvlan in tmp group
+                  [--max            1-n]\t# last macvlan in tmp group
+                  [--endp_type      {generic,nfs,nfs4,cifs,iscsi,cifs_v6,nfs_v6,nfs4_v6,smb2,smb2_v6,smb21,smb21_v6,smb3,smb3_v6}]
+                     # generic   fe_generic     Uses unspecified file protocol
+                     # nfs       fe_nfs         NFSv3 mount
+                     # nfs4      fe_nfs4        NFSv4 mount
+                     # cifs      fe_cifs        CIFS (Samba) mount
+                     # iscsi     fe_iscsi       ISCSI mount
+                     # cifs_v6   fe_cifs/ip6    IPv6 CIFS mount
+                     # nfs_v6    fe_nfs/ip6     NFSv3 IPv6 mount
+                     # nfs4_v6   fe_nfs4/ip6    NFSv4 IPv6 mount
+                     # smb2      fe_smb2        SMB v2.0 mount
+                     # smb2_v6   fe_smb2/ip6    SMB v2.0 IPv6 mount
+                     # smb21     fe_smb21       SMB v2.1 mount
+                     # smb21_v6  fe_smb21/ip6   SMB v2.1 IPv6 mount
+                     # smb3      fe_smb30       SMB v3.0 mount
+                     # smb3_v6   fe_smb30/ip6   SMB v3.0 IPv6 mount
+                  [--mount_options  ...]\t# CIFS or NFS mount(8) options, like 'rsize=1048576,wsize=1048576,async'
+                  [--endp_options {syncafter|syncbefore|direct|largefile|append|crc|unlink|verify|automount|unmount|lazyun|forceun|fstatfs}]
+                     # syncwrite    sync after each write
+                     # syncclose    sync before close
+                     # direct       O_DIRECT, disable read/write buffering
+                     # largefile    O_LARGEFILE, enable writing files >4GB on 32-bit systems
+                     # append       start writing at the end of the file, not at the start
+                     # crc          32bit CRC calculation on every buffer read/write
+                     # unlink       remove file before writing it
+                     # verify       verify mountpoint is associated with correct port
+                     # automount    attempt to mount filesystem if it is not mounted
+                     # unmount      attempt unmount when stopping test
+                     # lazyun       use the '-l' mount(8) switch that unmounts file locally
+                     # forceun      use the '-f' mount(8) switch that forces filesystem unmount
+                     # fstatfs      verify mount options, will stop test if fstatfs returns error
+         # If you endp_options, set all the options you need:
+         # verify,automount,unmount,direct,largefile,unmount are most used
 
 Examples:
  $0 --mgr 10.0.0.1 --resource 1 --action list_groups
@@ -186,6 +262,7 @@ Examples:
          --ips 192.168.48.10,192.168.48.13,192.168.48.14,192.168.48.15,192.168.48.16,192.168.48.17 \\
          --netmask 255.255.255.0 \\
          --min_rw_size 1048576 --max_rw_size 1048576 \\
+         --endp_options='rsize=verify,automount,unmount,direct,largefile' \\
          --mount_options='rsize=1048576,wsize=1048576,async'
 
  $0 --mgr 10.0.0.1 --resource 1 --action run_group --group group1 \\
@@ -205,7 +282,7 @@ Examples:
          --action run_group --group group2 --parent_port eth9 \\
          --first_mvlan_ip 172.168.90.1 --netmask 255.255.0.0 \\
          --nfs_list ./nfsexports.txt  \\
-         --num_files 20 --min_file_size 4096 --max_file_size 524288 \\ 
+         --num_files 20 --min_file_size 4096 --max_file_size 524288 \\
          --min_write_bps 1000000 --max_write 900000000
 
 $0 --mgr 10.0.0.1 --resource 1 \\
@@ -268,7 +345,7 @@ sub init {
          $::start       = @$ra_bounds[0];
          $::stop        = @$ra_bounds[1];
          $::qty_mac_vlans = ($::stop - $::start) + 1;
-         print "group [$group] vlans: $::stop - $::start = $::qty_mac_vlans\n" if($::DEBUG);
+         #print "group [$group] vlans: $::stop - $::start = $::qty_mac_vlans\n" if($::DEBUG);
       }
    }
 }
@@ -316,11 +393,13 @@ sub preparePorts {
    #   print Dumper(["ports:", \@ports]);
    #   die("look!");
    #}
+   print "Debug: discovered ports:" if($::DEBUG);
    for my $rh_port (@ports) {
-      print "Debug: discovered port $rh_port->{'dev'}".NL if($::DEBUG);
+      print " $rh_port->{'dev'}" if($::DEBUG);
       $all_ports{ $rh_port->{'dev'} } = $rh_port;
       next unless ( $rh_port->{'dev'} eq $::parent_port );
    }
+   print "\n" if($::DEBUG);
    do_err_exit("preparePorts: Failed to populate ports list, please debug.")
       unless (keys %all_ports > 0);
 
@@ -586,21 +665,50 @@ sub prepareFileEndpoints {
          my $mount_dir        = "NA";
 
          # we do not want anything 'blank' in this
-         my @names=qw(ep_name ::shelf_num ::resource mvlan min_read_rt max_read_rt  min_write_rt max_write_rt pattern directory prefix remote_mnt mount_options mount_dir mount_retry_nap);
+         my @names=qw(ep_name
+             ::shelf_num
+             ::resource
+             mvlan
+             min_read_rt
+             max_read_rt
+             min_write_rt
+             max_write_rt
+             pattern
+             directory
+             prefix
+             remote_mnt
+             mount_options
+             mount_dir
+             mount_retry_nap);
 
-         my @values=($ep_name, $::shelf_num, $::resource, $mvlan, $min_read_rt, $max_read_rt,  $min_write_rt, $max_write_rt, $pattern, $directory, $prefix, $remote_mnt, $mount_options, $mount_dir, $mount_retry_nap);
+         my @values=($ep_name,
+             $::shelf_num,
+             $::resource,
+             $mvlan,
+             $min_read_rt,
+             $max_read_rt,
+             $min_write_rt,
+             $max_write_rt,
+             $pattern,
+             $directory,
+             $prefix,
+             $remote_mnt,
+             $mount_options,
+             $mount_dir,
+             $mount_retry_nap);
+
          for (my $i=0; $i<@names; $i++) {
             notBlank($names[$i], $values[$i]);
          }
 
          my $cmd = $::utils->fmt_cmd(
-                     "add_file_endp",  $ep_name,      $::shelf_num,  $::resource,   $mvlan,
-                     'fe_nfs',         $min_read_rt , $max_read_rt,  $min_write_rt, $max_write_rt,
-                     $pattern,         $directory,    $prefix,       $remote_mnt,   $mount_options,
-                     "7",              $mount_dir,    NA,            $mount_retry_nap);
+                     "add_file_endp",     $ep_name,         $::shelf_num,  $::resource,   $mvlan,
+                     $::fe_types{$::fe_type}, $min_read_rt ,  $max_read_rt,  $min_write_rt, $max_write_rt,
+                     $pattern,            $directory,       $prefix,       $remote_mnt,   $mount_options,
+                     $computed_fio_flags, $mount_dir,       NA,            $mount_retry_nap);
          print " + " . $cmd.NL if ($::DEBUG);
          $::utils->doCmd($cmd);
-         sleep(0.1); # if ($::DEBUG);
+         sleep(0.05); # if ($::DEBUG);
          print ".";
          $cmd = $::utils->fmt_cmd( "set_fe_info", $ep_name,
                      $min_rw_size,     $max_rw_size,  $num_files,    $min_file_size, $max_file_size,
@@ -1054,7 +1162,8 @@ GetOptions
    'tmp_group|tmp=s'       => \$tmp_group,
    'min|ga=i'              => \$tmp_group_min,
    'max|gb=i'              => \$tmp_group_max,
-   'options=s'             => \$options,
+   'type'                  => \$fe_type,
+   'endp_options=s'        => \$endp_options,
 ) || do_err_exit("$usage");
 
 
@@ -1103,6 +1212,27 @@ elsif ($action ne "list_groups") {
    }
 } # ~list groups
 
+
+if (!(defined($::fe_types{$::fe_type}))) {
+   die("Unable to use file endpoint type [$::fe_type]");
+}
+
+if ($endp_options ne "") {
+   $computed_fio_flags = 0;
+   my @hunks = split(',',$endp_options);
+   for my $hunk (@hunks) {
+      if ($hunk =~ /^\d+$/) {
+         $computed_fio_flags |= atoi($hunk);
+      }
+      elsif (defined ($fio_flags{$hunk})) {
+         $computed_fio_flags |= $fio_flags{$hunk};
+      }
+      else {
+         die("Unknown file flag[$hunk]");
+      }
+   }
+}
+
 init();
 
 if ( $action eq "list_groups" ) {
@@ -1119,7 +1249,6 @@ if ( !defined $group || $group eq "" || ! $group_names{ $group }) {
       .NL."Known groups: ".join(', ', sort(keys(%group_names))));
 }
 print "Using group [$group]\n";
-
 
 if ( $action eq "stop_group" ) {
    stopGroup();
