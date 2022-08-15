@@ -935,14 +935,14 @@ Example :
 
     logger.debug("rx_ampdu: {rx_ampdu}".format(rx_ampdu=rx_ampdu))
 
+    rx_ampdu = [s.replace('rx_ampdu_','') for s in rx_ampdu] 
+
     # use class 
 
     # calculate percentages
     for rx_ampdu_count in rx_ampdu_value:
         rx_ampdu_value_percent.append(round((rx_ampdu_count/rx_ampdu_total_count)*100, 2)) 
 
-    # print(rx_ampdu)
-    # print(rx_ampdu_value)
 
     # rx_ampdu values
     report.set_table_title("Rx ampdu Histogram")
@@ -1007,6 +1007,7 @@ Example :
     tx_ampdu.sort(key=num_sort)
     logger.debug("tx_ampdu: {tx_ampdu}".format(tx_ampdu=tx_ampdu))
 
+    tx_ampdu = [s.replace('tx_ampdu_','') for s in tx_ampdu] 
 
     # tx_ampdu values
     report.set_table_title("Tx ampdu Histogram")
