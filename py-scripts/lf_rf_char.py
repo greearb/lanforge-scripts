@@ -211,7 +211,6 @@ class lf_rf_char(Realm):
     def read_stations(self):
         pass
 
-
 def main():
     # arguments
     parser = argparse.ArgumentParser(
@@ -394,6 +393,18 @@ Example :
     # run the test
     json_port_stats, json_wifi_stats, *nil = rf_char.start()
 
+    # sort the values when in a list
+    def num_sort(strn):
+        # getting number using isdigit() and split()
+        computed_num = [ele for ele in strn.split('_') if ele.isdigit()]    
+        # assigning lowest weightage to strings
+        # with no numbers
+        if len(computed_num) > 0:
+            return int(computed_num[0])
+        return -1
+
+
+
     
     # get dataset for port
     wifi_stats_json = json_wifi_stats[args.vap_port]
@@ -538,12 +549,13 @@ Example :
             rx_bw_value.append(wifi_stats_json[iterator])
             rx_bw_total_count += wifi_stats_json[iterator]
 
+    logger.debug("rx_bw: {rx_bw}".format(rx_bw=rx_bw))
+
     # calculate percentages
     for rx_bw_count in rx_bw_value:
         rx_bw_value_percent.append(round((rx_bw_count/rx_bw_total_count)*100, 2)) 
 
-    # print(rx_bw)
-    # print(rx_bw_value)
+    rx_bw.sort(key=num_sort)
 
     # rx_bw values
     report.set_table_title("Rx BW Histogram")
@@ -552,6 +564,7 @@ Example :
 
     df_rx_bw = pd.DataFrame({" Rx BW ": [k for k in rx_bw], " Total Packets ": [i for i in rx_bw_value],
         " Percentage ": [j for j in rx_bw_value_percent]})
+
 
     report.set_table_dataframe(df_rx_bw)
     report.build_table()
@@ -605,14 +618,17 @@ Example :
 
     # print(tx_bw)
     # print(tx_bw_value)
+    tx_bw.sort(key=num_sort)
+
 
     # tx_bw values
     report.set_table_title("Tx BW Histogram")
     report.build_table_title()
 
 
-    df_tx_bw = pd.DataFrame({" Tx BW ": [k for k in tx_bw], " Total Packets ": [i for i in tx_bw_value],
+    df_tx_bw = pd.DataFrame({"Tx BW": [k for k in tx_bw], " Total Packets ": [i for i in tx_bw_value],
         " Percentage ": [j for j in tx_bw_value_percent]})
+
 
     report.set_table_dataframe(df_tx_bw)
     report.build_table()
@@ -792,6 +808,8 @@ Example :
     for rx_mcs_count in rx_mcs_value:
         rx_mcs_value_percent.append(round((rx_mcs_count/rx_mcs_total_count)*100, 2)) 
 
+    rx_mcs.sort(key=num_sort)
+
     # print(rx_mcs)
     # print(rx_mcs_value)
 
@@ -854,8 +872,7 @@ Example :
         else:
             tx_mcs_value_percent.append(round((tx_mcs_count/tx_mcs_total_count)*100, 2)) 
 
-    # print(tx_mcs)
-    # print(tx_mcs_value)
+    tx_mcs.sort(key=num_sort)
 
     # tx_mcs values
     report.set_table_title("Tx MCS Histogram")
@@ -910,6 +927,15 @@ Example :
             rx_ampdu_value_str.append(str(wifi_stats_json[iterator]))
             rx_ampdu_value.append(wifi_stats_json[iterator])
             rx_ampdu_total_count += wifi_stats_json[iterator]
+
+    logger.debug("rx_ampdu: {rx_ampdu}".format(rx_ampdu=rx_ampdu))
+
+
+    rx_ampdu.sort(key=num_sort)
+
+    logger.debug("rx_ampdu: {rx_ampdu}".format(rx_ampdu=rx_ampdu))
+
+    # use class 
 
     # calculate percentages
     for rx_ampdu_count in rx_ampdu_value:
@@ -977,8 +1003,10 @@ Example :
         else:
             tx_ampdu_value_percent.append(round((tx_ampdu_count/tx_ampdu_total_count)*100, 2)) 
 
-    # print(tx_ampdu)
-    # print(tx_ampdu_value)
+    logger.debug(tx_ampdu)
+    tx_ampdu.sort(key=num_sort)
+    logger.debug("tx_ampdu: {tx_ampdu}".format(tx_ampdu=tx_ampdu))
+
 
     # tx_ampdu values
     report.set_table_title("Tx ampdu Histogram")
