@@ -375,7 +375,7 @@ class lf_bar_line_graph:
         def show_value(rectangles):
             for rect in rectangles:
                 h = rect.get_height()
-                plt.text(rect.get_x() + rect.get_width() / 2., h, h,
+                ax1.text(rect.get_x() + rect.get_width() / 2., h, h,
                          ha='center', va='bottom', rotation=self.text_rotation, fontsize=self.text_font)
 
         for _ in self.data_set1:
@@ -414,6 +414,10 @@ class lf_bar_line_graph:
 
 
         # overlay line graph
+        def show_value2(data):
+            for item, value in enumerate(data):
+                ax2.text(item, value, "{value}".format(value=value), ha='center',rotation=self.text_rotation, fontsize=self.text_font)
+
         i = 0
         for data in self.data_set2:
             ax2.plot(
@@ -422,6 +426,7 @@ class lf_bar_line_graph:
                 color=self.color2[i],
                 label=self.label2[i],
                 marker=self.marker[i])
+            show_value2(data)
             i += 1
         ax2.set_xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
         ax2.set_ylabel(self.y2axis_name, fontweight='bold', fontsize=15)
