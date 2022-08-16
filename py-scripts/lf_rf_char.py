@@ -1121,7 +1121,7 @@ Example :
     # print(tx_msdu_value)
 
     # tx_msdu values
-    report.set_table_title("Tx pkts , Tx retries")
+    report.set_table_title("Tx pkts , Tx retries, Tx Failed %")
     report.build_table_title()
 
 
