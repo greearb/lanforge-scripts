@@ -353,7 +353,7 @@ class lf_bar_line_graph:
         self.legend_handles = _legend_handles
         self.legend_loc1 = _legend_loc1
         self.legend_loc2 = _legend_loc2
-        self.legend_box1 = _legend_box2
+        self.legend_box1 = _legend_box1
         self.legend_box2 = _legend_box2
         self.legend_ncol = _legend_ncol
         self.legend_fontsize = _legend_fontsize
@@ -408,7 +408,7 @@ class lf_bar_line_graph:
         ax1.legend(
             handles=self.legend_handles,
             loc=self.legend_loc1,
-            # bbox_to_anchor=self.legend_box1,
+            bbox_to_anchor=self.legend_box1,
             ncol=self.legend_ncol,
             fontsize=self.legend_fontsize)
 
@@ -419,14 +419,15 @@ class lf_bar_line_graph:
                 ax2.text(item, value, "{value}".format(value=value), ha='center',rotation=self.text_rotation, fontsize=self.text_font)
 
         i = 0
-        for data in self.data_set2:
+        for _ in self.data_set2:
+            br1 = np.arange(len(self.data_set2[i]))
             ax2.plot(
-                self.xaxis_categories,
-                data,
+                br1,
+                self.data_set2[i],
                 color=self.color2[i],
                 label=self.label2[i],
                 marker=self.marker[i])
-            show_value2(data)
+            show_value2(self.data_set2[i])
             i += 1
         ax2.set_xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
         ax2.set_ylabel(self.y2axis_name, fontweight='bold', fontsize=15)
@@ -435,7 +436,7 @@ class lf_bar_line_graph:
         ax2.legend(
             handles=self.legend_handles,
             loc=self.legend_loc2,
-            # bbox_to_anchor=self.legend_box2,
+            bbox_to_anchor=self.legend_box2,
             ncol=self.legend_ncol,
             fontsize=self.legend_fontsize)
         plt.suptitle(self.title, fontsize=self.title_size)
