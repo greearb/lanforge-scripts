@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pdfkit
 from matplotlib.colors import ListedColormap
+import matplotlib.ticker as mticker
 import argparse
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
@@ -262,6 +263,191 @@ class lf_scatter_graph:
             self.lf_csv.generate_csv()
 
         return "%s.png" % self.graph_image_name
+
+# have a second yaxis with line graph
+class lf_bar_line_graph:
+    def __init__(self, 
+                 _data_set1=None,
+                 _data_set2=None,
+                 _xaxis_name="x-axis",
+                 _y1axis_name="y1-axis",
+                 _y2axis_name="y2-axis",
+                 _xaxis_categories=None,
+                 _xaxis_label=None,
+                 _graph_title="",
+                 _title_size=16,
+                 _graph_image_name="image_name",
+                 _label1=None,
+                 _label2=None,
+                 _color1=None,
+                 _color2=None,
+                 _bar_width=0.25,
+                 _color_edge='grey',
+                 _font_weight='bold',
+                 _color_name1=None,
+                 _color_name2=None,
+                 _marker=None,
+                 _figsize=(10, 5),
+                 _show_bar_value=False,
+                 _xaxis_step=1,
+                 _xticks_font=None,
+                 _xaxis_value_location=0,
+                 _text_font=None,
+                 _text_rotation=None,
+                 _grp_title="",
+                 _legend_handles=None,
+                 _legend_loc="best",
+                 _legend_box=None,
+                 _legend_ncol=1,
+                 _legend_fontsize=None,
+                 _dpi=96,
+                 _enable_csv=False):
+
+        if _data_set1 is None:
+            _data_set1 = [[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]]
+        if _xaxis_categories is None:
+            _xaxis_categories = [1, 2, 3, 4]
+        if _xaxis_label is None:
+            _xaxis_label = ["a", "b", "c", "d"]
+        if _label1 is None:
+            _label1 = ["bi-downlink", "bi-uplink", 'uplink']
+        if _label2 is None:
+            _label2 = ["bi-downlink", "bi-uplink", 'uplink']
+
+        if _color_name1 is None:
+            _color_name1 = ['lightcoral', 'darkgrey', 'r', 'g', 'b', 'y']
+        if _color_name2 is None:
+            _color_name2 = ['lightcoral', 'darkgrey', 'r', 'g', 'b', 'y']
+        self.data_set1 = _data_set1
+        self.data_set2 = _data_set2
+        self.xaxis_name = _xaxis_name
+        self.y1axis_name = _y1axis_name
+        self.y2axis_name = _y2axis_name
+        self.xaxis_categories = _xaxis_categories
+        self.xaxis_label = _xaxis_label
+        self.title = _graph_title
+        self.title_size = _title_size
+        self.graph_image_name = _graph_image_name
+        self.label1 = _label1
+        self.label2 = _label2
+        self.color1 = _color1
+        self.color2 = _color2
+        self.marker = _marker
+        self.bar_width = _bar_width
+        self.color_edge = _color_edge
+        self.font_weight = _font_weight
+        self.color_name1 = _color_name1
+        self.color_name2 = _color_name2
+        self.figsize = _figsize
+        self.show_bar_value = _show_bar_value
+        self.xaxis_step = _xaxis_step
+        self.xticks_font = _xticks_font
+        self._xaxis_value_location = _xaxis_value_location
+        self.text_font = _text_font
+        self.text_rotation = _text_rotation
+        self.grp_title = _grp_title
+        self.enable_csv = _enable_csv
+        self.lf_csv = lf_csv()
+        self.legend_handles = _legend_handles
+        self.legend_loc = _legend_loc
+        self.legend_box = _legend_box
+        self.legend_ncol = _legend_ncol
+        self.legend_fontsize = _legend_fontsize
+
+    def build_bar_line_graph(self):
+        if self.color1 is None:
+            i = 0
+            self.color1 = []
+            for _ in self.data_set1:
+                self.color1.append(self.color_name[i])
+                i = i + 1
+
+        fig, ax1 = plt.subplots(figsize=self.figsize)
+        
+        ax2 = ax1.twinx()
+
+        i = 0
+
+        def show_value(rectangles):
+            for rect in rectangles:
+                h = rect.get_height()
+                plt.text(rect.get_x() + rect.get_width() / 2., h, h,
+                         ha='center', va='bottom', rotation=self.text_rotation, fontsize=self.text_font)
+
+        for _ in self.data_set1:
+            if i > 0:
+                br = br1
+                br2 = [x + self.bar_width for x in br]
+                rects = plt.bar(br2, self.data_set1[i], color=self.color1[i], width=self.bar_width,
+                                edgecolor=self.color_edge, label=self.label1[i])
+                if self.show_bar_value:
+                    show_value(rects)
+                br1 = br2
+                i = i + 1
+            else:
+                br1 = np.arange(len(self.data_set1[i]))
+                rects = plt.bar(br1, self.data_set1[i], color=self.color1[i], width=self.bar_width,
+                                edgecolor=self.color_edge, label=self.label1[i])
+                if self.show_bar_value:
+                    show_value(rects)
+                i = i + 1
+        ax1.set_xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
+        ax1.set_ylabel(self.y1axis_name, fontweight='bold', fontsize=15)
+        if self.xaxis_categories[0] == 0:
+            xsteps = plt.xticks(np.arange(0,
+                                 len(self.xaxis_categories),
+                                 step=self.xaxis_step),
+                       fontsize=self.xticks_font)
+        else:
+            xsteps = plt.xticks([i + self._xaxis_value_location for i in np.arange(0, len(self.data_set1[0]), step=self.xaxis_step)],
+                       self.xaxis_categories, fontsize=self.xticks_font)
+
+
+        # overlay line graph
+        i = 0
+        for data in self.data_set2:
+            ax2.plot(
+                self.xaxis_categories,
+                data,
+                color=self.color2[i],
+                label=self.label2[i],
+                marker=self.marker[i])
+            i += 1
+        ax2.set_xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
+        ax2.set_ylabel(self.y2axis_name, fontweight='bold', fontsize=15)
+            
+        plt.legend(
+            handles=self.legend_handles,
+            loc=self.legend_loc,
+            bbox_to_anchor=self.legend_box,
+            ncol=self.legend_ncol,
+            fontsize=self.legend_fontsize)
+        plt.suptitle(self.title, fontsize=self.title_size)
+        plt.title(self.grp_title)
+        plt.gcf()
+        plt.savefig("%s.png" % self.graph_image_name, dpi=96)
+        plt.close()
+        print("{}.png".format(self.graph_image_name))
+        # TODO work though this for two axis
+        if self.enable_csv:
+            if self.data_set is not None and self.xaxis_categories is not None:
+                if len(self.xaxis_categories) == len(self.data_set[0]):
+                    self.lf_csv.columns = []
+                    self.lf_csv.rows = []
+                    self.lf_csv.columns.append(self.xaxis_name)
+                    self.lf_csv.columns.extend(self.label)
+                    self.lf_csv.rows.append(self.xaxis_categories)
+                    self.lf_csv.rows.extend(self.data_set)
+                    self.lf_csv.filename = f"{self.graph_image_name}.csv"
+                    self.lf_csv.generate_csv()
+                else:
+                    raise ValueError(
+                        "Length and x-axis values and y-axis values should be same.")
+            else:
+                print("No Dataset Found")
+        print("{}.csv".format(self.graph_image_name))
+        return "%s.png" % self.graph_image_name
+
 
 
 class lf_stacked_graph:

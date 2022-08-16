@@ -47,6 +47,7 @@ lf_json_api = importlib.import_module("py-scripts.lf_json_api")
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_bar_graph = lf_graph.lf_bar_graph
+lf_bar_line_graph = lf_graph.lf_bar_line_graph
 
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -1183,6 +1184,42 @@ Example :
     report.set_graph_image(graph_png)
     report.move_graph_image()
     report.build_graph()
+
+
+    # lf_bar_line_graph
+    # failed %
+    graph = lf_bar_line_graph(
+                        _data_set1=[tx_pkts,tx_retries],
+                        _data_set2=[tx_failed],
+                        _xaxis_name="Time Seconds",
+                        _y1axis_name="Tx Packets",
+                        _y2axis_name="Tx Failed %",
+                        _xaxis_categories=tx_interval,
+                        _graph_image_name="TX Info",
+                        _label1=[" Tx Packets "," Tx Retries "],
+                        _label2=[" Tx Failed % "],
+                        _color1=['blue','red'],
+                        _color2=['orange'],
+                        _marker=['o'],
+                        _color_edge='black',
+                        _figsize=(16,7),
+                        _grp_title='TX ',
+                        _xaxis_step=1,
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=45,
+                        _xticks_font=7,
+                        _legend_loc="best",
+                        _legend_box=(1, 1),
+                        _legend_ncol=1,
+                        _legend_fontsize=None,
+                        _enable_csv=False)
+    
+    graph_png = graph.build_bar_line_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
+
 
 
 
