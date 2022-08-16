@@ -26,6 +26,17 @@ import pdfkit
 from matplotlib.colors import ListedColormap
 import matplotlib.ticker as mticker
 import argparse
+import traceback
+
+
+# TODO have scipy be part of the base install
+try:
+    from scipy import interpolate
+
+except Exception as x:
+    print("Info:  scipy package not installed, Needed for smoothing linear plots 'pip install scipy'  ")
+    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -268,7 +279,11 @@ class lf_scatter_graph:
 class lf_bar_line_graph:
     def __init__(self, 
                  _data_set1=None,
+                 # Note data_set2, data_set2_poly and data_set2_spline needs same size list
                  _data_set2=None,
+                 _data_set2_poly=[False], # Values are True or False
+                 _data_set2_poly_degree=[3],
+                 _data_set2_interp1d=[False], # Values are True or False
                  _xaxis_name="x-axis",
                  _y1axis_name="y1-axis",
                  _y2axis_name="y2-axis",
@@ -279,8 +294,12 @@ class lf_bar_line_graph:
                  _graph_image_name="image_name",
                  _label1=None,
                  _label2=None,
+                 _label2_poly=None,
+                 _label2_interp1d=None,
                  _color1=None,
                  _color2=None,
+                 _color2_poly=None,
+                 _color2_interp1d=None,
                  _bar_width=0.25,
                  _color_edge='grey',
                  _font_weight='bold',
@@ -322,6 +341,9 @@ class lf_bar_line_graph:
             _color_name2 = ['lightcoral', 'darkgrey', 'r', 'g', 'b', 'y']
         self.data_set1 = _data_set1
         self.data_set2 = _data_set2
+        self.data_set2_poly = _data_set2_poly
+        self.data_set2_poly_degree = _data_set2_poly_degree
+        self.data_set2_interp1d = _data_set2_interp1d
         self.xaxis_name = _xaxis_name
         self.y1axis_name = _y1axis_name
         self.y2axis_name = _y2axis_name
@@ -332,8 +354,12 @@ class lf_bar_line_graph:
         self.graph_image_name = _graph_image_name
         self.label1 = _label1
         self.label2 = _label2
+        self.label2_poly = _label2_poly
+        self.label2_interp1d = _label2_interp1d
         self.color1 = _color1
         self.color2 = _color2
+        self.color2_poly = _color2_poly
+        self.color2_interp1d = _color2_interp1d
         self.marker = _marker
         self.bar_width = _bar_width
         self.color_edge = _color_edge
@@ -428,6 +454,29 @@ class lf_bar_line_graph:
                 label=self.label2[i],
                 marker=self.marker[i])
             show_value2(self.data_set2[i])
+            # do polynomial smoothing
+            if self.data_set2_poly[i]:
+                poly = np.polyfit(br1,self.data_set2[i],self.data_set2_poly_degree[i])
+                poly_y = np.poly1d(poly)(br1)
+                ax2.plot(
+                    br1,
+                    poly_y,
+                    color=self.color2_poly[i],
+                    label=self.label2_poly[i]
+                )
+            if self.data_set2_interp1d[i]:
+                cubic_interpolation_model = interpolate.interp1d(br1, self.data_set2[i],kind="cubic")
+
+                x_sm = np.array(br1)
+                x_smooth = np.linspace(x_sm.min(), x_sm.max(), 500)
+                y_smooth = cubic_interpolation_model(x_smooth)
+                ax2.plot(
+                    x_smooth,
+                    y_smooth,
+                    color=self.color2_interp1d[i],
+                    label=self.label2_interp1d[i]
+                )
+
             i += 1
         ax2.set_xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
         ax2.set_ylabel(self.y2axis_name, fontweight='bold', fontsize=15)

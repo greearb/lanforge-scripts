@@ -1191,6 +1191,9 @@ Example :
     graph = lf_bar_line_graph(
                         _data_set1=[tx_pkts,tx_retries],
                         _data_set2=[tx_failed],
+                        _data_set2_poly=[True],
+                        _data_set2_poly_degree=[3],
+                        _data_set2_interp1d=[True], # interpolate 1d
                         _xaxis_name="Time Seconds",
                         _y1axis_name="Tx Packets",
                         _y2axis_name="Tx Failed %",
@@ -1198,8 +1201,12 @@ Example :
                         _graph_image_name="TX Info bar line",
                         _label1=[" Tx Packets "," Tx Retries "],
                         _label2=[" Tx Failed % "],
+                        _label2_poly=["% plynomial fit"],
+                        _label2_interp1d=[" % interpolate"],
                         _color1=['blue','red'],
                         _color2=['orange'],
+                        _color2_poly=['green'],
+                        _color2_interp1d=['cyan'],
                         _marker=['o'],
                         _color_edge='black',
                         _figsize=(16,7),
