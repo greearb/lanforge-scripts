@@ -296,8 +296,10 @@ class lf_bar_line_graph:
                  _text_rotation=None,
                  _grp_title="",
                  _legend_handles=None,
-                 _legend_loc="best",
-                 _legend_box=None,
+                 _legend_loc1="best",
+                 _legend_loc2="best",
+                 _legend_box1=None,
+                 _legend_box2=None,
                  _legend_ncol=1,
                  _legend_fontsize=None,
                  _dpi=96,
@@ -349,8 +351,10 @@ class lf_bar_line_graph:
         self.enable_csv = _enable_csv
         self.lf_csv = lf_csv()
         self.legend_handles = _legend_handles
-        self.legend_loc = _legend_loc
-        self.legend_box = _legend_box
+        self.legend_loc1 = _legend_loc1
+        self.legend_loc2 = _legend_loc2
+        self.legend_box1 = _legend_box2
+        self.legend_box2 = _legend_box2
         self.legend_ncol = _legend_ncol
         self.legend_fontsize = _legend_fontsize
 
@@ -378,7 +382,7 @@ class lf_bar_line_graph:
             if i > 0:
                 br = br1
                 br2 = [x + self.bar_width for x in br]
-                rects = plt.bar(br2, self.data_set1[i], color=self.color1[i], width=self.bar_width,
+                rects = ax1.bar(br2, self.data_set1[i], color=self.color1[i], width=self.bar_width,
                                 edgecolor=self.color_edge, label=self.label1[i])
                 if self.show_bar_value:
                     show_value(rects)
@@ -386,7 +390,7 @@ class lf_bar_line_graph:
                 i = i + 1
             else:
                 br1 = np.arange(len(self.data_set1[i]))
-                rects = plt.bar(br1, self.data_set1[i], color=self.color1[i], width=self.bar_width,
+                rects = ax1.bar(br1, self.data_set1[i], color=self.color1[i], width=self.bar_width,
                                 edgecolor=self.color_edge, label=self.label1[i])
                 if self.show_bar_value:
                     show_value(rects)
@@ -401,6 +405,12 @@ class lf_bar_line_graph:
         else:
             xsteps = plt.xticks([i + self._xaxis_value_location for i in np.arange(0, len(self.data_set1[0]), step=self.xaxis_step)],
                        self.xaxis_categories, fontsize=self.xticks_font)
+        ax1.legend(
+            handles=self.legend_handles,
+            loc=self.legend_loc1,
+            # bbox_to_anchor=self.legend_box1,
+            ncol=self.legend_ncol,
+            fontsize=self.legend_fontsize)
 
 
         # overlay line graph
@@ -415,11 +425,12 @@ class lf_bar_line_graph:
             i += 1
         ax2.set_xlabel(self.xaxis_name, fontweight='bold', fontsize=15)
         ax2.set_ylabel(self.y2axis_name, fontweight='bold', fontsize=15)
+        ax2.tick_params(axis = 'y', labelcolor = 'orange')
             
-        plt.legend(
+        ax2.legend(
             handles=self.legend_handles,
-            loc=self.legend_loc,
-            bbox_to_anchor=self.legend_box,
+            loc=self.legend_loc2,
+            # bbox_to_anchor=self.legend_box2,
             ncol=self.legend_ncol,
             fontsize=self.legend_fontsize)
         plt.suptitle(self.title, fontsize=self.title_size)
