@@ -1131,6 +1131,8 @@ Example :
     report.set_table_dataframe(df_tx_info)
     report.build_table()
 
+    # The TX data and tx retries are contained in a single graph
+    '''    
     # TX data tx retries
     graph = lf_bar_graph(_data_set=[tx_pkts,tx_retries],
                         _xaxis_name="Time Seconds",
@@ -1185,6 +1187,7 @@ Example :
     report.move_graph_image()
     report.build_graph()
 
+    '''
 
     # lf_bar_line_graph
     # failed %
