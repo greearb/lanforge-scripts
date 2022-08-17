@@ -471,6 +471,8 @@ Example :
             return int(computed_num[0])
         return -1
 
+    def length_sort(strn):
+        return len(strn)
 
 
     
@@ -564,6 +566,8 @@ Example :
     rx_mode = [s.replace('_',' ') for s in rx_mode]
     rx_mode = [s.upper() for s in rx_mode]
 
+    rx_mode.sort(key=length_sort)
+
     # rx_mode values
     report.set_table_title("RX Mode Histogram")
     report.build_table_title()
@@ -628,6 +632,8 @@ Example :
     tx_mode = [s.replace('v_tx_mode_','') for s in tx_mode]
     tx_mode = [s.replace('_',' ') for s in tx_mode]
     tx_mode = [s.upper() for s in tx_mode]
+
+    tx_mode.sort(key=length_sort)
 
     # tx_mode values
     report.set_table_title("TX Mode Histogram")
@@ -1218,8 +1224,7 @@ Example :
         else:
             tx_msdu_value_percent.append(round((tx_msdu_count/tx_msdu_total_count)*100, 2)) 
 
-    # print(tx_msdu)
-    # print(tx_msdu_value)
+    tx_msdu = [s.replace('tx_msdu_pack_','') for s in tx_msdu]
 
     # tx_msdu values
     report.set_table_title("TX MSDU Histogram")
