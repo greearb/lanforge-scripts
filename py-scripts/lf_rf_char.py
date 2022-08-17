@@ -13,7 +13,7 @@ EXAMPLE:
 
 
 COPYRIGHT:
-    Copyright 2023 Candela Technologies Inc
+    Copyright 2022 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 
 INCLUDE_IN_README
@@ -621,6 +621,8 @@ Example :
 
     rx_bw.sort(key=num_sort)
 
+    rx_bw = [s.replace('v_rx_bw_','BW ') for s in rx_bw]
+
     # rx_bw values
     report.set_table_title("Rx BW Histogram")
     report.build_table_title()
@@ -680,9 +682,9 @@ Example :
     for tx_bw_count in tx_bw_value:
         tx_bw_value_percent.append(round((tx_bw_count/tx_bw_total_count)*100, 2)) 
 
-    # print(tx_bw)
-    # print(tx_bw_value)
     tx_bw.sort(key=num_sort)
+
+    tx_bw = [s.replace('v_tx_bw_','BW ') for s in tx_bw]
 
 
     # tx_bw values
@@ -746,8 +748,10 @@ Example :
     for rx_nss_count in rx_nss_value:
         rx_nss_value_percent.append(round((rx_nss_count/rx_nss_total_count)*100, 2)) 
 
-    # print(rx_nss)
-    # print(rx_nss_value)
+    rx_nss = [s.replace('v_rx_nss_1','1 x 1') for s in rx_nss] 
+    rx_nss = [s.replace('v_rx_nss_2','2 x 2') for s in rx_nss] 
+    rx_nss = [s.replace('v_rx_nss_3','3 x 3') for s in rx_nss] 
+    rx_nss = [s.replace('v_rx_nss_4','4 x 4') for s in rx_nss] 
 
     # rx_nss values
     report.set_table_title("Rx NSS Histogram")
@@ -808,8 +812,10 @@ Example :
     for tx_nss_count in tx_nss_value:
         tx_nss_value_percent.append(round((tx_nss_count/tx_nss_total_count)*100, 2)) 
 
-    # print(tx_nss)
-    # print(tx_nss_value)
+    tx_nss = [s.replace('v_tx_nss_1','1 x 1') for s in tx_nss] 
+    tx_nss = [s.replace('v_tx_nss_2','2 x 2') for s in tx_nss] 
+    tx_nss = [s.replace('v_tx_nss_3','3 x 3') for s in tx_nss] 
+    tx_nss = [s.replace('v_tx_nss_4','4 x 4') for s in tx_nss] 
 
     # tx_nss values
     report.set_table_title("Tx NSS Histogram")
@@ -874,8 +880,7 @@ Example :
 
     rx_mcs.sort(key=num_sort)
 
-    # print(rx_mcs)
-    # print(rx_mcs_value)
+    rx_mcs = [s.replace('v_rx_mcs_','MCS ') for s in rx_mcs] 
 
     # rx_mcs values
     report.set_table_title("Rx MCS Histogram")
@@ -937,6 +942,9 @@ Example :
             tx_mcs_value_percent.append(round((tx_mcs_count/tx_mcs_total_count)*100, 2)) 
 
     tx_mcs.sort(key=num_sort)
+
+    tx_mcs = [s.replace('v_tx_mcs_','MCS ') for s in tx_mcs] 
+
 
     # tx_mcs values
     report.set_table_title("Tx MCS Histogram")
@@ -1009,11 +1017,11 @@ Example :
 
 
     # rx_ampdu values
-    report.set_table_title("Rx ampdu Histogram")
+    report.set_table_title("Packets RX with AMPDU Count")
     report.build_table_title()
 
 
-    df_rx_ampdu = pd.DataFrame({" Rx ampdu ": [k for k in rx_ampdu], " Total Packets ": [i for i in rx_ampdu_value],
+    df_rx_ampdu = pd.DataFrame({" RX AMPDU ": [k for k in rx_ampdu], " Total Packets ": [i for i in rx_ampdu_value],
         " Percentage ": [j for j in rx_ampdu_value_percent]})
 
     report.set_table_dataframe(df_rx_ampdu)
@@ -1074,11 +1082,11 @@ Example :
     tx_ampdu = [s.replace('tx_ampdu_','') for s in tx_ampdu] 
 
     # tx_ampdu values
-    report.set_table_title("Tx ampdu Histogram")
+    report.set_table_title("Packets TX AMPDU Count")
     report.build_table_title()
 
 
-    df_tx_ampdu = pd.DataFrame({" Tx ampdu ": [k for k in tx_ampdu], " Total Packets ": [i for i in tx_ampdu_value],
+    df_tx_ampdu = pd.DataFrame({" TX AMPDU ": [k for k in tx_ampdu], " Total Packets ": [i for i in tx_ampdu_value],
         " Percentage ": [j for j in tx_ampdu_value_percent]})
 
     report.set_table_dataframe(df_tx_ampdu)
