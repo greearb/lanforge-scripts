@@ -94,7 +94,6 @@ class lf_clean(Realm):
                                         # logger.info(data)
                                         logger.info("Removing {cx_name}...".format(cx_name=cx_name))
                                         super().json_post(req_url, data)
-                                        time.sleep(.5)
                 time.sleep(1)
             else:
                 logger.info("No cross connects found to cleanup")
@@ -136,7 +135,6 @@ class lf_clean(Realm):
                                     # logger.info(data)
                                     logger.info("Removing {endp_name}...".format(endp_name=endp_name))
                                     super().json_post(req_url, data)
-                                    time.sleep(.5)
                     # if there are no L3-CX's, remove all L3-Endps:
                     else:
                         if name[list(name)[0]]["name"] == '':
@@ -148,7 +146,6 @@ class lf_clean(Realm):
                         # logger.info(data)
                         logger.info("Removing {endp_name}...".format(endp_name=endp_name))
                         super().json_post(req_url, data)
-                        time.sleep(.5)
                 time.sleep(1)
             else:
                 logger.info("No endpoints found to cleanup")
@@ -192,7 +189,6 @@ class lf_clean(Realm):
                                 # logger.info(data)
                                 logger.info("Removing {alias}...".format(alias=alias))
                                 super().json_post(req_url, data)
-                                time.sleep(.5)
                             if 'wlan' in alias:
                                 info = self.name_to_eid(alias)
                                 req_url = "cli-json/rm_vlan"
@@ -204,7 +200,6 @@ class lf_clean(Realm):
                                 # logger.info(data)
                                 logger.info("Removing {alias}...".format(alias=alias))
                                 super().json_post(req_url, data)
-                                time.sleep(.5)
                             if 'moni' in alias:
                                 info = self.name_to_eid(alias)
                                 req_url = "cli-json/rm_vlan"
@@ -216,7 +211,6 @@ class lf_clean(Realm):
                                 # logger.info(data)
                                 logger.info("Removing {alias}...".format(alias=alias))
                                 super().json_post(req_url, data)
-                                time.sleep(.5)
                             if 'Unknown' in alias:
                                 info = self.name_to_eid(alias)
                                 req_url = "cli-json/rm_vlan"
@@ -228,7 +222,6 @@ class lf_clean(Realm):
                                 # logger.info(data)
                                 logger.info("Removing {alias}...".format(alias=alias))
                                 super().json_post(req_url, data)
-                                time.sleep(.5)
                 time.sleep(1)
             else:
                 logger.info("No stations found to cleanup")
@@ -282,7 +275,6 @@ class lf_clean(Realm):
                                 # logger.info(data)
                                 logger.info("Removing {alias}...".format(alias=alias))
                                 super().json_post(req_url, data)
-                                time.sleep(.5)
                 time.sleep(1)
             else:
                 logger.info("No stations found to cleanup")
@@ -327,7 +319,6 @@ class lf_clean(Realm):
                                 # logger.info(data)
                                 logger.info("Removing {alias}...".format(alias=alias))
                                 super().json_post(req_url, data)
-                                time.sleep(.5)
                 time.sleep(1)
             else:
                 logger.info("No bridges found to cleanup")
@@ -371,7 +362,6 @@ class lf_clean(Realm):
                                 # logger.info(data)
                                 logger.info("Removing {alias}...".format(alias=alias))
                                 super().json_post(req_url, data)
-                                time.sleep(.5)
                         if '1.1.1.1.eth' in alias:
                             logger.info('alias 1.1.1.1.eth {alias}'.format(alias=alias))
                             # need to hand construct for delete.
@@ -389,7 +379,6 @@ class lf_clean(Realm):
                                 # logger.info(data)
                                 logger.info("Removing {alias}...".format(alias=alias))
                                 super().json_post(req_url, data)
-                                time.sleep(.5)
                 time.sleep(1)
             else:
                 logger.info("No misc found to cleanup")
