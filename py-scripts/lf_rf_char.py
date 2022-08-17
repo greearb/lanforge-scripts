@@ -227,8 +227,14 @@ lf_rf_char.py
 Summary :
 ---------
 
+Gather Tx and Rx RF Characteristic for a specific duration and polling interval
+
 Example :
 ---------
+
+./lf_rf_char.py --lf_mgr 192.168.0.104 --lf_port 8080 --lf_user lanforge --lf_passwd lanforge\
+    --vap_port 1.1.vap3 --vap_radio 1.1.wiphy3 --vap_channel 149 --vap_antenna 0 \
+    --log_level debug --debug --duration 10s --polling_interval 1s
             ''')
     # LANforge configuration
     parser.add_argument("--lf_mgr", type=str, help="address of the LANforge GUI machine (localhost is default)", default='localhost')
