@@ -33,6 +33,8 @@ import csv
 import time
 import re
 import platform
+import subprocess
+import re
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
@@ -121,8 +123,53 @@ class lf_rf_char(Realm):
         self.vap_channel = ''
         self.vap_antenna = ''
 
+        # get dut information
+        self.lf_command = ''
+        self.dut_mac = ''
+        self.dut_ip = ''
+
         # logging
         self.debug = debug
+
+
+    def dut_info(self):
+        self.json_api.request = 'stations'
+        json_stations, *nil = self.json_api.get_request_stations_information()
+        # Note there should lonely be on station connected 
+        # TODO verify what happens if multiple statons connected
+        self.dut_mac = json_stations['station']['station bssid']
+        logger.info("DUT MAC: {mac}".format(mac=self.dut_mac))
+
+        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
+
+        # get the IP from port mode
+        self.lf_command = ["../lf_portmod.pl", "--manager", self.lf_mgr, "--card",str(self.resource),"--port_name",self.port_name,
+                    "--cli_cmd","probe_port 1 {resource} {port}".format(resource=self.resource,port=self.port_name)]
+        logger.info("command: {cmd}".format(cmd=self.lf_command))
+        summary_output = ''
+        #summary = subprocess.Popen(["../lf_portmod.pl", "--manager", self.lf_mgr, "--card",str(self.resource),"--port_name",self.port_name,
+        #            "--cli_cmd","probe_port 1 {resource} {port}".format(resource=self.resource,port=self.port_name)], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        summary = subprocess.Popen(self.lf_command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+
+        for line in iter(summary.stdout.readline, ''):
+            logger.debug(line)
+            summary_output += line
+            # sys.stdout.flush() # please see comments regarding the necessity of this line
+        summary.wait()
+        logger.info(summary_output)  # .decode('utf-8', 'ignore'))
+
+
+        return json_stations
+        
+    def clear_dhcp_lease(self):
+        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
+        # may have to add extra to
+        extra = 'dhcp_leases'
+        self.command.post_clear_port_counters(shelf=self.shelf,
+                                              resource=self.resource,
+                                              port=self.port_name,
+                                              extra=extra)
 
 
     def clear_port_counters(self):
@@ -158,6 +205,8 @@ class lf_rf_char(Realm):
         self.tx_pkts = []
         self.tx_retries = []
         self.tx_failed = []
+        logger.info("clear dhcp leases")
+        # self.clear_dhcp_lease()
         logger.info("clear port counters")
         self.clear_port_counters()
         json_port_stats, *nil = self.json_api.get_request_port_information()
@@ -174,9 +223,12 @@ class lf_rf_char(Realm):
         while cur_time < end_time:
             interval_time = cur_time + datetime.timedelta(seconds=polling_interval_seconds)
 
+            # TODO check the port time stamp to see if data changed
+            # check every half second and only report of the timestamp changed
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 time.sleep(.2)
+                # Here check if the time stamp has changed
             json_port_stats, *nil = self.json_api.get_request_port_information()
 
             interval += int(polling_interval_seconds)
@@ -291,6 +343,10 @@ Example :
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
+    if not args.vap_radio:
+        logger.info("No radio name provided")
+        exit(1)
+
     # Gather data for test reporting
     # for kpi.csv generation
     logger.info("read in command line paramaters")
@@ -346,6 +402,31 @@ Example :
     report.set_obj_html("Objective", "RF Characteristics Test: Report RX and TX characteristics")
     report.build_objective()
 
+
+
+    # Set up the RF Characteristic test
+    logger.info("Configure RF Characteristic test")
+    rf_char = lf_rf_char(lf_mgr=args.lf_mgr,
+                            lf_port=args.lf_port,
+                            lf_user=args.lf_user,
+                            lf_passwd=args.lf_passwd,
+                            debug=args.debug)
+
+    # TODO need to get the DUT IP and put into test_input infor
+    rf_char.vap_radio = args.vap_radio
+    rf_char.vap_channel = args.vap_channel
+    rf_char.vap_antenna = args.vap_antenna
+    rf_char.modify_radio()
+    rf_char.vap_port = args.vap_port
+
+    rf_char.dut_info()
+
+    dut_mac = rf_char.dut_mac
+    dut_ip = rf_char.dut_ip
+
+
+
+
     test_setup_info = {
         "DUT Name": args.dut_model_num,
         "DUT Hardware Version": args.dut_hw_version,
@@ -371,27 +452,7 @@ Example :
 
 
 
-    # Set up the RF Characteristic test
-    logger.info("Configure RF Characteristic test")
-    rf_char = lf_rf_char(lf_mgr=args.lf_mgr,
-                            lf_port=args.lf_port,
-                            lf_user=args.lf_user,
-                            lf_passwd=args.lf_passwd,
-                            debug=args.debug)
-
-    if not args.vap_radio:
-        logger.info("No radio name provided")
-        exit(1)
-
     # Start traffic : Currently manually done
-    # TODO this needs to be a list to sweep though channels
-    rf_char.vap_radio = args.vap_radio
-    rf_char.vap_channel = args.vap_channel
-    rf_char.vap_antenna = args.vap_antenna
-    rf_char.modify_radio()
-
-    # TODO detect that the station is back up
-    rf_char.vap_port = args.vap_port
     rf_char.clear_port_counters()
 
     rf_char.duration = args.duration
