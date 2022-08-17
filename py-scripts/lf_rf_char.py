@@ -337,7 +337,7 @@ Example :
     report.set_title("RF Characteristics Test")
     report.build_banner_left()
     report.start_content_div2()
-    report.set_obj_html("Objective", "RF Characteristics Test: Report Rx and Tx characteristics")
+    report.set_obj_html("Objective", "RF Characteristics Test: Report RX and TX characteristics")
     report.build_objective()
 
     test_setup_info = {
@@ -417,13 +417,13 @@ Example :
     tx_failed = rf_char.tx_failed
     tx_interval = rf_char.tx_interval
 
-    # Tx pkts, Tx retries,  Tx Failed % 
-    report.set_table_title("Tx pkts , Tx retries, Tx Failed %")
+    # TX pkts, TX retries,  TX Failed % 
+    report.set_table_title("TX pkts , TX retries, TX Failed %")
     report.build_table_title()
 
 
-    df_tx_info = pd.DataFrame({" Time ": [k for k in tx_interval], " Tx Packets ": [i for i in tx_pkts],
-        " Tx Retries ": [j for j in tx_retries], " Tx Failed % ": [m for m in tx_failed]})
+    df_tx_info = pd.DataFrame({" Time ": [k for k in tx_interval], " TX Packets ": [i for i in tx_pkts],
+        " TX Retries ": [j for j in tx_retries], " TX Failed % ": [m for m in tx_failed]})
 
     report.set_table_dataframe(df_tx_info)
     report.build_table()
@@ -437,12 +437,12 @@ Example :
                         _data_set2_poly_degree=[3],
                         _data_set2_interp1d=[True], # interpolate 1d
                         _xaxis_name="Time Seconds",
-                        _y1axis_name="Tx Packets",
-                        _y2axis_name="Tx Failed %",
+                        _y1axis_name="TX Packets",
+                        _y2axis_name="TX Failed %",
                         _xaxis_categories=tx_interval,
                         _graph_image_name="TX Info bar line",
-                        _label1=[" Tx Packets "," Tx Retries "],
-                        _label2=[" Tx Failed % "],
+                        _label1=[" TX Packets "," TX Retries "],
+                        _label2=[" TX Failed % "],
                         _label2_poly=["% plynomial fit"],
                         _label2_interp1d=[" % interpolate"],
                         _color1=['blue','red'],
@@ -493,15 +493,16 @@ Example :
     for rx_mode_count in rx_mode_value:
         rx_mode_value_percent.append(round((rx_mode_count/rx_mode_total_count)*100, 2)) 
 
-    # print(rx_mode)
-    # print(rx_mode_value)
+    rx_mode = [s.replace('v_rx_mode_','') for s in rx_mode]
+    rx_mode = [s.replace('_',' ') for s in rx_mode]
+    rx_mode = [s.upper() for s in rx_mode]
 
     # rx_mode values
-    report.set_table_title("Rx Mode Histogram")
+    report.set_table_title("RX Mode Histogram")
     report.build_table_title()
 
 
-    df_rx_mode = pd.DataFrame({" Rx Mode ": [k for k in rx_mode], " Total Packets ": [i for i in rx_mode_value],
+    df_rx_mode = pd.DataFrame({" RX Mode ": [k for k in rx_mode], " Total Packets ": [i for i in rx_mode_value],
         " Percentage ": [j for j in rx_mode_value_percent]})
 
     report.set_table_dataframe(df_rx_mode)
@@ -511,7 +512,7 @@ Example :
     # RX MODE
     graph = lf_bar_graph(_data_set=[rx_mode_value_percent],
                         _xaxis_name="RX Mode",
-                        _yaxis_name="Percentage Mode",
+                        _yaxis_name="Percent Packets RX per Mode",
                         _xaxis_categories=rx_mode,
                         _graph_image_name="RX Mode",
                         _label=["% Total Packets"],
@@ -551,20 +552,25 @@ Example :
             tx_mode_value.append(wifi_stats_json[iterator])
             tx_mode_total_count += wifi_stats_json[iterator]
 
+
+
     # calculate percentages
     for tx_mode_count in tx_mode_value:
         tx_mode_value_percent.append(round((tx_mode_count/tx_mode_total_count)*100, 2)) 
 
-    # print(tx_mode)
-    # print(tx_mode_value)
+    tx_mode = [s.replace('v_tx_mode_','') for s in tx_mode]
+    tx_mode = [s.replace('_',' ') for s in tx_mode]
+    tx_mode = [s.upper() for s in tx_mode]
 
     # tx_mode values
-    report.set_table_title("Tx Mode Histogram")
+    report.set_table_title("TX Mode Histogram")
     report.build_table_title()
 
 
-    df_tx_mode = pd.DataFrame({" Tx Mode ": [k for k in tx_mode], " Total Packets ": [i for i in tx_mode_value],
+    df_tx_mode = pd.DataFrame({" TX Mode ": [k for k in tx_mode], " Total Packets ": [i for i in tx_mode_value],
         " Percentage ": [j for j in tx_mode_value_percent]})
+
+
 
     report.set_table_dataframe(df_tx_mode)
     report.build_table()
@@ -572,7 +578,7 @@ Example :
     # TX MODE
     graph = lf_bar_graph(_data_set=[tx_mode_value_percent],
                         _xaxis_name="TX Mode",
-                        _yaxis_name="Percentage Mode",
+                        _yaxis_name="Percent Packets TX per Mode",
                         _xaxis_categories=tx_mode,
                         _graph_image_name="TX Mode",
                         _label=["% Total Packets"],
@@ -621,14 +627,16 @@ Example :
 
     rx_bw.sort(key=num_sort)
 
+    rx_bw = [s.replace('v_rx_bw_he_ru','HE RU') for s in rx_bw]
+
     rx_bw = [s.replace('v_rx_bw_','BW ') for s in rx_bw]
 
     # rx_bw values
-    report.set_table_title("Rx BW Histogram")
+    report.set_table_title("RX BW Histogram")
     report.build_table_title()
 
 
-    df_rx_bw = pd.DataFrame({" Rx BW ": [k for k in rx_bw], " Total Packets ": [i for i in rx_bw_value],
+    df_rx_bw = pd.DataFrame({" RX BW ": [k for k in rx_bw], " Total Packets ": [i for i in rx_bw_value],
         " Percentage ": [j for j in rx_bw_value_percent]})
 
 
@@ -638,7 +646,7 @@ Example :
     # RX BW
     graph = lf_bar_graph(_data_set=[rx_bw_value_percent],
                         _xaxis_name="RX BW",
-                        _yaxis_name="Percentage BW",
+                        _yaxis_name="Percent Packets RX per BW",
                         _xaxis_categories=rx_bw,
                         _graph_image_name="RX BW",
                         _label=["% Total Packets"],
@@ -688,11 +696,11 @@ Example :
 
 
     # tx_bw values
-    report.set_table_title("Tx BW Histogram")
+    report.set_table_title("TX BW Histogram")
     report.build_table_title()
 
 
-    df_tx_bw = pd.DataFrame({"Tx BW": [k for k in tx_bw], " Total Packets ": [i for i in tx_bw_value],
+    df_tx_bw = pd.DataFrame({"TX BW": [k for k in tx_bw], " Total Packets ": [i for i in tx_bw_value],
         " Percentage ": [j for j in tx_bw_value_percent]})
 
 
@@ -702,7 +710,7 @@ Example :
     # TX BW
     graph = lf_bar_graph(_data_set=[tx_bw_value_percent],
                         _xaxis_name="TX BW",
-                        _yaxis_name="Percentage BW",
+                        _yaxis_name="Percent Packets TX per BW",
                         _xaxis_categories=tx_bw,
                         _graph_image_name="TX BW",
                         _label=["% Total Packets"],
@@ -754,11 +762,11 @@ Example :
     rx_nss = [s.replace('v_rx_nss_4','4 x 4') for s in rx_nss] 
 
     # rx_nss values
-    report.set_table_title("Rx NSS Histogram")
+    report.set_table_title("RX NSS Histogram")
     report.build_table_title()
 
 
-    df_rx_nss = pd.DataFrame({" Rx NSS ": [k for k in rx_nss], " Total Packets ": [i for i in rx_nss_value],
+    df_rx_nss = pd.DataFrame({" RX NSS ": [k for k in rx_nss], " Total Packets ": [i for i in rx_nss_value],
         " Percentage ": [j for j in rx_nss_value_percent]})
 
     report.set_table_dataframe(df_rx_nss)
@@ -767,7 +775,7 @@ Example :
     # RX NSS
     graph = lf_bar_graph(_data_set=[rx_nss_value_percent],
                         _xaxis_name="RX NSS",
-                        _yaxis_name="Percentage NSS",
+                        _yaxis_name="Percent RX Packets of NSS",
                         _xaxis_categories=rx_nss,
                         _graph_image_name="RX NSS",
                         _label=["% Total Packets"],
@@ -818,11 +826,11 @@ Example :
     tx_nss = [s.replace('v_tx_nss_4','4 x 4') for s in tx_nss] 
 
     # tx_nss values
-    report.set_table_title("Tx NSS Histogram")
+    report.set_table_title("TX NSS Histogram")
     report.build_table_title()
 
 
-    df_tx_nss = pd.DataFrame({" Tx NSS ": [k for k in tx_nss], " Total Packets ": [i for i in tx_nss_value],
+    df_tx_nss = pd.DataFrame({" TX NSS ": [k for k in tx_nss], " Total Packets ": [i for i in tx_nss_value],
         " Percentage ": [j for j in tx_nss_value_percent]})
 
     report.set_table_dataframe(df_tx_nss)
@@ -831,7 +839,7 @@ Example :
     # TX NSS
     graph = lf_bar_graph(_data_set=[tx_nss_value_percent],
                         _xaxis_name="TX NSS",
-                        _yaxis_name="Percentage NSS",
+                        _yaxis_name="Percent TX Packets of NSS",
                         _xaxis_categories=tx_nss,
                         _graph_image_name="TX NSS",
                         _label=["% Total Packets"],
@@ -883,11 +891,11 @@ Example :
     rx_mcs = [s.replace('v_rx_mcs_','MCS ') for s in rx_mcs] 
 
     # rx_mcs values
-    report.set_table_title("Rx MCS Histogram")
+    report.set_table_title("RX MCS Histogram")
     report.build_table_title()
 
 
-    df_rx_mcs = pd.DataFrame({" Rx MCS ": [k for k in rx_mcs], " Total Packets ": [i for i in rx_mcs_value],
+    df_rx_mcs = pd.DataFrame({" RX MCS ": [k for k in rx_mcs], " Total Packets ": [i for i in rx_mcs_value],
         " Percentage ": [j for j in rx_mcs_value_percent]})
 
     report.set_table_dataframe(df_rx_mcs)
@@ -896,7 +904,7 @@ Example :
     # RX MCS encoding
     graph = lf_bar_graph(_data_set=[rx_mcs_value_percent],
                         _xaxis_name="RX MCS encoding",
-                        _yaxis_name="Percentage Received Packets with MCS encoding",
+                        _yaxis_name="Percent RX Packets per MCS encoding",
                         _xaxis_categories=rx_mcs,
                         _graph_image_name="RX MCS encoding",
                         _label=["% Total Packets"],
@@ -947,11 +955,11 @@ Example :
 
 
     # tx_mcs values
-    report.set_table_title("Tx MCS Histogram")
+    report.set_table_title("TX MCS Histogram")
     report.build_table_title()
 
 
-    df_tx_mcs = pd.DataFrame({" Tx MCS ": [k for k in tx_mcs], " Total Packets ": [i for i in tx_mcs_value],
+    df_tx_mcs = pd.DataFrame({" TX MCS ": [k for k in tx_mcs], " Total Packets ": [i for i in tx_mcs_value],
         " Percentage ": [j for j in tx_mcs_value_percent]})
 
     report.set_table_dataframe(df_tx_mcs)
@@ -1002,12 +1010,14 @@ Example :
 
     logger.debug("rx_ampdu: {rx_ampdu}".format(rx_ampdu=rx_ampdu))
 
-
     rx_ampdu.sort(key=num_sort)
+
+    rx_ampdu = [s.replace('rx_ampdu_len_','') for s in rx_ampdu] 
+    rx_ampdu = [s.replace('_','-') for s in rx_ampdu]
+
 
     logger.debug("rx_ampdu: {rx_ampdu}".format(rx_ampdu=rx_ampdu))
 
-    rx_ampdu = [s.replace('rx_ampdu_','') for s in rx_ampdu] 
 
     # use class 
 
@@ -1030,9 +1040,9 @@ Example :
     # RX ampdu encoding
     graph = lf_bar_graph(_data_set=[rx_ampdu_value_percent],
                         _xaxis_name="RX ampdu",
-                        _yaxis_name="Percentage Received Packets ampdu",
+                        _yaxis_name="Percent Packets RX with AMPDU Count",
                         _xaxis_categories=rx_ampdu,
-                        _graph_image_name="RX ampdu encoding",
+                        _graph_image_name="RX AMPDU Count",
                         _label=["% Total Packets"],
                         _color=['blue'],
                         _color_edge='black',
@@ -1077,12 +1087,13 @@ Example :
 
     logger.debug(tx_ampdu)
     tx_ampdu.sort(key=num_sort)
+    tx_ampdu = [s.replace('tx_ampdu_len_','') for s in tx_ampdu] 
+    tx_ampdu = [s.replace('_','-') for s in tx_ampdu]
+
     logger.debug("tx_ampdu: {tx_ampdu}".format(tx_ampdu=tx_ampdu))
 
-    tx_ampdu = [s.replace('tx_ampdu_','') for s in tx_ampdu] 
-
     # tx_ampdu values
-    report.set_table_title("Packets TX AMPDU Count")
+    report.set_table_title("Percent Packets TX with AMPDU Count")
     report.build_table_title()
 
 
@@ -1095,7 +1106,7 @@ Example :
     # TX ampdu
     graph = lf_bar_graph(_data_set=[tx_ampdu_value_percent],
                         _xaxis_name="TX ampdu",
-                        _yaxis_name="Percentage Received Packets ampdu",
+                        _yaxis_name="Percent Packets TX with AMPDU Count",
                         _xaxis_categories=tx_ampdu,
                         _graph_image_name="TX ampdu encoding",
                         _label=["% Total Packets"],
@@ -1144,11 +1155,11 @@ Example :
     # print(tx_msdu_value)
 
     # tx_msdu values
-    report.set_table_title("Tx msdu Histogram")
+    report.set_table_title("TX MSDU Histogram")
     report.build_table_title()
 
 
-    df_tx_msdu = pd.DataFrame({" Tx msdu ": [k for k in tx_msdu], " Total Packets ": [i for i in tx_msdu_value],
+    df_tx_msdu = pd.DataFrame({" TX MSDU ": [k for k in tx_msdu], " Total Packets ": [i for i in tx_msdu_value],
         " Percentage ": [j for j in tx_msdu_value_percent]})
 
     report.set_table_dataframe(df_tx_msdu)
@@ -1156,10 +1167,10 @@ Example :
 
     # TX msdu
     graph = lf_bar_graph(_data_set=[tx_msdu_value_percent],
-                        _xaxis_name="TX msdu",
-                        _yaxis_name="Percentage Received Packets ampdu",
+                        _xaxis_name="TX MSDU",
+                        _yaxis_name="Percent Packets TX per MSDU",
                         _xaxis_categories=tx_msdu,
-                        _graph_image_name="TX msdu",
+                        _graph_image_name="TX MSDU",
                         _label=["% Total Packets"],
                         _color=['blue'],
                         _color_edge='black',
