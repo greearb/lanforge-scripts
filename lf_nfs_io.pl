@@ -90,6 +90,7 @@ our %group_names     = (
    #"group4"  => [  1,    1, 'eth1'],
    #"group5"  => [  2,    2, 'eth1']
 );
+our $prefix = "";
 our $fast_forward_ep = 0;  # set this to 1 to leave exiting file endpoints alone
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 our %mnt_map         = ();
@@ -201,6 +202,7 @@ my $usage = "$0   [--mgr               {host-name | IP}]
                   [--group          {name}] # test group base name, creates:
                      # <group>_wo for writers and
                      # <group>_ro for readers
+                  [--prefix {name}] # endpoint prefix other than group name
                   [--min_rw_size    ($min_rw_size)]\t# in bytes
                   [--max_rw_size    ($max_rw_size)]\t# in bytes
                   [--use_crc        {yes|no}]
@@ -252,25 +254,35 @@ my $usage = "$0   [--mgr               {host-name | IP}]
          # If you endp_options, set all the options you need:
          # verify,automount,unmount,direct,largefile,unmount are most used
 
-Examples:
+List Test Groups:
  $0 --mgr 10.0.0.1 --resource 1 --action list_groups
 
+Create a new NFS test group:
  $0 --mgr 10.0.0.1 --resource 1 --action new_group --group group1 \\
-         --parent_port eth2 --fio_prefix smallreads \\
+         --parent_port eth2 --prefix smallreads \\
          --nfs_mnt 192.168.48.5:/fire \\
-         --options direct,largefile,verify,automount,unmount \\
          --ips 192.168.48.10,192.168.48.13,192.168.48.14,192.168.48.15,192.168.48.16,192.168.48.17 \\
          --netmask 255.255.255.0 \\
          --min_rw_size 1048576 --max_rw_size 1048576 \\
-         --endp_options='rsize=verify,automount,unmount,direct,largefile' \\
-         --mount_options='rsize=1048576,wsize=1048576,async'
+         --endp_options verify,automount,unmount,direct,largefile \\
+         --mount_options 'rsize=1048576,wsize=1048576,async'
+
+Create a new SMB3 test group:
+ $0 --mgr localhost --action new_group --group tg_smb3 \\
+         --parent_port eth3 --prefix s3 \\
+         --endp_type smb3 --remote_mnt //10.0.0.1/fio \\
+         --first_mvlan_ip 10.0.0.10 --min 0 --max 11 \\
+         --netmask 255.255.255.0 \\
+         --min_rw_size 1048576 --max_rw_size 1048576 \\
+         --min_file_size 1073741824 --max_file_size 1073741824 \\
+         --endp_options='verify,automount,unmount,direct,largefile' \\
+         --mount_options='username=lanforge,password=lanforge,soft,rsize=1048576,wsize=1048576,noblocksend'
 
  $0 --mgr 10.0.0.1 --resource 1 --action run_group --group group1 \\
          --parent_port eth2 --netmask 255.255.0.0 \\
          --nfs_mnt 10.40.10.1:/fire \\
          --num_files 20 --min_file_size 4096 --max_file_size 524288 \\
          --min_write_bps 1000000 --max_write 900000000
-
 
  $0 --mgr 10.0.0.1 --resource 1 \\
          --action stop_group --group group1
@@ -590,21 +602,29 @@ sub prepareFileEndpoints {
    my @new_cross_connects  = ();
 
    my $ep_name             = undef;
+   my @prefixes            = ();
    for my $grp (sort(keys %::group_names)) {
+      my $name_prefix         = $grp;
+      my $name_prefix_        = "${grp}_";
+      if ($::prefix ne "") {
+         $name_prefix         = $::prefix;
+         $name_prefix_        = $::prefix."_";
+      }
+      push(@prefixes, $name_prefix_);
       my $ra_bounds = $::group_names{ $grp };
       print "skip_writers[$::skip_writers] skip_readers[$::skip_readers]" if ($::DEBUG);
       sleep(3) if($::DEBUG);
 
       for my $i (@$ra_bounds[0]..@$ra_bounds[1]) {
          if (! $::skip_writers) {
-            $ep_name                         = $grp ."_wo_".sprintf( "%03d", $i);
+            $ep_name                         = $name_prefix_."wo_".sprintf( "%03d", $i);
             $all_file_endpoints{ $ep_name }  = 0;
             $endpoints_mvlans{   $ep_name }  = $::parent_port."#".$i;
             $all_cross_connects{ $ep_name }  = 0;
          }
 
          if (! $::skip_readers) {
-            $ep_name                         = $grp ."_ro_".sprintf( "%03d", $i);
+            $ep_name                         = $name_prefix_."ro_".sprintf( "%03d", $i);
             $all_file_endpoints{ $ep_name }  = 0;
             $endpoints_mvlans{   $ep_name }  = $::parent_port."#".$i;
             $all_cross_connects{ $ep_name }  = 0;
@@ -623,14 +643,19 @@ sub prepareFileEndpoints {
          $all_file_endpoints{ $1 } = 1;
       }
    }
+   my $interesting_prefixes_regex = join('|', @prefixes);
    for my $ep_name (sort(keys %all_file_endpoints)) {
       print " $ep_name [".$all_file_endpoints{$ep_name}."] " if ($::DEBUG);
       if ($all_file_endpoints{$ep_name} == 0 ){
-         my $begins = $::group."_";
-         if( $ep_name =~ /^$begins/ ){
+         #print "check regex: $ep_name ~ $interesting_prefixes_regex\n";
+         if( $ep_name =~ /^$interesting_prefixes_regex/ ){
             push( @new_file_endpoints, $ep_name );
          }
+         # print Dumper(["new_file_endpoints:", \@new_file_endpoints]);
       }
+   }
+   if (@new_file_endpoints < 1) {
+      die("Unable to detect new file endpoint names, please debug.");
    }
    # assert we have sufficient remote_mnt entries
    for my $ep_name (@new_file_endpoints) {
@@ -702,10 +727,10 @@ sub prepareFileEndpoints {
          }
 
          my $cmd = $::utils->fmt_cmd(
-                     "add_file_endp",     $ep_name,         $::shelf_num,  $::resource,   $mvlan,
-                     $::fe_types{$::fe_type}, $min_read_rt ,  $max_read_rt,  $min_write_rt, $max_write_rt,
-                     $pattern,            $directory,       $prefix,       $remote_mnt,   $mount_options,
-                     $computed_fio_flags, $mount_dir,       NA,            $mount_retry_nap);
+            "add_file_endp",        $ep_name,      $::shelf_num,  $::resource,   $mvlan,
+            $::fe_types{$::fe_type}, $min_read_rt, $max_read_rt,  $min_write_rt, $max_write_rt,
+            $pattern,               $directory,    $prefix,       $remote_mnt,   $mount_options,
+            $computed_fio_flags,    $mount_dir,    NA,            $mount_retry_nap);
          print " + " . $cmd.NL if ($::DEBUG);
          $::utils->doCmd($cmd);
          sleep(0.05); # if ($::DEBUG);
@@ -1137,10 +1162,11 @@ GetOptions
    'resource|r=i'          => \$resource,
    'quiet|q=s'             => \$quiet,
    'action|a=s'            => \$action,
-   'nfs_mnt|nfs_mount|h=s' => \$nfs_mnt,
+   'nfs_mnt|nfs_mount|remote_mnt|h=s' => \$nfs_mnt,
    'nfs_list|e=s'          => \$nfs_list,
    'first_mvlan_ip|ips|n=s' => \$first_mvlan_ip,
    'group|g=s'             => \$group,
+   'prefix=s'              => \$prefix,
    'debug'                 => \$DEBUG,
    'dbg_nap|dp=i'          => \$D_PAUSE,
    'parent_port|pp=s'      => \$parent_port,
@@ -1162,7 +1188,7 @@ GetOptions
    'tmp_group|tmp=s'       => \$tmp_group,
    'min|ga=i'              => \$tmp_group_min,
    'max|gb=i'              => \$tmp_group_max,
-   'type'                  => \$fe_type,
+   'endp_type|type=s'      => \$fe_type,
    'endp_options=s'        => \$endp_options,
 ) || do_err_exit("$usage");
 
