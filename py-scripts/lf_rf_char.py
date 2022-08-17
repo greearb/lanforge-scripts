@@ -410,6 +410,69 @@ Example :
     # get dataset for port
     wifi_stats_json = json_wifi_stats[args.vap_port]
 
+
+    # transmitted packets per polling interval
+    tx_pkts = rf_char.tx_pkts
+    tx_retries = rf_char.tx_retries
+    tx_failed = rf_char.tx_failed
+    tx_interval = rf_char.tx_interval
+
+    # Tx pkts, Tx retries,  Tx Failed % 
+    report.set_table_title("Tx pkts , Tx retries, Tx Failed %")
+    report.build_table_title()
+
+
+    df_tx_info = pd.DataFrame({" Time ": [k for k in tx_interval], " Tx Packets ": [i for i in tx_pkts],
+        " Tx Retries ": [j for j in tx_retries], " Tx Failed % ": [m for m in tx_failed]})
+
+    report.set_table_dataframe(df_tx_info)
+    report.build_table()
+    
+    # lf_bar_line_graph
+    # failed %
+    graph = lf_bar_line_graph(
+                        _data_set1=[tx_pkts,tx_retries],
+                        _data_set2=[tx_failed],
+                        _data_set2_poly=[True],
+                        _data_set2_poly_degree=[3],
+                        _data_set2_interp1d=[True], # interpolate 1d
+                        _xaxis_name="Time Seconds",
+                        _y1axis_name="Tx Packets",
+                        _y2axis_name="Tx Failed %",
+                        _xaxis_categories=tx_interval,
+                        _graph_image_name="TX Info bar line",
+                        _label1=[" Tx Packets "," Tx Retries "],
+                        _label2=[" Tx Failed % "],
+                        _label2_poly=["% plynomial fit"],
+                        _label2_interp1d=[" % interpolate"],
+                        _color1=['blue','red'],
+                        _color2=['orange'],
+                        _color2_poly=['green'],
+                        _color2_interp1d=['cyan'],
+                        _marker=['o'],
+                        _color_edge='black',
+                        _figsize=(16,7),
+                        _grp_title='TX ',
+                        _xaxis_step=1,
+                        _show_bar_value=True,
+                        _text_font=7,
+                        _text_rotation=45,
+                        _xticks_font=7,
+                        _legend_loc1="upper right",
+                        _legend_loc2="upper left",
+                        _legend_box1=(0, 0),
+                        _legend_box2=(1, 0),
+                        _legend_ncol=1,
+                        _legend_fontsize=None,
+                        _enable_csv=False)
+    
+    graph_png = graph.build_bar_line_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
+
+
+
     # retrieve rx data from json for MODE
     rx_mode = []
     rx_mode_value_str = []
@@ -1110,17 +1173,13 @@ Example :
     report.move_graph_image()
     report.build_graph()
 
-    # transmitted packets per polling interval
+    '''
+    # Tx pkts, Tx retries,  Tx Failed % 
     tx_pkts = rf_char.tx_pkts
     tx_retries = rf_char.tx_retries
     tx_failed = rf_char.tx_failed
     tx_interval = rf_char.tx_interval
 
-
-    # print(tx_msdu)
-    # print(tx_msdu_value)
-
-    # tx_msdu values
     report.set_table_title("Tx pkts , Tx retries, Tx Failed %")
     report.build_table_title()
 
@@ -1173,7 +1232,7 @@ Example :
     report.set_graph_image(graph_png)
     report.move_graph_image()
     report.build_graph()
-
+    '''
 
 
 
