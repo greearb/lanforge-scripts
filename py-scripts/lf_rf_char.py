@@ -156,7 +156,32 @@ class lf_rf_char(Realm):
             summary_output += line
             # sys.stdout.flush() # please see comments regarding the necessity of this line
         summary.wait()
-        logger.info(summary_output)  # .decode('utf-8', 'ignore'))
+        logger.debug(summary_output)  # .decode('utf-8', 'ignore'))
+
+        dut_mac = ''
+        search_dhcp_lease = False
+        for line in summary_output.splitlines():
+            if(line.startswith("=========")):
+                search_dhcp_lease = True
+                continue
+            if(search_dhcp_lease):
+                pat = "(\\S+)\s+(\\S+)\s+"
+                m = re.search(pat, line)
+                if (m is not None):
+                    dut_mac = m.group(1)
+                    dut_ip = m.group(2)
+            # there should only be one connection
+        
+        logger.debug("probe mac : {mac} ip : {ip}".format(mac=dut_mac,ip=dut_ip))
+        if dut_mac != self.dut_mac:
+            logger.error("mac mismatch test cannot contine: probe mac : {mac} stations mac : {station_mac}".
+                format(mac=dut_mac, station_mac=self.dut_mac))
+            exit(1)
+
+        self.dut_ip = dut_ip
+
+
+
 
         return json_stations
 
@@ -419,6 +444,8 @@ Example :
         "DUT Hardware Version": args.dut_hw_version,
         "DUT Software Version": args.dut_sw_version,
         "DUT Serial Number": args.dut_serial_num,
+        "DUT MAC": dut_mac,
+        "DUT IP": dut_ip
     }
 
     report.set_table_title("Device Under Test Information")
