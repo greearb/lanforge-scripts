@@ -563,11 +563,22 @@ Example :
     for rx_mode_count in rx_mode_value:
         rx_mode_value_percent.append(round((rx_mode_count/rx_mode_total_count)*100, 2)) 
 
+
+
     rx_mode = [s.replace('v_rx_mode_','') for s in rx_mode]
     rx_mode = [s.replace('_',' ') for s in rx_mode]
     rx_mode = [s.upper() for s in rx_mode]
 
     #rx_mode.sort(key=length_sort)
+    logger.debug("Before sort: {rx_mode} : {rx_mode_value_str} : {rx_mode_value} : {rx_mode_value_percent}".
+        format(rx_mode=rx_mode,rx_mode_value_str=rx_mode_value_str, rx_mode_value=rx_mode_value, rx_mode_value_percent=rx_mode_value_percent))        
+
+    # see rx_mcs for detales
+    rx_mode, rx_mode_value_str, rx_mode_value, rx_mode_value_percent = map(list, zip(*sorted(zip(rx_mode,rx_mode_value_str,rx_mode_value,rx_mode_value_percent),key=length_sort)))
+
+    logger.debug("After sort: {rx_mode} : {rx_mode_value_str} : {rx_mode_value} : {rx_mode_value_percent}".
+        format(rx_mode=rx_mode,rx_mode_value_str=rx_mode_value_str, rx_mode_value=rx_mode_value, rx_mode_value_percent=rx_mode_value_percent))        
+
 
     # rx_mode values
     report.set_table_title("RX Mode Histogram")
@@ -630,11 +641,22 @@ Example :
     for tx_mode_count in tx_mode_value:
         tx_mode_value_percent.append(round((tx_mode_count/tx_mode_total_count)*100, 2)) 
 
+
+
     tx_mode = [s.replace('v_tx_mode_','') for s in tx_mode]
     tx_mode = [s.replace('_',' ') for s in tx_mode]
     tx_mode = [s.upper() for s in tx_mode]
 
     #tx_mode.sort(key=length_sort)
+    logger.debug("Before sort: {tx_mode} : {tx_mode_value_str} : {tx_mode_value} : {tx_mode_value_percent}".
+        format(tx_mode=tx_mode,tx_mode_value_str=tx_mode_value_str, tx_mode_value=tx_mode_value, tx_mode_value_percent=tx_mode_value_percent))        
+
+    # see rx_mcs for detales
+    tx_mode, tx_mode_value_str, tx_mode_value, tx_mode_value_percent = map(list, zip(*sorted(zip(tx_mode,tx_mode_value_str,tx_mode_value,tx_mode_value_percent),key=length_sort)))
+
+
+    logger.debug("After sort: {tx_mode} : {tx_mode_value_str} : {tx_mode_value} : {tx_mode_value_percent}".
+        format(tx_mode=tx_mode,tx_mode_value_str=tx_mode_value_str, tx_mode_value=tx_mode_value, tx_mode_value_percent=tx_mode_value_percent))        
 
     # tx_mode values
     report.set_table_title("TX Mode Histogram")
@@ -698,6 +720,15 @@ Example :
     # calculate percentages
     for rx_bw_count in rx_bw_value:
         rx_bw_value_percent.append(round((rx_bw_count/rx_bw_total_count)*100, 2)) 
+
+    logger.debug("Before sort: {rx_bw} : {rx_bw_value_str} : {rx_bw_value} : {rx_bw_value_percent}".
+        format(rx_bw=rx_bw,rx_bw_value_str=rx_bw_value_str, rx_bw_value=rx_bw_value, rx_bw_value_percent=rx_bw_value_percent))        
+
+    # see rx_mcs for detales
+    rx_bw, rx_bw_value_str, rx_bw_value, rx_bw_value_percent = map(list, zip(*sorted(zip(rx_bw,rx_bw_value_str,rx_bw_value,rx_bw_value_percent),key=num_sort)))
+
+    logger.debug("After sort: {rx_bw} : {rx_bw_value_str} : {rx_bw_value} : {rx_bw_value_percent}".
+        format(rx_bw=rx_bw,rx_bw_value_str=rx_bw_value_str, rx_bw_value=rx_bw_value, rx_bw_value_percent=rx_bw_value_percent))        
 
     #rx_bw.sort(key=num_sort)
 
@@ -763,6 +794,16 @@ Example :
     # calculate percentages
     for tx_bw_count in tx_bw_value:
         tx_bw_value_percent.append(round((tx_bw_count/tx_bw_total_count)*100, 2)) 
+
+    logger.debug("Before sort bw: {tx_bw} : {tx_bw_value_str} : {tx_bw_value} : {tx_bw_value_percent}".
+        format(tx_bw=tx_bw,tx_bw_value_str=tx_bw_value_str, tx_bw_value=tx_bw_value, tx_bw_value_percent=tx_bw_value_percent))        
+
+    # see rx_mcs for detales
+    tx_bw, tx_bw_value_str, tx_bw_value, tx_bw_value_percent = map(list, zip(*sorted(zip(tx_bw,tx_bw_value_str,tx_bw_value,tx_bw_value_percent),key=num_sort)))
+
+    logger.debug("After sort bw: {tx_bw} : {tx_bw_value_str} : {tx_bw_value} : {tx_bw_value_percent}".
+        format(tx_bw=tx_bw,tx_bw_value_str=tx_bw_value_str, tx_bw_value=tx_bw_value, tx_bw_value_percent=tx_bw_value_percent))        
+
 
     #tx_bw.sort(key=num_sort)
 
