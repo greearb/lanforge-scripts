@@ -35,6 +35,7 @@ import re
 import platform
 import subprocess
 import re
+import numpy as np
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
@@ -51,6 +52,7 @@ lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_bar_graph = lf_graph.lf_bar_graph
 lf_bar_line_graph = lf_graph.lf_bar_line_graph
+lf_line_graph = lf_graph.lf_line_graph
 
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -606,8 +608,29 @@ Example :
     report.build_table()
 
     # graph RSSI
+    graph = lf_line_graph(
+        _data_set = [rssi_signal, rssi_1, rssi_2, rssi_3, rssi_4],
+        _xaxis_name="Time Seconds",
+        _yaxis_name="RSSI dBm",
+        _xaxis_categories=tx_interval,
+        _graph_title="RSSI",
+        _title_size=16,
+        _graph_image_name="rssi",
+        _label=["RSSI Signal","RSSI 1","RSSI 2","RSSI 3", "RSSI 4"],
+        _font_weight='bold',
+        _color=['blue','orange','green','orange','cyan'],
+        _figsize=(17,7),
+        _xaxis_step=1,
+        _text_font=7,
+        _legend_loc="best",
+        _legend_box=(1,1),
+        _legend_ncol=1
+    )
 
-
+    graph_png = graph.build_line_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
 
     # retrieve rx data from json for MODE
     rx_mode = []
