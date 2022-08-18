@@ -721,13 +721,13 @@ Example :
     for rx_bw_count in rx_bw_value:
         rx_bw_value_percent.append(round((rx_bw_count/rx_bw_total_count)*100, 2)) 
 
-    logger.debug("Before sort: {rx_bw} : {rx_bw_value_str} : {rx_bw_value} : {rx_bw_value_percent}".
+    logger.debug("Before sort rx bw: {rx_bw} : {rx_bw_value_str} : {rx_bw_value} : {rx_bw_value_percent}".
         format(rx_bw=rx_bw,rx_bw_value_str=rx_bw_value_str, rx_bw_value=rx_bw_value, rx_bw_value_percent=rx_bw_value_percent))        
 
     # see rx_mcs for detales
     rx_bw, rx_bw_value_str, rx_bw_value, rx_bw_value_percent = map(list, zip(*sorted(zip(rx_bw,rx_bw_value_str,rx_bw_value,rx_bw_value_percent),key=num_sort)))
 
-    logger.debug("After sort: {rx_bw} : {rx_bw_value_str} : {rx_bw_value} : {rx_bw_value_percent}".
+    logger.debug("After sort rx bw: {rx_bw} : {rx_bw_value_str} : {rx_bw_value} : {rx_bw_value_percent}".
         format(rx_bw=rx_bw,rx_bw_value_str=rx_bw_value_str, rx_bw_value=rx_bw_value, rx_bw_value_percent=rx_bw_value_percent))        
 
     #rx_bw.sort(key=num_sort)
@@ -795,13 +795,13 @@ Example :
     for tx_bw_count in tx_bw_value:
         tx_bw_value_percent.append(round((tx_bw_count/tx_bw_total_count)*100, 2)) 
 
-    logger.debug("Before sort bw: {tx_bw} : {tx_bw_value_str} : {tx_bw_value} : {tx_bw_value_percent}".
+    logger.debug("Before sort tx bw: {tx_bw} : {tx_bw_value_str} : {tx_bw_value} : {tx_bw_value_percent}".
         format(tx_bw=tx_bw,tx_bw_value_str=tx_bw_value_str, tx_bw_value=tx_bw_value, tx_bw_value_percent=tx_bw_value_percent))        
 
     # see rx_mcs for detales
     tx_bw, tx_bw_value_str, tx_bw_value, tx_bw_value_percent = map(list, zip(*sorted(zip(tx_bw,tx_bw_value_str,tx_bw_value,tx_bw_value_percent),key=num_sort)))
 
-    logger.debug("After sort bw: {tx_bw} : {tx_bw_value_str} : {tx_bw_value} : {tx_bw_value_percent}".
+    logger.debug("After sort tx bw: {tx_bw} : {tx_bw_value_str} : {tx_bw_value} : {tx_bw_value_percent}".
         format(tx_bw=tx_bw,tx_bw_value_str=tx_bw_value_str, tx_bw_value=tx_bw_value, tx_bw_value_percent=tx_bw_value_percent))        
 
 
@@ -998,7 +998,7 @@ Example :
     for rx_mcs_count in rx_mcs_value:
         rx_mcs_value_percent.append(round((rx_mcs_count/rx_mcs_total_count)*100, 2)) 
 
-    logger.info("{rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
+    logger.info("Before sort rx MCS {rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
         format(rx_mcs=rx_mcs, rx_mcs_value_str = rx_mcs_value_str, rx_mcs_value=rx_mcs_value, rx_mcs_value_percent=rx_mcs_value_percent))
 
     # 
@@ -1016,7 +1016,7 @@ Example :
     # return the sorted lists
     rx_mcs, rx_mcs_value_str, rx_mcs_value, rx_mcs_value_percent = map(list, res_mcs)
 
-    logger.info("{rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
+    logger.info("After sort rx MCS {rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
         format(rx_mcs=rx_mcs, rx_mcs_value_str = rx_mcs_value_str, rx_mcs_value=rx_mcs_value, rx_mcs_value_percent=rx_mcs_value_percent))
 
     rx_mcs = [s.replace('v_rx_mcs_','MCS ') for s in rx_mcs] 
@@ -1083,13 +1083,13 @@ Example :
         else:
             tx_mcs_value_percent.append(round((tx_mcs_count/tx_mcs_total_count)*100, 2)) 
 
-    logger.debug("Before sort: {tx_mcs} : {tx_mcs_value_str} : {tx_mcs_value} : {tx_mcs_value_percent}".
+    logger.debug("Before sort tx MCS: {tx_mcs} : {tx_mcs_value_str} : {tx_mcs_value} : {tx_mcs_value_percent}".
         format(tx_mcs=tx_mcs, tx_mcs_value_str = tx_mcs_value_str, tx_mcs_value=tx_mcs_value, tx_mcs_value_percent=tx_mcs_value_percent))
 
     # see rx_mcs for details
     tx_mcs, tx_mcs_value_str, tx_mcs_value , tx_mcs_value_percent = map(list, zip(*sorted(zip(tx_mcs,tx_mcs_value_str, tx_mcs_value, tx_mcs_value_percent),key=num_sort)))
 
-    logger.debug("Before sort: {tx_mcs} : {tx_mcs_value_str} : {tx_mcs_value} : {tx_mcs_value_percent}".
+    logger.debug("After sort tx MCS: {tx_mcs} : {tx_mcs_value_str} : {tx_mcs_value} : {tx_mcs_value_percent}".
         format(tx_mcs=tx_mcs, tx_mcs_value_str = tx_mcs_value_str, tx_mcs_value=tx_mcs_value, tx_mcs_value_percent=tx_mcs_value_percent))
 
     #tx_mcs.sort(key=num_sort)
@@ -1152,13 +1152,13 @@ Example :
 
     logger.debug("rx_ampdu: {rx_ampdu}".format(rx_ampdu=rx_ampdu))
 
-    logger.debug("Before sort ampdu: {rx_ampdu} : {rx_ampdu_value_str} : {rx_ampdu_value}".
+    logger.debug("Before sort rx AMPDU: {rx_ampdu} : {rx_ampdu_value_str} : {rx_ampdu_value}".
         format(rx_ampdu=rx_ampdu,rx_ampdu_value_str=rx_ampdu_value_str, rx_ampdu_value=rx_ampdu_value))        
 
     # see rx_mcs for detales
     rx_ampdu, rx_ampdu_value_str, rx_ampdu_value = map(list, zip(*sorted(zip(rx_ampdu,rx_ampdu_value_str,rx_ampdu_value),key=num_sort)))
 
-    logger.debug("After sort ampdu: {rx_ampdu} : {rx_ampdu_value_str} : {rx_ampdu_value}".
+    logger.debug("After sort rx AMPDU: {rx_ampdu} : {rx_ampdu_value_str} : {rx_ampdu_value}".
         format(rx_ampdu=rx_ampdu,rx_ampdu_value_str=rx_ampdu_value_str, rx_ampdu_value=rx_ampdu_value))        
 
 
@@ -1239,13 +1239,13 @@ Example :
 
     logger.debug(tx_ampdu)
 
-    logger.debug("Before sort ampdu: {tx_ampdu} : {tx_ampdu_value_str} : {tx_ampdu_value}".
+    logger.debug("Before sort tx AMPDU: {tx_ampdu} : {tx_ampdu_value_str} : {tx_ampdu_value}".
         format(tx_ampdu=tx_ampdu,tx_ampdu_value_str=tx_ampdu_value_str, tx_ampdu_value=tx_ampdu_value))        
 
     # see rx_mcs for detales
     tx_ampdu, tx_ampdu_value_str, tx_ampdu_value = map(list, zip(*sorted(zip(tx_ampdu,tx_ampdu_value_str,tx_ampdu_value),key=num_sort)))
 
-    logger.debug("After sort ampdu: {tx_ampdu} : {tx_ampdu_value_str} : {tx_ampdu_value}".
+    logger.debug("After sort tx AMPDU: {tx_ampdu} : {tx_ampdu_value_str} : {tx_ampdu_value}".
         format(tx_ampdu=tx_ampdu,tx_ampdu_value_str=tx_ampdu_value_str, tx_ampdu_value=tx_ampdu_value))        
 
 
