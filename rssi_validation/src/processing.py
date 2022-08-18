@@ -11,7 +11,8 @@ import sys
 # 0: Success
 # 1: Python Error
 # 2: CSV file not found
-# 3: Radio disconnected before -85 expected RSSI; PNG will still be generated
+# 3: Radio disconnected before -80 expected RSSI; PNG will still be generated
+# 4: Attempted Bandwidth HT80 used with Channel 6
 
 parser = argparse.ArgumentParser(description='Input and output files.')
 parser.add_argument('--csv', metavar='i', type=str, help='../output.csv')
@@ -55,6 +56,10 @@ def check_data(signal, signal_exp):
     isnans = np.concatenate([np.isnan(e) for e in signal[0:threshold_ind, CHECK_RADIOS]]) # array of booleans
     if (any(isnans)):
         sys.exit(3)
+
+# check bandwidth compatibility
+if channel==6 and bandwidth==80:
+    sys.exit(4)
 
 # read data from file
 data=[]
