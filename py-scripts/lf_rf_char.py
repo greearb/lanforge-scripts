@@ -473,7 +473,7 @@ Example :
         return -1
 
     def length_sort(strn):
-        return len(strn)
+        return len(strn[0])
 
 
     
@@ -563,21 +563,26 @@ Example :
     for rx_mode_count in rx_mode_value:
         rx_mode_value_percent.append(round((rx_mode_count/rx_mode_total_count)*100, 2)) 
 
-
-
-    rx_mode = [s.replace('v_rx_mode_','') for s in rx_mode]
-    rx_mode = [s.replace('_',' ') for s in rx_mode]
-    rx_mode = [s.upper() for s in rx_mode]
+    # manipulate data to sort by length to have 
+    # CCK is first, the OFDMA, then HT variants, then VHT, the HE
+    rx_mode = [s.replace('v_rx_mode_ht','v_rx_mode_ht_AAA') for s in rx_mode]
+    rx_mode = [s.replace('v_rx_mode_vht','v_rx_mode_vht_AAA') for s in rx_mode]
+    rx_mode = [s.replace('v_rx_mode_he','v_rx_mode_he_AAA') for s in rx_mode]
 
     #rx_mode.sort(key=length_sort)
-    logger.debug("Before sort: {rx_mode} : {rx_mode_value_str} : {rx_mode_value} : {rx_mode_value_percent}".
+    logger.debug("Before sort rx mode: {rx_mode} : {rx_mode_value_str} : {rx_mode_value} : {rx_mode_value_percent}".
         format(rx_mode=rx_mode,rx_mode_value_str=rx_mode_value_str, rx_mode_value=rx_mode_value, rx_mode_value_percent=rx_mode_value_percent))        
 
     # see rx_mcs for detales
     rx_mode, rx_mode_value_str, rx_mode_value, rx_mode_value_percent = map(list, zip(*sorted(zip(rx_mode,rx_mode_value_str,rx_mode_value,rx_mode_value_percent),key=length_sort)))
 
-    logger.debug("After sort: {rx_mode} : {rx_mode_value_str} : {rx_mode_value} : {rx_mode_value_percent}".
+    logger.debug("After sort rx mode: {rx_mode} : {rx_mode_value_str} : {rx_mode_value} : {rx_mode_value_percent}".
         format(rx_mode=rx_mode,rx_mode_value_str=rx_mode_value_str, rx_mode_value=rx_mode_value, rx_mode_value_percent=rx_mode_value_percent))        
+
+    rx_mode = [s.replace('v_rx_mode_','') for s in rx_mode]
+    rx_mode = [s.replace('AAA','') for s in rx_mode]
+    rx_mode = [s.replace('_',' ') for s in rx_mode]
+    rx_mode = [s.upper() for s in rx_mode]
 
 
     # rx_mode values
@@ -641,11 +646,12 @@ Example :
     for tx_mode_count in tx_mode_value:
         tx_mode_value_percent.append(round((tx_mode_count/tx_mode_total_count)*100, 2)) 
 
+    # manipulate data to sort by length to have 
+    # CCK is first, the OFDMA, then HT variants, then VHT, the HE
+    tx_mode = [s.replace('v_tx_mode_ht','v_tx_mode_ht_AAA') for s in tx_mode]
+    tx_mode = [s.replace('v_tx_mode_vht','v_tx_mode_vht_AAA') for s in tx_mode]
+    tx_mode = [s.replace('v_tx_mode_he','v_tx_mode_he_AAA') for s in tx_mode]
 
-
-    tx_mode = [s.replace('v_tx_mode_','') for s in tx_mode]
-    tx_mode = [s.replace('_',' ') for s in tx_mode]
-    tx_mode = [s.upper() for s in tx_mode]
 
     #tx_mode.sort(key=length_sort)
     logger.debug("Before sort: {tx_mode} : {tx_mode_value_str} : {tx_mode_value} : {tx_mode_value_percent}".
@@ -657,6 +663,11 @@ Example :
 
     logger.debug("After sort: {tx_mode} : {tx_mode_value_str} : {tx_mode_value} : {tx_mode_value_percent}".
         format(tx_mode=tx_mode,tx_mode_value_str=tx_mode_value_str, tx_mode_value=tx_mode_value, tx_mode_value_percent=tx_mode_value_percent))        
+
+    tx_mode = [s.replace('v_tx_mode_','') for s in tx_mode]
+    tx_mode = [s.replace('AAA','') for s in tx_mode]
+    tx_mode = [s.replace('_',' ') for s in tx_mode]
+    tx_mode = [s.upper() for s in tx_mode]
 
     # tx_mode values
     report.set_table_title("TX Mode Histogram")
