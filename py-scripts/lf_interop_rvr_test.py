@@ -19,7 +19,6 @@ import importlib
 import logging
 import time
 import pandas as pd
-import random
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -45,10 +44,8 @@ logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 import argparse
-
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
-
 
 # from lf_graph import lf_bar_graph, lf_line_graph
 # from datetime import datetime, timedelta
@@ -258,8 +255,7 @@ class RvR(Realm):
                         phone_radio.append("AUTO")
                     else:
                         phone_radio.append('2G/5G')
-        return [resource_id_list, phone_name_list, mac_address, user_name, phone_radio, station_name, rx_rate, tx_rate,
-                ssid]
+        return [resource_id_list, phone_name_list, mac_address, user_name, phone_radio, station_name, rx_rate, tx_rate, ssid]
 
     def monitor(self):
         throughput, upload, download = {}, [], []
@@ -360,11 +356,12 @@ class RvR(Realm):
         report.set_title("LANforge InterOp Rate vs Range")
         report.build_banner()
         # objective title and description
-        report.set_obj_html(_obj_title="Objective", _obj="LANforge InterOp measures the performances of each real "
-                                                         "client over a certain distance of the DUT. Distance is emulated using programmable attenuators and "
-                                                         "throughput test is run at each attenuation/RSSI step. This test measures the performance over distance"
-                                                         " of the Device Under Test. The test allows the user to plot RSSI curves both upstream and downstream"
-                                                         " for different types of traffic and different station types.")
+        report.set_obj_html(_obj_title="Objective", _obj="This test measures the performance over distance of the"
+                                                         " Device Under Test. Distance is emulated using programmable"
+                                                         " attenuation and a throughput test is run at each "
+                                                         "distance/RSSI step and plotted on a chart. The test allows "
+                                                         "the user to plot RSSI curves both upstream and downstream for"
+                                                         " different types of traffic and different station types.")
         report.build_objective()
         report.test_setup_table(test_setup_data=test_setup_info, value="Device Under Test")
         report.end_content_div()
@@ -385,29 +382,27 @@ class RvR(Realm):
         for traffic_type in res["graph_df"]:
             report.set_obj_html(
                 _obj_title="Overall {} throughput for {} real clients using {} traffic."
-                .format(res["graph_df"][traffic_type]["direction"], len(self.list_of_data[0]), "TCP" if traffic_type ==
-                                                                                                        "lf_tcp" else "UDP" if traffic_type == "lf_udp" else "TCP and UDP"),
-                _obj="The below graph represents overall {} throughput for different attenuation levels ".format(
+                .format(res["graph_df"][traffic_type]["direction"], len(self.list_of_data[0]), traffic_type),
+                _obj="The below graph represents overall {} throughput for different attenuation ".format(
                     res["graph_df"][traffic_type]["direction"]))
             report.build_objective()
             graph = lf_graph.lf_line_graph(_data_set=res["graph_df"][traffic_type]["dataset"],
-                                           _xaxis_name="Attenuation",
-                                           _yaxis_name="Throughput(in Mbps)",
-                                           _xaxis_categories=[str(traffic_type) for traffic_type in
-                                                              res[traffic_type].keys()],
-                                           _graph_image_name=f"rvr_{traffic_type}_{self.traffic_direction}",
-                                           _label=res["graph_df"][traffic_type]["label"],
-                                           _color=res["graph_df"][traffic_type]["color"],
-                                           _xaxis_step=1,
-                                           _graph_title="Overall Throughput vs Attenuation",
-                                           _title_size=16,
-                                           _figsize=(18, 6),
-                                           _marker=['o', '+', '*', '.', 'x', '|', 's', 'd', '^', 'v', '>',
-                                                    '<', 'p', 'h'][random.randrange(0, 13)],
-                                           _legend_loc="best",
-                                           _legend_box=None,
-                                           _dpi=200,
-                                           _enable_csv=True)
+                                  _xaxis_name="Attenuation",
+                                  _yaxis_name="Throughput(in Mbps)",
+                                  _xaxis_categories=[str(traffic_type) for traffic_type in res[traffic_type].keys()],
+                                  _graph_image_name=f"rvr_{traffic_type}_{self.traffic_direction}",
+                                  _label=res["graph_df"][traffic_type]["label"],
+                                  _color=res["graph_df"][traffic_type]["color"],
+                                  _xaxis_step=1,
+                                  _graph_title="Overall throughput vs attenuation",
+                                  _title_size=16,
+                                  _figsize=(18, 6),
+                                  _marker=['o', '+', '*', '.', 'x', '_', '|', 's', 'd', '^', 'v', '>',
+                                           '<', 'p', 'h'],
+                                  _legend_loc="best",
+                                  _legend_box=None,
+                                  _dpi=200,
+                                  _enable_csv=True)
             graph_png = graph.build_line_graph()
 
             logger.info("graph name {}".format(graph_png))
@@ -443,31 +438,26 @@ class RvR(Realm):
         for traffic_type in phone_x:
             for phone in phone_x[traffic_type]:
                 for direction in phone_x[traffic_type][phone]:
-                    traffic_name = "TCP" if (traffic_type == "lf_tcp") else "UDP" if (
-                                traffic_type == "lf_udp") else "TCP and UDP"
+                    traffic_name = "TCP" if (traffic_type == "lf_tcp") else "UDP" if (traffic_type == "lf_udp") else "TCP and UDP"
                     report.set_obj_html(_obj_title=f"{phone} : {traffic_name} {direction}", _obj="")
                     report.build_objective()
                     line_graph = lf_graph.lf_line_graph(_data_set=[phone_x[traffic_type][phone][direction]],
-                                                        _xaxis_name="Attenuation",
-                                                        _yaxis_name='Throughput(in Mbps)' if (
-                                                                    direction == 'upload' or direction == 'download') else 'RSSI Strength(in dBm)',
-                                                        _xaxis_categories=self.attenuator_db_signal,
-                                                        _graph_image_name=f"rvr_{traffic_type}_{phone}_{direction}",
-                                                        _label=[
-                                                            'upload' if direction == 'upload' else 'download' if direction == "download" else 'RSSI Strength'],
-                                                        _color=[
-                                                            'olivedrab' if direction == 'upload' else 'orangered' if direction == 'download' else 'mediumblue'],
-                                                        _xaxis_step=1,
-                                                        _graph_title="Throughput vs Attenuation" if (
-                                                                    direction == 'upload' or direction == 'download') else "RSSI Signal Strength(in dBm)",
-                                                        _title_size=16,
-                                                        _figsize=(18, 6),
-                                                        _legend_loc="best",
-                                                        _marker=['o', '+', '*', '.', 'x', '|', 's', 'd', '^', 'v', '>',
-                                                                 '<', 'p', 'h'][random.randrange(0, 13)],
-                                                        _legend_box=None,
-                                                        _dpi=200,
-                                                        _enable_csv=True)
+                                               _xaxis_name="Attenuation",
+                                               _yaxis_name='Throughput(in Mbps)' if (direction == 'upload' or direction == 'download') else 'RSSI Strength(in dBm)',
+                                               _xaxis_categories=self.attenuator_db_signal,
+                                               _graph_image_name=f"rvr_{traffic_type}_{phone}_{direction}",
+                                               _label=['upload' if direction == 'upload' else 'download' if direction == "download" else 'RSSI Strength'],
+                                               _color=['olivedrab' if direction == 'upload' else 'orangered' if direction == 'download' else 'mediumblue'],
+                                               _xaxis_step=1,
+                                               _graph_title="Throughput vs Attenuation" if (direction == 'upload' or direction == 'download') else "RSSI Signal Strength(in dBm)",
+                                               _title_size=16,
+                                               _figsize=(18, 6),
+                                               _legend_loc="best",
+                                               _marker=['o', '+', '*', '.', 'x', '_', '|', 's', 'd', '^', 'v', '>',
+                                                        '<', 'p', 'h'],
+                                               _legend_box=None,
+                                               _dpi=200,
+                                               _enable_csv=True)
                     line_graph_png = line_graph.build_line_graph()
 
                     logger.info("graph name {}".format(line_graph_png))
@@ -484,7 +474,7 @@ class RvR(Realm):
                 for direction in res[traffic_type][attenuation]:
                     if direction == "upload" or direction == "download":
                         report.set_obj_html(
-                            _obj_title=f"Individual {direction} Throughput for {len(self.list_of_data[0])} clients using {'TCP' if traffic_type == 'lf_tcp' else 'UDP' if traffic_type == 'lf_udp' else 'TCP and UDP'} traffic over {attenuation} attenuation",
+                            _obj_title=f"Individual {direction} Throughput for {len(self.list_of_data[0])} clients using {traffic_type} traffic over {attenuation} attenuation",
                             _obj=f"The below graph represents Individual {direction} throughput of all stations when attenuation set to {attenuation}")
                         report.build_objective()
                         graph = lf_bar_graph(_data_set=[res[traffic_type][attenuation][direction]],
@@ -562,7 +552,7 @@ def main():
     optional.add_argument('--debug', help="to enable debug", default=False)
     # logging configuration:
     parser.add_argument('--log_level', default=None,
-                        help='Set logging level: debug | info | warning | error | critical')
+        help='Set logging level: debug | info | warning | error | critical')
 
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
@@ -654,7 +644,7 @@ def main():
     input_setup_info = {
         "contact": "support@candelatech.com"
     }
-    rvr_obj.generate_report(data=data, test_setup_info=test_setup_info, input_setup_info=input_setup_info, )
+    rvr_obj.generate_report(data=data, test_setup_info=test_setup_info, input_setup_info=input_setup_info,)
     rvr_obj.cleanup()
 
 
