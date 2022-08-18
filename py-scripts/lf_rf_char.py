@@ -92,6 +92,10 @@ class lf_rf_char(Realm):
         self.resource = ''
         self.duration = ''
         self.polling_interval = ''
+        self.frame = ''
+        self.frame_interval = ''
+        self.gen_endpoint = ''
+        self.cx_state = ''
 
         # create api_json
         self.json_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
@@ -176,7 +180,7 @@ class lf_rf_char(Realm):
                 search_dhcp_lease = True
                 continue
             if(search_dhcp_lease):
-                pat = "(\\S+)\s+(\\S+)\s+"
+                pat = "(\\S+)\\s+(\\S+)\\s+"
                 m = re.search(pat, line)
                 if (m is not None):
                     dut_mac = m.group(1)
@@ -209,9 +213,72 @@ class lf_rf_char(Realm):
                                               resource=self.resource,
                                               port=self.port_name,
                                               extra=None)
+    # ./lf_generic_ping.pl --mgr 192.168.0.104 --resource 1 --dest 10.10.10.4 -i vap3 --cmd 'lfping -s 1400 -i 0.01 -I vap3 10.10.10.4
+
+    def generic_ping(self):
+        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
+        self.gen_endpoint = "CX_lfping_{port_name}".format(port_name=self.port_name)
+
+        # need to change the current working director to run lf_generic_ping.pl
+        cwd_orig = os.getcwd()
+        logger.info("Current Working Directory is :{cwd}".format(cwd=cwd_orig))
+        os.chdir('../')
+        cwd_new = os.getcwd()
+        logger.info("Move up one dir Working Directory is :{cwd}".format(cwd=cwd_new))
+
+        self.lf_command = ["./lf_generic_ping.pl","--mgr", self.lf_mgr, "--resource", str(self.resource), "--dest", self.dut_ip,
+            "-i",self.port_name,"--cmd",'lfping -s {frame} -i {frame_interval} -I {port_name} {dut_ip}'.
+            format(frame=self.frame,frame_interval=self.frame_interval,port_name=self.port_name,dut_ip=self.dut_ip) ]
+        logger.debug("lf_generic_ping.pl : {cmd}".format(cmd=self.lf_command))
+        summary_output = ''
+
+        summary = subprocess.Popen(self.lf_command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        for line in iter(summary.stdout.readline, ''):
+            logger.debug(line)
+            summary_output += line
+            # sys.stdout.flush() # please see comments regarding the necessity of this line
+        summary.wait()
+        logger.debug(summary_output)  # .decode('utf-8', 'ignore'))
+        os.chdir(cwd_orig)
+        cwd_final = os.getcwd()
+        logger.info("Current Working Directory is :{cwd}".format(cwd=cwd_final))
+
+
+    # for updating the ping information
+    # ./lf_generic_ping.pl --mgr 192.168.0.104 --resource 1 --dest 10.10.10.4 -i vap3 --cmd 'lfping -s 1400 -i 0.01 -I vap3 10.10.10.4'
+    # add_gen_endp
+    def add_gen_endp(self):
+                self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
+                # cross connects prepend CX
+                self.gen_endpoint = "CX_lfping_{port_name}".format(port_name=self.port_name)
+                self.command.post_add_gen_endp(
+                    alias=self.gen_endpoint,
+                    port=self.port_name,
+                    resource=self.resource,
+                    shelf=self.shelf,
+                    p_type = 'gen_generic',   # gen_generic is default
+                    debug=self.debug
+                    )
+
+    # set_gen_cmd
+    def set_gen_cmd(self):
+        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
+        lf_command = "lfping '-s {frame} -i {frame_interval} -I {port_name} {ip}".format(
+            frame=self.frame,frame_interval=self.frame_interval,port_name=self.port_name,ip=self.dut_ip)
+        self.command.post_set_gen_cmd(
+            command=lf_command,
+            name=self.gen_endpoint,
+            debug=self.debug)
+
+    # set_cx_state
+    def set_cx_state(self):
+        self.command.post_set_cx_state(cx_name=self.gen_endpoint,
+                                       cx_state=self.cx_state,
+                                       test_mgr='all',
+                                       debug=self.debug )
 
     def modify_radio(self):
-
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
         self.command.post_set_wifi_radio(
             shelf=self.shelf,
@@ -239,6 +306,20 @@ class lf_rf_char(Realm):
         self.rssi_2 = []
         self.rssi_3 = []
         self.rssi_4 = []
+
+        # create lfping generic
+        '''
+        # Using lanforge_api
+        logger.info("create generic endpoint")
+        self.add_gen_endp()
+        logger.info("set frame {frame} frame_interval {interval}".format(frame=self.frame,interval=self.frame_interval))
+        self.set_gen_cmd()
+        '''
+        # use the lf_generic_ping.pl
+        self.generic_ping()
+        logger.info("start the lfping cx traffic frame: {frame} frame_interval: {frame_interval}".format(frame=self.frame,frame_interval=self.frame_interval))        
+        self.cx_state = 'RUNNING' # RUNNING< SWITCHB, QUIESCE, STOPPED, or DELETED
+        self.set_cx_state()
 
         logger.info("clear dhcp leases")
         # self.clear_dhcp_lease()
@@ -311,6 +392,11 @@ class lf_rf_char(Realm):
         self.json_api.request = 'wifi-stats'
         json_wifi_stats, *nil = self.json_api.get_request_wifi_stats_information()
 
+        # Stop Traffic
+        self.cx_state = 'STOPPED' # RUNNING< SWITCHB, QUIESCE, STOPPED, or DELETED
+        self.set_cx_state()
+
+
         return json_port_stats, json_wifi_stats
 
         # gather interval samples read stations to get RX Bytes, TX Bytes, TX Retries,
@@ -347,6 +433,8 @@ Example :
 ./lf_rf_char.py --lf_mgr 192.168.0.104 --lf_port 8080 --lf_user lanforge --lf_passwd lanforge\
     --vap_port 1.1.vap3 --vap_radio 1.1.wiphy3 --vap_channel 149 --vap_antenna 0 \
     --log_level debug --debug --duration 10s --polling_interval 1s
+
+for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands    
             ''')
     # LANforge configuration
     parser.add_argument("--lf_mgr", type=str, help="address of the LANforge GUI machine (localhost is default)", default='localhost')
@@ -386,6 +474,8 @@ Example :
     # Test Configuration
     parser.add_argument('--duration', help="--duration <seconds>", default='20s')
     parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='1s')
+    parser.add_argument('--frame', help="--frame <bytes>  , e.g. --frame 1400", default='1400')
+    parser.add_argument('--frame_interval', help="--frame_interval <fractions of second>  , e.g. --frame_interval .01 ", default='.01')
 
     args = parser.parse_args()
 
@@ -511,6 +601,9 @@ Example :
 
     rf_char.duration = args.duration
     rf_char.polling_interval = args.polling_interval
+    logger.debug("frame size {frame}".format(frame=args.frame))
+    rf_char.frame = args.frame
+    rf_char.frame_interval = args.frame_interval
 
     # run the test
     json_port_stats, json_wifi_stats, *nil = rf_char.start()
