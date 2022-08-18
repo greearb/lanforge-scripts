@@ -58,7 +58,7 @@ def check_data(signal, signal_exp):
         sys.exit(3)
 
 # check bandwidth compatibility
-if channel==6 and bandwidth==80:
+if CHANNEL==6 and BANDWIDTH==80:
     sys.exit(4)
 
 # read data from file
