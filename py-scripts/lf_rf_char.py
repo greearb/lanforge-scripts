@@ -1152,6 +1152,16 @@ Example :
 
     logger.debug("rx_ampdu: {rx_ampdu}".format(rx_ampdu=rx_ampdu))
 
+    logger.debug("Before sort ampdu: {rx_ampdu} : {rx_ampdu_value_str} : {rx_ampdu_value}".
+        format(rx_ampdu=rx_ampdu,rx_ampdu_value_str=rx_ampdu_value_str, rx_ampdu_value=rx_ampdu_value))        
+
+    # see rx_mcs for detales
+    rx_ampdu, rx_ampdu_value_str, rx_ampdu_value = map(list, zip(*sorted(zip(rx_ampdu,rx_ampdu_value_str,rx_ampdu_value),key=num_sort)))
+
+    logger.debug("After sort ampdu: {rx_ampdu} : {rx_ampdu_value_str} : {rx_ampdu_value}".
+        format(rx_ampdu=rx_ampdu,rx_ampdu_value_str=rx_ampdu_value_str, rx_ampdu_value=rx_ampdu_value))        
+
+
     #rx_ampdu.sort(key=num_sort)
 
     rx_ampdu = [s.replace('rx_ampdu_len_','') for s in rx_ampdu] 
@@ -1228,6 +1238,17 @@ Example :
             tx_ampdu_value_percent.append(round((tx_ampdu_count/tx_ampdu_total_count)*100, 2)) 
 
     logger.debug(tx_ampdu)
+
+    logger.debug("Before sort ampdu: {tx_ampdu} : {tx_ampdu_value_str} : {tx_ampdu_value}".
+        format(tx_ampdu=tx_ampdu,tx_ampdu_value_str=tx_ampdu_value_str, tx_ampdu_value=tx_ampdu_value))        
+
+    # see rx_mcs for detales
+    tx_ampdu, tx_ampdu_value_str, tx_ampdu_value = map(list, zip(*sorted(zip(tx_ampdu,tx_ampdu_value_str,tx_ampdu_value),key=num_sort)))
+
+    logger.debug("After sort ampdu: {tx_ampdu} : {tx_ampdu_value_str} : {tx_ampdu_value}".
+        format(tx_ampdu=tx_ampdu,tx_ampdu_value_str=tx_ampdu_value_str, tx_ampdu_value=tx_ampdu_value))        
+
+
     # tx_ampdu.sort(key=num_sort)
     tx_ampdu = [s.replace('tx_ampdu_len_','') for s in tx_ampdu] 
     tx_ampdu = [s.replace('_','-') for s in tx_ampdu]
