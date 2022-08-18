@@ -35,6 +35,8 @@ import re
 import platform
 import subprocess
 import re
+from operator import itemgetter
+
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
@@ -464,7 +466,7 @@ Example :
     # sort the values when in a list
     def num_sort(strn):
         # getting number using isdigit() and split()
-        computed_num = [ele for ele in strn.split('_') if ele.isdigit()]    
+        computed_num = [ele for ele in strn[0].split('_') if ele.isdigit()]    
         # assigning lowest weightage to strings
         # with no numbers
         if len(computed_num) > 0:
@@ -566,7 +568,7 @@ Example :
     rx_mode = [s.replace('_',' ') for s in rx_mode]
     rx_mode = [s.upper() for s in rx_mode]
 
-    rx_mode.sort(key=length_sort)
+    #rx_mode.sort(key=length_sort)
 
     # rx_mode values
     report.set_table_title("RX Mode Histogram")
@@ -633,7 +635,7 @@ Example :
     tx_mode = [s.replace('_',' ') for s in tx_mode]
     tx_mode = [s.upper() for s in tx_mode]
 
-    tx_mode.sort(key=length_sort)
+    #tx_mode.sort(key=length_sort)
 
     # tx_mode values
     report.set_table_title("TX Mode Histogram")
@@ -698,7 +700,11 @@ Example :
     for rx_bw_count in rx_bw_value:
         rx_bw_value_percent.append(round((rx_bw_count/rx_bw_total_count)*100, 2)) 
 
-    rx_bw.sort(key=num_sort)
+    #rx_bw.sort(key=num_sort)
+
+    rx_bw = [s.replace('v_rx_bw_he_ru','HE RU') for s in rx_bw]
+
+    rx_bw = [s.replace('v_rx_bw_','BW ') for s in rx_bw]
 
     rx_bw = [s.replace('v_rx_bw_he_ru','HE RU') for s in rx_bw]
 
@@ -763,7 +769,8 @@ Example :
     for tx_bw_count in tx_bw_value:
         tx_bw_value_percent.append(round((tx_bw_count/tx_bw_total_count)*100, 2)) 
 
-    tx_bw.sort(key=num_sort)
+    #tx_bw.sort(key=num_sort)
+
 
     tx_bw = [s.replace('v_tx_bw_','BW ') for s in tx_bw]
 
@@ -936,9 +943,6 @@ Example :
     report.move_graph_image()
     report.build_graph()
 
-
-
-
     # retrieve rx data from json for MCS
     rx_mcs = []
     rx_mcs_value_str = []
@@ -959,9 +963,31 @@ Example :
     for rx_mcs_count in rx_mcs_value:
         rx_mcs_value_percent.append(round((rx_mcs_count/rx_mcs_total_count)*100, 2)) 
 
-    rx_mcs.sort(key=num_sort)
+    logger.info("{rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
+        format(rx_mcs=rx_mcs, rx_mcs_value_str = rx_mcs_value_str, rx_mcs_value=rx_mcs_value, rx_mcs_value_percent=rx_mcs_value_percent))
+
+    # 
+    zip_rx_mcs = zip(rx_mcs,rx_mcs_value_str,rx_mcs_value,rx_mcs_value_percent)
+
+    # https://stackoverflow.com/questions/19931975/sort-multiple-lists-simultaneously
+    #https://www.geeksforgeeks.org/sorted-function-python/
+    # use the rx_mcs as the sort key
+    # Using the tuples default ordering
+    zip_rx_mcs_sort = sorted(zip_rx_mcs, key=num_sort)    
+
+    #https://www.geeksforgeeks.org/python-unzip-a-list-of-tuples/
+    res_mcs = zip(*zip_rx_mcs_sort)
+
+    # return the sorted lists
+    rx_mcs, rx_mcs_value_str, rx_mcs_value, rx_mcs_value_percent = map(list, res_mcs)
+
+    logger.info("{rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
+        format(rx_mcs=rx_mcs, rx_mcs_value_str = rx_mcs_value_str, rx_mcs_value=rx_mcs_value, rx_mcs_value_percent=rx_mcs_value_percent))
 
     rx_mcs = [s.replace('v_rx_mcs_','MCS ') for s in rx_mcs] 
+
+    # the above could be done with this one command
+    # rx_mcs, rx_mcs_value_str, rx_mcs_value = map(list, zip(*sorted(zip(rx_mcs,rx_mcs_value_str,rx_mcs_value),key=num_sort)))
 
     # rx_mcs values
     report.set_table_title("RX MCS Histogram")
@@ -1022,7 +1048,18 @@ Example :
         else:
             tx_mcs_value_percent.append(round((tx_mcs_count/tx_mcs_total_count)*100, 2)) 
 
-    tx_mcs.sort(key=num_sort)
+    logger.debug("Before sort: {tx_mcs} : {tx_mcs_value_str} : {tx_mcs_value} : {tx_mcs_value_percent}".
+        format(tx_mcs=tx_mcs, tx_mcs_value_str = tx_mcs_value_str, tx_mcs_value=tx_mcs_value, tx_mcs_value_percent=tx_mcs_value_percent))
+
+    # see rx_mcs for details
+    tx_mcs, tx_mcs_value_str, tx_mcs_value , tx_mcs_value_percent = map(list, zip(*sorted(zip(tx_mcs,tx_mcs_value_str, tx_mcs_value, tx_mcs_value_percent),key=num_sort)))
+
+    logger.debug("Before sort: {tx_mcs} : {tx_mcs_value_str} : {tx_mcs_value} : {tx_mcs_value_percent}".
+        format(tx_mcs=tx_mcs, tx_mcs_value_str = tx_mcs_value_str, tx_mcs_value=tx_mcs_value, tx_mcs_value_percent=tx_mcs_value_percent))
+
+    #tx_mcs.sort(key=num_sort)
+
+    tx_mcs = [s.replace('v_tx_mcs_','MCS ') for s in tx_mcs] 
 
     tx_mcs = [s.replace('v_tx_mcs_','MCS ') for s in tx_mcs] 
 
@@ -1083,7 +1120,11 @@ Example :
 
     logger.debug("rx_ampdu: {rx_ampdu}".format(rx_ampdu=rx_ampdu))
 
-    rx_ampdu.sort(key=num_sort)
+    #rx_ampdu.sort(key=num_sort)
+
+    rx_ampdu = [s.replace('rx_ampdu_len_','') for s in rx_ampdu] 
+    rx_ampdu = [s.replace('_','-') for s in rx_ampdu]
+
 
     rx_ampdu = [s.replace('rx_ampdu_len_','') for s in rx_ampdu] 
     rx_ampdu = [s.replace('_','-') for s in rx_ampdu]
@@ -1159,7 +1200,9 @@ Example :
             tx_ampdu_value_percent.append(round((tx_ampdu_count/tx_ampdu_total_count)*100, 2)) 
 
     logger.debug(tx_ampdu)
-    tx_ampdu.sort(key=num_sort)
+
+    # tx_ampdu.sort(key=num_sort)
+    
     tx_ampdu = [s.replace('tx_ampdu_len_','') for s in tx_ampdu] 
     tx_ampdu = [s.replace('_','-') for s in tx_ampdu]
 
