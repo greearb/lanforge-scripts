@@ -90,10 +90,6 @@ class lf_rf_char(Realm):
         self.resource = ''
         self.duration = ''
         self.polling_interval = ''
-        self.tx_pkts = []
-        self.tx_retries = []
-        self.tx_failed = []
-        self.tx_interval = []
 
         # create api_json
         self.json_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
@@ -128,6 +124,19 @@ class lf_rf_char(Realm):
         self.lf_command = ''
         self.dut_mac = ''
         self.dut_ip = ''
+
+        # tx data
+        self.tx_interval = []
+        self.tx_pkts = []
+        self.tx_retries = []
+        self.tx_failed = []
+
+        # RSSI calculation
+        self.rssi_signal = []
+        self.rssi_1 = []
+        self.rssi_2 = []
+        self.rssi_3 = []
+        self.rssi_4 = []
 
         # logging
         self.debug = debug
@@ -179,10 +188,7 @@ class lf_rf_char(Realm):
             exit(1)
 
         self.dut_ip = dut_ip
-
-
-
-
+        # TODO the return no needed
         return json_stations
 
     def clear_dhcp_lease(self):
@@ -225,6 +231,13 @@ class lf_rf_char(Realm):
         self.tx_pkts = []
         self.tx_retries = []
         self.tx_failed = []
+
+        self.rssi_signal = []
+        self.rssi_1 = []
+        self.rssi_2 = []
+        self.rssi_3 = []
+        self.rssi_4 = []
+
         logger.info("clear dhcp leases")
         # self.clear_dhcp_lease()
         logger.info("clear port counters")
@@ -261,7 +274,34 @@ class lf_rf_char(Realm):
             self.tx_failed.append(round(json_port_stats["interface"]["tx-failed %"], 2))
             # calculated the transmitted packets compared to number of retries
 
-            # todo read the info from the data frame
+            # take samples of RSSI
+            self.json_api.request = 'stations'
+            json_stations, *nil = self.json_api.get_request_stations_information()
+            
+            self.rssi_signal.append(json_stations['station']['signal'])
+            chain_rssi_str = json_stations['station']['chain rssi']
+            chain_rssi = chain_rssi_str.split(',')
+            logger.info("RSSI chain length {chain}".format(chain=len(chain_rssi)))
+            if len(chain_rssi) == 1:
+                self.rssi_1.append(chain_rssi[0])
+                self.rssi_2.append(np.nan)
+                self.rssi_3.append(np.nan)
+                self.rssi_4.append(np.nan)
+            elif len(chain_rssi) == 2:
+                self.rssi_1.append(chain_rssi[0])
+                self.rssi_2.append(chain_rssi[1])
+                self.rssi_3.append(np.nan)
+                self.rssi_4.append(np.nan)
+            elif len(chain_rssi) == 3:
+                self.rssi_1.append(chain_rssi[0])
+                self.rssi_2.append(chain_rssi[1])
+                self.rssi_3.append(chain_rssi[2])
+                self.rssi_4.append(np.nan)
+            elif len(chain_rssi) == 4:
+                self.rssi_1.append(chain_rssi[0])
+                self.rssi_2.append(chain_rssi[1])
+                self.rssi_3.append(chain_rssi[2])
+                self.rssi_4.append(chain_rssi[3])
 
         self.json_api.csv_mode = 'write'
         self.json_api.update_csv_mode()
@@ -548,6 +588,27 @@ Example :
     report.move_graph_image()
     report.build_graph()
 
+    # RSSI line graphs
+    rssi_signal = rf_char.rssi_signal
+    rssi_1 = rf_char.rssi_1
+    rssi_2 = rf_char.rssi_2
+    rssi_3 = rf_char.rssi_3
+    rssi_4 = rf_char.rssi_4
+    tx_interval = rf_char.tx_interval
+
+    report.set_table_title("RSSI Signal, RSSI per chain")
+    report.build_table_title()
+
+    df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval]," RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
+        " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3], " RSSI 4 ": [l for l in rssi_4]})
+
+    report.set_table_dataframe(df_rssi_info)
+    report.build_table()
+
+    # graph RSSI
+
+
+
     # retrieve rx data from json for MODE
     rx_mode = []
     rx_mode_value_str = []
@@ -555,7 +616,6 @@ Example :
     rx_mode_value_percent = []
     rx_mode_total_count = 0
 
-    # TODO change value to count
     # retrieve each mode value from json
     for iterator in wifi_stats_json:
         if 'rx_mode' in iterator:

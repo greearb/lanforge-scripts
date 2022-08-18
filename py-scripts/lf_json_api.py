@@ -145,7 +145,7 @@ class lf_json_api():
             lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
         ))
 
-
+        csv_file_port = "{shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request)
         try:
             # TODO re-evalute this if port
             if self.request == "port":
@@ -154,7 +154,6 @@ class lf_json_api():
                 key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
             df = json_normalize(lanforge_json[key])
             # TODO defaulting to the normal behavior
-            csv_file_port = "{shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request)
             df.to_csv(csv_file_port.format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request), 
                     mode = self.csv_mode, header = self.csv_header, index=False)
         except Exception as x:
