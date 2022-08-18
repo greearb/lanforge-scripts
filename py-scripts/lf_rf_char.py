@@ -957,11 +957,11 @@ Example :
     for rx_mcs_count in rx_mcs_value:
         rx_mcs_value_percent.append(round((rx_mcs_count/rx_mcs_total_count)*100, 2)) 
 
-    logger.info("{rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value}".
-        format(rx_mcs=rx_mcs, rx_mcs_value_str = rx_mcs_value_str, rx_mcs_value=rx_mcs_value))
+    logger.info("{rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
+        format(rx_mcs=rx_mcs, rx_mcs_value_str = rx_mcs_value_str, rx_mcs_value=rx_mcs_value, rx_mcs_value_percent=rx_mcs_value_percent))
 
     # 
-    zip_rx_mcs = zip(rx_mcs,rx_mcs_value_str,rx_mcs_value)
+    zip_rx_mcs = zip(rx_mcs,rx_mcs_value_str,rx_mcs_value,rx_mcs_value_percent)
 
     # https://stackoverflow.com/questions/19931975/sort-multiple-lists-simultaneously
     #https://www.geeksforgeeks.org/sorted-function-python/
@@ -973,10 +973,10 @@ Example :
     res_mcs = zip(*zip_rx_mcs_sort)
 
     # return the sorted lists
-    rx_mcs, rx_mcs_value_str, rx_mcs_value = map(list, res_mcs)
+    rx_mcs, rx_mcs_value_str, rx_mcs_value, rx_mcs_value_percent = map(list, res_mcs)
 
-    logger.info("{rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value}".
-        format(rx_mcs=rx_mcs, rx_mcs_value_str = rx_mcs_value_str, rx_mcs_value=rx_mcs_value))
+    logger.info("{rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
+        format(rx_mcs=rx_mcs, rx_mcs_value_str = rx_mcs_value_str, rx_mcs_value=rx_mcs_value, rx_mcs_value_percent=rx_mcs_value_percent))
 
     rx_mcs = [s.replace('v_rx_mcs_','MCS ') for s in rx_mcs] 
 
@@ -1042,10 +1042,18 @@ Example :
         else:
             tx_mcs_value_percent.append(round((tx_mcs_count/tx_mcs_total_count)*100, 2)) 
 
+    logger.debug("Before sort: {tx_mcs} : {tx_mcs_value_str} : {tx_mcs_value} : {tx_mcs_value_percent}".
+        format(tx_mcs=tx_mcs, tx_mcs_value_str = tx_mcs_value_str, tx_mcs_value=tx_mcs_value, tx_mcs_value_percent=tx_mcs_value_percent))
+
+    # see rx_mcs for details
+    tx_mcs, tx_mcs_value_str, tx_mcs_value , tx_mcs_value_percent = map(list, zip(*sorted(zip(tx_mcs,tx_mcs_value_str, tx_mcs_value, tx_mcs_value_percent),key=num_sort)))
+
+    logger.debug("Before sort: {tx_mcs} : {tx_mcs_value_str} : {tx_mcs_value} : {tx_mcs_value_percent}".
+        format(tx_mcs=tx_mcs, tx_mcs_value_str = tx_mcs_value_str, tx_mcs_value=tx_mcs_value, tx_mcs_value_percent=tx_mcs_value_percent))
+
     #tx_mcs.sort(key=num_sort)
 
     tx_mcs = [s.replace('v_tx_mcs_','MCS ') for s in tx_mcs] 
-
 
     # tx_mcs values
     report.set_table_title("TX MCS Histogram")
