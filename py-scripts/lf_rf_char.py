@@ -705,6 +705,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         _data_set = [rssi_signal, rssi_1, rssi_2, rssi_3, rssi_4],
         _xaxis_name="Time Seconds",
         _yaxis_name="RSSI dBm",
+        _reverse_y = True,
         _xaxis_categories=tx_interval,
         _graph_title="RSSI",
         _title_size=16,
@@ -718,6 +719,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         _legend_loc="best",
         _legend_box=(1,1),
         _legend_ncol=1
+        
     )
 
     graph_png = graph.build_line_graph()

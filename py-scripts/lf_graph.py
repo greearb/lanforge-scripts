@@ -697,7 +697,9 @@ class lf_line_graph:
                  _legend_fontsize=None,
                  _marker=None,
                  _dpi=96,
-                 _enable_csv=False):
+                 _enable_csv=False,
+                 _reverse_x=False,
+                 _reverse_y=False):
         if _data_set is None:
             _data_set = [[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]]
         if _xaxis_categories is None:
@@ -731,6 +733,8 @@ class lf_line_graph:
         self.legend_box = _legend_box
         self.legend_ncol = _legend_ncol
         self.legend_fontsize = _legend_fontsize
+        self.reverse_x = _reverse_x
+        self.reverse_y = _reverse_y
 
     def build_line_graph(self):
         plt.subplots(figsize=self.figsize)
@@ -753,6 +757,10 @@ class lf_line_graph:
             ncol=self.legend_ncol,
             fontsize=self.legend_fontsize)
         plt.suptitle(self.grp_title, fontsize=self.title_size)
+        if self.reverse_y:
+            plt.gca().invert_yaxis()
+        if self.reverse_x:
+            plt.gca().invert_xaxis()            
         plt.gcf()
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
