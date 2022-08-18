@@ -1,3 +1,23 @@
+'''
+NAME: wifi_diag.py
+
+PURPOSE: wifi_diag.py provides a comprehensive set of information for the packet captured(pcap) file
+        and generates a report based on input pcap file.The script will analyze the PCAP file and provide the
+        various analytical results such as A-MPDU percentage with histogram,various percentage of the pcakets
+        received for the different MCS, the report will include Bandwidth, Number of Spatial streams, encoding rate,
+        RSSI, percentage of control frames and management frames, etc.
+
+EXAMPLE:  python3 wifi_diag.py --input <pcap(Packet Capture) file path>
+
+VERIFIED_ON: 18 August 2022
+
+LICENSE:
+    Free to distribute and modify. LANforge systems must be licensed.
+    Copyright 2022 Candela Technologies Inc
+
+INCLUDE_IN_README: False
+'''
+
 import sys
 import pyshark
 import numpy as np
