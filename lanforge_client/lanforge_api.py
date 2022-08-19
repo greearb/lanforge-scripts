@@ -411,10 +411,11 @@ class BaseLFJsonRequest:
                   connection_timeout_sec: float = None,
                   max_timeout_sec: float = None,
                   die_on_error: bool = False,
-                  errors_warnings: list = None,    # p3.9 list[str]
+                  errors_warnings: list = None,  # p3.9 list[str]
                   response_json_list: list = None,
                   method_: str = 'POST',
-                  session_id_: str = "") -> Optional:  # p3.9 Optional[HTTPResponse]
+                  session_id_: str = "",
+                  suppress_related_commands = False) -> Optional:  # p3.9 Optional[HTTPResponse]
         """
 
         :param url: URL to post to
@@ -429,6 +430,8 @@ class BaseLFJsonRequest:
         :param method_: override HTTP method, please do not override
         :param session_id_: insert a session to the header; this is useful in the case where we are
         operating outside a session context, like during the __del__ constructor
+        :param suppress_related_commands: when True, the GUI HTTP responder will suppress associated commands,
+        such as checking for port and endpoint existance before operating the commands
         :return: returns first set of http.client.HTTPResponse data
         """
         debug |= self.debug_on
@@ -442,16 +445,39 @@ class BaseLFJsonRequest:
         responses: list = []  # p3.9 list[HTTPResponse]
         url = self.get_corrected_url(url)
         self.logger.by_method("url: "+url)
-        if (post_data is not None) and (post_data is not self.No_Data):
-            myrequest = request.Request(url=url,
-                                        method=method_,
-                                        data=json.dumps(post_data).encode("utf-8"),
-                                        headers=self.default_headers)
-        else:
+
+        if (post_data is None) or (post_data is self.No_Data):
+            # this is sending a post request without data
             myrequest = request.Request(url=url,
                                         headers=self.default_headers,
                                         method=method_,
                                         data=post_data)
+        else:
+            if suppress_related_commands is None:
+                if 'suppress_preexec_cli' in post_data:
+                    del post_data['suppress_preexec_cli']
+                if 'suppress_preexec_method' in post_data:
+                    del post_data['suppress_preexec_method']
+                if 'suppress_postexec_cli' in post_data:
+                    del post_data['suppress_postexec_cli']
+                if 'suppress_postexec_method' in post_data:
+                    del post_data['suppress_postexec_method']
+            elif not suppress_related_commands:
+                post_data['suppress_preexec_cli'] = False
+                post_data['suppress_preexec_method'] = False
+                post_data['suppress_postexec_cli'] = False
+                post_data['suppress_postexec_method'] = False
+            elif suppress_related_commands:
+                post_data['suppress_preexec_cli'] = True
+                post_data['suppress_preexec_method'] = True
+                post_data['suppress_postexec_cli'] = True
+                post_data['suppress_postexec_method'] = True
+
+            myrequest = request.Request(url=url,
+                                        method=method_,
+                                        data=json.dumps(post_data).encode("utf-8"),
+                                        headers=self.default_headers)
+
             self.logger.by_method("empty post sent to [%s]" % url)
 
         if not connection_timeout_sec:
@@ -1231,11 +1257,14 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#adb
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_adb(self, 
-                 adb_cmd: str = None,   # All remaining text after adb_id will be sent to the adb command.
-                 adb_id: str = None,    # Android device identifier, use NA if it should not be used/specified.
-                 resource: int = None,  # Resource number. [W]
-                 shelf: int = 1,        # Shelf name/id. Required. [R][D:1]
-                 debug=False):
+                 adb_cmd: str = None,                      # All remaining text after adb_id will be sent to the adb
+                 # command.
+                 adb_id: str = None,                       # Android device identifier, use NA if it should not be
+                 # used/specified.
+                 resource: int = None,                     # Resource number. [W]
+                 shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                 debug: bool = False,
+                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_adb(param=value ...)
@@ -1256,6 +1285,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/adb",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -1282,13 +1312,14 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#adb_gui
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_adb_gui(self, 
-                     adb_id: str = None,             # Android device identifier.
-                     display: str = None,            # The DISPLAY option, for example: 192.168.1.5:0.0. Will guess if
-                     # left blank.
-                     resource: int = None,           # Resource number. [W]
-                     screen_size_prcnt: str = None,  # 0.1 to 1.0, screen size percentage for the Android display.
-                     shelf: int = 1,                 # Shelf name/id. Required. [R][D:1]
-                     debug=False):
+                     adb_id: str = None,                       # Android device identifier.
+                     display: str = None,                      # The DISPLAY option, for example: 192.168.1.5:0.0. Will
+                     # guess if left blank.
+                     resource: int = None,                     # Resource number. [W]
+                     screen_size_prcnt: str = None,            # 0.1 to 1.0, screen size percentage for the Android display.
+                     shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_adb_gui(param=value ...)
@@ -1311,6 +1342,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/adb_gui",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -1338,16 +1370,17 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_adb
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_adb(self, 
-                     adb_device: str = None,   # Android device device ID
-                     adb_id: str = None,       # Android device identifier (serial number).
-                     adb_model: str = None,    # Android device model ID
-                     adb_product: str = None,  # Android device product ID
-                     lf_username: str = None,  # LANforge Interop app user-name
-                     resource: int = None,     # Resource number. [W]
-                     sdk_release: str = None,  # Android sdk release (example: 4.4.2)
-                     sdk_version: str = None,  # Android sdk version (example: 19)
-                     shelf: int = 1,           # Shelf name/id. Required. [R][D:1]
-                     debug=False):
+                     adb_device: str = None,                   # Android device device ID
+                     adb_id: str = None,                       # Android device identifier (serial number).
+                     adb_model: str = None,                    # Android device model ID
+                     adb_product: str = None,                  # Android device product ID
+                     lf_username: str = None,                  # LANforge Interop app user-name
+                     resource: int = None,                     # Resource number. [W]
+                     sdk_release: str = None,                  # Android sdk release (example: 4.4.2)
+                     sdk_version: str = None,                  # Android sdk version (example: 19)
+                     shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_adb(param=value ...)
@@ -1378,6 +1411,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_adb",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -1409,17 +1443,19 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_arm_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_arm_endp(self, 
-                          alias: str = None,      # Name of endpoint. [R]
-                          cpu_id: str = None,     # Preferred CPU ID on which this endpoint should run.
-                          mx_pkt_sz: str = None,  # Maximum packet size, including all Ethernet headers.
-                          pkt_sz: str = None,     # Minimum packet size, including all Ethernet headers.
-                          port: str = None,       # Port number. [W]
-                          pps: str = None,        # Packets per second to generate.
-                          resource: int = None,   # Resource number. [W]
-                          shelf: int = 1,         # Shelf name/id. Required. [R][D:1]
-                          tos: str = None,        # The Type of Service, can be HEX. See set_endp_tos for details.
-                          p_type: str = None,     # Endpoint Type : arm_udp. [W]
-                          debug=False):
+                          alias: str = None,                        # Name of endpoint. [R]
+                          cpu_id: str = None,                       # Preferred CPU ID on which this endpoint should run.
+                          mx_pkt_sz: str = None,                    # Maximum packet size, including all Ethernet headers.
+                          pkt_sz: str = None,                       # Minimum packet size, including all Ethernet headers.
+                          port: str = None,                         # Port number. [W]
+                          pps: str = None,                          # Packets per second to generate.
+                          resource: int = None,                     # Resource number. [W]
+                          shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                          tos: str = None,                          # The Type of Service, can be HEX. See set_endp_tos for
+                          # details.
+                          p_type: str = None,                       # Endpoint Type : arm_udp. [W]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_arm_endp(param=value ...)
@@ -1452,6 +1488,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_arm_endp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -1507,19 +1544,21 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_add_bgp_peer(self, 
-                          p_as: str = None,             # BGP Peer Autonomous System number, 0-65535
-                          delay_open_time: str = None,  # BGP Peer delay open time.
-                          flags: str = None,            # Virtual router BGP Peer flags, see above for definitions.
-                          holdtime: str = None,         # BGP Peer hold-time.
-                          local_dev: str = None,        # BGP Peer Local interface.
-                          nexthop: str = None,          # BGP Peer Nexthop, IPv4 Address.
-                          nexthop6: str = None,         # BGP Peer IPv6 Nexthop address.
-                          peer_id: str = None,          # BGP Peer Identifier: IPv4 Address
-                          peer_index: str = None,       # Peer index in this virtual router (0-7).
-                          resource: int = None,         # Resource number. [W]
-                          shelf: int = 1,               # Shelf name/id. [R][D:1]
-                          vr_id: str = None,            # Name of virtual router. [R]
-                          debug=False):
+                          p_as: str = None,                         # BGP Peer Autonomous System number, 0-65535
+                          delay_open_time: str = None,              # BGP Peer delay open time.
+                          flags: str = None,                        # Virtual router BGP Peer flags, see above for
+                          # definitions.
+                          holdtime: str = None,                     # BGP Peer hold-time.
+                          local_dev: str = None,                    # BGP Peer Local interface.
+                          nexthop: str = None,                      # BGP Peer Nexthop, IPv4 Address.
+                          nexthop6: str = None,                     # BGP Peer IPv6 Nexthop address.
+                          peer_id: str = None,                      # BGP Peer Identifier: IPv4 Address
+                          peer_index: str = None,                   # Peer index in this virtual router (0-7).
+                          resource: int = None,                     # Resource number. [W]
+                          shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                          vr_id: str = None,                        # Name of virtual router. [R]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_bgp_peer(param=value ...)
@@ -1556,6 +1595,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_bgp_peer",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -1590,11 +1630,13 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_bond
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_bond(self, 
-                      network_devs: str = None,  # Comma-separated list of network devices: eth1,eth2,eth3... [W]
-                      port: str = None,          # Name of the bond device. [W]
-                      resource: int = None,      # Resource number. [W]
-                      shelf: int = 1,            # Shelf number. [R][D:1]
-                      debug=False):
+                      network_devs: str = None,                 # Comma-separated list of network devices: eth1,eth2,eth3...
+                      # [W]
+                      port: str = None,                         # Name of the bond device. [W]
+                      resource: int = None,                     # Resource number. [W]
+                      shelf: int = 1,                           # Shelf number. [R][D:1]
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_bond(param=value ...)
@@ -1615,6 +1657,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_bond",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -1649,17 +1692,19 @@ class LFJsonCommand(JsonCommand):
         stp_enabled = 1      # Enable Spanning Tree Protocol (STP)
 
     def post_add_br(self, 
-                    br_aging_time: str = None,        # MAC aging time, in seconds, 32-bit number.
-                    br_flags: str = None,             # Bridge flags, see above.
-                    br_forwarding_delay: str = None,  # How long to wait until the bridge will start forwarding packets.
-                    br_hello_time: str = None,        # How often does the bridge send out STP hello packets.
-                    br_max_age: str = None,           # How long until STP considers a non-responsive bridge dead.
-                    br_priority: str = None,          # Bridge priority, 16-bit number.
-                    network_devs: str = None,         # Comma-separated list of network devices: eth1,eth2,eth3...
-                    port: str = None,                 # Name of the bridge device. [W]
-                    resource: int = None,             # Resource number. [W]
-                    shelf: int = 1,                   # Shelf number. [R][D:1]
-                    debug=False):
+                    br_aging_time: str = None,                # MAC aging time, in seconds, 32-bit number.
+                    br_flags: str = None,                     # Bridge flags, see above.
+                    br_forwarding_delay: str = None,          # How long to wait until the bridge will start forwarding
+                    # packets.
+                    br_hello_time: str = None,                # How often does the bridge send out STP hello packets.
+                    br_max_age: str = None,                   # How long until STP considers a non-responsive bridge dead.
+                    br_priority: str = None,                  # Bridge priority, 16-bit number.
+                    network_devs: str = None,                 # Comma-separated list of network devices: eth1,eth2,eth3...
+                    port: str = None,                         # Name of the bridge device. [W]
+                    resource: int = None,                     # Resource number. [W]
+                    shelf: int = 1,                           # Shelf number. [R][D:1]
+                    debug: bool = False,
+                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_br(param=value ...)
@@ -1692,6 +1737,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_br",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -1732,16 +1778,18 @@ class LFJsonCommand(JsonCommand):
         RUNNING = 1      # Set to running state.
 
     def post_add_cd(self, 
-                    alias: str = None,         # Name of Collision Domain. [W]
-                    bps: str = None,           # Maximum speed at which this collision domain can run.
-                    flags: str = None,         # See above. Leave blank or use 'NA' for no default values.
-                    report_timer: int = None,  # How often to report stats.
-                    resource: int = None,      # Resource number. [W]
-                    shelf: int = 1,            # Shelf name/id. [R][D:1]
-                    state: str = None,         # RUNNING or STOPPED (default is RUNNING). Use this to start/stop.
-                    p_type: str = None,        # CD Type: WIFI, WISER_SURFACE, WISER_SURFACE_AIR, WISER_AIR_AIR,
-                    # WISER_NCW
-                    debug=False):
+                    alias: str = None,                        # Name of Collision Domain. [W]
+                    bps: str = None,                          # Maximum speed at which this collision domain can run.
+                    flags: str = None,                        # See above. Leave blank or use 'NA' for no default values.
+                    report_timer: int = None,                 # How often to report stats.
+                    resource: int = None,                     # Resource number. [W]
+                    shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                    state: str = None,                        # RUNNING or STOPPED (default is RUNNING). Use this to
+                    # start/stop.
+                    p_type: str = None,                       # CD Type: WIFI, WISER_SURFACE, WISER_SURFACE_AIR,
+                    # WISER_AIR_AIR, WISER_NCW
+                    debug: bool = False,
+                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_cd(param=value ...)
@@ -1770,6 +1818,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_cd",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -1800,9 +1849,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_cd_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_cd_endp(self, 
-                         cd: str = None,    # Name of Collision Domain. [R]
-                         endp: str = None,  # Endpoint name/id. [R]
-                         debug=False):
+                         cd: str = None,                           # Name of Collision Domain. [R]
+                         endp: str = None,                         # Endpoint name/id. [R]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_cd_endp(param=value ...)
@@ -1819,6 +1869,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_cd_endp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -1843,9 +1894,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_cd_vr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_cd_vr(self, 
-                       cd: str = None,  # Name of Collision Domain. [R]
-                       vr: str = None,  # Virtual-Router name/ID. [R]
-                       debug=False):
+                       cd: str = None,                           # Name of Collision Domain. [R]
+                       vr: str = None,                           # Virtual-Router name/ID. [R]
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_cd_vr(param=value ...)
@@ -1862,6 +1914,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_cd_vr",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -1929,28 +1982,31 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_add_chamber(self, 
-                         chamber_type: str = None,    # Chamber type, see above. Use 1 for Medium if uncertain. [W]
-                         dut_name1: str = None,       # Name of first DUT in this chamber or NA
-                         dut_name2: str = None,       # Name of second DUT in this chamber or NA
-                         dut_name3: str = None,       # Name of third DUT in this chamber or NA
-                         dut_name4: str = None,       # Name of fourth DUT in this chamber or NA
-                         flags: str = None,           # Flag field for Chamber, see above. [W]
-                         flags_mask: str = None,      # Mask of what flags to pay attention to, or NA for all.
-                         height: str = None,          # Height to be used when drawn in the LANforge-GUI.
-                         isolation: str = None,       # Estimated isolation in db for this chamber.
-                         lanforge1: str = None,       # EID of first LANforge Resource in this chamber or NA
-                         lanforge2: str = None,       # EID of second LANforge Resource in this chamber or NA
-                         lanforge3: str = None,       # EID of third LANforge Resource in this chamber or NA
-                         lanforge4: str = None,       # EID of fourth LANforge Resource in this chamber or NA
-                         name: str = None,            # Name of Chamber, unique identifier. [R]
-                         resource: int = None,        # LANforge Resource ID for controlling turn-table via serial
-                         # protocol.
-                         sma_count: str = None,       # Number of SMA connectors on this chamber, default is 16.
-                         turntable_type: str = None,  # Turn-Table type: see above.
-                         width: str = None,           # Width to be used when drawn in the LANforge-GUI.
-                         x: str = None,               # X coordinate to be used when drawn in the LANforge-GUI.
-                         y: str = None,               # Y coordinate to be used when drawn in the LANforge-GUI.
-                         debug=False):
+                         chamber_type: str = None,                 # Chamber type, see above. Use 1 for Medium if uncertain.
+                         # [W]
+                         dut_name1: str = None,                    # Name of first DUT in this chamber or NA
+                         dut_name2: str = None,                    # Name of second DUT in this chamber or NA
+                         dut_name3: str = None,                    # Name of third DUT in this chamber or NA
+                         dut_name4: str = None,                    # Name of fourth DUT in this chamber or NA
+                         flags: str = None,                        # Flag field for Chamber, see above. [W]
+                         flags_mask: str = None,                   # Mask of what flags to pay attention to, or NA for all.
+                         height: str = None,                       # Height to be used when drawn in the LANforge-GUI.
+                         isolation: str = None,                    # Estimated isolation in db for this chamber.
+                         lanforge1: str = None,                    # EID of first LANforge Resource in this chamber or NA
+                         lanforge2: str = None,                    # EID of second LANforge Resource in this chamber or NA
+                         lanforge3: str = None,                    # EID of third LANforge Resource in this chamber or NA
+                         lanforge4: str = None,                    # EID of fourth LANforge Resource in this chamber or NA
+                         name: str = None,                         # Name of Chamber, unique identifier. [R]
+                         resource: int = None,                     # LANforge Resource ID for controlling turn-table via
+                         # serial protocol.
+                         sma_count: str = None,                    # Number of SMA connectors on this chamber, default is
+                         # 16.
+                         turntable_type: str = None,               # Turn-Table type: see above.
+                         width: str = None,                        # Width to be used when drawn in the LANforge-GUI.
+                         x: str = None,                            # X coordinate to be used when drawn in the LANforge-GUI.
+                         y: str = None,                            # Y coordinate to be used when drawn in the LANforge-GUI.
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_chamber(param=value ...)
@@ -2003,6 +2059,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_chamber",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -2054,24 +2111,28 @@ class LFJsonCommand(JsonCommand):
         TERMINATED = 2      # (2) Connection is terminated, signal shall not pass!
 
     def post_add_chamber_cx(self, 
-                            a_id: str = None,            # EidAntenna in string format for A side connection.
-                            atten_id: str = None,        # EID for the Attenuator module if one is inline on this
-                            # connection.
-                            b_id: str = None,            # EidAntenna in string format for B side connection.
-                            connection_idx: str = None,  # Connection index, currently up to 32 connections supported
-                            # (0-31) [R]
-                            flags: str = None,           # Flag field for Chamber Connection, see above.
-                            flags_mask: str = None,      # Mask of what flags to pay attention to, or NA for all.
-                            internal: str = None,        # Internal (1) or not (0): Internal connections are no longer
-                            # supported.
-                            min_atten: str = None,       # Specify minimum attenuation in 10ths of a db. Distance
-                            # logic will not set atten below this.
-                            name: str = None,            # Name of Chamber, unique identifier. [R]
-                            zrssi2: str = None,          # Specify 2.4Ghz zero-attenuation RSSI in 10ths of a db.
-                            # Distance logic will consider this in its calculations.
-                            zrssi5: str = None,          # Specify 5Ghz zero-attenuation RSSI in 10ths of a db.
-                            # Distance logic will consider this in its calculations.
-                            debug=False):
+                            a_id: str = None,                         # EidAntenna in string format for A side connection.
+                            atten_id: str = None,                     # EID for the Attenuator module if one is inline on
+                            # this connection.
+                            b_id: str = None,                         # EidAntenna in string format for B side connection.
+                            connection_idx: str = None,               # Connection index, currently up to 32 connections
+                            # supported (0-31) [R]
+                            flags: str = None,                        # Flag field for Chamber Connection, see above.
+                            flags_mask: str = None,                   # Mask of what flags to pay attention to, or NA for
+                            # all.
+                            internal: str = None,                     # Internal (1) or not (0): Internal connections are no
+                            # longer supported.
+                            min_atten: str = None,                    # Specify minimum attenuation in 10ths of a db.
+                            # Distance logic will not set atten below this.
+                            name: str = None,                         # Name of Chamber, unique identifier. [R]
+                            zrssi2: str = None,                       # Specify 2.4Ghz zero-attenuation RSSI in 10ths of a
+                            # db. Distance logic will consider this in its
+                            # calculations.
+                            zrssi5: str = None,                       # Specify 5Ghz zero-attenuation RSSI in 10ths of a db.
+                            # Distance logic will consider this in its
+                            # calculations.
+                            debug: bool = False,
+                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_chamber_cx(param=value ...)
@@ -2106,6 +2167,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_chamber_cx",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -2139,11 +2201,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_chamber_path
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_chamber_path(self, 
-                              chamber: str = None,  # Chamber Name. [R]
-                              content: str = None,  # <tt>[BLANK]</tt> will erase all content, any other text will
-                              # be appended to existing text.
-                              path: str = None,     # Path Name [R]
-                              debug=False):
+                              chamber: str = None,                      # Chamber Name. [R]
+                              content: str = None,                      # <tt>[BLANK]</tt> will erase all content, any other
+                              # text will be appended to existing text.
+                              path: str = None,                         # Path Name [R]
+                              debug: bool = False,
+                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_chamber_path(param=value ...)
@@ -2162,6 +2225,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_chamber_path",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -2206,17 +2270,20 @@ class LFJsonCommand(JsonCommand):
         unused = "unused"        # No signalling is performed, each channel in the list remains idle
 
     def post_add_channel_group(self, 
-                               alias: str = None,      # Name for this Channel Group. [R]
-                               channels: str = None,   # List of channels to add to this group.
-                               idle_flag: str = None,  # Idle flag (byte) for this channel group, for instance:
-                               # 0x7e
-                               mtu: str = None,        # MTU (and MRU) for this channel group. Must be a multiple
-                               # of the number of channels if configuring a T1 WanLink.
-                               resource: int = None,   # Resource number. [W]
-                               shelf: int = 1,         # Shelf name/id. [R][D:1]
-                               span_num: str = None,   # The span number. First span is 1, second is 2... [W]
-                               p_type: str = None,     # The channel-type. Use 'clear' for PPP links.
-                               debug=False):
+                               alias: str = None,                        # Name for this Channel Group. [R]
+                               channels: str = None,                     # List of channels to add to this group.
+                               idle_flag: str = None,                    # Idle flag (byte) for this channel group, for
+                               # instance: 0x7e
+                               mtu: str = None,                          # MTU (and MRU) for this channel group. Must be a
+                               # multiple of the number of channels if configuring
+                               # a T1 WanLink.
+                               resource: int = None,                     # Resource number. [W]
+                               shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                               span_num: str = None,                     # The span number. First span is 1, second is 2...
+                               # [W]
+                               p_type: str = None,                       # The channel-type. Use 'clear' for PPP links.
+                               debug: bool = False,
+                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_channel_group(param=value ...)
@@ -2245,6 +2312,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_channel_group",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -2275,11 +2343,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_cx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_cx(self, 
-                    alias: str = None,     # Name of the Cross Connect to create. [R]
-                    rx_endp: str = None,   # Name of Receiving endpoint. [W]
-                    test_mgr: str = None,  # Name of test-manager to create the CX on. [W][D:default_tm]
-                    tx_endp: str = None,   # Name of Transmitting endpoint. [R]
-                    debug=False):
+                    alias: str = None,                        # Name of the Cross Connect to create. [R]
+                    rx_endp: str = None,                      # Name of Receiving endpoint. [W]
+                    test_mgr: str = None,                     # Name of test-manager to create the CX on. [W][D:default_tm]
+                    tx_endp: str = None,                      # Name of Transmitting endpoint. [R]
+                    debug: bool = False,
+                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_cx(param=value ...)
@@ -2300,6 +2369,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_cx",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -2358,36 +2428,37 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_add_dut(self, 
-                     antenna_count1: str = None,  # Antenna count for first radio.
-                     antenna_count2: str = None,  # Antenna count for second radio.
-                     antenna_count3: str = None,  # Antenna count for third radio.
-                     api_id: str = None,          # DUT API Identifier (none specified yet)
-                     bssid1: str = None,          # BSSID for first radio.
-                     bssid2: str = None,          # BSSID for second radio.
-                     bssid3: str = None,          # BSSID for third radio.
-                     eap_id: str = None,          # EAP Identifier, for EAP-PEAP.
-                     flags: str = None,           # Flag field for DUT, see above. [W]
-                     flags_mask: str = None,      # Optional mask to specify what DUT flags are being set.
-                     hw_version: str = None,      # DUT Hardware Version information
-                     img_file: str = None,        # File-Name for image to represent DUT.
-                     lan_port: str = None,        # IP/Mask for LAN port
-                     mgt_ip: str = None,          # Management IP Address to access DUT
-                     model_num: str = None,       # DUT Model information
-                     name: str = None,            # Name of DUT, cannot contain '.' [R]
-                     passwd1: str = None,         # WiFi Password that can be used to connect to DUT
-                     passwd2: str = None,         # WiFi Password that can be used to connect to DUT
-                     passwd3: str = None,         # WiFi Password that can be used to connect to DUT
-                     serial_num: str = None,      # DUT Identifier (serial-number, etc)
-                     serial_port: str = None,     # Resource and Serial port name on LANforge that connects to DUT
-                     # (1.2.ttyS0).
-                     ssid1: str = None,           # WiFi SSID that can be used to connect to DUT
-                     ssid2: str = None,           # WiFi SSID that can be used to connect to DUT
-                     ssid3: str = None,           # WiFi SSID that can be used to connect to DUT
-                     sw_version: str = None,      # DUT Software Version information
-                     top_left_x: str = None,      # X Location for Chamber View.
-                     top_left_y: str = None,      # X Location for Chamber View.
-                     wan_port: str = None,        # IP/Mask for WAN port
-                     debug=False):
+                     antenna_count1: str = None,               # Antenna count for first radio.
+                     antenna_count2: str = None,               # Antenna count for second radio.
+                     antenna_count3: str = None,               # Antenna count for third radio.
+                     api_id: str = None,                       # DUT API Identifier (none specified yet)
+                     bssid1: str = None,                       # BSSID for first radio.
+                     bssid2: str = None,                       # BSSID for second radio.
+                     bssid3: str = None,                       # BSSID for third radio.
+                     eap_id: str = None,                       # EAP Identifier, for EAP-PEAP.
+                     flags: str = None,                        # Flag field for DUT, see above. [W]
+                     flags_mask: str = None,                   # Optional mask to specify what DUT flags are being set.
+                     hw_version: str = None,                   # DUT Hardware Version information
+                     img_file: str = None,                     # File-Name for image to represent DUT.
+                     lan_port: str = None,                     # IP/Mask for LAN port
+                     mgt_ip: str = None,                       # Management IP Address to access DUT
+                     model_num: str = None,                    # DUT Model information
+                     name: str = None,                         # Name of DUT, cannot contain '.' [R]
+                     passwd1: str = None,                      # WiFi Password that can be used to connect to DUT
+                     passwd2: str = None,                      # WiFi Password that can be used to connect to DUT
+                     passwd3: str = None,                      # WiFi Password that can be used to connect to DUT
+                     serial_num: str = None,                   # DUT Identifier (serial-number, etc)
+                     serial_port: str = None,                  # Resource and Serial port name on LANforge that connects to
+                     # DUT (1.2.ttyS0).
+                     ssid1: str = None,                        # WiFi SSID that can be used to connect to DUT
+                     ssid2: str = None,                        # WiFi SSID that can be used to connect to DUT
+                     ssid3: str = None,                        # WiFi SSID that can be used to connect to DUT
+                     sw_version: str = None,                   # DUT Software Version information
+                     top_left_x: str = None,                   # X Location for Chamber View.
+                     top_left_y: str = None,                   # X Location for Chamber View.
+                     wan_port: str = None,                     # IP/Mask for WAN port
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_dut(param=value ...)
@@ -2456,6 +2527,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_dut",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -2506,10 +2578,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_dut_notes
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_dut_notes(self, 
-                           dut: str = None,   # DUT Name. [R]
-                           text: str = None,  # [BLANK] will erase all, any other text will be appended to
-                           # existing text.
-                           debug=False):
+                           dut: str = None,                          # DUT Name. [R]
+                           text: str = None,                         # [BLANK] will erase all, any other text will be
+                           # appended to existing text.
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_dut_notes(param=value ...)
@@ -2526,6 +2599,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_dut_notes",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -2576,14 +2650,15 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_add_dut_ssid(self, 
-                          bssid: str = None,            # BSSID for cooresponding SSID.
-                          name: str = None,             # Name of DUT, cannot contain '.' [R]
-                          passwd: str = None,           # WiFi Password that can be used to connect to DUT
-                          ssid: str = None,             # WiFi SSID that can be used to connect to DUT
-                          ssid_flags: str = None,       # SSID flags, see above.
-                          ssid_flags_mask: str = None,  # SSID flags mask
-                          ssid_idx: str = None,         # Index of the SSID. Zero-based indexing: (0 - 7) [W]
-                          debug=False):
+                          bssid: str = None,                        # BSSID for cooresponding SSID.
+                          name: str = None,                         # Name of DUT, cannot contain '.' [R]
+                          passwd: str = None,                       # WiFi Password that can be used to connect to DUT
+                          ssid: str = None,                         # WiFi SSID that can be used to connect to DUT
+                          ssid_flags: str = None,                   # SSID flags, see above.
+                          ssid_flags_mask: str = None,              # SSID flags mask
+                          ssid_idx: str = None,                     # Index of the SSID. Zero-based indexing: (0 - 7) [W]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_dut_ssid(param=value ...)
@@ -2610,6 +2685,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_dut_ssid",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -2673,30 +2749,33 @@ class LFJsonCommand(JsonCommand):
         mc_udp = "mc_udp"                  # LF Multicast IPv4
 
     def post_add_endp(self, 
-                      alias: str = None,                     # Name of endpoint. [R]
-                      ip_port: str = None,                   # IP Port: IP port for layer three endpoints. Use -1 to let
+                      alias: str = None,                        # Name of endpoint. [R]
+                      ip_port: str = None,                      # IP Port: IP port for layer three endpoints. Use -1 to let
                       # the LANforge server automatically configure the ip_port.
                       # Layer 2 endpoints will ignore
-                      is_pkt_sz_random: str = None,          # Yes means use random sized packets, anything else means NO.
-                      is_rate_bursty: str = None,            # Yes means bursty, anything else means NO.
-                      max_pkt: str = None,                   # Maximum packet size, including all headers. 0 means 'same',
-                      # -1 means AUTO (5.3.2+) [D:0]
-                      max_rate: str = None,                  # Maximum transmit rate (bps), used if in bursty mode.
-                      min_pkt: str = None,                   # Minimum packet size, including all headers. -1 means AUTO
+                      is_pkt_sz_random: str = None,             # Yes means use random sized packets, anything else means
+                      # NO.
+                      is_rate_bursty: str = None,               # Yes means bursty, anything else means NO.
+                      max_pkt: str = None,                      # Maximum packet size, including all headers. 0 means
+                      # 'same', -1 means AUTO (5.3.2+) [D:0]
+                      max_rate: str = None,                     # Maximum transmit rate (bps), used if in bursty mode.
+                      min_pkt: str = None,                      # Minimum packet size, including all headers. -1 means AUTO
                       # (5.3.2+) [W][D:-1]
-                      min_rate: str = None,                  # Minimum transmit rate (bps), or only rate if not bursty. [W]
-                      multi_conn: str = None,                # If > 0, will create separate process with this many
+                      min_rate: str = None,                     # Minimum transmit rate (bps), or only rate if not bursty.
+                      # [W]
+                      multi_conn: str = None,                   # If > 0, will create separate process with this many
                       # connections per endpoint. See AUTO_HELPER flag
-                      payload_pattern: str = None,           # Payload pattern, see above.
-                      port: str = None,                      # Port/Interface name or number. [R]
-                      resource: int = None,                  # Resource number. [W]
-                      send_bad_crc_per_million: str = None,  # If NIC supports it, will randomly send X per million packets
-                      # with bad ethernet Frame Check Sum.
-                      shelf: int = 1,                        # Shelf name/id. [R][D:1]
-                      ttl: str = None,                       # Time-to-live, used by UDP Multicast Endpoints only.
-                      p_type: str = None,                    # Endpoint Type: See above. [W]
-                      use_checksum: str = None,              # Yes means checksum the payload, anything else means NO.
-                      debug=False):
+                      payload_pattern: str = None,              # Payload pattern, see above.
+                      port: str = None,                         # Port/Interface name or number. [R]
+                      resource: int = None,                     # Resource number. [W]
+                      send_bad_crc_per_million: str = None,     # If NIC supports it, will randomly send X per million
+                      # packets with bad ethernet Frame Check Sum.
+                      shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                      ttl: str = None,                          # Time-to-live, used by UDP Multicast Endpoints only.
+                      p_type: str = None,                       # Endpoint Type: See above. [W]
+                      use_checksum: str = None,                 # Yes means checksum the payload, anything else means NO.
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_endp(param=value ...)
@@ -2743,6 +2822,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_endp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -2782,12 +2862,14 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_event
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_event(self, 
-                       details: str = None,   # Event text description. Cannot include double-quote characters. [R]
-                       event_id: str = None,  # Numeric ID for the event to modify, or 'new' if creating a new one.
-                       # [W][D:new]
-                       name: str = None,      # Event entity name.
-                       priority: str = None,  # See set_event_priority for available priorities.
-                       debug=False):
+                       details: str = None,                      # Event text description. Cannot include double-quote
+                       # characters. [R]
+                       event_id: str = None,                     # Numeric ID for the event to modify, or 'new' if creating
+                       # a new one. [W][D:new]
+                       name: str = None,                         # Event entity name.
+                       priority: str = None,                     # See set_event_priority for available priorities.
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_event(param=value ...)
@@ -2808,6 +2890,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_event",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -2842,19 +2925,24 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(AddFileEndpFioFlags0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-        AUTO_MOUNT = 0x2          # (2) Attempt to mount with the provided information if not already mounted.
-        AUTO_UNMOUNT = 0x4        # (4) Attempt to un-mount when stopping test.
-        CHECK_MOUNT = 0x1         # (1) Attempt to verify NFS and SMB mounts match the configured values.
-        O_APPEND = 0x200          # (512) Open files for writing with O_APPEND instead
-        O_DIRECT = 0x8            # (8) Open file with O_DIRECT flag, disables caching. Must use block-size
+        AUTO_MOUNT = 0x2                # (2) Attempt to mount with the provided information if not already
+        # +mounted.
+        AUTO_UNMOUNT = 0x4              # (4) Attempt to un-mount when stopping test.
+        CHECK_MOUNT = 0x1               # (1) Attempt to verify NFS and SMB mounts match the configured values.
+        DO_CRC = 0x400                  # calculate 32 bit crc for each read/write
+        O_APPEND = 0x200                # (512) Open files for writing with O_APPEND instead
+        O_DIRECT = 0x8                  # (8) Open file with O_DIRECT flag, disables caching. Must use block-size
         # +read/write calls.
-        O_LARGEFILE = 0x20        # (32) Open files with O_LARGEFILE. This allows greater than 2GB files on
+        O_LARGEFILE = 0x20              # (32) Open files with O_LARGEFILE. This allows greater than 2GB files on
         # +32-bit systems.
-        UNLINK_BW = 0x10          # (16) Unlink file before writing. This works around issues with CIFS for some
-        # +file-servers.
-        UNMOUNT_FORCE = 0x40      # (64) Use -f flag when calling umount
-        UNMOUNT_LAZY = 0x80       # (128) Use -l flag when calling umount
-        USE_FSTATFS = 0x100       # (256) Use fstatfs system call to verify file-system type when opening files.
+        SYNC_AFTER_WRITE = 0x800        # call sync(2) after writing each block
+        SYNC_BEFORE_CLOSE = 0x1000      # call sync(2) before closing the file
+        UNLINK_BW = 0x10                # (16) Unlink file before writing. This works around issues with CIFS for
+        # +some file-servers.
+        UNMOUNT_FORCE = 0x40            # (64) Use -f flag when calling umount
+        UNMOUNT_LAZY = 0x80             # (128) Use -l flag when calling umount
+        USE_FSTATFS = 0x100             # (256) Use fstatfs system call to verify file-system type when opening
+        # +files.
 
         # use to get in value of flag
         @classmethod
@@ -2901,30 +2989,31 @@ class LFJsonCommand(JsonCommand):
         fe_smb30_ip6 = "fe_smb30/ip6"    # Does a SMB v3.0 IPv6 mount
 
     def post_add_file_endp(self, 
-                           alias: str = None,            # Name of endpoint. [R]
-                           directory: str = None,        # The directory to read/write in. Absolute path suggested.
-                           # [W]
-                           fio_flags: str = None,        # File-IO flags, see above for details.
-                           max_read_rate: str = None,    # Maximum read rate, bits-per-second.
-                           max_write_rate: str = None,   # Maximum write rate, bits-per-second.
-                           min_read_rate: str = None,    # Minimum read rate, bits-per-second.
-                           min_write_rate: str = None,   # Minimum write rate, bits-per-second.
-                           mount_dir: str = None,        # Directory to mount/unmount (if blank, will use
+                           alias: str = None,                        # Name of endpoint. [R]
+                           directory: str = None,                    # The directory to read/write in. Absolute path
+                           # suggested. [W]
+                           fio_flags: str = None,                    # File-IO flags, see above for details.
+                           max_read_rate: str = None,                # Maximum read rate, bits-per-second.
+                           max_write_rate: str = None,               # Maximum write rate, bits-per-second.
+                           min_read_rate: str = None,                # Minimum read rate, bits-per-second.
+                           min_write_rate: str = None,               # Minimum write rate, bits-per-second.
+                           mount_dir: str = None,                    # Directory to mount/unmount (if blank, will use
                            # 'directory').
-                           mount_options: str = None,    # Optional mount options, passed to the mount command. 'NONE'
-                           # clears.
-                           payload_pattern: str = None,  # Payload pattern, see above.
-                           port: str = None,             # Port number. [W]
-                           prefix: str = None,           # The prefix of the file(s) to read/write.
-                           resource: int = None,         # Resource number. [W]
-                           retry_timer: str = None,      # Number of miliseconds to retry errored IO calls before
-                           # giving up.
-                           server_mount: str = None,     # The server to mount, ex:
+                           mount_options: str = None,                # Optional mount options, passed to the mount command.
+                           # 'NONE' clears.
+                           payload_pattern: str = None,              # Payload pattern, see above.
+                           port: str = None,                         # Port number. [W]
+                           prefix: str = None,                       # The prefix of the file(s) to read/write.
+                           resource: int = None,                     # Resource number. [W]
+                           retry_timer: str = None,                  # Number of miliseconds to retry errored IO calls
+                           # before giving up.
+                           server_mount: str = None,                 # The server to mount, ex:
                            # <tt>192.168.100.5/exports/test1</tt> [W]
-                           shelf: int = 1,               # Shelf name/id. [R][D:1]
-                           p_type: str = None,           # Endpoint Type (like <tt>fe_nfs</tt>) [W]
-                           volume: str = None,           # iSCSI volume to mount
-                           debug=False):
+                           shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                           p_type: str = None,                       # Endpoint Type (like <tt>fe_nfs</tt>) [W]
+                           volume: str = None,                       # iSCSI volume to mount
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_file_endp(param=value ...)
@@ -2973,6 +3062,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_file_endp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -3013,12 +3103,13 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_gen_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_gen_endp(self, 
-                          alias: str = None,     # Name of endpoint. [R]
-                          port: str = None,      # Port number. [W]
-                          resource: int = None,  # Resource number. [W]
-                          shelf: int = 1,        # Shelf name/id. [R][D:1]
-                          p_type: str = None,    # Endpoint Type : gen_generic [W][D:gen_generic]
-                          debug=False):
+                          alias: str = None,                        # Name of endpoint. [R]
+                          port: str = None,                         # Port number. [W]
+                          resource: int = None,                     # Resource number. [W]
+                          shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                          p_type: str = None,                       # Endpoint Type : gen_generic [W][D:gen_generic]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_gen_endp(param=value ...)
@@ -3041,6 +3132,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_gen_endp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -3068,13 +3160,16 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_gre
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_gre(self, 
-                     local_lower_ip: str = None,   # The local lower-level IP to use.
-                     port: str = None,             # Name of the GRE to create, suggested to start with 'gre' [W]
-                     remote_lower_ip: str = None,  # The remote lower-level IP to use.
-                     report_timer: int = None,     # Report timer for this port, leave blank or use NA for defaults.
-                     resource: int = None,         # Resource number. [W]
-                     shelf: int = 1,               # Shelf number. [R][D:1]
-                     debug=False):
+                     local_lower_ip: str = None,               # The local lower-level IP to use.
+                     port: str = None,                         # Name of the GRE to create, suggested to start with 'gre'
+                     # [W]
+                     remote_lower_ip: str = None,              # The remote lower-level IP to use.
+                     report_timer: int = None,                 # Report timer for this port, leave blank or use NA for
+                     # defaults.
+                     resource: int = None,                     # Resource number. [W]
+                     shelf: int = 1,                           # Shelf number. [R][D:1]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_gre(param=value ...)
@@ -3099,6 +3194,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_gre",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -3147,11 +3243,13 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_add_group(self, 
-                       flags: str = None,       # Flags for this group, see above.
-                       flags_mask: str = None,  # Mask for flags that we care about, use 0xFFFFFFFF or leave blank
-                       # for all.
-                       name: str = None,        # The name of the test group. Must be unique across all groups. [R]
-                       debug=False):
+                       flags: str = None,                        # Flags for this group, see above.
+                       flags_mask: str = None,                   # Mask for flags that we care about, use 0xFFFFFFFF or
+                       # leave blank for all.
+                       name: str = None,                         # The name of the test group. Must be unique across all
+                       # groups. [R]
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_group(param=value ...)
@@ -3170,6 +3268,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_group",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -3268,34 +3367,36 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_add_l4_endp(self, 
-                         alias: str = None,              # Name of endpoint. [R]
-                         block_size: str = None,         # TFTP Block size, in bytes.
-                         dns_cache_timeout: str = None,  # In seconds, how long to cache DNS lookups. 0 means no
+                         alias: str = None,                        # Name of endpoint. [R]
+                         block_size: str = None,                   # TFTP Block size, in bytes.
+                         dns_cache_timeout: str = None,            # In seconds, how long to cache DNS lookups. 0 means no
                          # caching at all.
-                         http_auth_type: str = None,     # Bit-field for allowable http-authenticate methods.
-                         ip_addr: str = None,            # Local IP address, for binding to specific secondary IP.
-                         max_speed: str = None,          # In bits-per-second, can rate limit upload or download speed
-                         # of the URL contents. 0 means infinite.
-                         port: str = None,               # Port number. [W]
-                         proxy_auth_type: str = None,    # Bit-field for allowable proxy-authenticate methods.
-                         proxy_port: str = None,         # HTTP Proxy port if you are using a proxy.
-                         proxy_server: str = None,       # The name of our proxy server if using one.
-                         proxy_userpwd: str = None,      # The user-name and password for proxy authentication, format:
-                         # <tt>user:passwd</tt>.
-                         quiesce_after: str = None,      # Quiesce test after this many URLs have been processed.
-                         resource: int = None,           # Resource number. [W]
-                         shelf: int = 1,                 # Shelf name/id. [R][D:1]
-                         smtp_from: str = None,          # SMTP From address.
-                         ssl_cert_fname: str = None,     # Name of SSL Certs file.
-                         timeout: str = None,            # How long to wait for a connection, in milliseconds
-                         p_type: str = None,             # Endpoint Type : <tt>l4_generic</tt> [W]
-                         url: str = None,                # The URL, see syntax above. Can also be a local file.
-                         url_rate: str = None,           # How often should we process the URL(s), per 10
-                         # minutes.<ul><li>600: 1/s<li>1200: 2/s<li>1800: 3/s<li>2400:
-                         # 4/s</ul> [R][D:600]
-                         user_agent: str = None,         # User-Agent string. Leave blank for default. Also SMTP-TO:
+                         http_auth_type: str = None,               # Bit-field for allowable http-authenticate methods.
+                         ip_addr: str = None,                      # Local IP address, for binding to specific secondary IP.
+                         max_speed: str = None,                    # In bits-per-second, can rate limit upload or download
+                         # speed of the URL contents. 0 means infinite.
+                         port: str = None,                         # Port number. [W]
+                         proxy_auth_type: str = None,              # Bit-field for allowable proxy-authenticate methods.
+                         proxy_port: str = None,                   # HTTP Proxy port if you are using a proxy.
+                         proxy_server: str = None,                 # The name of our proxy server if using one.
+                         proxy_userpwd: str = None,                # The user-name and password for proxy authentication,
+                         # format: <tt>user:passwd</tt>.
+                         quiesce_after: str = None,                # Quiesce test after this many URLs have been processed.
+                         resource: int = None,                     # Resource number. [W]
+                         shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                         smtp_from: str = None,                    # SMTP From address.
+                         ssl_cert_fname: str = None,               # Name of SSL Certs file.
+                         timeout: str = None,                      # How long to wait for a connection, in milliseconds
+                         p_type: str = None,                       # Endpoint Type : <tt>l4_generic</tt> [W]
+                         url: str = None,                          # The URL, see syntax above. Can also be a local file.
+                         url_rate: str = None,                     # How often should we process the URL(s), per 10
+                         # minutes.<ul><li>600: 1/s<li>1200: 2/s<li>1800:
+                         # 3/s<li>2400: 4/s</ul> [R][D:600]
+                         user_agent: str = None,                   # User-Agent string. Leave blank for default. Also
+                         # SMTP-TO:
                          # &lt;a@b.com&gt;&lt;c@d.com&gt;...&lt;q@x.com&gt;
-                         debug=False):
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_l4_endp(param=value ...)
@@ -3350,6 +3451,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_l4_endp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -3415,15 +3517,17 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_add_monitor(self, 
-                         aid: str = None,         # AID, may be used when sniffing on /AX radios.
-                         ap_name: str = None,     # Name for this Monitor interface, for example: moni0 [W]
-                         bssid: str = None,       # BSSID to use when sniffing on /AX radios, optional.
-                         flags: str = None,       # Flags for this monitor interface.
-                         flags_mask: str = None,  # Flags mask for this monitor interface.
-                         radio: str = None,       # Name of the physical radio interface, for example: wiphy0 [W]
-                         resource: int = None,    # Resource number. [W]
-                         shelf: int = 1,          # Shelf number. [R][D:1]
-                         debug=False):
+                         aid: str = None,                          # AID, may be used when sniffing on /AX radios.
+                         ap_name: str = None,                      # Name for this Monitor interface, for example: moni0 [W]
+                         bssid: str = None,                        # BSSID to use when sniffing on /AX radios, optional.
+                         flags: str = None,                        # Flags for this monitor interface.
+                         flags_mask: str = None,                   # Flags mask for this monitor interface.
+                         radio: str = None,                        # Name of the physical radio interface, for example:
+                         # wiphy0 [W]
+                         resource: int = None,                     # Resource number. [W]
+                         shelf: int = 1,                           # Shelf number. [R][D:1]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_monitor(param=value ...)
@@ -3452,6 +3556,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_monitor",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -3482,17 +3587,20 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_mvlan
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_mvlan(self, 
-                       flags: str = None,         # 0x1: Create admin-down.
-                       index: str = None,         # Optional: The index of the VLAN, (the <b>4</b> in
+                       flags: str = None,                        # 0x1: Create admin-down.
+                       index: str = None,                        # Optional: The index of the VLAN, (the <b>4</b> in
                        # <tt>eth0#4</tt>)
-                       mac: str = None,           # The MAC address, can also use parent-pattern in 5.3.8 and higher:
-                       # <tt>xx:xx:xx:*:*:xx</tt> [W]
-                       old_name: str = None,      # The temporary name, used for configuring un-discovered hardware.
-                       port: str = None,          # Port number of an existing Ethernet interface. [W]
-                       report_timer: int = None,  # Report timer for this port, leave blank or use NA for defaults.
-                       resource: int = None,      # Resource number. [W]
-                       shelf: int = 1,            # Shelf number. [R][D:1]
-                       debug=False):
+                       mac: str = None,                          # The MAC address, can also use parent-pattern in 5.3.8 and
+                       # higher: <tt>xx:xx:xx:*:*:xx</tt> [W]
+                       old_name: str = None,                     # The temporary name, used for configuring un-discovered
+                       # hardware.
+                       port: str = None,                         # Port number of an existing Ethernet interface. [W]
+                       report_timer: int = None,                 # Report timer for this port, leave blank or use NA for
+                       # defaults.
+                       resource: int = None,                     # Resource number. [W]
+                       shelf: int = 1,                           # Shelf number. [R][D:1]
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_mvlan(param=value ...)
@@ -3521,6 +3629,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_mvlan",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -3551,36 +3660,38 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_ppp_link
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_ppp_link(self, 
-                          auth: str = None,                  # YES if you want to authenticate. Default is NO.
-                          channel_groups: str = None,        # List of channel groups, see above.
-                          p_debug: bool = False,             # YES for debug, otherwise debugging for the ppp connection
-                          # is off.
-                          down_time_max_ms: str = None,      # Maximum length of downtime (ms) for PPP link between runs,
-                          # or 0 for the link to be always up.
-                          down_time_min_ms: str = None,      # Minimum length of downtime (ms) for PPP link between runs,
-                          # or 0 for the link to be always up.
-                          dst_ip: str = None,                # Destination IP address for this PPP connection.
-                          extra_args: str = None,            # Extra arguments to be passed directly to the pppd server.
-                          holdoff: str = None,               # Seconds between attempt to bring link back up if it dies,
-                          # suggest 1.
-                          lcp_echo_failure: str = None,      # LCP echo failures before we determine links is dead,
+                          auth: str = None,                         # YES if you want to authenticate. Default is NO.
+                          channel_groups: str = None,               # List of channel groups, see above.
+                          p_debug: bool = False,                    # YES for debug, otherwise debugging for the ppp
+                          # connection is off.
+                          down_time_max_ms: str = None,             # Maximum length of downtime (ms) for PPP link between
+                          # runs, or 0 for the link to be always up.
+                          down_time_min_ms: str = None,             # Minimum length of downtime (ms) for PPP link between
+                          # runs, or 0 for the link to be always up.
+                          dst_ip: str = None,                       # Destination IP address for this PPP connection.
+                          extra_args: str = None,                   # Extra arguments to be passed directly to the pppd
+                          # server.
+                          holdoff: str = None,                      # Seconds between attempt to bring link back up if it
+                          # dies, suggest 1.
+                          lcp_echo_failure: str = None,             # LCP echo failures before we determine links is dead,
                           # suggest 5.
-                          lcp_echo_interval: str = None,     # Seconds between LCP echos, suggest 1.
-                          mlppp_descriptor: str = None,      # A unique key for use with multi-link PPP connections.
-                          persist: str = None,               # YES if you want to persist the connection. This is
+                          lcp_echo_interval: str = None,            # Seconds between LCP echos, suggest 1.
+                          mlppp_descriptor: str = None,             # A unique key for use with multi-link PPP connections.
+                          persist: str = None,                      # YES if you want to persist the connection. This is
                           # suggested.
-                          pppoe_transport_port: str = None,  # Port number (or name) for underlying PPPoE transport.
-                          resource: int = None,              # Resource (machine) number. [W]
-                          run_time_max_ms: str = None,       # Maximum uptime (ms) for PPP link during an experiment, or
-                          # 0 for the link to be always up.
-                          run_time_min_ms: str = None,       # Minimum uptime (ms) for PPP link during an experiment, or
-                          # 0 for the link to be always up.
-                          shelf: int = 1,                    # Shelf name/id. [R]
-                          src_ip: str = None,                # Source IP address for this PPP connection.
-                          transport_type: str = None,        # What sort of transport this ppp link uses.
-                          tty_transport_device: str = None,  # TTY device for PPP links associated with TTYs.
-                          unit: str = None,                  # Unit number for the PPP link. ie, the 7 in ppp7. [W]
-                          debug=False):
+                          pppoe_transport_port: str = None,         # Port number (or name) for underlying PPPoE transport.
+                          resource: int = None,                     # Resource (machine) number. [W]
+                          run_time_max_ms: str = None,              # Maximum uptime (ms) for PPP link during an experiment,
+                          # or 0 for the link to be always up.
+                          run_time_min_ms: str = None,              # Minimum uptime (ms) for PPP link during an experiment,
+                          # or 0 for the link to be always up.
+                          shelf: int = 1,                           # Shelf name/id. [R]
+                          src_ip: str = None,                       # Source IP address for this PPP connection.
+                          transport_type: str = None,               # What sort of transport this ppp link uses.
+                          tty_transport_device: str = None,         # TTY device for PPP links associated with TTYs.
+                          unit: str = None,                         # Unit number for the PPP link. ie, the 7 in ppp7. [W]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_ppp_link(param=value ...)
@@ -3635,6 +3746,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_ppp_link",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -3747,22 +3859,25 @@ class LFJsonCommand(JsonCommand):
         vlan = "vlan"                # 802.1q VLAN. Specify VID with the 'freq' option.
 
     def post_add_profile(self, 
-                         alias_prefix: str = None,    # Port alias prefix, aka hostname prefix.
-                         antenna: str = None,         # Antenna count for this profile.
-                         bandwidth: str = None,       # 0 (auto), 20, 40, 80 or 160
-                         eap_id: str = None,          # EAP Identifier
-                         flags_mask: str = None,      # Specify what flags to set.
-                         freq: str = None,            # WiFi frequency to be used, 0 means default.
-                         instance_count: str = None,  # Number of devices (stations, vdevs, etc)
-                         mac_pattern: str = None,     # Optional MAC-Address pattern, for instance: xx:xx:xx:*:*:xx
-                         name: str = None,            # Profile Name. [R]
-                         passwd: str = None,          # WiFi Password to be used (AP Mode), [BLANK] means no password.
-                         profile_flags: str = None,   # Flags for this profile, see above.
-                         profile_type: str = None,    # Profile type: See above. [W]
-                         ssid: str = None,            # WiFi SSID to be used, [BLANK] means any.
-                         vid: str = None,             # Vlan-ID (only valid for vlan profiles).
-                         wifi_mode: str = None,       # WiFi Mode for this profile.
-                         debug=False):
+                         alias_prefix: str = None,                 # Port alias prefix, aka hostname prefix.
+                         antenna: str = None,                      # Antenna count for this profile.
+                         bandwidth: str = None,                    # 0 (auto), 20, 40, 80 or 160
+                         eap_id: str = None,                       # EAP Identifier
+                         flags_mask: str = None,                   # Specify what flags to set.
+                         freq: str = None,                         # WiFi frequency to be used, 0 means default.
+                         instance_count: str = None,               # Number of devices (stations, vdevs, etc)
+                         mac_pattern: str = None,                  # Optional MAC-Address pattern, for instance:
+                         # xx:xx:xx:*:*:xx
+                         name: str = None,                         # Profile Name. [R]
+                         passwd: str = None,                       # WiFi Password to be used (AP Mode), [BLANK] means no
+                         # password.
+                         profile_flags: str = None,                # Flags for this profile, see above.
+                         profile_type: str = None,                 # Profile type: See above. [W]
+                         ssid: str = None,                         # WiFi SSID to be used, [BLANK] means any.
+                         vid: str = None,                          # Vlan-ID (only valid for vlan profiles).
+                         wifi_mode: str = None,                    # WiFi Mode for this profile.
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_profile(param=value ...)
@@ -3805,6 +3920,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_profile",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -3842,10 +3958,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_profile_notes
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_profile_notes(self, 
-                               dut: str = None,   # Profile Name. [R]
-                               text: str = None,  # [BLANK] will erase all, any other text will be appended to
-                               # existing text. <tt escapearg='false'>Unescaped Value</tt>
-                               debug=False):
+                               dut: str = None,                          # Profile Name. [R]
+                               text: str = None,                         # [BLANK] will erase all, any other text will be
+                               # appended to existing text. <tt
+                               # escapearg='false'>Unescaped Value</tt>
+                               debug: bool = False,
+                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_profile_notes(param=value ...)
@@ -3862,6 +3980,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_profile_notes",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -3886,12 +4005,14 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_rdd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_rdd(self, 
-                     peer_ifname: str = None,   # The peer (other) RedirectDevice in this pair.
-                     port: str = None,          # Name of the Redirect Device to create. [W]
-                     report_timer: int = None,  # Report timer for this port, leave blank or use NA for defaults.
-                     resource: int = None,      # Resource number. [W]
-                     shelf: int = 1,            # Shelf number. [R][D:1]
-                     debug=False):
+                     peer_ifname: str = None,                  # The peer (other) RedirectDevice in this pair.
+                     port: str = None,                         # Name of the Redirect Device to create. [W]
+                     report_timer: int = None,                 # Report timer for this port, leave blank or use NA for
+                     # defaults.
+                     resource: int = None,                     # Resource number. [W]
+                     shelf: int = 1,                           # Shelf number. [R][D:1]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_rdd(param=value ...)
@@ -3914,6 +4035,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_rdd",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -3941,12 +4063,13 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_sec_ip
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_sec_ip(self, 
-                        ip_list: str = None,   # IP1/prefix,IP2/prefix,...IPZ/prefix. [W]
-                        port: str = None,      # Name of network device (Port) to which these IPs will be added.
-                        # [W]
-                        resource: int = None,  # Resource number. [W]
-                        shelf: int = 1,        # Shelf number. [R][D:1]
-                        debug=False):
+                        ip_list: str = None,                      # IP1/prefix,IP2/prefix,...IPZ/prefix. [W]
+                        port: str = None,                         # Name of network device (Port) to which these IPs will be
+                        # added. [W]
+                        resource: int = None,                     # Resource number. [W]
+                        shelf: int = 1,                           # Shelf number. [R][D:1]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_sec_ip(param=value ...)
@@ -3967,6 +4090,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_sec_ip",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -4022,6 +4146,7 @@ class LFJsonCommand(JsonCommand):
         disable_ht80 = 0x8000000                  # Disable HT80 (for AC chipset NICs only)
         disable_roam = 0x80000000                 # Disable automatic station roaming based on scan results.
         disable_sgi = 0x4000                      # Disable SGI (Short Guard Interval).
+        ft_roam_over_ds = 0x800000000000          # Roam over DS when AP supports it.
         hs20_enable = 0x800000                    # Enable Hotspot 2.0 (HS20) feature. Requires WPA-2.
         ht160_enable = 0x100000000                # Enable HT160 mode.
         ht40_disable = 0x800                      # Disable HT-40 even if hardware and AP support it.
@@ -4089,38 +4214,42 @@ class LFJsonCommand(JsonCommand):
         p_bitmap_ = "[bitmap]"    # <b>'0xff 00 ...'</b> to directly specify the MCS bitmap.
 
     def post_add_sta(self, 
-                     ampdu_density: str = None,  # 0-7, or 0xFF to not set.
-                     ampdu_factor: str = None,   # 0-3, or 0xFF to not set.
-                     ap: str = None,             # The Access Point BSSID this Virtual STA should be associated with
-                     flags: str = None,          # Flags for this interface (see above.) [W]
-                     flags_mask: str = None,     # If set, only these flags will be considered.
-                     ieee80211w: str = None,     # Management Frame Protection: 0: disabled, 1: optional, 2:
+                     ampdu_density: str = None,                # 0-7, or 0xFF to not set.
+                     ampdu_factor: str = None,                 # 0-3, or 0xFF to not set.
+                     ap: str = None,                           # The Access Point BSSID this Virtual STA should be
+                     # associated with
+                     flags: str = None,                        # Flags for this interface (see above.) [W]
+                     flags_mask: str = None,                   # If set, only these flags will be considered.
+                     ieee80211w: str = None,                   # Management Frame Protection: 0: disabled, 1: optional, 2:
                      # Required.
-                     key: str = None,            # Encryption key (WEP, WPA, WPA2, WPA3, etc) for this Virtual STA.
-                     # Prepend with 0x for ascii-hex input.
-                     mac: str = None,            # The MAC address, can also use parent-pattern in 5.3.8 and higher:
-                     # <tt>xx:xx:xx:*:*:xx</tt> [W]
-                     max_amsdu: str = None,      # 1 == enabled, 0 == disabled, 0xFF == do not set.
-                     mode: str = None,           # WiFi mode: <ul><li>0: AUTO, <li>1: 802.11a</li> <li>2: b</li>
-                     # <li>3: g</li> <li>4: abg</li> <li>5: abgn</li> <li>6: bgn</li>
-                     # <li>7: bg</li> <li>8: abgnAC</li> <li>9 anAC</li> <li>10
-                     # an</li><li>11 bgnAC</li><li>12 abgnAX</li><li>13 bgnAX</li><li>14
-                     # anAX</li><li>15 aAX</li></ul> [D:0]
-                     nickname: str = None,       # Nickname for this Virtual STA. (No longer used)
-                     radio: str = None,          # Name of the physical radio interface, for example: wiphy0 [W]
-                     rate: str = None,           # Max rate, see help above.
-                     resource: int = None,       # Resource number. [W]
-                     shelf: int = 1,             # Shelf number. [R][D:1]
-                     ssid: str = None,           # SSID for this Virtual STA. Use [BLANK] for empty SSID. Start with
-                     # <tt>0x</tt> for HEX interpretation. [W]
-                     sta_br_ip: str = None,      # IP Address for station bridging. Set to 0.0.0.0 to use MAC
+                     key: str = None,                          # Encryption key (WEP, WPA, WPA2, WPA3, etc) for this Virtual
+                     # STA. Prepend with 0x for ascii-hex input.
+                     mac: str = None,                          # The MAC address, can also use parent-pattern in 5.3.8 and
+                     # higher: <tt>xx:xx:xx:*:*:xx</tt> [W]
+                     max_amsdu: str = None,                    # 1 == enabled, 0 == disabled, 0xFF == do not set.
+                     mode: str = None,                         # WiFi mode: <ul><li>0: AUTO, <li>1: 802.11a</li> <li>2:
+                     # b</li> <li>3: g</li> <li>4: abg</li> <li>5: abgn</li>
+                     # <li>6: bgn</li> <li>7: bg</li> <li>8: abgnAC</li> <li>9
+                     # anAC</li> <li>10 an</li><li>11 bgnAC</li><li>12
+                     # abgnAX</li><li>13 bgnAX</li><li>14 anAX</li><li>15
+                     # aAX</li></ul> [D:0]
+                     nickname: str = None,                     # Nickname for this Virtual STA. (No longer used)
+                     radio: str = None,                        # Name of the physical radio interface, for example: wiphy0
+                     # [W]
+                     rate: str = None,                         # Max rate, see help above.
+                     resource: int = None,                     # Resource number. [W]
+                     shelf: int = 1,                           # Shelf number. [R][D:1]
+                     ssid: str = None,                         # SSID for this Virtual STA. Use [BLANK] for empty SSID.
+                     # Start with <tt>0x</tt> for HEX interpretation. [W]
+                     sta_br_ip: str = None,                    # IP Address for station bridging. Set to 0.0.0.0 to use MAC
                      # bridging.
-                     sta_name: str = None,       # Name for this Virtual STA, for example: sta0 [W]
-                     wpa_cfg_file: str = None,   # WPA Supplicant config file.
-                     x_coord: str = None,        # Floating point number.
-                     y_coord: str = None,        # Floating point number.
-                     z_coord: str = None,        # Floating point number.
-                     debug=False):
+                     sta_name: str = None,                     # Name for this Virtual STA, for example: sta0 [W]
+                     wpa_cfg_file: str = None,                 # WPA Supplicant config file.
+                     x_coord: str = None,                      # Floating point number.
+                     y_coord: str = None,                      # Floating point number.
+                     z_coord: str = None,                      # Floating point number.
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_sta(param=value ...)
@@ -4177,6 +4306,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_sta",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -4244,20 +4374,23 @@ class LFJsonCommand(JsonCommand):
         Sangoma_T1 = "Sangoma_T1"    #
 
     def post_add_t1_span(self, 
-                         buildout: str = None,       # Buildout, Integer, see above.
-                         coding: str = None,         # Coding: T1: ami or b8zs. E1: ami or hdb3
-                         cpu_id: str = None,         # CPU identifier (A, B, etc) for multiport Sangoma resources.
-                         first_channel: str = None,  # The first DS0 channel for this span.
-                         framing: str = None,        # Framing: T1: esf or d4. E1: cas or ccs.
-                         mtu: str = None,            # MTU for this span (used by in-band management, if at all).
-                         pci_bus: str = None,        # PCI Bus number, needed for Sangoma resources.
-                         pci_slot: str = None,       # PCI slot number, needed for Sangoma resources.
-                         resource: int = None,       # Resource number. [W]
-                         shelf: int = 1,             # Shelf name/id. [R][D:1]
-                         span_num: str = None,       # The span number. First span is 1, second is 2... [W]
-                         timing: str = None,         # Timing: 0 == do not use, 1 == primary, 2 == secondary..
-                         p_type: str = None,         # Currently supported types listed above. [W]
-                         debug=False):
+                         buildout: str = None,                     # Buildout, Integer, see above.
+                         coding: str = None,                       # Coding: T1: ami or b8zs. E1: ami or hdb3
+                         cpu_id: str = None,                       # CPU identifier (A, B, etc) for multiport Sangoma
+                         # resources.
+                         first_channel: str = None,                # The first DS0 channel for this span.
+                         framing: str = None,                      # Framing: T1: esf or d4. E1: cas or ccs.
+                         mtu: str = None,                          # MTU for this span (used by in-band management, if at
+                         # all).
+                         pci_bus: str = None,                      # PCI Bus number, needed for Sangoma resources.
+                         pci_slot: str = None,                     # PCI slot number, needed for Sangoma resources.
+                         resource: int = None,                     # Resource number. [W]
+                         shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                         span_num: str = None,                     # The span number. First span is 1, second is 2... [W]
+                         timing: str = None,                       # Timing: 0 == do not use, 1 == primary, 2 == secondary..
+                         p_type: str = None,                       # Currently supported types listed above. [W]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_t1_span(param=value ...)
@@ -4296,6 +4429,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_t1_span",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -4331,11 +4465,14 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_text_blob
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_text_blob(self, 
-                           name: str = None,  # Text name, for instance '2-AP-test-case' [R]
-                           text: str = None,  # [BLANK] will erase all, any other text will be appended to
-                           # existing text. <tt escapearg='false'>Unescaped Value</tt>
-                           p_type: str = None,  # Text type identifier stream, for instance 'cv-connectivity' [R]
-                           debug=False):
+                           name: str = None,                         # Text name, for instance '2-AP-test-case' [R]
+                           text: str = None,                         # [BLANK] will erase all, any other text will be
+                           # appended to existing text. <tt
+                           # escapearg='false'>Unescaped Value</tt>
+                           p_type: str = None,                       # Text type identifier stream, for instance
+                           # 'cv-connectivity' [R]
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_text_blob(param=value ...)
@@ -4354,6 +4491,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_text_blob",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -4379,9 +4517,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_tgcx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_tgcx(self, 
-                      cxname: str = None,  # The name of the CX. [R]
-                      tgname: str = None,  # The name of the test group. [R]
-                      debug=False):
+                      cxname: str = None,                       # The name of the CX. [R]
+                      tgname: str = None,                       # The name of the test group. [R]
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_tgcx(param=value ...)
@@ -4398,6 +4537,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_tgcx",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -4444,13 +4584,14 @@ class LFJsonCommand(JsonCommand):
         TX_BPS_RATE_OOR_3S = 0       # tx-bps over last 3 seconds is out of range.
 
     def post_add_threshold(self, 
-                           endp: str = None,         # Endpoint name or ID. [R]
-                           thresh_id: str = None,    # Threshold ID. If adding new threshold, use -1, otherwise use
-                           # correct ID. [W]
-                           thresh_max: str = None,   # Maximum acceptable value for this threshold.
-                           thresh_min: str = None,   # Minimum acceptable value for this threshold.
-                           thresh_type: str = None,  # Threshold type, integer, (see above).
-                           debug=False):
+                           endp: str = None,                         # Endpoint name or ID. [R]
+                           thresh_id: str = None,                    # Threshold ID. If adding new threshold, use -1,
+                           # otherwise use correct ID. [W]
+                           thresh_max: str = None,                   # Maximum acceptable value for this threshold.
+                           thresh_min: str = None,                   # Minimum acceptable value for this threshold.
+                           thresh_type: str = None,                  # Threshold type, integer, (see above).
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_threshold(param=value ...)
@@ -4473,6 +4614,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_threshold",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -4500,8 +4642,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_tm
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_tm(self, 
-                    name: str = None,  # The name of the test manager. Must be unique across test managers. [R]
-                    debug=False):
+                    name: str = None,                         # The name of the test manager. Must be unique across test
+                    # managers. [R]
+                    debug: bool = False,
+                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_tm(param=value ...)
@@ -4516,6 +4660,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_tm",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -4573,18 +4718,19 @@ class LFJsonCommand(JsonCommand):
         udp = "udp"                        #
 
     def post_add_traffic_profile(self, 
-                                 instance_count: str = None,              # Number of connections per device
-                                 max_pdu: str = None,                     # Minimum PDU size
-                                 max_speed: str = None,                   # Opposite-Direction Speed in bps.
-                                 min_pdu: str = None,                     # Minimum PDU size
-                                 min_speed: str = None,                   # Opposite-Direction Speed in bps.
-                                 name: str = None,                        # Profile Name. [R]
-                                 tos: str = None,                         # IP Type-of-Service
-                                 traffic_profile_flags: str = None,       # Flags for this profile, none defined at this
+                                 instance_count: str = None,               # Number of connections per device
+                                 max_pdu: str = None,                      # Minimum PDU size
+                                 max_speed: str = None,                    # Opposite-Direction Speed in bps.
+                                 min_pdu: str = None,                      # Minimum PDU size
+                                 min_speed: str = None,                    # Opposite-Direction Speed in bps.
+                                 name: str = None,                         # Profile Name. [R]
+                                 tos: str = None,                          # IP Type-of-Service
+                                 traffic_profile_flags: str = None,        # Flags for this profile, none defined at this
                                  # point.
-                                 traffic_profile_flags_mask: str = None,  # Specify what flags to set.
-                                 p_type: str = None,                      # Profile type: See above. [W]
-                                 debug=False):
+                                 traffic_profile_flags_mask: str = None,   # Specify what flags to set.
+                                 p_type: str = None,                       # Profile type: See above. [W]
+                                 debug: bool = False,
+                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_traffic_profile(param=value ...)
@@ -4617,6 +4763,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_traffic_profile",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -4649,11 +4796,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_traffic_profile_notes
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_traffic_profile_notes(self, 
-                                       dut: str = None,   # Profile Name. [R]
-                                       text: str = None,  # [BLANK] will erase all, any other text will be
-                                       # appended to existing text. <tt
+                                       dut: str = None,                          # Profile Name. [R]
+                                       text: str = None,                         # [BLANK] will erase all, any other text
+                                       # will be appended to existing text. <tt
                                        # escapearg='false'>Unescaped Value</tt>
-                                       debug=False):
+                                       debug: bool = False,
+                                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_traffic_profile_notes(param=value ...)
@@ -4670,6 +4818,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_traffic_profile_notes",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -4770,31 +4919,36 @@ class LFJsonCommand(JsonCommand):
         g = 3              # 802.11g
 
     def post_add_vap(self, 
-                     ap_name: str = None,      # Name for this Virtual AP, for example: vap0 [W]
-                     beacon: str = None,       # The beacon interval, in 1kus (1.024 ms), default 100, range:
-                     # 15..65535
-                     custom_cfg: str = None,   # Custom hostapd config file, if you want to craft your own config.
-                     dtim_period: str = None,  # DTIM period, range 1..255. Default 2.
-                     flags: str = None,        # Flags for this interface (see above.) [W]
-                     flags_mask: str = None,   # If set, only these flags will be considered.
-                     frag_thresh: str = None,  # UN-USED, Was Fragmentation threshold, which is now set with
+                     ap_name: str = None,                      # Name for this Virtual AP, for example: vap0 [W]
+                     beacon: str = None,                       # The beacon interval, in 1kus (1.024 ms), default 100,
+                     # range: 15..65535
+                     custom_cfg: str = None,                   # Custom hostapd config file, if you want to craft your own
+                     # config.
+                     dtim_period: str = None,                  # DTIM period, range 1..255. Default 2.
+                     flags: str = None,                        # Flags for this interface (see above.) [W]
+                     flags_mask: str = None,                   # If set, only these flags will be considered.
+                     frag_thresh: str = None,                  # UN-USED, Was Fragmentation threshold, which is now set with
                      # set_wifi_radio, use NA [W]
-                     ieee80211w: str = None,   # Management Frame Protection: 0: disabled, 1: optional, 2: Required.
-                     key: str = None,          # Encryption key for this Virtual AP. Prepend with 0x for ascii-hex
-                     # representation.
-                     mac: str = None,          # The MAC address, can also use parent-pattern in 5.3.8 and higher:
-                     # <tt>xx:xx:xx:*:*:xx</tt>
-                     max_sta: str = None,      # Maximum number of Stations allowed to join this AP (1..2007)
-                     mode: str = None,         # WiFi mode: see table [W]
-                     radio: str = None,        # Name of the physical radio interface, for example: wiphy0 [W]
-                     rate: str = None,         # Max rate, see help for add_vsta
-                     resource: int = None,     # Resource number. [W]
-                     shelf: int = 1,           # Shelf number. [R][D:1]
-                     ssid: str = None,         # SSID for this Virtual AP. [W]
-                     x_coord: str = None,      # Floating point number.
-                     y_coord: str = None,      # Floating point number.
-                     z_coord: str = None,      # Floating point number.
-                     debug=False):
+                     ieee80211w: str = None,                   # Management Frame Protection: 0: disabled, 1: optional, 2:
+                     # Required.
+                     key: str = None,                          # Encryption key for this Virtual AP. Prepend with 0x for
+                     # ascii-hex representation.
+                     mac: str = None,                          # The MAC address, can also use parent-pattern in 5.3.8 and
+                     # higher: <tt>xx:xx:xx:*:*:xx</tt>
+                     max_sta: str = None,                      # Maximum number of Stations allowed to join this AP
+                     # (1..2007)
+                     mode: str = None,                         # WiFi mode: see table [W]
+                     radio: str = None,                        # Name of the physical radio interface, for example: wiphy0
+                     # [W]
+                     rate: str = None,                         # Max rate, see help for add_vsta
+                     resource: int = None,                     # Resource number. [W]
+                     shelf: int = 1,                           # Shelf number. [R][D:1]
+                     ssid: str = None,                         # SSID for this Virtual AP. [W]
+                     x_coord: str = None,                      # Floating point number.
+                     y_coord: str = None,                      # Floating point number.
+                     z_coord: str = None,                      # Floating point number.
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_vap(param=value ...)
@@ -4847,6 +5001,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_vap",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -4957,18 +5112,20 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_add_venue(self, 
-                       description: str = None,  # User-supplied description, ie: <tt>Big City Ball Park</tt>;
-                       # 47-characters max.
-                       freq_24: str = None,      # Frequency list for 2.4Ghz band, see above.
-                       freq_5: str = None,       # Frequency list for 5Ghz band, see above.
-                       resource: int = None,     # Resource number. [W]
-                       shelf: int = 1,           # Shelf number. [R][D:1]
-                       venu_id: str = None,      # Number to uniquely identify this venue on this resource. [W]
-                       x1: str = None,           # Floating point coordinate for lower-left corner.
-                       x2: str = None,           # Floating point coordinate for upper-right corner.
-                       y1: str = None,           # Floating point coordinate for lower-left corner.
-                       y2: str = None,           # Floating point coordinate for upper-right corner.
-                       debug=False):
+                       description: str = None,                  # User-supplied description, ie: <tt>Big City Ball
+                       # Park</tt>; 47-characters max.
+                       freq_24: str = None,                      # Frequency list for 2.4Ghz band, see above.
+                       freq_5: str = None,                       # Frequency list for 5Ghz band, see above.
+                       resource: int = None,                     # Resource number. [W]
+                       shelf: int = 1,                           # Shelf number. [R][D:1]
+                       venu_id: str = None,                      # Number to uniquely identify this venue on this resource.
+                       # [W]
+                       x1: str = None,                           # Floating point coordinate for lower-left corner.
+                       x2: str = None,                           # Floating point coordinate for upper-right corner.
+                       y1: str = None,                           # Floating point coordinate for lower-left corner.
+                       y2: str = None,                           # Floating point coordinate for upper-right corner.
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_venue(param=value ...)
@@ -5001,6 +5158,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_venue",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -5033,13 +5191,16 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_vlan
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_vlan(self, 
-                      old_name: str = None,      # The temporary name, used for configuring un-discovered hardware.
-                      port: str = None,          # Port number of an existing Ethernet interface. [W]
-                      report_timer: int = None,  # Report timer for this port, leave blank or use NA for defaults.
-                      resource: int = None,      # Resource number. [W]
-                      shelf: int = 1,            # Shelf number. [R][D:1]
-                      vid: str = None,           # The VLAN-ID for this 802.1Q VLAN interface. [W]
-                      debug=False):
+                      old_name: str = None,                     # The temporary name, used for configuring un-discovered
+                      # hardware.
+                      port: str = None,                         # Port number of an existing Ethernet interface. [W]
+                      report_timer: int = None,                 # Report timer for this port, leave blank or use NA for
+                      # defaults.
+                      resource: int = None,                     # Resource number. [W]
+                      shelf: int = 1,                           # Shelf number. [R][D:1]
+                      vid: str = None,                          # The VLAN-ID for this 802.1Q VLAN interface. [W]
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_vlan(param=value ...)
@@ -5064,6 +5225,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_vlan",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -5092,29 +5254,35 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_voip_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_voip_endp(self, 
-                           alias: str = None,           # Name of endpoint. [R]
-                           auth_user_name: str = None,  # Use this field for authentication user name. AUTO or blank
-                           # mean use phone number.
-                           display_name: str = None,    # User-Name to be displayed. Use AUTO to display phone number.
-                           gateway_port: str = None,    # IP Port for SIP gateway (defaults to 5060).
-                           ip_addr: str = None,         # Use this IP for local IP address. Useful when there are
-                           # multiple IPs on a port.
-                           peer_phone_num: str = None,  # Use AUTO to use phone number of peer endpoint, otherwise
-                           # specify a number: user[@host[:port]]
-                           phone_num: str = None,       # Phone number for Endpoint [W]
-                           port: str = None,            # Port number or name. [W]
-                           proxy_passwd: str = None,    # Password to be used when registering with proxy/gateway.
-                           resource: int = None,        # Resource number. [W]
-                           rtp_port: str = None,        # RTP port to use for send and receive.
-                           rx_sound_file: str = None,   # File name to save received PCM data to. Will be in WAV
-                           # format, or AUTO
-                           shelf: int = 1,              # Shelf name/id. [R][D:1]
-                           sip_gateway: str = None,     # SIP Gateway/Proxy Name, this is who to register with, or
-                           # AUTO
-                           tx_sound_file: str = None,   # File name containing the sound sample we will be playing.
-                           vad_max_timer: str = None,   # How often should we force a packet, even if VAD is on.
-                           vad_timer: str = None,       # How much silence (milliseconds) before VAD is enabled.
-                           debug=False):
+                           alias: str = None,                        # Name of endpoint. [R]
+                           auth_user_name: str = None,               # Use this field for authentication user name. AUTO or
+                           # blank mean use phone number.
+                           display_name: str = None,                 # User-Name to be displayed. Use AUTO to display phone
+                           # number.
+                           gateway_port: str = None,                 # IP Port for SIP gateway (defaults to 5060).
+                           ip_addr: str = None,                      # Use this IP for local IP address. Useful when there
+                           # are multiple IPs on a port.
+                           peer_phone_num: str = None,               # Use AUTO to use phone number of peer endpoint,
+                           # otherwise specify a number: user[@host[:port]]
+                           phone_num: str = None,                    # Phone number for Endpoint [W]
+                           port: str = None,                         # Port number or name. [W]
+                           proxy_passwd: str = None,                 # Password to be used when registering with
+                           # proxy/gateway.
+                           resource: int = None,                     # Resource number. [W]
+                           rtp_port: str = None,                     # RTP port to use for send and receive.
+                           rx_sound_file: str = None,                # File name to save received PCM data to. Will be in
+                           # WAV format, or AUTO
+                           shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                           sip_gateway: str = None,                  # SIP Gateway/Proxy Name, this is who to register with,
+                           # or AUTO
+                           tx_sound_file: str = None,                # File name containing the sound sample we will be
+                           # playing.
+                           vad_max_timer: str = None,                # How often should we force a packet, even if VAD is
+                           # on.
+                           vad_timer: str = None,                    # How much silence (milliseconds) before VAD is
+                           # enabled.
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_voip_endp(param=value ...)
@@ -5161,6 +5329,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_voip_endp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -5232,19 +5401,20 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_add_vr(self, 
-                    alias: str = None,     # Name of virtual router. [R]
-                    flags: str = None,     # Virtual router flags, see above for definitions.
-                    height: str = None,    # Height to be used when drawn in the LANforge-GUI.
-                    notes: str = None,     # Notes for this Virtual Router. Put in quotes if the notes include
-                    # white-space.
-                    resource: int = None,  # Resource number. [W]
-                    shelf: int = 1,        # Shelf name/id. [R][D:1]
-                    vr_id: str = None,     # Leave blank, use NA or 0xFFFF unless you are certain of the value you
-                    # want to enter.
-                    width: str = None,     # Width to be used when drawn in the LANforge-GUI.
-                    x: str = None,         # X coordinate to be used when drawn in the LANforge-GUI.
-                    y: str = None,         # Y coordinate to be used when drawn in the LANforge-GUI.
-                    debug=False):
+                    alias: str = None,                        # Name of virtual router. [R]
+                    flags: str = None,                        # Virtual router flags, see above for definitions.
+                    height: str = None,                       # Height to be used when drawn in the LANforge-GUI.
+                    notes: str = None,                        # Notes for this Virtual Router. Put in quotes if the notes
+                    # include white-space.
+                    resource: int = None,                     # Resource number. [W]
+                    shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                    vr_id: str = None,                        # Leave blank, use NA or 0xFFFF unless you are certain of the
+                    # value you want to enter.
+                    width: str = None,                        # Width to be used when drawn in the LANforge-GUI.
+                    x: str = None,                            # X coordinate to be used when drawn in the LANforge-GUI.
+                    y: str = None,                            # Y coordinate to be used when drawn in the LANforge-GUI.
+                    debug: bool = False,
+                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_vr(param=value ...)
@@ -5277,6 +5447,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_vr",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -5333,19 +5504,22 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_add_vr_bgp(self, 
-                        bgp_id: str = None,        # BGP Identifier: IPv4 Address [W]
-                        cluster_id: str = None,    # Cluster ID, IPv4 Address. Use NA if not clustering.
-                        confed_id: str = None,     # Confederation ID 1-65535. Use NA if not in a confederation.
-                        flags: str = None,         # Virtual router BGP flags, see above for definitions.
-                        half_life: str = None,     # Halflife in minutes for damping configuration.
-                        local_as: str = None,      # BGP Autonomous System number, 1-65535
-                        max_suppress: str = None,  # Maximum hold down time in minutes for damping configuration.
-                        resource: int = None,      # Resource number. [W]
-                        reuse: str = None,         # Route flag damping reuse threshold, in minutes.
-                        shelf: int = 1,            # Shelf name/id. [R][D:1]
-                        suppress: str = None,      # Route flag damping cutoff threshold, in minutes.
-                        vr_id: str = None,         # Name of virtual router. [R]
-                        debug=False):
+                        bgp_id: str = None,                       # BGP Identifier: IPv4 Address [W]
+                        cluster_id: str = None,                   # Cluster ID, IPv4 Address. Use NA if not clustering.
+                        confed_id: str = None,                    # Confederation ID 1-65535. Use NA if not in a
+                        # confederation.
+                        flags: str = None,                        # Virtual router BGP flags, see above for definitions.
+                        half_life: str = None,                    # Halflife in minutes for damping configuration.
+                        local_as: str = None,                     # BGP Autonomous System number, 1-65535
+                        max_suppress: str = None,                 # Maximum hold down time in minutes for damping
+                        # configuration.
+                        resource: int = None,                     # Resource number. [W]
+                        reuse: str = None,                        # Route flag damping reuse threshold, in minutes.
+                        shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                        suppress: str = None,                     # Route flag damping cutoff threshold, in minutes.
+                        vr_id: str = None,                        # Name of virtual router. [R]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_vr_bgp(param=value ...)
@@ -5382,6 +5556,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_vr_bgp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -5449,42 +5624,45 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_add_vrcx(self, 
-                      dhcp_dns: str = None,         # IP Address of DNS server.
-                      dhcp_dns6: str = None,        # IPv6 Address of DNS server.
-                      dhcp_domain: str = None,      # DHCP Domain name to serve.
-                      dhcp_lease_time: str = None,  # DHCP Lease time (in seconds)
-                      dhcp_max: str = None,         # Minimum IP address range to serve.
-                      dhcp_max6: str = None,        # Minimum IPv6 address to serve.
-                      dhcp_min: str = None,         # Minimum IP address range to serve.
-                      dhcp_min6: str = None,        # Minimum IPv6 address to serve.
-                      flags: str = None,            # Flags, specify if subnets 0-7 are in use, see above for others.
-                      height: str = None,           # Height to be used when drawn in the LANforge-GUI.
-                      interface_cost: str = None,   # If using OSPF, this sets the cost for this link (1-65535).
-                      local_dev: str = None,        # Name of port A, the local network device pair. [W]
-                      local_dev_b: str = None,      # Name of port B for the local redirect device pair. [W]
-                      nexthop: str = None,          # The next-hop to use when routing packets out this interface.
-                      ospf_area: str = None,        # If using OSPF, this sets the OSPF area for this interface.
+                      dhcp_dns: str = None,                     # IP Address of DNS server.
+                      dhcp_dns6: str = None,                    # IPv6 Address of DNS server.
+                      dhcp_domain: str = None,                  # DHCP Domain name to serve.
+                      dhcp_lease_time: str = None,              # DHCP Lease time (in seconds)
+                      dhcp_max: str = None,                     # Minimum IP address range to serve.
+                      dhcp_max6: str = None,                    # Minimum IPv6 address to serve.
+                      dhcp_min: str = None,                     # Minimum IP address range to serve.
+                      dhcp_min6: str = None,                    # Minimum IPv6 address to serve.
+                      flags: str = None,                        # Flags, specify if subnets 0-7 are in use, see above for
+                      # others.
+                      height: str = None,                       # Height to be used when drawn in the LANforge-GUI.
+                      interface_cost: str = None,               # If using OSPF, this sets the cost for this link (1-65535).
+                      local_dev: str = None,                    # Name of port A, the local network device pair. [W]
+                      local_dev_b: str = None,                  # Name of port B for the local redirect device pair. [W]
+                      nexthop: str = None,                      # The next-hop to use when routing packets out this
+                      # interface.
+                      ospf_area: str = None,                    # If using OSPF, this sets the OSPF area for this interface.
                       # Default is 0.0.0.0.
-                      remote_dev: str = None,       # Name the remote network device. [W]
-                      remote_dev_b: str = None,     # Name of port B for the remote network device. [W]
-                      resource: int = None,         # Resource number. [W]
-                      rip_metric: str = None,       # If using RIP, this determines the RIP metric (cost), (1-15, 15
-                      # is infinite).
-                      shelf: int = 1,               # Shelf name/id. [R][D:1]
-                      subnets: str = None,          # Subnets associated with this link, format:
+                      remote_dev: str = None,                   # Name the remote network device. [W]
+                      remote_dev_b: str = None,                 # Name of port B for the remote network device. [W]
+                      resource: int = None,                     # Resource number. [W]
+                      rip_metric: str = None,                   # If using RIP, this determines the RIP metric (cost),
+                      # (1-15, 15 is infinite).
+                      shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                      subnets: str = None,                      # Subnets associated with this link, format:
                       # 1.1.1.1/24,1.1.2.1/16...
-                      vr_name: str = None,          # Virtual Router this endpoint belongs to. Use 'FREE_LIST' to add
-                      # a stand-alone endpoint. [R][D:FREE_LIST]
-                      vrrp_id: str = None,          # VRRP id, must be unique in this virtual router (1-255)
-                      vrrp_interval: str = None,    # VRRP broadcast message interval, in seconds (1-255)
-                      vrrp_ip: str = None,          # VRRP IPv4 address..ignored if not flagged for VRRP.
-                      vrrp_ip_prefix: str = None,   # Number of bits in subnet mask, ie 24 for 255.255.255.0
-                      vrrp_priority: str = None,    # VRRP Priority (1-255, higher is more priority.)
-                      wanlink: str = None,          # The name of the WanLink that connects the two B ports. [W]
-                      width: str = None,            # Width to be used when drawn in the LANforge-GUI.
-                      x: str = None,                # X coordinate to be used when drawn in the LANforge-GUI.
-                      y: str = None,                # Y coordinate to be used when drawn in the LANforge-GUI.
-                      debug=False):
+                      vr_name: str = None,                      # Virtual Router this endpoint belongs to. Use 'FREE_LIST'
+                      # to add a stand-alone endpoint. [R][D:FREE_LIST]
+                      vrrp_id: str = None,                      # VRRP id, must be unique in this virtual router (1-255)
+                      vrrp_interval: str = None,                # VRRP broadcast message interval, in seconds (1-255)
+                      vrrp_ip: str = None,                      # VRRP IPv4 address..ignored if not flagged for VRRP.
+                      vrrp_ip_prefix: str = None,               # Number of bits in subnet mask, ie 24 for 255.255.255.0
+                      vrrp_priority: str = None,                # VRRP Priority (1-255, higher is more priority.)
+                      wanlink: str = None,                      # The name of the WanLink that connects the two B ports. [W]
+                      width: str = None,                        # Width to be used when drawn in the LANforge-GUI.
+                      x: str = None,                            # X coordinate to be used when drawn in the LANforge-GUI.
+                      y: str = None,                            # Y coordinate to be used when drawn in the LANforge-GUI.
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_vrcx(param=value ...)
@@ -5559,6 +5737,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_vrcx",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -5612,23 +5791,29 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#add_vrcx2
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_vrcx2(self, 
-                       dhcp_ignore1: str = None,  # MAC address and per 65535 chance MAC should be ignored by DHCPd,
-                       # format: MAC-prcnt, example: 00:11:22:33:44:55-65535
-                       dhcp_ignore2: str = None,  # MAC address and per 65535 chance MAC should be ignored by DHCPd,
-                       # format: MAC-prcnt, example: 00:11:22:33:44:55-65535
-                       dhcp_ignore3: str = None,  # MAC address and per 65535 chance MAC should be ignored by DHCPd,
-                       # format: MAC-prcnt, example: 00:11:22:33:44:55-65535
-                       dhcp_ignore4: str = None,  # MAC address and per 65535 chance MAC should be ignored by DHCPd,
-                       # format: MAC-prcnt, example: 00:11:22:33:44:55-65535
-                       local_dev: str = None,     # Name of port A for the connection. [W]
-                       nexthop6: str = None,      # The IPv6 next-hop to use when routing packets out this interface.
-                       resource: int = None,      # Resource number. [W]
-                       shelf: int = 1,            # Shelf name/id. [R][D:1]
-                       subnets6: str = None,      # IPv6 Subnets associated with this link, format:
+                       dhcp_ignore1: str = None,                 # MAC address and per 65535 chance MAC should be ignored by
+                       # DHCPd, format: MAC-prcnt, example:
+                       # 00:11:22:33:44:55-65535
+                       dhcp_ignore2: str = None,                 # MAC address and per 65535 chance MAC should be ignored by
+                       # DHCPd, format: MAC-prcnt, example:
+                       # 00:11:22:33:44:55-65535
+                       dhcp_ignore3: str = None,                 # MAC address and per 65535 chance MAC should be ignored by
+                       # DHCPd, format: MAC-prcnt, example:
+                       # 00:11:22:33:44:55-65535
+                       dhcp_ignore4: str = None,                 # MAC address and per 65535 chance MAC should be ignored by
+                       # DHCPd, format: MAC-prcnt, example:
+                       # 00:11:22:33:44:55-65535
+                       local_dev: str = None,                    # Name of port A for the connection. [W]
+                       nexthop6: str = None,                     # The IPv6 next-hop to use when routing packets out this
+                       # interface.
+                       resource: int = None,                     # Resource number. [W]
+                       shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                       subnets6: str = None,                     # IPv6 Subnets associated with this link, format:
                        # aaaa:bbbb::0/64,cccc:dddd:eeee::0/64...
-                       vr_name: str = None,       # Virtual Router this endpoint belongs to. Use 'FREE_LIST' to add a
-                       # stand-alone endpoint. [W][D:FREE_LIST]
-                       debug=False):
+                       vr_name: str = None,                      # Virtual Router this endpoint belongs to. Use 'FREE_LIST'
+                       # to add a stand-alone endpoint. [W][D:FREE_LIST]
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_vrcx2(param=value ...)
@@ -5661,6 +5846,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_vrcx2",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -5700,66 +5886,68 @@ class LFJsonCommand(JsonCommand):
         SHOW_WP = 1      # Show WanPaths in wanlink endpoint table in GUI
 
     def post_add_wl_endp(self, 
-                         alias: str = None,                  # Name of WanPath. [R]
-                         cpu_id: str = None,                 # The CPU/thread that this process should run on
+                         alias: str = None,                        # Name of WanPath. [R]
+                         cpu_id: str = None,                       # The CPU/thread that this process should run on
                          # (kernel-mode only).
-                         description: str = None,            # Description for this endpoint, put in single quotes if it
-                         # contains spaces.
-                         dest_ip: str = None,                # Selection filter: Destination IP.
-                         dest_ip_mask: str = None,           # Selection filter: Destination IP MASK.
-                         drop_every_xth_pkt: str = None,     # YES to periodically drop every Xth pkt, NO to drop packets
-                         # randomly.
-                         drop_freq: str = None,              # How often, out of 1,000,000 packets, should we
-                         # purposefully drop a packet. [W]
-                         dup_every_xth_pkt: str = None,      # YES to periodically duplicate every Xth pkt, NO to
-                         # duplicate packets randomly.
-                         dup_freq: str = None,               # How often, out of 1,000,000 packets, should we
-                         # purposefully duplicate a packet. [W]
-                         extra_buffer: str = None,           # The extra amount of bytes to buffer before dropping pkts,
-                         # in units of 1024, use -1 for AUTO. [D:-1]
-                         ignore_bandwidth: str = None,       # Should we ignore the bandwidth settings from the playback
-                         # file? YES, NO, or NA.
-                         ignore_dup: str = None,             # Should we ignore the Duplicate Packet settings from the
-                         # playback file? YES, NO, or NA.
-                         ignore_latency: str = None,         # Should we ignore the latency settings from the playback
-                         # file? YES, NO, or NA.
-                         ignore_loss: str = None,            # Should we ignore the packet-loss settings from the
-                         # playback file? YES, NO, or NA.
-                         jitter_freq: str = None,            # How often, out of 1,000,000 packets, should we apply
-                         # random jitter.
-                         latency: str = None,                # The base latency added to all packets, in milliseconds (or
-                         # add 'us' suffix for microseconds) [W]
-                         max_drop_amt: str = None,           # Maximum amount of packets to drop in a row. Default is 1.
-                         # [D:1]
-                         max_jitter: str = None,             # The maximum jitter, in milliseconds (or add 'us' suffix
-                         # for microseconds) [W]
-                         max_lateness: str = None,           # Maximum amount of un-intentional delay before pkt is
-                         # dropped. Default is AUTO
-                         max_rate: str = None,               # Maximum transmit rate (bps) for this WanLink.
-                         max_reorder_amt: str = None,        # Maximum amount of packets by which to reorder, Default is
-                         # 10. [D:10]
-                         min_drop_amt: str = None,           # Minimum amount of packets to drop in a row. Default is 1.
-                         # [D:1]
-                         min_reorder_amt: str = None,        # Minimum amount of packets by which to reorder, Default is
-                         # 1. [D:1]
-                         playback_capture: str = None,       # ON or OFF, should we play back a WAN capture file?
-                         playback_capture_file: str = None,  # Name of the WAN capture file to play back.
-                         playback_loop: str = None,          # Should we loop the playback file, YES or NO or NA.
-                         port: str = None,                   # Port number. [W]
-                         reorder_every_xth_pkt: str = None,  # YES to periodically reorder every Xth pkt, NO to reorder
+                         description: str = None,                  # Description for this endpoint, put in single quotes if
+                         # it contains spaces.
+                         dest_ip: str = None,                      # Selection filter: Destination IP.
+                         dest_ip_mask: str = None,                 # Selection filter: Destination IP MASK.
+                         drop_every_xth_pkt: str = None,           # YES to periodically drop every Xth pkt, NO to drop
                          # packets randomly.
-                         reorder_freq: str = None,           # How often, out of 1,000,000 packets, should we make a
+                         drop_freq: str = None,                    # How often, out of 1,000,000 packets, should we
+                         # purposefully drop a packet. [W]
+                         dup_every_xth_pkt: str = None,            # YES to periodically duplicate every Xth pkt, NO to
+                         # duplicate packets randomly.
+                         dup_freq: str = None,                     # How often, out of 1,000,000 packets, should we
+                         # purposefully duplicate a packet. [W]
+                         extra_buffer: str = None,                 # The extra amount of bytes to buffer before dropping
+                         # pkts, in units of 1024, use -1 for AUTO. [D:-1]
+                         ignore_bandwidth: str = None,             # Should we ignore the bandwidth settings from the
+                         # playback file? YES, NO, or NA.
+                         ignore_dup: str = None,                   # Should we ignore the Duplicate Packet settings from the
+                         # playback file? YES, NO, or NA.
+                         ignore_latency: str = None,               # Should we ignore the latency settings from the playback
+                         # file? YES, NO, or NA.
+                         ignore_loss: str = None,                  # Should we ignore the packet-loss settings from the
+                         # playback file? YES, NO, or NA.
+                         jitter_freq: str = None,                  # How often, out of 1,000,000 packets, should we apply
+                         # random jitter.
+                         latency: str = None,                      # The base latency added to all packets, in milliseconds
+                         # (or add 'us' suffix for microseconds) [W]
+                         max_drop_amt: str = None,                 # Maximum amount of packets to drop in a row. Default is
+                         # 1. [D:1]
+                         max_jitter: str = None,                   # The maximum jitter, in milliseconds (or add 'us' suffix
+                         # for microseconds) [W]
+                         max_lateness: str = None,                 # Maximum amount of un-intentional delay before pkt is
+                         # dropped. Default is AUTO
+                         max_rate: str = None,                     # Maximum transmit rate (bps) for this WanLink.
+                         max_reorder_amt: str = None,              # Maximum amount of packets by which to reorder, Default
+                         # is 10. [D:10]
+                         min_drop_amt: str = None,                 # Minimum amount of packets to drop in a row. Default is
+                         # 1. [D:1]
+                         min_reorder_amt: str = None,              # Minimum amount of packets by which to reorder, Default
+                         # is 1. [D:1]
+                         playback_capture: str = None,             # ON or OFF, should we play back a WAN capture file?
+                         playback_capture_file: str = None,        # Name of the WAN capture file to play back.
+                         playback_loop: str = None,                # Should we loop the playback file, YES or NO or NA.
+                         port: str = None,                         # Port number. [W]
+                         reorder_every_xth_pkt: str = None,        # YES to periodically reorder every Xth pkt, NO to
+                         # reorder packets randomly.
+                         reorder_freq: str = None,                 # How often, out of 1,000,000 packets, should we make a
                          # packet out of order. [W]
-                         resource: int = None,               # Resource number. [W]
-                         shelf: int = 1,                     # Shelf name/id. [R][D:1]
-                         source_ip: str = None,              # Selection filter: Source IP.
-                         source_ip_mask: str = None,         # Selection filter: Source IP MASK.
-                         speed: str = None,                  # The maximum speed this WanLink will accept (bps). [W]
-                         test_mgr: str = None,               # The name of the Test-Manager this WanPath is to use. Leave
-                         # blank for no restrictions.
-                         wanlink: str = None,                # Name of WanLink to which we are adding this WanPath. [R]
-                         wle_flags: str = None,              # WanLink Endpoint specific flags, see above.
-                         debug=False):
+                         resource: int = None,                     # Resource number. [W]
+                         shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                         source_ip: str = None,                    # Selection filter: Source IP.
+                         source_ip_mask: str = None,               # Selection filter: Source IP MASK.
+                         speed: str = None,                        # The maximum speed this WanLink will accept (bps). [W]
+                         test_mgr: str = None,                     # The name of the Test-Manager this WanPath is to use.
+                         # Leave blank for no restrictions.
+                         wanlink: str = None,                      # Name of WanLink to which we are adding this WanPath.
+                         # [R]
+                         wle_flags: str = None,                    # WanLink Endpoint specific flags, see above.
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_add_wl_endp(param=value ...)
@@ -5846,6 +6034,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/add_wl_endp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -5905,14 +6094,15 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#admin
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_admin(self, 
-                   arg1: str = None,  # Argument 1: xorp-port | scan-rslts-file | iface-name | iface-eid |
-                   # rfgen-message | id | log_file_name
-                   arg2: str = None,  # Argument 2: scan key | message | angle | dest-radio
-                   arg3: str = None,  # Argument 3: noprobe | migrate-sta-mac-pattern
-                   arg5: str = None,  # Argument 4: table-speed
-                   cmd: str = None,   # Admin command:
+                   arg1: str = None,                         # Argument 1: xorp-port | scan-rslts-file | iface-name |
+                   # iface-eid | rfgen-message | id | log_file_name
+                   arg2: str = None,                         # Argument 2: scan key | message | angle | dest-radio
+                   arg3: str = None,                         # Argument 3: noprobe | migrate-sta-mac-pattern
+                   arg5: str = None,                         # Argument 4: table-speed
+                   cmd: str = None,                          # Admin command:
                    # resync_clock|write_xorp_cfg|scan_complete|ifup_post_complete|flush_complete|req_migrate|rfgen|chamber|clean_logs
-                   debug=False):
+                   debug: bool = False,
+                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_admin(param=value ...)
@@ -5935,6 +6125,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/admin",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -5962,9 +6153,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#apply_vr_cfg
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_apply_vr_cfg(self, 
-                          resource: int = None,  # The number of the resource in question, or 'ALL'. [W]
-                          shelf: int = 1,        # The number of the shelf in question, or 'ALL'. [R][D:ALL]
-                          debug=False):
+                          resource: int = None,                     # The number of the resource in question, or 'ALL'. [W]
+                          shelf: int = 1,                           # The number of the shelf in question, or 'ALL'.
+                          # [R][D:ALL]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_apply_vr_cfg(param=value ...)
@@ -5981,6 +6174,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/apply_vr_cfg",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6005,10 +6199,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#blink_attenuator
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_blink_attenuator(self, 
-                              resource: int = None,  # Resource number. [W]
-                              serno: str = None,     # Serial number for requested Attenuator, or 'all'. [W]
-                              shelf: int = 1,        # Shelf number, usually 1. [R][D:1]
-                              debug=False):
+                              resource: int = None,                     # Resource number. [W]
+                              serno: str = None,                        # Serial number for requested Attenuator, or 'all'.
+                              # [W]
+                              shelf: int = 1,                           # Shelf number, usually 1. [R][D:1]
+                              debug: bool = False,
+                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_blink_attenuator(param=value ...)
@@ -6027,6 +6223,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/blink_attenuator",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6078,12 +6275,13 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_c_show_ports(self, 
-                          port: str = None,         # Port number, or 'all'. [W]
-                          probe_flags: str = None,  # See above, add them together for multiple probings. Leave
-                          # blank if you want stats only.
-                          resource: int = None,     # Resource number, or 'all'. [W]
-                          shelf: int = 1,           # Name/id of the shelf, or 'all'. [R][D:1]
-                          debug=False):
+                          port: str = None,                         # Port number, or 'all'. [W]
+                          probe_flags: str = None,                  # See above, add them together for multiple probings.
+                          # Leave blank if you want stats only.
+                          resource: int = None,                     # Resource number, or 'all'. [W]
+                          shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_c_show_ports(param=value ...)
@@ -6104,6 +6302,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/c_show_ports",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6130,9 +6329,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#cancel_vr_cfg
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_cancel_vr_cfg(self, 
-                           resource: int = None,  # The number of the resource in question, or 'ALL'. [W]
-                           shelf: int = 1,        # The number of the shelf in question, or 'ALL'. [R][D:ALL]
-                           debug=False):
+                           resource: int = None,                     # The number of the resource in question, or 'ALL'. [W]
+                           shelf: int = 1,                           # The number of the shelf in question, or 'ALL'.
+                           # [R][D:ALL]
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_cancel_vr_cfg(param=value ...)
@@ -6149,6 +6350,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/cancel_vr_cfg",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6173,9 +6375,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#clear_cd_counters
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_clear_cd_counters(self, 
-                               cd_name: str = None,  # Name of Collision Domain, or 'all'. Null argument is same
-                               # as 'all'. [W][D:all]
-                               debug=False):
+                               cd_name: str = None,                      # Name of Collision Domain, or 'all'. Null argument
+                               # is same as 'all'. [W][D:all]
+                               debug: bool = False,
+                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_clear_cd_counters(param=value ...)
@@ -6190,6 +6393,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/clear_cd_counters",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6213,9 +6417,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#clear_cx_counters
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_clear_cx_counters(self, 
-                               cx_name: str = None,  # Name of Cross Connect, or 'all'. Null argument is same as
-                               # 'all'. [W][D:all]
-                               debug=False):
+                               cx_name: str = None,                      # Name of Cross Connect, or 'all'. Null argument is
+                               # same as 'all'. [W][D:all]
+                               debug: bool = False,
+                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_clear_cx_counters(param=value ...)
@@ -6230,6 +6435,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/clear_cx_counters",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6253,13 +6459,14 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#clear_endp_counters
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_clear_endp_counters(self, 
-                                 endp_name: str = None,     # Name of Endpoint, or 'all'. Null argument is same as
-                                 # 'all'. [W][D:all]
-                                 incr_seqno: str = None,    # Enter 'YES' if you want the target to increment the
-                                 # cfg-seq-no.
-                                 just_latency: str = None,  # Enter 'YES' if you only want to clear latency counters,
-                                 # and see above for RXGAP.
-                                 debug=False):
+                                 endp_name: str = None,                    # Name of Endpoint, or 'all'. Null argument is
+                                 # same as 'all'. [W][D:all]
+                                 incr_seqno: str = None,                   # Enter 'YES' if you want the target to increment
+                                 # the cfg-seq-no.
+                                 just_latency: str = None,                 # Enter 'YES' if you only want to clear latency
+                                 # counters, and see above for RXGAP.
+                                 debug: bool = False,
+                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_clear_endp_counters(param=value ...)
@@ -6278,6 +6485,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/clear_endp_counters",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6303,8 +6511,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#clear_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_clear_group(self, 
-                         name: str = None,  # The name of the test group. [W]
-                         debug=False):
+                         name: str = None,                         # The name of the test group. [W]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_clear_group(param=value ...)
@@ -6319,6 +6528,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/clear_group",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6351,12 +6561,16 @@ class LFJsonCommand(JsonCommand):
         dhcp_leases = "dhcp_leases"    # Remove dhcp lease files for IPv4 and IPv6 DHCP
 
     def post_clear_port_counters(self, 
-                                 extra: str = None,     # Clear something else instead: dhcp4_lease | dhcp6_lease |
-                                 # dhcp_leases
-                                 port: str = None,      # The number of the port in question, or 'ALL'. [W]
-                                 resource: int = None,  # The number of the resource in question, or 'ALL'. [W]
-                                 shelf: int = 1,        # The number of the shelf in question, or 'ALL'. [R][D:1]
-                                 debug=False):
+                                 extra: str = None,                        # Clear something else instead: dhcp4_lease |
+                                 # dhcp6_lease | dhcp_leases
+                                 port: str = None,                         # The number of the port in question, or 'ALL'.
+                                 # [W]
+                                 resource: int = None,                     # The number of the resource in question, or
+                                 # 'ALL'. [W]
+                                 shelf: int = 1,                           # The number of the shelf in question, or 'ALL'.
+                                 # [R][D:1]
+                                 debug: bool = False,
+                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_clear_port_counters(param=value ...)
@@ -6377,6 +6591,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/clear_port_counters",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6403,10 +6618,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#clear_resource_counters
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_clear_resource_counters(self, 
-                                     resource: int = None,  # The number of the resource in question, or 'ALL'. [W]
-                                     shelf: int = 1,        # The number of the shelf in question, or 'ALL'.
-                                     # [R][D:1]
-                                     debug=False):
+                                     resource: int = None,                     # The number of the resource in question, or
+                                     # 'ALL'. [W]
+                                     shelf: int = 1,                           # The number of the shelf in question, or
+                                     # 'ALL'. [R][D:1]
+                                     debug: bool = False,
+                                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_clear_resource_counters(param=value ...)
@@ -6423,6 +6640,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/clear_resource_counters",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6447,9 +6665,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#clear_wp_counters
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_clear_wp_counters(self, 
-                               endp_name: str = None,  # Name of WanLink Endpoint. [W]
-                               wp_name: str = None,    # Name of WanPath to clear.
-                               debug=False):
+                               endp_name: str = None,                    # Name of WanLink Endpoint. [W]
+                               wp_name: str = None,                      # Name of WanPath to clear.
+                               debug: bool = False,
+                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_clear_wp_counters(param=value ...)
@@ -6466,6 +6685,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/clear_wp_counters",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6490,12 +6710,14 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#create_client
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_create_client(self, 
-                           name: str = None,        # A single name with no white-spaces (15 characters or less) [W]
-                           password: str = None,    # Can be blank or 'NA' if no password is set, otherwise must be
-                           # the password. Use IGNORE for no change.
-                           super_user: str = None,  # 1 If you want this user to have Administrative powers, 0 or
-                           # blank otherwise.
-                           debug=False):
+                           name: str = None,                         # A single name with no white-spaces (15 characters or
+                           # less) [W]
+                           password: str = None,                     # Can be blank or 'NA' if no password is set, otherwise
+                           # must be the password. Use IGNORE for no change.
+                           super_user: str = None,                   # 1 If you want this user to have Administrative
+                           # powers, 0 or blank otherwise.
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_create_client(param=value ...)
@@ -6514,6 +6736,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/create_client",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6554,10 +6777,11 @@ class LFJsonCommand(JsonCommand):
         shelf = "shelf"            #
 
     def post_diag(self, 
-                  arg1: str = None,  # Optional: Endpoint name to diag.
-                  p_type: str = None,  # Default (blank) is everything, options: alerts, license, counters, fds,
-                  # clients, endpoints, shelf, iobuffer.
-                  debug=False):
+                  arg1: str = None,                         # Optional: Endpoint name to diag.
+                  p_type: str = None,                       # Default (blank) is everything, options: alerts, license,
+                  # counters, fds, clients, endpoints, shelf, iobuffer.
+                  debug: bool = False,
+                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_diag(param=value ...)
@@ -6574,6 +6798,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/diag",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6598,10 +6823,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#discover
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_discover(self, 
-                      option: str = None,    # See above.
-                      resource: int = None,  # Resource ID. Use if discovering Attenuators or ADB devices. [W]
-                      shelf: int = 1,        # Shelf-ID, only used if discovering Attenuators. [R][D:1]
-                      debug=False):
+                      option: str = None,                       # See above.
+                      resource: int = None,                     # Resource ID. Use if discovering Attenuators or ADB
+                      # devices. [W]
+                      shelf: int = 1,                           # Shelf-ID, only used if discovering Attenuators. [R][D:1]
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_discover(param=value ...)
@@ -6620,6 +6847,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/discover",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6645,9 +6873,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#do_pesq
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_do_pesq(self, 
-                     endp_name: str = None,         # Name of Endpoint. [W]
-                     result_file_name: str = None,  # The name of the file received by the endpoint. [W]
-                     debug=False):
+                     endp_name: str = None,                    # Name of Endpoint. [W]
+                     result_file_name: str = None,             # The name of the file received by the endpoint. [W]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_do_pesq(param=value ...)
@@ -6664,6 +6893,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/do_pesq",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6695,15 +6925,17 @@ class LFJsonCommand(JsonCommand):
         UNLINK_WHEN_DL_COMPLETE = 1      # Remove the file once it has been downloaded.
 
     def post_file(self, 
-                  card: int = None,       # Resource ID [W]
-                  client_id: str = None,  # Internal use only.
-                  cmd: str = None,        # Only 'Download' supported for now, 'Upload' reserved for future use.
-                  # [W][D:Download]
-                  filename: str = None,   # File to transfer. [W]
-                  flags: str = None,      # Options for the file operation, see above.
-                  req_id: str = None,     # Request identifier, uint32. Will be passed back in response frames.
-                  shelf: int = 1,         # Shelf ID [R][D:1]
-                  debug=False):
+                  card: int = None,                         # Resource ID [W]
+                  client_id: str = None,                    # Internal use only.
+                  cmd: str = None,                          # Only 'Download' supported for now, 'Upload' reserved for
+                  # future use. [W][D:Download]
+                  filename: str = None,                     # File to transfer. [W]
+                  flags: str = None,                        # Options for the file operation, see above.
+                  req_id: str = None,                       # Request identifier, uint32. Will be passed back in response
+                  # frames.
+                  shelf: int = 1,                           # Shelf ID [R][D:1]
+                  debug: bool = False,
+                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_file(param=value ...)
@@ -6730,6 +6962,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/file",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6759,11 +6992,13 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#flash_attenuator
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_flash_attenuator(self, 
-                              filename: str = None,  # File to use when uploading to attenuator.
-                              resource: int = None,  # Resource number. [W]
-                              serno: str = None,     # Serial number for requested Attenuator, or 'all'. [W]
-                              shelf: int = 1,        # Shelf number, usually 1. [R][D:1]
-                              debug=False):
+                              filename: str = None,                     # File to use when uploading to attenuator.
+                              resource: int = None,                     # Resource number. [W]
+                              serno: str = None,                        # Serial number for requested Attenuator, or 'all'.
+                              # [W]
+                              shelf: int = 1,                           # Shelf number, usually 1. [R][D:1]
+                              debug: bool = False,
+                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_flash_attenuator(param=value ...)
@@ -6784,6 +7019,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/flash_attenuator",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6810,9 +7046,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#getavglatency
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getavglatency(self, 
-                           aorb: str = None,  # For AtoB, enter 'B', for BtoA, enter 'A'.
-                           cx: str = None,    # Cross-connect or Test-Group name [W]
-                           debug=False):
+                           aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
+                           cx: str = None,                           # Cross-connect or Test-Group name [W]
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_getavglatency(param=value ...)
@@ -6829,6 +7066,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/getavglatency",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6853,9 +7091,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#getinrxbps
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getinrxbps(self, 
-                        aorb: str = None,  # For endpoint a, enter 'A', for endpoint b, enter 'B'.
-                        cx: str = None,    # Cross-connect or Test-Group name [W]
-                        debug=False):
+                        aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
+                        cx: str = None,                           # Cross-connect or Test-Group name [W]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_getinrxbps(param=value ...)
@@ -6872,6 +7111,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/getinrxbps",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6896,9 +7136,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#getinrxrate
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getinrxrate(self, 
-                         aorb: str = None,  # For endpoint a, enter 'A', for endpoint b, enter 'B'.
-                         cx: str = None,    # Cross-connect or Test-Group name [W]
-                         debug=False):
+                         aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
+                         cx: str = None,                           # Cross-connect or Test-Group name [W]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_getinrxrate(param=value ...)
@@ -6915,6 +7156,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/getinrxrate",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6939,9 +7181,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#getintxrate
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getintxrate(self, 
-                         aorb: str = None,  # For endpoint a, enter 'A', for endpoint b, enter 'B'.
-                         cx: str = None,    # Cross-connect or Test-Group name [W]
-                         debug=False):
+                         aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
+                         cx: str = None,                           # Cross-connect or Test-Group name [W]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_getintxrate(param=value ...)
@@ -6958,6 +7201,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/getintxrate",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -6982,9 +7226,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#getipadd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getipadd(self, 
-                      aorb: str = None,  # For endpoint a, enter 'A', for endpoint b, enter 'B'.
-                      cx: str = None,    # Cross-connect name [W]
-                      debug=False):
+                      aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
+                      cx: str = None,                           # Cross-connect name [W]
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_getipadd(param=value ...)
@@ -7001,6 +7246,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/getipadd",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7025,9 +7271,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#getmac
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getmac(self, 
-                    aorb: str = None,  # For endpoint a, enter 'A', for endpoint b, enter 'B'.
-                    cx: str = None,    # Cross-connect name [W]
-                    debug=False):
+                    aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
+                    cx: str = None,                           # Cross-connect name [W]
+                    debug: bool = False,
+                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_getmac(param=value ...)
@@ -7044,6 +7291,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/getmac",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7068,9 +7316,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#getmask
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getmask(self, 
-                     aorb: str = None,  # For endpoint a, enter 'A', for endpoint b, enter 'B'.
-                     cx: str = None,    # Cross-connect name
-                     debug=False):
+                     aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
+                     cx: str = None,                           # Cross-connect name
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_getmask(param=value ...)
@@ -7087,6 +7336,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/getmask",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7111,9 +7361,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#getpktdrops
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getpktdrops(self, 
-                         aorb: str = None,  # For AtoB, enter 'B', for BtoA, enter 'A'.
-                         cx: str = None,    # Cross-connect or Test-Group name [W]
-                         debug=False):
+                         aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
+                         cx: str = None,                           # Cross-connect or Test-Group name [W]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_getpktdrops(param=value ...)
@@ -7130,6 +7381,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/getpktdrops",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7154,9 +7406,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#getrxendperrpkts
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getrxendperrpkts(self, 
-                              aorb: str = None,  # For AtoB, enter 'B', for BtoA, enter 'A'.
-                              cx: str = None,    # Cross-connect or Test-Group name [W]
-                              debug=False):
+                              aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
+                              cx: str = None,                           # Cross-connect or Test-Group name [W]
+                              debug: bool = False,
+                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_getrxendperrpkts(param=value ...)
@@ -7173,6 +7426,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/getrxendperrpkts",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7197,9 +7451,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#getrxpkts
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getrxpkts(self, 
-                       aorb: str = None,  # For endpoint a, enter 'A', for endpoint b, enter 'B'.
-                       cx: str = None,    # Cross-connect or Test-Group name [W]
-                       debug=False):
+                       aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
+                       cx: str = None,                           # Cross-connect or Test-Group name [W]
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_getrxpkts(param=value ...)
@@ -7216,6 +7471,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/getrxpkts",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7240,9 +7496,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#getrxporterrpkts
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_getrxporterrpkts(self, 
-                              aorb: str = None,  # For AtoB, enter 'B', for BtoA, enter 'A'.
-                              cx: str = None,    # Cross-connect name [W]
-                              debug=False):
+                              aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
+                              cx: str = None,                           # Cross-connect name [W]
+                              debug: bool = False,
+                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_getrxporterrpkts(param=value ...)
@@ -7259,6 +7516,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/getrxporterrpkts",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7283,9 +7541,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#gettxpkts
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_gettxpkts(self, 
-                       aorb: str = None,  # For endpoint a, enter 'A', for endpoint b, enter 'B'.
-                       cx: str = None,    # Cross-connect or Test-Group name [W]
-                       debug=False):
+                       aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
+                       cx: str = None,                           # Cross-connect or Test-Group name [W]
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_gettxpkts(param=value ...)
@@ -7302,6 +7561,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/gettxpkts",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7326,9 +7586,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#gossip
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_gossip(self, 
-                    message: str = None,  # Message to show to others currently logged on. <tt
+                    message: str = None,                      # Message to show to others currently logged on. <tt
                     # escapearg='false'>Unescaped Value</tt> [W]
-                    debug=False):
+                    debug: bool = False,
+                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_gossip(param=value ...)
@@ -7343,6 +7604,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/gossip",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7366,8 +7628,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#help
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_help(self, 
-                  command: str = None,  # The command to get help for. Can be 'all', or blank.
-                  debug=False):
+                  command: str = None,                      # The command to get help for. Can be 'all', or blank.
+                  debug: bool = False,
+                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_help(param=value ...)
@@ -7382,6 +7645,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/help",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7405,13 +7669,14 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#init_wiser
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_init_wiser(self, 
-                        file_name: str = None,   # The WISER file name for the desired emulation, or 'NA' for empty
-                        # string.
-                        node_count: str = None,  # The number of WISER nodes for the desired emulation, or 'NA' for
-                        # empty string.
-                        resource: int = None,    # The number of the resource in question. [W]
-                        shelf: int = 1,          # The number of the shelf in question. [R][D:1]
-                        debug=False):
+                        file_name: str = None,                    # The WISER file name for the desired emulation, or 'NA'
+                        # for empty string.
+                        node_count: str = None,                   # The number of WISER nodes for the desired emulation, or
+                        # 'NA' for empty string.
+                        resource: int = None,                     # The number of the resource in question. [W]
+                        shelf: int = 1,                           # The number of the shelf in question. [R][D:1]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_init_wiser(param=value ...)
@@ -7432,6 +7697,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/init_wiser",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7458,10 +7724,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#licenses
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_licenses(self, 
-                      popup: str = None,      # If 'popup', then cause a GUI popup msg, otherwise, just show text.
-                      show_file: str = None,  # If 'yes', then show the license file, not the parsed license
-                      # information.
-                      debug=False):
+                      popup: str = None,                        # If 'popup', then cause a GUI popup msg, otherwise, just
+                      # show text.
+                      show_file: str = None,                    # If 'yes', then show the license file, not the parsed
+                      # license information.
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_licenses(param=value ...)
@@ -7478,6 +7746,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/licenses",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7502,15 +7771,16 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#load
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_load(self, 
-                  action: str = None,          # Should be 'append' or 'overwrite'. [W]
-                  clean_chambers: str = None,  # If yes, then Chambers will be cleaned up when overwrite is selected,
+                  action: str = None,                       # Should be 'append' or 'overwrite'. [W]
+                  clean_chambers: str = None,               # If yes, then Chambers will be cleaned up when overwrite is
+                  # selected, otherwise they will be kept.
+                  clean_dut: str = None,                    # If yes, then DUT will be cleaned up when overwrite is
+                  # selected, otherwise they will be kept.
+                  clean_profiles: str = None,               # If yes, then clean all profiles when overwrite is selected,
                   # otherwise they will be kept.
-                  clean_dut: str = None,       # If yes, then DUT will be cleaned up when overwrite is selected,
-                  # otherwise they will be kept.
-                  clean_profiles: str = None,  # If yes, then clean all profiles when overwrite is selected, otherwise
-                  # they will be kept.
-                  name: str = None,            # The name of the database to load. (DFLT is the default) [W]
-                  debug=False):
+                  name: str = None,                         # The name of the database to load. (DFLT is the default) [W]
+                  debug: bool = False,
+                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_load(param=value ...)
@@ -7533,6 +7803,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/load",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7560,18 +7831,20 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#log_capture
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_log_capture(self, 
-                         destination: str = None,  # Where to save the file to on the LANforge resource. If
-                         # 'stdout', then content will be passed back as a keyed text
-                         # message.
-                         duration: str = None,     # For journalctl, seconds of logs to gather, or NA if not used.
-                         identifier: str = None,   # port name or other identifier needed for some types, NA if not
+                         destination: str = None,                  # Where to save the file to on the LANforge resource. If
+                         # 'stdout', then content will be passed back as a keyed
+                         # text message.
+                         duration: str = None,                     # For journalctl, seconds of logs to gather, or NA if not
                          # used.
-                         resource: int = None,     # The number of the resource in question. [W]
-                         shelf: int = 1,           # The number of the shelf in question. [R][D:1]
-                         p_type: str = None,       # journalctl, supplicant, lflogs, adb
-                         user_key: str = None,     # Key to use for keyed-text-message response when using stdout
-                         # destination
-                         debug=False):
+                         identifier: str = None,                   # port name or other identifier needed for some types, NA
+                         # if not used.
+                         resource: int = None,                     # The number of the resource in question. [W]
+                         shelf: int = 1,                           # The number of the shelf in question. [R][D:1]
+                         p_type: str = None,                       # journalctl, supplicant, lflogs, adb
+                         user_key: str = None,                     # Key to use for keyed-text-message response when using
+                         # stdout destination
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_log_capture(param=value ...)
@@ -7598,6 +7871,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/log_capture",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7663,9 +7937,10 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_log_level(self, 
-                       level: str = None,   # Integer corresponding to the logging flags. [W]
-                       target: str = None,  # Options: 'gnu' | [file-endp-name].
-                       debug=False):
+                       level: str = None,                        # Integer corresponding to the logging flags. [W]
+                       target: str = None,                       # Options: 'gnu' | [file-endp-name].
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_log_level(param=value ...)
@@ -7682,6 +7957,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/log_level",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7706,8 +7982,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#log_msg
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_log_msg(self, 
-                     message: str = None,  # Message to log. <tt escapearg='false'>Unescaped Value</tt> [W]
-                     debug=False):
+                     message: str = None,                      # Message to log. <tt escapearg='false'>Unescaped Value</tt>
+                     # [W]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_log_msg(param=value ...)
@@ -7722,6 +8000,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/log_msg",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7745,10 +8024,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#login
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_login(self, 
-                   name: str = None,      # A single name with no white-spaces (15 characters or less) [W]
-                   password: str = None,  # Can be blank or 'NA' if no password is set, otherwise must be the
-                   # password.
-                   debug=False):
+                   name: str = None,                         # A single name with no white-spaces (15 characters or less)
+                   # [W]
+                   password: str = None,                     # Can be blank or 'NA' if no password is set, otherwise must be
+                   # the password.
+                   debug: bool = False,
+                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_login(param=value ...)
@@ -7765,6 +8046,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/login",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7789,7 +8071,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#motd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_motd(self, 
-                  debug=False):
+                  debug: bool = False,
+                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_motd(param=value ...)
@@ -7800,6 +8083,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/motd",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7822,10 +8106,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#nc_show_cd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_cd(self, 
-                        collision_domain: str = None,  # Name of the Collision Domain, or 'all'. [W]
-                        resource: int = None,          # Resource number, or 'all'. [W]
-                        shelf: int = 1,                # Name/id of the shelf, or 'all'. [R][D:1]
-                        debug=False):
+                        collision_domain: str = None,             # Name of the Collision Domain, or 'all'. [W]
+                        resource: int = None,                     # Resource number, or 'all'. [W]
+                        shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_nc_show_cd(param=value ...)
@@ -7844,6 +8129,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/nc_show_cd",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7869,10 +8155,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#nc_show_channel_groups
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_channel_groups(self, 
-                                    channel_name: str = None,  # Name of the channel, or 'all'. [W]
-                                    resource: int = None,      # Resource number, or 'all'. [W]
-                                    shelf: int = 1,            # Name/id of the shelf, or 'all'. [R][D:1]
-                                    debug=False):
+                                    channel_name: str = None,                 # Name of the channel, or 'all'. [W]
+                                    resource: int = None,                     # Resource number, or 'all'. [W]
+                                    shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                                    debug: bool = False,
+                                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_nc_show_channel_groups(param=value ...)
@@ -7891,6 +8178,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/nc_show_channel_groups",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7916,9 +8204,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#nc_show_endpoints
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_endpoints(self, 
-                               endpoint: str = None,  # Name of endpoint, or 'all'. [W]
-                               extra: str = None,     # See above.
-                               debug=False):
+                               endpoint: str = None,                     # Name of endpoint, or 'all'. [W]
+                               extra: str = None,                        # See above.
+                               debug: bool = False,
+                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_nc_show_endpoints(param=value ...)
@@ -7935,6 +8224,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/nc_show_endpoints",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -7959,8 +8249,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#nc_show_pesq
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_pesq(self, 
-                          endpoint: str = None,  # Name of endpoint, or 'all'. [W]
-                          debug=False):
+                          endpoint: str = None,                     # Name of endpoint, or 'all'. [W]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_nc_show_pesq(param=value ...)
@@ -7975,6 +8266,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/nc_show_pesq",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8024,12 +8316,13 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_nc_show_ports(self, 
-                           port: str = None,         # Port number, or 'all'. [W]
-                           probe_flags: str = None,  # See above, add them together for multiple probings. Leave
-                           # blank if you want stats only.
-                           resource: int = None,     # Resource number, or 'all'. [W]
-                           shelf: int = 1,           # Name/id of the shelf, or 'all'. [R][D:1]
-                           debug=False):
+                           port: str = None,                         # Port number, or 'all'. [W]
+                           probe_flags: str = None,                  # See above, add them together for multiple probings.
+                           # Leave blank if you want stats only.
+                           resource: int = None,                     # Resource number, or 'all'. [W]
+                           shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_nc_show_ports(param=value ...)
@@ -8050,6 +8343,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/nc_show_ports",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8076,10 +8370,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#nc_show_ppp_links
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_ppp_links(self, 
-                               link_num: str = None,  # Ppp-Link number of the span, or 'all'. [W]
-                               resource: int = None,  # Resource number, or 'all'. [W]
-                               shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
-                               debug=False):
+                               link_num: str = None,                     # Ppp-Link number of the span, or 'all'. [W]
+                               resource: int = None,                     # Resource number, or 'all'. [W]
+                               shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                               debug: bool = False,
+                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_nc_show_ppp_links(param=value ...)
@@ -8098,6 +8393,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/nc_show_ppp_links",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8123,10 +8419,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#nc_show_spans
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_spans(self, 
-                           resource: int = None,     # Resource number, or 'all'. [W]
-                           shelf: int = 1,           # Name/id of the shelf, or 'all'. [R][D:1]
-                           span_number: str = None,  # Span-Number of the span, or 'all'. [W]
-                           debug=False):
+                           resource: int = None,                     # Resource number, or 'all'. [W]
+                           shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                           span_number: str = None,                  # Span-Number of the span, or 'all'. [W]
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_nc_show_spans(param=value ...)
@@ -8145,6 +8442,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/nc_show_spans",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8170,10 +8468,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#nc_show_vr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_vr(self, 
-                        resource: int = None,  # Resource number, or 'all'. [W]
-                        router: str = None,    # Name of the Virtual Router, or 'all'. [W]
-                        shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
-                        debug=False):
+                        resource: int = None,                     # Resource number, or 'all'. [W]
+                        router: str = None,                       # Name of the Virtual Router, or 'all'. [W]
+                        shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_nc_show_vr(param=value ...)
@@ -8192,6 +8491,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/nc_show_vr",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8217,10 +8517,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#nc_show_vrcx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_vrcx(self, 
-                          cx_name: str = None,   # Name of the Virtual Router Connection, or 'all'. [W]
-                          resource: int = None,  # Resource number, or 'all'. [W]
-                          shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
-                          debug=False):
+                          cx_name: str = None,                      # Name of the Virtual Router Connection, or 'all'. [W]
+                          resource: int = None,                     # Resource number, or 'all'. [W]
+                          shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_nc_show_vrcx(param=value ...)
@@ -8239,6 +8540,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/nc_show_vrcx",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8264,17 +8566,19 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#notify_dhcp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_notify_dhcp(self, 
-                         cmd: str = None,         # set/down/timeout/info: What does DHCP want us to do? [W]
-                         netmask: str = None,     # New subnet mask.
-                         new_dns: str = None,     # New DNS server(s) for use by this interface.
-                         new_ip: str = None,      # New IP address.
-                         new_ip6: str = None,     # New Global IPv6 address: ipv6/prefix
-                         new_mtu: str = None,     # New MTU.
-                         new_router: str = None,  # One or more default routers. LANforge will only use the first
-                         # one.
-                         port: str = None,        # Interface name. [W]
-                         reason: str = None,      # DHCP reason, informational mostly.
-                         debug=False):
+                         cmd: str = None,                          # set/down/timeout/info: What does DHCP want us to do?
+                         # [W]
+                         netmask: str = None,                      # New subnet mask.
+                         new_dns: str = None,                      # New DNS server(s) for use by this interface.
+                         new_ip: str = None,                       # New IP address.
+                         new_ip6: str = None,                      # New Global IPv6 address: ipv6/prefix
+                         new_mtu: str = None,                      # New MTU.
+                         new_router: str = None,                   # One or more default routers. LANforge will only use the
+                         # first one.
+                         port: str = None,                         # Interface name. [W]
+                         reason: str = None,                       # DHCP reason, informational mostly.
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_notify_dhcp(param=value ...)
@@ -8305,6 +8609,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/notify_dhcp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8336,11 +8641,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#port_reset_completed
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_port_reset_completed(self, 
-                                  extra: str = None,  # IP for SECIP, blank for others.
-                                  port: str = None,   # The port in question. [W]
-                                  p_type: str = None,  # SUNOS, NORMAL, or SECIP..let us know what kind of reset
-                                  # completed.
-                                  debug=False):
+                                  extra: str = None,                        # IP for SECIP, blank for others.
+                                  port: str = None,                         # The port in question. [W]
+                                  p_type: str = None,                       # SUNOS, NORMAL, or SECIP..let us know what kind
+                                  # of reset completed.
+                                  debug: bool = False,
+                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_port_reset_completed(param=value ...)
@@ -8359,6 +8665,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/port_reset_completed",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8384,11 +8691,13 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#probe_port
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_probe_port(self, 
-                        key: str = None,       # Unique identifier for this request. Usually left blank.<br/>
-                        port: str = None,      # Port number or name [W]
-                        resource: int = None,  # Resource number. [W]
-                        shelf: int = 1,        # Shelf number. [R][D:1]
-                        debug=False):
+                        key: str = None,                          # Unique identifier for this request. Usually left
+                        # blank.<br/>
+                        port: str = None,                         # Port number or name [W]
+                        resource: int = None,                     # Resource number. [W]
+                        shelf: int = 1,                           # Shelf number. [R][D:1]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_probe_port(param=value ...)
@@ -8409,6 +8718,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/probe_port",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8435,9 +8745,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#probe_ports
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_probe_ports(self, 
-                         resource: int = None,  # Resource number, or 'all'. [W]
-                         shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
-                         debug=False):
+                         resource: int = None,                     # Resource number, or 'all'. [W]
+                         shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_probe_ports(param=value ...)
@@ -8454,6 +8765,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/probe_ports",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8478,8 +8790,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#quiesce_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_quiesce_endp(self, 
-                          endp_name: str = None,  # Name of the endpoint, or 'all'. [R]
-                          debug=False):
+                          endp_name: str = None,                    # Name of the endpoint, or 'all'. [R]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_quiesce_endp(param=value ...)
@@ -8494,6 +8807,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/quiesce_endp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8517,8 +8831,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#quiesce_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_quiesce_group(self, 
-                           name: str = None,  # The name of the test group, or 'all' [R]
-                           debug=False):
+                           name: str = None,                         # The name of the test group, or 'all' [R]
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_quiesce_group(param=value ...)
@@ -8533,6 +8848,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/quiesce_group",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8556,7 +8872,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#quit
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_quit(self, 
-                  debug=False):
+                  debug: bool = False,
+                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_quit(param=value ...)
@@ -8567,6 +8884,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/quit",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8589,9 +8907,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#reboot_os
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_reboot_os(self, 
-                       resource: int = None,  # Resource number, or ALL. [W]
-                       shelf: int = 1,        # Shelf number, or ALL. [R][D:1]
-                       debug=False):
+                       resource: int = None,                     # Resource number, or ALL. [W]
+                       shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_reboot_os(param=value ...)
@@ -8608,6 +8927,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/reboot_os",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8632,12 +8952,13 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#report
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_report(self, 
-                    reporting_on: str = None,   # Should we globally enable/disable reporting. (YES, NO or NA)
-                    rpt_dir: str = None,        # Directory in which reports should be saved. [W]
-                    save_endps: str = None,     # Should we save endpoint reports or not. (YES, NO or NA)
-                    save_ports: str = None,     # Should we save Port reports or not. (YES, NO or NA)
-                    save_resource: str = None,  # Should we save Resource reports or not. (YES, NO or NA)
-                    debug=False):
+                    reporting_on: str = None,                 # Should we globally enable/disable reporting. (YES, NO or NA)
+                    rpt_dir: str = None,                      # Directory in which reports should be saved. [W]
+                    save_endps: str = None,                   # Should we save endpoint reports or not. (YES, NO or NA)
+                    save_ports: str = None,                   # Should we save Port reports or not. (YES, NO or NA)
+                    save_resource: str = None,                # Should we save Resource reports or not. (YES, NO or NA)
+                    debug: bool = False,
+                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_report(param=value ...)
@@ -8660,6 +8981,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/report",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8696,13 +9018,14 @@ class LFJsonCommand(JsonCommand):
         YES = "YES"        # (include logout) Call portal-bot.pl ... <b>--logout</b> before going down.
 
     def post_reset_port(self, 
-                        port: str = None,        # Port number to reset, or ALL. [W]
-                        pre_ifdown: str = None,  # See above. Leave blank or use NA if unsure.
-                        reset_ospf: str = None,  # If set to 'NO' or 'NA', then OSPF will not be updated. Otherwise,
-                        # it will be updated.
-                        resource: int = None,    # Resource number, or ALL. [W]
-                        shelf: int = 1,          # Shelf number, or ALL. [R][D:1]
-                        debug=False):
+                        port: str = None,                         # Port number to reset, or ALL. [W]
+                        pre_ifdown: str = None,                   # See above. Leave blank or use NA if unsure.
+                        reset_ospf: str = None,                   # If set to 'NO' or 'NA', then OSPF will not be updated.
+                        # Otherwise, it will be updated.
+                        resource: int = None,                     # Resource number, or ALL. [W]
+                        shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_reset_port(param=value ...)
@@ -8725,6 +9048,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/reset_port",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8752,10 +9076,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#reset_serial_span
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_reset_serial_span(self, 
-                               resource: int = None,  # Resource (machine) number. [W]
-                               shelf: int = 1,        # Shelf number [R][D:1]
-                               span: str = None,      # Serial-Span number to reset. [W]
-                               debug=False):
+                               resource: int = None,                     # Resource (machine) number. [W]
+                               shelf: int = 1,                           # Shelf number [R][D:1]
+                               span: str = None,                         # Serial-Span number to reset. [W]
+                               debug: bool = False,
+                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_reset_serial_span(param=value ...)
@@ -8774,6 +9099,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/reset_serial_span",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8794,15 +9120,65 @@ class LFJsonCommand(JsonCommand):
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/RM_ADB> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#rm_adb
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_rm_adb(self, 
+                    adb_id: str = None,                       # Android device identifier (serial number).
+                    resource: int = None,                     # Resource number. [W]
+                    shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                    debug: bool = False,
+                    suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                result = post_rm_adb(param=value ...)
+                pprint.pprint( result )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if adb_id is not None:
+            data["adb_id"] = adb_id
+        if resource is not None:
+            data["resource"] = resource
+        if shelf is not None:
+            data["shelf"] = shelf
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/rm_adb",
+                                  post_data=data,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+    #
+
+    def post_rm_adb_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_rm_adb(adb_id=param_map.get("adb_id"),
+                         resource=param_map.get("resource"),
+                         shelf=param_map.get("shelf"),
+                         )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/RM_ATTENUATOR> type requests
 
         https://www.candelatech.com/lfcli_ug.php#rm_attenuator
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_attenuator(self, 
-                           resource: int = None,  # Resource number [W]
-                           serno: str = None,     # Serial number for requested Attenuator. [W]
-                           shelf: int = 1,        # Shelf number, usually 1 [R][D:1]
-                           debug=False):
+                           resource: int = None,                     # Resource number [W]
+                           serno: str = None,                        # Serial number for requested Attenuator. [W]
+                           shelf: int = 1,                           # Shelf number, usually 1 [R][D:1]
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_attenuator(param=value ...)
@@ -8821,6 +9197,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_attenuator",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8846,8 +9223,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_cd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_cd(self, 
-                   cd: str = None,  # Name of Collision Domain. [W]
-                   debug=False):
+                   cd: str = None,                           # Name of Collision Domain. [W]
+                   debug: bool = False,
+                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_cd(param=value ...)
@@ -8862,6 +9240,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_cd",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8885,9 +9264,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_cd_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_cd_endp(self, 
-                        cd: str = None,    # Name of Collision Domain. [W]
-                        endp: str = None,  # Endpoint name/id. [W]
-                        debug=False):
+                        cd: str = None,                           # Name of Collision Domain. [W]
+                        endp: str = None,                         # Endpoint name/id. [W]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_cd_endp(param=value ...)
@@ -8904,6 +9284,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_cd_endp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8928,9 +9309,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_cd_vr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_cd_vr(self, 
-                      cd: str = None,    # Name of Collision Domain. [W]
-                      endp: str = None,  # Virtual-Router name/id. [W]
-                      debug=False):
+                      cd: str = None,                           # Name of Collision Domain. [W]
+                      endp: str = None,                         # Virtual-Router name/id. [W]
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_cd_vr(param=value ...)
@@ -8947,6 +9329,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_cd_vr",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -8971,8 +9354,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_chamber
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_chamber(self, 
-                        chamber: str = None,  # Chamber name, or 'ALL' [W]
-                        debug=False):
+                        chamber: str = None,                      # Chamber name, or 'ALL' [W]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_chamber(param=value ...)
@@ -8987,6 +9371,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_chamber",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9010,9 +9395,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_chamber_path
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_chamber_path(self, 
-                             chamber: str = None,  # Chamber Name. [W]
-                             path: str = None,     # Path Name, use 'ALL' to delete all paths. [W]
-                             debug=False):
+                             chamber: str = None,                      # Chamber Name. [W]
+                             path: str = None,                         # Path Name, use 'ALL' to delete all paths. [W]
+                             debug: bool = False,
+                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_chamber_path(param=value ...)
@@ -9029,6 +9415,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_chamber_path",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9053,10 +9440,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_channel_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_channel_group(self, 
-                              channel_name: str = None,  # Name of the channel, or 'all'. [W]
-                              resource: int = None,      # Resource number, or 'all'. [W]
-                              shelf: int = 1,            # Name/id of the shelf, or 'all'. [R][D:1]
-                              debug=False):
+                              channel_name: str = None,                 # Name of the channel, or 'all'. [W]
+                              resource: int = None,                     # Resource number, or 'all'. [W]
+                              shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                              debug: bool = False,
+                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_channel_group(param=value ...)
@@ -9075,6 +9463,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_channel_group",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9100,9 +9489,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_client
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_client(self, 
-                       client_name: str = None,      # Name of the client profile you wish to remove. [W]
-                       client_password: str = None,  # Client password. Not required if we are super-user.
-                       debug=False):
+                       client_name: str = None,                  # Name of the client profile you wish to remove. [W]
+                       client_password: str = None,              # Client password. Not required if we are super-user.
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_client(param=value ...)
@@ -9119,6 +9509,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_client",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9143,9 +9534,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_cx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_cx(self, 
-                   cx_name: str = None,   # Name of the cross-connect, or 'all'. [W]
-                   test_mgr: str = None,  # Name of test-mgr, or 'all'. [W]
-                   debug=False):
+                   cx_name: str = None,                      # Name of the cross-connect, or 'all'. [W]
+                   test_mgr: str = None,                     # Name of test-mgr, or 'all'. [W]
+                   debug: bool = False,
+                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_cx(param=value ...)
@@ -9162,6 +9554,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_cx",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9186,8 +9579,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_db
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_db(self, 
-                   db_name: str = None,  # Name of the database to delete. [W]
-                   debug=False):
+                   db_name: str = None,                      # Name of the database to delete. [W]
+                   debug: bool = False,
+                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_db(param=value ...)
@@ -9202,6 +9596,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_db",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9225,8 +9620,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_dut
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_dut(self, 
-                    shelf: int = 1,  # DUT name, or 'ALL' [W]
-                    debug=False):
+                    shelf: int = 1,                           # DUT name, or 'ALL' [W]
+                    debug: bool = False,
+                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_dut(param=value ...)
@@ -9241,6 +9637,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_dut",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9264,8 +9661,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_endp(self, 
-                     endp_name: str = None,  # Name of the endpoint, or 'YES_ALL'. [W]
-                     debug=False):
+                     endp_name: str = None,                    # Name of the endpoint, or 'YES_ALL'. [W]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_endp(param=value ...)
@@ -9280,6 +9678,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_endp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9303,8 +9702,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_event
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_event(self, 
-                      event_id: str = None,  # Numeric event-id, or 'all' [W]
-                      debug=False):
+                      event_id: str = None,                     # Numeric event-id, or 'all' [W]
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_event(param=value ...)
@@ -9319,6 +9719,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_event",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9342,8 +9743,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_group(self, 
-                      name: str = None,  # The name of the test group. [W]
-                      debug=False):
+                      name: str = None,                         # The name of the test group. [W]
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_group(param=value ...)
@@ -9358,6 +9760,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_group",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9381,10 +9784,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_ppp_link
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_ppp_link(self, 
-                         resource: int = None,  # Resource number that holds this PppLink. [W]
-                         shelf: int = 1,        # Name/id of the shelf. [R][D:1]
-                         unit_num: str = None,  # Unit-Number for the PppLink to be deleted. [W]
-                         debug=False):
+                         resource: int = None,                     # Resource number that holds this PppLink. [W]
+                         shelf: int = 1,                           # Name/id of the shelf. [R][D:1]
+                         unit_num: str = None,                     # Unit-Number for the PppLink to be deleted. [W]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_ppp_link(param=value ...)
@@ -9403,6 +9807,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_ppp_link",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9428,8 +9833,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_profile
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_profile(self, 
-                        name: str = None,  # Profile name, or 'ALL' [W]
-                        debug=False):
+                        name: str = None,                         # Profile name, or 'ALL' [W]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_profile(param=value ...)
@@ -9444,6 +9850,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_profile",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9467,9 +9874,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_resource
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_resource(self, 
-                         resource: int = None,  # Resource number. [W]
-                         shelf: int = 1,        # Shelf number. [R][D:1]
-                         debug=False):
+                         resource: int = None,                     # Resource number. [W]
+                         shelf: int = 1,                           # Shelf number. [R][D:1]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_resource(param=value ...)
@@ -9486,6 +9894,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_resource",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9510,9 +9919,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_rfgen
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_rfgen(self, 
-                      resource: int = None,  # Resource number [W]
-                      shelf: int = 1,        # Shelf number, usually 1 [R][D:1]
-                      debug=False):
+                      resource: int = None,                     # Resource number [W]
+                      shelf: int = 1,                           # Shelf number, usually 1 [R][D:1]
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_rfgen(param=value ...)
@@ -9529,6 +9939,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_rfgen",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9553,12 +9964,13 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_sec_ip
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_sec_ip(self, 
-                       ip_list: str = None,   # IP1/prefix,IP2/prefix,...IPZ/prefix, or ALL [W]
-                       port: str = None,      # Name of network device (Port) from which these IPs will be removed.
-                       # [W]
-                       resource: int = None,  # Resource number. [W]
-                       shelf: int = 1,        # Shelf number. [R][D:1]
-                       debug=False):
+                       ip_list: str = None,                      # IP1/prefix,IP2/prefix,...IPZ/prefix, or ALL [W]
+                       port: str = None,                         # Name of network device (Port) from which these IPs will
+                       # be removed. [W]
+                       resource: int = None,                     # Resource number. [W]
+                       shelf: int = 1,                           # Shelf number. [R][D:1]
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_sec_ip(param=value ...)
@@ -9579,6 +9991,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_sec_ip",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9605,10 +10018,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_span
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_span(self, 
-                     resource: int = None,  # Resource number, or 'all'. [W]
-                     shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
-                     span_num: str = None,  # Span-Number of the channel, or 'all'. [W]
-                     debug=False):
+                     resource: int = None,                     # Resource number, or 'all'. [W]
+                     shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                     span_num: str = None,                     # Span-Number of the channel, or 'all'. [W]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_span(param=value ...)
@@ -9627,6 +10041,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_span",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9652,8 +10067,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_test_mgr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_test_mgr(self, 
-                         test_mgr: str = None,  # Name of the test manager to be removed. [W]
-                         debug=False):
+                         test_mgr: str = None,                     # Name of the test manager to be removed. [W]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_test_mgr(param=value ...)
@@ -9668,6 +10084,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_test_mgr",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9691,9 +10108,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_text_blob
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_text_blob(self, 
-                          name: str = None,  # Text Blob Name, or 'ALL' [W]
-                          p_type: str = None,  # Text Blob type, or 'ALL' [W]
-                          debug=False):
+                          name: str = None,                         # Text Blob Name, or 'ALL' [W]
+                          p_type: str = None,                       # Text Blob type, or 'ALL' [W]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_text_blob(param=value ...)
@@ -9710,6 +10128,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_text_blob",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9734,9 +10153,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_tgcx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_tgcx(self, 
-                     cxname: str = None,  # The name of the CX. [W]
-                     tgname: str = None,  # The name of the test group. [W]
-                     debug=False):
+                     cxname: str = None,                       # The name of the CX. [W]
+                     tgname: str = None,                       # The name of the test group. [W]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_tgcx(param=value ...)
@@ -9753,6 +10173,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_tgcx",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9777,9 +10198,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_threshold
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_threshold(self, 
-                          endp: str = None,       # Endpoint name or ID. [W]
-                          thresh_id: str = None,  # Threshold ID to remove. Use 'all' to remove all. [W]
-                          debug=False):
+                          endp: str = None,                         # Endpoint name or ID. [W]
+                          thresh_id: str = None,                    # Threshold ID to remove. Use 'all' to remove all. [W]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_threshold(param=value ...)
@@ -9796,6 +10218,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_threshold",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9820,8 +10243,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_traffic_profile
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_traffic_profile(self, 
-                                name: str = None,  # Profile name, or 'ALL' [W]
-                                debug=False):
+                                name: str = None,                         # Profile name, or 'ALL' [W]
+                                debug: bool = False,
+                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_traffic_profile(param=value ...)
@@ -9836,6 +10260,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_traffic_profile",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9859,11 +10284,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_venue
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_venue(self, 
-                      resource: int = None,  # Resource number, or 'ALL' [W]
-                      shelf: int = 1,        # Shelf number. [R][D:1]
-                      venu_id: str = None,   # Number to uniquely identify this venue on this resource, or 'ALL'
-                      # [W]
-                      debug=False):
+                      resource: int = None,                     # Resource number, or 'ALL' [W]
+                      shelf: int = 1,                           # Shelf number. [R][D:1]
+                      venu_id: str = None,                      # Number to uniquely identify this venue on this resource,
+                      # or 'ALL' [W]
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_venue(param=value ...)
@@ -9882,6 +10308,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_venue",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9907,10 +10334,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_vlan
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_vlan(self, 
-                     port: str = None,      # Port number or name of the virtual interface. [W]
-                     resource: int = None,  # Resource number. [W]
-                     shelf: int = 1,        # Shelf number. [R][D:1]
-                     debug=False):
+                     port: str = None,                         # Port number or name of the virtual interface. [W]
+                     resource: int = None,                     # Resource number. [W]
+                     shelf: int = 1,                           # Shelf number. [R][D:1]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_vlan(param=value ...)
@@ -9929,6 +10357,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_vlan",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -9954,10 +10383,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_vr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_vr(self, 
-                   resource: int = None,     # Resource number, or 'all'. [W]
-                   router_name: str = None,  # Virtual Router name, or 'all'. [W]
-                   shelf: int = 1,           # Name/id of the shelf, or 'all'. [R][D:1]
-                   debug=False):
+                   resource: int = None,                     # Resource number, or 'all'. [W]
+                   router_name: str = None,                  # Virtual Router name, or 'all'. [W]
+                   shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                   debug: bool = False,
+                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_vr(param=value ...)
@@ -9976,6 +10406,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_vr",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10001,14 +10432,16 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_vrcx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_vrcx(self, 
-                     connection_name: str = None,  # Virtual Router Connection name, or 'all'. [W]
-                     resource: int = None,         # Resource number, or 'all'. [W]
-                     shelf: int = 1,               # Name/id of the shelf, or 'all'. [R][D:1]
-                     vr_id: str = None,            # If not removing from the free-list, then supply the
-                     # virtual-router name/ID here. Leave blank or use NA for free-list.
-                     vrcx_only: str = None,        # If we should NOT delete underlying auto-created objects, enter
-                     # 'vrcx_only' here, otherwise leave blank or use NA.
-                     debug=False):
+                     connection_name: str = None,              # Virtual Router Connection name, or 'all'. [W]
+                     resource: int = None,                     # Resource number, or 'all'. [W]
+                     shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                     vr_id: str = None,                        # If not removing from the free-list, then supply the
+                     # virtual-router name/ID here. Leave blank or use NA for
+                     # free-list.
+                     vrcx_only: str = None,                    # If we should NOT delete underlying auto-created objects,
+                     # enter 'vrcx_only' here, otherwise leave blank or use NA.
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_vrcx(param=value ...)
@@ -10031,6 +10464,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_vrcx",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10058,9 +10492,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rm_wanpath
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_wanpath(self, 
-                        endp_name: str = None,  # Name of the endpoint. [W]
-                        wp_name: str = None,    # Name of the wanpath. [W]
-                        debug=False):
+                        endp_name: str = None,                    # Name of the endpoint. [W]
+                        wp_name: str = None,                      # Name of the wanpath. [W]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rm_wanpath(param=value ...)
@@ -10077,6 +10512,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rm_wanpath",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10101,14 +10537,15 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#rpt_script
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rpt_script(self, 
-                        endp: str = None,          # Endpoint name or ID. [W]
-                        flags: str = None,         # See above for description of the defined flags.
-                        group_action: str = None,  # All or Sequential.
-                        loop_count: str = None,    # How many times to loop before stopping (0 is infinite).
-                        name: str = None,          # Script name. [W]
-                        private: str = None,       # Private encoding for the particular script.
-                        p_type: str = None,        # One of: NONE, Script2544, ScriptHunt, ScriptWL
-                        debug=False):
+                        endp: str = None,                         # Endpoint name or ID. [W]
+                        flags: str = None,                        # See above for description of the defined flags.
+                        group_action: str = None,                 # All or Sequential.
+                        loop_count: str = None,                   # How many times to loop before stopping (0 is infinite).
+                        name: str = None,                         # Script name. [W]
+                        private: str = None,                      # Private encoding for the particular script.
+                        p_type: str = None,                       # One of: NONE, Script2544, ScriptHunt, ScriptWL
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_rpt_script(param=value ...)
@@ -10135,6 +10572,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/rpt_script",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10173,12 +10611,13 @@ class LFJsonCommand(JsonCommand):
         trigger_freq__freq_ = "trigger freq [freq]"    # scan exactly those frequencies
 
     def post_scan_wifi(self, 
-                       extra: str = None,     # Extra arguments to the scan script, see above.
-                       key: str = None,       # Unique identifier for this request. Usually left blank.
-                       port: str = None,      # Port number or name of the virtual interface. [W]
-                       resource: int = None,  # Resource number. [W]
-                       shelf: int = 1,        # Shelf number. [R][D:1]
-                       debug=False):
+                       extra: str = None,                        # Extra arguments to the scan script, see above.
+                       key: str = None,                          # Unique identifier for this request. Usually left blank.
+                       port: str = None,                         # Port number or name of the virtual interface. [W]
+                       resource: int = None,                     # Resource number. [W]
+                       shelf: int = 1,                           # Shelf number. [R][D:1]
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_scan_wifi(param=value ...)
@@ -10201,6 +10640,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/scan_wifi",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10253,31 +10693,33 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_set_arm_info(self, 
-                          arm_flags: str = None,      # Armageddon-related flags, see above for details.
-                          burst: str = None,          # Burst amount, can significantly improve throughput with some
-                          # modern drivers, similar to 'multi_pkts', and uses the
-                          # 'xmit_more' linux skb option.
-                          dst_mac: str = None,        # The destination MAC address.
-                          dst_mac_count: str = None,  # How many destination MACs to iterate through.
-                          ip_dst_max: str = None,     # Maximum destination IP address to use.
-                          ip_dst_min: str = None,     # Minimum destination IP address to use.
-                          ip_src_max: str = None,     # Maximum source IP address to use.
-                          ip_src_min: str = None,     # Minimum source IP address to use.
-                          max_pkt_size: str = None,   # Maximum packet size, including all Ethernet headers (but not
-                          # CRC).
-                          min_pkt_size: str = None,   # Minimum packet size, including all Ethernet headers (but not
-                          # CRC).
-                          multi_pkts: str = None,     # The number of identical packets to send before creating a new
-                          # one.
-                          name: str = None,           # Name of the Endpoint we are setting. [R]
-                          pkts_to_send: str = None,   # The number of packets to send. Set to zero for infinite.
-                          src_mac: str = None,        # The source MAC address.
-                          src_mac_count: str = None,  # How many source MACs to iterate through.
-                          udp_dst_max: str = None,    # Minimum destination UDP port.
-                          udp_dst_min: str = None,    # Minimum destination UDP port.
-                          udp_src_max: str = None,    # Maximum source UDP port.
-                          udp_src_min: str = None,    # Minimum source UDP port.
-                          debug=False):
+                          arm_flags: str = None,                    # Armageddon-related flags, see above for details.
+                          burst: str = None,                        # Burst amount, can significantly improve throughput
+                          # with some modern drivers, similar to 'multi_pkts', and
+                          # uses the 'xmit_more' linux skb option.
+                          dst_mac: str = None,                      # The destination MAC address.
+                          dst_mac_count: str = None,                # How many destination MACs to iterate through.
+                          ip_dst_max: str = None,                   # Maximum destination IP address to use.
+                          ip_dst_min: str = None,                   # Minimum destination IP address to use.
+                          ip_src_max: str = None,                   # Maximum source IP address to use.
+                          ip_src_min: str = None,                   # Minimum source IP address to use.
+                          max_pkt_size: str = None,                 # Maximum packet size, including all Ethernet headers
+                          # (but not CRC).
+                          min_pkt_size: str = None,                 # Minimum packet size, including all Ethernet headers
+                          # (but not CRC).
+                          multi_pkts: str = None,                   # The number of identical packets to send before
+                          # creating a new one.
+                          name: str = None,                         # Name of the Endpoint we are setting. [R]
+                          pkts_to_send: str = None,                 # The number of packets to send. Set to zero for
+                          # infinite.
+                          src_mac: str = None,                      # The source MAC address.
+                          src_mac_count: str = None,                # How many source MACs to iterate through.
+                          udp_dst_max: str = None,                  # Minimum destination UDP port.
+                          udp_dst_min: str = None,                  # Minimum destination UDP port.
+                          udp_src_max: str = None,                  # Maximum source UDP port.
+                          udp_src_min: str = None,                  # Minimum source UDP port.
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_arm_info(param=value ...)
@@ -10328,6 +10770,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_arm_info",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10377,24 +10820,26 @@ class LFJsonCommand(JsonCommand):
         p_1 = "1"    # Pulse mode (API Tech 4205A modules directly connected via USB only)
 
     def post_set_attenuator(self, 
-                            atten_count: str = None,        # For cases where we are creating/setting a phantom
+                            atten_count: str = None,                  # For cases where we are creating/setting a phantom
                             # attenuator.
-                            atten_idx: str = None,          # Attenuator index, or 'all'. [W]
-                            ip_addr: str = None,            # IP address, in case this Attenuator is to be managed over
-                            # TCP.
-                            mode: str = None,               # 0 == normal attenuator, 1 == pulse mode (API Tech 4205A
-                            # modules directly connected via USB only)
-                            pulse_count: str = None,        # Number of pulses (0-255)
-                            pulse_interval_ms: str = None,  # Time between pulses, in mili-seconds (0-60000).
-                            pulse_time_ms: str = None,      # Time interval between pulse groups in miliseconds
+                            atten_idx: str = None,                    # Attenuator index, or 'all'. [W]
+                            ip_addr: str = None,                      # IP address, in case this Attenuator is to be managed
+                            # over TCP.
+                            mode: str = None,                         # 0 == normal attenuator, 1 == pulse mode (API Tech
+                            # 4205A modules directly connected via USB only)
+                            pulse_count: str = None,                  # Number of pulses (0-255)
+                            pulse_interval_ms: str = None,            # Time between pulses, in mili-seconds (0-60000).
+                            pulse_time_ms: str = None,                # Time interval between pulse groups in miliseconds
                             # (1-60000)
-                            pulse_width_us5: str = None,    # Pulse width in units of 1/2 micro second. So, if you want
-                            # 1.5us, use value 3 (0-60000)
-                            resource: int = None,           # Resource number. [W]
-                            serno: str = None,              # Serial number for requested Attenuator, or 'all'. [W]
-                            shelf: int = 1,                 # Shelf number, usually 1. [R][D:1]
-                            val: str = None,                # Requested attenution in 1/10ths of dB (ddB). [W]
-                            debug=False):
+                            pulse_width_us5: str = None,              # Pulse width in units of 1/2 micro second. So, if you
+                            # want 1.5us, use value 3 (0-60000)
+                            resource: int = None,                     # Resource number. [W]
+                            serno: str = None,                        # Serial number for requested Attenuator, or 'all'.
+                            # [W]
+                            shelf: int = 1,                           # Shelf number, usually 1. [R][D:1]
+                            val: str = None,                          # Requested attenution in 1/10ths of dB (ddB). [W]
+                            debug: bool = False,
+                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_attenuator(param=value ...)
@@ -10431,6 +10876,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_attenuator",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10465,14 +10911,15 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_chamber
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_chamber(self, 
-                         chamber: str = None,       # Chamber name [W]
-                         cur_rotation: str = None,  # Primarily used to store the last known rotation for turntables
-                         # that do not report absolute position.
-                         position: str = None,      # Absolute position in degrees.
-                         speed_rpm: str = None,     # Speed in rpm (floating point number is accepted
-                         tilt: str = None,          # Absolute tilt in degrees.
-                         turntable: str = None,     # Turn-table address, for instance: 192.168.1.22:3001
-                         debug=False):
+                         chamber: str = None,                      # Chamber name [W]
+                         cur_rotation: str = None,                 # Primarily used to store the last known rotation for
+                         # turntables that do not report absolute position.
+                         position: str = None,                     # Absolute position in degrees.
+                         speed_rpm: str = None,                    # Speed in rpm (floating point number is accepted
+                         tilt: str = None,                         # Absolute tilt in degrees.
+                         turntable: str = None,                    # Turn-table address, for instance: 192.168.1.22:3001
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_chamber(param=value ...)
@@ -10497,6 +10944,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_chamber",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10525,12 +10973,14 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_cx_report_timer
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_cx_report_timer(self, 
-                                 cx_name: str = None,       # Name of cross-connect, or 'all'. [W]
-                                 cxonly: str = None,        # If you want to set the timer for ONLY the CX, and not
-                                 milliseconds: str = None,  # Report timer length in milliseconds.
+                                 cx_name: str = None,                      # Name of cross-connect, or 'all'. [W]
+                                 cxonly: str = None,                       # If you want to set the timer for ONLY the CX,
+                                 # and not
+                                 milliseconds: str = None,                 # Report timer length in milliseconds.
                                  # [W,250-60000][D:5000]
-                                 test_mgr: str = None,      # Name of the test manager, or 'all'. [W]
-                                 debug=False):
+                                 test_mgr: str = None,                     # Name of the test manager, or 'all'. [W]
+                                 debug: bool = False,
+                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_cx_report_timer(param=value ...)
@@ -10551,6 +11001,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_cx_report_timer",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10588,10 +11039,12 @@ class LFJsonCommand(JsonCommand):
         SWITCH = "SWITCH"      # Sets the CX(s) in the running state, stopping any conflicting tests.
 
     def post_set_cx_state(self, 
-                          cx_name: str = None,   # Name of the cross-connect, or 'all'. [W]
-                          cx_state: str = None,  # One of: RUNNING, SWITCH, QUIESCE, STOPPED, or DELETED. [W]
-                          test_mgr: str = None,  # Name of the test-manager, or 'all'. [W]
-                          debug=False):
+                          cx_name: str = None,                      # Name of the cross-connect, or 'all'. [W]
+                          cx_state: str = None,                     # One of: RUNNING, SWITCH, QUIESCE, STOPPED, or DELETED.
+                          # [W]
+                          test_mgr: str = None,                     # Name of the test-manager, or 'all'. [W]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_cx_state(param=value ...)
@@ -10610,6 +11063,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_cx_state",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10635,12 +11089,16 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_endp_addr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_endp_addr(self, 
-                           ip: str = None,        # The IP Address. Used for TCP/IP and UDP/IP protocols.
-                           mac: str = None,       # The MAC address. Only needed for LANforge protocol Endpoints.
-                           max_port: str = None,  # The Maximum IP Port. Used for TCP/IP and UDP/IP protocols.
-                           min_port: str = None,  # The Minimum IP Port. Used for TCP/IP and UDP/IP protocols.
-                           name: str = None,      # The name of the endpoint we are configuring. [R]
-                           debug=False):
+                           ip: str = None,                           # The IP Address. Used for TCP/IP and UDP/IP protocols.
+                           mac: str = None,                          # The MAC address. Only needed for LANforge protocol
+                           # Endpoints.
+                           max_port: str = None,                     # The Maximum IP Port. Used for TCP/IP and UDP/IP
+                           # protocols.
+                           min_port: str = None,                     # The Minimum IP Port. Used for TCP/IP and UDP/IP
+                           # protocols.
+                           name: str = None,                         # The name of the endpoint we are configuring. [R]
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_endp_addr(param=value ...)
@@ -10663,6 +11121,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_endp_addr",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10690,35 +11149,36 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_endp_details
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_endp_details(self, 
-                              conn_timeout: str = None,      # For TCP, the max time in miliseconds to wait for
+                              conn_timeout: str = None,                 # For TCP, the max time in miliseconds to wait for
                               # connection to establish.
-                              dst_mac: str = None,           # Destination MAC address, used for custom Ethernet
+                              dst_mac: str = None,                      # Destination MAC address, used for custom Ethernet
                               # replays.
-                              max_conn_timer: str = None,    # The maximum duration (in ms) this connection should run
-                              # before re-establishing.
-                              max_ip_port: str = None,       # The maximum IP Port value. (The value for min ip port is
-                              # set through the add_endp/ip_port parameter.) If greater
-                              # than min, each connection will use a random value
-                              # between min and max.
-                              max_reconn_pause: str = None,  # The maximum time between re-connects, in ms.
-                              mcast_src_ip: str = None,      # Multicast source address (used in SSM mode, multicast
-                              # endpoints only)
-                              mcast_src_port: str = None,    # Multicast source address (used in SSM mode, multicast
-                              # endpoints only)
-                              min_conn_timer: str = None,    # The minimum duration (in ms) this connection should run
-                              # before re-establishing.
-                              min_reconn_pause: str = None,  # The minimum time between re-connects, in ms.
-                              name: str = None,              # The name of the endpoint we are configuring. [R]
-                              pkts_to_send: str = None,      # Number of packets to send before stopping. 0 means
+                              max_conn_timer: str = None,               # The maximum duration (in ms) this connection
+                              # should run before re-establishing.
+                              max_ip_port: str = None,                  # The maximum IP Port value. (The value for min ip
+                              # port is set through the add_endp/ip_port
+                              # parameter.) If greater than min, each connection
+                              # will use a random value between min and max.
+                              max_reconn_pause: str = None,             # The maximum time between re-connects, in ms.
+                              mcast_src_ip: str = None,                 # Multicast source address (used in SSM mode,
+                              # multicast endpoints only)
+                              mcast_src_port: str = None,               # Multicast source address (used in SSM mode,
+                              # multicast endpoints only)
+                              min_conn_timer: str = None,               # The minimum duration (in ms) this connection
+                              # should run before re-establishing.
+                              min_reconn_pause: str = None,             # The minimum time between re-connects, in ms.
+                              name: str = None,                         # The name of the endpoint we are configuring. [R]
+                              pkts_to_send: str = None,                 # Number of packets to send before stopping. 0 means
                               # infinite.
-                              rcvbuf_size: str = None,       # The receive buffer (window) size. Zero for AUTO
-                              sndbuf_size: str = None,       # The sending buffer (window) size. Zero for AUTO
-                              tcp_delack_segs: str = None,   # NA: No longer supported.
-                              tcp_max_delack: str = None,    # NA: No longer supported.
-                              tcp_min_delack: str = None,    # NA: No longer supported.
-                              tcp_mss: str = None,           # TCP Maximum Segment Size, affects packet size on the
-                              # wire (88 - 32767).
-                              debug=False):
+                              rcvbuf_size: str = None,                  # The receive buffer (window) size. Zero for AUTO
+                              sndbuf_size: str = None,                  # The sending buffer (window) size. Zero for AUTO
+                              tcp_delack_segs: str = None,              # NA: No longer supported.
+                              tcp_max_delack: str = None,               # NA: No longer supported.
+                              tcp_min_delack: str = None,               # NA: No longer supported.
+                              tcp_mss: str = None,                      # TCP Maximum Segment Size, affects packet size on
+                              # the wire (88 - 32767).
+                              debug: bool = False,
+                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_endp_details(param=value ...)
@@ -10765,6 +11225,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_endp_details",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10812,10 +11273,11 @@ class LFJsonCommand(JsonCommand):
         ON = "ON"      # on
 
     def post_set_endp_file(self, 
-                           file: str = None,      # The file name to read the playback packets from.
-                           name: str = None,      # The name of the endpoint we are configuring. [R]
-                           playback: str = None,  # Should we playback the capture or not? ON or OFF. [R]
-                           debug=False):
+                           file: str = None,                         # The file name to read the playback packets from.
+                           name: str = None,                         # The name of the endpoint we are configuring. [R]
+                           playback: str = None,                     # Should we playback the capture or not? ON or OFF. [R]
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_endp_file(param=value ...)
@@ -10834,6 +11296,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_endp_file",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10877,10 +11340,11 @@ class LFJsonCommand(JsonCommand):
         UseAutoNAT = "UseAutoNAT"                          # NAT friendly behavior
 
     def post_set_endp_flag(self, 
-                           flag: str = None,  # The name of the flag. [R]
-                           name: str = None,  # The name of the endpoint we are configuring. [R]
-                           val: str = None,   # Either 1 (for on), or 0 (for off). [R,0-1]
-                           debug=False):
+                           flag: str = None,                         # The name of the flag. [R]
+                           name: str = None,                         # The name of the endpoint we are configuring. [R]
+                           val: str = None,                          # Either 1 (for on), or 0 (for off). [R,0-1]
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_endp_flag(param=value ...)
@@ -10899,6 +11363,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_endp_flag",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10941,11 +11406,14 @@ class LFJsonCommand(JsonCommand):
         zeros = "zeros"                  # Payload is all zeros (00).
 
     def post_set_endp_payload(self, 
-                              name: str = None,          # The name of the endpoint we are configuring. [R]
-                              payload: str = None,       # For custom payloads, enter the payload in hex, up to 2048
-                              # bytes. <tt escapearg='false'>Unescaped Value</tt>
-                              payload_type: str = None,  # The payload type. See help for add_endp. [W][D:increasing]
-                              debug=False):
+                              name: str = None,                         # The name of the endpoint we are configuring. [R]
+                              payload: str = None,                      # For custom payloads, enter the payload in hex, up
+                              # to 2048 bytes. <tt escapearg='false'>Unescaped
+                              # Value</tt>
+                              payload_type: str = None,                 # The payload type. See help for add_endp.
+                              # [W][D:increasing]
+                              debug: bool = False,
+                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_endp_payload(param=value ...)
@@ -10964,6 +11432,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_endp_payload",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -10989,12 +11458,15 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_endp_pld_bounds
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_endp_pld_bounds(self, 
-                                 is_random: str = None,     # YES if random, anything else for NO.
-                                 max_pld_size: str = None,  # The maximum payload size, in bytes.
-                                 min_pld_size: str = None,  # The minimum payload size, in bytes.
-                                 name: str = None,          # The name of the endpoint we are configuring. [R]
-                                 use_checksum: str = None,  # YES if use checksum on payload, anything else for NO.
-                                 debug=False):
+                                 is_random: str = None,                    # YES if random, anything else for NO.
+                                 max_pld_size: str = None,                 # The maximum payload size, in bytes.
+                                 min_pld_size: str = None,                 # The minimum payload size, in bytes.
+                                 name: str = None,                         # The name of the endpoint we are configuring.
+                                 # [R]
+                                 use_checksum: str = None,                 # YES if use checksum on payload, anything else
+                                 # for NO.
+                                 debug: bool = False,
+                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_endp_pld_bounds(param=value ...)
@@ -11017,6 +11489,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_endp_pld_bounds",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11044,11 +11517,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_endp_proxy
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_endp_proxy(self, 
-                            enabled: str = None,        # YES or NO to enable or disable proxying.
-                            endp_name: str = None,      # Name of endpoint. [W]
-                            proxy_ip: str = None,       # Proxy IP Address.
-                            proxy_ip_port: str = None,  # Proxy IP Port.
-                            debug=False):
+                            enabled: str = None,                      # YES or NO to enable or disable proxying.
+                            endp_name: str = None,                    # Name of endpoint. [W]
+                            proxy_ip: str = None,                     # Proxy IP Address.
+                            proxy_ip_port: str = None,                # Proxy IP Port.
+                            debug: bool = False,
+                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_endp_proxy(param=value ...)
@@ -11069,6 +11543,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_endp_proxy",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11095,10 +11570,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_endp_quiesce
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_endp_quiesce(self, 
-                              name: str = None,     # The name of the endpoint we are configuring. [R]
-                              quiesce: str = None,  # The number of seconds to quiesce this endpoint when told to
-                              # quiesce. [R]
-                              debug=False):
+                              name: str = None,                         # The name of the endpoint we are configuring. [R]
+                              quiesce: str = None,                      # The number of seconds to quiesce this endpoint
+                              # when told to quiesce. [R]
+                              debug: bool = False,
+                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_endp_quiesce(param=value ...)
@@ -11115,6 +11591,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_endp_quiesce",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11139,10 +11616,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_endp_report_timer
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_endp_report_timer(self, 
-                                   endp_name: str = None,     # Name of endpoint. [R]
-                                   milliseconds: str = None,  # Report timer length in milliseconds.
+                                   endp_name: str = None,                    # Name of endpoint. [R]
+                                   milliseconds: str = None,                 # Report timer length in milliseconds.
                                    # [W,250-60000][D:5000]
-                                   debug=False):
+                                   debug: bool = False,
+                                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_endp_report_timer(param=value ...)
@@ -11159,6 +11637,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_endp_report_timer",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11193,10 +11672,11 @@ class LFJsonCommand(JsonCommand):
         THROUGHPUT = "THROUGHPUT"      #
 
     def post_set_endp_tos(self, 
-                          name: str = None,      # The name of the endpoint we are configuring. [R]
-                          priority: str = None,  # The socket priority, can be any positive number.
-                          tos: str = None,       # The Type of Service, can be HEX, see above.
-                          debug=False):
+                          name: str = None,                         # The name of the endpoint we are configuring. [R]
+                          priority: str = None,                     # The socket priority, can be any positive number.
+                          tos: str = None,                          # The Type of Service, can be HEX, see above.
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_endp_tos(param=value ...)
@@ -11215,6 +11695,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_endp_tos",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11240,11 +11721,14 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_endp_tx_bounds
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_endp_tx_bounds(self, 
-                                is_bursty: str = None,    # YES if bursty, anything else for NO.
-                                max_tx_rate: str = None,  # The maximum transmit rate, in bits per second (bps).
-                                min_tx_rate: str = None,  # The minimum transmit rate, in bits per second (bps).
-                                name: str = None,         # The name of the endpoint we are configuring. [R]
-                                debug=False):
+                                is_bursty: str = None,                    # YES if bursty, anything else for NO.
+                                max_tx_rate: str = None,                  # The maximum transmit rate, in bits per second
+                                # (bps).
+                                min_tx_rate: str = None,                  # The minimum transmit rate, in bits per second
+                                # (bps).
+                                name: str = None,                         # The name of the endpoint we are configuring. [R]
+                                debug: bool = False,
+                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_endp_tx_bounds(param=value ...)
@@ -11265,6 +11749,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_endp_tx_bounds",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11397,14 +11882,15 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_set_event_interest(self, 
-                                ei_flags: str = None,   # Event Interest flags, see above. [W]
-                                event_cnt: str = None,  # Maximum number of events to store.
-                                events1: str = None,    # See description for possible values.
-                                events2: str = None,    # See description for possible values.
-                                events3: str = None,    # See description for possible values.
-                                events4: str = None,    # See description for possible values.
-                                var1: str = None,       # Currently un-used.
-                                debug=False):
+                                ei_flags: str = None,                     # Event Interest flags, see above. [W]
+                                event_cnt: str = None,                    # Maximum number of events to store.
+                                events1: str = None,                      # See description for possible values.
+                                events2: str = None,                      # See description for possible values.
+                                events3: str = None,                      # See description for possible values.
+                                events4: str = None,                      # See description for possible values.
+                                var1: str = None,                         # Currently un-used.
+                                debug: bool = False,
+                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_event_interest(param=value ...)
@@ -11431,6 +11917,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_event_interest",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11499,9 +11986,11 @@ class LFJsonCommand(JsonCommand):
         WARNING = "WARNING"      #
 
     def post_set_event_priority(self, 
-                                event: str = None,     # Number or name for the event, see above. [R,0-21]
-                                priority: str = None,  # Number or name for the priority. [R,0-5]
-                                debug=False):
+                                event: str = None,                        # Number or name for the event, see above.
+                                # [R,0-21]
+                                priority: str = None,                     # Number or name for the priority. [R,0-5]
+                                debug: bool = False,
+                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_event_priority(param=value ...)
@@ -11518,6 +12007,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_event_priority",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11542,18 +12032,20 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_fe_info
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_fe_info(self, 
-                         directory: str = None,            # The directory to read/write in. Absolute path suggested.
-                         io_direction: str = None,         # Should we be reading or writing: options: read, write
-                         max_file_size: str = None,        # The maximum file size, in bytes.
-                         max_rw_sz: str = None,            # Maximum read/write size, in bytes.
-                         min_file_size: str = None,        # The minimum file size, in bytes.
-                         min_rw_sz: str = None,            # Minimum read/write size, in bytes.
-                         name: str = None,                 # The name of the file endpoint we are configuring. [R]
-                         num_files: str = None,            # Number of files to create when writing.
-                         prefix: str = None,               # The prefix of the file(s) to read/write.
-                         quiesce_after_files: str = None,  # If non-zero, quiesce test after this many files have been
-                         # read/written.
-                         debug=False):
+                         directory: str = None,                    # The directory to read/write in. Absolute path
+                         # suggested.
+                         io_direction: str = None,                 # Should we be reading or writing: options: read, write
+                         max_file_size: str = None,                # The maximum file size, in bytes.
+                         max_rw_sz: str = None,                    # Maximum read/write size, in bytes.
+                         min_file_size: str = None,                # The minimum file size, in bytes.
+                         min_rw_sz: str = None,                    # Minimum read/write size, in bytes.
+                         name: str = None,                         # The name of the file endpoint we are configuring. [R]
+                         num_files: str = None,                    # Number of files to create when writing.
+                         prefix: str = None,                       # The prefix of the file(s) to read/write.
+                         quiesce_after_files: str = None,          # If non-zero, quiesce test after this many files have
+                         # been read/written.
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_fe_info(param=value ...)
@@ -11586,6 +12078,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_fe_info",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11631,11 +12124,12 @@ class LFJsonCommand(JsonCommand):
         # +Event
 
     def post_set_flag(self, 
-                      client: str = None,  # Specify the user, if it is not the current user. Requires admin
-                      # privileges.
-                      flag: str = None,    # The name of the flag. [R]
-                      val: str = None,     # Either 1 (for on), or 0 (for off). [R,0-1]
-                      debug=False):
+                      client: str = None,                       # Specify the user, if it is not the current user. Requires
+                      # admin privileges.
+                      flag: str = None,                         # The name of the flag. [R]
+                      val: str = None,                          # Either 1 (for on), or 0 (for off). [R,0-1]
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_flag(param=value ...)
@@ -11654,6 +12148,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_flag",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11679,10 +12174,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_gen_cmd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_gen_cmd(self, 
-                         command: str = None,  # The rest of the command line arguments. <tt
+                         command: str = None,                      # The rest of the command line arguments. <tt
                          # escapearg='false'>Unescaped Value</tt> [R]
-                         name: str = None,     # The name of the file endpoint we are configuring. [R]
-                         debug=False):
+                         name: str = None,                         # The name of the file endpoint we are configuring. [R]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_gen_cmd(param=value ...)
@@ -11699,6 +12195,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_gen_cmd",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11723,14 +12220,16 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_gps_info
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_gps_info(self, 
-                          altitude: str = None,   # Altitude, assumes units are Meters.
-                          ew: str = None,         # East or west (Longitude).
-                          lattitude: str = None,  # The lattitude, as read from a GPS device.
-                          longitude: str = None,  # The longitude, as ready from a GPS device.
-                          ns: str = None,         # North or South (Latitude).
-                          resource: int = None,   # Resource number for the port to be modified. [W]
-                          shelf: int = 1,         # Shelf number for the port to be modified, or SELF. [R][D:1]
-                          debug=False):
+                          altitude: str = None,                     # Altitude, assumes units are Meters.
+                          ew: str = None,                           # East or west (Longitude).
+                          lattitude: str = None,                    # The lattitude, as read from a GPS device.
+                          longitude: str = None,                    # The longitude, as ready from a GPS device.
+                          ns: str = None,                           # North or South (Latitude).
+                          resource: int = None,                     # Resource number for the port to be modified. [W]
+                          shelf: int = 1,                           # Shelf number for the port to be modified, or SELF.
+                          # [R][D:1]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_gps_info(param=value ...)
@@ -11757,6 +12256,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_gps_info",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11786,13 +12286,14 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_ifup_script
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_ifup_script(self, 
-                             flags: str = None,             # Currently un-defined, use NA
-                             port: str = None,              # WiFi interface name or number. [W]
-                             post_ifup_script: str = None,  # Script name with optional args, will run after interface
-                             # comes up and gets IP.
-                             resource: int = None,          # Resource number. [W]
-                             shelf: int = 1,                # Shelf number. [R][D:1]
-                             debug=False):
+                             flags: str = None,                        # Currently un-defined, use NA
+                             port: str = None,                         # WiFi interface name or number. [W]
+                             post_ifup_script: str = None,             # Script name with optional args, will run after
+                             # interface comes up and gets IP.
+                             resource: int = None,                     # Resource number. [W]
+                             shelf: int = 1,                           # Shelf number. [R][D:1]
+                             debug: bool = False,
+                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_ifup_script(param=value ...)
@@ -11815,6 +12316,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_ifup_script",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11842,9 +12344,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_license
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_license(self, 
-                         licenses: str = None,  # License keys all appended into a single line. <tt
+                         licenses: str = None,                     # License keys all appended into a single line. <tt
                          # escapearg='false'>Unescaped Value</tt> [W]
-                         debug=False):
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_license(param=value ...)
@@ -11859,6 +12362,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_license",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11882,12 +12386,14 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_mc_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_mc_endp(self, 
-                         mcast_dest_port: str = None,  # Multicast destination IP Port, for example: 55000
-                         mcast_group: str = None,      # Multicast group IP, ie: 224.1.1.2 IPv6 supported as well.
-                         name: str = None,             # The name of the endpoint we are configuring. [R]
-                         rcv_mcast: str = None,        # Should we attempt to receive? Values: Yes or No
-                         ttl: str = None,              # Time to live for the multicast packets generated.
-                         debug=False):
+                         mcast_dest_port: str = None,              # Multicast destination IP Port, for example: 55000
+                         mcast_group: str = None,                  # Multicast group IP, ie: 224.1.1.2 IPv6 supported as
+                         # well.
+                         name: str = None,                         # The name of the endpoint we are configuring. [R]
+                         rcv_mcast: str = None,                    # Should we attempt to receive? Values: Yes or No
+                         ttl: str = None,                          # Time to live for the multicast packets generated.
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_mc_endp(param=value ...)
@@ -11910,6 +12416,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_mc_endp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11937,10 +12444,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_password
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_password(self, 
-                          client: str = None,        # Specify the client. If left blank, will use current client.
-                          new_password: str = None,  # New password, or 'NA' for blank password. [W]
-                          old_password: str = None,  # Old password, or 'NA' for blank password. [W]
-                          debug=False):
+                          client: str = None,                       # Specify the client. If left blank, will use current
+                          # client.
+                          new_password: str = None,                 # New password, or 'NA' for blank password. [W]
+                          old_password: str = None,                 # Old password, or 'NA' for blank password. [W]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_password(param=value ...)
@@ -11959,6 +12468,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_password",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -11992,8 +12502,9 @@ class LFJsonCommand(JsonCommand):
         push = "push"          #
 
     def post_set_poll_mode(self, 
-                           mode: str = None,  # 'polling' or 'push'. [R]
-                           debug=False):
+                           mode: str = None,                         # 'polling' or 'push'. [R]
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_poll_mode(param=value ...)
@@ -12008,6 +12519,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_poll_mode",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -12218,62 +12730,66 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_set_port(self, 
-                      alias: str = None,                # A user-defined name for this interface. Can be BLANK or NA.
-                      br_aging_time: str = None,        # MAC aging time, in seconds, 32-bit number (or peer IP for
+                      alias: str = None,                        # A user-defined name for this interface. Can be BLANK or
+                      # NA.
+                      br_aging_time: str = None,                # MAC aging time, in seconds, 32-bit number (or peer IP for
                       # GRE).
-                      br_forwarding_delay: str = None,  # How long to wait until the bridge will start forwarding
+                      br_forwarding_delay: str = None,          # How long to wait until the bridge will start forwarding
                       # packets.
-                      br_hello_time: str = None,        # How often does the bridge send out STP hello packets.
-                      br_max_age: str = None,           # How long until STP considers a non-responsive bridge dead.
-                      br_port_cost: str = None,         # STP Port cost for a port (this applies only to NON-BRIDGE
+                      br_hello_time: str = None,                # How often does the bridge send out STP hello packets.
+                      br_max_age: str = None,                   # How long until STP considers a non-responsive bridge dead.
+                      br_port_cost: str = None,                 # STP Port cost for a port (this applies only to NON-BRIDGE
                       # interfaces).
-                      br_port_priority: str = None,     # STP Port priority for a port (this applies only to NON-BRIDGE
-                      # interfaces).
-                      br_priority: str = None,          # Bridge priority, 16-bit number.
-                      bypass_wdt: str = None,           # Watch Dog Timer (in seconds) for this port. Zero (0) to
+                      br_port_priority: str = None,             # STP Port priority for a port (this applies only to
+                      # NON-BRIDGE interfaces).
+                      br_priority: str = None,                  # Bridge priority, 16-bit number.
+                      bypass_wdt: str = None,                   # Watch Dog Timer (in seconds) for this port. Zero (0) to
                       # disable.
-                      cmd_flags: str = None,            # Command Flags: See above, or NA.
-                      cpu_mask: str = None,             # CPU Mask for CPUs that should service this interface. Zero is
-                      # don't set (let OS make the decision). This value will be
-                      # applied to the proper /proc/irq/[irq-num]/smp_affinity file by
-                      # the pin_irq.pl script.
-                      current_flags: str = None,        # See above, or NA.
-                      current_flags_msk: str = None,    # This sets 'interest' for flags 'Enable RADIUS service' and
+                      cmd_flags: str = None,                    # Command Flags: See above, or NA.
+                      cpu_mask: str = None,                     # CPU Mask for CPUs that should service this interface. Zero
+                      # is don't set (let OS make the decision). This value will
+                      # be applied to the proper /proc/irq/[irq-num]/smp_affinity
+                      # file by the pin_irq.pl script.
+                      current_flags: str = None,                # See above, or NA.
+                      current_flags_msk: str = None,            # This sets 'interest' for flags 'Enable RADIUS service' and
                       # higher. See above, or NA.
-                      dhcp_client_id: str = None,       # Optional string of up to 63 bytes in length to be passed to
-                      # the dhclient process. See above.
-                      dhcp_hostname: str = None,        # Optional string of up to 63 bytes in length to be passed to
-                      # the dhclient process. Option 12, see above.
-                      dhcp_vendor_id: str = None,       # Optional string of up to 63 bytes in length to be passed to
-                      # the dhclient process. See above.
-                      dns_servers: str = None,          # DNS servers for use by traffic on this port, comma-separated
-                      # list, BLANK means zero-length string.
-                      flags2: str = None,               # Bridge &amp; other flags, see above.
-                      gateway: str = None,              # IP address of the gateway device - used for IP routing, or NA.
-                      interest: str = None,             # Which things are we really interested in setting. Can
+                      dhcp_client_id: str = None,               # Optional string of up to 63 bytes in length to be passed
+                      # to the dhclient process. See above.
+                      dhcp_hostname: str = None,                # Optional string of up to 63 bytes in length to be passed
+                      # to the dhclient process. Option 12, see above.
+                      dhcp_vendor_id: str = None,               # Optional string of up to 63 bytes in length to be passed
+                      # to the dhclient process. See above.
+                      dns_servers: str = None,                  # DNS servers for use by traffic on this port,
+                      # comma-separated list, BLANK means zero-length string.
+                      flags2: str = None,                       # Bridge &amp; other flags, see above.
+                      gateway: str = None,                      # IP address of the gateway device - used for IP routing, or
+                      # NA.
+                      interest: str = None,                     # Which things are we really interested in setting. Can
                       # over-ride defaults based on the other arguments.
-                      ip_addr: str = None,              # IP address for the port, or NA.
-                      ipsec_concentrator: str = None,   # IP Address of IPSec concentrator.
-                      ipsec_local_id: str = None,       # Local Identifier for this IPSec tunnel.
-                      ipsec_passwd: str = None,         # Password for IPSec, for pubkey, use: pubkey:[pem-file-name],
-                      # for instance: pubkey:station.pem
-                      ipsec_remote_id: str = None,      # Remote Identifier for this IPSec tunnel.
-                      ipv6_addr_global: str = None,     # Global scoped IPv6 address.
-                      ipv6_addr_link: str = None,       # Link scoped IPv6 address.
-                      ipv6_dflt_gw: str = None,         # IPv6 default gateway.
-                      mac: str = None,                  # MAC address to set this port to, or leave blank to not set it,
-                      # or NA.
-                      mtu: str = None,                  # Maximum Transmit Unit (MTU) for this interface. Can be blank
-                      # or NA.
-                      netmask: str = None,              # Netmask which this port should use, or NA.
-                      port: str = None,                 # Port number for the port to be modified. [W]
-                      report_timer: int = None,         # How often, in milliseconds, should we poll stats on this
+                      ip_addr: str = None,                      # IP address for the port, or NA.
+                      ipsec_concentrator: str = None,           # IP Address of IPSec concentrator.
+                      ipsec_local_id: str = None,               # Local Identifier for this IPSec tunnel.
+                      ipsec_passwd: str = None,                 # Password for IPSec, for pubkey, use:
+                      # pubkey:[pem-file-name], for instance: pubkey:station.pem
+                      ipsec_remote_id: str = None,              # Remote Identifier for this IPSec tunnel.
+                      ipv6_addr_global: str = None,             # Global scoped IPv6 address.
+                      ipv6_addr_link: str = None,               # Link scoped IPv6 address.
+                      ipv6_dflt_gw: str = None,                 # IPv6 default gateway.
+                      mac: str = None,                          # MAC address to set this port to, or leave blank to not set
+                      # it, or NA.
+                      mtu: str = None,                          # Maximum Transmit Unit (MTU) for this interface. Can be
+                      # blank or NA.
+                      netmask: str = None,                      # Netmask which this port should use, or NA.
+                      port: str = None,                         # Port number for the port to be modified. [W]
+                      report_timer: int = None,                 # How often, in milliseconds, should we poll stats on this
                       # interface?
-                      resource: int = None,             # Resource number for the port to be modified. [W]
-                      shelf: int = 1,                   # Shelf number for the port to be modified. [R][D:1]
-                      sta_br_id: str = None,            # WiFi STAtion bridge ID. Zero means none.
-                      tx_queue_len: str = None,         # Transmit Queue Length for this interface. Can be blank or NA.
-                      debug=False):
+                      resource: int = None,                     # Resource number for the port to be modified. [W]
+                      shelf: int = 1,                           # Shelf number for the port to be modified. [R][D:1]
+                      sta_br_id: str = None,                    # WiFi STAtion bridge ID. Zero means none.
+                      tx_queue_len: str = None,                 # Transmit Queue Length for this interface. Can be blank or
+                      # NA.
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_port(param=value ...)
@@ -12360,6 +12876,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_port",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -12419,12 +12936,13 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_port2
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_port2(self, 
-                       dhclient_50: str = None,  # Set DHCP Client option-50 text. DEFAULT means do not use this
-                       # option.
-                       port: str = None,         # Port identifier. [R]
-                       resource: int = None,     # Resource number for the port to be modified. [W]
-                       shelf: int = 1,           # Shelf number for the port to be modified. [R][D:1]
-                       debug=False):
+                       dhclient_50: str = None,                  # Set DHCP Client option-50 text. DEFAULT means do not use
+                       # this option.
+                       port: str = None,                         # Port identifier. [R]
+                       resource: int = None,                     # Resource number for the port to be modified. [W]
+                       shelf: int = 1,                           # Shelf number for the port to be modified. [R][D:1]
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_port2(param=value ...)
@@ -12445,6 +12963,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_port2",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -12471,13 +12990,15 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_port_alias
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_port_alias(self, 
-                            alias: str = None,     # New alias to assign to this virtual interface. [W]
-                            port: str = None,      # Physical Port identifier that owns the virtual interface. [R]
-                            resource: int = None,  # Resource number for the port to be modified. [W]
-                            shelf: int = 1,        # Shelf number for the port to be modified. [R][D:1]
-                            vport: str = None,     # Virtual port identifier. MAC for MAC-VLANs, VLAN-ID for 802.1Q
-                            # vlans.
-                            debug=False):
+                            alias: str = None,                        # New alias to assign to this virtual interface. [W]
+                            port: str = None,                         # Physical Port identifier that owns the virtual
+                            # interface. [R]
+                            resource: int = None,                     # Resource number for the port to be modified. [W]
+                            shelf: int = 1,                           # Shelf number for the port to be modified. [R][D:1]
+                            vport: str = None,                        # Virtual port identifier. MAC for MAC-VLANs, VLAN-ID
+                            # for 802.1Q vlans.
+                            debug: bool = False,
+                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_port_alias(param=value ...)
@@ -12500,6 +13021,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_port_alias",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -12527,11 +13049,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_ppp_link_state
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_ppp_link_state(self, 
-                                link: str = None,       # Unit Number of the PPP Link, or 'all'. [W]
-                                ppp_state: str = None,  # One of: RUNNING, STOPPED, or DELETED. [R]
-                                resource: int = None,   # Number of the Resource, or 'all'. [W]
-                                shelf: int = 1,         # Name of the Shelf, or 'all'. [R][D:1]
-                                debug=False):
+                                link: str = None,                         # Unit Number of the PPP Link, or 'all'. [W]
+                                ppp_state: str = None,                    # One of: RUNNING, STOPPED, or DELETED. [R]
+                                resource: int = None,                     # Number of the Resource, or 'all'. [W]
+                                shelf: int = 1,                           # Name of the Shelf, or 'all'. [R][D:1]
+                                debug: bool = False,
+                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_ppp_link_state(param=value ...)
@@ -12552,6 +13075,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_ppp_link_state",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -12585,25 +13109,26 @@ class LFJsonCommand(JsonCommand):
         skip_load_db_on_start = 1      # Should we skip loading the DB on start?
 
     def post_set_resource(self, 
-                          device_profiles: str = None,      # List of profiles, see above
-                          max_helper_count: str = None,     # Maximum number of helper traffic generation processes. 0
-                          # means CPU-core-count (AUTO).
-                          max_staged_bringup: str = None,   # Maximum amount of interfaces attempting to come up at
+                          device_profiles: str = None,              # List of profiles, see above
+                          max_helper_count: str = None,             # Maximum number of helper traffic generation processes.
+                          # 0 means CPU-core-count (AUTO).
+                          max_staged_bringup: str = None,           # Maximum amount of interfaces attempting to come up at
                           # once. Default is 50
-                          max_station_bringup: str = None,  # Maximum amount of stations to bring up per radio per tick.
-                          # Default is 12.
-                          max_trying_ifup: str = None,      # Maximum amount of interfaces running the network config
-                          # 'ifup' logic. Default is 15
-                          resource: int = None,             # Number of the Resource, or <tt>all</tt>. [W]
-                          resource_flags: str = None,       # System wide flags, often requires a reboot for changes to
-                          # take effect.
-                          resource_flags_mask: str = None,  # What flags to change. If unset, default is all.
-                          shelf: int = 1,                   # Name of the Shelf, or <tt>all</tt>. [R][D:1]
-                          top_left_x: str = None,           # X Location for Chamber View.
-                          top_left_y: str = None,           # X Location for Chamber View.
-                          user_name: str = None,            # Store user-name configured for this Resource. Only
+                          max_station_bringup: str = None,          # Maximum amount of stations to bring up per radio per
+                          # tick. Default is 12.
+                          max_trying_ifup: str = None,              # Maximum amount of interfaces running the network
+                          # config 'ifup' logic. Default is 15
+                          resource: int = None,                     # Number of the Resource, or <tt>all</tt>. [W]
+                          resource_flags: str = None,               # System wide flags, often requires a reboot for changes
+                          # to take effect.
+                          resource_flags_mask: str = None,          # What flags to change. If unset, default is all.
+                          shelf: int = 1,                           # Name of the Shelf, or <tt>all</tt>. [R][D:1]
+                          top_left_x: str = None,                   # X Location for Chamber View.
+                          top_left_y: str = None,                   # X Location for Chamber View.
+                          user_name: str = None,                    # Store user-name configured for this Resource. Only
                           # settable during DB load.
-                          debug=False):
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_resource(param=value ...)
@@ -12640,6 +13165,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_resource",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -12695,21 +13221,22 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_set_rfgen(self, 
-                       bb_gain: str = None,            # RX Gain, 0 - 62 in 2dB steps
-                       freq_khz: str = None,           # Center frequency in Khz
-                       gain: str = None,               # Main TX/RX Amp, 0 or 14 (dB), default is 14
-                       p_id: str = None,               # RF Generator ID, not used at this time, enter 'NA' or 0.
+                       bb_gain: str = None,                      # RX Gain, 0 - 62 in 2dB steps
+                       freq_khz: str = None,                     # Center frequency in Khz
+                       gain: str = None,                         # Main TX/RX Amp, 0 or 14 (dB), default is 14
+                       p_id: str = None,                         # RF Generator ID, not used at this time, enter 'NA' or 0.
                        # [D:NA]
-                       if_gain: str = None,            # Fine-tune TX/RX Gain, 0 - 40 dB
-                       pulse_count: str = None,        # Number of pulses (0-255)
-                       pulse_interval_us: str = None,  # Time between pulses, in micro-seconds.
-                       pulse_width_us: str = None,     # Requested pulse width, units are in micro-seconds.
-                       resource: int = None,           # Resource number. [W]
-                       rfgen_flags: str = None,        # RF Generator flags, see above.
-                       rfgen_flags_mask: str = None,   # Mask of what flags to set, see above.
-                       shelf: int = 1,                 # Shelf number, usually 1. [R][D:1]
-                       sweep_time_ms: str = None,      # Time interval between pulse groups in miliseconds
-                       debug=False):
+                       if_gain: str = None,                      # Fine-tune TX/RX Gain, 0 - 40 dB
+                       pulse_count: str = None,                  # Number of pulses (0-255)
+                       pulse_interval_us: str = None,            # Time between pulses, in micro-seconds.
+                       pulse_width_us: str = None,               # Requested pulse width, units are in micro-seconds.
+                       resource: int = None,                     # Resource number. [W]
+                       rfgen_flags: str = None,                  # RF Generator flags, see above.
+                       rfgen_flags_mask: str = None,             # Mask of what flags to set, see above.
+                       shelf: int = 1,                           # Shelf number, usually 1. [R][D:1]
+                       sweep_time_ms: str = None,                # Time interval between pulse groups in miliseconds
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_rfgen(param=value ...)
@@ -12748,6 +13275,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_rfgen",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -12831,14 +13359,16 @@ class LFJsonCommand(JsonCommand):
         ScriptWL = "ScriptWL"          # For iterating through WanLink settings
 
     def post_set_script(self, 
-                        endp: str = None,          # Endpoint, Test Group or Attenuator name or ID. [R]
-                        flags: str = None,         # See above for description of the defined flags.
-                        group_action: str = None,  # How to handle group script operations: ALL, Sequential
-                        loop_count: str = None,    # How many times to loop before stopping (0 is infinite).
-                        name: str = None,          # Script name. [W]
-                        private: str = None,       # Private encoding for the particular script.
-                        p_type: str = None,        # One of: NONE, Script2544, ScriptHunt, ScriptWL, ScriptAtten
-                        debug=False):
+                        endp: str = None,                         # Endpoint, Test Group or Attenuator name or ID. [R]
+                        flags: str = None,                        # See above for description of the defined flags.
+                        group_action: str = None,                 # How to handle group script operations: ALL, Sequential
+                        loop_count: str = None,                   # How many times to loop before stopping (0 is infinite).
+                        name: str = None,                         # Script name. [W]
+                        private: str = None,                      # Private encoding for the particular script.
+                        p_type: str = None,                       # One of: NONE, Script2544, ScriptHunt, ScriptWL,
+                        # ScriptAtten
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_script(param=value ...)
@@ -12865,6 +13395,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_script",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -12894,12 +13425,13 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_sec_ip
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_sec_ip(self, 
-                        ip_list: str = None,   # IP1/prefix,IP2/prefix,...IPZ/prefix. [W]
-                        port: str = None,      # Name of network device (Port) to which these IPs will be added.
-                        # [R]
-                        resource: int = None,  # Resource number. [W]
-                        shelf: int = 1,        # Shelf number. [R][D:1]
-                        debug=False):
+                        ip_list: str = None,                      # IP1/prefix,IP2/prefix,...IPZ/prefix. [W]
+                        port: str = None,                         # Name of network device (Port) to which these IPs will be
+                        # added. [R]
+                        resource: int = None,                     # Resource number. [W]
+                        shelf: int = 1,                           # Shelf number. [R][D:1]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_sec_ip(param=value ...)
@@ -12920,6 +13452,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_sec_ip",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -12946,10 +13479,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_test_id
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_test_id(self, 
-                         resource: int = None,  # Number of the Resource, or <tt>all</tt>. [W]
-                         shelf: int = 1,        # Name of the Shelf, or <tt>all</tt>. [R][D:1]
-                         test_id: str = None,   # Up to 15 character identifier.
-                         debug=False):
+                         resource: int = None,                     # Number of the Resource, or <tt>all</tt>. [W]
+                         shelf: int = 1,                           # Name of the Shelf, or <tt>all</tt>. [R][D:1]
+                         test_id: str = None,                      # Up to 15 character identifier.
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_test_id(param=value ...)
@@ -12968,6 +13502,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_test_id",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -12993,32 +13528,34 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_voip_info
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_voip_info(self, 
-                           codec: str = None,                # Codec to use for the voice stream, supported values:
-                           # G711U, G711A, SPEEX, g726-16, g726-24, g726-32, g726-40,
-                           # g729a.
-                           first_call_delay: str = None,     # How long to wait before making first call, in seconds.
-                           jitter_buffer_sz: str = None,     # The size of the jitter buffer in packets. Default value
-                           # is 8.
-                           local_sip_port: str = None,       # Local SIP UDP port. Default is min-rtp-port + 2.
-                           loop_call_count: str = None,      # How many calls to make, zero means infinite.
-                           loop_wavefile_count: str = None,  # How many times to play the wave file, zero means
+                           codec: str = None,                        # Codec to use for the voice stream, supported values:
+                           # G711U, G711A, SPEEX, g726-16, g726-24, g726-32,
+                           # g726-40, g729a.
+                           first_call_delay: str = None,             # How long to wait before making first call, in
+                           # seconds.
+                           jitter_buffer_sz: str = None,             # The size of the jitter buffer in packets. Default
+                           # value is 8.
+                           local_sip_port: str = None,               # Local SIP UDP port. Default is min-rtp-port + 2.
+                           loop_call_count: str = None,              # How many calls to make, zero means infinite.
+                           loop_wavefile_count: str = None,          # How many times to play the wave file, zero means
                            # infinite.
-                           max_call_duration: str = None,    # How long should the call be, in seconds.
-                           max_inter_call_gap: str = None,   # Maximum time to wait between calls, in seconds.
-                           messaging_protocol: str = None,   # Messaging protocol, supported values: SIP.
-                           min_call_duration: str = None,    # How long should the call be, in seconds.
-                           min_inter_call_gap: str = None,   # Minimum time to wait between calls, in seconds.
-                           name: str = None,                 # The name of the endpoint we are configuring. [R]
-                           pesq_server_ip: str = None,       # LANforge PESQ server IP address.
-                           pesq_server_passwd: str = None,   # LANforge PESQ server password. Default is to use no
+                           max_call_duration: str = None,            # How long should the call be, in seconds.
+                           max_inter_call_gap: str = None,           # Maximum time to wait between calls, in seconds.
+                           messaging_protocol: str = None,           # Messaging protocol, supported values: SIP.
+                           min_call_duration: str = None,            # How long should the call be, in seconds.
+                           min_inter_call_gap: str = None,           # Minimum time to wait between calls, in seconds.
+                           name: str = None,                         # The name of the endpoint we are configuring. [R]
+                           pesq_server_ip: str = None,               # LANforge PESQ server IP address.
+                           pesq_server_passwd: str = None,           # LANforge PESQ server password. Default is to use no
                            # authentication (blank entry).
-                           pesq_server_port: str = None,     # LANforge PESQ server port, default is 3998.
-                           reg_expire_timer: str = None,     # SIP Registration expire timer, in seconds.
-                           ringing_timer: str = None,        # How long (milliseconds) to wait in the ringing state
+                           pesq_server_port: str = None,             # LANforge PESQ server port, default is 3998.
+                           reg_expire_timer: str = None,             # SIP Registration expire timer, in seconds.
+                           ringing_timer: str = None,                # How long (milliseconds) to wait in the ringing state
                            # before flagging call as no-answer.
-                           sound_dev: str = None,            # Which sound device should we play sound to. (see
+                           sound_dev: str = None,                    # Which sound device should we play sound to. (see
                            # set_endp_flags).
-                           debug=False):
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_voip_info(param=value ...)
@@ -13067,6 +13604,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_voip_info",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -13107,17 +13645,21 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_vrcx_cost
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_vrcx_cost(self, 
-                           interface_cost: str = None,  # If using OSPF, this sets the cost for this link (1-65535).
-                           local_dev: str = None,       # Name of port A for the local redirect device pair.
-                           local_dev_b: str = None,     # Name of port B for the local redirect device pair.
-                           remote_dev: str = None,      # Name of port B for the remote redirect device pair.
-                           remote_dev_b: str = None,    # Name of port B for the remote redirect device pair.
-                           resource: int = None,        # Resource number. [W]
-                           shelf: int = 1,              # Shelf name/id. [R][D:1]
-                           vr_name: str = None,         # Virtual Router this endpoint belongs to. Use 'FREE_LIST' to
-                           # add a stand-alone endpoint. [W][D:FREE_LIST]
-                           wanlink: str = None,         # The name of the WanLink that connects the two B ports.
-                           debug=False):
+                           interface_cost: str = None,               # If using OSPF, this sets the cost for this link
+                           # (1-65535).
+                           local_dev: str = None,                    # Name of port A for the local redirect device pair.
+                           local_dev_b: str = None,                  # Name of port B for the local redirect device pair.
+                           remote_dev: str = None,                   # Name of port B for the remote redirect device pair.
+                           remote_dev_b: str = None,                 # Name of port B for the remote redirect device pair.
+                           resource: int = None,                     # Resource number. [W]
+                           shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                           vr_name: str = None,                      # Virtual Router this endpoint belongs to. Use
+                           # 'FREE_LIST' to add a stand-alone endpoint.
+                           # [W][D:FREE_LIST]
+                           wanlink: str = None,                      # The name of the WanLink that connects the two B
+                           # ports.
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_vrcx_cost(param=value ...)
@@ -13148,6 +13690,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_vrcx_cost",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -13179,35 +13722,36 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_wanlink_info
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_wanlink_info(self, 
-                              drop_freq: str = None,              # How often, out of 1,000,000 packets, should we
+                              drop_freq: str = None,                    # How often, out of 1,000,000 packets, should we
                               # purposefully drop a packet.
-                              dup_freq: str = None,               # How often, out of 1,000,000 packets, should we
+                              dup_freq: str = None,                     # How often, out of 1,000,000 packets, should we
                               # purposefully duplicate a packet.
-                              extra_buffer: str = None,           # The extra amount of bytes to buffer before dropping
-                              # pkts, in units of 1024. Use -1 for AUTO.
-                              jitter_freq: str = None,            # How often, out of 1,000,000 packets, should we apply
-                              # jitter.
-                              latency: str = None,                # The base latency added to all packets, in
+                              extra_buffer: str = None,                 # The extra amount of bytes to buffer before
+                              # dropping pkts, in units of 1024. Use -1 for AUTO.
+                              jitter_freq: str = None,                  # How often, out of 1,000,000 packets, should we
+                              # apply jitter.
+                              latency: str = None,                      # The base latency added to all packets, in
                               # milliseconds (or add 'us' suffix for microseconds
-                              max_drop_amt: str = None,           # Maximum amount of packets to drop in a row. Default
-                              # is 1.
-                              max_jitter: str = None,             # The maximum jitter, in milliseconds (or ad 'us'
-                              # suffix for microseconds)
-                              max_lateness: str = None,           # Maximum amount of un-intentional delay before pkt is
-                              # dropped. Default is AUTO
-                              max_reorder_amt: str = None,        # Maximum amount of packets by which to reorder,
-                              # Default is 10.
-                              min_drop_amt: str = None,           # Minimum amount of packets to drop in a row. Default
-                              # is 1.
-                              min_reorder_amt: str = None,        # Minimum amount of packets by which to reorder,
+                              max_drop_amt: str = None,                 # Maximum amount of packets to drop in a row.
                               # Default is 1.
-                              name: str = None,                   # The name of the endpoint we are configuring. [R]
-                              playback_capture_file: str = None,  # Name of the WAN capture file to play back.
-                              reorder_freq: str = None,           # How often, out of 1,000,000 packets, should we make a
-                              # packet out of order.
-                              speed: str = None,                  # The maximum speed of traffic this endpoint will
+                              max_jitter: str = None,                   # The maximum jitter, in milliseconds (or ad 'us'
+                              # suffix for microseconds)
+                              max_lateness: str = None,                 # Maximum amount of un-intentional delay before pkt
+                              # is dropped. Default is AUTO
+                              max_reorder_amt: str = None,              # Maximum amount of packets by which to reorder,
+                              # Default is 10.
+                              min_drop_amt: str = None,                 # Minimum amount of packets to drop in a row.
+                              # Default is 1.
+                              min_reorder_amt: str = None,              # Minimum amount of packets by which to reorder,
+                              # Default is 1.
+                              name: str = None,                         # The name of the endpoint we are configuring. [R]
+                              playback_capture_file: str = None,        # Name of the WAN capture file to play back.
+                              reorder_freq: str = None,                 # How often, out of 1,000,000 packets, should we
+                              # make a packet out of order.
+                              speed: str = None,                        # The maximum speed of traffic this endpoint will
                               # accept (bps).
-                              debug=False):
+                              debug: bool = False,
+                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_wanlink_info(param=value ...)
@@ -13250,6 +13794,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_wanlink_info",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -13295,11 +13840,12 @@ class LFJsonCommand(JsonCommand):
         ON = "ON"      # start capturing
 
     def post_set_wanlink_pcap(self, 
-                              capture: str = None,    # Should we capture or not? ON or OFF. [R]
-                              directory: str = None,  # The directory name in which packet capture files will be
-                              # written.
-                              name: str = None,       # The name of the endpoint we are configuring. [R]
-                              debug=False):
+                              capture: str = None,                      # Should we capture or not? ON or OFF. [R]
+                              directory: str = None,                    # The directory name in which packet capture files
+                              # will be written.
+                              name: str = None,                         # The name of the endpoint we are configuring. [R]
+                              debug: bool = False,
+                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_wanlink_pcap(param=value ...)
@@ -13318,6 +13864,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_wanlink_pcap",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -13368,18 +13915,19 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_set_wanpath_corruption(self, 
-                                    byte: str = None,        # The byte to use for OVERWRITE_FIXED (or NA).
-                                    flags: str = None,       # The flags for this corruption.
-                                    index: str = None,       # The corruption to modify (0-5). [R,0-5]
-                                    max_offset: str = None,  # The maximum offset from start of Ethernet packet for
-                                    # the byte to be modified.
-                                    min_offset: str = None,  # The minimum offset from start of Ethernet packet for
-                                    # the byte to be modified.
-                                    name: str = None,        # WanLink name [R]
-                                    path: str = None,        # WanPath name [R]
-                                    rate: str = None,        # Specifies how often, per million, this corruption
-                                    # should be applied.
-                                    debug=False):
+                                    byte: str = None,                         # The byte to use for OVERWRITE_FIXED (or NA).
+                                    flags: str = None,                        # The flags for this corruption.
+                                    index: str = None,                        # The corruption to modify (0-5). [R,0-5]
+                                    max_offset: str = None,                   # The maximum offset from start of Ethernet
+                                    # packet for the byte to be modified.
+                                    min_offset: str = None,                   # The minimum offset from start of Ethernet
+                                    # packet for the byte to be modified.
+                                    name: str = None,                         # WanLink name [R]
+                                    path: str = None,                         # WanPath name [R]
+                                    rate: str = None,                         # Specifies how often, per million, this
+                                    # corruption should be applied.
+                                    debug: bool = False,
+                                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_wanpath_corruption(param=value ...)
@@ -13408,6 +13956,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_wanpath_corruption",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -13438,19 +13987,21 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_wanpath_filter
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_wanpath_filter(self, 
-                                defer_flush: str = None,  # Enter 'YES' if you do NOT want this flushed to the
-                                # remote.
-                                dst_filter: str = None,   # The destination MAC or IP/Mask, 'NA' for PCAP.
-                                filter_type: str = None,  # The filter type, one of: MAC, IP, PCAP.
-                                passive: str = None,      # Enter 'YES' if you do NOT want to use this filter
-                                # currently.
-                                reverse: str = None,      # If you want the logic reversed, use 'ON', otherwise set
-                                # to 'OFF'
-                                src_filter: str = None,   # The source MAC or IP/Mask. For PCAP, this is the only
-                                # filter.
-                                wl_name: str = None,      # The name of the WanLink endpoint we are configuring. [R]
-                                wp_name: str = None,      # The name of the WanPath we are configuring. [R]
-                                debug=False):
+                                defer_flush: str = None,                  # Enter 'YES' if you do NOT want this flushed to
+                                # the remote.
+                                dst_filter: str = None,                   # The destination MAC or IP/Mask, 'NA' for PCAP.
+                                filter_type: str = None,                  # The filter type, one of: MAC, IP, PCAP.
+                                passive: str = None,                      # Enter 'YES' if you do NOT want to use this
+                                # filter currently.
+                                reverse: str = None,                      # If you want the logic reversed, use 'ON',
+                                # otherwise set to 'OFF'
+                                src_filter: str = None,                   # The source MAC or IP/Mask. For PCAP, this is the
+                                # only filter.
+                                wl_name: str = None,                      # The name of the WanLink endpoint we are
+                                # configuring. [R]
+                                wp_name: str = None,                      # The name of the WanPath we are configuring. [R]
+                                debug: bool = False,
+                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_wanpath_filter(param=value ...)
@@ -13479,6 +14030,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_wanpath_filter",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -13518,10 +14070,13 @@ class LFJsonCommand(JsonCommand):
         STOPPED = "STOPPED"        # then it will not be running at any time.
 
     def post_set_wanpath_running(self, 
-                                 running: str = None,  # The state, one of: AS_PARENT, RUNNING, STOPPED. [R]
-                                 wl_name: str = None,  # The name of the WanLink endpoint we are configuring. [R]
-                                 wp_name: str = None,  # The name of the WanPath we are configuring. [R]
-                                 debug=False):
+                                 running: str = None,                      # The state, one of: AS_PARENT, RUNNING, STOPPED.
+                                 # [R]
+                                 wl_name: str = None,                      # The name of the WanLink endpoint we are
+                                 # configuring. [R]
+                                 wp_name: str = None,                      # The name of the WanPath we are configuring. [R]
+                                 debug: bool = False,
+                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_wanpath_running(param=value ...)
@@ -13540,6 +14095,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_wanpath_running",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -13598,25 +14154,31 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_set_wifi_corruptions(self, 
-                                  corrupt_flags: str = None,    # Specify packet types to corrupt (see flags above).
-                                  corrupt_per_mil: str = None,  # Per-million: Station to randomly corrupt selected
-                                  # message types by this amount.
-                                  delay_flags: str = None,      # Specify packet types to delay (see flags above).
-                                  delay_max: str = None,        # miliseconds: Station to randomly delay processing
-                                  # received messages, max time
-                                  delay_min: str = None,        # miliseconds: Station to randomly delay processing
-                                  # received messages, min time
-                                  dup_flags: str = None,        # Specify packet types to duplicate (see flags above).
-                                  dup_per_65535: str = None,    # Percentage, represented as x per 65535 of packets we
-                                  # should duplicate.
-                                  ignore_flags: str = None,     # Specify packet types to ignore (see flags above).
-                                  ignore_per_mil: str = None,   # Per-million: Station to randomly ignore selected
-                                  # message types by this amount.
-                                  port: str = None,             # WiFi interface name or number. [W]
-                                  req_flush: str = None,        # Set to 1 if you wish to flush changes to kernel now.
-                                  resource: int = None,         # Resource number. [W]
-                                  shelf: int = 1,               # Shelf number. [R][D:1]
-                                  debug=False):
+                                  corrupt_flags: str = None,                # Specify packet types to corrupt (see flags
+                                  # above).
+                                  corrupt_per_mil: str = None,              # Per-million: Station to randomly corrupt
+                                  # selected message types by this amount.
+                                  delay_flags: str = None,                  # Specify packet types to delay (see flags
+                                  # above).
+                                  delay_max: str = None,                    # miliseconds: Station to randomly delay
+                                  # processing received messages, max time
+                                  delay_min: str = None,                    # miliseconds: Station to randomly delay
+                                  # processing received messages, min time
+                                  dup_flags: str = None,                    # Specify packet types to duplicate (see flags
+                                  # above).
+                                  dup_per_65535: str = None,                # Percentage, represented as x per 65535 of
+                                  # packets we should duplicate.
+                                  ignore_flags: str = None,                 # Specify packet types to ignore (see flags
+                                  # above).
+                                  ignore_per_mil: str = None,               # Per-million: Station to randomly ignore
+                                  # selected message types by this amount.
+                                  port: str = None,                         # WiFi interface name or number. [W]
+                                  req_flush: str = None,                    # Set to 1 if you wish to flush changes to
+                                  # kernel now.
+                                  resource: int = None,                     # Resource number. [W]
+                                  shelf: int = 1,                           # Shelf number. [R][D:1]
+                                  debug: bool = False,
+                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_wifi_corruptions(param=value ...)
@@ -13655,6 +14217,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_wifi_corruptions",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -13690,13 +14253,15 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_wifi_custom
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_wifi_custom(self, 
-                             port: str = None,      # WiFi interface name or number. [W]
-                             resource: int = None,  # Resource number. [W]
-                             shelf: int = 1,        # Shelf number. [R][D:1]
-                             text: str = None,      # [BLANK] will erase all, any other text will be appended to
-                             # existing text.
-                             p_type: str = None,    # NA for now, may specify specific locations later. [D:NA]
-                             debug=False):
+                             port: str = None,                         # WiFi interface name or number. [W]
+                             resource: int = None,                     # Resource number. [W]
+                             shelf: int = 1,                           # Shelf number. [R][D:1]
+                             text: str = None,                         # [BLANK] will erase all, any other text will be
+                             # appended to existing text.
+                             p_type: str = None,                       # NA for now, may specify specific locations later.
+                             # [D:NA]
+                             debug: bool = False,
+                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_wifi_custom(param=value ...)
@@ -13719,6 +14284,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_wifi_custom",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -13746,49 +14312,53 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_wifi_extra
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_wifi_extra(self, 
-                            anonymous_identity: str = None,  # Anonymous identity string for EAP.
-                            anqp_3gpp_cell_net: str = None,  # 802.11u 3GCPP Cellular Network Info, VAP only.
-                            ca_cert: str = None,             # CA-CERT file name.
-                            client_cert: str = None,         # 802.11u Client cert file: /etc/wpa_supplicant/ca.pem
-                            domain: str = None,              # 802.11u domain: mytelco.com
-                            eap: str = None,                 # EAP method: MD5, MSCHAPV2, OTP, GTC, TLS, PEAP, TTLS.
-                            group: str = None,               # Group cyphers: CCMP, TKIP, WEP104, WEP40, or combination.
-                            hessid: str = None,              # 802.11u HESSID (MAC address format) (or peer for WDS
+                            anonymous_identity: str = None,           # Anonymous identity string for EAP.
+                            anqp_3gpp_cell_net: str = None,           # 802.11u 3GCPP Cellular Network Info, VAP only.
+                            ca_cert: str = None,                      # CA-CERT file name.
+                            client_cert: str = None,                  # 802.11u Client cert file: /etc/wpa_supplicant/ca.pem
+                            domain: str = None,                       # 802.11u domain: mytelco.com
+                            eap: str = None,                          # EAP method: MD5, MSCHAPV2, OTP, GTC, TLS, PEAP,
+                            # TTLS.
+                            group: str = None,                        # Group cyphers: CCMP, TKIP, WEP104, WEP40, or
+                            # combination.
+                            hessid: str = None,                       # 802.11u HESSID (MAC address format) (or peer for WDS
                             # stations).
-                            identity: str = None,            # EAP Identity string.
-                            imsi: str = None,                # 802.11u IMSI: 310026-000000000
-                            ipaddr_type_avail: str = None,   # 802.11u network type available, integer, VAP only.
-                            key: str = None,                 # WEP key0. This should be entered in ascii-hex. Use this
-                            # only for WEP.
-                            key_mgmt: str = None,            # Key management: WPA-PSK, WPA-EAP, IEEE8021X, NONE,
+                            identity: str = None,                     # EAP Identity string.
+                            imsi: str = None,                         # 802.11u IMSI: 310026-000000000
+                            ipaddr_type_avail: str = None,            # 802.11u network type available, integer, VAP only.
+                            key: str = None,                          # WEP key0. This should be entered in ascii-hex. Use
+                            # this only for WEP.
+                            key_mgmt: str = None,                     # Key management: WPA-PSK, WPA-EAP, IEEE8021X, NONE,
                             # WPA-PSK-SHA256, WPA-EAP-SHA256 or combo.
-                            milenage: str = None,            # 802.11u milenage:
+                            milenage: str = None,                     # 802.11u milenage:
                             # 90dca4eda45b53cf0f12d7c9c3bc6a89:cb9cccc4b9258e6dca4760379fb82
-                            network_auth_type: str = None,   # 802.11u network authentication type, VAP only.
-                            network_type: str = None,        # 802.11u network type, integer, VAP only.
-                            pac_file: str = None,            # EAP-FAST PAC-File name. (For AP, this field is the RADIUS
-                            # secret password)
-                            pairwise: str = None,            # Pairwise ciphers: CCMP, TKIP, NONE, or combination.
-                            password: str = None,            # EAP Password string.
-                            phase1: str = None,              # Outer-authentication, ie TLS tunnel parameters.
-                            phase2: str = None,              # Inner authentication with TLS tunnel.
-                            pin: str = None,                 # EAP-SIM pin string. (For AP, this field is HS20 Operating
-                            # Class)
-                            pk_passwd: str = None,           # EAP private key password. (For AP, this field is HS20
-                            # connection capability)
-                            port: str = None,                # WiFi interface name or number. [W]
-                            private_key: str = None,         # EAP private key certificate file name. (For AP, this
+                            network_auth_type: str = None,            # 802.11u network authentication type, VAP only.
+                            network_type: str = None,                 # 802.11u network type, integer, VAP only.
+                            pac_file: str = None,                     # EAP-FAST PAC-File name. (For AP, this field is the
+                            # RADIUS secret password)
+                            pairwise: str = None,                     # Pairwise ciphers: CCMP, TKIP, NONE, or combination.
+                            password: str = None,                     # EAP Password string.
+                            phase1: str = None,                       # Outer-authentication, ie TLS tunnel parameters.
+                            phase2: str = None,                       # Inner authentication with TLS tunnel.
+                            pin: str = None,                          # EAP-SIM pin string. (For AP, this field is HS20
+                            # Operating Class)
+                            pk_passwd: str = None,                    # EAP private key password. (For AP, this field is
+                            # HS20 connection capability)
+                            port: str = None,                         # WiFi interface name or number. [W]
+                            private_key: str = None,                  # EAP private key certificate file name. (For AP, this
                             # field is HS20 WAN Metrics)
-                            psk: str = None,                 # WPA(2) pre-shared key. If unsure, use this field for any
-                            # password entry. Prepend with 0x for ascii-hex
+                            psk: str = None,                          # WPA(2) pre-shared key. If unsure, use this field for
+                            # any password entry. Prepend with 0x for ascii-hex
                             # representation.
-                            realm: str = None,               # 802.11u realm: mytelco.com
-                            resource: int = None,            # Resource number. [W]
-                            roaming_consortium: str = None,  # 802.11u roaming consortium: 223344 (15 characters max)
-                            shelf: int = 1,                  # Shelf number. [R][D:1]
-                            venue_group: str = None,         # 802.11u Venue Group, integer. VAP only.
-                            venue_type: str = None,          # 802.11u Venue Type, integer. VAP only.
-                            debug=False):
+                            realm: str = None,                        # 802.11u realm: mytelco.com
+                            resource: int = None,                     # Resource number. [W]
+                            roaming_consortium: str = None,           # 802.11u roaming consortium: 223344 (15 characters
+                            # max)
+                            shelf: int = 1,                           # Shelf number. [R][D:1]
+                            venue_group: str = None,                  # 802.11u Venue Group, integer. VAP only.
+                            venue_type: str = None,                   # 802.11u Venue Type, integer. VAP only.
+                            debug: bool = False,
+                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_wifi_extra(param=value ...)
@@ -13865,6 +14435,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_wifi_extra",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -13919,28 +14490,31 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_wifi_extra2
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_wifi_extra2(self, 
-                             corrupt_gtk_rekey_mic: str = None,  # Per-million: AP corrupts GTK Rekey MIC.
-                             freq_24: str = None,                # Frequency list for 2.4Ghz band, see above.
-                             freq_5: str = None,                 # Frequency list for 5Ghz band, see above.
-                             ignore_assoc: str = None,           # Per-million: AP ignore assoc request percentage.
-                             ignore_auth: str = None,            # Per-million: AP ignore auth request percentage.
-                             ignore_probe: str = None,           # Per-million: AP ignore probe percentage.
-                             ignore_reassoc: str = None,         # Per-million: AP ignore re-assoc request percentage.
-                             ocsp: str = None,                   # OCSP settings: 0=disabled, 1=try, but to not require
-                             # response, 2=require valid OCSP stapling response.
-                             port: str = None,                   # WiFi interface name or number. [W]
-                             post_ifup_script: str = None,       # Script name with optional args, will run after
+                             corrupt_gtk_rekey_mic: str = None,        # Per-million: AP corrupts GTK Rekey MIC.
+                             freq_24: str = None,                      # Frequency list for 2.4Ghz band, see above.
+                             freq_5: str = None,                       # Frequency list for 5Ghz band, see above.
+                             ignore_assoc: str = None,                 # Per-million: AP ignore assoc request percentage.
+                             ignore_auth: str = None,                  # Per-million: AP ignore auth request percentage.
+                             ignore_probe: str = None,                 # Per-million: AP ignore probe percentage.
+                             ignore_reassoc: str = None,               # Per-million: AP ignore re-assoc request percentage.
+                             ocsp: str = None,                         # OCSP settings: 0=disabled, 1=try, but to not
+                             # require response, 2=require valid OCSP stapling
+                             # response.
+                             port: str = None,                         # WiFi interface name or number. [W]
+                             post_ifup_script: str = None,             # Script name with optional args, will run after
                              # interface comes up and gets IP.
-                             radius_ip: str = None,              # RADIUS server IP Address (AP Only)
-                             radius_port: str = None,            # RADIUS server IP Port (AP Only)
-                             req_flush: str = None,              # Set to 1 if you wish to flush changes to kernel now.
-                             resource: int = None,               # Resource number. [W]
-                             sae_pwe: str = None,                # Set SAE-PWE, 0 == hunting-and-pecking, 1 ==
+                             radius_ip: str = None,                    # RADIUS server IP Address (AP Only)
+                             radius_port: str = None,                  # RADIUS server IP Port (AP Only)
+                             req_flush: str = None,                    # Set to 1 if you wish to flush changes to kernel
+                             # now.
+                             resource: int = None,                     # Resource number. [W]
+                             sae_pwe: str = None,                      # Set SAE-PWE, 0 == hunting-and-pecking, 1 ==
                              # hash-to-element, 2 allow both.
-                             shelf: int = 1,                     # Shelf number. [R][D:1]
-                             venue_id: str = None,               # Venue-ID for this wifi device. VAP in same venue will
-                             # share neigh reports as appropriate.
-                             debug=False):
+                             shelf: int = 1,                           # Shelf number. [R][D:1]
+                             venue_id: str = None,                     # Venue-ID for this wifi device. VAP in same venue
+                             # will share neigh reports as appropriate.
+                             debug: bool = False,
+                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_wifi_extra2(param=value ...)
@@ -13987,6 +14561,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_wifi_extra2",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14084,52 +14659,58 @@ class LFJsonCommand(JsonCommand):
         g = 3              # 802.11g
 
     def post_set_wifi_radio(self, 
-                            active_peer_count: str = None,   # Number of locally-cached peer objects for this radio.
-                            ampdu_factor: str = None,        # ax200/ax210 only, currently. Requires module reload. OS
-                            # Default: 0xFF
-                            antenna: str = None,             # Antenna configuration: 0 Diversity/All, 1 Fixed-A (1x1),
-                            # 4 AB (2x2), 7 ABC (3x3), 8 ABCD (4x4), 9 8x8
-                            channel: str = None,             # Channel number for this radio device. Frequency takes
-                            # precedence if both are set to non-default values.
-                            const_tx: str = None,            # RF Pattern Generator , encoded as a single 32-bit
+                            active_peer_count: str = None,            # Number of locally-cached peer objects for this
+                            # radio.
+                            ampdu_factor: str = None,                 # ax200/ax210 only, currently. Requires module reload.
+                            # OS Default: 0xFF
+                            antenna: str = None,                      # Antenna configuration: 0 Diversity/All, 1 Fixed-A
+                            # (1x1), 4 AB (2x2), 7 ABC (3x3), 8 ABCD (4x4), 9 8x8
+                            channel: str = None,                      # Channel number for this radio device. Frequency
+                            # takes precedence if both are set to non-default
+                            # values.
+                            const_tx: str = None,                     # RF Pattern Generator , encoded as a single 32-bit
                             # integer. See above.
-                            country: str = None,             # Country number for this radio device.
-                            flags: str = None,               # Flags for this interface (see above.)
-                            flags_mask: str = None,          # If set, only these flags will be considered.
-                            frag_thresh: str = None,         # Fragmentation Threshold (256 - 2346, 2346 == disabled).
-                            frequency: str = None,           # Frequency for this radio. <tt>0xFFFF, AUTO or
+                            country: str = None,                      # Country number for this radio device.
+                            flags: str = None,                        # Flags for this interface (see above.)
+                            flags_mask: str = None,                   # If set, only these flags will be considered.
+                            frag_thresh: str = None,                  # Fragmentation Threshold (256 - 2346, 2346 ==
+                            # disabled).
+                            frequency: str = None,                    # Frequency for this radio. <tt>0xFFFF, AUTO or
                             # DEFAULT</tt> means ANY.
-                            fwname: str = None,              # Firmware name (for example: firmware-5.bin)
-                            fwver: str = None,               # Firmware API version (for example, 5 if firmware is based
-                            # on firmware-5.bin
-                            mac: str = None,                 # Used to identify when name cannot be trusted (2.6.34+
-                            # kernels).
-                            max_amsdu: str = None,           # Maximum number of frames per AMSDU that may be
+                            fwname: str = None,                       # Firmware name (for example: firmware-5.bin)
+                            fwver: str = None,                        # Firmware API version (for example, 5 if firmware is
+                            # based on firmware-5.bin
+                            mac: str = None,                          # Used to identify when name cannot be trusted
+                            # (2.6.34+ kernels).
+                            max_amsdu: str = None,                    # Maximum number of frames per AMSDU that may be
                             # transmitted. See above.
-                            mode: str = None,                # WiFi mode, see table
-                            peer_count: str = None,          # Number of peer objects for this radio.
-                            pref_ap: str = None,             # Preferred AP BSSID for all station vdevs on this radio.
-                            pulse2_interval_us: str = None,  # Pause between pattern burst for RF noise generator.
-                            pulse_interval: str = None,      # RF Pattern generator: interval between pulses in usecs.
-                            pulse_width: str = None,         # RF Pattern generator: pulse width in usecs.
-                            radio: str = None,               # Name of the physical radio interface, for example: wiphy0
-                            # [W]
-                            rate: str = None,                # No longer used, specify the rate on the virtual
+                            mode: str = None,                         # WiFi mode, see table
+                            peer_count: str = None,                   # Number of peer objects for this radio.
+                            pref_ap: str = None,                      # Preferred AP BSSID for all station vdevs on this
+                            # radio.
+                            pulse2_interval_us: str = None,           # Pause between pattern burst for RF noise generator.
+                            pulse_interval: str = None,               # RF Pattern generator: interval between pulses in
+                            # usecs.
+                            pulse_width: str = None,                  # RF Pattern generator: pulse width in usecs.
+                            radio: str = None,                        # Name of the physical radio interface, for example:
+                            # wiphy0 [W]
+                            rate: str = None,                         # No longer used, specify the rate on the virtual
                             # station(s) instead.
-                            rate_ctrl_count: str = None,     # Number of rate-ctrl objects for this radio.
-                            resource: int = None,            # Resource number. [W]
-                            rts: str = None,                 # The RTS Threshold for this radio (off, or 1-2347).
-                            shelf: int = 1,                  # Shelf number. [R][D:1]
-                            skid_limit: str = None,          # Firmware hash-table Skid Limit for this radio.
-                            stations_count: str = None,      # Number of stations supported by this radio.
-                            tids_count: str = None,          # TIDs count for this radio.
-                            tx_pulses: str = None,           # Number of pattern pulses per burst for RF noise
+                            rate_ctrl_count: str = None,              # Number of rate-ctrl objects for this radio.
+                            resource: int = None,                     # Resource number. [W]
+                            rts: str = None,                          # The RTS Threshold for this radio (off, or 1-2347).
+                            shelf: int = 1,                           # Shelf number. [R][D:1]
+                            skid_limit: str = None,                   # Firmware hash-table Skid Limit for this radio.
+                            stations_count: str = None,               # Number of stations supported by this radio.
+                            tids_count: str = None,                   # TIDs count for this radio.
+                            tx_pulses: str = None,                    # Number of pattern pulses per burst for RF noise
                             # generator.
-                            txdesc_count: str = None,        # Transmit descriptor count for this radio.
-                            txpower: str = None,             # The transmit power setting for this radio. (AUTO for
+                            txdesc_count: str = None,                 # Transmit descriptor count for this radio.
+                            txpower: str = None,                      # The transmit power setting for this radio. (AUTO for
                             # system defaults)
-                            vdev_count: str = None,          # Configure radio vdev count.
-                            debug=False):
+                            vdev_count: str = None,                   # Configure radio vdev count.
+                            debug: bool = False,
+                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_wifi_radio(param=value ...)
@@ -14208,6 +14789,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_wifi_radio",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14263,24 +14845,25 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#set_wifi_txo
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_set_wifi_txo(self, 
-                          port: str = None,         # WiFi interface name or number. [W]
-                          resource: int = None,     # Resource number. [W]
-                          shelf: int = 1,           # Shelf number. [R][D:1]
-                          txo_bw: str = None,       # Configure bandwidth: 0 == 20, 1 == 40, 2 == 80, 3 == 160, 4 ==
-                          # 80+80.
-                          txo_enable: str = None,   # Set to 1 if you wish to enable transmit override, 0 to
+                          port: str = None,                         # WiFi interface name or number. [W]
+                          resource: int = None,                     # Resource number. [W]
+                          shelf: int = 1,                           # Shelf number. [R][D:1]
+                          txo_bw: str = None,                       # Configure bandwidth: 0 == 20, 1 == 40, 2 == 80, 3 ==
+                          # 160, 4 == 80+80.
+                          txo_enable: str = None,                   # Set to 1 if you wish to enable transmit override, 0 to
                           # disable.
-                          txo_mcs: str = None,      # Configure the MCS (0-3 for CCK, 0-7 for OFDM, 0-7 for HT, 0-9
-                          # for VHT, 0-11 for HE
-                          txo_nss: str = None,      # Configure number of spatial streams (0 == nss1, 1 == nss2,
-                          # ...).
-                          txo_pream: str = None,    # Select rate preamble: 0 == OFDM, 1 == CCK, 2 == HT, 3 == VHT,
-                          # 4 == HE_SU.
-                          txo_retries: str = None,  # Configure number of retries. 0 or 1 means no retries).
-                          txo_sgi: str = None,      # Should rates be sent with short-guard-interval or not?
-                          txo_txpower: str = None,  # Configure TX power in db. Use 255 for system defaults. See
-                          # notes above.
-                          debug=False):
+                          txo_mcs: str = None,                      # Configure the MCS (0-3 for CCK, 0-7 for OFDM, 0-7 for
+                          # HT, 0-9 for VHT, 0-11 for HE
+                          txo_nss: str = None,                      # Configure number of spatial streams (0 == nss1, 1 ==
+                          # nss2, ...).
+                          txo_pream: str = None,                    # Select rate preamble: 0 == OFDM, 1 == CCK, 2 == HT, 3
+                          # == VHT, 4 == HE_SU.
+                          txo_retries: str = None,                  # Configure number of retries. 0 or 1 means no retries).
+                          txo_sgi: str = None,                      # Should rates be sent with short-guard-interval or not?
+                          txo_txpower: str = None,                  # Configure TX power in db. Use 255 for system defaults.
+                          # See notes above.
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_wifi_txo(param=value ...)
@@ -14315,6 +14898,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_wifi_txo",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14373,17 +14957,18 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_set_wl_corruption(self, 
-                               byte: str = None,        # The byte to use for OVERWRITE_FIXED (or NA).
-                               flags: str = None,       # The flags for this corruption.
-                               index: str = None,       # The corruption to modify (0-5). [R,0-5]
-                               max_offset: str = None,  # The maximum offset from start of Ethernet packet for the
-                               # byte to be modified.
-                               min_offset: str = None,  # The minimum offset from start of Ethernet packet for the
-                               # byte to be modified.
-                               name: str = None,        # WanLink name [R]
-                               rate: str = None,        # Specifies how often, per million, this corruption should
-                               # be applied.
-                               debug=False):
+                               byte: str = None,                         # The byte to use for OVERWRITE_FIXED (or NA).
+                               flags: str = None,                        # The flags for this corruption.
+                               index: str = None,                        # The corruption to modify (0-5). [R,0-5]
+                               max_offset: str = None,                   # The maximum offset from start of Ethernet packet
+                               # for the byte to be modified.
+                               min_offset: str = None,                   # The minimum offset from start of Ethernet packet
+                               # for the byte to be modified.
+                               name: str = None,                         # WanLink name [R]
+                               rate: str = None,                         # Specifies how often, per million, this corruption
+                               # should be applied.
+                               debug: bool = False,
+                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_wl_corruption(param=value ...)
@@ -14410,6 +14995,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_wl_corruption",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14447,9 +15033,10 @@ class LFJsonCommand(JsonCommand):
         WRR__queue_queue_____ = "WRR,[queue,queue,...]"    # Weighted Round Robbin is also available
 
     def post_set_wl_qdisc(self, 
-                          name: str = None,   # WanLink name [R]
-                          qdisc: str = None,  # FIFO, WRR,a,b,c,d,e,f,g etc [R]
-                          debug=False):
+                          name: str = None,                         # WanLink name [R]
+                          qdisc: str = None,                        # FIFO, WRR,a,b,c,d,e,f,g etc [R]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_set_wl_qdisc(param=value ...)
@@ -14466,6 +15053,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/set_wl_qdisc",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14490,10 +15078,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_adb
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_adb(self, 
-                      resource: int = None,  # Resource number, or 'all'. [W]
-                      serno: str = None,     # Serial number for requested ADB device, or 'all'. [W]
-                      shelf: int = 1,        # Shelf number or alias, can be 'all'. [R][D:1]
-                      debug=False):
+                      resource: int = None,                     # Resource number, or 'all'. [W]
+                      serno: str = None,                        # Serial number for requested ADB device, or 'all'. [W]
+                      shelf: int = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_adb(param=value ...)
@@ -14512,6 +15101,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_adb",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14555,13 +15145,14 @@ class LFJsonCommand(JsonCommand):
         Test_Mgr = "Test_Mgr"                  #
 
     def post_show_alerts(self, 
-                         card: int = None,   # Alert resource filter.
-                         endp: str = None,   # Alert endpoint filter.
-                         extra: str = None,  # Extra filter, currently ignored.
-                         port: str = None,   # Alert port filter (can be port name or number).
-                         shelf: int = 1,     # Alert shelf filter.
-                         p_type: str = None,  # Alert type filter. [R]
-                         debug=False):
+                         card: int = None,                         # Alert resource filter.
+                         endp: str = None,                         # Alert endpoint filter.
+                         extra: str = None,                        # Extra filter, currently ignored.
+                         port: str = None,                         # Alert port filter (can be port name or number).
+                         shelf: int = 1,                           # Alert shelf filter.
+                         p_type: str = None,                       # Alert type filter. [R]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_alerts(param=value ...)
@@ -14586,6 +15177,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_alerts",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14614,10 +15206,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_attenuators
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_attenuators(self, 
-                              resource: int = None,  # Resource number, or 'all'. [W]
-                              serno: str = None,     # Serial number for requested Attenuator, or 'all'. [W]
-                              shelf: int = 1,        # Shelf number or alias, can be 'all'. [R][D:1]
-                              debug=False):
+                              resource: int = None,                     # Resource number, or 'all'. [W]
+                              serno: str = None,                        # Serial number for requested Attenuator, or 'all'.
+                              # [W]
+                              shelf: int = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
+                              debug: bool = False,
+                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_attenuators(param=value ...)
@@ -14636,6 +15230,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_attenuators",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14661,10 +15256,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_cd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_cd(self, 
-                     collision_domain: str = None,  # Name of the Collision Domain, or 'all'. [W]
-                     resource: int = None,          # Resource number, or 'all'. [W]
-                     shelf: int = 1,                # Name/id of the shelf, or 'all'. [R][D:1]
-                     debug=False):
+                     collision_domain: str = None,             # Name of the Collision Domain, or 'all'. [W]
+                     resource: int = None,                     # Resource number, or 'all'. [W]
+                     shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_cd(param=value ...)
@@ -14683,6 +15279,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_cd",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14708,8 +15305,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_chamber
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_chamber(self, 
-                          name: str = None,  # Chamber Name or 'ALL'. [W][D:ALL]
-                          debug=False):
+                          name: str = None,                         # Chamber Name or 'ALL'. [W][D:ALL]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_chamber(param=value ...)
@@ -14724,6 +15322,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_chamber",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14747,10 +15346,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_channel_groups
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_channel_groups(self, 
-                                 channel_name: str = None,  # Name of the channel, or 'all'. [W]
-                                 resource: int = None,      # Resource number, or 'all'. [W]
-                                 shelf: int = 1,            # Name/id of the shelf, or 'all'. [R][D:1]
-                                 debug=False):
+                                 channel_name: str = None,                 # Name of the channel, or 'all'. [W]
+                                 resource: int = None,                     # Resource number, or 'all'. [W]
+                                 shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                                 debug: bool = False,
+                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_channel_groups(param=value ...)
@@ -14769,6 +15369,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_channel_groups",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14794,7 +15395,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_clients
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_clients(self, 
-                          debug=False):
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_clients(param=value ...)
@@ -14805,6 +15407,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_clients",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14827,9 +15430,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_cx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_cx(self, 
-                     cross_connect: str = None,  # Specify cross-connect to act on, or 'all'. [W]
-                     test_mgr: str = None,       # Specify test-mgr to act on, or 'all'. [R]
-                     debug=False):
+                     cross_connect: str = None,                # Specify cross-connect to act on, or 'all'. [W]
+                     test_mgr: str = None,                     # Specify test-mgr to act on, or 'all'. [R]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_cx(param=value ...)
@@ -14846,6 +15450,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_cx",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14870,9 +15475,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_cxe
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_cxe(self, 
-                      cross_connect: str = None,  # Specify cross-connect to show, or 'all'. [W]
-                      test_mgr: str = None,       # Specify test-mgr to use, or 'all'. [R]
-                      debug=False):
+                      cross_connect: str = None,                # Specify cross-connect to show, or 'all'. [W]
+                      test_mgr: str = None,                     # Specify test-mgr to use, or 'all'. [R]
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_cxe(param=value ...)
@@ -14889,6 +15495,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_cxe",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14913,7 +15520,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_dbs
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_dbs(self, 
-                      debug=False):
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_dbs(param=value ...)
@@ -14924,6 +15532,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_dbs",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14946,8 +15555,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_dut
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_dut(self, 
-                      name: str = None,  # DUT Name or 'ALL'. [W][D:ALL]
-                      debug=False):
+                      name: str = None,                         # DUT Name or 'ALL'. [W][D:ALL]
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_dut(param=value ...)
@@ -14962,6 +15572,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_dut",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -14985,10 +15596,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_endp_payload
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_endp_payload(self, 
-                               max_bytes: str = None,  # The max number of payload bytes to print out, default is
-                               # 128. [R][D:128]
-                               name: str = None,       # The name of the endpoint we are configuring. [R]
-                               debug=False):
+                               max_bytes: str = None,                    # The max number of payload bytes to print out,
+                               # default is 128. [R][D:128]
+                               name: str = None,                         # The name of the endpoint we are configuring. [R]
+                               debug: bool = False,
+                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_endp_payload(param=value ...)
@@ -15005,6 +15617,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_endp_payload",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15029,9 +15642,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_endpoints
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_endpoints(self, 
-                            endpoint: str = None,  # Name of endpoint, or 'all'. [R]
-                            extra: str = None,     # See above.
-                            debug=False):
+                            endpoint: str = None,                     # Name of endpoint, or 'all'. [R]
+                            extra: str = None,                        # See above.
+                            debug: bool = False,
+                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_endpoints(param=value ...)
@@ -15048,6 +15662,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_endpoints",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15072,9 +15687,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_err
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_err(self, 
-                      message: str = None,  # Message to show to others currently logged on. <tt
+                      message: str = None,                      # Message to show to others currently logged on. <tt
                       # escapearg='false'>Unescaped Value</tt> [R]
-                      debug=False):
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_err(param=value ...)
@@ -15089,6 +15705,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_err",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15112,7 +15729,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_event_interest
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_event_interest(self, 
-                                 debug=False):
+                                 debug: bool = False,
+                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_event_interest(param=value ...)
@@ -15123,6 +15741,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_event_interest",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15163,13 +15782,14 @@ class LFJsonCommand(JsonCommand):
         Test_Mgr = "Test_Mgr"                  #
 
     def post_show_events(self, 
-                         card: int = None,   # Event resource filter.
-                         endp: str = None,   # Event endpoint filter.
-                         extra: str = None,  # Extra filter, currently ignored.
-                         port: str = None,   # Event port filter (can be port name or number).
-                         shelf: int = 1,     # Event shelf filter.
-                         p_type: str = None,  # Event type filter. [R]
-                         debug=False):
+                         card: int = None,                         # Event resource filter.
+                         endp: str = None,                         # Event endpoint filter.
+                         extra: str = None,                        # Extra filter, currently ignored.
+                         port: str = None,                         # Event port filter (can be port name or number).
+                         shelf: int = 1,                           # Event shelf filter.
+                         p_type: str = None,                       # Event type filter. [R]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_events(param=value ...)
@@ -15194,6 +15814,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_events",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15222,14 +15843,15 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_files
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_files(self, 
-                        dir_flags: str = None,  # Determines format of listing, see above.
-                        directory: str = None,  # The sub-directory in which to list.
-                        p_filter: str = None,   # An optional filter, as used by the 'ls' command.
-                        key: str = None,        # A special key, can be used for scripting.
-                        resource: int = None,   # The machine to search in. [W]
-                        shelf: int = 1,         # The virtual shelf to search in. Use 0 for manager machine.
-                        # [R,0-1]
-                        debug=False):
+                        dir_flags: str = None,                    # Determines format of listing, see above.
+                        directory: str = None,                    # The sub-directory in which to list.
+                        p_filter: str = None,                     # An optional filter, as used by the 'ls' command.
+                        key: str = None,                          # A special key, can be used for scripting.
+                        resource: int = None,                     # The machine to search in. [W]
+                        shelf: int = 1,                           # The virtual shelf to search in. Use 0 for manager
+                        # machine. [R,0-1]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_files(param=value ...)
@@ -15254,6 +15876,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_files",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15282,8 +15905,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_group(self, 
-                        group: str = None,  # Can be name of test group. Use 'all' or leave blank for all groups.
-                        debug=False):
+                        group: str = None,                        # Can be name of test group. Use 'all' or leave blank for
+                        # all groups.
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_group(param=value ...)
@@ -15298,6 +15923,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_group",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15321,8 +15947,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_pesq
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_pesq(self, 
-                       endpoint: str = None,  # Name of endpoint, or 'all'. [R]
-                       debug=False):
+                       endpoint: str = None,                     # Name of endpoint, or 'all'. [R]
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_pesq(param=value ...)
@@ -15337,6 +15964,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_pesq",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15360,12 +15988,13 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_ports
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_ports(self, 
-                        port: str = None,         # Port number, or 'all'. [W]
-                        probe_flags: str = None,  # See above, add them together for multiple probings. Leave blank
-                        # if you want stats only.
-                        resource: int = None,     # Resource number, or 'all'. [W]
-                        shelf: int = 1,           # Name/id of the shelf, or 'all'. [R][D:1]
-                        debug=False):
+                        port: str = None,                         # Port number, or 'all'. [W]
+                        probe_flags: str = None,                  # See above, add them together for multiple probings.
+                        # Leave blank if you want stats only.
+                        resource: int = None,                     # Resource number, or 'all'. [W]
+                        shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_ports(param=value ...)
@@ -15386,6 +16015,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_ports",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15412,10 +16042,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_ppp_links
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_ppp_links(self, 
-                            link_num: str = None,  # Ppp-Link number of the span, or 'all'. [W]
-                            resource: int = None,  # Resource number, or 'all'. [W]
-                            shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
-                            debug=False):
+                            link_num: str = None,                     # Ppp-Link number of the span, or 'all'. [W]
+                            resource: int = None,                     # Resource number, or 'all'. [W]
+                            shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                            debug: bool = False,
+                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_ppp_links(param=value ...)
@@ -15434,6 +16065,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_ppp_links",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15459,8 +16091,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_profile
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_profile(self, 
-                          name: str = None,  # Profile Name or 'ALL'. [R]
-                          debug=False):
+                          name: str = None,                         # Profile Name or 'ALL'. [R]
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_profile(param=value ...)
@@ -15475,6 +16108,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_profile",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15498,9 +16132,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_resources
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_resources(self, 
-                            resource: int = None,  # Resource number, or 'all'. [W]
-                            shelf: int = 1,        # Shelf number or alias, can be 'all'. [R][D:1]
-                            debug=False):
+                            resource: int = None,                     # Resource number, or 'all'. [W]
+                            shelf: int = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
+                            debug: bool = False,
+                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_resources(param=value ...)
@@ -15517,6 +16152,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_resources",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15541,9 +16177,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_rfgen
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_rfgen(self, 
-                        resource: int = None,  # Resource number, or 'all'. [W]
-                        shelf: int = 1,        # Shelf number or alias, can be 'all'. [R][D:1]
-                        debug=False):
+                        resource: int = None,                     # Resource number, or 'all'. [W]
+                        shelf: int = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_rfgen(param=value ...)
@@ -15560,6 +16197,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_rfgen",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15584,11 +16222,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_rt
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_rt(self, 
-                     key: str = None,             # Unique identifier for this request. Usually left blank.
-                     resource: int = None,        # Resource number. [W]
-                     shelf: int = 1,              # Shelf number. [R][D:1]
-                     virtual_router: str = None,  # Name of the virtual router. [W]
-                     debug=False):
+                     key: str = None,                          # Unique identifier for this request. Usually left blank.
+                     resource: int = None,                     # Resource number. [W]
+                     shelf: int = 1,                           # Shelf number. [R][D:1]
+                     virtual_router: str = None,               # Name of the virtual router. [W]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_rt(param=value ...)
@@ -15609,6 +16248,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_rt",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15635,9 +16275,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_script_results
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_script_results(self, 
-                                 endpoint: str = None,  # Name of endpoint, test-group, or 'all'. [R]
-                                 key: str = None,       # Optional 'key' to be used in keyed-text message result.
-                                 debug=False):
+                                 endpoint: str = None,                     # Name of endpoint, test-group, or 'all'. [R]
+                                 key: str = None,                          # Optional 'key' to be used in keyed-text message
+                                 # result.
+                                 debug: bool = False,
+                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_script_results(param=value ...)
@@ -15654,6 +16296,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_script_results",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15678,10 +16321,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_spans
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_spans(self, 
-                        resource: int = None,     # Resource number, or 'all'. [W]
-                        shelf: int = 1,           # Name/id of the shelf, or 'all'. [R][D:1]
-                        span_number: str = None,  # Span-Number of the span, or 'all'. [W]
-                        debug=False):
+                        resource: int = None,                     # Resource number, or 'all'. [W]
+                        shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                        span_number: str = None,                  # Span-Number of the span, or 'all'. [W]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_spans(param=value ...)
@@ -15700,6 +16344,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_spans",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15725,10 +16370,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_text_blob
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_text_blob(self, 
-                            brief: str = None,  # Set to 'brief' for a brief listing of all text blobs.
-                            name: str = None,   # Text Blob Name or 'ALL'. [R]
-                            p_type: str = None,  # Text Blob type or 'ALL'. [R]
-                            debug=False):
+                            brief: str = None,                        # Set to 'brief' for a brief listing of all text
+                            # blobs.
+                            name: str = None,                         # Text Blob Name or 'ALL'. [R]
+                            p_type: str = None,                       # Text Blob type or 'ALL'. [R]
+                            debug: bool = False,
+                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_text_blob(param=value ...)
@@ -15747,6 +16394,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_text_blob",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15772,8 +16420,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_tm
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_tm(self, 
-                     test_mgr: str = None,  # Can be name of test manager, or 'all'. [R]
-                     debug=False):
+                     test_mgr: str = None,                     # Can be name of test manager, or 'all'. [R]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_tm(param=value ...)
@@ -15788,6 +16437,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_tm",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15811,8 +16461,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_traffic_profile
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_traffic_profile(self, 
-                                  name: str = None,  # Profile Name or 'ALL'. [R]
-                                  debug=False):
+                                  name: str = None,                         # Profile Name or 'ALL'. [R]
+                                  debug: bool = False,
+                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_traffic_profile(param=value ...)
@@ -15827,6 +16478,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_traffic_profile",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15850,11 +16502,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_venue
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_venue(self, 
-                        resource: int = None,  # Resource number, or 'ALL' [W]
-                        shelf: int = 1,        # Shelf number. [R][D:1]
-                        venu_id: str = None,   # Number to uniquely identify this venue on this resource, or 'ALL'
-                        # [W]
-                        debug=False):
+                        resource: int = None,                     # Resource number, or 'ALL' [W]
+                        shelf: int = 1,                           # Shelf number. [R][D:1]
+                        venu_id: str = None,                      # Number to uniquely identify this venue on this resource,
+                        # or 'ALL' [W]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_venue(param=value ...)
@@ -15873,6 +16526,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_venue",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15898,10 +16552,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_vr
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_vr(self, 
-                     resource: int = None,  # Resource number, or 'all'. [W]
-                     router: str = None,    # Name of the Virtual Router, or 'all'. [W]
-                     shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
-                     debug=False):
+                     resource: int = None,                     # Resource number, or 'all'. [W]
+                     router: str = None,                       # Name of the Virtual Router, or 'all'. [W]
+                     shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_vr(param=value ...)
@@ -15920,6 +16575,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_vr",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15945,10 +16601,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_vrcx
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_vrcx(self, 
-                       cx_name: str = None,   # Name of the Virtual Router Connection, or 'all'. [W]
-                       resource: int = None,  # Resource number, or 'all'. [W]
-                       shelf: int = 1,        # Name/id of the shelf, or 'all'. [R][D:1]
-                       debug=False):
+                       cx_name: str = None,                      # Name of the Virtual Router Connection, or 'all'. [W]
+                       resource: int = None,                     # Resource number, or 'all'. [W]
+                       shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_vrcx(param=value ...)
@@ -15967,6 +16624,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_vrcx",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -15992,9 +16650,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_wanpaths
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_wanpaths(self, 
-                           endpoint: str = None,  # Name of endpoint, or 'all'. [W]
-                           wanpath: str = None,   # Name of wanpath, or 'all'. [W]
-                           debug=False):
+                           endpoint: str = None,                     # Name of endpoint, or 'all'. [W]
+                           wanpath: str = None,                      # Name of wanpath, or 'all'. [W]
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_show_wanpaths(param=value ...)
@@ -16011,6 +16670,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/show_wanpaths",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16035,12 +16695,13 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#shutdown
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_shutdown(self, 
-                      chdir: str = None,      # Directory to cd to before dying. Only useful when using gprof to
-                      # debug, or 'NA' to ignore.
-                      really: str = None,     # Must be 'YES' for command to really work.
-                      serverctl: str = None,  # Enter 'YES' to do a ./serverctl.bash restart to restart all
-                      # LANforge processes.
-                      debug=False):
+                      chdir: str = None,                        # Directory to cd to before dying. Only useful when using
+                      # gprof to debug, or 'NA' to ignore.
+                      really: str = None,                       # Must be 'YES' for command to really work.
+                      serverctl: str = None,                    # Enter 'YES' to do a ./serverctl.bash restart to restart
+                      # all LANforge processes.
+                      debug: bool = False,
+                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_shutdown(param=value ...)
@@ -16059,6 +16720,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/shutdown",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16084,9 +16746,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#shutdown_os
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_shutdown_os(self, 
-                         resource: int = None,  # Resource number, or ALL. [W]
-                         shelf: int = 1,        # Shelf number, or ALL. [R][D:1]
-                         debug=False):
+                         resource: int = None,                     # Resource number, or ALL. [W]
+                         shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_shutdown_os(param=value ...)
@@ -16103,6 +16766,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/shutdown_os",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16127,9 +16791,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#shutdown_resource
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_shutdown_resource(self, 
-                               resource: int = None,  # Resource number, or ALL. [W]
-                               shelf: int = 1,        # Shelf number, or ALL. [R][D:1]
-                               debug=False):
+                               resource: int = None,                     # Resource number, or ALL. [W]
+                               shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
+                               debug: bool = False,
+                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_shutdown_resource(param=value ...)
@@ -16146,6 +16811,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/shutdown_resource",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16194,17 +16860,19 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_sniff_port(self, 
-                        display: str = None,   # The DISPLAY option, for example: 192.168.1.5:0.0. Will guess if
-                        # left blank.
-                        duration: str = None,  # Duration for doing a capture (in seconds). Default is 5 minutes
-                        # for dumpcap/tshark, and forever for wireshark
-                        flags: str = None,     # Flags that control how the sniffing is done.
-                        outfile: str = None,   # Optional file location for saving a capture.
-                        port: str = None,      # The port we are trying to run the packet sniffer on. [R]
-                        resource: int = None,  # Resource number. [W]
-                        shelf: int = 1,        # Shelf number. [R][D:1]
-                        snaplen: str = None,   # Amount of each packet to store. Default is to store all of it.
-                        debug=False):
+                        display: str = None,                      # The DISPLAY option, for example: 192.168.1.5:0.0. Will
+                        # guess if left blank.
+                        duration: str = None,                     # Duration for doing a capture (in seconds). Default is 5
+                        # minutes for dumpcap/tshark, and forever for wireshark
+                        flags: str = None,                        # Flags that control how the sniffing is done.
+                        outfile: str = None,                      # Optional file location for saving a capture.
+                        port: str = None,                         # The port we are trying to run the packet sniffer on. [R]
+                        resource: int = None,                     # Resource number. [W]
+                        shelf: int = 1,                           # Shelf number. [R][D:1]
+                        snaplen: str = None,                      # Amount of each packet to store. Default is to store all
+                        # of it.
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_sniff_port(param=value ...)
@@ -16233,6 +16901,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/sniff_port",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16263,8 +16932,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#start_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_start_endp(self, 
-                        endp_name: str = None,  # Name of the cross-connect, or 'all'. [R]
-                        debug=False):
+                        endp_name: str = None,                    # Name of the cross-connect, or 'all'. [R]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_start_endp(param=value ...)
@@ -16279,6 +16949,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/start_endp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16302,8 +16973,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#start_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_start_group(self, 
-                         name: str = None,  # The name of the test group. [R]
-                         debug=False):
+                         name: str = None,                         # The name of the test group. [R]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_start_group(param=value ...)
@@ -16318,6 +16990,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/start_group",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16341,10 +17014,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#start_ppp_link
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_start_ppp_link(self, 
-                            resource: int = None,  # Resource number that holds this PppLink. [W]
-                            shelf: int = 1,        # Name/id of the shelf. [R][D:1]
-                            unit_num: str = None,  # Unit-Number for the PppLink to be started. [R]
-                            debug=False):
+                            resource: int = None,                     # Resource number that holds this PppLink. [W]
+                            shelf: int = 1,                           # Name/id of the shelf. [R][D:1]
+                            unit_num: str = None,                     # Unit-Number for the PppLink to be started. [R]
+                            debug: bool = False,
+                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_start_ppp_link(param=value ...)
@@ -16363,6 +17037,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/start_ppp_link",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16388,8 +17063,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#stop_endp
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_stop_endp(self, 
-                       endp_name: str = None,  # Name of the endpoint, or 'all'. [R]
-                       debug=False):
+                       endp_name: str = None,                    # Name of the endpoint, or 'all'. [R]
+                       debug: bool = False,
+                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_stop_endp(param=value ...)
@@ -16404,6 +17080,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/stop_endp",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16427,8 +17104,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#stop_group
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_stop_group(self, 
-                        name: str = None,  # The name of the test group, or 'all' [R]
-                        debug=False):
+                        name: str = None,                         # The name of the test group, or 'all' [R]
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_stop_group(param=value ...)
@@ -16443,6 +17121,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/stop_group",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16466,10 +17145,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#stop_ppp_link
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_stop_ppp_link(self, 
-                           resource: int = None,  # Resource number that holds this PppLink. [W]
-                           shelf: int = 1,        # Name/id of the shelf. [R][D:1]
-                           unit_num: str = None,  # Unit-Number for the PppLink to be stopped. [W]
-                           debug=False):
+                           resource: int = None,                     # Resource number that holds this PppLink. [W]
+                           shelf: int = 1,                           # Name/id of the shelf. [R][D:1]
+                           unit_num: str = None,                     # Unit-Number for the PppLink to be stopped. [W]
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_stop_ppp_link(param=value ...)
@@ -16488,6 +17168,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/stop_ppp_link",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16513,13 +17194,14 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#tail
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_tail(self, 
-                  cmd: str = None,       # Command: start, stop, results
-                  key: str = None,       # File-name that we should be tailing.
-                  message: str = None,   # The contents to display (for results only) <tt
+                  cmd: str = None,                          # Command: start, stop, results
+                  key: str = None,                          # File-name that we should be tailing.
+                  message: str = None,                      # The contents to display (for results only) <tt
                   # escapearg='false'>Unescaped Value</tt>
-                  resource: int = None,  # Resource that holds the file. [W]
-                  shelf: int = 1,        # Shelf that holds the resource that holds the file. [R][D:1]
-                  debug=False):
+                  resource: int = None,                     # Resource that holds the file. [W]
+                  shelf: int = 1,                           # Shelf that holds the resource that holds the file. [R][D:1]
+                  debug: bool = False,
+                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_tail(param=value ...)
@@ -16542,6 +17224,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/tail",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16569,9 +17252,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#tm_register
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_tm_register(self, 
-                         client_name: str = None,  # Name of client to be registered. (dflt is current client) [W]
-                         test_mgr: str = None,     # Name of test manager (can be all.) [R]
-                         debug=False):
+                         client_name: str = None,                  # Name of client to be registered. (dflt is current
+                         # client) [W]
+                         test_mgr: str = None,                     # Name of test manager (can be all.) [R]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_tm_register(param=value ...)
@@ -16588,6 +17273,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/tm_register",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16612,10 +17298,11 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#tm_unregister
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_tm_unregister(self, 
-                           client_name: str = None,  # Name of client to be un-registered. (dflt is current client)
-                           # [W]
-                           test_mgr: str = None,     # Name of test manager (can be all.) [R]
-                           debug=False):
+                           client_name: str = None,                  # Name of client to be un-registered. (dflt is current
+                           # client) [W]
+                           test_mgr: str = None,                     # Name of test manager (can be all.) [R]
+                           debug: bool = False,
+                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_tm_unregister(param=value ...)
@@ -16632,6 +17319,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/tm_unregister",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16656,7 +17344,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#version
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_version(self, 
-                     debug=False):
+                     debug: bool = False,
+                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_version(param=value ...)
@@ -16667,6 +17356,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/version",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16689,7 +17379,8 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#who
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_who(self, 
-                 debug=False):
+                 debug: bool = False,
+                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_who(param=value ...)
@@ -16700,6 +17391,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/who",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16722,13 +17414,14 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#wifi_cli_cmd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_wifi_cli_cmd(self, 
-                          port: str = None,         # Name of the WiFi station or AP interface to which this command
-                          # will be directed. [R]
-                          resource: int = None,     # Resource number. [W]
-                          shelf: int = 1,           # Shelf number. [R][D:1]
-                          wpa_cli_cmd: str = None,  # Command to pass to wpa_cli or hostap_cli. This must be
+                          port: str = None,                         # Name of the WiFi station or AP interface to which this
+                          # command will be directed. [R]
+                          resource: int = None,                     # Resource number. [W]
+                          shelf: int = 1,                           # Shelf number. [R][D:1]
+                          wpa_cli_cmd: str = None,                  # Command to pass to wpa_cli or hostap_cli. This must be
                           # single-quoted. [R]
-                          debug=False):
+                          debug: bool = False,
+                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_wifi_cli_cmd(param=value ...)
@@ -16749,6 +17442,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/wifi_cli_cmd",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16775,11 +17469,12 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#wifi_event
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_wifi_event(self, 
-                        device: str = None,  # Interface or PHY in most cases. [R]
-                        event: str = None,   # What happened. [R]
-                        msg: str = None,     # Entire event in human readable form.
-                        status: str = None,  # Status on what happened.
-                        debug=False):
+                        device: str = None,                       # Interface or PHY in most cases. [R]
+                        event: str = None,                        # What happened. [R]
+                        msg: str = None,                          # Entire event in human readable form.
+                        status: str = None,                       # Status on what happened.
+                        debug: bool = False,
+                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_wifi_event(param=value ...)
@@ -16800,6 +17495,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/wifi_event",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16826,9 +17522,10 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#wiser_reset
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_wiser_reset(self, 
-                         resource: int = None,  # Resource number, or ALL. [W]
-                         shelf: int = 1,        # Shelf number, or ALL. [R][D:1]
-                         debug=False):
+                         resource: int = None,                     # Resource number, or ALL. [W]
+                         shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_wiser_reset(param=value ...)
@@ -16845,6 +17542,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/wiser_reset",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16869,8 +17567,9 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#write
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_write(self, 
-                   db_name: str = None,  # The name the backup shall be saved as (blank means dflt)
-                   debug=False):
+                   db_name: str = None,                      # The name the backup shall be saved as (blank means dflt)
+                   debug: bool = False,
+                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
                 result = post_write(param=value ...)
@@ -16885,6 +17584,7 @@ class LFJsonCommand(JsonCommand):
         response = self.json_post(url="/cli-json/write",
                                   post_data=data,
                                   die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
                                   debug=debug)
         return response
     #
@@ -16998,7 +17698,7 @@ class LFJsonQuery(JsonQuery):
         if response is None:
             return None
         return self.extract_values(response=response,
-                                   singular_key="device",
+                                   singular_key="devices",
                                    plural_key="devices")
     #
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -18864,6 +19564,180 @@ class LFJsonQuery(JsonQuery):
                                    plural_key="probe-results")
     #
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <PROFILE> type requests
+
+    If you need to call the URL directly,
+    request one of these URLs:
+        /profile/
+        /profile/$name
+        /profiles/
+        /profiles/$name
+
+    When requesting specific column names, they need to be URL encoded:
+        antennas, bandwidth, eap-id, entity+id, frequency, instances, mode, name, 
+        notes, password, pattern, ssid, type
+    Example URL: /profile?fields=antennas,bandwidth
+
+    Example py-json call (it knows the URL):
+        record = LFJsonGet.get_profile(eid_list=['1.234', '1.344'],
+                                       requested_col_names=['entity id'], 
+                                       debug=True)
+
+    The record returned will have these members: 
+    {
+        'antennas':  # -
+        'bandwidth': # -
+        'eap-id':    # -
+        'entity id': # -
+        'frequency': # -
+        'instances': # -
+        'mode':      # -
+        'name':      # -
+        'notes':     # -
+        'password':  # -
+        'pattern':   # -
+        'ssid':      # -
+        'type':      # -
+    }
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    def get_profile(self, 
+                    eid_list: list = None,
+                    requested_col_names: list = None,
+                    wait_sec: float = 0.01,
+                    timeout_sec: float = 5.0,
+                    errors_warnings: list = None,
+                    debug: bool = False):
+        """
+        :param eid_list: list of entity IDs to query for
+        :param requested_col_names: list of column names to return
+        :param wait_sec: duration to wait between retries if no response or response is HTTP 404
+        :param timeout_sec: duration in which to keep querying before returning
+        :param errors_warnings: optional list to extend with errors and warnings from response
+        :param debug: print diagnostic info if true
+        :return: dictionary of results
+        """
+        debug |= self.debug_on
+        url = "/profile"
+        if (eid_list is None) or (len(eid_list) < 1):
+            raise ValueError("no entity id in request")
+        trimmed_fields = []
+        if isinstance(requested_col_names, str):
+            if not requested_col_names.strip():
+                raise ValueError("column name cannot be blank")
+            trimmed_fields.append(requested_col_names.strip())
+        if isinstance(requested_col_names, list):
+            for field in requested_col_names:
+                if not field.strip():
+                    raise ValueError("column names cannot be blank")
+                field = field.strip()
+                if field.find(" ") > -1:
+                    raise ValueError("field should be URL encoded: [%s]" % field)
+                trimmed_fields.append(field)
+        url += self.create_port_eid_url(eid_list=eid_list)
+
+        if len(trimmed_fields) > 0:
+            url += "?fields=%s" % (",".join(trimmed_fields))
+
+        response = self.json_get(url=url,
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=timeout_sec,
+                                 max_timeout_sec=timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if response is None:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="profiles",
+                                   plural_key="profiles")
+    #
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <PROFILES> type requests
+
+    If you need to call the URL directly,
+    request one of these URLs:
+        /profiles/
+        /profiles/$name
+
+    When requesting specific column names, they need to be URL encoded:
+        antennas, bandwidth, eap-id, entity+id, frequency, instances, mode, name, 
+        notes, password, pattern, ssid, type
+    Example URL: /profiles?fields=antennas,bandwidth
+
+    Example py-json call (it knows the URL):
+        record = LFJsonGet.get_profiles(eid_list=['1.234', '1.344'],
+                                        requested_col_names=['entity id'], 
+                                        debug=True)
+
+    The record returned will have these members: 
+    {
+        'antennas':  # -
+        'bandwidth': # -
+        'eap-id':    # -
+        'entity id': # -
+        'frequency': # -
+        'instances': # -
+        'mode':      # -
+        'name':      # -
+        'notes':     # -
+        'password':  # -
+        'pattern':   # -
+        'ssid':      # -
+        'type':      # -
+    }
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    def get_profiles(self, 
+                     eid_list: list = None,
+                     requested_col_names: list = None,
+                     wait_sec: float = 0.01,
+                     timeout_sec: float = 5.0,
+                     errors_warnings: list = None,
+                     debug: bool = False):
+        """
+        :param eid_list: list of entity IDs to query for
+        :param requested_col_names: list of column names to return
+        :param wait_sec: duration to wait between retries if no response or response is HTTP 404
+        :param timeout_sec: duration in which to keep querying before returning
+        :param errors_warnings: optional list to extend with errors and warnings from response
+        :param debug: print diagnostic info if true
+        :return: dictionary of results
+        """
+        debug |= self.debug_on
+        url = "/profiles"
+        if (eid_list is None) or (len(eid_list) < 1):
+            raise ValueError("no entity id in request")
+        trimmed_fields = []
+        if isinstance(requested_col_names, str):
+            if not requested_col_names.strip():
+                raise ValueError("column name cannot be blank")
+            trimmed_fields.append(requested_col_names.strip())
+        if isinstance(requested_col_names, list):
+            for field in requested_col_names:
+                if not field.strip():
+                    raise ValueError("column names cannot be blank")
+                field = field.strip()
+                if field.find(" ") > -1:
+                    raise ValueError("field should be URL encoded: [%s]" % field)
+                trimmed_fields.append(field)
+        url += self.create_port_eid_url(eid_list=eid_list)
+
+        if len(trimmed_fields) > 0:
+            url += "?fields=%s" % (",".join(trimmed_fields))
+
+        response = self.json_get(url=url,
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=timeout_sec,
+                                 max_timeout_sec=timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if response is None:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="profiles",
+                                   plural_key="profiles")
+    #
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <QUIT> type requests
 
     If you need to call the URL directly,
@@ -20050,6 +20924,94 @@ class LFJsonQuery(JsonQuery):
                                    plural_key="router-connections")
     #
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <WIFI-MSG> type requests
+
+    If you need to call the URL directly,
+    request one of these URLs:
+        /wifi-msgs/$shelf_id/$resource_id/before=time/$time-stamp
+        /wifi-msgs/$shelf_id/$resource_id/between=time/$start_time/$end_time
+        /wifi-msgs/$shelf_id/$resource_id/first/$wifi-msg_count
+        /wifi-msgs/$shelf_id/$resource_id/first=time/$time-period
+        /wifi-msgs/$shelf_id/$resource_id/last/$wifi_msg_count
+        /wifi-msgs/$shelf_id/$resource_id/last=time/$time-period
+        /wifi-msgs/$shelf_id/$resource_id/since=time/$time-stamp
+        /wifi-msgs/before=time/$time-stamp
+        /wifi-msgs/between=time/$start_time/$end_time
+        /wifi-msgs/first/$wifi-msg_count
+        /wifi-msgs/first=time/$time-period
+        /wifi-msgs/last/$wifi_msg_count
+        /wifi-msgs/last=time/$time-period
+        /wifi-msgs/since=time/$time-stamp
+
+    When requesting specific column names, they need to be URL encoded:
+        resource, text, time-stamp
+    Example URL: /wifi-msg?fields=resource,text
+
+    Example py-json call (it knows the URL):
+        record = LFJsonGet.get_wifi_msg(eid_list=['1.234', '1.344'],
+                                        requested_col_names=['text'], 
+                                        debug=True)
+
+    The record returned will have these members: 
+    {
+        'resource':   # Resource that the wifi message is about.
+        'text':       # Text content of the wifi message.
+        'time-stamp': # Time at which this event was created.This uses the clock on the source
+                      # machine.
+    }
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    def get_wifi_msg(self, 
+                     eid_list: list = None,
+                     requested_col_names: list = None,
+                     wait_sec: float = 0.01,
+                     timeout_sec: float = 5.0,
+                     errors_warnings: list = None,
+                     debug: bool = False):
+        """
+        :param eid_list: list of entity IDs to query for
+        :param requested_col_names: list of column names to return
+        :param wait_sec: duration to wait between retries if no response or response is HTTP 404
+        :param timeout_sec: duration in which to keep querying before returning
+        :param errors_warnings: optional list to extend with errors and warnings from response
+        :param debug: print diagnostic info if true
+        :return: dictionary of results
+        """
+        debug |= self.debug_on
+        url = "/wifi-msg"
+        if (eid_list is None) or (len(eid_list) < 1):
+            raise ValueError("no entity id in request")
+        trimmed_fields = []
+        if isinstance(requested_col_names, str):
+            if not requested_col_names.strip():
+                raise ValueError("column name cannot be blank")
+            trimmed_fields.append(requested_col_names.strip())
+        if isinstance(requested_col_names, list):
+            for field in requested_col_names:
+                if not field.strip():
+                    raise ValueError("column names cannot be blank")
+                field = field.strip()
+                if field.find(" ") > -1:
+                    raise ValueError("field should be URL encoded: [%s]" % field)
+                trimmed_fields.append(field)
+        url += self.create_port_eid_url(eid_list=eid_list)
+
+        if len(trimmed_fields) > 0:
+            url += "?fields=%s" % (",".join(trimmed_fields))
+
+        response = self.json_get(url=url,
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=timeout_sec,
+                                 max_timeout_sec=timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if response is None:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="wifi-messages",
+                                   plural_key="wifi-messages")
+    #
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <WIFI-STATS> type requests
 
     If you need to call the URL directly,
@@ -20067,26 +21029,26 @@ class LFJsonQuery(JsonQuery):
         rx_ampdu_len_80_103, rx_cck, rx_he_2mu, rx_he_2ru, rx_he_3mu, rx_he_3ru, 
         rx_he_4mu, rx_he_4ru, rx_he_5to8ru, rx_he_9to16ru, rx_he_ext_su, rx_he_gtr16ru, 
         rx_he_su, rx_htgf, rx_htmix, rx_ofdm, rx_vht_2mu, rx_vht_3mu, rx_vht_4mu, 
-        rx_vht_su, tx_ampdu_len_0_1, tx_ampdu_len_104_127, tx_ampdu_len_11_19, tx_ampdu_len_128_151, 
-        tx_ampdu_len_152_175, tx_ampdu_len_176_199, tx_ampdu_len_200_223, tx_ampdu_len_20_28, 
-        tx_ampdu_len_224_247, tx_ampdu_len_29_37, tx_ampdu_len_2_10, tx_ampdu_len_38_46, 
-        tx_ampdu_len_47_55, tx_ampdu_len_56_79, tx_ampdu_len_80_103, tx_bf_ppdu_ebf, 
-        tx_bf_ppdu_ibf, tx_bf_rx_feedback_all, tx_bf_rx_feedback_he, tx_bf_rx_feedback_ht, 
-        tx_bf_rx_feedback_vht, tx_hetrig_2mu, tx_hetrig_2ru, tx_hetrig_3mu, tx_hetrig_3ru, 
-        tx_hetrig_4mu, tx_hetrig_4ru, tx_hetrig_5to8ru, tx_hetrig_9to16ru, tx_hetrig_gtr16ru, 
-        tx_hetrig_su, tx_msdu_pack_0, tx_msdu_pack_1, tx_msdu_pack_2, tx_msdu_pack_3, 
-        tx_msdu_pack_4, tx_msdu_pack_5, tx_msdu_pack_6, tx_msdu_pack_7, tx_pkt_ebf, 
-        tx_pkt_ibf, v_rx_bw_160, v_rx_bw_20, v_rx_bw_40, v_rx_bw_80, v_rx_bw_he_ru, 
-        v_rx_mcs_0, v_rx_mcs_1, v_rx_mcs_10, v_rx_mcs_11, v_rx_mcs_2, v_rx_mcs_3, 
-        v_rx_mcs_4, v_rx_mcs_5, v_rx_mcs_6, v_rx_mcs_7, v_rx_mcs_8, v_rx_mcs_9, v_rx_mode_cck, 
-        v_rx_mode_he_ext_su, v_rx_mode_he_mu, v_rx_mode_he_su, v_rx_mode_he_tb, v_rx_mode_ht, 
-        v_rx_mode_ht_gf, v_rx_mode_ofdm, v_rx_mode_vht, v_rx_nss_1, v_rx_nss_2, v_rx_nss_3, 
-        v_rx_nss_4, v_rx_ru_106, v_tx_bw_160, v_tx_bw_20, v_tx_bw_40, v_tx_bw_80, 
-        v_tx_mcs_0, v_tx_mcs_1, v_tx_mcs_10, v_tx_mcs_11, v_tx_mcs_2, v_tx_mcs_3, 
-        v_tx_mcs_4, v_tx_mcs_5, v_tx_mcs_6, v_tx_mcs_7, v_tx_mcs_8, v_tx_mcs_9, v_tx_mode_cck, 
-        v_tx_mode_he_ext_su, v_tx_mode_he_mu, v_tx_mode_he_su, v_tx_mode_he_tb, v_tx_mode_ht, 
-        v_tx_mode_ht_gf, v_tx_mode_ofdm, v_tx_mode_vht, v_tx_nss_1, v_tx_nss_2, v_tx_nss_3, 
-        v_tx_nss_4        # hidden columns:
+        rx_vht_su, time-stamp, tx_ampdu_len_0_1, tx_ampdu_len_104_127, tx_ampdu_len_11_19, 
+        tx_ampdu_len_128_151, tx_ampdu_len_152_175, tx_ampdu_len_176_199, tx_ampdu_len_200_223, 
+        tx_ampdu_len_20_28, tx_ampdu_len_224_247, tx_ampdu_len_29_37, tx_ampdu_len_2_10, 
+        tx_ampdu_len_38_46, tx_ampdu_len_47_55, tx_ampdu_len_56_79, tx_ampdu_len_80_103, 
+        tx_bf_ppdu_ebf, tx_bf_ppdu_ibf, tx_bf_rx_feedback_all, tx_bf_rx_feedback_he, 
+        tx_bf_rx_feedback_ht, tx_bf_rx_feedback_vht, tx_hetrig_2mu, tx_hetrig_2ru, 
+        tx_hetrig_3mu, tx_hetrig_3ru, tx_hetrig_4mu, tx_hetrig_4ru, tx_hetrig_5to8ru, 
+        tx_hetrig_9to16ru, tx_hetrig_gtr16ru, tx_hetrig_su, tx_msdu_pack_0, tx_msdu_pack_1, 
+        tx_msdu_pack_2, tx_msdu_pack_3, tx_msdu_pack_4, tx_msdu_pack_5, tx_msdu_pack_6, 
+        tx_msdu_pack_7, tx_pkt_ebf, tx_pkt_ibf, v_rx_bw_160, v_rx_bw_20, v_rx_bw_40, 
+        v_rx_bw_80, v_rx_bw_he_ru, v_rx_mcs_0, v_rx_mcs_1, v_rx_mcs_10, v_rx_mcs_11, 
+        v_rx_mcs_2, v_rx_mcs_3, v_rx_mcs_4, v_rx_mcs_5, v_rx_mcs_6, v_rx_mcs_7, v_rx_mcs_8, 
+        v_rx_mcs_9, v_rx_mode_cck, v_rx_mode_he_ext_su, v_rx_mode_he_mu, v_rx_mode_he_su, 
+        v_rx_mode_he_tb, v_rx_mode_ht, v_rx_mode_ht_gf, v_rx_mode_ofdm, v_rx_mode_vht, 
+        v_rx_nss_1, v_rx_nss_2, v_rx_nss_3, v_rx_nss_4, v_rx_ru_106, v_tx_bw_160, 
+        v_tx_bw_20, v_tx_bw_40, v_tx_bw_80, v_tx_mcs_0, v_tx_mcs_1, v_tx_mcs_10, 
+        v_tx_mcs_11, v_tx_mcs_2, v_tx_mcs_3, v_tx_mcs_4, v_tx_mcs_5, v_tx_mcs_6, 
+        v_tx_mcs_7, v_tx_mcs_8, v_tx_mcs_9, v_tx_mode_cck, v_tx_mode_he_ext_su, v_tx_mode_he_mu, 
+        v_tx_mode_he_su, v_tx_mode_he_tb, v_tx_mode_ht, v_tx_mode_ht_gf, v_tx_mode_ofdm, 
+        v_tx_mode_vht, v_tx_nss_1, v_tx_nss_2, v_tx_nss_3, v_tx_nss_4        # hidden columns:
         resource
     Example URL: /wifi-stats?fields=alias,ba_miss_count
 
@@ -20138,6 +21100,8 @@ class LFJsonQuery(JsonQuery):
         'rx_vht_3mu':            # Radio level stat:  Received VHT 3-MU (/ac) encoded frames.
         'rx_vht_4mu':            # Radio level stat:  Received VHT 4-MU (/ac) encoded frames.
         'rx_vht_su':             # Radio level stat:  Received VHT SU (/ac) encoded frames.
+        'time-stamp':            # Time at which this event was created.This uses the clock on the source
+                                 # machine.
         'tx_ampdu_len_0_1':      # Radio level stat:  TX AMPDU length of 0-1 frame.
         'tx_ampdu_len_104_127':  # Radio level stat:  TX AMPDU length of 104-127 frames.
         'tx_ampdu_len_11_19':    # Radio level stat:  TX AMPDU length of 11-19 frames.
