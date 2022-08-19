@@ -23,6 +23,7 @@ COPYRIGHT:
 
 INCLUDE_IN_README
 """
+
 import argparse
 import sys
 import os
@@ -44,10 +45,11 @@ import numpy as np
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-
-from lanforge_client.lanforge_api import LFSession
-from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFJsonQuery
+from lanforge_client.lanforge_api import LFJsonCommand
+from lanforge_client.lanforge_api import LFSession
+
+
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
@@ -191,11 +193,11 @@ class lf_rf_char(Realm):
                     dut_mac = m.group(1)
                     dut_ip = m.group(2)
             # there should only be one connection
-        
-        logger.debug("probe mac : {mac} ip : {ip}".format(mac=dut_mac,ip=dut_ip))
+
+        logger.debug("probe mac : {mac} ip : {ip}".format(mac=dut_mac, ip=dut_ip))
         if dut_mac != self.dut_mac:
             logger.error("mac mismatch test cannot contine: probe mac : {mac} stations mac : {station_mac}".
-                format(mac=dut_mac, station_mac=self.dut_mac))
+                         format(mac=dut_mac, station_mac=self.dut_mac))
             exit(1)
 
         self.dut_ip = dut_ip
@@ -231,9 +233,9 @@ class lf_rf_char(Realm):
         cwd_new = os.getcwd()
         logger.info("Move up one dir Working Directory is :{cwd}".format(cwd=cwd_new))
 
-        self.lf_command = ["./lf_generic_ping.pl","--mgr", self.lf_mgr, "--resource", str(self.resource), "--dest", self.dut_ip,
-            "-i",self.port_name,"--cmd",'lfping -s {frame} -i {frame_interval} -I {port_name} {dut_ip}'.
-            format(frame=self.frame,frame_interval=self.frame_interval,port_name=self.port_name,dut_ip=self.dut_ip) ]
+        self.lf_command = ["./lf_generic_ping.pl", "--mgr", self.lf_mgr, "--resource", str(self.resource), "--dest", self.dut_ip,
+                           "-i", self.port_name, "--cmd", 'lfping -s {frame} -i {frame_interval} -I {port_name} {dut_ip}'.
+                           format(frame=self.frame, frame_interval=self.frame_interval, port_name=self.port_name, dut_ip=self.dut_ip)]
         logger.debug("lf_generic_ping.pl : {cmd}".format(cmd=self.lf_command))
         summary_output = ''
 
@@ -249,28 +251,28 @@ class lf_rf_char(Realm):
         cwd_final = os.getcwd()
         logger.info("Current Working Directory is :{cwd}".format(cwd=cwd_final))
 
-
     # for updating the ping information
     # ./lf_generic_ping.pl --mgr 192.168.0.104 --resource 1 --dest 10.10.10.4 -i vap3 --cmd 'lfping -s 1400 -i 0.01 -I vap3 10.10.10.4'
     # add_gen_endp
+
     def add_gen_endp(self):
-                self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
-                # cross connects prepend CX
-                self.gen_endpoint = "CX_lfping_{port_name}".format(port_name=self.port_name)
-                self.command.post_add_gen_endp(
-                    alias=self.gen_endpoint,
-                    port=self.port_name,
-                    resource=self.resource,
-                    shelf=self.shelf,
-                    p_type = 'gen_generic',   # gen_generic is default
-                    debug=self.debug
-                    )
+        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
+        # cross connects prepend CX
+        self.gen_endpoint = "CX_lfping_{port_name}".format(port_name=self.port_name)
+        self.command.post_add_gen_endp(
+            alias=self.gen_endpoint,
+            port=self.port_name,
+            resource=self.resource,
+            shelf=self.shelf,
+            p_type='gen_generic',   # gen_generic is default
+            debug=self.debug
+        )
 
     # set_gen_cmd
     def set_gen_cmd(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
         lf_command = "lfping '-s {frame} -i {frame_interval} -I {port_name} {ip}".format(
-            frame=self.frame,frame_interval=self.frame_interval,port_name=self.port_name,ip=self.dut_ip)
+            frame=self.frame, frame_interval=self.frame_interval, port_name=self.port_name, ip=self.dut_ip)
         self.command.post_set_gen_cmd(
             command=lf_command,
             name=self.gen_endpoint,
@@ -281,7 +283,7 @@ class lf_rf_char(Realm):
         self.command.post_set_cx_state(cx_name=self.gen_endpoint,
                                        cx_state=self.cx_state,
                                        test_mgr='all',
-                                       debug=self.debug )
+                                       debug=self.debug)
 
     def modify_radio(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
@@ -322,9 +324,12 @@ class lf_rf_char(Realm):
         '''
         # use the lf_generic_ping.pl
         self.generic_ping()
-        logger.info("start the lfping cx traffic frame: {frame} frame_interval: {frame_interval}".format(frame=self.frame,frame_interval=self.frame_interval))        
-        self.cx_state = 'RUNNING' # RUNNING< SWITCHB, QUIESCE, STOPPED, or DELETED
+        logger.info("start the lfping cx traffic frame: {frame} frame_interval: {frame_interval}".format(frame=self.frame, frame_interval=self.frame_interval))
+        self.cx_state = 'RUNNING'  # RUNNING< SWITCHB, QUIESCE, STOPPED, or DELETED
         self.set_cx_state()
+        
+        # TODO understand when data is read
+        # time.sleep(1)
 
         logger.info("clear dhcp leases")
         # self.clear_dhcp_lease()
@@ -365,7 +370,7 @@ class lf_rf_char(Realm):
             # take samples of RSSI
             self.json_api.request = 'stations'
             json_stations, *nil = self.json_api.get_request_stations_information()
-            
+
             self.rssi_signal.append(json_stations['station']['signal'])
             chain_rssi_str = json_stations['station']['chain rssi']
             chain_rssi = chain_rssi_str.split(',')
@@ -398,9 +403,8 @@ class lf_rf_char(Realm):
         json_wifi_stats, *nil = self.json_api.get_request_wifi_stats_information()
 
         # Stop Traffic
-        self.cx_state = 'STOPPED' # RUNNING< SWITCHB, QUIESCE, STOPPED, or DELETED
+        self.cx_state = 'STOPPED'  # RUNNING< SWITCHB, QUIESCE, STOPPED, or DELETED
         self.set_cx_state()
-
 
         return json_port_stats, json_wifi_stats
 
@@ -440,7 +444,7 @@ Example :
     --log_level debug --debug --duration 10s --polling_interval 1s --frame 1400 \
     --frame_interval .01
 
-for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands    
+for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             ''')
     # LANforge configuration
     parser.add_argument("--lf_mgr", type=str, help="address of the LANforge GUI machine (localhost is default)", default='localhost')
@@ -700,32 +704,32 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("RSSI Signal, RSSI per chain")
     report.build_table_title()
 
-    df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval]," RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
-        " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3], " RSSI 4 ": [l for l in rssi_4]})
+    df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
+                                 " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3], " RSSI 4 ": [l for l in rssi_4]})
 
     report.set_table_dataframe(df_rssi_info)
     report.build_table()
 
     # graph RSSI
     graph = lf_line_graph(
-        _data_set = [rssi_signal, rssi_1, rssi_2, rssi_3, rssi_4],
+        _data_set=[rssi_signal, rssi_1, rssi_2, rssi_3, rssi_4],
         _xaxis_name="Time Seconds",
         _yaxis_name="RSSI dBm",
-        _reverse_y = True,
+        _reverse_y=True,
         _xaxis_categories=tx_interval,
         _graph_title="RSSI",
         _title_size=16,
         _graph_image_name="rssi",
-        _label=["RSSI Signal","RSSI 1","RSSI 2","RSSI 3", "RSSI 4"],
+        _label=["RSSI Signal", "RSSI 1", "RSSI 2", "RSSI 3", "RSSI 4"],
         _font_weight='bold',
-        _color=['blue','orange','green','orange','cyan'],
-        _figsize=(17,7),
+        _color=['blue', 'orange', 'green', 'orange', 'cyan'],
+        _figsize=(17, 7),
         _xaxis_step=1,
         _text_font=7,
         _legend_loc="best",
-        _legend_box=(1,1),
+        _legend_box=(1, 1),
         _legend_ncol=1
-        
+
     )
 
     graph_png = graph.build_line_graph()
