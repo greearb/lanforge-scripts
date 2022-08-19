@@ -11,6 +11,11 @@ There need to be a vAP in a Virtual Router  on LANforge , goal is to eventually 
 
 EXAMPLE:
 
+./lf_rf_char.py --lf_mgr 192.168.0.104 --lf_port 8080 --lf_user lanforge --lf_passwd lanforge \
+    --vap_port 1.1.vap3 --vap_radio 1.1.wiphy3 --vap_channel 36 --vap_antenna 0 \
+    --log_level debug --debug --duration 10s --polling_interval 1s --frame 1400 \
+    --frame_interval .01
+
 
 COPYRIGHT:
     Copyright 2022 Candela Technologies Inc
@@ -430,9 +435,10 @@ Gather Tx and Rx RF Characteristic for a specific duration and polling interval
 Example :
 ---------
 
-./lf_rf_char.py --lf_mgr 192.168.0.104 --lf_port 8080 --lf_user lanforge --lf_passwd lanforge\
-    --vap_port 1.1.vap3 --vap_radio 1.1.wiphy3 --vap_channel 149 --vap_antenna 0 \
-    --log_level debug --debug --duration 10s --polling_interval 1s
+./lf_rf_char.py --lf_mgr 192.168.0.104 --lf_port 8080 --lf_user lanforge --lf_passwd lanforge \
+    --vap_port 1.1.vap3 --vap_radio 1.1.wiphy3 --vap_channel 36 --vap_antenna 0 \
+    --log_level debug --debug --duration 10s --polling_interval 1s --frame 1400 \
+    --frame_interval .01
 
 for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands    
             ''')
