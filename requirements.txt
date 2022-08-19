@@ -15,3 +15,5 @@ pyshark>=0.4.3
 scp>=0.14.1
 websocket-client>=1.2.1
 XlsxWriter>=3.0.2
+scipy==1.5.2
+simple-geometry==0.1.4
