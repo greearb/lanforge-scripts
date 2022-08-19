@@ -49,7 +49,7 @@ from lanforge_client.lanforge_api import LFJsonQuery
 from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFSession
 
-
+from pprint import pprint
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
@@ -220,6 +220,13 @@ class lf_rf_char(Realm):
                                               resource=self.resource,
                                               port=self.port_name,
                                               extra=None)
+
+        # Clear radio stats too
+        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
+        self.command.post_clear_port_counters(shelf=self.shelf,
+                                              resource=self.resource,
+                                              port=self.port_name,
+                                              extra=None)
     # ./lf_generic_ping.pl --mgr 192.168.0.104 --resource 1 --dest 10.10.10.4 -i vap3 --cmd 'lfping -s 1400 -i 0.01 -I vap3 10.10.10.4
 
     def generic_ping(self):
@@ -337,7 +344,9 @@ class lf_rf_char(Realm):
         # self.clear_dhcp_lease()
         logger.info("clear port counters")
         self.clear_port_counters()
-        json_port_stats, *nil = self.json_api.get_request_port_information()
+
+        self.json_api.shelf, self.json_api.resource, self.json_api.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
+        json_radio_port_stats, *nil = self.json_api.get_request_port_information()
         tx_pkts_previous = 0
         tx_retries_previous = 0
 
@@ -357,16 +366,16 @@ class lf_rf_char(Realm):
                 cur_time = datetime.datetime.now()
                 time.sleep(.2)
                 # Here check if the time stamp has changed
-            json_port_stats, *nil = self.json_api.get_request_port_information()
+            json_radio_port_stats, *nil = self.json_api.get_request_port_information()
 
             interval += int(polling_interval_seconds)
             self.tx_interval.append(interval)
-            # print(json_port_stats["interface"]["tx pkts"])
-            self.tx_pkts.append(json_port_stats["interface"]["tx pkts"] - tx_pkts_previous)
-            tx_pkts_previous = json_port_stats["interface"]["tx pkts"]
-            self.tx_retries.append(json_port_stats["interface"]["wifi retries"] - tx_retries_previous)
-            tx_retries_previous = json_port_stats["interface"]["wifi retries"]
-            self.tx_failed.append(round(json_port_stats["interface"]["tx-failed %"], 2))
+            # print(json_radio_port_stats["interface"]["tx pkts"])
+            self.tx_pkts.append(json_radio_port_stats["interface"]["tx pkts"] - tx_pkts_previous)
+            tx_pkts_previous = json_radio_port_stats["interface"]["tx pkts"]
+            self.tx_retries.append(json_radio_port_stats["interface"]["wifi retries"] - tx_retries_previous)
+            tx_retries_previous = json_radio_port_stats["interface"]["wifi retries"]
+            self.tx_failed.append(round(json_radio_port_stats["interface"]["tx-failed %"], 2))
             # calculated the transmitted packets compared to number of retries
 
             # take samples of RSSI
@@ -400,15 +409,20 @@ class lf_rf_char(Realm):
 
         self.json_api.csv_mode = 'write'
         self.json_api.update_csv_mode()
+
         # TODO make the get_request more generic just set the request
         self.json_api.request = 'wifi-stats'
+        # Queries for 'json_api.resource, json_api.port_name'
+        self.json_api.shelf, self.json_api.resource, self.json_api.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
         json_wifi_stats, *nil = self.json_api.get_request_wifi_stats_information()
+        #print("wifi-stats output, vap-radio: %s radio port name %s:"%(self.vap_radio, self.json_api.port_name))
+        #pprint(json_wifi_stats)
 
         # Stop Traffic
         self.cx_state = 'STOPPED'  # RUNNING< SWITCHB, QUIESCE, STOPPED, or DELETED
         self.set_cx_state()
 
-        return json_port_stats, json_wifi_stats
+        return json_radio_port_stats, json_wifi_stats
 
         # gather interval samples read stations to get RX Bytes, TX Bytes, TX Retries,
 
@@ -633,8 +647,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     def length_sort(strn):
         return len(strn[0])
 
-    # get dataset for port
-    wifi_stats_json = json_wifi_stats[args.vap_port]
+    # get dataset for the radio
+    wifi_stats_json = json_wifi_stats[args.vap_radio]
 
     # transmitted packets per polling interval
     tx_pkts = rf_char.tx_pkts
