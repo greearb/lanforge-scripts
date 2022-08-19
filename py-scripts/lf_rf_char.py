@@ -325,11 +325,13 @@ class lf_rf_char(Realm):
         # use the lf_generic_ping.pl
         self.generic_ping()
         logger.info("start the lfping cx traffic frame: {frame} frame_interval: {frame_interval}".format(frame=self.frame, frame_interval=self.frame_interval))
+        # TODO understand when data is read
+        # This needs to be removed
+        time.sleep(1)
+
         self.cx_state = 'RUNNING'  # RUNNING< SWITCHB, QUIESCE, STOPPED, or DELETED
         self.set_cx_state()
         
-        # TODO understand when data is read
-        # time.sleep(1)
 
         logger.info("clear dhcp leases")
         # self.clear_dhcp_lease()
