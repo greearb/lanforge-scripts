@@ -35,15 +35,15 @@ import re
 import platform
 import subprocess
 import re
-from operator import itemgetter
-
+import numpy as np
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
 
-from lanforge_client.lanforge_api import LFJsonQuery
-from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFSession
+from lanforge_client.lanforge_api import LFJsonCommand
+from lanforge_client.lanforge_api import LFJsonQuery
+
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 
@@ -52,6 +52,7 @@ lf_report = importlib.import_module("py-scripts.lf_report")
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_bar_graph = lf_graph.lf_bar_graph
 lf_bar_line_graph = lf_graph.lf_bar_line_graph
+lf_line_graph = lf_graph.lf_line_graph
 
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -91,10 +92,10 @@ class lf_rf_char(Realm):
         self.resource = ''
         self.duration = ''
         self.polling_interval = ''
-        self.tx_pkts = []
-        self.tx_retries = []
-        self.tx_failed = []
-        self.tx_interval = []
+        self.frame = ''
+        self.frame_interval = ''
+        self.gen_endpoint = ''
+        self.cx_state = ''
 
         # create api_json
         self.json_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
@@ -103,7 +104,7 @@ class lf_rf_char(Realm):
                                                 lf_passwd=self.lf_passwd)
 
         # create a session
-        #self.session = LFSession(lfclient_url="http://{lf_mgr}:{lf_port}".format(lf_mgr=self.lf_mgr, lf_port=self.lf_port),
+        # self.session = LFSession(lfclient_url="http://{lf_mgr}:{lf_port}".format(lf_mgr=self.lf_mgr, lf_port=self.lf_port),
         self.session = LFSession(lfclient_url="http://%s:8080" % self.lf_mgr,
                                  debug=debug,
                                  connection_timeout_sec=4.0,
@@ -130,14 +131,26 @@ class lf_rf_char(Realm):
         self.dut_mac = ''
         self.dut_ip = ''
 
+        # tx data
+        self.tx_interval = []
+        self.tx_pkts = []
+        self.tx_retries = []
+        self.tx_failed = []
+
+        # RSSI calculation
+        self.rssi_signal = []
+        self.rssi_1 = []
+        self.rssi_2 = []
+        self.rssi_3 = []
+        self.rssi_4 = []
+
         # logging
         self.debug = debug
-
 
     def dut_info(self):
         self.json_api.request = 'stations'
         json_stations, *nil = self.json_api.get_request_stations_information()
-        # Note there should lonely be on station connected 
+        # Note there should lonely be on station connected
         # TODO verify what happens if multiple statons connected
         self.dut_mac = json_stations['station']['station bssid']
         logger.info("DUT MAC: {mac}".format(mac=self.dut_mac))
@@ -145,25 +158,45 @@ class lf_rf_char(Realm):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
 
         # get the IP from port mode
-        self.lf_command = ["../lf_portmod.pl", "--manager", self.lf_mgr, "--card",str(self.resource),"--port_name",self.port_name,
-                    "--cli_cmd","probe_port 1 {resource} {port}".format(resource=self.resource,port=self.port_name)]
+        self.lf_command = ["../lf_portmod.pl", "--manager", self.lf_mgr, "--card", str(self.resource), "--port_name", self.port_name,
+                           "--cli_cmd", "probe_port 1 {resource} {port}".format(resource=self.resource, port=self.port_name)]
         logger.info("command: {cmd}".format(cmd=self.lf_command))
         summary_output = ''
-        #summary = subprocess.Popen(["../lf_portmod.pl", "--manager", self.lf_mgr, "--card",str(self.resource),"--port_name",self.port_name,
+        # summary = subprocess.Popen(["../lf_portmod.pl", "--manager", self.lf_mgr, "--card",str(self.resource),"--port_name",self.port_name,
         #            "--cli_cmd","probe_port 1 {resource} {port}".format(resource=self.resource,port=self.port_name)], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         summary = subprocess.Popen(self.lf_command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
 
         for line in iter(summary.stdout.readline, ''):
             logger.debug(line)
             summary_output += line
             # sys.stdout.flush() # please see comments regarding the necessity of this line
         summary.wait()
-        logger.info(summary_output)  # .decode('utf-8', 'ignore'))
+        logger.debug(summary_output)  # .decode('utf-8', 'ignore'))
 
-
-        return json_stations
+        dut_mac = ''
+        search_dhcp_lease = False
+        for line in summary_output.splitlines():
+            if(line.startswith("=========")):
+                search_dhcp_lease = True
+                continue
+            if(search_dhcp_lease):
+                pat = "(\\S+)\\s+(\\S+)\\s+"
+                m = re.search(pat, line)
+                if (m is not None):
+                    dut_mac = m.group(1)
+                    dut_ip = m.group(2)
+            # there should only be one connection
         
+        logger.debug("probe mac : {mac} ip : {ip}".format(mac=dut_mac,ip=dut_ip))
+        if dut_mac != self.dut_mac:
+            logger.error("mac mismatch test cannot contine: probe mac : {mac} stations mac : {station_mac}".
+                format(mac=dut_mac, station_mac=self.dut_mac))
+            exit(1)
+
+        self.dut_ip = dut_ip
+        # TODO the return no needed
+        return json_stations
+
     def clear_dhcp_lease(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
         # may have to add extra to
@@ -173,7 +206,6 @@ class lf_rf_char(Realm):
                                               port=self.port_name,
                                               extra=extra)
 
-
     def clear_port_counters(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
         # may have to add extra to
@@ -181,25 +213,86 @@ class lf_rf_char(Realm):
                                               resource=self.resource,
                                               port=self.port_name,
                                               extra=None)
+    # ./lf_generic_ping.pl --mgr 192.168.0.104 --resource 1 --dest 10.10.10.4 -i vap3 --cmd 'lfping -s 1400 -i 0.01 -I vap3 10.10.10.4
 
-        
+    def generic_ping(self):
+        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
+        self.gen_endpoint = "CX_lfping_{port_name}".format(port_name=self.port_name)
+
+        # need to change the current working director to run lf_generic_ping.pl
+        cwd_orig = os.getcwd()
+        logger.info("Current Working Directory is :{cwd}".format(cwd=cwd_orig))
+        os.chdir('../')
+        cwd_new = os.getcwd()
+        logger.info("Move up one dir Working Directory is :{cwd}".format(cwd=cwd_new))
+
+        self.lf_command = ["./lf_generic_ping.pl","--mgr", self.lf_mgr, "--resource", str(self.resource), "--dest", self.dut_ip,
+            "-i",self.port_name,"--cmd",'lfping -s {frame} -i {frame_interval} -I {port_name} {dut_ip}'.
+            format(frame=self.frame,frame_interval=self.frame_interval,port_name=self.port_name,dut_ip=self.dut_ip) ]
+        logger.debug("lf_generic_ping.pl : {cmd}".format(cmd=self.lf_command))
+        summary_output = ''
+
+        summary = subprocess.Popen(self.lf_command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        for line in iter(summary.stdout.readline, ''):
+            logger.debug(line)
+            summary_output += line
+            # sys.stdout.flush() # please see comments regarding the necessity of this line
+        summary.wait()
+        logger.debug(summary_output)  # .decode('utf-8', 'ignore'))
+        os.chdir(cwd_orig)
+        cwd_final = os.getcwd()
+        logger.info("Current Working Directory is :{cwd}".format(cwd=cwd_final))
+
+
+    # for updating the ping information
+    # ./lf_generic_ping.pl --mgr 192.168.0.104 --resource 1 --dest 10.10.10.4 -i vap3 --cmd 'lfping -s 1400 -i 0.01 -I vap3 10.10.10.4'
+    # add_gen_endp
+    def add_gen_endp(self):
+                self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
+                # cross connects prepend CX
+                self.gen_endpoint = "CX_lfping_{port_name}".format(port_name=self.port_name)
+                self.command.post_add_gen_endp(
+                    alias=self.gen_endpoint,
+                    port=self.port_name,
+                    resource=self.resource,
+                    shelf=self.shelf,
+                    p_type = 'gen_generic',   # gen_generic is default
+                    debug=self.debug
+                    )
+
+    # set_gen_cmd
+    def set_gen_cmd(self):
+        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
+        lf_command = "lfping '-s {frame} -i {frame_interval} -I {port_name} {ip}".format(
+            frame=self.frame,frame_interval=self.frame_interval,port_name=self.port_name,ip=self.dut_ip)
+        self.command.post_set_gen_cmd(
+            command=lf_command,
+            name=self.gen_endpoint,
+            debug=self.debug)
+
+    # set_cx_state
+    def set_cx_state(self):
+        self.command.post_set_cx_state(cx_name=self.gen_endpoint,
+                                       cx_state=self.cx_state,
+                                       test_mgr='all',
+                                       debug=self.debug )
 
     def modify_radio(self):
-
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
         self.command.post_set_wifi_radio(
             shelf=self.shelf,
             resource=self.resource,
-            radio=self.port_name, 
+            radio=self.port_name,
             antenna=self.vap_antenna,
             channel=self.vap_channel,
             debug=self.debug)
 
     def start(self):
         # first read with
-        self.json_api.port=self.vap_port
+        self.json_api.port = self.vap_port
         self.json_api.update_port_info()
-        self.json_api.csv_mode='write'
+        self.json_api.csv_mode = 'write'
         self.json_api.update_csv_mode()
         self.json_api.request = 'port'
 
@@ -207,6 +300,27 @@ class lf_rf_char(Realm):
         self.tx_pkts = []
         self.tx_retries = []
         self.tx_failed = []
+
+        self.rssi_signal = []
+        self.rssi_1 = []
+        self.rssi_2 = []
+        self.rssi_3 = []
+        self.rssi_4 = []
+
+        # create lfping generic
+        '''
+        # Using lanforge_api
+        logger.info("create generic endpoint")
+        self.add_gen_endp()
+        logger.info("set frame {frame} frame_interval {interval}".format(frame=self.frame,interval=self.frame_interval))
+        self.set_gen_cmd()
+        '''
+        # use the lf_generic_ping.pl
+        self.generic_ping()
+        logger.info("start the lfping cx traffic frame: {frame} frame_interval: {frame_interval}".format(frame=self.frame,frame_interval=self.frame_interval))        
+        self.cx_state = 'RUNNING' # RUNNING< SWITCHB, QUIESCE, STOPPED, or DELETED
+        self.set_cx_state()
+
         logger.info("clear dhcp leases")
         # self.clear_dhcp_lease()
         logger.info("clear port counters")
@@ -215,7 +329,7 @@ class lf_rf_char(Realm):
         tx_pkts_previous = 0
         tx_retries_previous = 0
 
-        self.json_api.csv_mode='append'
+        self.json_api.csv_mode = 'append'
         self.json_api.update_csv_mode()
 
         cur_time = datetime.datetime.now()
@@ -238,33 +352,63 @@ class lf_rf_char(Realm):
             # print(json_port_stats["interface"]["tx pkts"])
             self.tx_pkts.append(json_port_stats["interface"]["tx pkts"] - tx_pkts_previous)
             tx_pkts_previous = json_port_stats["interface"]["tx pkts"]
-            self.tx_retries.append(json_port_stats["interface"]["wifi retries"] - tx_retries_previous )
+            self.tx_retries.append(json_port_stats["interface"]["wifi retries"] - tx_retries_previous)
             tx_retries_previous = json_port_stats["interface"]["wifi retries"]
-            self.tx_failed.append(round(json_port_stats["interface"]["tx-failed %"],2))
+            self.tx_failed.append(round(json_port_stats["interface"]["tx-failed %"], 2))
             # calculated the transmitted packets compared to number of retries
 
+            # take samples of RSSI
+            self.json_api.request = 'stations'
+            json_stations, *nil = self.json_api.get_request_stations_information()
+            
+            self.rssi_signal.append(json_stations['station']['signal'])
+            chain_rssi_str = json_stations['station']['chain rssi']
+            chain_rssi = chain_rssi_str.split(',')
+            logger.info("RSSI chain length {chain}".format(chain=len(chain_rssi)))
+            if len(chain_rssi) == 1:
+                self.rssi_1.append(chain_rssi[0])
+                self.rssi_2.append(np.nan)
+                self.rssi_3.append(np.nan)
+                self.rssi_4.append(np.nan)
+            elif len(chain_rssi) == 2:
+                self.rssi_1.append(chain_rssi[0])
+                self.rssi_2.append(chain_rssi[1])
+                self.rssi_3.append(np.nan)
+                self.rssi_4.append(np.nan)
+            elif len(chain_rssi) == 3:
+                self.rssi_1.append(chain_rssi[0])
+                self.rssi_2.append(chain_rssi[1])
+                self.rssi_3.append(chain_rssi[2])
+                self.rssi_4.append(np.nan)
+            elif len(chain_rssi) == 4:
+                self.rssi_1.append(chain_rssi[0])
+                self.rssi_2.append(chain_rssi[1])
+                self.rssi_3.append(chain_rssi[2])
+                self.rssi_4.append(chain_rssi[3])
 
-            # todo read the info from the data frame
-
-        self.json_api.csv_mode='write'
+        self.json_api.csv_mode = 'write'
         self.json_api.update_csv_mode()
         # TODO make the get_request more generic just set the request
         self.json_api.request = 'wifi-stats'
         json_wifi_stats, *nil = self.json_api.get_request_wifi_stats_information()
 
+        # Stop Traffic
+        self.cx_state = 'STOPPED' # RUNNING< SWITCHB, QUIESCE, STOPPED, or DELETED
+        self.set_cx_state()
+
+
         return json_port_stats, json_wifi_stats
 
-            # gather interval samples read stations to get RX Bytes, TX Bytes, TX Retries, 
+        # gather interval samples read stations to get RX Bytes, TX Bytes, TX Retries,
 
         # read the extended mgr tab to get rx tx MCS, NSS
-
-
 
     def read_wifi_stats(self):
         pass
 
     def read_stations(self):
         pass
+
 
 def main():
     # arguments
@@ -289,6 +433,8 @@ Example :
 ./lf_rf_char.py --lf_mgr 192.168.0.104 --lf_port 8080 --lf_user lanforge --lf_passwd lanforge\
     --vap_port 1.1.vap3 --vap_radio 1.1.wiphy3 --vap_channel 149 --vap_antenna 0 \
     --log_level debug --debug --duration 10s --polling_interval 1s
+
+for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands    
             ''')
     # LANforge configuration
     parser.add_argument("--lf_mgr", type=str, help="address of the LANforge GUI machine (localhost is default)", default='localhost')
@@ -320,7 +466,6 @@ Example :
     parser.add_argument("--test_id", default="kpi_unit_test", help="test-id for kpi.csv,  script or test name")
     parser.add_argument("--csv_outfile", default="lf_rf_char", help=" csv outfile")
 
-
     # Logging Configuration
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
@@ -329,6 +474,8 @@ Example :
     # Test Configuration
     parser.add_argument('--duration', help="--duration <seconds>", default='20s')
     parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='1s')
+    parser.add_argument('--frame', help="--frame <bytes>  , e.g. --frame 1400", default='1400')
+    parser.add_argument('--frame_interval', help="--frame_interval <fractions of second>  , e.g. --frame_interval .01 ", default='.01')
 
     args = parser.parse_args()
 
@@ -404,15 +551,13 @@ Example :
     report.set_obj_html("Objective", "RF Characteristics Test: Report RX and TX characteristics")
     report.build_objective()
 
-
-
     # Set up the RF Characteristic test
     logger.info("Configure RF Characteristic test")
     rf_char = lf_rf_char(lf_mgr=args.lf_mgr,
-                            lf_port=args.lf_port,
-                            lf_user=args.lf_user,
-                            lf_passwd=args.lf_passwd,
-                            debug=args.debug)
+                         lf_port=args.lf_port,
+                         lf_user=args.lf_user,
+                         lf_passwd=args.lf_passwd,
+                         debug=args.debug)
 
     # TODO need to get the DUT IP and put into test_input infor
     rf_char.vap_radio = args.vap_radio
@@ -426,14 +571,13 @@ Example :
     dut_mac = rf_char.dut_mac
     dut_ip = rf_char.dut_ip
 
-
-
-
     test_setup_info = {
         "DUT Name": args.dut_model_num,
         "DUT Hardware Version": args.dut_hw_version,
         "DUT Software Version": args.dut_sw_version,
         "DUT Serial Number": args.dut_serial_num,
+        "DUT MAC": dut_mac,
+        "DUT IP": dut_ip
     }
 
     report.set_table_title("Device Under Test Information")
@@ -452,13 +596,14 @@ Example :
     report.build_table_title()
     report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
 
-
-
     # Start traffic : Currently manually done
     rf_char.clear_port_counters()
 
     rf_char.duration = args.duration
     rf_char.polling_interval = args.polling_interval
+    logger.debug("frame size {frame}".format(frame=args.frame))
+    rf_char.frame = args.frame
+    rf_char.frame_interval = args.frame_interval
 
     # run the test
     json_port_stats, json_wifi_stats, *nil = rf_char.start()
@@ -466,7 +611,7 @@ Example :
     # sort the values when in a list
     def num_sort(strn):
         # getting number using isdigit() and split()
-        computed_num = [ele for ele in strn[0].split('_') if ele.isdigit()]    
+        computed_num = [ele for ele in strn[0].split('_') if ele.isdigit()]
         # assigning lowest weightage to strings
         # with no numbers
         if len(computed_num) > 0:
@@ -474,13 +619,10 @@ Example :
         return -1
 
     def length_sort(strn):
-        return len(strn)
+        return len(strn[0])
 
-
-    
     # get dataset for port
     wifi_stats_json = json_wifi_stats[args.vap_port]
-
 
     # transmitted packets per polling interval
     tx_pkts = rf_char.tx_pkts
@@ -488,61 +630,102 @@ Example :
     tx_failed = rf_char.tx_failed
     tx_interval = rf_char.tx_interval
 
-    # TX pkts, TX retries,  TX Failed % 
+    # TX pkts, TX retries,  TX Failed %
     report.set_table_title("TX pkts , TX retries, TX Failed %")
     report.build_table_title()
 
-
     df_tx_info = pd.DataFrame({" Time ": [k for k in tx_interval], " TX Packets ": [i for i in tx_pkts],
-        " TX Retries ": [j for j in tx_retries], " TX Failed % ": [m for m in tx_failed]})
+                               " TX Retries ": [j for j in tx_retries], " TX Failed % ": [m for m in tx_failed]})
 
     report.set_table_dataframe(df_tx_info)
     report.build_table()
-    
+
     # lf_bar_line_graph
     # failed %
     graph = lf_bar_line_graph(
-                        _data_set1=[tx_pkts,tx_retries],
-                        _data_set2=[tx_failed],
-                        _data_set2_poly=[True],
-                        _data_set2_poly_degree=[3],
-                        _data_set2_interp1d=[True], # interpolate 1d
-                        _xaxis_name="Time Seconds",
-                        _y1axis_name="TX Packets",
-                        _y2axis_name="TX Failed %",
-                        _xaxis_categories=tx_interval,
-                        _graph_image_name="TX Info bar line",
-                        _label1=[" TX Packets "," TX Retries "],
-                        _label2=[" TX Failed % "],
-                        _label2_poly=["% plynomial fit"],
-                        _label2_interp1d=[" % interpolate"],
-                        _color1=['blue','red'],
-                        _color2=['orange'],
-                        _color2_poly=['green'],
-                        _color2_interp1d=['cyan'],
-                        _marker=['o'],
-                        _color_edge='black',
-                        _figsize=(17,7),
-                        _grp_title='TX ',
-                        _xaxis_step=1,
-                        _show_bar_value=True,
-                        _text_font=7,
-                        _text_rotation=45,
-                        _xticks_font=7,
-                        _legend_loc1="upper right",
-                        _legend_loc2="upper left",
-                        _legend_box1=(0, 0),
-                        _legend_box2=(1, 0),
-                        _legend_ncol=1,
-                        _legend_fontsize=None,
-                        _enable_csv=False)
-    
+        _data_set1=[tx_pkts, tx_retries],
+        _data_set2=[tx_failed],
+        _data_set2_poly=[True],
+        _data_set2_poly_degree=[3],
+        _data_set2_interp1d=[True],  # interpolate 1d
+        _xaxis_name="Time Seconds",
+        _y1axis_name="TX Packets",
+        _y2axis_name="TX Failed %",
+        _xaxis_categories=tx_interval,
+        _graph_image_name="TX Info bar line",
+        _label1=[" TX Packets ", " TX Retries "],
+        _label2=[" TX Failed % "],
+        _label2_poly=["% plynomial fit"],
+        _label2_interp1d=[" % interpolate"],
+        _color1=['blue', 'red'],
+        _color2=['orange'],
+        _color2_poly=['green'],
+        _color2_interp1d=['cyan'],
+        _marker=['o'],
+        _color_edge='black',
+        _figsize=(17, 7),
+        _grp_title='TX ',
+        _xaxis_step=1,
+        _show_bar_value=True,
+        _text_font=7,
+        _text_rotation=45,
+        _xticks_font=7,
+        _legend_loc1="upper right",
+        _legend_loc2="upper left",
+        _legend_box1=(0, 0),
+        _legend_box2=(1, 0),
+        _legend_ncol=1,
+        _legend_fontsize=None,
+        _enable_csv=False)
+
     graph_png = graph.build_bar_line_graph()
     report.set_graph_image(graph_png)
     report.move_graph_image()
     report.build_graph()
 
+    # RSSI line graphs
+    rssi_signal = rf_char.rssi_signal
+    rssi_1 = rf_char.rssi_1
+    rssi_2 = rf_char.rssi_2
+    rssi_3 = rf_char.rssi_3
+    rssi_4 = rf_char.rssi_4
+    tx_interval = rf_char.tx_interval
 
+    report.set_table_title("RSSI Signal, RSSI per chain")
+    report.build_table_title()
+
+    df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval]," RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
+        " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3], " RSSI 4 ": [l for l in rssi_4]})
+
+    report.set_table_dataframe(df_rssi_info)
+    report.build_table()
+
+    # graph RSSI
+    graph = lf_line_graph(
+        _data_set = [rssi_signal, rssi_1, rssi_2, rssi_3, rssi_4],
+        _xaxis_name="Time Seconds",
+        _yaxis_name="RSSI dBm",
+        _reverse_y = True,
+        _xaxis_categories=tx_interval,
+        _graph_title="RSSI",
+        _title_size=16,
+        _graph_image_name="rssi",
+        _label=["RSSI Signal","RSSI 1","RSSI 2","RSSI 3", "RSSI 4"],
+        _font_weight='bold',
+        _color=['blue','orange','green','orange','cyan'],
+        _figsize=(17,7),
+        _xaxis_step=1,
+        _text_font=7,
+        _legend_loc="best",
+        _legend_box=(1,1),
+        _legend_ncol=1
+        
+    )
+
+    graph_png = graph.build_line_graph()
+    report.set_graph_image(graph_png)
+    report.move_graph_image()
+    report.build_graph()
 
     # retrieve rx data from json for MODE
     rx_mode = []
@@ -551,8 +734,7 @@ Example :
     rx_mode_value_percent = []
     rx_mode_total_count = 0
 
-    # TODO change value to count
-    # retrieve each mode value from json 
+    # retrieve each mode value from json
     for iterator in wifi_stats_json:
         if 'rx_mode' in iterator:
             rx_mode.append(iterator)
@@ -562,48 +744,61 @@ Example :
 
     # calculate percentages
     for rx_mode_count in rx_mode_value:
-        rx_mode_value_percent.append(round((rx_mode_count/rx_mode_total_count)*100, 2)) 
+        rx_mode_value_percent.append(round((rx_mode_count / rx_mode_total_count) * 100, 2))
 
-    rx_mode = [s.replace('v_rx_mode_','') for s in rx_mode]
-    rx_mode = [s.replace('_',' ') for s in rx_mode]
+    # manipulate data to sort by length to have
+    # CCK is first, the OFDMA, then HT variants, then VHT, the HE
+    rx_mode = [s.replace('v_rx_mode_ht', 'v_rx_mode_ht_AAA') for s in rx_mode]
+    rx_mode = [s.replace('v_rx_mode_vht', 'v_rx_mode_vht_AAA') for s in rx_mode]
+    rx_mode = [s.replace('v_rx_mode_he', 'v_rx_mode_he_AAA') for s in rx_mode]
+
+    # rx_mode.sort(key=length_sort)
+    logger.debug("Before sort rx mode: {rx_mode} : {rx_mode_value_str} : {rx_mode_value} : {rx_mode_value_percent}".
+                 format(rx_mode=rx_mode, rx_mode_value_str=rx_mode_value_str, rx_mode_value=rx_mode_value, rx_mode_value_percent=rx_mode_value_percent))
+
+    # see rx_mcs for detales
+    rx_mode, rx_mode_value_str, rx_mode_value, rx_mode_value_percent = map(list, zip(*sorted(zip(rx_mode, rx_mode_value_str, rx_mode_value, rx_mode_value_percent), key=length_sort)))
+
+    logger.debug("After sort rx mode: {rx_mode} : {rx_mode_value_str} : {rx_mode_value} : {rx_mode_value_percent}".
+                 format(rx_mode=rx_mode, rx_mode_value_str=rx_mode_value_str, rx_mode_value=rx_mode_value, rx_mode_value_percent=rx_mode_value_percent))
+
+    rx_mode = [s.replace('v_rx_mode_', '') for s in rx_mode]
+    rx_mode = [s.replace('AAA', '') for s in rx_mode]
+    rx_mode = [s.replace('_', ' ') for s in rx_mode]
     rx_mode = [s.upper() for s in rx_mode]
-
-    #rx_mode.sort(key=length_sort)
 
     # rx_mode values
     report.set_table_title("RX Mode Histogram")
     report.build_table_title()
 
-
     df_rx_mode = pd.DataFrame({" RX Mode ": [k for k in rx_mode], " Total Packets ": [i for i in rx_mode_value],
-        " Percentage ": [j for j in rx_mode_value_percent]})
+                               " Percentage ": [j for j in rx_mode_value_percent]})
 
     report.set_table_dataframe(df_rx_mode)
     report.build_table()
 
-
     # RX MODE
     graph = lf_bar_graph(_data_set=[rx_mode_value_percent],
-                        _xaxis_name="RX Mode",
-                        _yaxis_name="Percent Packets RX per Mode",
-                        _xaxis_categories=rx_mode,
-                        _graph_image_name="RX Mode",
-                        _label=["% Total Packets"],
-                        _color=['blue'],
-                        _color_edge='black',
-                        _figsize=(18,7),
-                        _grp_title='RX Mode',
-                        _xaxis_step=1,
-                        _show_bar_value=True,
-                        _text_font=7,
-                        _text_rotation=45,
-                        _xticks_font=7,
-                        _legend_loc="best",
-                        _legend_box=(1, 1),
-                        _legend_ncol=1,
-                        _legend_fontsize=None,
-                        _enable_csv=False)
-    
+                         _xaxis_name="RX Mode",
+                         _yaxis_name="Percent Packets RX per Mode",
+                         _xaxis_categories=rx_mode,
+                         _graph_image_name="RX Mode",
+                         _label=["% Total Packets"],
+                         _color=['blue'],
+                         _color_edge='black',
+                         _figsize=(18, 7),
+                         _grp_title='RX Mode',
+                         _xaxis_step=1,
+                         _show_bar_value=True,
+                         _text_font=7,
+                         _text_rotation=45,
+                         _xticks_font=7,
+                         _legend_loc="best",
+                         _legend_box=(1, 1),
+                         _legend_ncol=1,
+                         _legend_fontsize=None,
+                         _enable_csv=False)
+
     graph_png = graph.build_bar_graph()
     report.set_graph_image(graph_png)
     report.move_graph_image()
@@ -617,7 +812,7 @@ Example :
     tx_mode_total_count = 0
 
     # TODO change value to count
-    # retrieve each mode value from json 
+    # retrieve each mode value from json
     for iterator in wifi_stats_json:
         if 'tx_mode' in iterator:
             tx_mode.append(iterator)
@@ -625,58 +820,67 @@ Example :
             tx_mode_value.append(wifi_stats_json[iterator])
             tx_mode_total_count += wifi_stats_json[iterator]
 
-
-
     # calculate percentages
     for tx_mode_count in tx_mode_value:
-        tx_mode_value_percent.append(round((tx_mode_count/tx_mode_total_count)*100, 2)) 
+        tx_mode_value_percent.append(round((tx_mode_count / tx_mode_total_count) * 100, 2))
 
-    tx_mode = [s.replace('v_tx_mode_','') for s in tx_mode]
-    tx_mode = [s.replace('_',' ') for s in tx_mode]
+    # manipulate data to sort by length to have
+    # CCK is first, the OFDMA, then HT variants, then VHT, the HE
+    tx_mode = [s.replace('v_tx_mode_ht', 'v_tx_mode_ht_AAA') for s in tx_mode]
+    tx_mode = [s.replace('v_tx_mode_vht', 'v_tx_mode_vht_AAA') for s in tx_mode]
+    tx_mode = [s.replace('v_tx_mode_he', 'v_tx_mode_he_AAA') for s in tx_mode]
+
+    # tx_mode.sort(key=length_sort)
+    logger.debug("Before sort: {tx_mode} : {tx_mode_value_str} : {tx_mode_value} : {tx_mode_value_percent}".
+                 format(tx_mode=tx_mode, tx_mode_value_str=tx_mode_value_str, tx_mode_value=tx_mode_value, tx_mode_value_percent=tx_mode_value_percent))
+
+    # see rx_mcs for detales
+    tx_mode, tx_mode_value_str, tx_mode_value, tx_mode_value_percent = map(list, zip(*sorted(zip(tx_mode, tx_mode_value_str, tx_mode_value, tx_mode_value_percent), key=length_sort)))
+
+    logger.debug("After sort: {tx_mode} : {tx_mode_value_str} : {tx_mode_value} : {tx_mode_value_percent}".
+                 format(tx_mode=tx_mode, tx_mode_value_str=tx_mode_value_str, tx_mode_value=tx_mode_value, tx_mode_value_percent=tx_mode_value_percent))
+
+    tx_mode = [s.replace('v_tx_mode_', '') for s in tx_mode]
+    tx_mode = [s.replace('AAA', '') for s in tx_mode]
+    tx_mode = [s.replace('_', ' ') for s in tx_mode]
     tx_mode = [s.upper() for s in tx_mode]
-
-    #tx_mode.sort(key=length_sort)
 
     # tx_mode values
     report.set_table_title("TX Mode Histogram")
     report.build_table_title()
 
-
     df_tx_mode = pd.DataFrame({" TX Mode ": [k for k in tx_mode], " Total Packets ": [i for i in tx_mode_value],
-        " Percentage ": [j for j in tx_mode_value_percent]})
-
-
+                               " Percentage ": [j for j in tx_mode_value_percent]})
 
     report.set_table_dataframe(df_tx_mode)
     report.build_table()
 
     # TX MODE
     graph = lf_bar_graph(_data_set=[tx_mode_value_percent],
-                        _xaxis_name="TX Mode",
-                        _yaxis_name="Percent Packets TX per Mode",
-                        _xaxis_categories=tx_mode,
-                        _graph_image_name="TX Mode",
-                        _label=["% Total Packets"],
-                        _color=['blue'],
-                        _color_edge='black',
-                        _figsize=(17,7),
-                        _grp_title='TX Mode',
-                        _xaxis_step=1,
-                        _show_bar_value=True,
-                        _text_font=7,
-                        _text_rotation=45,
-                        _xticks_font=7,
-                        _legend_loc="best",
-                        _legend_box=(1, 1),
-                        _legend_ncol=1,
-                        _legend_fontsize=None,
-                        _enable_csv=False)
-    
+                         _xaxis_name="TX Mode",
+                         _yaxis_name="Percent Packets TX per Mode",
+                         _xaxis_categories=tx_mode,
+                         _graph_image_name="TX Mode",
+                         _label=["% Total Packets"],
+                         _color=['blue'],
+                         _color_edge='black',
+                         _figsize=(17, 7),
+                         _grp_title='TX Mode',
+                         _xaxis_step=1,
+                         _show_bar_value=True,
+                         _text_font=7,
+                         _text_rotation=45,
+                         _xticks_font=7,
+                         _legend_loc="best",
+                         _legend_box=(1, 1),
+                         _legend_ncol=1,
+                         _legend_fontsize=None,
+                         _enable_csv=False)
+
     graph_png = graph.build_bar_graph()
     report.set_graph_image(graph_png)
     report.move_graph_image()
     report.build_graph()
-
 
     # retrieve rx data from json for BW
     rx_bw = []
@@ -686,7 +890,7 @@ Example :
     rx_bw_total_count = 0
 
     # TODO change value to count
-    # retrieve each nss value from json 
+    # retrieve each nss value from json
     for iterator in wifi_stats_json:
         if 'rx_bw' in iterator:
             rx_bw.append(iterator)
@@ -698,52 +902,55 @@ Example :
 
     # calculate percentages
     for rx_bw_count in rx_bw_value:
-        rx_bw_value_percent.append(round((rx_bw_count/rx_bw_total_count)*100, 2)) 
+        rx_bw_value_percent.append(round((rx_bw_count / rx_bw_total_count) * 100, 2))
 
-    #rx_bw.sort(key=num_sort)
+    logger.debug("Before sort rx bw: {rx_bw} : {rx_bw_value_str} : {rx_bw_value} : {rx_bw_value_percent}".
+                 format(rx_bw=rx_bw, rx_bw_value_str=rx_bw_value_str, rx_bw_value=rx_bw_value, rx_bw_value_percent=rx_bw_value_percent))
 
-    rx_bw = [s.replace('v_rx_bw_he_ru','HE RU') for s in rx_bw]
+    # see rx_mcs for detales
+    rx_bw, rx_bw_value_str, rx_bw_value, rx_bw_value_percent = map(list, zip(*sorted(zip(rx_bw, rx_bw_value_str, rx_bw_value, rx_bw_value_percent), key=num_sort)))
 
-    rx_bw = [s.replace('v_rx_bw_','BW ') for s in rx_bw]
+    logger.debug("After sort rx bw: {rx_bw} : {rx_bw_value_str} : {rx_bw_value} : {rx_bw_value_percent}".
+                 format(rx_bw=rx_bw, rx_bw_value_str=rx_bw_value_str, rx_bw_value=rx_bw_value, rx_bw_value_percent=rx_bw_value_percent))
 
-    rx_bw = [s.replace('v_rx_bw_he_ru','HE RU') for s in rx_bw]
+    # rx_bw.sort(key=num_sort)
 
-    rx_bw = [s.replace('v_rx_bw_','BW ') for s in rx_bw]
+    rx_bw = [s.replace('v_rx_bw_he_ru', 'HE RU') for s in rx_bw]
+
+    rx_bw = [s.replace('v_rx_bw_', 'BW ') for s in rx_bw]
 
     # rx_bw values
     report.set_table_title("RX BW Histogram")
     report.build_table_title()
 
-
     df_rx_bw = pd.DataFrame({" RX BW ": [k for k in rx_bw], " Total Packets ": [i for i in rx_bw_value],
-        " Percentage ": [j for j in rx_bw_value_percent]})
-
+                             " Percentage ": [j for j in rx_bw_value_percent]})
 
     report.set_table_dataframe(df_rx_bw)
     report.build_table()
 
     # RX BW
     graph = lf_bar_graph(_data_set=[rx_bw_value_percent],
-                        _xaxis_name="RX BW",
-                        _yaxis_name="Percent Packets RX per BW",
-                        _xaxis_categories=rx_bw,
-                        _graph_image_name="RX BW",
-                        _label=["% Total Packets"],
-                        _color=['blue'],
-                        _color_edge='black',
-                        _figsize=(17,7),
-                        _grp_title='RX BW',
-                        _xaxis_step=1,
-                        _show_bar_value=True,
-                        _text_font=7,
-                        _text_rotation=45,
-                        _xticks_font=7,
-                        _legend_loc="best",
-                        _legend_box=(1, 1),
-                        _legend_ncol=1,
-                        _legend_fontsize=None,
-                        _enable_csv=False)
-    
+                         _xaxis_name="RX BW",
+                         _yaxis_name="Percent Packets RX per BW",
+                         _xaxis_categories=rx_bw,
+                         _graph_image_name="RX BW",
+                         _label=["% Total Packets"],
+                         _color=['blue'],
+                         _color_edge='black',
+                         _figsize=(17, 7),
+                         _grp_title='RX BW',
+                         _xaxis_step=1,
+                         _show_bar_value=True,
+                         _text_font=7,
+                         _text_rotation=45,
+                         _xticks_font=7,
+                         _legend_loc="best",
+                         _legend_box=(1, 1),
+                         _legend_ncol=1,
+                         _legend_fontsize=None,
+                         _enable_csv=False)
+
     graph_png = graph.build_bar_graph()
     report.set_graph_image(graph_png)
     report.move_graph_image()
@@ -757,7 +964,7 @@ Example :
     tx_bw_total_count = 0
 
     # TODO change value to count
-    # retrieve each nss value from json 
+    # retrieve each nss value from json
     for iterator in wifi_stats_json:
         if 'tx_bw' in iterator:
             tx_bw.append(iterator)
@@ -767,54 +974,57 @@ Example :
 
     # calculate percentages
     for tx_bw_count in tx_bw_value:
-        tx_bw_value_percent.append(round((tx_bw_count/tx_bw_total_count)*100, 2)) 
+        tx_bw_value_percent.append(round((tx_bw_count / tx_bw_total_count) * 100, 2))
 
-    #tx_bw.sort(key=num_sort)
+    logger.debug("Before sort tx bw: {tx_bw} : {tx_bw_value_str} : {tx_bw_value} : {tx_bw_value_percent}".
+                 format(tx_bw=tx_bw, tx_bw_value_str=tx_bw_value_str, tx_bw_value=tx_bw_value, tx_bw_value_percent=tx_bw_value_percent))
 
+    # see rx_mcs for detales
+    tx_bw, tx_bw_value_str, tx_bw_value, tx_bw_value_percent = map(list, zip(*sorted(zip(tx_bw, tx_bw_value_str, tx_bw_value, tx_bw_value_percent), key=num_sort)))
 
-    tx_bw = [s.replace('v_tx_bw_','BW ') for s in tx_bw]
+    logger.debug("After sort tx bw: {tx_bw} : {tx_bw_value_str} : {tx_bw_value} : {tx_bw_value_percent}".
+                 format(tx_bw=tx_bw, tx_bw_value_str=tx_bw_value_str, tx_bw_value=tx_bw_value, tx_bw_value_percent=tx_bw_value_percent))
 
+    # tx_bw.sort(key=num_sort)
+
+    tx_bw = [s.replace('v_tx_bw_', 'BW ') for s in tx_bw]
 
     # tx_bw values
     report.set_table_title("TX BW Histogram")
     report.build_table_title()
 
-
     df_tx_bw = pd.DataFrame({"TX BW": [k for k in tx_bw], " Total Packets ": [i for i in tx_bw_value],
-        " Percentage ": [j for j in tx_bw_value_percent]})
-
+                             " Percentage ": [j for j in tx_bw_value_percent]})
 
     report.set_table_dataframe(df_tx_bw)
     report.build_table()
 
     # TX BW
     graph = lf_bar_graph(_data_set=[tx_bw_value_percent],
-                        _xaxis_name="TX BW",
-                        _yaxis_name="Percent Packets TX per BW",
-                        _xaxis_categories=tx_bw,
-                        _graph_image_name="TX BW",
-                        _label=["% Total Packets"],
-                        _color=['blue'],
-                        _color_edge='black',
-                        _figsize=(17,7),
-                        _grp_title='TX BW',
-                        _xaxis_step=1,
-                        _show_bar_value=True,
-                        _text_font=7,
-                        _text_rotation=45,
-                        _xticks_font=7,
-                        _legend_loc="best",
-                        _legend_box=(1, 1),
-                        _legend_ncol=1,
-                        _legend_fontsize=None,
-                        _enable_csv=False)
-    
+                         _xaxis_name="TX BW",
+                         _yaxis_name="Percent Packets TX per BW",
+                         _xaxis_categories=tx_bw,
+                         _graph_image_name="TX BW",
+                         _label=["% Total Packets"],
+                         _color=['blue'],
+                         _color_edge='black',
+                         _figsize=(17, 7),
+                         _grp_title='TX BW',
+                         _xaxis_step=1,
+                         _show_bar_value=True,
+                         _text_font=7,
+                         _text_rotation=45,
+                         _xticks_font=7,
+                         _legend_loc="best",
+                         _legend_box=(1, 1),
+                         _legend_ncol=1,
+                         _legend_fontsize=None,
+                         _enable_csv=False)
+
     graph_png = graph.build_bar_graph()
     report.set_graph_image(graph_png)
     report.move_graph_image()
     report.build_graph()
-
-
 
     # retrieve rx data from json for NSS
     rx_nss = []
@@ -824,7 +1034,7 @@ Example :
     rx_nss_total_count = 0
 
     # TODO change value to count
-    # retrieve each nss value from json 
+    # retrieve each nss value from json
     for iterator in wifi_stats_json:
         if 'rx_nss' in iterator:
             rx_nss.append(iterator)
@@ -834,51 +1044,49 @@ Example :
 
     # calculate percentages
     for rx_nss_count in rx_nss_value:
-        rx_nss_value_percent.append(round((rx_nss_count/rx_nss_total_count)*100, 2)) 
+        rx_nss_value_percent.append(round((rx_nss_count / rx_nss_total_count) * 100, 2))
 
-    rx_nss = [s.replace('v_rx_nss_1','1 x 1') for s in rx_nss] 
-    rx_nss = [s.replace('v_rx_nss_2','2 x 2') for s in rx_nss] 
-    rx_nss = [s.replace('v_rx_nss_3','3 x 3') for s in rx_nss] 
-    rx_nss = [s.replace('v_rx_nss_4','4 x 4') for s in rx_nss] 
+    rx_nss = [s.replace('v_rx_nss_1', '1 x 1') for s in rx_nss]
+    rx_nss = [s.replace('v_rx_nss_2', '2 x 2') for s in rx_nss]
+    rx_nss = [s.replace('v_rx_nss_3', '3 x 3') for s in rx_nss]
+    rx_nss = [s.replace('v_rx_nss_4', '4 x 4') for s in rx_nss]
 
     # rx_nss values
     report.set_table_title("RX NSS Histogram")
     report.build_table_title()
 
-
     df_rx_nss = pd.DataFrame({" RX NSS ": [k for k in rx_nss], " Total Packets ": [i for i in rx_nss_value],
-        " Percentage ": [j for j in rx_nss_value_percent]})
+                              " Percentage ": [j for j in rx_nss_value_percent]})
 
     report.set_table_dataframe(df_rx_nss)
     report.build_table()
 
     # RX NSS
     graph = lf_bar_graph(_data_set=[rx_nss_value_percent],
-                        _xaxis_name="RX NSS",
-                        _yaxis_name="Percent RX Packets of NSS",
-                        _xaxis_categories=rx_nss,
-                        _graph_image_name="RX NSS",
-                        _label=["% Total Packets"],
-                        _color=['blue'],
-                        _color_edge='black',
-                        _figsize=(17,7),
-                        _grp_title='RX NSS',
-                        _xaxis_step=1,
-                        _show_bar_value=True,
-                        _text_font=7,
-                        _text_rotation=45,
-                        _xticks_font=7,
-                        _legend_loc="best",
-                        _legend_box=(1, 1),
-                        _legend_ncol=1,
-                        _legend_fontsize=None,
-                        _enable_csv=False)
-    
+                         _xaxis_name="RX NSS",
+                         _yaxis_name="Percent RX Packets of NSS",
+                         _xaxis_categories=rx_nss,
+                         _graph_image_name="RX NSS",
+                         _label=["% Total Packets"],
+                         _color=['blue'],
+                         _color_edge='black',
+                         _figsize=(17, 7),
+                         _grp_title='RX NSS',
+                         _xaxis_step=1,
+                         _show_bar_value=True,
+                         _text_font=7,
+                         _text_rotation=45,
+                         _xticks_font=7,
+                         _legend_loc="best",
+                         _legend_box=(1, 1),
+                         _legend_ncol=1,
+                         _legend_fontsize=None,
+                         _enable_csv=False)
+
     graph_png = graph.build_bar_graph()
     report.set_graph_image(graph_png)
     report.move_graph_image()
     report.build_graph()
-
 
     # retrieve tx data from json for NSS
     tx_nss = []
@@ -888,7 +1096,7 @@ Example :
     tx_nss_total_count = 0
 
     # TODO change value to count
-    # retrieve each nss value from json 
+    # retrieve each nss value from json
     for iterator in wifi_stats_json:
         if 'tx_nss' in iterator:
             tx_nss.append(iterator)
@@ -898,46 +1106,45 @@ Example :
 
     # calculate percentages
     for tx_nss_count in tx_nss_value:
-        tx_nss_value_percent.append(round((tx_nss_count/tx_nss_total_count)*100, 2)) 
+        tx_nss_value_percent.append(round((tx_nss_count / tx_nss_total_count) * 100, 2))
 
-    tx_nss = [s.replace('v_tx_nss_1','1 x 1') for s in tx_nss] 
-    tx_nss = [s.replace('v_tx_nss_2','2 x 2') for s in tx_nss] 
-    tx_nss = [s.replace('v_tx_nss_3','3 x 3') for s in tx_nss] 
-    tx_nss = [s.replace('v_tx_nss_4','4 x 4') for s in tx_nss] 
+    tx_nss = [s.replace('v_tx_nss_1', '1 x 1') for s in tx_nss]
+    tx_nss = [s.replace('v_tx_nss_2', '2 x 2') for s in tx_nss]
+    tx_nss = [s.replace('v_tx_nss_3', '3 x 3') for s in tx_nss]
+    tx_nss = [s.replace('v_tx_nss_4', '4 x 4') for s in tx_nss]
 
     # tx_nss values
     report.set_table_title("TX NSS Histogram")
     report.build_table_title()
 
-
     df_tx_nss = pd.DataFrame({" TX NSS ": [k for k in tx_nss], " Total Packets ": [i for i in tx_nss_value],
-        " Percentage ": [j for j in tx_nss_value_percent]})
+                              " Percentage ": [j for j in tx_nss_value_percent]})
 
     report.set_table_dataframe(df_tx_nss)
     report.build_table()
 
     # TX NSS
     graph = lf_bar_graph(_data_set=[tx_nss_value_percent],
-                        _xaxis_name="TX NSS",
-                        _yaxis_name="Percent TX Packets of NSS",
-                        _xaxis_categories=tx_nss,
-                        _graph_image_name="TX NSS",
-                        _label=["% Total Packets"],
-                        _color=['blue'],
-                        _color_edge='black',
-                        _figsize=(17,7),
-                        _grp_title='TX NSS',
-                        _xaxis_step=1,
-                        _show_bar_value=True,
-                        _text_font=7,
-                        _text_rotation=45,
-                        _xticks_font=7,
-                        _legend_loc="best",
-                        _legend_box=(1, 1),
-                        _legend_ncol=1,
-                        _legend_fontsize=None,
-                        _enable_csv=False)
-    
+                         _xaxis_name="TX NSS",
+                         _yaxis_name="Percent TX Packets of NSS",
+                         _xaxis_categories=tx_nss,
+                         _graph_image_name="TX NSS",
+                         _label=["% Total Packets"],
+                         _color=['blue'],
+                         _color_edge='black',
+                         _figsize=(17, 7),
+                         _grp_title='TX NSS',
+                         _xaxis_step=1,
+                         _show_bar_value=True,
+                         _text_font=7,
+                         _text_rotation=45,
+                         _xticks_font=7,
+                         _legend_loc="best",
+                         _legend_box=(1, 1),
+                         _legend_ncol=1,
+                         _legend_fontsize=None,
+                         _enable_csv=False)
+
     graph_png = graph.build_bar_graph()
     report.set_graph_image(graph_png)
     report.move_graph_image()
@@ -951,7 +1158,7 @@ Example :
     rx_mcs_total_count = 0
 
     # TODO change value to count
-    # retrieve each mcs value from json 
+    # retrieve each mcs value from json
     for iterator in wifi_stats_json:
         if 'rx_mcs' in iterator:
             rx_mcs.append(iterator)
@@ -961,30 +1168,30 @@ Example :
 
     # calculate percentages
     for rx_mcs_count in rx_mcs_value:
-        rx_mcs_value_percent.append(round((rx_mcs_count/rx_mcs_total_count)*100, 2)) 
+        rx_mcs_value_percent.append(round((rx_mcs_count / rx_mcs_total_count) * 100, 2))
 
-    logger.info("{rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
-        format(rx_mcs=rx_mcs, rx_mcs_value_str = rx_mcs_value_str, rx_mcs_value=rx_mcs_value, rx_mcs_value_percent=rx_mcs_value_percent))
+    logger.info("Before sort rx MCS {rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
+                format(rx_mcs=rx_mcs, rx_mcs_value_str=rx_mcs_value_str, rx_mcs_value=rx_mcs_value, rx_mcs_value_percent=rx_mcs_value_percent))
 
-    # 
-    zip_rx_mcs = zip(rx_mcs,rx_mcs_value_str,rx_mcs_value,rx_mcs_value_percent)
+    #
+    zip_rx_mcs = zip(rx_mcs, rx_mcs_value_str, rx_mcs_value, rx_mcs_value_percent)
 
     # https://stackoverflow.com/questions/19931975/sort-multiple-lists-simultaneously
-    #https://www.geeksforgeeks.org/sorted-function-python/
+    # https://www.geeksforgeeks.org/sorted-function-python/
     # use the rx_mcs as the sort key
     # Using the tuples default ordering
-    zip_rx_mcs_sort = sorted(zip_rx_mcs, key=num_sort)    
+    zip_rx_mcs_sort = sorted(zip_rx_mcs, key=num_sort)
 
-    #https://www.geeksforgeeks.org/python-unzip-a-list-of-tuples/
+    # https://www.geeksforgeeks.org/python-unzip-a-list-of-tuples/
     res_mcs = zip(*zip_rx_mcs_sort)
 
     # return the sorted lists
     rx_mcs, rx_mcs_value_str, rx_mcs_value, rx_mcs_value_percent = map(list, res_mcs)
 
-    logger.info("{rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
-        format(rx_mcs=rx_mcs, rx_mcs_value_str = rx_mcs_value_str, rx_mcs_value=rx_mcs_value, rx_mcs_value_percent=rx_mcs_value_percent))
+    logger.info("After sort rx MCS {rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
+                format(rx_mcs=rx_mcs, rx_mcs_value_str=rx_mcs_value_str, rx_mcs_value=rx_mcs_value, rx_mcs_value_percent=rx_mcs_value_percent))
 
-    rx_mcs = [s.replace('v_rx_mcs_','MCS ') for s in rx_mcs] 
+    rx_mcs = [s.replace('v_rx_mcs_', 'MCS ') for s in rx_mcs]
 
     # the above could be done with this one command
     # rx_mcs, rx_mcs_value_str, rx_mcs_value = map(list, zip(*sorted(zip(rx_mcs,rx_mcs_value_str,rx_mcs_value),key=num_sort)))
@@ -993,41 +1200,40 @@ Example :
     report.set_table_title("RX MCS Histogram")
     report.build_table_title()
 
-
     df_rx_mcs = pd.DataFrame({" RX MCS ": [k for k in rx_mcs], " Total Packets ": [i for i in rx_mcs_value],
-        " Percentage ": [j for j in rx_mcs_value_percent]})
+                              " Percentage ": [j for j in rx_mcs_value_percent]})
 
     report.set_table_dataframe(df_rx_mcs)
     report.build_table()
 
     # RX MCS encoding
     graph = lf_bar_graph(_data_set=[rx_mcs_value_percent],
-                        _xaxis_name="RX MCS encoding",
-                        _yaxis_name="Percent RX Packets per MCS encoding",
-                        _xaxis_categories=rx_mcs,
-                        _graph_image_name="RX MCS encoding",
-                        _label=["% Total Packets"],
-                        _color=['blue'],
-                        _color_edge='black',
-                        _figsize=(17,7),
-                        _grp_title='RX MCS encoding',
-                        _xaxis_step=1,
-                        _show_bar_value=True,
-                        _text_font=7,
-                        _text_rotation=45,
-                        _xticks_font=7,
-                        _legend_loc="best",
-                        _legend_box=(1, 1),
-                        _legend_ncol=1,
-                        _legend_fontsize=None,
-                        _enable_csv=False)
-    
+                         _xaxis_name="RX MCS encoding",
+                         _yaxis_name="Percent RX Packets per MCS encoding",
+                         _xaxis_categories=rx_mcs,
+                         _graph_image_name="RX MCS encoding",
+                         _label=["% Total Packets"],
+                         _color=['blue'],
+                         _color_edge='black',
+                         _figsize=(17, 7),
+                         _grp_title='RX MCS encoding',
+                         _xaxis_step=1,
+                         _show_bar_value=True,
+                         _text_font=7,
+                         _text_rotation=45,
+                         _xticks_font=7,
+                         _legend_loc="best",
+                         _legend_box=(1, 1),
+                         _legend_ncol=1,
+                         _legend_fontsize=None,
+                         _enable_csv=False)
+
     graph_png = graph.build_bar_graph()
     report.set_graph_image(graph_png)
     report.move_graph_image()
     report.build_graph()
 
-    # retrieve tx  mcs value from json 
+    # retrieve tx  mcs value from json
     tx_mcs = []
     tx_mcs_value_str = []
     tx_mcs_value = []
@@ -1046,57 +1252,53 @@ Example :
         if tx_mcs_total_count == 0:
             tx_mcs_value_percent.append(0)
         else:
-            tx_mcs_value_percent.append(round((tx_mcs_count/tx_mcs_total_count)*100, 2)) 
+            tx_mcs_value_percent.append(round((tx_mcs_count / tx_mcs_total_count) * 100, 2))
 
-    logger.debug("Before sort: {tx_mcs} : {tx_mcs_value_str} : {tx_mcs_value} : {tx_mcs_value_percent}".
-        format(tx_mcs=tx_mcs, tx_mcs_value_str = tx_mcs_value_str, tx_mcs_value=tx_mcs_value, tx_mcs_value_percent=tx_mcs_value_percent))
+    logger.debug("Before sort tx MCS: {tx_mcs} : {tx_mcs_value_str} : {tx_mcs_value} : {tx_mcs_value_percent}".
+                 format(tx_mcs=tx_mcs, tx_mcs_value_str=tx_mcs_value_str, tx_mcs_value=tx_mcs_value, tx_mcs_value_percent=tx_mcs_value_percent))
 
     # see rx_mcs for details
-    tx_mcs, tx_mcs_value_str, tx_mcs_value , tx_mcs_value_percent = map(list, zip(*sorted(zip(tx_mcs,tx_mcs_value_str, tx_mcs_value, tx_mcs_value_percent),key=num_sort)))
+    tx_mcs, tx_mcs_value_str, tx_mcs_value, tx_mcs_value_percent = map(list, zip(*sorted(zip(tx_mcs, tx_mcs_value_str, tx_mcs_value, tx_mcs_value_percent), key=num_sort)))
 
-    logger.debug("Before sort: {tx_mcs} : {tx_mcs_value_str} : {tx_mcs_value} : {tx_mcs_value_percent}".
-        format(tx_mcs=tx_mcs, tx_mcs_value_str = tx_mcs_value_str, tx_mcs_value=tx_mcs_value, tx_mcs_value_percent=tx_mcs_value_percent))
+    logger.debug("After sort tx MCS: {tx_mcs} : {tx_mcs_value_str} : {tx_mcs_value} : {tx_mcs_value_percent}".
+                 format(tx_mcs=tx_mcs, tx_mcs_value_str=tx_mcs_value_str, tx_mcs_value=tx_mcs_value, tx_mcs_value_percent=tx_mcs_value_percent))
 
-    #tx_mcs.sort(key=num_sort)
+    # tx_mcs.sort(key=num_sort)
 
-    tx_mcs = [s.replace('v_tx_mcs_','MCS ') for s in tx_mcs] 
-
-    tx_mcs = [s.replace('v_tx_mcs_','MCS ') for s in tx_mcs] 
-
+    tx_mcs = [s.replace('v_tx_mcs_', 'MCS ') for s in tx_mcs]
 
     # tx_mcs values
     report.set_table_title("TX MCS Histogram")
     report.build_table_title()
 
-
     df_tx_mcs = pd.DataFrame({" TX MCS ": [k for k in tx_mcs], " Total Packets ": [i for i in tx_mcs_value],
-        " Percentage ": [j for j in tx_mcs_value_percent]})
+                              " Percentage ": [j for j in tx_mcs_value_percent]})
 
     report.set_table_dataframe(df_tx_mcs)
     report.build_table()
 
     # TX MCS encoding
     graph = lf_bar_graph(_data_set=[tx_mcs_value_percent],
-                        _xaxis_name="TX MCS encoding",
-                        _yaxis_name="Percentage Received Packets with MCS encoding",
-                        _xaxis_categories=tx_mcs,
-                        _graph_image_name="TX MCS encoding",
-                        _label=["% Total Packets"],
-                        _color=['blue'],
-                        _color_edge='black',
-                        _figsize=(17,7),
-                        _grp_title='TX MCS encoding',
-                        _xaxis_step=1,
-                        _show_bar_value=True,
-                        _text_font=7,
-                        _text_rotation=45,
-                        _xticks_font=7,
-                        _legend_loc="best",
-                        _legend_box=(1, 1),
-                        _legend_ncol=1,
-                        _legend_fontsize=None,
-                        _enable_csv=False)
-    
+                         _xaxis_name="TX MCS encoding",
+                         _yaxis_name="Percentage Received Packets with MCS encoding",
+                         _xaxis_categories=tx_mcs,
+                         _graph_image_name="TX MCS encoding",
+                         _label=["% Total Packets"],
+                         _color=['blue'],
+                         _color_edge='black',
+                         _figsize=(17, 7),
+                         _grp_title='TX MCS encoding',
+                         _xaxis_step=1,
+                         _show_bar_value=True,
+                         _text_font=7,
+                         _text_rotation=45,
+                         _xticks_font=7,
+                         _legend_loc="best",
+                         _legend_box=(1, 1),
+                         _legend_ncol=1,
+                         _legend_fontsize=None,
+                         _enable_csv=False)
+
     graph_png = graph.build_bar_graph()
     report.set_graph_image(graph_png)
     report.move_graph_image()
@@ -1110,7 +1312,7 @@ Example :
     rx_ampdu_total_count = 0
 
     # TODO change value to count
-    # retrieve each mcs value from json 
+    # retrieve each mcs value from json
     for iterator in wifi_stats_json:
         if 'rx_ampdu' in iterator:
             rx_ampdu.append(iterator)
@@ -1120,65 +1322,66 @@ Example :
 
     logger.debug("rx_ampdu: {rx_ampdu}".format(rx_ampdu=rx_ampdu))
 
-    #rx_ampdu.sort(key=num_sort)
+    logger.debug("Before sort rx AMPDU: {rx_ampdu} : {rx_ampdu_value_str} : {rx_ampdu_value}".
+                 format(rx_ampdu=rx_ampdu, rx_ampdu_value_str=rx_ampdu_value_str, rx_ampdu_value=rx_ampdu_value))
 
-    rx_ampdu = [s.replace('rx_ampdu_len_','') for s in rx_ampdu] 
-    rx_ampdu = [s.replace('_','-') for s in rx_ampdu]
+    # see rx_mcs for detales
+    rx_ampdu, rx_ampdu_value_str, rx_ampdu_value = map(list, zip(*sorted(zip(rx_ampdu, rx_ampdu_value_str, rx_ampdu_value), key=num_sort)))
 
+    logger.debug("After sort rx AMPDU: {rx_ampdu} : {rx_ampdu_value_str} : {rx_ampdu_value}".
+                 format(rx_ampdu=rx_ampdu, rx_ampdu_value_str=rx_ampdu_value_str, rx_ampdu_value=rx_ampdu_value))
 
-    rx_ampdu = [s.replace('rx_ampdu_len_','') for s in rx_ampdu] 
-    rx_ampdu = [s.replace('_','-') for s in rx_ampdu]
+    # rx_ampdu.sort(key=num_sort)
 
+    rx_ampdu = [s.replace('rx_ampdu_len_', '') for s in rx_ampdu]
+    rx_ampdu = [s.replace('_', '-') for s in rx_ampdu]
 
     logger.debug("rx_ampdu: {rx_ampdu}".format(rx_ampdu=rx_ampdu))
 
-
-    # use class 
+    # use class
 
     # calculate percentages
     for rx_ampdu_count in rx_ampdu_value:
-        rx_ampdu_value_percent.append(round((rx_ampdu_count/rx_ampdu_total_count)*100, 2)) 
-
+        rx_ampdu_value_percent.append(round((rx_ampdu_count / rx_ampdu_total_count) * 100, 2))
 
     # rx_ampdu values
     report.set_table_title("Packets RX with AMPDU Count")
     report.build_table_title()
 
-
     df_rx_ampdu = pd.DataFrame({" RX AMPDU ": [k for k in rx_ampdu], " Total Packets ": [i for i in rx_ampdu_value],
-        " Percentage ": [j for j in rx_ampdu_value_percent]})
+                                " Percentage ": [j for j in rx_ampdu_value_percent]})
 
     report.set_table_dataframe(df_rx_ampdu)
     report.build_table()
 
     # RX ampdu encoding
     graph = lf_bar_graph(_data_set=[rx_ampdu_value_percent],
-                        _xaxis_name="RX ampdu",
-                        _yaxis_name="Percent Packets RX with AMPDU Count",
-                        _xaxis_categories=rx_ampdu,
-                        _graph_image_name="RX AMPDU Count",
-                        _label=["% Total Packets"],
-                        _color=['blue'],
-                        _color_edge='black',
-                        _figsize=(17,7),
-                        _grp_title='RX ampdu',
-                        _xaxis_step=1,
-                        _show_bar_value=True,
-                        _text_font=7,
-                        _text_rotation=45,
-                        _xticks_font=7,
-                        _legend_loc="best",
-                        _legend_box=(1, 1),
-                        _legend_ncol=1,
-                        _legend_fontsize=None,
-                        _enable_csv=False)
-    
+                         _xaxis_name="RX ampdu",
+                         _yaxis_name="Percent Packets RX with AMPDU Count",
+                         _xaxis_categories=rx_ampdu,
+                         _graph_image_name="RX AMPDU Count",
+                         _label=["% Total Packets"],
+                         _color=['blue'],
+                         _color_edge='black',
+                         _figsize=(17, 7),
+                         _grp_title='RX ampdu',
+                         _xaxis_step=1,
+                         _show_bar_value=True,
+                         _text_font=7,
+                         _text_rotation=45,
+                         _xticks_font=7,
+                         _legend_loc="best",
+                         _legend_box=(1, 1),
+                         _legend_ncol=1,
+                         _legend_fontsize=None,
+                         _enable_csv=False)
+
     graph_png = graph.build_bar_graph()
     report.set_graph_image(graph_png)
     report.move_graph_image()
     report.build_graph()
 
-    # retrieve tx ampdu value from json 
+    # retrieve tx ampdu value from json
     tx_ampdu = []
     tx_ampdu_value_str = []
     tx_ampdu_value = []
@@ -1197,14 +1400,22 @@ Example :
         if tx_ampdu_total_count == 0:
             tx_ampdu_value_percent.append(0)
         else:
-            tx_ampdu_value_percent.append(round((tx_ampdu_count/tx_ampdu_total_count)*100, 2)) 
+            tx_ampdu_value_percent.append(round((tx_ampdu_count / tx_ampdu_total_count) * 100, 2))
 
     logger.debug(tx_ampdu)
 
+    logger.debug("Before sort tx AMPDU: {tx_ampdu} : {tx_ampdu_value_str} : {tx_ampdu_value}".
+                 format(tx_ampdu=tx_ampdu, tx_ampdu_value_str=tx_ampdu_value_str, tx_ampdu_value=tx_ampdu_value))
+
+    # see rx_mcs for detales
+    tx_ampdu, tx_ampdu_value_str, tx_ampdu_value = map(list, zip(*sorted(zip(tx_ampdu, tx_ampdu_value_str, tx_ampdu_value), key=num_sort)))
+
+    logger.debug("After sort tx AMPDU: {tx_ampdu} : {tx_ampdu_value_str} : {tx_ampdu_value}".
+                 format(tx_ampdu=tx_ampdu, tx_ampdu_value_str=tx_ampdu_value_str, tx_ampdu_value=tx_ampdu_value))
+
     # tx_ampdu.sort(key=num_sort)
-    
-    tx_ampdu = [s.replace('tx_ampdu_len_','') for s in tx_ampdu] 
-    tx_ampdu = [s.replace('_','-') for s in tx_ampdu]
+    tx_ampdu = [s.replace('tx_ampdu_len_', '') for s in tx_ampdu]
+    tx_ampdu = [s.replace('_', '-') for s in tx_ampdu]
 
     logger.debug("tx_ampdu: {tx_ampdu}".format(tx_ampdu=tx_ampdu))
 
@@ -1212,41 +1423,40 @@ Example :
     report.set_table_title("Percent Packets TX with AMPDU Count")
     report.build_table_title()
 
-
     df_tx_ampdu = pd.DataFrame({" TX AMPDU ": [k for k in tx_ampdu], " Total Packets ": [i for i in tx_ampdu_value],
-        " Percentage ": [j for j in tx_ampdu_value_percent]})
+                                " Percentage ": [j for j in tx_ampdu_value_percent]})
 
     report.set_table_dataframe(df_tx_ampdu)
     report.build_table()
 
     # TX ampdu
     graph = lf_bar_graph(_data_set=[tx_ampdu_value_percent],
-                        _xaxis_name="TX ampdu",
-                        _yaxis_name="Percent Packets TX with AMPDU Count",
-                        _xaxis_categories=tx_ampdu,
-                        _graph_image_name="TX ampdu encoding",
-                        _label=["% Total Packets"],
-                        _color=['blue'],
-                        _color_edge='black',
-                        _figsize=(17,7),
-                        _grp_title='TX ampdu',
-                        _xaxis_step=1,
-                        _show_bar_value=True,
-                        _text_font=7,
-                        _text_rotation=45,
-                        _xticks_font=7,
-                        _legend_loc="best",
-                        _legend_box=(1, 1),
-                        _legend_ncol=1,
-                        _legend_fontsize=None,
-                        _enable_csv=False)
-    
+                         _xaxis_name="TX ampdu",
+                         _yaxis_name="Percent Packets TX with AMPDU Count",
+                         _xaxis_categories=tx_ampdu,
+                         _graph_image_name="TX ampdu encoding",
+                         _label=["% Total Packets"],
+                         _color=['blue'],
+                         _color_edge='black',
+                         _figsize=(17, 7),
+                         _grp_title='TX ampdu',
+                         _xaxis_step=1,
+                         _show_bar_value=True,
+                         _text_font=7,
+                         _text_rotation=45,
+                         _xticks_font=7,
+                         _legend_loc="best",
+                         _legend_box=(1, 1),
+                         _legend_ncol=1,
+                         _legend_fontsize=None,
+                         _enable_csv=False)
+
     graph_png = graph.build_bar_graph()
     report.set_graph_image(graph_png)
     report.move_graph_image()
     report.build_graph()
 
-    # retrieve tx msdu value from json 
+    # retrieve tx msdu value from json
     tx_msdu = []
     tx_msdu_value_str = []
     tx_msdu_value = []
@@ -1265,43 +1475,42 @@ Example :
         if tx_msdu_total_count == 0:
             tx_msdu_value_percent.append(0)
         else:
-            tx_msdu_value_percent.append(round((tx_msdu_count/tx_msdu_total_count)*100, 2)) 
+            tx_msdu_value_percent.append(round((tx_msdu_count / tx_msdu_total_count) * 100, 2))
 
-    tx_msdu = [s.replace('tx_msdu_pack_','') for s in tx_msdu]
+    tx_msdu = [s.replace('tx_msdu_pack_', '') for s in tx_msdu]
 
     # tx_msdu values
     report.set_table_title("TX MSDU Histogram")
     report.build_table_title()
 
-
     df_tx_msdu = pd.DataFrame({" TX MSDU ": [k for k in tx_msdu], " Total Packets ": [i for i in tx_msdu_value],
-        " Percentage ": [j for j in tx_msdu_value_percent]})
+                               " Percentage ": [j for j in tx_msdu_value_percent]})
 
     report.set_table_dataframe(df_tx_msdu)
     report.build_table()
 
     # TX msdu
     graph = lf_bar_graph(_data_set=[tx_msdu_value_percent],
-                        _xaxis_name="TX MSDU",
-                        _yaxis_name="Percent Packets TX per MSDU",
-                        _xaxis_categories=tx_msdu,
-                        _graph_image_name="TX MSDU",
-                        _label=["% Total Packets"],
-                        _color=['blue'],
-                        _color_edge='black',
-                        _figsize=(17,7),
-                        _grp_title='TX msdu',
-                        _xaxis_step=1,
-                        _show_bar_value=True,
-                        _text_font=7,
-                        _text_rotation=45,
-                        _xticks_font=7,
-                        _legend_loc="best",
-                        _legend_box=(1, 1),
-                        _legend_ncol=1,
-                        _legend_fontsize=None,
-                        _enable_csv=False)
-    
+                         _xaxis_name="TX MSDU",
+                         _yaxis_name="Percent Packets TX per MSDU",
+                         _xaxis_categories=tx_msdu,
+                         _graph_image_name="TX MSDU",
+                         _label=["% Total Packets"],
+                         _color=['blue'],
+                         _color_edge='black',
+                         _figsize=(17, 7),
+                         _grp_title='TX msdu',
+                         _xaxis_step=1,
+                         _show_bar_value=True,
+                         _text_font=7,
+                         _text_rotation=45,
+                         _xticks_font=7,
+                         _legend_loc="best",
+                         _legend_box=(1, 1),
+                         _legend_ncol=1,
+                         _legend_fontsize=None,
+                         _enable_csv=False)
+
     graph_png = graph.build_bar_graph()
     report.set_graph_image(graph_png)
     report.move_graph_image()
@@ -1316,8 +1525,6 @@ Example :
 
     if platform.system() == 'Linux':
         report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
-
-
 
 
 if __name__ == "__main__":
