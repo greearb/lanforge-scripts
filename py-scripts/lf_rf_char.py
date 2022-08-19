@@ -105,10 +105,15 @@ class lf_rf_char(Realm):
         self.cx_state = ''
 
         # create api_json
-        self.json_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
-                                                lf_port=self.lf_port,
-                                                lf_user=self.lf_user,
-                                                lf_passwd=self.lf_passwd)
+        self.json_vap_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
+                                                    lf_port=self.lf_port,
+                                                    lf_user=self.lf_user,
+                                                    lf_passwd=self.lf_passwd)
+
+        self.json_rad_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
+                                                    lf_port=self.lf_port,
+                                                    lf_user=self.lf_user,
+                                                    lf_passwd=self.lf_passwd)
 
         # create a session
         # self.session = LFSession(lfclient_url="http://{lf_mgr}:{lf_port}".format(lf_mgr=self.lf_mgr, lf_port=self.lf_port),
@@ -155,8 +160,8 @@ class lf_rf_char(Realm):
         self.debug = debug
 
     def dut_info(self):
-        self.json_api.request = 'stations'
-        json_stations, *nil = self.json_api.get_request_stations_information()
+        self.json_vap_api.request = 'stations'
+        json_stations, *nil = self.json_vap_api.get_request_stations_information()
         # Note there should lonely be on station connected
         # TODO verify what happens if multiple statons connected
         self.dut_mac = json_stations['station']['station bssid']
@@ -304,11 +309,17 @@ class lf_rf_char(Realm):
 
     def start(self):
         # first read with
-        self.json_api.port = self.vap_port
-        self.json_api.update_port_info()
-        self.json_api.csv_mode = 'write'
-        self.json_api.update_csv_mode()
-        self.json_api.request = 'port'
+        self.json_vap_api.port = self.vap_port
+        self.json_vap_api.update_port_info()
+        self.json_vap_api.csv_mode = 'write'
+        self.json_vap_api.update_csv_mode()
+        self.json_vap_api.request = 'port'
+
+        self.json_rad_api.port = self.vap_radio
+        self.json_rad_api.update_port_info()
+        self.json_rad_api.csv_mode = 'write'
+        self.json_rad_api.update_csv_mode()
+        self.json_rad_api.request = 'port'
 
         self.tx_interval = []
         self.tx_pkts = []
@@ -345,13 +356,12 @@ class lf_rf_char(Realm):
         logger.info("clear port counters")
         self.clear_port_counters()
 
-        self.json_api.shelf, self.json_api.resource, self.json_api.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
-        json_radio_port_stats, *nil = self.json_api.get_request_port_information()
+        jason_vap_port_stats, *nil = self.json_vap_api.get_request_port_information()
         tx_pkts_previous = 0
         tx_retries_previous = 0
 
-        self.json_api.csv_mode = 'append'
-        self.json_api.update_csv_mode()
+        self.json_vap_api.csv_mode = 'append'
+        self.json_vap_api.update_csv_mode()
 
         cur_time = datetime.datetime.now()
         end_time = self.parse_time(self.duration) + cur_time
@@ -366,21 +376,21 @@ class lf_rf_char(Realm):
                 cur_time = datetime.datetime.now()
                 time.sleep(.2)
                 # Here check if the time stamp has changed
-            json_radio_port_stats, *nil = self.json_api.get_request_port_information()
+            jason_vap_port_stats, *nil = self.json_vap_api.get_request_port_information()
 
             interval += int(polling_interval_seconds)
             self.tx_interval.append(interval)
-            # print(json_radio_port_stats["interface"]["tx pkts"])
-            self.tx_pkts.append(json_radio_port_stats["interface"]["tx pkts"] - tx_pkts_previous)
-            tx_pkts_previous = json_radio_port_stats["interface"]["tx pkts"]
-            self.tx_retries.append(json_radio_port_stats["interface"]["wifi retries"] - tx_retries_previous)
-            tx_retries_previous = json_radio_port_stats["interface"]["wifi retries"]
-            self.tx_failed.append(round(json_radio_port_stats["interface"]["tx-failed %"], 2))
+            # print(jason_vap_port_stats["interface"]["tx pkts"])
+            self.tx_pkts.append(jason_vap_port_stats["interface"]["tx pkts"] - tx_pkts_previous)
+            tx_pkts_previous = jason_vap_port_stats["interface"]["tx pkts"]
+            self.tx_retries.append(jason_vap_port_stats["interface"]["wifi retries"] - tx_retries_previous)
+            tx_retries_previous = jason_vap_port_stats["interface"]["wifi retries"]
+            self.tx_failed.append(round(jason_vap_port_stats["interface"]["tx-failed %"], 2))
             # calculated the transmitted packets compared to number of retries
 
             # take samples of RSSI
-            self.json_api.request = 'stations'
-            json_stations, *nil = self.json_api.get_request_stations_information()
+            self.json_vap_api.request = 'stations'
+            json_stations, *nil = self.json_vap_api.get_request_stations_information()
 
             self.rssi_signal.append(json_stations['station']['signal'])
             chain_rssi_str = json_stations['station']['chain rssi']
@@ -407,14 +417,12 @@ class lf_rf_char(Realm):
                 self.rssi_3.append(chain_rssi[2])
                 self.rssi_4.append(chain_rssi[3])
 
-        self.json_api.csv_mode = 'write'
-        self.json_api.update_csv_mode()
+        self.json_vap_api.csv_mode = 'write'
+        self.json_vap_api.update_csv_mode()
 
         # TODO make the get_request more generic just set the request
-        self.json_api.request = 'wifi-stats'
-        # Queries for 'json_api.resource, json_api.port_name'
-        self.json_api.shelf, self.json_api.resource, self.json_api.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
-        json_wifi_stats, *nil = self.json_api.get_request_wifi_stats_information()
+        self.json_rad_api.request = 'wifi-stats'
+        json_wifi_stats, *nil = self.json_rad_api.get_request_wifi_stats_information()
         #print("wifi-stats output, vap-radio: %s radio port name %s:"%(self.vap_radio, self.json_api.port_name))
         #pprint(json_wifi_stats)
 
@@ -422,7 +430,7 @@ class lf_rf_char(Realm):
         self.cx_state = 'STOPPED'  # RUNNING< SWITCHB, QUIESCE, STOPPED, or DELETED
         self.set_cx_state()
 
-        return json_radio_port_stats, json_wifi_stats
+        return jason_vap_port_stats, json_wifi_stats
 
         # gather interval samples read stations to get RX Bytes, TX Bytes, TX Retries,
 
