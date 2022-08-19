@@ -76,7 +76,11 @@ class TestStation(Realm):
             if response:
                 pprint.pprint(response)
                 print("Deleting previous station:")
-                post_request.post_rm_vlan(shelf=1, resource=1, port="sta000", debug=self.debug)
+                post_request.post_rm_vlan(shelf=1,
+                                          resource=1,
+                                          port="sta000",
+                                          debug=self.debug,
+                                          suppress_related_commands=True)
             else:
                 print("Previous station not seen")
 
@@ -179,6 +183,7 @@ def test_set_port(args=None,
                                    report_timer=2000,
                                    resource=1,  # Resource number for the port to be modified.
                                    shelf=1,  # Shelf number for the port to be modified.
+                                   suppress_related_commands=True,
                                    debug=True)
 
         my_current_flags = LFPost.clear_flags(LFPost.SetPortCurrentFlags,
@@ -212,6 +217,7 @@ def test_set_port(args=None,
                                    report_timer=2000,
                                    resource=1,  # Resource number for the port to be modified.
                                    shelf=1,  # Shelf number for the port to be modified.
+                                   suppress_related_commands=True,
                                    debug=True)
 
         result = get_request.get_port(eid_list="1.1.eth2",
