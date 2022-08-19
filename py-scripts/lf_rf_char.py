@@ -768,9 +768,13 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             rx_mode_value.append(wifi_stats_json[iterator])
             rx_mode_total_count += wifi_stats_json[iterator]
 
-    # calculate percentages
-    for rx_mode_count in rx_mode_value:
-        rx_mode_value_percent.append(round((rx_mode_count / rx_mode_total_count) * 100, 2))
+    if rx_mode_total_count == 0:
+        print("WARNING:  Could not find any rx-mode packets.")
+        pprint(wifi_stats_json)
+    else:
+        # calculate percentages
+        for rx_mode_count in rx_mode_value:
+            rx_mode_value_percent.append(round((rx_mode_count / rx_mode_total_count) * 100, 2))
 
     # manipulate data to sort by length to have
     # CCK is first, the OFDMA, then HT variants, then VHT, the HE
