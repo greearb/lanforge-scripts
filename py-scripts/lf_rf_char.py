@@ -24,6 +24,9 @@ COPYRIGHT:
 INCLUDE_IN_README
 """
 
+# TODO:  Set report timer on vap and radios to 1 sec, possibly smaller.
+# TODO:  Enable extra tx and rx stats on the radios
+
 import argparse
 import sys
 import os
@@ -155,6 +158,10 @@ class lf_rf_char(Realm):
         self.rssi_2 = []
         self.rssi_3 = []
         self.rssi_4 = []
+        self.rssi_1_count = 0
+        self.rssi_2_count = 0
+        self.rssi_3_count = 0
+        self.rssi_4_count = 0
 
         # logging
         self.debug = debug
@@ -331,6 +338,10 @@ class lf_rf_char(Realm):
         self.rssi_2 = []
         self.rssi_3 = []
         self.rssi_4 = []
+        self.rssi_1_count = 0
+        self.rssi_2_count = 0
+        self.rssi_3_count = 0
+        self.rssi_4_count = 0
 
         # create lfping generic
         '''
@@ -398,24 +409,28 @@ class lf_rf_char(Realm):
             logger.info("RSSI chain length {chain}".format(chain=len(chain_rssi)))
             if len(chain_rssi) == 1:
                 self.rssi_1.append(chain_rssi[0])
-                self.rssi_2.append(np.nan)
-                self.rssi_3.append(np.nan)
-                self.rssi_4.append(np.nan)
+                self.rssi_2.append("")
+                self.rssi_3.append("")
+                self.rssi_4.append("")
+                self.rssi_1_count = self.rssi_1_count + 1
             elif len(chain_rssi) == 2:
                 self.rssi_1.append(chain_rssi[0])
                 self.rssi_2.append(chain_rssi[1])
-                self.rssi_3.append(np.nan)
-                self.rssi_4.append(np.nan)
+                self.rssi_3.append("")
+                self.rssi_4.append("")
+                self.rssi_2_count = self.rssi_2_count + 1
             elif len(chain_rssi) == 3:
                 self.rssi_1.append(chain_rssi[0])
                 self.rssi_2.append(chain_rssi[1])
                 self.rssi_3.append(chain_rssi[2])
-                self.rssi_4.append(np.nan)
+                self.rssi_4.append("")
+                self.rssi_3_count = self.rssi_3_count + 1
             elif len(chain_rssi) == 4:
                 self.rssi_1.append(chain_rssi[0])
                 self.rssi_2.append(chain_rssi[1])
                 self.rssi_3.append(chain_rssi[2])
                 self.rssi_4.append(chain_rssi[3])
+                self.rssi_4_count = self.rssi_4_count + 1
 
         self.json_vap_api.csv_mode = 'write'
         self.json_vap_api.update_csv_mode()
@@ -724,19 +739,37 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     rssi_3 = rf_char.rssi_3
     rssi_4 = rf_char.rssi_4
     tx_interval = rf_char.tx_interval
+    data_set = [rssi_signal, rssi_1, rssi_2, rssi_3, rssi_4]
+    label = ["RSSI Signal", "RSSI 1", "RSSI 2", "RSSI 3", "RSSI 4"]
 
     report.set_table_title("RSSI Signal, RSSI per chain")
     report.build_table_title()
 
-    df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
-                                 " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3], " RSSI 4 ": [l for l in rssi_4]})
+    # TODO:  There is almost certainly a cleaner way to do this.
+    if (rf_char.rssi_4_count > 0):
+        df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
+                                     " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3], " RSSI 4 ": [l for l in rssi_4]})
+    elif (rf_char.rssi_3_count > 0):
+        df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
+                                     " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3]})
+        data_set = [rssi_signal, rssi_1, rssi_2, rssi_3]
+        label = ["RSSI Signal", "RSSI 1", "RSSI 2", "RSSI 3"]
+    elif (rf_char.rssi_2_count > 0):
+        df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
+                                     " RSSI 2 ": [j for j in rssi_2]})
+        data_set = [rssi_signal, rssi_1, rssi_2]
+        label = ["RSSI Signal", "RSSI 1", "RSSI 2"]
+    else:
+        df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1]})
+        data_set = [rssi_signal, rssi_1]
+        label = ["RSSI Signal", "RSSI 1"]
 
     report.set_table_dataframe(df_rssi_info)
     report.build_table()
 
     # graph RSSI
     graph = lf_line_graph(
-        _data_set=[rssi_signal, rssi_1, rssi_2, rssi_3, rssi_4],
+        _data_set=data_set,
         _xaxis_name="Time Seconds",
         _yaxis_name="RSSI dBm",
         _reverse_y=True,
@@ -744,9 +777,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         _graph_title="RSSI",
         _title_size=16,
         _graph_image_name="rssi",
-        _label=["RSSI Signal", "RSSI 1", "RSSI 2", "RSSI 3", "RSSI 4"],
+        _label=label,
         _font_weight='bold',
-        _color=['blue', 'orange', 'green', 'orange', 'cyan'],
+        _color=['blue', 'orange', 'green', 'red', 'cyan'],
         _figsize=(17, 7),
         _xaxis_step=1,
         _text_font=7,
