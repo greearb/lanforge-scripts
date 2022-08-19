@@ -11,7 +11,7 @@ import sys
 # 0: Success
 # 1: Python Error
 # 2: CSV file not found
-# 3: Radio disconnected before -80 expected RSSI; PNG will still be generated
+# 3: Radio disconnected before exit threshold expected RSSI; PNG will still be generated
 # 4: Attempted Bandwidth HT80 used with Channel 6
 
 parser = argparse.ArgumentParser(description='Input and output files.')
@@ -49,19 +49,20 @@ def avg(lst): # mean
 def dev(lst): # element-wise deviation from mean (not standard deviation)
     return np.abs(avg(lst) - lst)
 
-def expected_signal(attenuation): # mathematically expected signal
+def expected_signal(attenuation): # theoretical expected signal
     return TX_POWER - (BASE_PATH_LOSS + attenuation)
 
 # early exit for disconnected radio before threshold expected RSSI
-# def check_data(signal, signal_exp):
-#     if CHANNEL==6:
-#         CHECK_RADIOS.remove(1) # TODO: Make generic
-#     if CHANNEL==36:
-#         CHECK_RADIOS.remove(0) # TODO: Make generic
-#     threshold_ind = np.where(signal_exp==EXIT_THRESHOLD)[0][0] # the first index where exit threshold is reached
-#     isnans = np.concatenate([np.isnan(e) for e in signal[0:threshold_ind, CHECK_RADIOS]]) # array of booleans
-#     if (any(isnans)):
-#         sys.exit(3)
+def check_data(signal, signal_exp):
+    if CHANNEL==6:
+        CHECK_RADIOS.remove(1) # TODO: Make generic
+    if CHANNEL==36:
+        CHECK_RADIOS.remove(0) # TODO: Make generic
+    threshold_ind = np.where(signal_exp<=EXIT_THRESHOLD)[0][0] # the first index where exit threshold is reached
+    isnans = np.concatenate([np.isnan(e) for e in signal[0:threshold_ind, CHECK_RADIOS]]) # array of booleans
+    if (any(isnans)):
+        print(F'Warning: Radio disconnected before exit threshold expected RSSI; check {PNG_OUTPUT_DIR}/{CHANNEL}_{ANTENNA}_{BANDWIDTH}_*.png.')
+        sys.exit(3)
 
 # check bandwidth compatibility
 if CHANNEL==6 and BANDWIDTH==80:
@@ -170,5 +171,5 @@ plt.grid(color=COLORS['dark_gray'], linestyle='-', linewidth=1)
 plt.legend()
 plt.savefig(F'{PNG_OUTPUT_DIR}/{CHANNEL}_{ANTENNA}_{BANDWIDTH}_signal_deviation_atten.png')
 
-# check_data(signal, signal_exp)
+check_data(signal, signal_exp)
 sys.exit(0)
