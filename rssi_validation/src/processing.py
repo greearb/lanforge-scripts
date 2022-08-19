@@ -11,7 +11,8 @@ import sys
 # 0: Success
 # 1: Python Error
 # 2: CSV file not found
-# 3: Radio disconnected before -85 expected RSSI; PNG will still be generated
+# 3: Radio disconnected before exit threshold expected RSSI; PNG will still be generated
+# 4: Attempted Bandwidth HT80 used with Channel 6
 
 parser = argparse.ArgumentParser(description='Input and output files.')
 parser.add_argument('--csv', metavar='i', type=str, help='../output.csv')
@@ -19,14 +20,20 @@ parser.add_argument('--png_dir', metavar='o', type=str, help='../PNGs')
 parser.add_argument('--bandwidth', metavar='b', type=int, help='20, 40, 80')
 parser.add_argument('--channel', metavar='c', type=int, help='6, 36')
 parser.add_argument('--antenna', metavar='a', type=int, help='0, 1, 4, 7, 8')
+parser.add_argument('--path_loss_2', metavar='p', type=float, help='26.74')
+parser.add_argument('--path_loss_5', metavar='q', type=float, help='31.87')
 
 args = parser.parse_args()
 CSV_FILE = args.csv
 PNG_OUTPUT_DIR = args.png_dir
 BANDWIDTH = args.bandwidth
 CHANNEL = args.channel
-ANTENNA = args.antenna 
-BASE_PATH_LOSS = 36 # depends on test bed: 12 (attenuator) + 2*12 (splitter combiners)
+ANTENNA = args.antenna
+BASE_PATH_LOSS = 36
+if CHANNEL == 6:
+    BASE_PATH_LOSS = args.path_loss_2
+elif CHANNEL == 36:
+    BASE_PATH_LOSS = args.path_loss_5
 TX_POWER = 20
 CHECK_RADIOS = [0,1,2,3,4,5,6] # radios to check during early exit
 EXIT_THRESHOLD = -85. # expected-signal cutoff for radio-disconnect exit code
@@ -42,7 +49,7 @@ def avg(lst): # mean
 def dev(lst): # element-wise deviation from mean (not standard deviation)
     return np.abs(avg(lst) - lst)
 
-def expected_signal(attenuation): # mathematically expected signal
+def expected_signal(attenuation): # theoretical expected signal
     return TX_POWER - (BASE_PATH_LOSS + attenuation)
 
 # early exit for disconnected radio before threshold expected RSSI
@@ -50,11 +57,16 @@ def check_data(signal, signal_exp):
     if CHANNEL==6:
         CHECK_RADIOS.remove(1) # TODO: Make generic
     if CHANNEL==36:
-        CHECK_RADIOS.remove(0) # TODO: Make geneirc
-    threshold_ind = np.where(signal_exp==EXIT_THRESHOLD)[0][0] # the first index where exit threshold is reached
+        CHECK_RADIOS.remove(0) # TODO: Make generic
+    threshold_ind = np.where(signal_exp<=EXIT_THRESHOLD)[0][0] # the first index where exit threshold is reached
     isnans = np.concatenate([np.isnan(e) for e in signal[0:threshold_ind, CHECK_RADIOS]]) # array of booleans
     if (any(isnans)):
+        print(F'Warning: Radio disconnected before exit threshold expected RSSI; check {PNG_OUTPUT_DIR}/{CHANNEL}_{ANTENNA}_{BANDWIDTH}_*.png.')
         sys.exit(3)
+
+# check bandwidth compatibility
+if CHANNEL==6 and BANDWIDTH==80:
+    sys.exit(4)
 
 # read data from file
 data=[]

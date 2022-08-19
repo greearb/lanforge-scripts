@@ -1,6 +1,12 @@
 #!/bin/bash
 TEST_DIR=$1
 PNG_DIR=$2
+
+# Depends on test scenario:
+# Theoretically, 1*(number_of_cables) + 12*(number_of_programmable_attenuators) + 12*(number_of_splitter_combiners)
+PATH_LOSS_2=26.74
+PATH_LOSS_5=31.87
+
 # Minimal Test
 # -----
 BANDWIDTH_OPTIONS=( 20 )
@@ -20,7 +26,7 @@ do
     do
 	for antenna in "${ANTENNA_OPTIONS[@]}"
 	do
-	    ./generate_png.sh "$TEST_DIR" ../output.csv "$PNG_DIR" "$bandwidth" "$channel" "$antenna"
+	    ./generate_png.sh "$TEST_DIR" ../output.csv "$PNG_DIR" "$bandwidth" "$channel" "$antenna" "$PATH_LOSS_2" "$PATH_LOSS_5"
 	done
     done
 done
