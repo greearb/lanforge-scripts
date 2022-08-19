@@ -169,13 +169,27 @@ class lf_rf_char(Realm):
 
     def dut_info(self):
         self.json_vap_api.request = 'stations'
-        json_stations, *nil = self.json_vap_api.get_request_stations_information()
-        # Note there should only be one station connected
-        # TODO verify what happens if multiple statons connected
-        self.dut_mac = json_stations['station']['station bssid']
-        logger.info("DUT MAC: {mac}".format(mac=self.dut_mac))
+        json_stations = []
+        try:
+            json_stations, *nil = self.json_vap_api.get_request_stations_information()
+            # Note there should only be one station connected
+            # TODO verify what happens if multiple statons connected
+
+            self.dut_mac = json_stations['station']['station bssid']
+            logger.info("DUT MAC: {mac}".format(mac=self.dut_mac))
+        except:
+            logger.error("Stations table not as expected:")
+            pprint(json_stations)
+            return False
 
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
+
+        # Make sure the station is on correct IP vap
+        sta_ap = json_stations['station']['ap']
+        vap_eid = "%s.%s.%s"%(self.shelf, self.resource, self.port_name);
+        if (sta_ap != vap_eid):
+            logger.error("Detected STA on AP: %s, expected it to be on AP: %s"%(sta_ap, vap_eid))
+            return False
 
         # get the IP from port mode
         self.lf_command = ["../lf_portmod.pl", "--manager", self.lf_mgr, "--card", str(self.resource), "--port_name", self.port_name,
@@ -193,6 +207,7 @@ class lf_rf_char(Realm):
         summary.wait()
         logger.debug(summary_output)  # .decode('utf-8', 'ignore'))
 
+        dut_ip = ''
         dut_mac = ''
         dut_hostname = ''
         search_dhcp_lease = False
@@ -225,13 +240,12 @@ class lf_rf_char(Realm):
         if dut_mac != self.dut_mac:
             logger.error("mac mismatch test cannot continue: probe mac : {mac} stations mac : {station_mac}".
                          format(mac=dut_mac, station_mac=self.dut_mac))
-            exit(1)
+            return False
 
         self.dut_ip = dut_ip
         self.dut_hostname = dut_hostname
 
-        # TODO the return no needed
-        return json_stations
+        return True
 
     def clear_dhcp_lease(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
@@ -632,7 +646,13 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     rf_char.modify_radio()
     rf_char.vap_port = args.vap_port
 
-    rf_char.dut_info()
+    try_count = 0
+    while try_count < 100:
+        if rf_char.dut_info():
+            break
+        print("Could not query DUT info from DHCP, waiting %s/100"%(try_count))
+        time.sleep(3)
+        try_count = try_count + 1
 
     dut_mac = rf_char.dut_mac
     dut_ip = rf_char.dut_ip
