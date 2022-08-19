@@ -344,6 +344,9 @@ class lf_rf_char(Realm):
             antenna=self.vap_antenna,
             channel=self.vap_channel,
             debug=self.debug)
+        self.command.post_reset_port(shelf=self.shelf,
+                                     resource=self.resource,
+                                     port=self.port_name)
 
     def start(self):
         # first read with
@@ -393,8 +396,6 @@ class lf_rf_char(Realm):
         self.set_cx_state()
         
 
-        logger.info("clear dhcp leases")
-        # self.clear_dhcp_lease()
         logger.info("clear port counters")
         self.clear_port_counters()
 
@@ -643,8 +644,13 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     rf_char.vap_radio = args.vap_radio
     rf_char.vap_channel = args.vap_channel
     rf_char.vap_antenna = args.vap_antenna
-    rf_char.modify_radio()
     rf_char.vap_port = args.vap_port
+
+    logger.info("clear dhcp leases")
+    rf_char.clear_dhcp_lease()
+
+    # modify and reset
+    rf_char.modify_radio()
 
     try_count = 0
     while try_count < 100:
