@@ -145,6 +145,7 @@ class lf_rf_char(Realm):
         self.lf_command = ''
         self.dut_mac = ''
         self.dut_ip = ''
+        self.dut_hostname = '';
 
         # tx data
         self.tx_interval = []
@@ -169,7 +170,7 @@ class lf_rf_char(Realm):
     def dut_info(self):
         self.json_vap_api.request = 'stations'
         json_stations, *nil = self.json_vap_api.get_request_stations_information()
-        # Note there should lonely be on station connected
+        # Note there should only be one station connected
         # TODO verify what happens if multiple statons connected
         self.dut_mac = json_stations['station']['station bssid']
         logger.info("DUT MAC: {mac}".format(mac=self.dut_mac))
@@ -193,26 +194,42 @@ class lf_rf_char(Realm):
         logger.debug(summary_output)  # .decode('utf-8', 'ignore'))
 
         dut_mac = ''
+        dut_hostname = ''
         search_dhcp_lease = False
+        search_equals = False
         for line in summary_output.splitlines():
-            if(line.startswith("=========")):
+            if (line.startswith("DHCPD-Lease-File-Contents")):
+                search_equals = True
+                continue
+
+            if (search_equals and line.startswith("=========")):
                 search_dhcp_lease = True
                 continue
-            if(search_dhcp_lease):
-                pat = "(\\S+)\\s+(\\S+)\\s+"
+
+            if (search_dhcp_lease):
+                pat = "(\\S+)\\s+(\\S+)\\s+(\\S+)"
                 m = re.search(pat, line)
                 if (m is not None):
                     dut_mac = m.group(1)
                     dut_ip = m.group(2)
+                    dut_hostname = m.group(3)
+                else:
+                    pat = "(\\S+)\\s+(\\S+)"
+                    m = re.search(pat, line)
+                    if (m is not None):
+                        dut_mac = m.group(1)
+                        dut_ip = m.group(2)
             # there should only be one connection
 
         logger.debug("probe mac : {mac} ip : {ip}".format(mac=dut_mac, ip=dut_ip))
         if dut_mac != self.dut_mac:
-            logger.error("mac mismatch test cannot contine: probe mac : {mac} stations mac : {station_mac}".
+            logger.error("mac mismatch test cannot continue: probe mac : {mac} stations mac : {station_mac}".
                          format(mac=dut_mac, station_mac=self.dut_mac))
             exit(1)
 
         self.dut_ip = dut_ip
+        self.dut_hostname = dut_hostname
+
         # TODO the return no needed
         return json_stations
 
@@ -501,13 +518,13 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                         help="test rig for kpi.csv, testbed that the tests are run on")
     parser.add_argument("--test_tag", default="kpi_generation",
                         help="test tag for kpi.csv,  test specific information to differenciate the test")
-    parser.add_argument("--dut_hw_version", default="hw_01",
+    parser.add_argument("--dut_hw_version", default="",
                         help="dut hw version for kpi.csv, hardware version of the device under test")
-    parser.add_argument("--dut_sw_version", default="sw_01",
+    parser.add_argument("--dut_sw_version", default="",
                         help="dut sw version for kpi.csv, software version of the device under test")
-    parser.add_argument("--dut_model_num", default="can_ap",
+    parser.add_argument("--dut_model_num", default="",
                         help="dut model for kpi.csv,  model number / name of the device under test")
-    parser.add_argument("--dut_serial_num", default="can_123",
+    parser.add_argument("--dut_serial_num", default="",
                         help="dut serial num for kpi.csv,  model serial number ")
 
     parser.add_argument("--test_priority", default="95",
@@ -621,7 +638,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     dut_ip = rf_char.dut_ip
 
     test_setup_info = {
-        "DUT Name": args.dut_model_num,
+        "DUT Name": rf_char.dut_hostname,
+        "DUT Model": args.dut_model_num,
         "DUT Hardware Version": args.dut_hw_version,
         "DUT Software Version": args.dut_sw_version,
         "DUT Serial Number": args.dut_serial_num,
