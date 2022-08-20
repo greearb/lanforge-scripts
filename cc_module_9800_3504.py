@@ -177,7 +177,7 @@ class create_controller_series_object:
         self.mcs_tx_index = None    # default cannot be NONE for send command
         self.regulatory_domain = 'NA'
         self.country_code = 'NA'
-        self.series = 'NA'
+        # self.series = 'NA'
         self.testbed_location = 'NA'
         self.ap_config_radio_role = 'NA'
 
