@@ -251,6 +251,10 @@ class lf_report:
         fname, ext = os.path.splitext(_graph_title)
         self.csv_file_name = fname + ".csv"
 
+    def write_dataframe_to_csv(self, _index=False):
+        csv_file = "{path_date_time}/{csv_file_name}".format(path_date_time=self.path_date_time,csv_file_name=self.csv_file_name)
+        self.dataframe.to_csv(csv_file,index=_index)
+
     # The _date is set when class is enstanciated / created so this set_date should be used with caution, used to synchronize results
     def set_date(self, _date):
         self.date = _date

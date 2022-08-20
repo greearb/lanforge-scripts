@@ -733,6 +733,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_dataframe(df_tx_info)
     report.build_table()
 
+    # Write out csv file 
+    report.set_csv_filename("tx_pkts_tx_retries_tx_failed.csv")
+    report.write_dataframe_to_csv()
+
     # lf_bar_line_graph
     # failed %
     graph = lf_bar_line_graph(
@@ -810,6 +814,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     report.set_table_dataframe(df_rssi_info)
     report.build_table()
+
+    report.set_csv_filename("rssi.csv")
+    report.write_dataframe_to_csv()
+
 
     # graph RSSI
     graph = lf_line_graph(
@@ -892,6 +900,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_dataframe(df_rx_mode)
     report.build_table()
 
+    report.set_csv_filename("rx_mode.csv")
+    report.write_dataframe_to_csv()
+
+
     # RX MODE
     graph = lf_bar_graph(_data_set=[rx_mode_value_percent],
                          _xaxis_name="RX Mode",
@@ -970,6 +982,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_dataframe(df_tx_mode)
     report.build_table()
 
+    report.set_csv_filename("tx_mode.csv")
+    report.write_dataframe_to_csv()
+
     # TX MODE
     graph = lf_bar_graph(_data_set=[tx_mode_value_percent],
                          _xaxis_name="TX Mode",
@@ -1044,6 +1059,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_dataframe(df_rx_bw)
     report.build_table()
 
+    report.set_csv_filename("rx_bw.csv")
+    report.write_dataframe_to_csv()
+
     # RX BW
     graph = lf_bar_graph(_data_set=[rx_bw_value_percent],
                          _xaxis_name="RX BW",
@@ -1114,6 +1132,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_dataframe(df_tx_bw)
     report.build_table()
 
+    report.set_csv_filename("tx_bw.csv")
+    report.write_dataframe_to_csv()
+
+
     # TX BW
     graph = lf_bar_graph(_data_set=[tx_bw_value_percent],
                          _xaxis_name="TX BW",
@@ -1176,6 +1198,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_dataframe(df_rx_nss)
     report.build_table()
 
+    report.set_csv_filename("rx_nss.csv")
+    report.write_dataframe_to_csv()
+
+
     # RX NSS
     graph = lf_bar_graph(_data_set=[rx_nss_value_percent],
                          _xaxis_name="RX NSS",
@@ -1237,6 +1263,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     report.set_table_dataframe(df_tx_nss)
     report.build_table()
+
+    report.set_csv_filename("tx_nss.csv")
+    report.write_dataframe_to_csv()
 
     # TX NSS
     graph = lf_bar_graph(_data_set=[tx_nss_value_percent],
@@ -1321,6 +1350,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_dataframe(df_rx_mcs)
     report.build_table()
 
+    report.set_csv_filename("rx_mcs.csv")
+    report.write_dataframe_to_csv()
+
+
     # RX MCS encoding
     graph = lf_bar_graph(_data_set=[rx_mcs_value_percent],
                          _xaxis_name="RX MCS encoding",
@@ -1391,6 +1424,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     report.set_table_dataframe(df_tx_mcs)
     report.build_table()
+
+    report.set_csv_filename("tx_mcs.csv")
+    report.write_dataframe_to_csv()
+
 
     # TX MCS encoding
     graph = lf_bar_graph(_data_set=[tx_mcs_value_percent],
@@ -1469,6 +1506,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_dataframe(df_rx_ampdu)
     report.build_table()
 
+    report.set_csv_filename("rx_ampdu.csv")
+    report.write_dataframe_to_csv()
+
     # RX ampdu encoding
     graph = lf_bar_graph(_data_set=[rx_ampdu_value_percent],
                          _xaxis_name="RX ampdu",
@@ -1544,6 +1584,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_dataframe(df_tx_ampdu)
     report.build_table()
 
+    report.set_csv_filename("tx_ampdu.csv")
+    report.write_dataframe_to_csv()
+
     # TX ampdu
     graph = lf_bar_graph(_data_set=[tx_ampdu_value_percent],
                          _xaxis_name="TX ampdu",
@@ -1603,6 +1646,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     report.set_table_dataframe(df_tx_msdu)
     report.build_table()
+
+    report.set_csv_filename("tx_msdu.csv")
+    report.write_dataframe_to_csv()
+
 
     # TX msdu
     graph = lf_bar_graph(_data_set=[tx_msdu_value_percent],
