@@ -53,6 +53,7 @@ from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFSession
 
 from pprint import pprint
+from pprint import pformat
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
@@ -366,6 +367,7 @@ class lf_rf_char(Realm):
         self.json_rad_api.request = 'port'
 
         self.tx_interval = []
+        self.tx_interval_time = []
         self.tx_pkts = []
         self.tx_retries = []
         self.tx_failed = []
@@ -413,25 +415,41 @@ class lf_rf_char(Realm):
         end_time = self.parse_time(self.duration) + cur_time
         polling_interval_seconds = self.duration_time_to_seconds(self.polling_interval)
         interval = 0
+        # initialize time stamps
+        json_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
+        current_time_stamp = json_vap_port_stats["interface"]["time-stamp"]
+        previous_time_stamp = current_time_stamp
+        tx_pkts_previous = json_vap_port_stats["interface"]["tx pkts"]
+        tx_retries_previous = json_vap_port_stats["interface"]["wifi retries"]        
         while cur_time < end_time:
             interval_time = cur_time + datetime.timedelta(seconds=polling_interval_seconds)
 
             # TODO check the port time stamp to see if data changed
             # check every half second and only report of the timestamp changed
+
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
+                # read the current time
                 time.sleep(.2)
+                json_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
+                current_time_stamp = json_vap_port_stats["interface"]["time-stamp"]
+                if current_time_stamp  !=  previous_time_stamp:
+                    logger.debug("new TX stats: time_stamp {time} previous_time_stamp {pre_time}".format(time=current_time_stamp, pre_time=previous_time_stamp))
+                    previous_time_stamp = current_time_stamp
+                    break
                 # Here check if the time stamp has changed
-            jason_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
 
+            # json_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
             interval += int(polling_interval_seconds)
             self.tx_interval.append(interval)
-            # print(jason_vap_port_stats["interface"]["tx pkts"])
-            self.tx_pkts.append(jason_vap_port_stats["interface"]["tx pkts"] - tx_pkts_previous)
-            tx_pkts_previous = jason_vap_port_stats["interface"]["tx pkts"]
-            self.tx_retries.append(jason_vap_port_stats["interface"]["wifi retries"] - tx_retries_previous)
-            tx_retries_previous = jason_vap_port_stats["interface"]["wifi retries"]
-            self.tx_failed.append(round(jason_vap_port_stats["interface"]["tx-failed %"], 2))
+            current_time = current_time_stamp.split()
+            self.tx_interval_time.append(current_time[1])
+            # print(json_vap_port_stats["interface"]["tx pkts"])
+            self.tx_pkts.append(json_vap_port_stats["interface"]["tx pkts"] - tx_pkts_previous)
+            tx_pkts_previous = json_vap_port_stats["interface"]["tx pkts"]
+            self.tx_retries.append(json_vap_port_stats["interface"]["wifi retries"] - tx_retries_previous)
+            tx_retries_previous = json_vap_port_stats["interface"]["wifi retries"]
+            self.tx_failed.append(round(json_vap_port_stats["interface"]["tx-failed %"], 2))
             # calculated the transmitted packets compared to number of retries
 
             # take samples of RSSI
@@ -726,12 +744,13 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     tx_retries = rf_char.tx_retries
     tx_failed = rf_char.tx_failed
     tx_interval = rf_char.tx_interval
+    tx_interval_time = rf_char.tx_interval_time
 
     # TX pkts, TX retries,  TX Failed %
     report.set_table_title("TX pkts , TX retries, TX Failed %")
     report.build_table_title()
 
-    df_tx_info = pd.DataFrame({" Time ": [k for k in tx_interval], " TX Packets ": [i for i in tx_pkts],
+    df_tx_info = pd.DataFrame({" Time Interval ": [ti for ti in tx_interval], " Time ": [k for k in tx_interval_time], " TX Packets ": [i for i in tx_pkts],
                                " TX Retries ": [j for j in tx_retries], " TX Failed % ": [m for m in tx_failed]})
 
     report.set_table_dataframe(df_tx_info)
@@ -749,7 +768,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         _data_set2_poly=[True],
         _data_set2_poly_degree=[3],
         _data_set2_interp1d=[True],  # interpolate 1d
-        _xaxis_name="Time Seconds",
+        _xaxis_name="Time Interval",
         _y1axis_name="TX Packets",
         _y2axis_name="TX Failed %",
         _xaxis_categories=tx_interval,
@@ -799,7 +818,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     # TODO:  There is almost certainly a cleaner way to do this.
     if (rf_char.rssi_4_count > 0):
-        df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
+        df_rssi_info = pd.DataFrame({" Time Interval": [t for t in tx_interval], " Time ": [it for it in tx_interval_time], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
                                      " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3], " RSSI 4 ": [l for l in rssi_4]})
     elif (rf_char.rssi_3_count > 0):
         df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
@@ -826,7 +845,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     # graph RSSI
     graph = lf_line_graph(
         _data_set=data_set,
-        _xaxis_name="Time Seconds",
+        _xaxis_name="Time Interval",
         _yaxis_name="RSSI dBm",
         _reverse_y=True,
         _xaxis_categories=tx_interval,
@@ -866,8 +885,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             rx_mode_total_count += wifi_stats_json[iterator]
 
     if rx_mode_total_count == 0:
-        print("WARNING:  Could not find any rx-mode packets.")
-        pprint(wifi_stats_json)
+        logger.warning("Could not find any rx-mode packets.")
+        logger.info(pformat(wifi_stats_json))
     else:
         # calculate percentages
         for rx_mode_count in rx_mode_value:
