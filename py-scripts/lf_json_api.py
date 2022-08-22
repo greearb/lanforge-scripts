@@ -114,7 +114,14 @@ class lf_json_api():
 
 
 
-    def get_request_port_information(self):
+    def get_request_port_information(self, _port=None):
+        # port passed in with command
+        # this is needed for backward compatibility
+        if _port is not None:
+            self.port = _port
+            logger.info("self.port updated to : {port}".format(port=self.port))
+            self.update_port_info()
+
         # https://docs.python-requests.org/en/latest/
         # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
         # station command
@@ -165,7 +172,14 @@ class lf_json_api():
 
         return lanforge_json, csv_file_port, lanforge_text, lanforge_json_formatted
 
-    def get_request_wifi_stats_information(self):
+    def get_request_wifi_stats_information(self,_port = None):
+        # port passed in with command
+        # this is needed for backward compatibility
+        if _port is not None:
+            self.port = _port
+            logger.info("self.port updated to : {port}".format(port=self.port))
+            self.update_port_info()
+
         # https://docs.python-requests.org/en/latest/
         # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
         # station command
@@ -211,7 +225,14 @@ class lf_json_api():
         return lanforge_json, csv_file_wifi_stats, lanforge_text, lanforge_json_formatted
 
     # give information on a single station if the mac is entered.
-    def get_request_single_station_information(self):
+    def get_request_single_station_information(self,_port=None):
+        # port passed in with command
+        # this is needed for backward compatibility
+        if _port is not None:
+            self.port = _port
+            logger.info("self.port updated to : {port}".format(port=self.port))
+            self.update_port_info()
+
         # https://docs.python-requests.org/en/latest/
         # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
         #
@@ -268,6 +289,7 @@ class lf_json_api():
 
 
     def get_request_stations_information(self):
+
         # https://docs.python-requests.org/en/latest/
         # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
         #
@@ -323,7 +345,14 @@ class lf_json_api():
 
         return lanforge_json, lanforge_text, lanforge_json_formatted
 
-    def get_request_adb_information(self):
+    def get_request_adb_information(self,_port=None):
+        # port passed in with command
+        # this is needed for backward compatibility
+        if _port is not None:
+            self.port = _port
+            logger.info("self.port updated to : {port}".format(port=self.port))
+            self.update_port_info()
+
         # https://docs.python-requests.org/en/latest/
         # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
         #
@@ -368,7 +397,14 @@ class lf_json_api():
 
     # TODO this is a generic one.
 
-    def get_request_information(self):
+    def get_request_information(self, _port):
+        # port passed in with command
+        # this is needed for backward compatibility
+        if _port is not None:
+            self.port = _port
+            logger.info("self.port updated to : {port}".format(port=self.port))
+            self.update_port_info()
+
         # https://docs.python-requests.org/en/latest/
         # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
         #
@@ -418,7 +454,14 @@ class lf_json_api():
 
     # TODO This method is left in for an example it was taken from
 
-    def get_request_radio_information(self):
+    def get_request_radio_information(self,_port=None):
+        # port passed in with command
+        # this is needed for backward compatibility
+        if _port is not None:
+            self.port = _port
+            logger.info("self.port updated to : {port}".format(port=self.port))
+            self.update_port_info()
+
         # https://docs.python-requests.org/en/latest/
         # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
         # curl --user "lanforge:lanforge" -H 'Accept: application/json'
@@ -439,7 +482,14 @@ class lf_json_api():
         logger.info("radio request.text: {text}".format(text=lanforge_radio_text))
         return lanforge_radio_json, lanforge_radio_text
 
-    def post_clear_port_counters(self):
+    def post_clear_port_counters(self,_port=None):
+        # port passed in with command
+        # this is needed for backward compatibility
+        if _port is not None:
+            self.port = _port
+            logger.info("self.port updated to : {port}".format(port=self.port))
+            self.update_port_info()
+
         # Syntax
         '''
         echo "{'shelf':1,'resource':1,'port':'vap3','extra':'dhcp_leases'}' > /tmp/curl_data
