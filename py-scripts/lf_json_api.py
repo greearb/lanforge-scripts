@@ -172,11 +172,11 @@ class lf_json_api():
 
         return lanforge_json, csv_file_port, lanforge_text, lanforge_json_formatted
 
-    def get_request_wifi_stats_information(self,_port = None):
+    def get_request_wifi_stats_information(self,port=None):
         # port passed in with command
         # this is needed for backward compatibility
-        if _port is not None:
-            self.port = _port
+        if port is not None:
+            self.port = port
             logger.info("self.port updated to : {port}".format(port=self.port))
             self.update_port_info()
 

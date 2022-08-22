@@ -171,6 +171,7 @@ class lf_rf_char(Realm):
         self.json_vap_api.request = 'stations'
         json_stations = []
         try:
+            # does not need specific port information
             json_stations, *nil = self.json_vap_api.get_request_stations_information()
             # Note there should only be one station connected
             # TODO verify what happens if multiple statons connected
@@ -305,6 +306,7 @@ class lf_rf_char(Realm):
     # ./lf_generic_ping.pl --mgr 192.168.0.104 --resource 1 --dest 10.10.10.4 -i vap3 --cmd 'lfping -s 1400 -i 0.01 -I vap3 10.10.10.4'
     # add_gen_endp
 
+    # TODO not working yet using perl command
     def add_gen_endp(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
         # cross connects prepend CX
@@ -318,6 +320,7 @@ class lf_rf_char(Realm):
             debug=self.debug
         )
 
+    # TODO not working yet using perl command
     # set_gen_cmd
     def set_gen_cmd(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
@@ -399,7 +402,7 @@ class lf_rf_char(Realm):
         logger.info("clear port counters")
         self.clear_port_counters()
 
-        jason_vap_port_stats, *nil = self.json_vap_api.get_request_port_information()
+        jason_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
         tx_pkts_previous = 0
         tx_retries_previous = 0
 
@@ -419,7 +422,7 @@ class lf_rf_char(Realm):
                 cur_time = datetime.datetime.now()
                 time.sleep(.2)
                 # Here check if the time stamp has changed
-            jason_vap_port_stats, *nil = self.json_vap_api.get_request_port_information()
+            jason_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
 
             interval += int(polling_interval_seconds)
             self.tx_interval.append(interval)
@@ -433,6 +436,7 @@ class lf_rf_char(Realm):
 
             # take samples of RSSI
             self.json_vap_api.request = 'stations'
+            # port not needed for all 
             json_stations, *nil = self.json_vap_api.get_request_stations_information()
 
             self.rssi_signal.append(json_stations['station']['signal'])
@@ -469,7 +473,7 @@ class lf_rf_char(Realm):
 
         # TODO make the get_request more generic just set the request
         self.json_rad_api.request = 'wifi-stats'
-        json_wifi_stats, *nil = self.json_rad_api.get_request_wifi_stats_information()
+        json_wifi_stats, *nil = self.json_rad_api.get_request_wifi_stats_information(port=self.vap_radio)
         #print("wifi-stats output, vap-radio: %s radio port name %s:"%(self.vap_radio, self.json_api.port_name))
         #pprint(json_wifi_stats)
 
