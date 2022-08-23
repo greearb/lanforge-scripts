@@ -274,6 +274,14 @@ class lf_rf_char(Realm):
                                               extra=None)
     # ./lf_generic_ping.pl --mgr 192.168.0.104 --resource 1 --dest 10.10.10.4 -i vap3 --cmd 'lfping -s 1400 -i 0.01 -I vap3 10.10.10.4
 
+    # set_port 1 1 vap3 NA NA NA NA NA NA NA NA NA 32768 5000 NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA
+    # set_port 1 1 vap3 NA NA NA NA NA NA NA NA NA 32768 1000 
+    def set_port_report_timer(self,port=None,milliseconds=1000):
+        if port is not None:
+            self.port = port
+            self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.port)
+        self.command.post_set_port(shelf=self.shelf,resource=self.resource,port=self.port_name, interest=32768, report_timer= int(milliseconds), debug=self.debug)
+
     def generic_ping(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
         self.gen_endpoint = "CX_lfping_{port_name}".format(port_name=self.port_name)
@@ -544,8 +552,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     parser.add_argument("--lf_port", help="IP Port the LANforge GUI is listening on (8080 is default)", default=8080)
     parser.add_argument("--lf_user", type=str, help="user: lanforge", default='lanforge')
     parser.add_argument("--lf_passwd", type=str, help="passwd: lanforge", default='lanforge')
-    parser.add_argument("--vap_port", type=str, help=" port : 1.1.vap3  provide full eid  (endpoint id")
-    parser.add_argument("--vap_radio", type=str, help=" --vap_radio wiphy0")
+    parser.add_argument("--vap_port", type=str, help=" port : 1.1.vap3  provide full eid  (endpoint id", required=True)
+    parser.add_argument("--vap_radio", type=str, help=" --vap_radio wiphy0", required=True)
     parser.add_argument("--vap_channel", type=str, help=" --vap_channel '36'  channel of the radio e.g. 6 (2.4G) , 36 (5G), ")
     parser.add_argument("--vap_antenna", help='number of spatial streams: 0 Diversity (All), 1 Fixed-A (1x1), 4 AB (2x2), 7 ABC (3x3), 8 ABCD (4x4), 9 (8x8)')
 
@@ -699,6 +707,13 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.build_table_title()
     report.test_setup_table(value="Device Under Test", test_setup_data=test_setup_info)
 
+    # Set the report timer
+    # use the duration in seconds to set the report timer
+    # TODO call only once
+    polling_interval_seconds = rf_char.duration_time_to_seconds(args.polling_interval)
+    polling_interval_ms = polling_interval_seconds*1000
+    rf_char.set_port_report_timer(port=args.vap_port,milliseconds=polling_interval_ms)
+
     test_input_info = {
         "LANforge ip": args.lf_mgr,
         "LANforge port": args.lf_port,
@@ -710,6 +725,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("Test Configuration")
     report.build_table_title()
     report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
+
+
 
     # Start traffic : Currently manually done
     rf_char.clear_port_counters()
