@@ -52,6 +52,7 @@ from lanforge_client.lanforge_api import LFJsonQuery
 from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFSession
 
+
 from pprint import pprint
 from pprint import pformat
 
@@ -280,7 +281,29 @@ class lf_rf_char(Realm):
         if port is not None:
             self.port = port
             self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.port)
-        self.command.post_set_port(shelf=self.shelf,resource=self.resource,port=self.port_name, interest=32768, report_timer= int(milliseconds), debug=self.debug)
+        self.command.post_set_port(shelf=self.shelf,
+                                resource=self.resource,
+                                port=self.port_name, 
+                                interest=32768, 
+                                report_timer= int(milliseconds), 
+                                debug=self.debug)
+
+    # enable extra_rxstatus extra_txstatus
+    def set_wifi_radio(self,radio=None,flags_list=[]):
+        if radio is not None:
+            self.radio = radio
+            self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
+
+        flag_val = 0
+        # flag_val = LFPost.set_flags(SetWifiRadioFlags0, flag_names=['extra_rxstatus', 'extra_tx_status'])
+        flag_val = self.command.set_flags(self.command.SetWifiRadioFlags, flag_val, flag_names=flags_list)
+        self.command.post_set_wifi_radio(shelf=self.shelf,
+                                        resource=self.resource,
+                                        radio=self.port_name,
+                                        flags=flag_val,
+                                        flags_mask=flag_val,
+                                        debug=self.debug)
+
 
     def generic_ping(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
@@ -316,6 +339,7 @@ class lf_rf_char(Realm):
     # add_gen_endp
 
     # TODO not working yet using perl command
+    # TODO pass port
     def add_gen_endp(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
         # cross connects prepend CX
@@ -330,6 +354,7 @@ class lf_rf_char(Realm):
         )
 
     # TODO not working yet using perl command
+    # TODO pass port
     # set_gen_cmd
     def set_gen_cmd(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
@@ -339,6 +364,7 @@ class lf_rf_char(Realm):
             command=lf_command,
             name=self.gen_endpoint,
             debug=self.debug)
+
 
     # set_cx_state
     def set_cx_state(self):
@@ -713,6 +739,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     polling_interval_seconds = rf_char.duration_time_to_seconds(args.polling_interval)
     polling_interval_ms = polling_interval_seconds*1000
     rf_char.set_port_report_timer(port=args.vap_port,milliseconds=polling_interval_ms)
+
+    flags_list =['extra_rxstatus', 'extra_txstatus']
+
+    rf_char.set_wifi_radio(radio=args.vap_radio,flags_list= flags_list)
 
     test_input_info = {
         "LANforge ip": args.lf_mgr,
