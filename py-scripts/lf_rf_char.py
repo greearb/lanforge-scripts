@@ -719,6 +719,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         "LANforge port": args.lf_port,
         "Test Duration": args.duration,
         "Polling Interval": args.polling_interval,
+        "GUI Report Interval (ms)": str(polling_interval_ms),
         "vAP Channel": args.vap_channel
     }
 
