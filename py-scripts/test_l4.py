@@ -100,6 +100,7 @@ import requests
 from pandas import json_normalize
 import json
 import traceback
+from pprint import pformat
 
 
 if sys.version_info[0] != 3:
@@ -719,7 +720,7 @@ Generic command example:
         logger.info("url: {url}".format(url=args.url))
 
 
-    num_sta = 2
+    num_sta = 1
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
@@ -756,7 +757,14 @@ Generic command example:
     ip_test.start()
     l4_cx_results = {}
 
-    layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.json_get('layer4')['endpoint']])
+    ip_test_json_data = ip_test.json_get('layer4')['endpoint']    
+    logger.info(pformat(ip_test_json_data))
+
+    if num_sta == 1:
+        layer4traffic = []
+        layer4traffic.append(ip_test_json_data['name'])
+    else:
+        layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.json_get('layer4')['endpoint']])
     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
                                report_file=report_file,
                                duration_sec=args.test_duration,

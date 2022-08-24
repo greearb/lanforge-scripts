@@ -98,14 +98,35 @@ class L4CXProfile(LFCliBase):
     def get_bytes(self):
         time.sleep(1)
         cx_list = self.json_get("layer4/list?fields=name,%s" % self.test_type, debug_=self.debug)
-        # logger.info("==============\n", cx_list, "\n==============")
+        logger.info("==============\n", cx_list, "\n==============")
+        logger.info(pformat(cx_list))
+
+        # single CX == 'endpoint':{'bytes-rd': 5535, 'name': 'sta0000_l4'}
+        # multiple CX == 'endpoint': [{'sta0000_l4': {'bytes-rd': 4920, 'name': 'sta0000_l4'}}, {'sta0001_l4': {'bytes-rd': 3690, 'name': 'sta0001_l4'}}]
         cx_map = {}
+        logger.info("cx_list['endpoint'] type {type}".format(type=type(cx_list['endpoint'])))
+
         for cx_name in cx_list['endpoint']:
             if cx_name != 'uri' and cx_name != 'handler':
-                for item, value in cx_name.items():
-                    for value_name, value_rx in value.items():
-                        if item in self.created_cx.keys() and value_name == self.test_type:
-                            cx_map[item] = value_rx
+                # single CX
+                if (type(cx_name) is str):
+                    # single CX (str) 
+                    # create a dictionary
+                    cx_name_dict = {cx_list['endpoint']['name'] : cx_list['endpoint']}
+                    for item, value in cx_name_dict.items():
+                        for value_name, value_rx in value.items():
+                            if item in self.created_cx.keys() and value_name == self.test_type:
+                                cx_map[item] = value_rx
+                    # break is needed for cx_name is not the cx_names
+                    # {'_links': '/layer4/451', 'entity id': '1.1.12.451.11', 'name': 'sta0000_l4'} 
+                    # 
+                    break
+                else:
+                    # multipe CX (dict)
+                    for item, value in cx_name.items():
+                        for value_name, value_rx in value.items():
+                            if item in self.created_cx.keys() and value_name == self.test_type:
+                                cx_map[item] = value_rx
         return cx_map
 
     def check_request_rate(self):
