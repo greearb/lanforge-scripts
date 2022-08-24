@@ -761,10 +761,11 @@ Generic command example:
     logger.info(pformat(ip_test_json_data))
 
     if num_sta == 1:
-        layer4traffic = []
-        layer4traffic.append(ip_test_json_data['name'])
+        # single cx
+        layer4traffic = ip_test_json_data['name']
     else:
         layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.json_get('layer4')['endpoint']])
+    # TODO pass in what is to be monitored on the command line
     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
                                report_file=report_file,
                                duration_sec=args.test_duration,

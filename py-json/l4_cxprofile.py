@@ -283,15 +283,15 @@ class L4CXProfile(LFCliBase):
                     response = self.json_get("/layer4/all")
                 else:
                     fields = ",".join(col_names)
-                    response = self.json_get("/layer4/%s?fields=%s" % (created_cx, fields))
+                    response = self.json_get("/layer4/%s?fields=%s" % (created_cx, fields), debug_=self.debug)
                 if debug:
-                    logger.debug(response)
+                    logger.debug(pformat(response))
                 if response is None:
-                    logger.debug(response)
+                    logger.debug(pformat(response))
                     raise ValueError("Cannot find any endpoints")
                 if monitor:
                     if debug:
-                        logger.debug(response)
+                        logger.debug(pformat(response))
 
                 time.sleep(sleep_interval)
                 t = datetime.datetime.now()
@@ -319,13 +319,14 @@ class L4CXProfile(LFCliBase):
                     # self.exit_fail()
                 time.sleep(monitor_interval)
 
-        logger.info(value_map)
+        logger.info(pformat(value_map))
 
         # [further] post-processing data, after test completion
         full_test_data_list = []
         for test_timestamp, data in value_map.items():
             # reduce the endpoint data to single dictionary of dictionaries
             for datum in data["endpoint"]:
+                logger.debug("type datum {datum}".format(datum=type(datum)))
                 for endpoint_data in datum.values():
                     if debug:
                         logger.debug(endpoint_data)
