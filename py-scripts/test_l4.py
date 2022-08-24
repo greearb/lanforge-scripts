@@ -724,39 +724,6 @@ Generic command example:
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
 
-    # TODO remove code lf_report.py places the report
-    # Create directory
-    ##report_data_dir_file = ""
-    ##if args.report_file is None:
-    ##    try:
-    ##        if os.path.isdir('/home/lanforge/report-data'):
-    ##            homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':', '-') + '_test_l4'
-    ##            path = os.path.join('/home/lanforge/report-data/', homedir)
-    ##            logger.info(path)
-    ##            os.mkdir(path)
-    ##            if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
-    ##                                  'xlsx']:
-    ##                report_data_dir_file = path + '/data.' + args.output_format
-    ##                logger.info(report_data_dir_file)
-    ##            else:
-    ##                logger.info('Defaulting data file output type to Excel')
-    ##                report_data_dir_file = path + '/data.xlsx'
-    ##                logger.info(report_data_dir_file)
-    ##    except Exception as x:
-    ##        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-    ##
-    ##    rpt_path = report.get_report_path()
-    ##    if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
-    ##                                'xlsx']:
-    ##        rpt_file = rpt_path + '/data.' + args.output_format
-    ##        logger.info(rpt_file)
-    ##    else:
-    ##        logger.info('Defaulting data file output type to Excel')
-    ##        rpt_file = rpt_path + '/data.xlsx'
-    ##        logger.info(rpt_file)
-    ##else:
-    ##    rpt_file = args.report_file
-    ##    logger.info(rpt_file)
 
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
                                           radio=args.radio)
@@ -790,17 +757,6 @@ Generic command example:
     l4_cx_results = {}
 
     layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.json_get('layer4')['endpoint']])
-    # output data.xlsx to /home/lanforge/report-data/ for backward compatibility with legacy code
-    # if report_data_dir_file != "":
-    #     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
-    #                            report_file=report_data_dir_file,
-    #                            duration_sec=args.test_duration,
-    #                            created_cx=layer4traffic,
-    #                            output_format=output_form,
-    #                            script_name='test_l4',
-    #                            arguments=args,
-    #                            debug=args.debug)
-    # output data.xlsx to /home/lanforge/html-reports/ along with all other test reports
     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
                                report_file=report_file,
                                duration_sec=args.test_duration,
