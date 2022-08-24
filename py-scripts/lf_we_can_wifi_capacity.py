@@ -113,7 +113,7 @@ class LfInteropWifiCapacity(Realm):
         return latest_file
 
     def get_data(self):
-        resource_id_real, phone_name, mac_address, user_name, phone_radio, rx_rate, tx_rate, signal, ssid, channel \
+        resource_id_real, phone_name, mac_address, user_name, phone_radio, rx_rate, tx_rate, signal, ssid, channel, phone_radio_bandwidth \
             = self.get_resource_data()
         folder_directory = self.get_folder_name()
         rx_rate = [(i.split(" ")[0]) if (i.split(" ")[0]) != '' else '0' for i in rx_rate]
@@ -202,7 +202,7 @@ class LfInteropWifiCapacity(Realm):
             }, index=[phone_name[i] for i in range(int(self.batch_size))])
 
         phone_data = [resource_id_real, phone_name, mac_address, user_name, phone_radio, rx_rate, tx_rate, signal,
-                      ssid, channel]
+                      ssid, channel, phone_radio_bandwidth]
         self.generate_report(folder_directory, phone_data, rx_tx_df, link_rate_df, link_rate_phone_df)
 
     def generate_report(self, file_derectory, get_data, rx_tx_df, link_rate_df, link_rate_phone_df):
@@ -222,7 +222,10 @@ class LfInteropWifiCapacity(Realm):
         signal = [get_data[7][i] for i in range(self.batch_size)]
         ssid = [get_data[8][i] for i in range(self.batch_size)]
         channel = [get_data[9][i] for i in range(self.batch_size)]
+        mode = [get_data[10][i] for i in range(self.batch_size)]
+        phone_radio_bandwidth = [get_data[10][i].split(" ")[-2] for i in range(self.batch_size)]
 
+        # phone_radio_bandwidth = [i.split(" ")[-1] for i in phone_radio_bandwidth]
         report = lf_report(_output_html="we-can-wifi-capacity.html", _output_pdf="we-can-wifi-capacity.pdf",
                            _results_dir_name="we-can wifi-capacity result")
 
@@ -262,10 +265,10 @@ class LfInteropWifiCapacity(Realm):
                 twog_count += 1
             else:
                 fiveg_count += 1
-        twog_fiveg_count = "5G-" + str(fiveg_count) + " 2G-" + str(twog_count)
+        twog_fiveg_count = ("5G - stations = " + str(fiveg_count) + "    :   2G - stations = " + str(twog_count))
         device_data = {
-            "Total no.of stations(2G & 5G)": [twog_fiveg_count],
-            "Traffic rate ": ["Upload: " + self.inp_upload_rate + ", Download: " + self.inp_download_rate],
+            "No.of stations(2G & 5G)": [twog_fiveg_count],
+            "Traffic rate ": ["Total Upload - " + self.inp_upload_rate + ": Total Download - " + self.inp_download_rate],
             "Total connected clients": [len(phone_name)],
             "Failed clients": ["NA"],
 
@@ -288,6 +291,11 @@ class LfInteropWifiCapacity(Realm):
             "Phone Radio": phone_radio,
             "Rx link Rate (Mbps) ": rx_rate,
             "Tx link Rate (Mbps)": tx_rate,
+            "Device type": ["Android" for i in range(len(tx_rate))],
+            "Channel": channel,
+            "Signal": signal,
+            "Mode": mode,
+
         }
         # Real time chart
         report.start_content_div()
@@ -310,6 +318,9 @@ class LfInteropWifiCapacity(Realm):
             "Security": ["WPA2" for i in range(len(ssid))],
             "Channel": channel,
             "Mode": phone_radio,
+            "Rx Rate (Mbps)": rx_rate,
+            "Tx Rate (Mbps)": tx_rate,
+            "Band": phone_radio_bandwidth,
             "Direction": [direction for i in range(len(ssid))],
             "Traffic": [str(self.protocol).replace(')','').replace('(','').replace("'",'').strip() for i in range(len(ssid))],
 
@@ -326,7 +337,7 @@ class LfInteropWifiCapacity(Realm):
 
         report.save_bar_chart("Real Client", "Rx/Tx (Mbps)", link_rate_df, "link_rate")
         report.start_content_div()
-        report.build_chart_title("Link Rate Chart")
+        # report.build_chart_title("Link Rate Chart")
         # report.set_text("<h5> This chart shows that the total Link rate we got during running the script for TCP and "
         #                 "UDP traffic versus the real traffic we got for each phone in Mbps.")
         report.build_chart_custom("link_rate.png", align='left', padding='15px', margin='0px 0px 0px 0px',
@@ -438,6 +449,7 @@ class LfInteropWifiCapacity(Realm):
         signal = []
         ssid = []
         channel = []
+        phone_radio_bandwidth = []
         eid_data = self.json_get("ports?fields=alias,mac,mode,Parent Dev,rx-rate,tx-rate,signal,ssid,channel")
         for alias in eid_data["interfaces"]:
             for i in alias:
@@ -463,7 +475,7 @@ class LfInteropWifiCapacity(Realm):
                     phone_name_list.append(name)
                     mac_address.append(mac)
                 if int(i.split(".")[1]) > 1 and alias[i]["alias"] == 'wlan0' and alias[i]["parent dev"] == 'wiphy0':
-                    # phone_radio.append(alias[i]['mode'])
+                    phone_radio_bandwidth.append(alias[i]['mode'])
                     # Mapping Radio Name in human readable format
                     if 'a' not in alias[i]['mode'] or "20" in alias[i]['mode']:
                         phone_radio.append('2G')
@@ -471,7 +483,7 @@ class LfInteropWifiCapacity(Realm):
                         phone_radio.append("AUTO")
                     else:
                         phone_radio.append('2G/5G')
-        return resource_id_list, phone_name_list, mac_address, user_name, phone_radio, rx_rate, tx_rate, signal, ssid, channel
+        return resource_id_list, phone_name_list, mac_address, user_name, phone_radio, rx_rate, tx_rate, signal, ssid, channel, phone_radio_bandwidth
 
 
 def main():
