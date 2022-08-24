@@ -223,10 +223,12 @@ class L4CXProfile(LFCliBase):
         if (monitor_interval is None) or (monitor_interval < 1):
             logger.critical("L4CXProfile::monitor wants monitor_interval >= 1 second")
             raise ValueError("L4CXProfile::monitor wants monitor_interval >= 1 second")
+        # verify that the file extension matches the output format    
         if output_format is not None:
             if output_format.lower() != report_file.split('.')[-1]:
-                logger.critical('Filename %s does not match output format %s' % (report_file, output_format))
-                raise ValueError('Filename %s does not match output format %s' % (report_file, output_format))
+                logger.info('File extension %s does not match output format %s changing file extension to match output format' % (report_file, output_format))
+                result = os.path.splitext(report_file)[0]
+                report_file = result + output_format.lower()
         else:
             output_format = report_file.split('.')[-1]
 

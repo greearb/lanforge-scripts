@@ -49,21 +49,21 @@ EXAMPLE (urls/s):
     ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
                  --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
                  --url "dl http://upstream_port_ip/ /dev/null" --requests_per_ten 600 --test_type 'urls'
-                 --csv_outfile test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
+                 --report_file test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
                  --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
 
 EXAMPLE (bytes-rd):
     ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
                  --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 2m
                  --url "dl http://upstream_port_ip/ /dev/null" --requests_per_ten 600 --test_type bytes-rd
-                 --csv_outfile test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
+                 --report_file test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
                  --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
 
 EXAMPLE (ftp urls/s):
     ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
                  --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
                  --url "ul ftp://lanforge:lanforge@upstream_port_ip/large-file.bin /home/lanforge/large-file.bin"
-                 --requests_per_ten 600 --test_type 'urls' --csv_outfile test_l4.csv --test_rig Test-Lab
+                 --requests_per_ten 600 --test_type 'urls' --report_file test_l4.csv --test_rig Test-Lab
                  --test_tag L4 --dut_hw_version Linux --dut_model_num 1 --dut_sw_version 5.4.5
                  --dut_serial_num 1234 --test_id "L4 data"
 
@@ -71,7 +71,7 @@ EXAMPLE (ftp bytes-wr):
     ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
                  --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
                  --url "ul ftp://lanforge:lanforge@upstream_port_ip/large-file.bin /home/lanforge/large-file.bin"
-                 --requests_per_ten 600 --test_type bytes-wr --csv_outfile test_l4.csv --test_rig Test-Lab
+                 --requests_per_ten 600 --test_type bytes-wr --report_file test_l4.csv --test_rig Test-Lab
                  --test_tag L4 --dut_hw_version Linux --dut_model_num 1 --dut_sw_version 5.4.5
                  --dut_serial_num 1234 --test_id "L4 data"
 
@@ -79,7 +79,7 @@ EXAMPLE (ftp bytes-rd):
     ./test_l4.py --mgr localhost --upstream_port eth1 --radio wiphy0 --num_stations 3
                  --security {open|wep|wpa|wpa2|wpa3} --ssid <ssid> --passwd <password> --test_duration 1m
                  --url "dl ftp://upstream_port_ip /dev/null" --requests_per_ten 600 --test_type bytes-rd
-                 --csv_outfile test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
+                 --report_file test_l4.csv --test_rig Test-Lab --test_tag L4 --dut_hw_version Linux
                  --dut_model_num 1 --dut_sw_version 5.4.5 --dut_serial_num 1234 --test_id "L4 data"
 
 COPYRIGHT:
@@ -197,11 +197,11 @@ class IPV4L4(Realm):
         self.cx_profile.requests_per_ten = self.requests_per_ten
         self.cx_profile.target_requests_per_ten = self.target_requests_per_ten
 
-        if self.outfile is not None:
-            results = self.outfile[:-4]
-            results = results + "-results.csv"
-            self.csv_results_file = open(results, "w")
-            self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
+        # if self.outfile is not None:
+        results = self.outfile[:-4]
+        results = results + "-results.csv"
+        self.csv_results_file = open(results, "w")
+        self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
 
         self.ftp = ftp
         if self.ftp and 'ftp://' not in self.url:
@@ -548,7 +548,8 @@ Generic command example:
     parser.add_argument('--mode', help='Used to force mode of stations')
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
     parser.add_argument('--report_file', help='where you want to store results')
-    parser.add_argument('--output_format', help='choose csv or xlsx')  # update once other forms are completed
+    # parser.add_argument('--output_format', help='default csv',default='csv')  # update once other forms are completed
+    parser.add_argument('--output_format', help="'csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'parquet', 'png', 'df', 'xlsx'")  
     parser.add_argument('--ftp', help='Use ftp for the test', action='store_true')
     parser.add_argument('--test_type', help='Choose type of test to run {urls, bytes-rd, bytes-wr}',
                         default='bytes-rd')
@@ -597,10 +598,11 @@ Generic command example:
         "--test_priority",
         default="",
         help="dut model for kpi.csv,  test-priority is arbitrary number")
-    parser.add_argument(
-        '--csv_outfile',
-        help="--csv_outfile <Output file for csv data>",
-        default="")
+    # Use report file
+    # parser.add_argument(
+    #     '--csv_outfile',
+    #     help="--csv_outfile <Output file for csv data>",
+    #     default="")
 
 
 
@@ -654,12 +656,40 @@ Generic command example:
         _kpi_dut_serial_num=dut_serial_num,
         _kpi_test_id=test_id)
 
-    if args.csv_outfile is not None:
+    # the output format
+    if args.report_file is not None:
         current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        csv_outfile = "{}_{}-test_l4.csv".format(
-            args.csv_outfile, current_time)
-        csv_outfile = report.file_add_path(csv_outfile)
-        logger.info("csv output file : {}".format(csv_outfile))
+        if args.output_format is not None:
+            report_file = "{}_{}_{}.{}".format(
+                args.report_file, current_time,args.report_file,args.output_format)
+        else:   
+            report_file = "{}_{}_{}".format(
+                args.report_file, current_time,args.report_file)
+
+        report_file = report.file_add_path(report_file)
+        logger.info("report file : {}".format(report_file))
+    else:
+        current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+        report_file = "{}-test_l4.csv".format(current_time)
+        report_file = report.file_add_path(report_file)
+        logger.info("csv output file : {}".format(report_file))
+
+    if report_file is None:
+        if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'parquet', 'png', 'df',
+                                  'xlsx']:
+            output_form = args.output_format.lower()
+        else:
+            logger.info("Defaulting data file output type to Excel")
+            # output_form = 'xlsx'
+            output_form = 'csv'
+
+    else:
+        if args.output_format is None:
+            output_form = str(report_file).split('.')[-1]
+        else:
+            output_form = args.output_format
+
+
 
     # TODO either use Realm or create a port to IP method in realm
     if 'upstream_port_ip' in args.url:
@@ -693,52 +723,40 @@ Generic command example:
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
-    if args.report_file is None:
-        if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'parquet', 'png', 'df',
-                                  'xlsx']:
-            output_form = args.output_format.lower()
-        else:
-            logger.info("Defaulting data file output type to Excel")
-            output_form = 'xlsx'
 
-    else:
-        if args.output_format is None:
-            output_form = str(args.report_file).split('.')[-1]
-        else:
-            output_form = args.output_format
-
+    # TODO remove code lf_report.py places the report
     # Create directory
-    report_data_dir_file = ""
-    if args.report_file is None:
-        try:
-            if os.path.isdir('/home/lanforge/report-data'):
-                homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':', '-') + '_test_l4'
-                path = os.path.join('/home/lanforge/report-data/', homedir)
-                logger.info(path)
-                os.mkdir(path)
-                if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
-                                      'xlsx']:
-                    report_data_dir_file = path + '/data.' + args.output_format
-                    logger.info(report_data_dir_file)
-                else:
-                    logger.info('Defaulting data file output type to Excel')
-                    report_data_dir_file = path + '/data.xlsx'
-                    logger.info(report_data_dir_file)
-        except Exception as x:
-            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-
-        rpt_path = report.get_report_path()
-        if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
-                                    'xlsx']:
-            rpt_file = rpt_path + '/data.' + args.output_format
-            logger.info(rpt_file)
-        else:
-            logger.info('Defaulting data file output type to Excel')
-            rpt_file = rpt_path + '/data.xlsx'
-            logger.info(rpt_file)
-    else:
-        rpt_file = args.report_file
-        logger.info(rpt_file)
+    ##report_data_dir_file = ""
+    ##if args.report_file is None:
+    ##    try:
+    ##        if os.path.isdir('/home/lanforge/report-data'):
+    ##            homedir = str(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")).replace(':', '-') + '_test_l4'
+    ##            path = os.path.join('/home/lanforge/report-data/', homedir)
+    ##            logger.info(path)
+    ##            os.mkdir(path)
+    ##            if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
+    ##                                  'xlsx']:
+    ##                report_data_dir_file = path + '/data.' + args.output_format
+    ##                logger.info(report_data_dir_file)
+    ##            else:
+    ##                logger.info('Defaulting data file output type to Excel')
+    ##                report_data_dir_file = path + '/data.xlsx'
+    ##                logger.info(report_data_dir_file)
+    ##    except Exception as x:
+    ##        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+    ##
+    ##    rpt_path = report.get_report_path()
+    ##    if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'parquet',
+    ##                                'xlsx']:
+    ##        rpt_file = rpt_path + '/data.' + args.output_format
+    ##        logger.info(rpt_file)
+    ##    else:
+    ##        logger.info('Defaulting data file output type to Excel')
+    ##        rpt_file = rpt_path + '/data.xlsx'
+    ##        logger.info(rpt_file)
+    ##else:
+    ##    rpt_file = args.report_file
+    ##    logger.info(rpt_file)
 
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
                                           radio=args.radio)
@@ -753,7 +771,7 @@ Generic command example:
                      url=args.url,
                      mode=args.mode,
                      ap=args.ap,
-                     outfile=args.csv_outfile,
+                     outfile=report_file,
                      kpi_csv=kpi_csv,
                      ftp=args.ftp,
                      ftp_user=args.ftp_user,
@@ -773,18 +791,18 @@ Generic command example:
 
     layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.json_get('layer4')['endpoint']])
     # output data.xlsx to /home/lanforge/report-data/ for backward compatibility with legacy code
-    if report_data_dir_file != "":
-        ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
-                               report_file=report_data_dir_file,
-                               duration_sec=args.test_duration,
-                               created_cx=layer4traffic,
-                               output_format=output_form,
-                               script_name='test_l4',
-                               arguments=args,
-                               debug=args.debug)
+    # if report_data_dir_file != "":
+    #     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
+    #                            report_file=report_data_dir_file,
+    #                            duration_sec=args.test_duration,
+    #                            created_cx=layer4traffic,
+    #                            output_format=output_form,
+    #                            script_name='test_l4',
+    #                            arguments=args,
+    #                            debug=args.debug)
     # output data.xlsx to /home/lanforge/html-reports/ along with all other test reports
     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
-                               report_file=rpt_file,
+                               report_file=report_file,
                                duration_sec=args.test_duration,
                                created_cx=layer4traffic,
                                output_format=output_form,
