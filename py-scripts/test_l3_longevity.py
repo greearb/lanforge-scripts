@@ -150,6 +150,7 @@ class L3VariableTime(Realm):
                  atten_vals=None,
                  number_template="00",
                  test_duration="256s",
+                 layer3_cols=None,
                  polling_interval="60s",
                  lfclient_host="localhost",
                  lfclient_port=8080,
@@ -205,6 +206,8 @@ class L3VariableTime(Realm):
             atten_vals = []
         if _capture_signal_list is None:
             _capture_signal_list = []
+        if layer3_cols is None:
+            layer3_cols = ['Avg RTT','tx rate']
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
                          debug_=debug,
@@ -236,6 +239,7 @@ class L3VariableTime(Realm):
         self.number_template = number_template
         self.name_prefix = name_prefix
         self.test_duration = test_duration
+        self.layer3_cols = layer3_cols
         self.radio_name_list = radio_name_list
         self.number_of_stations_per_radio_list = number_of_stations_per_radio_list
         # self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
@@ -976,6 +980,7 @@ class L3VariableTime(Realm):
         return ap_chanim_stats_fake
 
     # Run the main body of the test logic.
+    #(Lines 983- 2220)
     def start(self, print_pass=False):
         print("Bringing up stations")
         self.admin_up(self.side_b)
@@ -1012,7 +1017,18 @@ class L3VariableTime(Realm):
         else:
             # No reason to continue
             raise ValueError("ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
-
+        try:
+            #TODO : edit this to be layer3 tab, not layer3 endps
+            layer3connections =  layer3connections = ','.join([[*x.keys()][0] for x in self.json_get('endp')['endpoint']])
+        except ValueError:
+            raise ValueError('Unable to find Layer 3 connections.')
+        if type(self.layer3_cols) is not list:
+            layer3_cols = list(self.layer3_cols.split(","))
+        else:
+            layer3_cols = self.layer3_cols
+        if self.debug:
+            logger.debug("Layer 3 columns are.....")
+            logger.debug(layer3_cols)
         self.csv_generate_column_headers()
         # print(csv_header)
         self.csv_add_column_headers()
@@ -1889,9 +1905,10 @@ class L3VariableTime(Realm):
                                         total_dl_rate_ll,
                                         total_dl_pkts_ll,
                                         ap_row)
+                    #ENDTIME reached                    
 
                     # Consolidate all the dl ports into one file
-                    # Create empty da
+                    # Create empty dataframe
                     all_dl_ports_df = pd.DataFrame()
                     port_eids = self.gather_port_eids()
 
@@ -1909,9 +1926,9 @@ class L3VariableTime(Realm):
                     # if there are multiple loops then delete the df
                     del all_dl_ports_df
 
-                    # consolidate all the
+    
                     if self.ap_read:
-                        # Consolidate all the dl ports into one file
+                        # Consolidate all the ul ports into one file
                         # Create empty dataframe
                         all_ul_ports_df = pd.DataFrame()
                         port_eids = self.gather_port_eids()
@@ -1992,12 +2009,7 @@ class L3VariableTime(Realm):
                         # provide OFDMA stats 2.4GHz
                         self.ap_ofdma_24g += self.ap_custom_cmd(
                             'wl -i wl0 muinfo -v')
-
-                    # TODO there is a specific stop method
-                    # Stop connections.
-                    # self.cx_profile.stop_cx()
-                    # self.multicast_profile.stop_mc()
-
+                    # Calculate passes before moving onto next atten val.
                     if passes == expected_passes:
                         self._pass(
                             "PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" %

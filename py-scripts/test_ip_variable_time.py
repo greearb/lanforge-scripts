@@ -418,7 +418,7 @@ class IPVariableTime(Realm):
         try:
             layer3connections = ','.join([[*x.keys()][0] for x in self.json_get('endp')['endpoint']])
         except ValueError:
-            raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
+            raise ValueError('Unable to find layer 3 connections.')
 
         if type(self.layer3_cols) is not list:
             layer3_cols = list(self.layer3_cols.split(","))
