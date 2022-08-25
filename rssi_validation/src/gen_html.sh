@@ -5,15 +5,15 @@ REPORT="$REPORT_NAME"
 
 # Minimal Test
 # -----
-BANDWIDTH_OPTIONS=( 20 )
-CHANNEL_OPTIONS=( 36 )
-ANTENNA_OPTIONS=( 0 )
+# BANDWIDTH_OPTIONS=( 20 )
+# CHANNEL_OPTIONS=( 36 )
+# ANTENNA_OPTIONS=( 0 )
 
 # Full Test
 # -----
-# ANTENNA_OPTIONS=( 0 1 4 7 8 )
-# CHANNEL_OPTIONS=( 6 36 )
-# BANDWIDTH_OPTIONS=( 20 40 80 )
+ANTENNA_OPTIONS=( 0 1 4 7 8 )
+CHANNEL_OPTIONS=( 6 36 )
+BANDWIDTH_OPTIONS=( 20 40 80 )
 
 ANTENNA_TITLE=( [0]="Diversity (All)" [1]="Fixed-A (1x1)" [4]="AB (2x2)" [7]="ABC (3x3)" [8]="ABCD (4x4)" [9]="(8x8)" )
 
@@ -37,7 +37,9 @@ add_sections (){
 	do
 	    for bandwidth in "${BANDWIDTH_OPTIONS[@]}"
 	    do
-		add_signal_section "$channel" "$antenna" "$bandwidth" "$deviation"
+		if ! [[ "$bandwidth" == "80" ]] || ! [[ "$channel" == "6" ]]; then #check for bandwidth incompatibility
+		    add_signal_section "$channel" "$antenna" "$bandwidth" "$deviation"
+		fi
 	    done
 	done
     done
