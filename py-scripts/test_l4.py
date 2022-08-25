@@ -239,16 +239,26 @@ class IPV4L4(Realm):
         urls_seconds = 0
         total_urls = 0
 
-        '''
-        for e in self.cx_profile.created_endp.keys():
+        # gather statistics for only endpoints created does not work 
+        # the created_cx is an empty list in the profile
+        # logger.debug("self.cx_profile.created_endp : {endp}".format(endp=self.cx_profile.created_endp))
+        # for e in self.cx_profile.created_endp.keys():
         # for e in self.cx_profile.created_cx.keys():
-            our_endps[e] = e
-        logger.info("our_endps {our_endps}".format(our_endps=our_endps))
-        '''
+        #    our_endps[e] = e
+        # logger.info("our_endps {our_endps}".format(our_endps=our_endps))
         
+        logger.info("type endp_list['endpoint'] {endp}".format(endp=type(endp_list['endpoint'])))
         for endp_name in endp_list['endpoint']:
-            if endp_name != 'uri' and endp_name != 'handler':
-                for item, endp_value in endp_name.items():
+            logger.info("type endp_name {endp}".format(endp=type(endp_name)))
+            if (type(endp_name) is str):
+                # single endpoint
+                # create a disctionary
+                # 1 station types
+                # 1661440520.975214 INFO     type endp_list['endpoint'] <class 'dict'> test_l4.py 248
+                # 1661440627.267687 INFO     type endp_name <class 'str'> test_l4.py 250
+                endp_name_dict = {endp_list['endpoint']['name'] : endp_list['endpoint']}
+                for item, endp_value in endp_name_dict.items():
+                    # TODO only do for the created endpoints
                     # if item in our_endps:
                     if True:
                         endps.append(endp_value)
@@ -277,6 +287,46 @@ class IPV4L4(Realm):
                                 if value_name == 'total-urls':
                                     endp_rx_map[item] = value
                                     total_urls += int(value)
+                break
+
+            else:   
+                # multiple endpoints
+                # two stations types 
+                # for 2 stations:
+                # 1661440144.630128 INFO     type endp_list['endpoint'] <class 'list'> test_l4.py 248
+                # 1661440315.269799 INFO     type endp_name <class 'dict'> test_l4.py 250
+
+                if endp_name != 'uri' and endp_name != 'handler':
+                    # TODO make dictionary 
+                    for item, endp_value in endp_name.items():
+                        # if item in our_endps:
+                        if True:
+                            endps.append(endp_value)
+                            logger.debug("endpoint: {item} value:\n".format(item=item))
+                            logger.debug(endp_value)
+                            logger.info("item {item}".format(item=item))
+
+                            for value_name, value in endp_value.items():
+                                # value can be a '' empty string
+                                if value != '': 
+                                    if value_name == 'bytes-rd':
+                                        endp_rx_map[item] = value
+                                        total_bytes_rd += int(value)
+                                    if value_name == 'bytes-wr':
+                                        endp_rx_map[item] = value
+                                        total_bytes_wr += int(value)
+                                    if value_name == 'rx rate':
+                                        endp_rx_map[item] = value
+                                        total_rx_rate += int(value)
+                                    if value_name == 'tx rate':
+                                        endp_rx_map[item] = value
+                                        total_tx_rate += int(value)
+                                    if value_name == 'urls/s':
+                                        endp_rx_map[item] = value
+                                        urls_seconds += float(value)
+                                    if value_name == 'total-urls':
+                                        endp_rx_map[item] = value
+                                        total_urls += int(value)
 
         # logger.debug("total-dl: ", total_dl, " total-ul: ", total_ul, "\n")
         return endp_rx_map, endps, total_bytes_rd, total_bytes_wr, total_rx_rate, total_tx_rate, urls_seconds, total_urls

@@ -325,13 +325,30 @@ class L4CXProfile(LFCliBase):
         full_test_data_list = []
         for test_timestamp, data in value_map.items():
             # reduce the endpoint data to single dictionary of dictionaries
+            # for single cx data["endpoint"] string not dict
+            logger.debug("type data['endpoint']  {data}".format(data=type(data['endpoint'])))
+            logger.debug(" data['endpoint'] : {data}".format(data=data['endpoint']))
+
             for datum in data["endpoint"]:
                 logger.debug("type datum {datum}".format(datum=type(datum)))
-                for endpoint_data in datum.values():
-                    if debug:
+                if type(datum) is str:
+                    # single CX (str)
+                    datum_dict = {data['endpoint']['name'] : data['endpoint']}
+                    logger.debug("datum_dict {datum}".format(datum=datum_dict))
+                    for endpoint_data in datum_dict.values():
                         logger.debug(endpoint_data)
-                    endpoint_data["Timestamp"] = test_timestamp
-                    full_test_data_list.append(endpoint_data)
+                        endpoint_data["Timestamp"] = test_timestamp
+                        full_test_data_list.append(endpoint_data)
+                    # break is needed ,  there is a single CX the json is formatted 
+                    break
+
+                else:
+                    # multiple CS (str)
+                    for endpoint_data in datum.values():
+                        if debug:
+                            logger.debug(endpoint_data)
+                        endpoint_data["Timestamp"] = test_timestamp
+                        full_test_data_list.append(endpoint_data)
 
         header_row.append("Timestamp")
         header_row.append('Timestamp milliseconds')
