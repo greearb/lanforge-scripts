@@ -347,7 +347,7 @@ python3 ./test_generic.py
 
     if args.type != "speedtest" and args.dest is None:
         logger.error("Destination is not set. Use --dest [ip_address] to specify destination")
-        raise ValueError("Error received from GUI, please ensure generic tab is enabled")
+        raise ValueError("Destination is not set. Use --dest [ip_address] to specify destination")
 
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
