@@ -490,7 +490,7 @@
                     " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED ",
                     " --test_duration 30s",
                     " --url 'dl http://upstream_port_ip /dev/null'",
-                    " --report_file REPORT_PATH"
+                    " --local_lf_report_dir REPORT_PATH"
                 ]
             },
             "test_l4_bytes_rd":{
@@ -502,7 +502,7 @@
                     " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED ",
                     " --test_duration 30s --requests_per_ten 600 --test_type bytes-rd",
                     " --url 'dl http://upstream_port_ip /dev/null'",
-                    " --report_file REPORT_PATH"
+                    " --local_lf_report_dir REPORT_PATH"
                 ]
             },
             "test_l4_urls":{
@@ -514,7 +514,7 @@
                     " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED ",
                     " --test_duration 30s --requests_per_ten 600 --test_type urls",
                     " --url 'dl http://upstream_port_ip /dev/null'",
-                    " --report_file REPORT_PATH"
+                    " --local_lf_report_dir REPORT_PATH"
                 ]
             },
             "test_l4_ftp_bytes_rd":{
@@ -526,7 +526,7 @@
                     " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED ",
                     " --test_duration 30s --requests_per_ten 600 --test_type bytes-rd --ftp",
                     " --url 'dl ftp://upstream_port_ip /dev/null'",
-                    " --report_file REPORT_PATH"
+                    " --local_lf_report_dir REPORT_PATH"
                 ]
             },
             "test_l3_longevity_1":{
