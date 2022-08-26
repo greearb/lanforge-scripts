@@ -970,6 +970,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     if rx_mode_total_count == 0:
         logger.warning("Could not find any rx-mode packets.")
         logger.info(pformat(wifi_stats_json))
+        # calculate percentages
+        for rx_mode_count in rx_mode_value:
+            rx_mode_value_percent.append(0)
     else:
         # calculate percentages
         for rx_mode_count in rx_mode_value:
@@ -1053,9 +1056,16 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             tx_mode_value.append(wifi_stats_json[iterator])
             tx_mode_total_count += wifi_stats_json[iterator]
 
-    # calculate percentages
-    for tx_mode_count in tx_mode_value:
-        tx_mode_value_percent.append(round((tx_mode_count / tx_mode_total_count) * 100, 2))
+    if tx_mode_total_count == 0:
+        logger.warning("Could not find any tx-mode packets.")
+        logger.info(pformat(wifi_stats_json))
+        # calculate percentages
+        for tx_mode_count in tx_mode_value:
+            tx_mode_value_percent.append(0)
+    else:
+        # calculate percentages
+        for tx_mode_count in tx_mode_value:
+            tx_mode_value_percent.append(round((tx_mode_count / tx_mode_total_count) * 100, 2))
 
     # manipulate data to sort by length to have
     # CCK is first, the OFDMA, then HT variants, then VHT, the HE
@@ -1136,9 +1146,16 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     logger.debug("rx_bw: {rx_bw}".format(rx_bw=rx_bw))
 
-    # calculate percentages
-    for rx_bw_count in rx_bw_value:
-        rx_bw_value_percent.append(round((rx_bw_count / rx_bw_total_count) * 100, 2))
+    if rx_bw_total_count == 0:
+        logger.warning("Could not find any rx-bw packets.")
+        logger.info(pformat(wifi_stats_json))
+        # calculate percentages
+        for rx_bw_count in rx_bw_value:
+            rx_bw_value_percent.append(0)
+    else:
+        # calculate percentages
+        for rx_bw_count in rx_bw_value:
+            rx_bw_value_percent.append(round((rx_bw_count / rx_bw_total_count) * 100, 2))
 
     logger.debug("Before sort rx bw: {rx_bw} : {rx_bw_value_str} : {rx_bw_value} : {rx_bw_value_percent}".
                  format(rx_bw=rx_bw, rx_bw_value_str=rx_bw_value_str, rx_bw_value=rx_bw_value, rx_bw_value_percent=rx_bw_value_percent))
@@ -1210,10 +1227,16 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             tx_bw_value_str.append(str(wifi_stats_json[iterator]))
             tx_bw_value.append(wifi_stats_json[iterator])
             tx_bw_total_count += wifi_stats_json[iterator]
-
-    # calculate percentages
-    for tx_bw_count in tx_bw_value:
-        tx_bw_value_percent.append(round((tx_bw_count / tx_bw_total_count) * 100, 2))
+    if tx_bw_total_count == 0:
+        logger.warning("Could not find any tx-bw packets.")
+        logger.info(pformat(wifi_stats_json))
+        # calculate percentages
+        for tx_bw_count in tx_bw_value:
+            tx_bw_value_percent.append(0)
+    else:
+        # calculate percentages
+        for tx_bw_count in tx_bw_value:
+            tx_bw_value_percent.append(round((tx_bw_count / tx_bw_total_count) * 100, 2))
 
     logger.debug("Before sort tx bw: {tx_bw} : {tx_bw_value_str} : {tx_bw_value} : {tx_bw_value_percent}".
                  format(tx_bw=tx_bw, tx_bw_value_str=tx_bw_value_str, tx_bw_value=tx_bw_value, tx_bw_value_percent=tx_bw_value_percent))
@@ -1284,10 +1307,16 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             rx_nss_value_str.append(str(wifi_stats_json[iterator]))
             rx_nss_value.append(wifi_stats_json[iterator])
             rx_nss_total_count += wifi_stats_json[iterator]
-
-    # calculate percentages
-    for rx_nss_count in rx_nss_value:
-        rx_nss_value_percent.append(round((rx_nss_count / rx_nss_total_count) * 100, 2))
+    if rx_nss_total_count == 0:
+        logger.warning("Could not find any rx-nss packets.")
+        logger.info(pformat(wifi_stats_json))
+        # calculate percentages
+        for rx_nss_count in rx_nss_value:
+            rx_nss_value_percent.append(0)
+    else:
+        # calculate percentages
+        for rx_nss_count in rx_nss_value:
+            rx_nss_value_percent.append(round((rx_nss_count / rx_nss_total_count) * 100, 2))
 
     rx_nss = [s.replace('v_rx_nss_1', '1 x 1') for s in rx_nss]
     rx_nss = [s.replace('v_rx_nss_2', '2 x 2') for s in rx_nss]
@@ -1350,10 +1379,16 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             tx_nss_value_str.append(str(wifi_stats_json[iterator]))
             tx_nss_value.append(wifi_stats_json[iterator])
             tx_nss_total_count += wifi_stats_json[iterator]
-
-    # calculate percentages
-    for tx_nss_count in tx_nss_value:
-        tx_nss_value_percent.append(round((tx_nss_count / tx_nss_total_count) * 100, 2))
+    if tx_nss_total_count == 0:
+        logger.warning("Could not find any tx-nss packets.")
+        logger.info(pformat(wifi_stats_json))
+        # calculate percentages
+        for tx_nss_count in tx_nss_value:
+            tx_nss_value_percent.append(0)
+    else:
+        # calculate percentages
+        for tx_nss_count in tx_nss_value:
+            tx_nss_value_percent.append(round((tx_nss_count / tx_nss_total_count) * 100, 2))
 
     tx_nss = [s.replace('v_tx_nss_1', '1 x 1') for s in tx_nss]
     tx_nss = [s.replace('v_tx_nss_2', '2 x 2') for s in tx_nss]
@@ -1416,9 +1451,16 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             rx_mcs_value.append(wifi_stats_json[iterator])
             rx_mcs_total_count += wifi_stats_json[iterator]
 
-    # calculate percentages
-    for rx_mcs_count in rx_mcs_value:
-        rx_mcs_value_percent.append(round((rx_mcs_count / rx_mcs_total_count) * 100, 2))
+    if rx_mcs_total_count == 0:
+        logger.warning("Could not find any rx-mode packets.")
+        logger.info(pformat(wifi_stats_json))
+        # calculate percentages
+        for rx_mcs_count in rx_mcs_value:
+            rx_mcs_value_percent.append(0)
+    else:
+        # calculate percentages
+        for rx_mcs_count in rx_mcs_value:
+            rx_mcs_value_percent.append(round((rx_mcs_count / rx_mcs_total_count) * 100, 2))
 
     logger.info("Before sort rx MCS {rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
                 format(rx_mcs=rx_mcs, rx_mcs_value_str=rx_mcs_value_str, rx_mcs_value=rx_mcs_value, rx_mcs_value_percent=rx_mcs_value_percent))
@@ -1600,7 +1642,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     # calculate percentages
     for rx_ampdu_count in rx_ampdu_value:
-        rx_ampdu_value_percent.append(round((rx_ampdu_count / rx_ampdu_total_count) * 100, 2))
+        if rx_ampdu_total_count == 0:
+            rx_ampdu_value_percent.append(0)
+        else:
+            rx_ampdu_value_percent.append(round((rx_ampdu_count / rx_ampdu_total_count) * 100, 2))
 
     # rx_ampdu values
     report.set_table_title("Packets RX with AMPDU Count")
