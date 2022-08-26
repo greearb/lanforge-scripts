@@ -187,19 +187,22 @@ class lf_rf_char(Realm):
         except:
             # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
             print("Looking for vap-eid: %s"%(vap_eid))
-            for s in json_stations['stations']:
-                #print("s (stations):")
-                #pprint(s)
-                keys = list(s.keys())
-                vals = s[keys[0]]
-                #print("vals:")
-                #pprint(vals)
+            try:
+                for s in json_stations['stations']:
+                    #print("s (stations):")
+                    #pprint(s)
+                    keys = list(s.keys())
+                    vals = s[keys[0]]
+                    #print("vals:")
+                    #pprint(vals)
 
-                if vals['ap'] == vap_eid:
-                    sta_ap = vap_eid
-                    self.dut_mac = vals['station bssid']
-                    print("found sta, ap: %s  mac: %s"%(sta_ap, self.dut_mac))
-                    break
+                    if vals['ap'] == vap_eid:
+                        sta_ap = vap_eid
+                        self.dut_mac = vals['station bssid']
+                        print("found sta, ap: %s  mac: %s"%(sta_ap, self.dut_mac))
+                        break
+            except:
+                pass
 
             if sta_ap == "":
                 logger.error("Stations table not as expected:")
