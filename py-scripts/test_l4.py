@@ -199,8 +199,15 @@ class IPV4L4(Realm):
         self.cx_profile.target_requests_per_ten = self.target_requests_per_ten
 
         # if self.outfile is not None:
-        results = self.outfile[:-4]
-        results = results + "-results.csv"
+        # results = self.outfile[:-4]
+        # todo check for the various extentions 
+        results = self.outfile
+        if results.split('.')[-1] == '':
+            logger.debug("report_file has no file extension will add .csv")
+
+        # check the file extension and compare to the mode set
+        
+
         self.csv_results_file = open(results, "w")
         self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
 
@@ -598,7 +605,7 @@ Generic command example:
                         default=600)
     parser.add_argument('--mode', help='Used to force mode of stations')
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
-    parser.add_argument('--report_file', help='where you want to store results')
+    parser.add_argument('--report_file', help='where you want to store monitor results in output_format')
     # parser.add_argument('--output_format', help='default csv',default='csv')  # update once other forms are completed
     parser.add_argument('--output_format', help="'csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'parquet', 'png', 'df', 'xlsx'")  
     parser.add_argument('--ftp', help='Use ftp for the test', action='store_true')
@@ -649,11 +656,11 @@ Generic command example:
         "--test_priority",
         default="",
         help="dut model for kpi.csv,  test-priority is arbitrary number")
-    # Use report file
-    # parser.add_argument(
-    #     '--csv_outfile',
-    #     help="--csv_outfile <Output file for csv data>",
-    #     default="")
+    # Used to report 
+    parser.add_argument(
+        '--csv_outfile',
+        help="--csv_outfile <Output file for csv data>",
+        default="csv_outfile")
 
 
 
@@ -707,39 +714,93 @@ Generic command example:
         _kpi_dut_serial_num=dut_serial_num,
         _kpi_test_id=test_id)
 
+
+    # TODO put in the output csv file
+    current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+    csv_outfile = "{}_{}-test_l4.csv".format(args.csv_outfile, current_time)
+    csv_outfile = report.file_add_path(csv_outfile)
+    logger.info("csv output file : {}".format(csv_outfile))
+
+
+    supported_formats =  ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'parquet', 'png', 'df', 'xlsx']
     # the output format
+    # The following will align the file extension with the output_format , 
+    #   if the report file does not have an extension the output format will become the extension
+    #   if the report file has an extension the output format will be set to that extension
+    #   if the report file is not set, default report file will be use and the output format will be used 
+
+    # the report_file is used by the monitor functionality 
     if args.report_file is not None:
+        # check if there was an extension on the report_file
         current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        if args.output_format is not None:
-            report_file = "{}_{}_{}.{}".format(
-                args.report_file, current_time,args.report_file,args.output_format)
+        logger.debug("Does report_file have an extension {ext}, if -1 then no extension".format(ext=args.report_file.find('.')))
+        if args.report_file.find('.') == -1:
+            # no file extension on report_file
+            if args.output_format is not None:
+                if args.output_format.lower() in supported_formats:
+                    report_file = "{}_{}.{}".format(current_time,args.report_file,args.output_format.lower())
+                    output_format = args.output_format.lower()
+                else:   
+                    report_file = "{}_{}.csv".format(current_time,args.report_file)
+                    output_format = "csv"
+            else:
+                report_file = "{}_{}.csv".format(current_time,args.report_file)
+                output_format = "csv"
+        else:
+            if args.report_file.split('.')[-1] in  supported_formats and args.output_format is not None:
+                if args.output_format.lower() in supported_formats:
+                    if args.output_format.lower() != args.report_file.split('.')[-1]:
+                        logger.warning("--output_format {output} not equal to extension on --report_file {report} setting output format to report_file extnsion".
+                        format(output=args.output_format, report=args.report_file))
+                        # the extension was passed in with report_file
+                        report_file = "{}_{}".format(current_time,args.report_file)
+                        output_format = report_file.split('.')[-1]
+                    else:
+                        report_file = "{}_{}".format(current_time,args.report_file)
+                        output_format = args.output_format
+                        logger.info("output_format {ext} and report_file extension the same {file}".format(ext=output_format,file=report_file))      
+                else:
+                    logger.info("setting output_format to report_file extension")      
+                    output_format = report_file.split('.')[-1]     
+                    report_file = "{}_{}".format(current_time,args.report_file)
+            else: 
+                report_file = args.report_file
+                logger.error("report_file extension {file} not in supported_formats {formats}".format(file=report_file,formats=supported_formats))                    
+
+    else:
+        current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+        if args.output_format in supported_formats:
+            report_file = "{}_monitor_test_l4.{}".format(current_time,args.output_format.lower())
+            output_format = args.output_format.lower()
         else:   
-            report_file = "{}_{}_{}".format(
-                args.report_file, current_time,args.report_file)
+            report_file = "{}_{}_monitor_test_l4.csv".format(current_time,args.report_file)
+            output_format = "csv"
 
-        report_file = report.file_add_path(report_file)
-        logger.info("report file : {}".format(report_file))
-    else:
-        current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        report_file = "{}-test_l4.csv".format(current_time)
-        report_file = report.file_add_path(report_file)
-        logger.info("csv output file : {}".format(report_file))
+    report_file = report.file_add_path(report_file)
+    logger.info("report file : {}".format(report_file))
 
-    if report_file is None:
-        if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'parquet', 'png', 'df',
-                                  'xlsx']:
-            output_form = args.output_format.lower()
-        else:
-            logger.info("Defaulting data file output type to Excel")
-            # output_form = 'xlsx'
-            output_form = 'csv'
+    # check for extension on report_file  hopefully there are not intermediat '.'
 
-    else:
-        if args.output_format is None:
-            output_form = str(report_file).split('.')[-1]
-        else:
-            output_form = args.output_format
-
+    #if report_file is None:
+    #    if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'parquet', 'png', 'df', 'xlsx']:
+    #        output_form = args.output_format.lower()
+    #    else:
+    #        logger.info("Defaulting data file output type to .csv")
+    #        # output_form = 'xlsx'
+    #        output_form = 'csv'
+    #
+    #else:
+    #    if args.output_format is None:
+    #        logger.debug("fine '.' in report_file {report}".format(report=report_file.find('.')))
+    #        if report_file.find('.') == -1:
+    #            # there is no file extension so add '.csv'
+    #            report_file = report_file + '.csv'
+    #        output_form = str(report_file).split('.')[-1]
+    #    else:
+    #        output_form = args.output_format
+    #        if report_file.find('.') == -1:
+    #            # there is no file extension so add output_form
+    #            report_file = report_file + output_form
 
 
     # TODO either use Realm or create a port to IP method in realm
@@ -789,7 +850,7 @@ Generic command example:
                      url=args.url,
                      mode=args.mode,
                      ap=args.ap,
-                     outfile=report_file,
+                     outfile=csv_outfile,
                      kpi_csv=kpi_csv,
                      ftp=args.ftp,
                      ftp_user=args.ftp_user,
@@ -817,13 +878,14 @@ Generic command example:
         layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.json_get('layer4')['endpoint']])
     # TODO pass in what is to be monitored on the command line
     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
-                               report_file=report_file,
-                               duration_sec=args.test_duration,
-                               created_cx=layer4traffic,
-                               output_format=output_form,
-                               script_name='test_l4',
-                               arguments=args,
-                               debug=args.debug)
+                                # report_file is for the monitor
+                                report_file=report_file,
+                                duration_sec=args.test_duration,
+                                created_cx=layer4traffic,
+                                output_format=output_format,
+                                script_name='test_l4',
+                                arguments=args,
+                                debug=args.debug)
 
     temp_stations_list = []
     temp_stations_list.extend(ip_test.station_profile.station_names.copy())
@@ -886,7 +948,7 @@ Generic command example:
 
 
 
-    report.set_table_title("L4 Test Key Performance Indexes")
+    report.set_table_title("L4 Test Results")
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
     report.build_table()
