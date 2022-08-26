@@ -513,12 +513,18 @@ class lf_rf_char(Realm):
                 chain_rssi = chain_rssi_str.split(',')
             except:
                 # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
-                s = json_stations['stations']["0.0.0.%s"%(self.dut_mac)]
-                keys = list(s.keys())
-                vals = s[keys[0]]
-                self.rssi_signal.append(vals['signal'])
-                chain_rssi_str = vals['chain rssi']
-                chain_rssi = chain_rssi_str.split(',')
+                #pprint(json_stations)
+                # This should give us faster lookup if I knew how to use it.
+                #sta_key = "0.0.0.%s"%(self.dut_mac)
+                #pprint("key: %s"%(sta_key))
+                for s in json_stations['stations']:
+                     keys = list(s.keys())
+                     vals = s[keys[0]]
+                     if vals['station bssid'] == self.dut_mac:
+                         self.rssi_signal.append(vals['signal'])
+                         chain_rssi_str = vals['chain rssi']
+                         chain_rssi = chain_rssi_str.split(',')
+                         break
 
             logger.info("RSSI chain length {chain}".format(chain=len(chain_rssi)))
             if len(chain_rssi) == 1:
