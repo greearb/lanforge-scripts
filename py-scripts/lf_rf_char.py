@@ -172,24 +172,41 @@ class lf_rf_char(Realm):
     def dut_info(self):
         self.json_vap_api.request = 'stations'
         json_stations = []
+        sta_ap = ""
+
+        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
+        vap_eid = "%s.%s.%s"%(self.shelf, self.resource, self.port_name);
+
         try:
             # does not need specific port information
             json_stations, *nil = self.json_vap_api.get_request_stations_information()
-            # Note there should only be one station connected
-            # TODO verify what happens if multiple statons connected
 
             self.dut_mac = json_stations['station']['station bssid']
+            sta_ap = json_stations['station']['ap']
             logger.info("DUT MAC: {mac}".format(mac=self.dut_mac))
         except:
-            logger.error("Stations table not as expected:")
-            pprint(json_stations)
-            return False
+            # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
+            print("Looking for vap-eid: %s"%(vap_eid))
+            for s in json_stations['stations']:
+                #print("s (stations):")
+                #pprint(s)
+                keys = list(s.keys())
+                vals = s[keys[0]]
+                #print("vals:")
+                #pprint(vals)
 
-        self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
+                if vals['ap'] == vap_eid:
+                    sta_ap = vap_eid
+                    self.dut_mac = vals['station bssid']
+                    print("found sta, ap: %s  mac: %s"%(sta_ap, self.dut_mac))
+                    break
+
+            if sta_ap == "":
+                logger.error("Stations table not as expected:")
+                pprint(json_stations)
+                return False
 
         # Make sure the station is on correct IP vap
-        sta_ap = json_stations['station']['ap']
-        vap_eid = "%s.%s.%s"%(self.shelf, self.resource, self.port_name);
         if (sta_ap != vap_eid):
             logger.error("Detected STA on AP: %s, expected it to be on AP: %s"%(sta_ap, vap_eid))
             return False
@@ -490,10 +507,19 @@ class lf_rf_char(Realm):
             self.json_vap_api.request = 'stations'
             # port not needed for all 
             json_stations, *nil = self.json_vap_api.get_request_stations_information()
+            try:
+                self.rssi_signal.append(json_stations['station']['signal'])
+                chain_rssi_str = json_stations['station']['chain rssi']
+                chain_rssi = chain_rssi_str.split(',')
+            except:
+                # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
+                s = json_stations['stations']["0.0.0.%s"%(self.dut_mac)]
+                keys = list(s.keys())
+                vals = s[keys[0]]
+                self.rssi_signal.append(vals['signal'])
+                chain_rssi_str = vals['chain rssi']
+                chain_rssi = chain_rssi_str.split(',')
 
-            self.rssi_signal.append(json_stations['station']['signal'])
-            chain_rssi_str = json_stations['station']['chain rssi']
-            chain_rssi = chain_rssi_str.split(',')
             logger.info("RSSI chain length {chain}".format(chain=len(chain_rssi)))
             if len(chain_rssi) == 1:
                 self.rssi_1.append(chain_rssi[0])
