@@ -560,7 +560,8 @@ class lf_rf_char(Realm):
 
         # TODO make the get_request more generic just set the request
         self.json_rad_api.request = 'wifi-stats'
-        json_wifi_stats, *nil = self.json_rad_api.get_request_wifi_stats_information(port=self.vap_radio)
+        # Read the vap device stats, it will also be able to report underlying radio stats as needed.
+        json_wifi_stats, *nil = self.json_rad_api.get_request_wifi_stats_information(port=self.vap_port)
         #print("wifi-stats output, vap-radio: %s radio port name %s:"%(self.vap_radio, self.json_api.port_name))
         #pprint(json_wifi_stats)
 
@@ -820,7 +821,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         return len(strn[0])
 
     # get dataset for the radio
-    wifi_stats_json = json_wifi_stats[args.vap_radio]
+    wifi_stats_json = json_wifi_stats[args.vap_port]
 
     # transmitted packets per polling interval
     tx_pkts = rf_char.tx_pkts
@@ -988,7 +989,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     logger.debug("Before sort rx mode: {rx_mode} : {rx_mode_value_str} : {rx_mode_value} : {rx_mode_value_percent}".
                  format(rx_mode=rx_mode, rx_mode_value_str=rx_mode_value_str, rx_mode_value=rx_mode_value, rx_mode_value_percent=rx_mode_value_percent))
 
-    # see rx_mcs for detales
+    # see rx_mcs for details
     rx_mode, rx_mode_value_str, rx_mode_value, rx_mode_value_percent = map(list, zip(*sorted(zip(rx_mode, rx_mode_value_str, rx_mode_value, rx_mode_value_percent), key=length_sort)))
 
     logger.debug("After sort rx mode: {rx_mode} : {rx_mode_value_str} : {rx_mode_value} : {rx_mode_value_percent}".
