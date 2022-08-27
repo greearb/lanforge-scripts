@@ -792,6 +792,33 @@ class Realm(LFCliBase):
         return num_sta_with_ips
 
     @staticmethod
+    def duration_time_to_milliseconds(time_string):
+        if isinstance(time_string, str):
+            pattern = re.compile("^(\d+)(\S+$)")
+            td = pattern.match(time_string)
+            if td:
+                dur_time = int(td.group(1))
+                dur_measure = str(td.group(2))
+                if dur_measure == "d":
+                    duration_millisec = dur_time * 24 * 60 * 60 * 1000
+                elif dur_measure == "h":
+                    duration_millisec = dur_time * 60 * 60 * 1000
+                elif dur_measure == "m":
+                    duration_millisec = dur_time * 60 * 1000
+                elif dur_measure == "s":
+                    duration_millisec = dur_time * 1 * 1000
+                elif dur_measure == "ms":
+                    duration_millisec = dur_time * 1
+                else:
+                    raise ValueError("Unknown value for time_string %s" % time_string)
+            else:
+                raise ValueError("Unknown value for time_string: %s" % time_string)
+        else:
+            raise ValueError("time_string must be of type str. Type %s provided" % type(time_string))
+        return duration_millisec
+
+
+    @staticmethod
     def duration_time_to_seconds(time_string):
         if isinstance(time_string, str):
             pattern = re.compile("^(\d+)([dhms]$)")

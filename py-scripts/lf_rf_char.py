@@ -24,8 +24,8 @@ COPYRIGHT:
 INCLUDE_IN_README
 """
 
-# TODO:  Set report timer on vap and radios to 1 sec, possibly smaller.
-# TODO:  Enable extra tx and rx stats on the radios
+# TODO:  Done, Set report timer on vap and radios to 1 sec, possibly smaller.
+# TODO:  Done, Enable extra tx and rx stats on the radios ,
 
 import argparse
 import sys
@@ -467,7 +467,7 @@ class lf_rf_char(Realm):
 
         cur_time = datetime.datetime.now()
         end_time = self.parse_time(self.duration) + cur_time
-        polling_interval_seconds = self.duration_time_to_seconds(self.polling_interval)
+        polling_interval_milliseconds = self.duration_time_to_milliseconds(self.polling_interval)
         interval = 0
         # initialize time stamps
         json_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
@@ -476,15 +476,15 @@ class lf_rf_char(Realm):
         tx_pkts_previous = json_vap_port_stats["interface"]["tx pkts"]
         tx_retries_previous = json_vap_port_stats["interface"]["wifi retries"]        
         while cur_time < end_time:
-            interval_time = cur_time + datetime.timedelta(seconds=polling_interval_seconds)
+            interval_time = cur_time + datetime.timedelta(milliseconds=polling_interval_milliseconds)
 
-            # TODO check the port time stamp to see if data changed
-            # check every half second and only report of the timestamp changed
+            # check the port time stamp to see if data changed
+            # check every 1/5 second and only report of the timestamp changed
 
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 # read the current time
-                time.sleep(.2)
+                time.sleep(.1)
                 json_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
                 current_time_stamp = json_vap_port_stats["interface"]["time-stamp"]
                 if current_time_stamp  !=  previous_time_stamp:
@@ -494,7 +494,7 @@ class lf_rf_char(Realm):
                 # Here check if the time stamp has changed
 
             # json_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
-            interval += int(polling_interval_seconds)
+            interval += float(polling_interval_milliseconds)/1000
             self.tx_interval.append(interval)
             current_time = current_time_stamp.split()
             self.tx_interval_time.append(current_time[1])
@@ -772,9 +772,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     # Set the report timer
     # use the duration in seconds to set the report timer
     # TODO call only once
-    polling_interval_seconds = rf_char.duration_time_to_seconds(args.polling_interval)
-    polling_interval_ms = polling_interval_seconds*1000
-    rf_char.set_port_report_timer(port=args.vap_port,milliseconds=polling_interval_ms)
+    polling_interval_milliseconds = rf_char.duration_time_to_milliseconds(args.polling_interval)
+    # polling_interval_milliseconds = polling_interval_seconds*1000
+    rf_char.set_port_report_timer(port=args.vap_port,milliseconds=polling_interval_milliseconds)
+    rf_char.set_port_report_timer(port=args.vap_radio,milliseconds=polling_interval_milliseconds)
 
     flags_list =['extra_rxstatus', 'extra_txstatus']
 
@@ -785,7 +786,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         "LANforge port": args.lf_port,
         "Test Duration": args.duration,
         "Polling Interval": args.polling_interval,
-        "GUI Report Interval (ms)": str(polling_interval_ms),
+        "GUI Report Interval (ms) vap and vap radio": str(polling_interval_milliseconds),
         "vAP Channel": args.vap_channel
     }
 
@@ -834,7 +835,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("TX pkts , TX retries, TX Failed %")
     report.build_table_title()
 
-    df_tx_info = pd.DataFrame({" Time Interval ": [ti for ti in tx_interval], " Time ": [k for k in tx_interval_time], " TX Packets ": [i for i in tx_pkts],
+    df_tx_info = pd.DataFrame({" Time Interval (s) ": [ti for ti in tx_interval], " Time ": [k for k in tx_interval_time], " TX Packets ": [i for i in tx_pkts],
                                " TX Retries ": [j for j in tx_retries], " TX Failed % ": [m for m in tx_failed]})
 
     report.set_table_dataframe(df_tx_info)
@@ -852,7 +853,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         _data_set2_poly=[True],
         _data_set2_poly_degree=[3],
         _data_set2_interp1d=[True],  # interpolate 1d
-        _xaxis_name="Time Interval",
+        _xaxis_name="Time Interval (s)",
         _y1axis_name="TX Packets",
         _y2axis_name="TX Failed %",
         _xaxis_categories=tx_interval,
@@ -902,8 +903,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     # TODO:  There is almost certainly a cleaner way to do this.
     if (rf_char.rssi_4_count > 0):
-        df_rssi_info = pd.DataFrame({" Time Interval": [t for t in tx_interval], " Time ": [it for it in tx_interval_time], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
+        df_rssi_info = pd.DataFrame({" Time Interval (s)": [t for t in tx_interval], " Time ": [it for it in tx_interval_time], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
                                      " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3], " RSSI 4 ": [l for l in rssi_4]})
+    # These are not needed as blanks are filled in for missing RSSI changes
     elif (rf_char.rssi_3_count > 0):
         df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
                                      " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3]})
@@ -929,7 +931,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     # graph RSSI
     graph = lf_line_graph(
         _data_set=data_set,
-        _xaxis_name="Time Interval",
+        _xaxis_name="Time Interval (s)",
         _yaxis_name="RSSI dBm",
         _reverse_y=True,
         _xaxis_categories=tx_interval,
