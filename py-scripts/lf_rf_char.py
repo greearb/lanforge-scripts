@@ -902,24 +902,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.build_table_title()
 
     # TODO:  There is almost certainly a cleaner way to do this.
-    if (rf_char.rssi_4_count > 0):
-        df_rssi_info = pd.DataFrame({" Time Interval (s)": [t for t in tx_interval], " Time ": [it for it in tx_interval_time], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
-                                     " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3], " RSSI 4 ": [l for l in rssi_4]})
-    # These are not needed as blanks are filled in for missing RSSI changes
-    elif (rf_char.rssi_3_count > 0):
-        df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
-                                     " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3]})
-        data_set = [rssi_signal, rssi_1, rssi_2, rssi_3]
-        label = ["RSSI Signal", "RSSI 1", "RSSI 2", "RSSI 3"]
-    elif (rf_char.rssi_2_count > 0):
-        df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
-                                     " RSSI 2 ": [j for j in rssi_2]})
-        data_set = [rssi_signal, rssi_1, rssi_2]
-        label = ["RSSI Signal", "RSSI 1", "RSSI 2"]
-    else:
-        df_rssi_info = pd.DataFrame({" Time ": [t for t in tx_interval], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1]})
-        data_set = [rssi_signal, rssi_1]
-        label = ["RSSI Signal", "RSSI 1"]
+    # if (rf_char.rssi_4_count > 0):
+    df_rssi_info = pd.DataFrame({" Time Interval (s)": [t for t in tx_interval], " Time ": [it for it in tx_interval_time], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
+                                " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3], " RSSI 4 ": [l for l in rssi_4]})
 
     report.set_table_dataframe(df_rssi_info)
     report.build_table()
