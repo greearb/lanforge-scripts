@@ -142,9 +142,9 @@ ax.plot(atten[:, 4], signal[:, 4], color=COLORS['cyan'],   alpha=1.0, label=lege
 ax.plot(atten[:, 5], signal[:, 5], color=COLORS['blue'],   alpha=1.0, label=legend['sta0005'])
 ax.plot(atten[:, 6], signal[:, 6], color=COLORS['violet'], alpha=1.0, label=legend['sta0006'])
 ax.set_title('Attenuation vs. Signal:\n'
-             + F'SSID={data[1][14]}, '
+             + F'SSID={data[7][14]}, '
              + F'Channel={CHANNEL}, '
-             + F'Mode={data[1][11]}')
+             + F'Mode={data[7][11]}')
 ax.set_xlabel('Attenuation (dB)')
 ax.set_ylabel('RSSI (dBm)')
 ax.set_yticks(range(-30, -110, -5))
@@ -166,9 +166,9 @@ ax.plot(atten[:, 2], signal_dev[:, 4], color=COLORS['cyan'], label=legend['sta00
 ax.plot(atten[:, 2], signal_dev[:, 5], color=COLORS['blue'], label=legend['sta0005'])
 ax.plot(atten[:, 2], signal_dev[:, 6], color=COLORS['violet'], label=legend['sta0006'])
 ax.set_title('Atteunuation vs. Signal Deviation:\n'
-             + F'SSID={data[1][14]}, '
+             + F'SSID={data[7][14]}, '
              + F'Channel={CHANNEL}, '
-             + F'Mode={data[1][11]}')
+             + F'Mode={data[7][11]}')
 ax.set_xlabel('Attenuation (dB)')
 ax.set_ylabel('RSSI (dBm)')
 ax.set_yticks(range(-5, 30, 5))
