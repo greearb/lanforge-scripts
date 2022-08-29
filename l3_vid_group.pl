@@ -116,6 +116,7 @@ GetOptions
    'num_cx|n=i'         => \$::num_cx,
    'quiet|q=s'          => \$::quiet,
    'resource|r=i'       => \$::resource,
+    # TODO: speed as integer is difficult to type, switch to string to allow scalar abbreviations
    'speed|s=i'          => \$::speed,
    'stream|vid_mode|e'  => \$::vid_mode,
    'test_group|test_grp|group|g=s'       => \$::generic_test_grp,
@@ -183,7 +184,7 @@ my $ra_generic_cx_names = $::utils->group_items($::generic_test_grp);
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if (($::clear_group > 0) || ($::action eq "destroy")) {
    if (@$ra_tg_list < 1) {
-     print "No test groups defined, bye.";
+     print "No test groups defined, bye.\n";
      exit(1);
    }
 
@@ -191,7 +192,7 @@ if (($::clear_group > 0) || ($::action eq "destroy")) {
 
    print Dumper(\@matches) if ($::debug);
    if (@matches < 1) {
-     print "No test group matching name [$::generic_test_grp], bye.";
+     print "No test group matching name [$::generic_test_grp], bye.\n";
      exit(1);
    }
    print "will clear groups $::generic_test_grp and $::l3_test_grp\n";
@@ -215,7 +216,7 @@ if ($::action eq "create") {
      $::cx_name = $::generic_test_grp."-";
    }
    if (!(defined $::buffer_size) or ($::buffer_size < 0)) {
-     print ("Please set --buffer_size, bye.");
+     print ("Please set --buffer_size, bye.\n");
      exit(1);
    }
    if (!(defined $::endp_type) or ("" eq $::endp_type)) {
@@ -232,20 +233,20 @@ if ($::action eq "create") {
      exit(1);
    }
    if (!(defined $::first_sta) or ("" eq $::first_sta)) {
-     print "Please set first station name: --first_sta 200; bye.";
+     print "Please set first station name: --first_sta 200; bye.\n";
      exit(1);
    }
    if (!(defined $::upstream) or ("" eq $::upstream)) {
-     print "Please set your upstream port: --upstream 1.1.eth1; bye.";
+     print "Please set your upstream port: --upstream 1.1.eth1; bye.\n";
      exit(1);
    }
    elsif ($::upstream !~ /^1.\d+\.\S+$/) {
-     print "Upstream port should be named 1.<resource>.<name>\n EG: --upstream 1.1.eth1\nbye.";
+     print "Upstream port should be named 1.<resource>.<name>\n EG: --upstream 1.1.eth1\nbye.\n";
      exit(1);
    }
 
    if ( ! -x "./lf_firemod.pl" ) {
-     print "I don't see ./lf_firemod.pl, bye.";
+     print "I don't see ./lf_firemod.pl, bye.\n";
      exit(1);
    }
    my $upstream_resource = $::resource;
@@ -268,7 +269,7 @@ if ($::action eq "create") {
    die("Unable to find dev record for port $::first_sta on resource $::resource")
      if ($rh_first_dev == -1);
    my $parent_name = $rh_first_dev->{parent};
-   die("Unable to find parent of $::first_sta, bye.")
+   die("Unable to find parent of $::first_sta, bye.\n")
      if (!(defined $parent_name));
    my $ra_interfaces = $::utils->ports_on_radio($rh_eid_map, $parent_name);
    while (@$ra_interfaces < $::num_cx) {
@@ -412,7 +413,7 @@ if ($::action eq "destroy") {
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if ($::action eq "start") {
    if (!(defined $::generic_test_grp) || ("" eq $::generic_test_grp)) {
-     print "Please specify test group to start: --test_grp foo; bye.";
+     print "Please specify test group to start: --test_grp foo; bye.\n";
      exit(1);
    }
 
@@ -428,7 +429,7 @@ if ($::action eq "start") {
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if ($::action eq "stop") {
    if (!(defined $::generic_test_grp) || ("" eq $::generic_test_grp)) {
-     print "Please specify test group to stop: --test_grp foo; bye.";
+     print "Please specify test group to stop: --test_grp foo; bye.\n";
      exit(1);
    }
 
