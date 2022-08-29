@@ -509,7 +509,8 @@ class lf_rf_char(Realm):
             # take samples of RSSI
             self.json_vap_api.request = 'stations'
             # port not needed for all 
-            json_stations, *nil = self.json_vap_api.get_request_stations_information()
+            json_stations, *nil = self.json_vap_api.get_request_stations_information() 
+            logger.info("json_stations {json}".format(json=pformat(json_stations)))
             try:
                 self.rssi_signal.append(json_stations['station']['signal'])
                 chain_rssi_str = json_stations['station']['chain rssi']
@@ -524,35 +525,35 @@ class lf_rf_char(Realm):
                      keys = list(s.keys())
                      vals = s[keys[0]]
                      if vals['station bssid'] == self.dut_mac:
-                         self.rssi_signal.append(vals['signal'])
+                         self.rssi_signal.append(int(vals['signal'].lstrip()))
                          chain_rssi_str = vals['chain rssi']
                          chain_rssi = chain_rssi_str.split(',')
                          break
 
             logger.info("RSSI chain length {chain}".format(chain=len(chain_rssi)))
             if len(chain_rssi) == 1:
-                self.rssi_1.append(chain_rssi[0])
-                self.rssi_2.append("")
-                self.rssi_3.append("")
-                self.rssi_4.append("")
+                self.rssi_1.append(int(chain_rssi[0].lstrip()))
+                self.rssi_2.append(np.nan)
+                self.rssi_3.append(np.nan)
+                self.rssi_4.append(np.nan)
                 self.rssi_1_count = self.rssi_1_count + 1
             elif len(chain_rssi) == 2:
-                self.rssi_1.append(chain_rssi[0])
-                self.rssi_2.append(chain_rssi[1])
-                self.rssi_3.append("")
-                self.rssi_4.append("")
+                self.rssi_1.append(int(chain_rssi[0].lstrip()))
+                self.rssi_2.append(int(chain_rssi[1].lstrip()))
+                self.rssi_3.append(np.nan)
+                self.rssi_4.append(np.nan)
                 self.rssi_2_count = self.rssi_2_count + 1
             elif len(chain_rssi) == 3:
-                self.rssi_1.append(chain_rssi[0])
-                self.rssi_2.append(chain_rssi[1])
-                self.rssi_3.append(chain_rssi[2])
-                self.rssi_4.append("")
+                self.rssi_1.append(int(chain_rssi[0].lstrip()))
+                self.rssi_2.append(int(chain_rssi[1].lstrip()))
+                self.rssi_3.append(int(chain_rssi[2].lstrip()))
+                self.rssi_4.append(np.nan)
                 self.rssi_3_count = self.rssi_3_count + 1
             elif len(chain_rssi) == 4:
-                self.rssi_1.append(chain_rssi[0])
-                self.rssi_2.append(chain_rssi[1])
-                self.rssi_3.append(chain_rssi[2])
-                self.rssi_4.append(chain_rssi[3])
+                self.rssi_1.append(int(chain_rssi[0].lstrip()))
+                self.rssi_2.append(int(chain_rssi[1].lstrip()))
+                self.rssi_3.append(int(chain_rssi[2].lstrip()))
+                self.rssi_4.append(int(chain_rssi[3].lstrip()))
                 self.rssi_4_count = self.rssi_4_count + 1
 
         self.json_vap_api.csv_mode = 'write'
@@ -906,7 +907,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     df_rssi_info = pd.DataFrame({" Time Interval (s)": [t for t in tx_interval], " Time ": [it for it in tx_interval_time], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
                                 " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3], " RSSI 4 ": [l for l in rssi_4]})
 
-    report.set_table_dataframe(df_rssi_info)
+    report.set_table_dataframe(df_rssi_info.replace(np.nan, ''))
     report.build_table()
 
     report.set_csv_filename("rssi.csv")
@@ -918,7 +919,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         _data_set=data_set,
         _xaxis_name="Time Interval (s)",
         _yaxis_name="RSSI dBm",
-        _reverse_y=True,
+        _reverse_y=False,
         _xaxis_categories=tx_interval,
         _graph_title="RSSI",
         _title_size=16,
@@ -926,13 +927,12 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         _label=label,
         _font_weight='bold',
         _color=['blue', 'orange', 'green', 'red', 'cyan'],
-        _figsize=(17, 7),
+        _figsize=(17, 12),
         _xaxis_step=1,
         _text_font=7,
-        _legend_loc="best",
-        _legend_box=(1, 1),
+        _legend_loc="upper left",
+        _legend_box=(1, 0),
         _legend_ncol=1
-
     )
 
     graph_png = graph.build_line_graph()
