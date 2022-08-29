@@ -646,7 +646,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     # Test Configuration
     parser.add_argument('--duration', help="--duration <seconds>", default='20s')
-    parser.add_argument('--polling_interval', help="--polling_interval <seconds>", default='1s')
+    parser.add_argument('--polling_interval', help="--polling_interval <h m s ms>", default='1000ms')
     parser.add_argument('--frame', help="--frame <bytes>  , e.g. --frame 1400", default='1400')
     parser.add_argument('--frame_interval', help="--frame_interval <fractions of second>  , e.g. --frame_interval .01 ", default='.01')
 
