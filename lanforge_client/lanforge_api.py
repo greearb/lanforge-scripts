@@ -494,8 +494,8 @@ class BaseLFJsonRequest:
             myrequest.headers[SESSION_HEADER] = str(sess_id)
         elif iss(session_id_):
             myrequest.headers[SESSION_HEADER] = str(session_id_)
-        else:
-            self.logger.warning("Request sent without X-LFJson-ID header: " + url)
+        elif not url.endswith("/newsession"):
+            self.logger.warning("Request (%s) sent without X-LFJson-ID header".format(url))
         if debug:
             self.logger.by_method("headers sent to: " + url)
             self.logger.by_method(pformat(myrequest.headers))
