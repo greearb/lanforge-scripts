@@ -162,6 +162,8 @@ class lf_check():
                  _json_dut,
                  _json_test,
                  _test_suite,
+                 _use_test_list,
+                 _test_list,
                  _server_override,
                  _db_override,
                  _production,
@@ -170,10 +172,14 @@ class lf_check():
                  _outfile_name,
                  _report_path,
                  _log_path):
+
+        # test configuration
         self.json_rig = _json_rig
         self.json_dut = _json_dut
         self.json_test = _json_test
         self.test_suite = _test_suite
+        self.use_test_list = _use_test_list
+        self.test_list = _test_list
         self.server_override = _server_override
         self.db_override = _db_override
         self.production_run = _production
@@ -1286,10 +1292,11 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
         # Configure Tests
         for self.test in self.test_dict:
-            if self.test_dict[self.test]['enabled'] == "FALSE":
-                self.logger.info("test: {}  skipped".format(self.test))
-            # load the default database
-            elif self.test_dict[self.test]['enabled'] == "TRUE":
+
+            if ((self.test_dict[self.test]['enabled'] == "TRUE" and self.use_test_list is False) or 
+                (self.use_test_list is True and self.test in self.test_list)):
+                        
+                        
                 # TODO Place test interations here
                 if 'iterations' in self.test_dict[self.test]:
                     self.logger.info("iterations : {}".format(self.test_dict[self.test]['iterations']))
@@ -1383,7 +1390,15 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
                         # Runs the scripts
                         self.run_script()
+            # Using use_test_list is True and test is not in test_list
+            elif self.use_test_list is True and self.test not in self.test_list:
+                self.logger.info("use_test_list set TRUE test: {test} not in {list} skipping".format(test=self.test,list=self.test_list))
 
+            # Test disabled
+            elif self.test_dict[self.test]['enabled'] == "FALSE":
+                self.logger.info("test: {}  enabled set FALSE test skipped ".format(self.test))
+
+            # enabled flag missing in json
             else:
                 self.logger.warning(
                     "enable value {} for test: {} ".format(self.test_dict[self.test]['enabled'], self.test))
@@ -1450,11 +1465,20 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         help="--suite <suite name> ",
         required=True)
     parser.add_argument(
-        '--tests',
+        '--use_test_list',
         help='''
-            --tests <tests list>  use this switch to run only certain tests in a suite,
-            a comma separated list
-        '''
+            --use_test_list will have lf_check.py look at the <tests list> passed in to run a subset of the tests in a suite
+            for targeted testing.
+        ''',
+        action='store_true'
+        )
+    parser.add_argument(
+        '--test_list',
+        help='''
+            --test_list <tests list>  pass in a comma separated list, this will allow another method so select,
+            specific tests in a test list.
+        ''',
+        default=[]
         )
     parser.add_argument('--flat_dir', help="--flat_dir , will place the results in the top directory",action='store_true')
     parser.add_argument(
@@ -1561,11 +1585,26 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
        
     log_path = report.get_log_path()
 
+    # Check if a test_list passed as the user would like to do a selected 
+    # set of tests from the test list
+    use_test_list = args.use_test_list
+    test_list = args.test_list
+    if use_test_list:
+        # if the test_list is empty should probably exit?
+        if test_list == []:
+            use_test_list = False
+            logger.warning("use_testlist set to True yet test list was empty")
+        else:
+            test_list = args.test_list.split(',')
+            logger.info("use_testlist set True test list : {list}".format(list=test_list))
+
     # lf_check() class created
     check = lf_check(_json_rig=json_rig,
                      _json_dut=json_dut,
                      _json_test=json_test,
                      _test_suite=test_suite,
+                     _use_test_list=use_test_list,
+                     _test_list=test_list,
                      _server_override=server_override,
                      _db_override=db_override,
                      _production=production,
