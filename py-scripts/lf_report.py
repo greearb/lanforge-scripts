@@ -101,6 +101,8 @@ class lf_report:
         self.pdf_link_html = ""
         self.objective = _obj
         self.obj_title = _obj_title
+        self.description = ""
+        self.desc_title = ""
         # self.systeminfopath = ""
         self.date_time_directory = ""
         self.log_directory = ""
@@ -278,6 +280,10 @@ class lf_report:
     def set_obj_html(self, _obj_title, _obj):
         self.objective = _obj
         self.obj_title = _obj_title
+
+    def set_desc_html(self, _desc_title, _desc):
+        self.description = _desc
+        self.desc_title = _desc_title
 
     def set_graph_image(self, _graph_image):
         self.graph_image = _graph_image
@@ -650,6 +656,16 @@ function copyTextToClipboard(ele) {
             """.format(title=self.obj_title,
                        objective=self.objective)
         self.html += self.obj_html
+
+    def build_description(self):
+        self.obj_html = """
+            <!-- Test Description -->
+            <h3 align='left'>{title}</h3> 
+            <p align='left' width='900'>{description}</p>
+            """.format(title=self.desc_title,
+                       description=self.description)
+        self.html += self.obj_html
+
 
     def build_graph_title(self):
         self.table_graph_html = """

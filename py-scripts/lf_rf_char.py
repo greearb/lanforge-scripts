@@ -646,6 +646,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     parser.add_argument('--debug', help='Legacy debug flag', action='store_true')
 
     # Test Configuration
+    parser.add_argument('--desc', help="--desc <test description> , if not provided will section not printed")
+    parser.add_argument('--polynomial', help="--polynomial store_true , show polynomial lines on retries graph", action="store_true")
+    parser.add_argument('--interpolate', help="--interpolate store_true , show interpolation on retries graph", action="store_true")
     parser.add_argument('--duration', help="--duration <seconds>", default='20s')
     parser.add_argument('--polling_interval', help="--polling_interval <h m s ms>", default='1000ms')
     parser.add_argument('--frame', help="--frame <bytes>  , e.g. --frame 1400", default='1400')
@@ -724,6 +727,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.start_content_div2()
     report.set_obj_html("Objective", "RF Characteristics Test: Report RX and TX characteristics")
     report.build_objective()
+
+    if args.desc:
+        report.set_desc_html("Test Description","{desc}".format(desc=args.desc))
+        report.build_description()
 
     # Set up the RF Characteristic test
     logger.info("Configure RF Characteristic test")
@@ -851,9 +858,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     graph = lf_bar_line_graph(
         _data_set1=[tx_pkts, tx_retries],
         _data_set2=[tx_failed],
-        _data_set2_poly=[True],
+        _data_set2_poly=[args.polynomial],
         _data_set2_poly_degree=[3],
-        _data_set2_interp1d=[True],  # interpolate 1d
+        _data_set2_interp1d=[args.interpolate],  # interpolate 1d
         _xaxis_name="Time Interval (s)",
         _y1axis_name="TX Packets",
         _y2axis_name="TX Failed %",
