@@ -57,9 +57,6 @@ def main():
     if not args.type:
         print("No blob type provided")
         exit(1)
-    if not args.text:
-        print("No blob text provided")
-        exit(1)
 
     session = lanforge_api.LFSession(lfclient_url="http://%s:8080" % args.host,
                                      debug=args.debug,
@@ -73,10 +70,27 @@ def main():
     query: LFJsonQuery
     query = session.get_query()
 
+    txt_blob = args.text
+    if (not args.text) or (args.text == "saved01"):
+        txt_blob = """      }
+    }
+EOF
+  )"
+  qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.evaluateScript "$SCRIPT" 2> /dev/null
+fi
+
+# TODO: handle other desktop environments
+
+exec /snap/bin/firefox "$@"
+"""
+
+    # Is it possible that the post_add_text_blob can detect any kind of \r \n combo and
+    # split it up into lines, multiplying the command?
+
     command.post_rm_text_blob(p_type=args.type, name=args.name,
                               debug=args.debug, suppress_related_commands=True)
     command.post_show_text_blob(name='ALL', p_type='ALL', brief='yes')
-    command.post_add_text_blob(p_type=args.type, name=args.name, text=args.text,
+    command.post_add_text_blob(p_type=args.type, name=args.name, text=txt_blob,
                                debug=args.debug, suppress_related_commands=True)
     command.post_show_text_blob(name='ALL', p_type='ALL', brief='no')
     eid_url="%s.%s" % (args.type, args.name)
