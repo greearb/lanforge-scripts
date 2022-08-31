@@ -27,6 +27,8 @@ INCLUDE_IN_README
 # TODO:  Done, Set report timer on vap and radios to 1 sec, possibly smaller.
 # TODO:  Done, Enable extra tx and rx stats on the radios ,
 
+from pprint import pformat
+from pprint import pprint
 import argparse
 import sys
 import os
@@ -34,8 +36,6 @@ import logging
 import importlib
 import datetime
 import pandas as pd
-import requests
-from pandas import json_normalize
 import json
 import traceback
 import csv
@@ -43,21 +43,15 @@ import time
 import re
 import platform
 import subprocess
-import re
 import numpy as np
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-from lanforge_client.lanforge_api import LFJsonQuery
-from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFSession
-
-
-from pprint import pprint
-from pprint import pformat
+from lanforge_client.lanforge_api import LFJsonCommand
+from lanforge_client.lanforge_api import LFJsonQuery
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
-
 
 lf_json_api = importlib.import_module("py-scripts.lf_json_api")
 lf_report = importlib.import_module("py-scripts.lf_report")
@@ -147,7 +141,7 @@ class lf_rf_char(Realm):
         self.lf_command = ''
         self.dut_mac = ''
         self.dut_ip = ''
-        self.dut_hostname = '';
+        self.dut_hostname = ''
 
         # tx data
         self.tx_interval = []
@@ -175,7 +169,7 @@ class lf_rf_char(Realm):
         sta_ap = ""
 
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
-        vap_eid = "%s.%s.%s"%(self.shelf, self.resource, self.port_name);
+        vap_eid = "%s.%s.%s" % (self.shelf, self.resource, self.port_name)
 
         try:
             # does not need specific port information
@@ -184,24 +178,21 @@ class lf_rf_char(Realm):
             self.dut_mac = json_stations['station']['station bssid']
             sta_ap = json_stations['station']['ap']
             logger.info("DUT MAC: {mac}".format(mac=self.dut_mac))
-        except:
+        except BaseException:
             # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
-            print("Looking for vap-eid: %s"%(vap_eid))
+            print("Looking for vap-eid: %s" % (vap_eid))
             try:
                 for s in json_stations['stations']:
-                    #print("s (stations):")
-                    #pprint(s)
                     keys = list(s.keys())
                     vals = s[keys[0]]
-                    #print("vals:")
-                    #pprint(vals)
 
                     if vals['ap'] == vap_eid:
                         sta_ap = vap_eid
                         self.dut_mac = vals['station bssid']
-                        print("found sta, ap: %s  mac: %s"%(sta_ap, self.dut_mac))
+                        print("found sta, ap: %s  mac: %s" % (sta_ap, self.dut_mac))
                         break
-            except:
+            except BaseException:
+                print("waiting on stations")
                 pass
 
             if sta_ap == "":
@@ -211,7 +202,7 @@ class lf_rf_char(Realm):
 
         # Make sure the station is on correct IP vap
         if (sta_ap != vap_eid):
-            logger.error("Detected STA on AP: %s, expected it to be on AP: %s"%(sta_ap, vap_eid))
+            logger.error("Detected STA on AP: %s, expected it to be on AP: %s" % (sta_ap, vap_eid))
             return False
 
         # get the IP from port mode
@@ -296,20 +287,20 @@ class lf_rf_char(Realm):
     # ./lf_generic_ping.pl --mgr 192.168.0.104 --resource 1 --dest 10.10.10.4 -i vap3 --cmd 'lfping -s 1400 -i 0.01 -I vap3 10.10.10.4
 
     # set_port 1 1 vap3 NA NA NA NA NA NA NA NA NA 32768 5000 NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA NA
-    # set_port 1 1 vap3 NA NA NA NA NA NA NA NA NA 32768 1000 
-    def set_port_report_timer(self,port=None,milliseconds=1000):
+    # set_port 1 1 vap3 NA NA NA NA NA NA NA NA NA 32768 1000
+    def set_port_report_timer(self, port=None, milliseconds=1000):
         if port is not None:
             self.port = port
             self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.port)
         self.command.post_set_port(shelf=self.shelf,
-                                resource=self.resource,
-                                port=self.port_name, 
-                                interest=32768, 
-                                report_timer= int(milliseconds), 
-                                debug=self.debug)
+                                   resource=self.resource,
+                                   port=self.port_name,
+                                   interest=32768,
+                                   report_timer=int(milliseconds),
+                                   debug=self.debug)
 
     # enable extra_rxstatus extra_txstatus
-    def set_wifi_radio(self,radio=None,flags_list=[]):
+    def set_wifi_radio(self, radio=None, flags_list=[]):
         if radio is not None:
             self.radio = radio
             self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
@@ -318,12 +309,11 @@ class lf_rf_char(Realm):
         # flag_val = LFPost.set_flags(SetWifiRadioFlags0, flag_names=['extra_rxstatus', 'extra_tx_status'])
         flag_val = self.command.set_flags(self.command.SetWifiRadioFlags, flag_val, flag_names=flags_list)
         self.command.post_set_wifi_radio(shelf=self.shelf,
-                                        resource=self.resource,
-                                        radio=self.port_name,
-                                        flags=flag_val,
-                                        flags_mask=flag_val,
-                                        debug=self.debug)
-
+                                         resource=self.resource,
+                                         radio=self.port_name,
+                                         flags=flag_val,
+                                         flags_mask=flag_val,
+                                         debug=self.debug)
 
     def generic_ping(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
@@ -385,8 +375,8 @@ class lf_rf_char(Realm):
             name=self.gen_endpoint,
             debug=self.debug)
 
-
     # set_cx_state
+
     def set_cx_state(self):
         self.command.post_set_cx_state(cx_name=self.gen_endpoint,
                                        cx_state=self.cx_state,
@@ -453,7 +443,6 @@ class lf_rf_char(Realm):
 
         self.cx_state = 'RUNNING'  # RUNNING< SWITCHB, QUIESCE, STOPPED, or DELETED
         self.set_cx_state()
-        
 
         logger.info("clear port counters")
         self.clear_port_counters()
@@ -474,7 +463,7 @@ class lf_rf_char(Realm):
         current_time_stamp = json_vap_port_stats["interface"]["time-stamp"]
         previous_time_stamp = current_time_stamp
         tx_pkts_previous = json_vap_port_stats["interface"]["tx pkts"]
-        tx_retries_previous = json_vap_port_stats["interface"]["wifi retries"]        
+        tx_retries_previous = json_vap_port_stats["interface"]["wifi retries"]
         while cur_time < end_time:
             interval_time = cur_time + datetime.timedelta(milliseconds=polling_interval_milliseconds)
 
@@ -487,14 +476,14 @@ class lf_rf_char(Realm):
                 time.sleep(.1)
                 json_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
                 current_time_stamp = json_vap_port_stats["interface"]["time-stamp"]
-                if current_time_stamp  !=  previous_time_stamp:
+                if current_time_stamp != previous_time_stamp:
                     logger.debug("new TX stats: time_stamp {time} previous_time_stamp {pre_time}".format(time=current_time_stamp, pre_time=previous_time_stamp))
                     previous_time_stamp = current_time_stamp
                     break
                 # Here check if the time stamp has changed
 
             # json_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
-            interval += float(polling_interval_milliseconds)/1000
+            interval += float(polling_interval_milliseconds) / 1000
             self.tx_interval.append(interval)
             current_time = current_time_stamp.split()
             self.tx_interval_time.append(current_time[1])
@@ -508,27 +497,27 @@ class lf_rf_char(Realm):
 
             # take samples of RSSI
             self.json_vap_api.request = 'stations'
-            # port not needed for all 
-            json_stations, *nil = self.json_vap_api.get_request_stations_information() 
+            # port not needed for all
+            json_stations, *nil = self.json_vap_api.get_request_stations_information()
             logger.info("json_stations {json}".format(json=pformat(json_stations)))
             try:
                 self.rssi_signal.append(json_stations['station']['signal'])
                 chain_rssi_str = json_stations['station']['chain rssi']
                 chain_rssi = chain_rssi_str.split(',')
-            except:
+            except BaseException:
                 # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
-                #pprint(json_stations)
+                # pprint(json_stations)
                 # This should give us faster lookup if I knew how to use it.
                 #sta_key = "0.0.0.%s"%(self.dut_mac)
                 #pprint("key: %s"%(sta_key))
                 for s in json_stations['stations']:
-                     keys = list(s.keys())
-                     vals = s[keys[0]]
-                     if vals['station bssid'] == self.dut_mac:
-                         self.rssi_signal.append(int(vals['signal'].lstrip()))
-                         chain_rssi_str = vals['chain rssi']
-                         chain_rssi = chain_rssi_str.split(',')
-                         break
+                    keys = list(s.keys())
+                    vals = s[keys[0]]
+                    if vals['station bssid'] == self.dut_mac:
+                        self.rssi_signal.append(int(vals['signal'].lstrip()))
+                        chain_rssi_str = vals['chain rssi']
+                        chain_rssi = chain_rssi_str.split(',')
+                        break
 
             logger.info("RSSI chain length {chain}".format(chain=len(chain_rssi)))
             if len(chain_rssi) == 1:
@@ -564,7 +553,7 @@ class lf_rf_char(Realm):
         # Read the vap device stats, it will also be able to report underlying radio stats as needed.
         json_wifi_stats, *nil = self.json_rad_api.get_request_wifi_stats_information(port=self.vap_port)
         #print("wifi-stats output, vap-radio: %s radio port name %s:"%(self.vap_radio, self.json_api.port_name))
-        #pprint(json_wifi_stats)
+        # pprint(json_wifi_stats)
 
         # Stop Traffic
         self.cx_state = 'STOPPED'  # RUNNING< SWITCHB, QUIESCE, STOPPED, or DELETED
@@ -729,7 +718,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.build_objective()
 
     if args.desc:
-        report.set_desc_html("Test Description","{desc}".format(desc=args.desc))
+        report.set_desc_html("Test Description", "{desc}".format(desc=args.desc))
         report.build_description()
 
     # Set up the RF Characteristic test
@@ -756,7 +745,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     while try_count < 100:
         if rf_char.dut_info():
             break
-        print("Could not query DUT info from DHCP, waiting %s/100"%(try_count))
+        print("Could not query DUT info from DHCP, waiting %s/100" % (try_count))
         time.sleep(3)
         try_count = try_count + 1
 
@@ -782,12 +771,12 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     # TODO call only once
     polling_interval_milliseconds = rf_char.duration_time_to_milliseconds(args.polling_interval)
     # polling_interval_milliseconds = polling_interval_seconds*1000
-    rf_char.set_port_report_timer(port=args.vap_port,milliseconds=polling_interval_milliseconds)
-    rf_char.set_port_report_timer(port=args.vap_radio,milliseconds=polling_interval_milliseconds)
+    rf_char.set_port_report_timer(port=args.vap_port, milliseconds=polling_interval_milliseconds)
+    rf_char.set_port_report_timer(port=args.vap_radio, milliseconds=polling_interval_milliseconds)
 
-    flags_list =['extra_rxstatus', 'extra_txstatus']
+    flags_list = ['extra_rxstatus', 'extra_txstatus']
 
-    rf_char.set_wifi_radio(radio=args.vap_radio,flags_list= flags_list)
+    rf_char.set_wifi_radio(radio=args.vap_radio, flags_list=flags_list)
 
     test_input_info = {
         "LANforge ip": args.lf_mgr,
@@ -801,8 +790,6 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("Test Configuration")
     report.build_table_title()
     report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
-
-
 
     # Start traffic : Currently manually done
     rf_char.clear_port_counters()
@@ -849,7 +836,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_dataframe(df_tx_info)
     report.build_table()
 
-    # Write out csv file 
+    # Write out csv file
     report.set_csv_filename("tx_pkts_tx_retries_tx_failed.csv")
     report.write_dataframe_to_csv()
 
@@ -919,7 +906,6 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     report.set_csv_filename("rssi.csv")
     report.write_dataframe_to_csv()
-
 
     # graph RSSI
     graph = lf_line_graph(
@@ -1006,7 +992,6 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     report.set_csv_filename("rx_mode.csv")
     report.write_dataframe_to_csv()
-
 
     # RX MODE
     graph = lf_bar_graph(_data_set=[rx_mode_value_percent],
@@ -1259,7 +1244,6 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_csv_filename("tx_bw.csv")
     report.write_dataframe_to_csv()
 
-
     # TX BW
     graph = lf_bar_graph(_data_set=[tx_bw_value_percent],
                          _xaxis_name="TX BW",
@@ -1330,7 +1314,6 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     report.set_csv_filename("rx_nss.csv")
     report.write_dataframe_to_csv()
-
 
     # RX NSS
     graph = lf_bar_graph(_data_set=[rx_nss_value_percent],
@@ -1496,7 +1479,6 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_csv_filename("rx_mcs.csv")
     report.write_dataframe_to_csv()
 
-
     # RX MCS encoding
     graph = lf_bar_graph(_data_set=[rx_mcs_value_percent],
                          _xaxis_name="RX MCS encoding",
@@ -1570,7 +1552,6 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     report.set_csv_filename("tx_mcs.csv")
     report.write_dataframe_to_csv()
-
 
     # TX MCS encoding
     graph = lf_bar_graph(_data_set=[tx_mcs_value_percent],
@@ -1795,7 +1776,6 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     report.set_csv_filename("tx_msdu.csv")
     report.write_dataframe_to_csv()
-
 
     # TX msdu
     graph = lf_bar_graph(_data_set=[tx_msdu_value_percent],
