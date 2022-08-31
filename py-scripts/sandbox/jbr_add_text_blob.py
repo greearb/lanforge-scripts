@@ -91,7 +91,7 @@ exec /snap/bin/firefox "$@"
                               debug=args.debug, suppress_related_commands=True)
     command.post_show_text_blob(name='ALL', p_type='ALL', brief='yes')
     command.post_add_text_blob(p_type=args.type, name=args.name, text=txt_blob,
-                               debug=args.debug, suppress_related_commands=True)
+                               debug=True, suppress_related_commands=True)
     command.post_show_text_blob(name='ALL', p_type='ALL', brief='no')
     eid_url="%s.%s" % (args.type, args.name)
     time.sleep(0.05)
