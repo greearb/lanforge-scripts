@@ -1,3 +1,4 @@
+
 import matplotlib.pyplot as plt
 import numpy as np
 import csv
@@ -27,6 +28,13 @@ PNG_OUTPUT_DIR = args.png_dir
 BANDWIDTH = args.bandwidth
 CHANNEL = args.channel
 ANTENNA = args.antenna
+ANTENNA_LEGEND = {
+    0: 'Diversity (All)',
+    1: 'Fixed-A (1x1)',
+    4: 'AB (2x2)',
+    7: 'ABC (7x7)',
+    8: 'ABCD (4x4)'
+}
 BASE_PATH_LOSS = 36
 if CHANNEL == 6:
     BASE_PATH_LOSS = args.path_loss_2
@@ -144,7 +152,8 @@ ax.plot(atten[:, 6], signal[:, 6], color=COLORS['violet'], alpha=1.0, label=lege
 ax.set_title('Attenuation vs. Signal:\n'
              + F'SSID={data[7][14]}, '
              + F'Channel={CHANNEL}, '
-             + F'Mode={data[7][11]}')
+             + F'Bandwidth={BANDWIDTH}, '
+             + F'Antenna={ANTENNA_LEGEND[ANTENNA]}')
 ax.set_xlabel('Attenuation (dB)')
 ax.set_ylabel('RSSI (dBm)')
 ax.set_yticks(range(-30, -110, -5))
@@ -168,7 +177,8 @@ ax.plot(atten[:, 2], signal_dev[:, 6], color=COLORS['violet'], label=legend['sta
 ax.set_title('Atteunuation vs. Signal Deviation:\n'
              + F'SSID={data[7][14]}, '
              + F'Channel={CHANNEL}, '
-             + F'Mode={data[7][11]}')
+             + F'Bandwidth={BANDWIDTH}, '
+             + F'Antenna={ANTENNA_LEGEND[ANTENNA]}')
 ax.set_xlabel('Attenuation (dB)')
 ax.set_ylabel('RSSI (dBm)')
 ax.set_yticks(range(-5, 30, 5))
