@@ -47,6 +47,7 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 logger = logging.getLogger(__name__)
 
+
 class max_associate(Realm):
     def __init__(self, _host, _port,
                  radio_name_list,
@@ -685,7 +686,7 @@ For a overnight test using chambered AP's with no security enabled:
     --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==[BLANK],security==open'
     --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==[BLANK],security==open'
     --csv_outfile lf_test_max_association.csv --test_rig CT_01 --test_tag MAX_STA
-    --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c    
+    --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
 
 ---------------------------
 """)
@@ -1069,7 +1070,7 @@ For a overnight test using chambered AP's with no security enabled:
     for (
             radio_,
             ssid_,
-            ssid_password_, # do not print password
+            ssid_password_,  # do not print password
             ssid_security_,
             mode_,
             wifi_enable_flags_list_,
@@ -1093,7 +1094,7 @@ For a overnight test using chambered AP's with no security enabled:
             "Security": ssid_security_,
             "Wifi mode set": mode_value,
             'Wifi Enable Flags': wifi_enable_flags_list_
-            #"WIFI-Radio Driver": 
+            # "WIFI-Radio Driver":
         }
         report.test_setup_table(value=radio_, test_setup_data=radio_info)
 
