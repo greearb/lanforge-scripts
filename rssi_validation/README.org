@@ -16,7 +16,7 @@
    3. python3 parser2.py --test_dir ../json --csv ../output.csv --bandwidth 20 --channel 36 --antenna 0
 ** Process one attenuation-sweep instance into PNG format:
    1. mkdir -p ../html/PNGs
-   2. python3 processing.py --csv ../output.csv --png_dir ../html/PNGs --bandwidth 20 --channel 36 --antenna 0 --path_loss_2 '26.74' --path_loss_5 '31.87'
+   2. python3 processing.py --csv ../output.csv --png_dir ../html/PNGs --bandwidth 20 --channel 36 --antenna 0 --path_loss_2 '28.74' --path_loss_5 '33.87'
 ** Generate all PNGs from JSON data at once:
    1. mkdir -p ../html/PNGs
    2. Modify the options at the top of gen_all_pngs.sh to fit your setup.
