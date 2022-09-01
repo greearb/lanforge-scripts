@@ -47,14 +47,6 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 logger = logging.getLogger(__name__)
 
-OPEN = "open"
-WEP = "wep"
-WPA = "wpa"
-WPA2 = "wpa2"
-WPA3 = "wpa3"
-MODE_AUTO = 0
-
-
 class max_associate(Realm):
     def __init__(self, _host, _port,
                  radio_name_list,
@@ -309,73 +301,22 @@ class max_associate(Realm):
         start_num_stations = 0
         end_num_stations = 0
         for wiphy_radio in wiphy_radio_list:
-
-            wiphy_radio_split = wiphy_radio.split('.')
-            # get last character in wiphy_radio_split[2] [ex: 1.1.wiphy0]
-            if len(wiphy_radio_split[2]) == 6:
-                wiphy_alias = wiphy_radio_split[2][-1]
-            # get last two characters in wiphy_radio_split[2] [ex: 1.1.wiphy11]
-            elif len(wiphy_radio_split[2]) == 7:
-                wiphy_alias = wiphy_radio_split[2][-2:]
-
             # build stations for wiphy0 radio:
-            if wiphy_radio == "1." + self.resource + ".wiphy0":
-                start_num_stations = 0
-                num_stations = self.wiphy_info.get_max_vifs(wiphy_radio)
-                track_num_stations += int(num_stations)
-                end_num_stations += int(num_stations)
-                station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=start_num_stations,
-                                                      end_id_=end_num_stations - 1,
-                                                      padding_number_=10000,
-                                                      radio=wiphy_radio)
-                start_num_stations += end_num_stations
-
-                wiphy_int = int(wiphy_alias)
-
-                wiphy0_ssid = self.ssid_list[0][wiphy_int]
-                wiphy0_password = self.ssid_password_list[0][wiphy_int]
-                wiphy0_security = self.ssid_security_list[0][wiphy_int]
-
-                self.station_profile.lfclient_url = self.lfclient_url
-                self.station_profile.ssid = wiphy0_ssid
-                # logger.info(self.password)
-                self.station_profile.ssid_pass = wiphy0_password
-                self.station_profile.security = wiphy0_security
-                # self.station_profile.number_template_ = self.number_template
-                self.station_profile.debug = self.debug
-                self.station_profile.use_security(wiphy0_security, wiphy0_ssid, wiphy0_password)
-                # self.station_profile.set_number_template(self.number_template)
-                self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-                self.station_profile.set_command_param("set_port", "report_timer", 1500)
-                self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-
-                logger.info("Creating stations")
-                self.station_profile.create(radio=wiphy_radio, sta_names_=station_list, debug=self.debug)
-                self._pass("PASS: Station build finished")
-
-                self.cx_profile.create(endp_type=self.traffic_type,
-                                       side_a=station_list,
-                                       side_b=self.upstream_port,
-                                       sleep_time=0)
-
-            # build stations for remaining wiphy radios:
-            elif wiphy_radio == self.radio_name_list[0][int(wiphy_alias)]:
+            if wiphy_radio in self.radio_name_list[0]:
                 num_stations = self.wiphy_info.get_max_vifs(wiphy_radio)
                 end_num_stations += int(num_stations)
-
                 station_list = LFUtils.portNameSeries(prefix_="sta",
                                                       start_id_=start_num_stations,
                                                       end_id_=end_num_stations - 1,
                                                       padding_number_=10000,
                                                       radio=wiphy_radio)
-
                 start_num_stations = end_num_stations
 
-                wiphy_int = int(wiphy_alias)
-
-                wiphy_ssid = self.ssid_list[0][wiphy_int]
-                wiphy_password = self.ssid_password_list[0][wiphy_int]
-                wiphy_security = self.ssid_security_list[0][wiphy_int]
+                wiphy_ssid = self.ssid_list[0][track_num_stations]
+                wiphy_password = self.ssid_password_list[0][track_num_stations]
+                wiphy_security = self.ssid_security_list[0][track_num_stations]
+                track_num_stations += 1
+                logger.info(self.wiphy_info)
 
                 self.station_profile.lfclient_url = self.lfclient_url
                 self.station_profile.ssid = wiphy_ssid
@@ -384,15 +325,15 @@ class max_associate(Realm):
                 # self.station_profile.number_template_ = self.number_template
                 self.station_profile.debug = self.debug
                 self.station_profile.use_security(wiphy_security, wiphy_ssid, wiphy_password)
+                # if self.wifi_mode_list
+                # TODO: check radios for 6E wifi settings "ieee80211w", and then set flags & continue
                 # self.station_profile.set_number_template(self.number_template)
                 self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
                 self.station_profile.set_command_param("set_port", "report_timer", 1500)
                 self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-
                 logger.info("Creating stations")
                 self.station_profile.create(radio=wiphy_radio, sta_names_=station_list, debug=self.debug)
                 self._pass("PASS: Station build finished")
-
                 self.cx_profile.create(endp_type=self.traffic_type,
                                        side_a=station_list,
                                        side_b=self.upstream_port,
@@ -734,10 +675,17 @@ This script will provide the following features for the ct521a system:
 ---------------------------
 CLI Example:
 ./lf_test_max_association.py --mgr <localhost>
-    --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
-    --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==<password>,security==wpa2'
+    --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==<password>,security==<type>'
+    --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==<password>,security==<type>'
     --csv_outfile lf_test_max_association.csv --test_rig CT_01 --test_tag MAX_STA
     --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
+
+For a overnight test using chambered AP's with no security enabled:
+./lf_test_max_association.py --mgr <localhost>
+    --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==[BLANK],security==open'
+    --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==[BLANK],security==open'
+    --csv_outfile lf_test_max_association.csv --test_rig CT_01 --test_tag MAX_STA
+    --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c    
 
 ---------------------------
 """)
