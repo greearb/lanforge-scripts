@@ -91,6 +91,7 @@ import traceback
 from typing import Optional
 import urllib
 from urllib import request, error, parse
+import base64
 
 # - - - - deployed import references - - - - -
 from .logg import Logg
@@ -210,6 +211,7 @@ class BaseLFJsonRequest:
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     No_Data: dict = {'No Data': 0}
     OK_STATUSES = (100, 200, 201, 204, 205, 206, 301, 302, 303, 304, 307, 308, 404)
+    BASE64_SUFFIX = "-64"
     subclasses = []
 
     def __init_subclass__(cls, **kwargs):
@@ -472,6 +474,35 @@ class BaseLFJsonRequest:
                 post_data['suppress_preexec_method'] = True
                 post_data['suppress_postexec_cli'] = True
                 post_data['suppress_postexec_method'] = True
+
+            # self.logger.warning("Post_data: "+pformat(post_data))
+            # self.logger.warning("Encoded Post_data: %s"%json.dumps(post_data).encode("utf-8"))
+            change_list = []
+            for (key, value) in post_data.items():
+                if not isinstance(value, str):
+                    continue
+                if ((value.find("\\") >= 0)
+                    or (value.find("\n") >= 0)
+                    or (value.find("\r") >= 0)
+                    or (value.find("\t") >= 0)):
+                    if key.endswith(BaseLFJsonRequest.BASE64_SUFFIX):
+                        self.logger.warning("Post_data: "+pformat(post_data))
+                        self.logger.error(" misformated post_data key: "+key)
+                        raise ValueError("Complex value submitted in a base64 tagged parameter [%s]. Cannot continue" % key)
+                    change_list.append(key)
+
+            if change_list:
+                for key in change_list:
+                    value = post_data[key]
+                    # base64.encodebytes provides MIME encoding which appears to be sufficient for JSON
+                    # if we need to move to base64 URL encoding, please test, but CliCmd.java should
+                    # maintain both decodings depening on the detection of _ and - characters
+                    new_value = base64.encodebytes(value.encode("utf-8")).decode("ascii")
+                    new_key = key + BaseLFJsonRequest.BASE64_SUFFIX
+                    del post_data[key]
+                    post_data[new_key] = new_value
+                    self.logger.info("replaced key[%s] with new key: %s"%(key, new_key))
+                    self.logger.info("new value [%s]"%(new_value))
 
             myrequest = request.Request(url=url,
                                         method=method_,
@@ -1187,7 +1218,7 @@ class BaseSession:
         """
         if self.command_instance:
             return self.command_instance
-        self.command_instance = JsonCommand(session_obj=self)
+        self.command_instance = JsonCommand(session_obj=self, debug=self.debug_on, exit_on_error=self.exit_on_error)
         return self.command_instance
 
     def get_query(self) -> 'JsonQuery':
@@ -1197,7 +1228,7 @@ class BaseSession:
         """
         if self.query_instance:
             return self.query_instance
-        self.query_instance = JsonQuery(session_obj=self, debug=self.debug_on)
+        self.query_instance = JsonQuery(session_obj=self, debug=self.debug_on, exit_on_error=self.exit_on_error)
         return self.query_instance
 
     def is_exit_on_error(self) -> bool:
@@ -19097,8 +19128,8 @@ class LFJsonQuery(JsonQuery):
         dns-min, eid, elapsed, entity+id, fb-avg, fb-max, fb-min, ftp-host, ftp-port, 
         ftp-stor, http-p, http-r, http-t, login-denied, name, nf+%284xx%29, other-err, 
         read, redir, rpt+timer, rslv-h, rslv-p, rx+rate, rx+rate+%281%C2%A0min%29, status, 
-        timeout, total-err, total-urls, tx+rate, tx+rate+%281%C2%A0min%29, type, uc-avg, 
-        uc-max, uc-min, urls%2Fs, write        # hidden columns:
+        time-stamp, timeout, total-err, total-urls, tx+rate, tx+rate+%281%C2%A0min%29, 
+        type, uc-avg, uc-max, uc-min, urls%2Fs, write        # hidden columns:
         rpt-time
     Example URL: /layer4?fields=%21conn,acc.+denied
 
@@ -19163,6 +19194,7 @@ class LFJsonQuery(JsonQuery):
                                 # phantom, probably due to non-existent interface or resource.WAITINGWill
                                 # restart as soon as resources are available.PHANTOMTest is stopped, and
                                 # is phantom, probably due to non-existent interface or resource.
+        'time-stamp':           # Time-Stamp
         'timeout':              # Operation timed out.
         'total-err':            # Total Errors. This is also total failed URLs.
         'total-urls':           # URLs processed and in process. This includes passed and failed URLs.
@@ -21610,7 +21642,7 @@ class LFSession(BaseSession):
         """
         if self.command_instance:
             return self.command_instance
-        self.command_instance = LFJsonCommand(session_obj=self)
+        self.command_instance = LFJsonCommand(session_obj=self, debug=self.debug_on, exit_on_error=self.exit_on_error)
         return self.command_instance
 
     def get_query(self) -> LFJsonQuery:
@@ -21620,5 +21652,5 @@ class LFSession(BaseSession):
         """
         if self.query_instance:
             return self.query_instance
-        self.query_instance = LFJsonQuery(session_obj=self, debug=self.debug_on)
+        self.query_instance = LFJsonQuery(session_obj=self, debug=self.debug_on, exit_on_error=self.exit_on_error)
         return self.query_instance
