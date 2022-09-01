@@ -32,7 +32,7 @@ ANTENNA_LEGEND = {
     0: 'Diversity (All)',
     1: 'Fixed-A (1x1)',
     4: 'AB (2x2)',
-    7: 'ABC (7x7)',
+    7: 'ABC (3x3)',
     8: 'ABCD (4x4)'
 }
 BASE_PATH_LOSS = 36
