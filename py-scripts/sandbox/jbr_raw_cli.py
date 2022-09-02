@@ -87,6 +87,10 @@ def main():
     };
     command.json_post(url="/cli-json/raw", post_data=data, debug=args.debug, suppress_related_commands=True)
 
+    print("Next, using command.json_post_raw")
+
+    command.json_post_raw(post_data=data, debug=args.debug, suppress_related_commands=True)
+
     #localrealm =
 
 if __name__ == "__main__":
