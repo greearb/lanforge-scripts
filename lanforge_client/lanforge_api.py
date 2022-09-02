@@ -157,13 +157,14 @@ def print_diagnostics(url_: str = None,
                 if headername.startswith("X-Error-"):
                     xerrors.append("%s: %s" % (headername, err_headers.get(headername)))
         if len(xerrors) > 0:
-            print(" = = LANforge Error Messages = =")
-            print(" = = URL: %s" % err_full_url)
+            LOGGER.error(" = = LANforge Error Messages = =")
+            LOGGER.error(" = = URL: %s" % err_full_url)
+            LOGGER.error(" = = Request: %s" % str(request_.data))
             for xerr in xerrors:
                 LOGGER.error(xerr)
                 if (error_list_ is not None) and isinstance(error_list_, list):
                     error_list_.append(xerr)
-            print(" = = = = = = = = = = = = = = = =")
+            LOGGER.error(" = = = = = = = = = = = = = = = =")
 
     if error_.__class__ is urllib.error.HTTPError:
         LOGGER.debug("----- HTTPError: ------------------------------------ print_diagnostics:")
@@ -549,15 +550,16 @@ class BaseLFJsonRequest:
                 jzon_data = None
                 if debug and die_on_error:
                     self.logger.warning(__name__ +
-                                        " ----- json_post: %d debug: --------------------------------------------" %
+                                        " json_post: attempt %d --------------------------------------------" %
                                         attempt)
                     self.logger.warning("URL: <%s> status:%d " % (url, response.status))
-                    self.logger.warning(__name__ + " ----- headers -------------------------------------------------")
+                    self.logger.warning("submitted: "+pformat(post_data))
                     if response.status != 200:
+                        self.logger.warning(" ----- headers --------------------------------------------------")
                         self.logger.error(pformat(response.getheaders()))
-                    self.logger.error(__name__ + " ----- response -------------------------------------------------")
+                    self.logger.error(" ----- response -------------------------------------------------")
                     self.logger.error(pformat(resp_data))
-                    self.logger.error(" ----- -------------------------------------------------")
+                    self.logger.error(" ----------------------------------------------------------------")
                 responses.append(response)
                 header_items = response.getheaders()
                 if debug:
