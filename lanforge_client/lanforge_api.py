@@ -550,7 +550,7 @@ class BaseLFJsonRequest:
                 jzon_data = None
                 if debug and die_on_error:
                     self.logger.warning(__name__ +
-                                        " json_post: attempt %d --------------------------------------------" %
+                                        " json_post: attempt %d ---------------------" %
                                         attempt)
                     self.logger.warning("URL: <%s> status:%d " % (url, response.status))
                     self.logger.warning("submitted: "+pformat(post_data))
@@ -628,8 +628,38 @@ class BaseLFJsonRequest:
             exit(1)
         return None
 
+    def json_post_raw(self,
+                      url: str = "",
+                      post_data: dict = None,
+                      debug: bool = False,
+                      wait_sec: float = None,
+                      connection_timeout_sec: float = None,
+                      max_timeout_sec: float = None,
+                      die_on_error: bool = False,
+                      errors_warnings: list = None,  # p3.9 list[str]
+                      response_json_list: list = None,
+                      method_: str = 'POST',
+                      session_id_: str = "",
+                      suppress_related_commands=False) -> Optional:
+        if not url:
+            url = self.lfclient_url + "/cli-json/raw";
+            LOGGER.warning(__name__+": assuming URL: "+url)
+        if not post_data:
+            raise ValueError("No data to post")
+
+        return self.json_post(url=url,
+                              post_data=post_data,
+                              debug=debug | self.debug_on,
+                              wait_sec=wait_sec,
+                              connection_timeout_sec=connection_timeout_sec,
+                              max_timeout_sec=max_timeout_sec,
+                              die_on_error=die_on_error | self.die_on_error,
+                              response_json_list=response_json_list,
+                              errors_warnings=errors_warnings)
+
     def json_put(self,
                  url: str = None,
+                 post_data: dict = None,
                  debug: bool = False,
                  wait_sec: float = None,
                  request_timeout_sec: float = None,
@@ -639,7 +669,10 @@ class BaseLFJsonRequest:
                  response_json_list: list = None) -> Optional:  # Optional[HTTPResponse]
         if not url:
             raise ValueError("json_put requires url")
+        if not post_data:
+            raise ValueError("json_put requires post_data")
         return self.json_post(url=url,
+                              post_data=post_data,
                               debug=debug | self.debug_on,
                               wait_sec=wait_sec,
                               connection_timeout_sec=request_timeout_sec,
@@ -21393,8 +21426,8 @@ class LFJsonQuery(JsonQuery):
         if response is None:
             return None
         return self.extract_values(response=response,
-                                   singular_key="",
-                                   plural_key="")
+                                   singular_key="wanlinks",
+                                   plural_key="wanlinks")
     #
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <WL-ENDP> type requests
