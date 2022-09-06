@@ -10,6 +10,7 @@ import sys
 import os
 import importlib
 import argparse
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -25,12 +26,16 @@ realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
 create_wanlink = importlib.import_module("py-json.create_wanlink")
 
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
+
 
 class LANtoWAN(Realm):
     def __init__(self, args):
         super().__init__(args['host'], args['port'])
         self.args = args
-        self._debug_on = False
+        self._debug_on = args['debug']
         self._exit_on_error = False
         self._exit_on_fail = False
 
@@ -72,6 +77,7 @@ def main():
         optional_args.add_argument('--drop_B', help='The drop frequency of port B (%%)', default=None)
         # todo: packet loss A and B
         # todo: jitter A and B
+
     parseargs = parser.parse_args()
     args = {
         "host": parseargs.mgr,
@@ -94,7 +100,21 @@ def main():
         "drop": parseargs.drop,
         "drop_A": (parseargs.drop_A if parseargs.drop_A is not None else parseargs.drop),
         "drop_B": (parseargs.drop_B if parseargs.drop_B is not None else parseargs.drop),
+        "debug": parseargs.debug
     }
+
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    if parseargs.log_level:
+        logger_config.set_level(level=parseargs.log_level)
+
+    if parseargs.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = parseargs.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
     ltw = LANtoWAN(args)
     ltw.create_wanlinks()
     ltw.cleanup()
