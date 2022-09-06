@@ -120,7 +120,8 @@ class lf_clean(Realm):
                     endp_name = list(name)[0]
                     # logger.info(endp_name)
                     # get existing L3-CX names:
-                    if cx_json is not None:
+                    if cx_json['empty'] != 'please ignore':
+                        # logger.info(cx_json['empty'])
                         for cx_name in list(cx_json):
                             # logger.info(cx_name)
                             if cx_name != 'handler' and cx_name != 'uri' and cx_name != 'empty':
