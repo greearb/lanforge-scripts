@@ -37,7 +37,7 @@ j_printer = pprint.PrettyPrinter(indent=2)
 # todo: this needs to change
 resource_id = 1
 
-
+# TODO make port configurable
 def main(args):
     base_url = 'http://'+args['host']+':8080'
     print(base_url)
@@ -46,17 +46,17 @@ def main(args):
     num_wanlinks = -1
 
     # see if there are old wanlinks to remove
-    lf_r = LFRequest.LFRequest(base_url+"/wl/list")
+    lf_r = LFRequest.LFRequest(base_url+"/wl/list", debug_=args['debug'])
     logger.info(lf_r.get_as_json())
-
+    # TODO there wl list needs to be parced to remove the wanlink
     # remove old wanlinks
     if num_wanlinks > 0:
-        lf_r = LFRequest.LFRequest(base_url+"/cli-json/rm_cx")
+        lf_r = LFRequest.LFRequest(base_url+"/cli-json/rm_cx", debug_=args['debug'])
         lf_r.addPostData({
          'test_mgr': 'all',
          'cx_name': args['name']
         })
-        lf_r.jsonPost()
+        lf_r.jsonPost(debug=debug)
         sleep(0.05)
 
     try:
@@ -68,31 +68,33 @@ def main(args):
     except urllib.error.HTTPError as error:
         logger.error("Error code %s" % error.code)
 
-        lf_r = LFRequest.LFRequest(base_url+"/cli-json/rm_endp")
+        lf_r = LFRequest.LFRequest(base_url+"/cli-json/rm_endp", debug_=args['debug'])
         lf_r.addPostData({
            'endp_name': args['name']+"-A"
         })
-        lf_r.jsonPost()
+        lf_r.jsonPost(debug=args['debug'])
         sleep(0.05)
 
-        lf_r = LFRequest.LFRequest(base_url+"/cli-json/rm_endp")
+        lf_r = LFRequest.LFRequest(base_url+"/cli-json/rm_endp", debug_=args['debug'])
         lf_r.addPostData({
            'endp_name': args['name']+"-B"
         })
-        lf_r.jsonPost()
+        lf_r.jsonPost(debug=args['debug'])
         sleep(0.05)
 
     # create wanlink endpoint A
-    lf_r = LFRequest.LFRequest(base_url+"/cli-json/add_wl_endp")
+    lf_r = LFRequest.LFRequest(base_url+"/cli-json/add_wl_endp", debug_=args['debug'])
     lf_r.addPostData({
         'alias': args['name']+"-A",
         'shelf': 1,
         'resource': '1',
+        'wanlink': args['name'],
         'port': args['port_A'],
         'latency': args['latency_A'],
         'max_rate': args['rate_A'],
     })
-    lf_r.jsonPost()
+    lf_r.jsonPost(debug=args['debug'])
+
     sleep(0.05)
 
     # create wanlink endpoint B
@@ -101,11 +103,12 @@ def main(args):
         'alias': args['name']+"-B",
         'shelf': 1,
         'resource': '1',
+        'wanlink': args['name'],
         'port': args['port_B'],
         'latency': args['latency_B'],
         'max_rate': args['rate_B'],
     })
-    lf_r.jsonPost()
+    lf_r.jsonPost(debug=args['debug'])
     sleep(0.05)
 
     # create cx
@@ -116,7 +119,7 @@ def main(args):
        'tx_endp': args['name']+"-A",
        'rx_endp': args['name']+"-B",
     })
-    lf_r.jsonPost()
+    lf_r.jsonPost(debug=args['debug'])
     sleep(0.05)
 
     # modify wanlink endpoint A
@@ -127,7 +130,7 @@ def main(args):
         'jitter_freq': args['jitter_freq_A'],
         'drop_freq': args['drop_A']
     })
-    lf_r.jsonPost()
+    lf_r.jsonPost(debug=args['debug'])
     sleep(0.05)
 
     # modify wanlink endpoint B
@@ -138,7 +141,7 @@ def main(args):
         'jitter_freq': args['jitter_freq_B'],
         'drop_freq': args['drop_B']
     })
-    lf_r.jsonPost()
+    lf_r.jsonPost(debug=args['debug'])
     sleep(0.05)
 
     # start wanlink once we see it
@@ -171,13 +174,13 @@ def main(args):
 
     # print("starting wanlink:")
     # # print("the latency is {laten}".format(laten=latency))
-    # lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_cx_state")
-    # lf_r.addPostData({
-    #    'test_mgr': 'all',
-    #    'cx_name': args['name'],
-    #    'cx_state': 'RUNNING'
-    # })
-    # lf_r.jsonPost()
+    lf_r = LFRequest.LFRequest(base_url+"/cli-json/set_cx_state")
+    lf_r.addPostData({
+       'test_mgr': 'all',
+       'cx_name': args['name'],
+       'cx_state': 'RUNNING'
+    })
+    lf_r.jsonPost(debug=args['debug'])
 
     running = 0
     while running < 1:
@@ -267,6 +270,7 @@ if __name__ == '__main__':
         "drop": parseargs.drop,
         "drop_A": (parseargs.drop_A if parseargs.drop_A else parseargs.drop),
         "drop_B": (parseargs.drop_B if parseargs.drop_B else parseargs.drop),
+        "debug": parseargs.debug
     }
 
     main(args)
