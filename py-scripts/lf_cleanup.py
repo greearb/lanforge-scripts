@@ -37,7 +37,8 @@ class lf_clean(Realm):
                  clean_cxs=None,
                  clean_endp=None,
                  clean_sta=None,
-                 clean_port_mgr=None):
+                 clean_port_mgr=None,
+                 clean_misc=None):
         super().__init__(lfclient_host=host,
                          lfclient_port=port),
         self.host = host
@@ -47,6 +48,7 @@ class lf_clean(Realm):
         self.clean_endp = clean_endp
         self.clean_sta = clean_sta
         self.clean_port_mgr = clean_port_mgr
+        self.clean_misc = clean_misc
         self.cxs_done = False
         self.endp_done = False
         self.sta_done = False
@@ -239,7 +241,6 @@ class lf_clean(Realm):
 
         while still_looking_san and iterations_san <= 10:
             iterations_san += 1
-            logger.info("sta_clean: iterations_san: {iterations_san}".format(iterations_san=iterations_san))
             try:
                 port_mgr_json = super().json_get("/port/?fields=port+type,alias".format(resource=self.resource))['interfaces']
                 # logger.info(port_mgr_json)
@@ -390,12 +391,22 @@ class lf_clean(Realm):
             return still_looking_misc
 
     '''
-        1: delete cx
-        2: delete endp
-        3: delete sta
+        1: delete cx (Layer-3 tab objects)
+        2: delete endp (L3 Endps tab objects)
+        3: delete Port Mgr tab objects
         when deleting sta first, you will end up with phantom CX
     '''
-    def cleanup(self):
+    def sanitize_all(self):
+        # clean Layer-3 tab:
+        finished_clean_cxs = self.cxs_clean()
+        logger.info("clean_cxs: finished_clean_cxs {looking_cxs}".format(looking_cxs=finished_clean_cxs))
+        # clean L3 Endps tab:
+        finished_clean_endp = self.endp_clean()
+        logger.info("clean_endp: finished_clean_endp {looking_endp}".format(looking_endp=finished_clean_endp))
+        # clean Port Mgr tab:
+        finished_clean_port_mgr = self.port_mgr_clean()
+        logger.info("clean_sta: finished_clean_port_mgr {looking_port_mgr}".format(looking_port_mgr=finished_clean_port_mgr))
+        '''
         if self.clean_cxs:
             # also clean the endp when cleaning cxs
             still_looking_cxs = self.cxs_clean()
@@ -410,7 +421,6 @@ class lf_clean(Realm):
         if self.clean_port_mgr:
             still_looking_san = self.port_mgr_clean()
             logger.info("clean_sta: still_looking_san {looking_sta}".format(looking_sta=still_looking_san))
-        '''
         if self.clean_sta:
             still_looking_sta = self.sta_clean()
             logger.info("clean_sta: still_looking_sta {looking_sta}".format(looking_sta=still_looking_sta))
@@ -418,11 +428,10 @@ class lf_clean(Realm):
         if self.clean_br:
             still_looking_br = self.bridge_clean()
             logger.info("clean_br: still_looking_br {looking_br}".format(looking_br=still_looking_br))
-        '''
-
         if self.clean_misc:
             still_looking_misc = self.misc_clean()
             logger.info("clean_misc: still_looking_misc {looking_misc}".format(looking_misc=still_looking_misc))
+        '''
 
 
 def main():
@@ -481,6 +490,10 @@ python3 ./lf_clean.py --mgr MGR
         help="--misc, this will clear sta with names phy (not wiphy) and 1.1.eth stations",
         action='store_true')
     parser.add_argument(
+        '--sanitize',
+        help="--sanitize, this will clear all the created objects on the Port Mgr, Layer-3, and L3 Endps tab",
+        action='store_true')
+    parser.add_argument(
         "--debug",
         help="enable debugging",
         action="store_true")
@@ -501,8 +514,14 @@ python3 ./lf_clean.py --mgr MGR
         logger_config.set_level("debug")
 
     # if args.cxs or args.endp or args.sta or args.br or args.misc:
-    if args.cxs or args.endp or args.sta or args.br or args.misc or args.port_mgr:
-        clean = lf_clean(host=args.mgr, resource=args.resource, clean_cxs=args.cxs, clean_endp=args.endp, clean_sta=args.sta, clean_port_mgr=args.port_mgr)
+    if args.cxs or args.endp or args.sta or args.br or args.misc or args.port_mgr or args.sanitize:
+        clean = lf_clean(host=args.mgr,
+                         resource=args.resource,
+                         clean_cxs=args.cxs,
+                         clean_endp=args.endp,
+                         clean_sta=args.sta,
+                         clean_port_mgr=args.port_mgr,
+                         clean_misc=args.misc)
         logger.info("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.endp, sta=args.sta))
         if args.cxs:
             logger.info("cleaning cxs will also clean endp")
@@ -518,6 +537,8 @@ python3 ./lf_clean.py --mgr MGR
             clean.bridge_clean()
         if args.misc:
             clean.misc_clean()
+        if args.sanitize:
+            clean.sanitize_all()
 
         logger.info("Clean done")
         # print("Clean  cxs_done {cxs_done} endp_done {endp_done} sta_done {sta_done}"
