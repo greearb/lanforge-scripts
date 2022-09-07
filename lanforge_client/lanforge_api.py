@@ -92,6 +92,9 @@ from typing import Optional
 import urllib
 from urllib import request, error, parse
 import base64
+import string
+import re
+import random
 
 # - - - - deployed import references - - - - -
 from .logg import Logg
@@ -1281,6 +1284,18 @@ class BaseSession:
     def get_session_id(self) -> str:
         return self.session_id
 
+    def get_session_based_key(self) -> str:
+        """
+
+        :return: modestly random string prefixed with the alphanumeric characters of the existing session
+        """
+        short_session : str = None
+        if self.session_id:
+            short_session = re.sub("[^A-Za-z0-9]", "", self.session_id)
+        else:
+            short_session = "00000"
+        return short_session+"key"+''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(12))
+
     def get_proxies(self):
         return self.proxy_map
 
@@ -1326,7 +1341,10 @@ class LFJsonCommand(JsonCommand):
                  adb_cmd: str = None,                      # All remaining text after adb_id will be sent to the adb
                  # command. <tt escapearg='false'>Unescaped Value</tt>
                  adb_id: str = None,                       # Android device identifier, use NA if it should not be
-                 # used/specified.
+                 # used/specified. [W]
+                 key: str = None,                          # Key to be used in response messages, NA for generic keyed
+                 # message. Key should not have - or spaces or other
+                 # non-alphanumeric characters in it. [W]
                  resource: int = None,                     # Resource number. [W]
                  shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
                  debug: bool = False,
@@ -1342,6 +1360,8 @@ class LFJsonCommand(JsonCommand):
             data["adb_cmd"] = adb_cmd
         if adb_id is not None:
             data["adb_id"] = adb_id
+        if key is not None:
+            data["key"] = key
         if resource is not None:
             data["resource"] = resource
         if shelf is not None:
@@ -1367,6 +1387,7 @@ class LFJsonCommand(JsonCommand):
         TODO: fix comma counting
         self.post_adb(adb_cmd=param_map.get("adb_cmd"),
                       adb_id=param_map.get("adb_id"),
+                      key=param_map.get("key"),
                       resource=param_map.get("resource"),
                       shelf=param_map.get("shelf"),
                       )
@@ -6213,8 +6234,9 @@ class LFJsonCommand(JsonCommand):
     def post_admin(self, 
                    arg1: str = None,                         # Argument 1: xorp-port | scan-rslts-file | iface-name |
                    # iface-eid | rfgen-message | id | log_file_name
-                   arg2: str = None,                         # Argument 2: scan key | message | angle | dest-radio
-                   arg3: str = None,                         # Argument 3: noprobe | migrate-sta-mac-pattern
+                   arg2: str = None,                         # Argument 2: scan key | message | angle | dest-radio |
+                   # adb-filename
+                   arg3: str = None,                         # Argument 3: noprobe | migrate-sta-mac-pattern | adb-key
                    arg5: str = None,                         # Argument 4: table-speed
                    cmd: str = None,                          # Admin command:
                    # resync_clock|write_xorp_cfg|scan_complete|ifup_post_complete|flush_complete|req_migrate|rfgen|chamber|clean_logs
