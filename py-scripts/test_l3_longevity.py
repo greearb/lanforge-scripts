@@ -150,7 +150,7 @@ class L3VariableTime(Realm):
                  atten_vals=None,
                  number_template="00",
                  test_duration="256s",
-                 layer3_cols=None,
+                 collect_layer3_data=False,
                  polling_interval="60s",
                  lfclient_host="localhost",
                  lfclient_port=8080,
@@ -181,6 +181,7 @@ class L3VariableTime(Realm):
                  use_existing_station_lists=False,
                  existing_station_lists=None):
         self.eth_endps = []
+        self.cx_names = []
         self.total_stas = 0
         if side_a_min_rate is None:
             side_a_min_rate = [56000]
@@ -206,8 +207,6 @@ class L3VariableTime(Realm):
             atten_vals = []
         if _capture_signal_list is None:
             _capture_signal_list = []
-        if layer3_cols is None:
-            layer3_cols = ['Avg RTT','tx rate']
         super().__init__(lfclient_host=lfclient_host,
                          lfclient_port=lfclient_port,
                          debug_=debug,
@@ -239,7 +238,7 @@ class L3VariableTime(Realm):
         self.number_template = number_template
         self.name_prefix = name_prefix
         self.test_duration = test_duration
-        self.layer3_cols = layer3_cols
+        self.collect_layer3_data = collect_layer3_data
         self.radio_name_list = radio_name_list
         self.number_of_stations_per_radio_list = number_of_stations_per_radio_list
         # self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
@@ -321,6 +320,9 @@ class L3VariableTime(Realm):
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
 
+        self.l3_port_csv_files = {}
+        self.l3_port_csv_writers = {}
+
         # the --ap_read will use these headers
         self.ap_stats_col_titles = [
             "Station Address",
@@ -362,7 +364,8 @@ class L3VariableTime(Realm):
 
         # Full spread-sheet data
         if self.outfile is not None:
-            results = self.outfile[:-4]
+            #create csv results writer and open results file to be written to.
+            results = self.outfile[:-4] #take off .csv part of outfile
             results = results + "-results.csv"
             self.csv_results_file = open(results, "w")
             self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
@@ -457,6 +460,26 @@ class L3VariableTime(Realm):
     def get_results_csv(self):
         # print("self.csv_results_file {}".format(self.csv_results_file.name))
         return self.csv_results_file.name
+
+    def get_l3_stats_for_cx(self, data):
+        type = data["type"]
+        state = data["state"]
+        pkt_rx_a = int(data['pkt rx a'])
+        pkt_rx_b = int(data['pkt rx b'])
+        bps_rx_a = int(data['bps rx a'])
+        bps_rx_b = int(data['bps rx b'])
+        rx_drop_percent_a = int(data['rx drop % a'])
+        rx_drop_percent_b = int(data['rx drop % b'])
+        drop_pkts_a = int(data['drop pkts a'])
+        drop_pkts_b = int(data['drop pkts b'])
+        avg_rtt = int(data['avg rtt'])
+        rpt_timer = data['rpt timer']
+        eid = data['eid']
+
+        return type, state, pkt_rx_a, pkt_rx_b, bps_rx_a, bps_rx_b, rx_drop_percent_a, rx_drop_percent_b, drop_pkts_a, drop_pkts_b, avg_rtt, rpt_timer, eid
+
+
+
 
     # Find avg latency, jitter for connections using specified port.
     def get_endp_stats_for_port(self, port_eid, endps):
@@ -703,6 +726,8 @@ class L3VariableTime(Realm):
                         self.lf_endps = self.eth_endps + these_endp
                     else:
                         self.tcp_endps = self.tcp_endps + these_endp
+                    #after we create cxs, append to global variable
+                    self.cx_names.append(these_cx)
 
         else:
             for station_profile in self.station_profiles:
@@ -746,6 +771,8 @@ class L3VariableTime(Realm):
                                 self.udp_endps = self.udp_endps + these_endp
                             else:
                                 self.tcp_endps = self.tcp_endps + these_endp
+                            #after we create the cxs, append to global
+                            self.cx_names.append(these_cx)
 
         self.cx_count = self.cx_profile.get_cx_count()
 
@@ -1017,29 +1044,20 @@ class L3VariableTime(Realm):
         else:
             # No reason to continue
             raise ValueError("ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
-        try:
-            #TODO : edit this to be layer3 tab, not layer3 endps
-            layer3connections =  layer3connections = ','.join([[*x.keys()][0] for x in self.json_get('endp')['endpoint']])
-        except ValueError:
-            raise ValueError('Unable to find Layer 3 connections.')
-        if type(self.layer3_cols) is not list:
-            layer3_cols = list(self.layer3_cols.split(","))
-        else:
-            layer3_cols = self.layer3_cols
-        if self.debug:
-            logger.debug("Layer 3 columns are.....")
-            logger.debug(layer3_cols)
-        self.csv_generate_column_headers()
+        # self.csv_generate_column_headers() 
         # print(csv_header)
-        self.csv_add_column_headers()
+        self.csv_add_results_column_headers()
 
         # dl - ports
         port_eids = self.gather_port_eids()
         #if self.use_existing_station_lists:
         #    port_eids.extend(self.existing_station_lists.copy())
         for port_eid in port_eids:
-            self.csv_add_port_column_headers(
+            self.csv_add_dl_port_column_headers(
                 port_eid, self.csv_generate_port_column_headers())
+        if self.collect_layer3_data:
+            for cx in self.cx_names:
+                self.csv_add_l3_column_headers(cx[0], self.csv_generate_l3_column_headers())
 
         # ul -ports the csv will only be filled out if the
         # ap is read
@@ -1675,7 +1693,7 @@ class L3VariableTime(Realm):
                                     logger.info(pformat(response))
                                     port_data = response['interface']
                                     # print("#### From LANforge: port_data,
-                                    # response['insterface']:{}".format(p))
+                                    # response['interface']:{}".format(p))
                                     mac = port_data['mac']
                                     # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
@@ -1866,7 +1884,7 @@ class L3VariableTime(Realm):
                                             total_dl_pkts_ll,
                                             ap_ul_row)
                         else:
-
+                            # NOT ap.read
                             # Query all of our ports
                             # Note: the endp eid is the
                             # shelf.resource.port.endp-id
@@ -1905,6 +1923,35 @@ class L3VariableTime(Realm):
                                         total_dl_rate_ll,
                                         total_dl_pkts_ll,
                                         ap_row)
+                            #collect layer 3 data
+                            if (self.collect_layer3_data):
+                                for cx in self.cx_names:
+                                    cx_name = cx[0]
+                                    url = "/cx/%s" % (cx_name)
+                                    response = self.json_get(url)
+                                    if (response is None) or (
+                                        cx_name not in response):
+                                        logger.info(
+                                        "query-port: %s: incomplete response:" % url)
+                                        logger.info(pformat(response))
+                                    else:
+                                        cx_data = response[cx_name]
+                                        type, state, pkt_rx_a, pkt_rx_b, bps_rx_a, bps_rx_b, rx_drop_percent_a, rx_drop_percent_b, drop_pkts_a, drop_pkts_b, avg_rtt, rpt_timer, eid = self.get_l3_stats_for_cx(cx_data)
+
+                                        self.write_l3_csv(cx_name,
+                                                            type,
+                                                            state,
+                                                            pkt_rx_a,
+                                                            pkt_rx_b,
+                                                            bps_rx_a,
+                                                            bps_rx_b,
+                                                            rx_drop_percent_a,
+                                                            rx_drop_percent_b,
+                                                            drop_pkts_a,
+                                                            drop_pkts_b,
+                                                            avg_rtt,
+                                                            rpt_timer,
+                                                            eid)
                     #ENDTIME reached                    
 
                     # Consolidate all the dl ports into one file
@@ -2014,7 +2061,29 @@ class L3VariableTime(Realm):
                         self._pass(
                             "PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" %
                             (ul, dl, ul_pdu, dl_pdu), print_pass)
+    def write_l3_csv(self,
+                    cx_name,
+                    type, 
+                    state, 
+                    pkt_rx_a, 
+                    pkt_rx_b, 
+                    bps_rx_a, 
+                    bps_rx_b, 
+                    rx_drop_percent_a, 
+                    rx_drop_percent_b, 
+                    drop_pkts_a, 
+                    drop_pkts_b, 
+                    avg_rtt, 
+                    rpt_timer, 
+                    eid
+                    ):    
 
+
+        writer = self.ul_port_csv_writers[cx_name]
+        #writer.writerow(row)
+        self.ul_port_csv_files[cx_name].flush()
+    
+    
     def write_port_csv(
             self,
             sta_count,
@@ -2311,6 +2380,24 @@ class L3VariableTime(Realm):
 
         return csv_rx_headers
 
+    def csv_generate_l3_column_headers(self):
+        csv_l3_headers = [
+            'Name',
+            'Type',
+            'State',
+            'Pkt Rx A',
+            'Pkt Rx B',
+            'Bps Rx A',
+            'Bps Rx B',
+            'Rx Drop % A',
+            'Rx Drop % B',
+            'Drop Pkts A',
+            'Drop Pkts B',
+            'Avg RTT',
+            'Rpt Timer',
+            'EID']
+        return csv_l3_headers
+
     def csv_generate_ul_port_column_headers(self):
         csv_ul_rx_headers = [
             'Time epoch',
@@ -2342,10 +2429,8 @@ class L3VariableTime(Realm):
             'Dl-Rx-Rate-ll',
             'Dl-Rx-Pkts-ll']
         # Add in columns we are going to query from the AP
-        if self.ap_read:
-            for col in self.ap_stats_ul_col_titles:
-                csv_ul_rx_headers.append(col)
-
+        for col in self.ap_stats_ul_col_titles:
+            csv_ul_rx_headers.append(col)
         return csv_ul_rx_headers
 
     def csv_generate_results_column_headers(self):
@@ -2374,14 +2459,14 @@ class L3VariableTime(Realm):
         return csv_rx_headers
 
     # Write initial headers to csv file.
-    def csv_add_column_headers(self):
+    def csv_add_results_column_headers(self):
         if self.csv_results_file is not None:
             self.csv_results_writer.writerow(
                 self.csv_generate_results_column_headers())
             self.csv_results_file.flush()
 
     # Write initial headers to port csv file.
-    def csv_add_port_column_headers(self, port_eid, headers):
+    def csv_add_dl_port_column_headers(self, port_eid, headers):
         # if self.csv_file is not None:
         fname = self.outfile[:-4]  # Strip '.csv' from file name
         fname = fname + "-dl-" + port_eid + ".csv"
@@ -2393,6 +2478,18 @@ class L3VariableTime(Realm):
         port_csv_writer.writerow(headers)
         pfile.flush()
 
+    #write initial headers to l3 files
+    def csv_add_l3_column_headers(self, cx, headers):
+        fname = self.outfile[:-4] #String '.csv' from file name
+        fname = fname + "-" + cx + "-l3-cx.csv"
+        pfile = open(fname, "w")
+        l3_csv_writer = csv.writer(pfile, delimiter=",")
+        self.l3_port_csv_files[cx] = pfile
+        self.l3_port_csv_writers[cx] = l3_csv_writer
+        l3_csv_writer.writerow(headers)
+        pfile.flush()
+
+    #Write initial headers to upload port csv file
     def csv_add_ul_port_column_headers(self, port_eid, headers):
         # if self.csv_file is not None:
         fname = self.outfile[:-4]  # Strip '.csv' from file name
@@ -2894,6 +2991,10 @@ Setting wifi_settings per radio
               ' reset_port_time_max==<max>s" ')
     )
     parser.add_argument(
+        '--collect_layer3_data',
+        help='--collect_layer3_data flag present creates csv files recording layer3 columns of cxs.',
+        action='store_true')
+    parser.add_argument(
         '--ap_read',
         help='--ap_read  flag present enable reading ap',
         action='store_true')
@@ -3072,6 +3173,11 @@ Setting wifi_settings per radio
     dut_serial_num = args.dut_serial_num
     # test_priority = args.test_priority  # this may need to be set per test
     test_id = args.test_id
+
+    if args.collect_layer3_data:
+        collect_layer3_data = args.collect_layer3_data
+    else:
+        collect_layer3_data = False
 
     if args.ap_read:
         ap_read = args.ap_read
@@ -3413,6 +3519,7 @@ Setting wifi_settings per radio
         influxdb=influxdb,
         kpi_csv=kpi_csv,  # kpi.csv object
         no_cleanup=args.no_cleanup,
+        collect_layer3_data=collect_layer3_data,
         use_existing_station_lists=args.use_existing_station_list,
         existing_station_lists=existing_station_lists,
         ap_scheduler_stats=ap_scheduler_stats,
