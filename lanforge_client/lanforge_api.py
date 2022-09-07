@@ -1324,7 +1324,7 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_adb(self, 
                  adb_cmd: str = None,                      # All remaining text after adb_id will be sent to the adb
-                 # command.
+                 # command. <tt escapearg='false'>Unescaped Value</tt>
                  adb_id: str = None,                       # Android device identifier, use NA if it should not be
                  # used/specified.
                  resource: int = None,                     # Resource number. [W]
@@ -2269,7 +2269,8 @@ class LFJsonCommand(JsonCommand):
     def post_add_chamber_path(self, 
                               chamber: str = None,                      # Chamber Name. [R]
                               content: str = None,                      # <tt>[BLANK]</tt> will erase all content, any other
-                              # text will be appended to existing text.
+                              # text will be appended to existing text. <tt
+                              # escapearg='false'>Unescaped Value</tt>
                               path: str = None,                         # Path Name [R]
                               debug: bool = False,
                               suppress_related_commands: bool = False):
@@ -2515,7 +2516,8 @@ class LFJsonCommand(JsonCommand):
                      passwd3: str = None,                      # WiFi Password that can be used to connect to DUT
                      serial_num: str = None,                   # DUT Identifier (serial-number, etc)
                      serial_port: str = None,                  # Resource and Serial port name on LANforge that connects to
-                     # DUT (1.2.ttyS0).
+                     # DUT (1.2.ttyS0). Serial port does not need to be on
+                     # resource holding wan_port or lan_port
                      ssid1: str = None,                        # WiFi SSID that can be used to connect to DUT
                      ssid2: str = None,                        # WiFi SSID that can be used to connect to DUT
                      ssid3: str = None,                        # WiFi SSID that can be used to connect to DUT
@@ -2646,7 +2648,8 @@ class LFJsonCommand(JsonCommand):
     def post_add_dut_notes(self, 
                            dut: str = None,                          # DUT Name. [R]
                            text: str = None,                         # [BLANK] will erase all, any other text will be
-                           # appended to existing text.
+                           # appended to existing text. <tt
+                           # escapearg='false'>Unescaped Value</tt>
                            debug: bool = False,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -2818,7 +2821,8 @@ class LFJsonCommand(JsonCommand):
                       alias: str = None,                        # Name of endpoint. [R]
                       ip_port: str = None,                      # IP Port: IP port for layer three endpoints. Use -1 to let
                       # the LANforge server automatically configure the ip_port.
-                      # Layer 2 endpoints will ignore
+                      # Layer 2 endpoints will ignore this argument. Use 0 for
+                      # 'ANY', and let the OS choose.
                       is_pkt_sz_random: str = None,             # Yes means use random sized packets, anything else means
                       # NO.
                       is_rate_bursty: str = None,               # Yes means bursty, anything else means NO.
@@ -4283,7 +4287,8 @@ class LFJsonCommand(JsonCommand):
                      ampdu_density: str = None,                # 0-7, or 0xFF to not set.
                      ampdu_factor: str = None,                 # 0-3, or 0xFF to not set.
                      ap: str = None,                           # The Access Point BSSID this Virtual STA should be
-                     # associated with
+                     # associated with (example: <tt>00:11:22:33:4:55</tt>, or
+                     # <tt>DEFAULT</tt> for any).
                      flags: str = None,                        # Flags for this interface (see above.) [W]
                      flags_mask: str = None,                   # If set, only these flags will be considered.
                      ieee80211w: str = None,                   # Management Frame Protection: 0: disabled, 1: optional, 2:
@@ -8804,7 +8809,8 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_probe_port(self, 
                         key: str = None,                          # Unique identifier for this request. Usually left
-                        # blank.<br/>
+                        # blank.<br/> Use 'probe_port.quiet.[EID]' to suppress
+                        # popup.
                         port: str = None,                         # Port number or name [W]
                         resource: int = None,                     # Resource number. [W]
                         shelf: int = 1,                           # Shelf number. [R][D:1]
@@ -11025,7 +11031,8 @@ class LFJsonCommand(JsonCommand):
     def post_set_chamber(self, 
                          chamber: str = None,                      # Chamber name [W]
                          cur_rotation: str = None,                 # Primarily used to store the last known rotation for
-                         # turntables that do not report absolute position.
+                         # turntables that do not report absolute position. Use NA
+                         # or leave blank if unsure.
                          position: str = None,                     # Absolute position in degrees.
                          speed_rpm: str = None,                    # Speed in rpm (floating point number is accepted
                          tilt: str = None,                         # Absolute tilt in degrees.
@@ -11087,7 +11094,8 @@ class LFJsonCommand(JsonCommand):
     def post_set_cx_report_timer(self, 
                                  cx_name: str = None,                      # Name of cross-connect, or 'all'. [W]
                                  cxonly: str = None,                       # If you want to set the timer for ONLY the CX,
-                                 # and not
+                                 # and not the endpoints, enter 'cxonly'.
+                                 # Otherwise, leave it blank..
                                  milliseconds: str = None,                 # Report timer length in milliseconds.
                                  # [W,250-60000][D:5000]
                                  test_mgr: str = None,                     # Name of the test manager, or 'all'. [W]
@@ -12401,7 +12409,9 @@ class LFJsonCommand(JsonCommand):
                              flags: str = None,                        # Currently un-defined, use NA
                              port: str = None,                         # WiFi interface name or number. [W]
                              post_ifup_script: str = None,             # Script name with optional args, will run after
-                             # interface comes up and gets IP.
+                             # interface comes up and gets IP. Use [BLANK] to
+                             # clear. <tt escapearg='false'>Unescaped Value</tt>
+                             # [W]
                              resource: int = None,                     # Resource number. [W]
                              shelf: int = 1,                           # Shelf number. [R][D:1]
                              debug: bool = False,
@@ -14369,7 +14379,8 @@ class LFJsonCommand(JsonCommand):
                              resource: int = None,                     # Resource number. [W]
                              shelf: int = 1,                           # Shelf number. [R][D:1]
                              text: str = None,                         # [BLANK] will erase all, any other text will be
-                             # appended to existing text.
+                             # appended to existing text. <tt
+                             # escapearg='false'>Unescaped Value</tt> [W]
                              p_type: str = None,                       # NA for now, may specify specific locations later.
                              # [D:NA]
                              debug: bool = False,
@@ -14779,7 +14790,7 @@ class LFJsonCommand(JsonCommand):
                             # (1x1), 4 AB (2x2), 7 ABC (3x3), 8 ABCD (4x4), 9 8x8
                             channel: str = None,                      # Channel number for this radio device. Frequency
                             # takes precedence if both are set to non-default
-                            # values.
+                            # values. <tt>0xFFFF, AUTO or DEFAULT</tt> means ANY.
                             const_tx: str = None,                     # RF Pattern Generator , encoded as a single 32-bit
                             # integer. See above.
                             country: str = None,                      # Country number for this radio device.
@@ -20597,14 +20608,8 @@ class LFJsonQuery(JsonQuery):
     request one of these URLs:
         /voip-endp/
         /voip-endp/$endp_id
-        /voip-ep/
-        /voip-ep/$endp_id
         /voip/
         /voip/$cx_id
-        /voip_endp/
-        /voip_endp/$endp_id
-        /voip_ep/
-        /voip_ep/$endp_id
 
     When requesting specific column names, they need to be URL encoded:
         bps+rx+a, bps+rx+b, delay+a+%E2%86%90+b, delay+a+%E2%86%92+b, eid, endpoints+%28a%C2%A0%E2%86%94%C2%A0b%29, 
