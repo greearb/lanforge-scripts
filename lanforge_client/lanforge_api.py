@@ -38,7 +38,7 @@
                                 'http':'http://192.168.1.250:3128'
                             },
                         debug=True,
-                        die_on_error=False);
+                        die_on_error=False)
     lf_command = session.get_command()
     full_response = []
     first_response = lf_command.json_post(  url="/nc_show_ports",
@@ -642,7 +642,7 @@ class BaseLFJsonRequest:
                       session_id_: str = "",
                       suppress_related_commands=False) -> Optional:
         if not url:
-            url = self.lfclient_url + "/cli-json/raw";
+            url = self.lfclient_url + "/cli-json/raw"
             LOGGER.warning(__name__+": assuming URL: "+url)
         if not post_data:
             raise ValueError("No data to post")
@@ -1229,7 +1229,7 @@ class BaseSession:
         self.lfclient_url = "%s//%s:%s" % (("http:", "https:")[is_https],
                                            lfclient_url,
                                            ("8080", port)[has_port])
-        # print("RESULTING URL: "+self.lfclient_url);
+        # print("RESULTING URL: "+self.lfclient_url)
 
         # test connection with GUI to get a session id, then set our session ids in those instances
         # self.session_connection_check = self.command_instance.start_session(debug=debug)
@@ -5940,23 +5940,12 @@ class LFJsonCommand(JsonCommand):
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Notes for <CLI-JSON/ADD_WL_ENDP> type requests
+            Notes for <CLI-JSON/ADD_WANPATH> type requests
 
-        https://www.candelatech.com/lfcli_ug.php#add_wl_endp
+        https://www.candelatech.com/lfcli_ug.php#add_wanpath
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-
-    class AddWlEndpWleFlags(Enum):
-        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
-            Example Usage: 
-        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
-        SHOW_WP = 1      # Show WanPaths in wanlink endpoint table in GUI
-
-    def post_add_wl_endp(self, 
+    def post_add_wanpath(self, 
                          alias: str = None,                        # Name of WanPath. [R]
-                         cpu_id: str = None,                       # The CPU/thread that this process should run on
-                         # (kernel-mode only).
-                         description: str = None,                  # Description for this endpoint, put in single quotes if
-                         # it contains spaces.
                          dest_ip: str = None,                      # Selection filter: Destination IP.
                          dest_ip_mask: str = None,                 # Selection filter: Destination IP MASK.
                          drop_every_xth_pkt: str = None,           # YES to periodically drop every Xth pkt, NO to drop
@@ -5987,7 +5976,6 @@ class LFJsonCommand(JsonCommand):
                          # for microseconds) [W]
                          max_lateness: str = None,                 # Maximum amount of un-intentional delay before pkt is
                          # dropped. Default is AUTO
-                         max_rate: str = None,                     # Maximum transmit rate (bps) for this WanLink.
                          max_reorder_amt: str = None,              # Maximum amount of packets by which to reorder, Default
                          # is 10. [D:10]
                          min_drop_amt: str = None,                 # Minimum amount of packets to drop in a row. Default is
@@ -5997,13 +5985,10 @@ class LFJsonCommand(JsonCommand):
                          playback_capture: str = None,             # ON or OFF, should we play back a WAN capture file?
                          playback_capture_file: str = None,        # Name of the WAN capture file to play back.
                          playback_loop: str = None,                # Should we loop the playback file, YES or NO or NA.
-                         port: str = None,                         # Port number. [W]
                          reorder_every_xth_pkt: str = None,        # YES to periodically reorder every Xth pkt, NO to
                          # reorder packets randomly.
                          reorder_freq: str = None,                 # How often, out of 1,000,000 packets, should we make a
                          # packet out of order. [W]
-                         resource: int = None,                     # Resource number. [W]
-                         shelf: int = 1,                           # Shelf name/id. [R][D:1]
                          source_ip: str = None,                    # Selection filter: Source IP.
                          source_ip_mask: str = None,               # Selection filter: Source IP MASK.
                          speed: str = None,                        # The maximum speed this WanLink will accept (bps). [W]
@@ -6011,22 +5996,17 @@ class LFJsonCommand(JsonCommand):
                          # Leave blank for no restrictions.
                          wanlink: str = None,                      # Name of WanLink to which we are adding this WanPath.
                          # [R]
-                         wle_flags: str = None,                    # WanLink Endpoint specific flags, see above.
                          debug: bool = False,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_wl_endp(param=value ...)
+                result = post_add_wanpath(param=value ...)
                 pprint.pprint( result )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
         if alias is not None:
             data["alias"] = alias
-        if cpu_id is not None:
-            data["cpu_id"] = cpu_id
-        if description is not None:
-            data["description"] = description
         if dest_ip is not None:
             data["dest_ip"] = dest_ip
         if dest_ip_mask is not None:
@@ -6059,8 +6039,6 @@ class LFJsonCommand(JsonCommand):
             data["max_jitter"] = max_jitter
         if max_lateness is not None:
             data["max_lateness"] = max_lateness
-        if max_rate is not None:
-            data["max_rate"] = max_rate
         if max_reorder_amt is not None:
             data["max_reorder_amt"] = max_reorder_amt
         if min_drop_amt is not None:
@@ -6073,16 +6051,10 @@ class LFJsonCommand(JsonCommand):
             data["playback_capture_file"] = playback_capture_file
         if playback_loop is not None:
             data["playback_loop"] = playback_loop
-        if port is not None:
-            data["port"] = port
         if reorder_every_xth_pkt is not None:
             data["reorder_every_xth_pkt"] = reorder_every_xth_pkt
         if reorder_freq is not None:
             data["reorder_freq"] = reorder_freq
-        if resource is not None:
-            data["resource"] = resource
-        if shelf is not None:
-            data["shelf"] = shelf
         if source_ip is not None:
             data["source_ip"] = source_ip
         if source_ip_mask is not None:
@@ -6093,6 +6065,108 @@ class LFJsonCommand(JsonCommand):
             data["test_mgr"] = test_mgr
         if wanlink is not None:
             data["wanlink"] = wanlink
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/add_wanpath",
+                                  post_data=data,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+    #
+
+    def post_add_wanpath_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_add_wanpath(alias=param_map.get("alias"),
+                              dest_ip=param_map.get("dest_ip"),
+                              dest_ip_mask=param_map.get("dest_ip_mask"),
+                              drop_every_xth_pkt=param_map.get("drop_every_xth_pkt"),
+                              drop_freq=param_map.get("drop_freq"),
+                              dup_every_xth_pkt=param_map.get("dup_every_xth_pkt"),
+                              dup_freq=param_map.get("dup_freq"),
+                              extra_buffer=param_map.get("extra_buffer"),
+                              ignore_bandwidth=param_map.get("ignore_bandwidth"),
+                              ignore_dup=param_map.get("ignore_dup"),
+                              ignore_latency=param_map.get("ignore_latency"),
+                              ignore_loss=param_map.get("ignore_loss"),
+                              jitter_freq=param_map.get("jitter_freq"),
+                              latency=param_map.get("latency"),
+                              max_drop_amt=param_map.get("max_drop_amt"),
+                              max_jitter=param_map.get("max_jitter"),
+                              max_lateness=param_map.get("max_lateness"),
+                              max_reorder_amt=param_map.get("max_reorder_amt"),
+                              min_drop_amt=param_map.get("min_drop_amt"),
+                              min_reorder_amt=param_map.get("min_reorder_amt"),
+                              playback_capture=param_map.get("playback_capture"),
+                              playback_capture_file=param_map.get("playback_capture_file"),
+                              playback_loop=param_map.get("playback_loop"),
+                              reorder_every_xth_pkt=param_map.get("reorder_every_xth_pkt"),
+                              reorder_freq=param_map.get("reorder_freq"),
+                              source_ip=param_map.get("source_ip"),
+                              source_ip_mask=param_map.get("source_ip_mask"),
+                              speed=param_map.get("speed"),
+                              test_mgr=param_map.get("test_mgr"),
+                              wanlink=param_map.get("wanlink"),
+                              )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/ADD_WL_ENDP> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#add_wl_endp
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    class AddWlEndpWleFlags(Enum):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        SHOW_WP = 1      # Show WanPaths in wanlink endpoint table in GUI
+
+    def post_add_wl_endp(self, 
+                         alias: str = None,                        # Name of endpoint. [R]
+                         cpu_id: str = None,                       # The CPU/thread that this process should run on
+                         # (kernel-mode only).
+                         description: str = None,                  # Description for this endpoint, put in single quotes if
+                         # it contains spaces.
+                         latency: str = None,                      # The latency (ms) that will be added to each packet
+                         # entering this WanLink.
+                         max_rate: str = None,                     # Maximum transmit rate (bps) for this WanLink.
+                         port: str = None,                         # Port number. [W]
+                         resource: int = None,                     # Resource number. [W]
+                         shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                         wle_flags: str = None,                    # WanLink Endpoint specific flags, see above.
+                         debug: bool = False,
+                         suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                result = post_add_wl_endp(param=value ...)
+                pprint.pprint( result )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if alias is not None:
+            data["alias"] = alias
+        if cpu_id is not None:
+            data["cpu_id"] = cpu_id
+        if description is not None:
+            data["description"] = description
+        if latency is not None:
+            data["latency"] = latency
+        if max_rate is not None:
+            data["max_rate"] = max_rate
+        if port is not None:
+            data["port"] = port
+        if resource is not None:
+            data["resource"] = resource
+        if shelf is not None:
+            data["shelf"] = shelf
         if wle_flags is not None:
             data["wle_flags"] = wle_flags
         if len(data) < 1:
@@ -6117,39 +6191,11 @@ class LFJsonCommand(JsonCommand):
         self.post_add_wl_endp(alias=param_map.get("alias"),
                               cpu_id=param_map.get("cpu_id"),
                               description=param_map.get("description"),
-                              dest_ip=param_map.get("dest_ip"),
-                              dest_ip_mask=param_map.get("dest_ip_mask"),
-                              drop_every_xth_pkt=param_map.get("drop_every_xth_pkt"),
-                              drop_freq=param_map.get("drop_freq"),
-                              dup_every_xth_pkt=param_map.get("dup_every_xth_pkt"),
-                              dup_freq=param_map.get("dup_freq"),
-                              extra_buffer=param_map.get("extra_buffer"),
-                              ignore_bandwidth=param_map.get("ignore_bandwidth"),
-                              ignore_dup=param_map.get("ignore_dup"),
-                              ignore_latency=param_map.get("ignore_latency"),
-                              ignore_loss=param_map.get("ignore_loss"),
-                              jitter_freq=param_map.get("jitter_freq"),
                               latency=param_map.get("latency"),
-                              max_drop_amt=param_map.get("max_drop_amt"),
-                              max_jitter=param_map.get("max_jitter"),
-                              max_lateness=param_map.get("max_lateness"),
                               max_rate=param_map.get("max_rate"),
-                              max_reorder_amt=param_map.get("max_reorder_amt"),
-                              min_drop_amt=param_map.get("min_drop_amt"),
-                              min_reorder_amt=param_map.get("min_reorder_amt"),
-                              playback_capture=param_map.get("playback_capture"),
-                              playback_capture_file=param_map.get("playback_capture_file"),
-                              playback_loop=param_map.get("playback_loop"),
                               port=param_map.get("port"),
-                              reorder_every_xth_pkt=param_map.get("reorder_every_xth_pkt"),
-                              reorder_freq=param_map.get("reorder_freq"),
                               resource=param_map.get("resource"),
                               shelf=param_map.get("shelf"),
-                              source_ip=param_map.get("source_ip"),
-                              source_ip_mask=param_map.get("source_ip_mask"),
-                              speed=param_map.get("speed"),
-                              test_mgr=param_map.get("test_mgr"),
-                              wanlink=param_map.get("wanlink"),
                               wle_flags=param_map.get("wle_flags"),
                               )
         """
@@ -7906,7 +7952,7 @@ class LFJsonCommand(JsonCommand):
                          # if not used.
                          resource: int = None,                     # The number of the resource in question. [W]
                          shelf: int = 1,                           # The number of the shelf in question. [R][D:1]
-                         p_type: str = None,                       # journalctl, supplicant, lflogs, adb
+                         p_type: str = None,                       # journalctl, supplicant, lflogs, adb, hostapd
                          user_key: str = None,                     # Key to use for keyed-text-message response when using
                          # stdout destination
                          debug: bool = False,
