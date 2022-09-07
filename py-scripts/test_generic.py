@@ -345,21 +345,6 @@ python3 ./test_generic.py
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
 
-    if args.type != "speedtest" and args.dest is None:
-        logger.error("Destination is not set. Use --dest [ip_address] to specify destination")
-        raise ValueError("Destination is not set. Use --dest [ip_address] to specify destination")
-
-    num_sta = 2
-    if (args.num_stations is not None) and (int(args.num_stations) > 0):
-        num_stations_converted = int(args.num_stations)
-        num_sta = num_stations_converted
-
-        # Create directory
-
-        # if file path with output file extension is not given...
-        # check if home/lanforge/report-data exists. if not, save
-        # in new folder based in current file's directory
-
     # TODO either use Realm or create a port to IP method in realm
     if args.dest is None:
         # get ip upstream port
@@ -383,6 +368,19 @@ python3 ./test_generic.py
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+
+
+    num_sta = 2
+    if (args.num_stations is not None) and (int(args.num_stations) > 0):
+        num_stations_converted = int(args.num_stations)
+        num_sta = num_stations_converted
+
+        # Create directory
+
+        # if file path with output file extension is not given...
+        # check if home/lanforge/report-data exists. if not, save
+        # in new folder based in current file's directory
+
 
     systeminfopath = None
     if args.report_file is None:
