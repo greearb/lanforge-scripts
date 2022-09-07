@@ -165,7 +165,7 @@ class lf_json_api():
                     mode = self.csv_mode, header = self.csv_header, index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+            logger.info("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
 
         logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request))
 

@@ -457,6 +457,7 @@ class lf_rf_char(Realm):
         cur_time = datetime.datetime.now()
         end_time = self.parse_time(self.duration) + cur_time
         polling_interval_milliseconds = self.duration_time_to_milliseconds(self.polling_interval)
+        sleep_interval = (polling_interval_milliseconds/1000)/2
         interval = 0
         # initialize time stamps
         json_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
@@ -468,12 +469,11 @@ class lf_rf_char(Realm):
             interval_time = cur_time + datetime.timedelta(milliseconds=polling_interval_milliseconds)
 
             # check the port time stamp to see if data changed
-            # check every 1/5 second and only report of the timestamp changed
-
+            # check 1/2 polling interval
             while cur_time < interval_time:
                 cur_time = datetime.datetime.now()
                 # read the current time
-                time.sleep(.1)
+                time.sleep(sleep_interval)
                 json_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
                 current_time_stamp = json_vap_port_stats["interface"]["time-stamp"]
                 if current_time_stamp != previous_time_stamp:
