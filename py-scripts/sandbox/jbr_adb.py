@@ -81,7 +81,15 @@ def main():
 
     # command.post_rm_adb(shelf=1, resource=1, adb_id=args.id, debug=args.debug, suppress_related_commands=True)
     command.post_show_adb(shelf=1, resource=1, serno='ALL')
-    command.post_adb(shelf=1, resource=1, adb_id=args.id, adb_cmd=txt_cmd, debug=True, suppress_related_commands=True)
+    adb_key = session.get_session_based_key()
+    session.logger.error("adb_key: "+ adb_key)
+    command.post_adb(shelf=1,
+                     resource=1,
+                     key=adb_key,
+                     adb_id=args.id,
+                     adb_cmd=txt_cmd,
+                     debug=True,
+                     suppress_related_commands=True)
     command.post_show_adb(shelf=1, resource=1, serno='ALL')
     eid_url="%s.%s.%s" % (1, 1, args.id)
     time.sleep(0.05)
