@@ -473,7 +473,7 @@
                 "args":"",
                 "args_list":[
                     " --mgr LF_MGR_IP --radio 1.1.wiphy1 --upstream_port UPSTREAM_PORT --num_stations 1 --type lfping  --debug",
-                    " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED --dest UPSTREAM_PORT"
+                    " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED"
                 ]
             },
             "clean_up_sanitize_ipv4_ps":{
