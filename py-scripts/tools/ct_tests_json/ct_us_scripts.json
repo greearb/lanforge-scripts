@@ -536,7 +536,7 @@
                 "command":"test_l4.py",
                 "args":"",
                 "args_list":[
-                    "--mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT --num_stations 1",
+                    "--mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT --num_stations 2",
                     " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED ",
                     " --test_duration 30s",
                     " --url 'dl http://upstream_port_ip /dev/null'",
@@ -555,7 +555,7 @@
                 "command":"test_l4.py",
                 "args":"",
                 "args_list":[
-                    "--mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT --num_stations 1",
+                    "--mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT --num_stations 2",
                     " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED ",
                     " --test_duration 30s --requests_per_ten 600 --test_type bytes-rd",
                     " --url 'dl http://upstream_port_ip /dev/null'",
@@ -574,7 +574,7 @@
                 "command":"test_l4.py",
                 "args":"",
                 "args_list":[
-                    "--mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT --num_stations 1",
+                    "--mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT --num_stations 2",
                     " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED ",
                     " --test_duration 30s --requests_per_ten 600 --test_type urls",
                     " --url 'dl http://upstream_port_ip /dev/null'",
@@ -593,7 +593,7 @@
                 "command":"test_l4.py",
                 "args":"",
                 "args_list":[
-                    "--mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT --num_stations 1",
+                    "--mgr LF_MGR_IP --radio wiphy1 --upstream_port UPSTREAM_PORT --num_stations 2",
                     " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED ",
                     " --test_duration 30s --requests_per_ten 600 --test_type bytes-rd --ftp",
                     " --url 'dl ftp://upstream_port_ip /dev/null'",
