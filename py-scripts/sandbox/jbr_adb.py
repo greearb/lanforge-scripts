@@ -24,6 +24,7 @@ if sys.version_info[0] != 3:
 import importlib
 import argparse
 import pprint
+
 sys.path.insert(1, "../../")
 
 if "SHELL" in os.environ.keys():
@@ -33,8 +34,9 @@ if "SHELL" in os.environ.keys():
     from lanforge_client.lanforge_api import LFJsonQuery
 else:
     import lanforge_api
-    from lanforge_api import LFJsonCommand
-    from lanforge_api import LFJsonQuery
+    import lanforge_api.LFJsonCommand
+    import lanforge_api.LFJsonQuery
+
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 #   M A I N
@@ -82,7 +84,7 @@ def main():
     # command.post_rm_adb(shelf=1, resource=1, adb_id=args.id, debug=args.debug, suppress_related_commands=True)
     command.post_show_adb(shelf=1, resource=1, serno='ALL')
     adb_key = session.get_session_based_key()
-    session.logger.error("adb_key: "+ adb_key)
+    session.logger.error("adb_key: " + adb_key)
     command.post_adb(shelf=1,
                      resource=1,
                      key=adb_key,
@@ -91,15 +93,16 @@ def main():
                      debug=True,
                      suppress_related_commands=True)
     command.post_show_adb(shelf=1, resource=1, serno='ALL')
-    eid_url="%s.%s.%s" % (1, 1, args.id)
+    eid_url = "%s.%s.%s" % (1, 1, args.id)
     time.sleep(0.05)
-    print ("List of adbs:")
-    diagnostics=[]
+    print("List of adbs:")
+    diagnostics = []
     result = query.get_adb(eid_list=eid_url, debug=True, errors_warnings=diagnostics)
     pprint.pprint(diagnostics)
     pprint.pprint(result)
 
-    #localrealm =
+    # localrealm =
+
 
 if __name__ == "__main__":
     main()
