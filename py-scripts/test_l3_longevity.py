@@ -320,8 +320,8 @@ class L3VariableTime(Realm):
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
 
-        self.l3_port_csv_files = {}
-        self.l3_port_csv_writers = {}
+        self.l3_csv_files = {}
+        self.l3_csv_writers = {}
 
         # the --ap_read will use these headers
         self.ap_stats_col_titles = [
@@ -2077,12 +2077,26 @@ class L3VariableTime(Realm):
                     rpt_timer, 
                     eid
                     ):    
-
-
-        writer = self.ul_port_csv_writers[cx_name]
-        #writer.writerow(row)
-        self.ul_port_csv_files[cx_name].flush()
-    
+        row = [self.epoch_time,
+                self.time_stamp(),
+                cx_name,
+                type,
+                state,
+                pkt_rx_a,
+                pkt_rx_b,
+                bps_rx_a,
+                bps_rx_b,
+                rx_drop_percent_a,
+                rx_drop_percent_b,
+                drop_pkts_a,
+                drop_pkts_b,
+                avg_rtt,
+                rpt_timer,
+                eid
+                ]
+        writer = self.l3_csv_writers[cx_name]
+        writer.writerow(row)
+        self.l3_csv_files[cx_name].flush()
     
     def write_port_csv(
             self,
@@ -2382,6 +2396,8 @@ class L3VariableTime(Realm):
 
     def csv_generate_l3_column_headers(self):
         csv_l3_headers = [
+            'Time Epoch',
+            'Time',
             'Name',
             'Type',
             'State',
@@ -2484,8 +2500,8 @@ class L3VariableTime(Realm):
         fname = fname + "-" + cx + "-l3-cx.csv"
         pfile = open(fname, "w")
         l3_csv_writer = csv.writer(pfile, delimiter=",")
-        self.l3_port_csv_files[cx] = pfile
-        self.l3_port_csv_writers[cx] = l3_csv_writer
+        self.l3_csv_files[cx] = pfile
+        self.l3_csv_writers[cx] = l3_csv_writer
         l3_csv_writer.writerow(headers)
         pfile.flush()
 
