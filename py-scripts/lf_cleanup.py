@@ -56,6 +56,52 @@ class lf_clean(Realm):
         self.br_done = False
         self.misc_done = False
 
+    # clenaup LF gui Layer 4-7 tab (--layer4):
+    def layer4_endp_clean(self):
+        still_looking_endp = True
+        iterations_endp = 0
+
+        while still_looking_endp and iterations_endp <= 10:
+            iterations_endp += 1
+            logger.info("layer4_endp_clean: iterations_endp: {iterations_endp}".format(iterations_endp=iterations_endp))
+            layer4_endp_json = super().json_get("layer4")
+            logger.info(layer4_endp_json)
+            if layer4_endp_json is not None:
+                logger.info("Removing old Layer 4-7 endpoints")
+                for name in list(layer4_endp_json):
+                    # if name != 'handler' and name != 'uri' and name != 'empty':
+                    if name == 'endpoint':
+                        for endp_num in layer4_endp_json['endpoint']:
+                            # get L4-Endp name:
+                            for endp_values in endp_num.values():
+                                #endp_eid = endp_val['entity id']
+                                #logger.info(endp_eid)
+                                endp_name = endp_values['name']
+                                # Remove Layer 4-7 cross connections:
+                                req_url = "cli-json/rm_cx"
+                                data = {
+                                    "test_mgr": "default_tm",
+                                    "cx_name": "CX_" + endp_name
+                                }
+                                logger.info("Removing {endp_name}...".format(endp_name="CX_" + endp_name))
+                                super().json_post(req_url, data)
+
+                                # Remove Layer 4-7 endpoint
+                                req_url = "cli-json/rm_endp"
+                                data = {
+                                    "endp_name": endp_name
+                                }
+                                logger.info("Removing {endp_name}...".format(endp_name=endp_name))
+                                super().json_post(req_url, data)
+                time.sleep(1)
+            else:
+                logger.info("No endpoints found to cleanup")
+                still_looking_endp = False
+                logger.info("clean_endp still_looking_endp {ednp_looking}".format(ednp_looking=still_looking_endp))
+            if not still_looking_endp:
+                self.endp_done = True
+            return still_looking_endp
+
     def cxs_clean(self):
         still_looking_cxs = True
         iterations_cxs = 1
@@ -122,7 +168,7 @@ class lf_clean(Realm):
                     endp_name = list(name)[0]
                     # logger.info(endp_name)
                     # get existing L3-CX names:
-                    if cx_json['empty'] != 'please ignore':
+                    if cx_json is not None and cx_json['empty'] != 'please ignore':
                         # logger.info(cx_json['empty'])
                         for cx_name in list(cx_json):
                             # logger.info(cx_name)
@@ -393,7 +439,8 @@ class lf_clean(Realm):
     '''
         1: delete cx (Layer-3 tab objects)
         2: delete endp (L3 Endps tab objects)
-        3: delete Port Mgr tab objects
+        3: delete cx & endp (Layer 4-7 tab objects)
+        4: delete Port Mgr tab objects
         when deleting sta first, you will end up with phantom CX
     '''
     def sanitize_all(self):
@@ -403,6 +450,9 @@ class lf_clean(Realm):
         # clean L3 Endps tab:
         finished_clean_endp = self.endp_clean()
         logger.info("clean_endp: finished_clean_endp {looking_endp}".format(looking_endp=finished_clean_endp))
+        # clean Layer 4-7 tab:
+        finished_clean_l4 = self.layer4_endp_clean()
+        logger.info("clean_l4_endp: finished_clean_l4 {looking_l4}".format(looking_l4=finished_clean_l4))
         # clean Port Mgr tab:
         finished_clean_port_mgr = self.port_mgr_clean()
         logger.info("clean_sta: finished_clean_port_mgr {looking_port_mgr}".format(looking_port_mgr=finished_clean_port_mgr))
@@ -467,11 +517,11 @@ python3 ./lf_clean.py --mgr MGR
         default='1')
     parser.add_argument(
         '--cxs',
-        help="--cxs, this will clear all the endps and cxs",
+        help="--cxs, this will clear all the Layer-3 cxs and endps",
         action='store_true')
     parser.add_argument(
         '--endp',
-        help="--endp, this will clear all the endps",
+        help="--endp, this will clear all the Layer-3 endps",
         action='store_true')
     parser.add_argument(
         '--sta',
@@ -479,7 +529,7 @@ python3 ./lf_clean.py --mgr MGR
         action='store_true')
     parser.add_argument(
         '--port_mgr',
-        help="--port_mgr, this will clear all the created objects on the Port Mgr tab(wifi-sta, mac-vlans, vap, br)",
+        help="--port_mgr, this will clear all the created ports on the Port Mgr tab (wifi-sta, mac-vlans, vap, br)",
         action='store_true')
     parser.add_argument(
         '--br',
@@ -490,8 +540,12 @@ python3 ./lf_clean.py --mgr MGR
         help="--misc, this will clear sta with names phy (not wiphy) and 1.1.eth stations",
         action='store_true')
     parser.add_argument(
+        '--layer4',
+        help="--layer4, this will clear all the created endpoints on the Layer 4-7 LF GUI tab",
+        action='store_true')
+    parser.add_argument(
         '--sanitize',
-        help="--sanitize, this will clear all the created objects on the Port Mgr, Layer-3, and L3 Endps tab",
+        help="--sanitize, this will clear all the created objects on the Layer-3, L3 Endps, Layer 4-7, and Port Mgr LF GUI tabs",
         action='store_true')
     parser.add_argument(
         "--debug",
@@ -514,7 +568,7 @@ python3 ./lf_clean.py --mgr MGR
         logger_config.set_level("debug")
 
     # if args.cxs or args.endp or args.sta or args.br or args.misc:
-    if args.cxs or args.endp or args.sta or args.br or args.misc or args.port_mgr or args.sanitize:
+    if args.cxs or args.endp or args.sta or args.br or args.misc or args.port_mgr or args.layer4 or args.sanitize:
         clean = lf_clean(host=args.mgr,
                          resource=args.resource,
                          clean_cxs=args.cxs,
@@ -537,6 +591,8 @@ python3 ./lf_clean.py --mgr MGR
             clean.bridge_clean()
         if args.misc:
             clean.misc_clean()
+        if args.layer4:
+            clean.layer4_endp_clean()
         if args.sanitize:
             clean.sanitize_all()
 
