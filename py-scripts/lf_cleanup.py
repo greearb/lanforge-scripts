@@ -119,7 +119,7 @@ class lf_clean(Realm):
                 # the e.i.d of the associated L3-Endps
                 for cx_name in list(cx_json):
                     # logger.info(cx_name)
-                    if cx_name != 'handler' and cx_name != 'uri' and cx_name != 'empty':
+                    if cx_name != 'handler' and cx_name != 'uri' and cx_name != 'empty' and cx_name != 'warnings':
                         for endp_num in endp_json['endpoint']:
                             # get L3-Endp e.i.d & name:
                             for endp_val in endp_num.values():
