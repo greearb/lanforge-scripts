@@ -24,7 +24,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    "--mgr LF_MGR_IP --sanitize "
+                    "--mgr LF_MGR_IP --sanitize --sleep 5"
                 ]
             },
             "sta_connect2": {
