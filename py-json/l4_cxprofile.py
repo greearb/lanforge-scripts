@@ -98,7 +98,6 @@ class L4CXProfile(LFCliBase):
     def get_bytes(self):
         time.sleep(1)
         cx_list = self.json_get("layer4/list?fields=name,%s" % self.test_type, debug_=self.debug)
-        logger.info("==============\n", cx_list, "\n==============")
         logger.info(pformat(cx_list))
 
         # single CX == 'endpoint':{'bytes-rd': 5535, 'name': 'sta0000_l4'}
