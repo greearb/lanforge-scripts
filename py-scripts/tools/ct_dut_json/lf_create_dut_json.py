@@ -106,8 +106,18 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
         nargs=1,
         required=True,
         help='''
+            The ssid_idx is used to enter multiple ssid, ssid password, bssid, security types 
+
             Example:
             --ssid_idx ssid_idx==0,SSID_USED==<ssid>,SSID_PW_USED==<ssid password>,BSSID_TO_USE==<bssid>,SECURITY_USED==<security>'
+            --ssid_idx ssid_idx==1,SSID_USED==<ssid_2>,SSID_PW_USED==<ssid password 2>,BSSID_TO_USE==<bssid 2>,SECURITY_USED==<security>'
+            --ssid_idx ssid_idx==2,SSID_USED==<ssid_3>,SSID_PW_USED==<ssid password 3>,BSSID_TO_USE==<bssid 3>,SECURITY_USED==<security>'
+
+            The ssid_idx will be used in the test json
+
+            NOTE: SSID_USE , SSID_PW_USED , BSSID_TO_USE, SECUITY_USED are keys used by lf_check.py so that test json files may
+                    be reused between test setups and only the dut json needs to change.
+
             '''
     )
     parser.add_argument('--log_level',
@@ -117,7 +127,7 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
     # logging configuration
     parser.add_argument(
         "--lf_logger_config_json",
-        help="--lf_logger_config_json <json file> , json configuration of logger")
+        help="--lf_logger_config_json <json file> , json configuration of logger, optional")
 
 
     args = parser.parse_args()
@@ -206,6 +216,8 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
                                 _dut_serial=_dut_serial,
                                 _ssid_idx_dict_dict_str=ssid_idx_dict_dict_str)
     dut_json.create()
+
+    logger.info("Device under test json created {file}".format(file=_file))
 
 
 if __name__ == '__main__':
