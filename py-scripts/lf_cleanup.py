@@ -547,6 +547,7 @@ python3 ./lf_clean.py --mgr MGR
         '--sanitize',
         help="--sanitize, this will clear all the created objects on the Layer-3, L3 Endps, Layer 4-7, and Port Mgr LF GUI tabs",
         action='store_true')
+    parser.add_argument('--sleep',help="sleep at completion of cleanup in seconds --sleep 2")
     parser.add_argument(
         "--debug",
         help="enable debugging",
@@ -595,6 +596,11 @@ python3 ./lf_clean.py --mgr MGR
             clean.layer4_endp_clean()
         if args.sanitize:
             clean.sanitize_all()
+
+        if args.sleep is not None:
+            sleep = int(args.sleep)
+            logger.info("sleep option selected sleep {sleep} seconds".format(sleep=sleep))
+            time.sleep(sleep)
 
         logger.info("Clean done")
         # print("Clean  cxs_done {cxs_done} endp_done {endp_done} sta_done {sta_done}"
