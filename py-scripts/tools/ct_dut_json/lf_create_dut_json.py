@@ -110,10 +110,11 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
 
             Example:
             --ssid_idx ssid_idx==0,SSID_USED==<ssid>,SSID_PW_USED==<ssid password>,BSSID_TO_USE==<bssid>,SECURITY_USED==<security>'
-            --ssid_idx ssid_idx==1,SSID_USED==<ssid_2>,SSID_PW_USED==<ssid password 2>,BSSID_TO_USE==<bssid 2>,SECURITY_USED==<security>'
-            --ssid_idx ssid_idx==2,SSID_USED==<ssid_3>,SSID_PW_USED==<ssid password 3>,BSSID_TO_USE==<bssid 3>,SECURITY_USED==<security>'
+            --ssid_idx ssid_idx==1,SSID_USED==<ssid>,SSID_PW_USED==<ssid password>,BSSID_TO_USE==<bssid>,SECURITY_USED==<security>'
+            --ssid_idx ssid_idx==2,SSID_USED==<ssid>,SSID_PW_USED==<ssid password>,BSSID_TO_USE==<bssid>,SECURITY_USED==<security>'
 
-            The ssid_idx will be used in the test json
+            The ssid_idx will be used in the test json,  there can be as many combinations of ssid, ssid passwork , bssid and security used
+            The bssid is entered as there are usesers that have the same ssid for 24g, 5g, 6g
 
             NOTE: SSID_USE , SSID_PW_USED , BSSID_TO_USE, SECUITY_USED are keys used by lf_check.py so that test json files may
                     be reused between test setups and only the dut json needs to change.
