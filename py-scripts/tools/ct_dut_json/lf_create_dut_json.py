@@ -105,11 +105,10 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
         action='append',
         nargs=1,
         required=True,
-        help=('--ssid_idx', 
-            ' "ssid_idx==0,SSID_USED==<ssid>,SSID_PW_USED==<ssid password>,BSSID==<bssid>,SECURITY_USED==<security> ',
-            ' '
-
-        )
+        help='''
+            Example:
+            --ssid_idx ssid_idx==0,SSID_USED==<ssid>,SSID_PW_USED==<ssid password>,BSSID_TO_USE==<bssid>,SECURITY_USED==<security>'
+            '''
     )
     parser.add_argument('--log_level',
                         default=None,
