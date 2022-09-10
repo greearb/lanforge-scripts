@@ -9,6 +9,8 @@ import logging
 import importlib
 import os
 import sys
+import traceback
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -162,22 +164,30 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
     ssid_idx_lengh = len(_ssid_idx)
     for ssid_idx_ in _ssid_idx:
         ssid_idx_keys = ['ssid_idx','SSID_USED','SSID_PW_USED','BSSID_TO_USE','SECURITY_USED']
-        _ssid_idx_dict_element = dict(
-            map(
-                lambda x: x.split('=='),
-                str(ssid_idx_).replace(
-                    '"',
-                    '').replace(
-                    '[',
-                    '').replace(
-                    ']',
-                    '').replace(
-                    "'",
-                    "").replace(
-                        ",",
-                    " ").split()))
+        try:
+            _ssid_idx_dict_element = dict(
+                map(
+                    lambda x: x.split('=='),
+                    str(ssid_idx_).replace(
+                        '"',
+                        '').replace(
+                        '[',
+                        '').replace(
+                        ']',
+                        '').replace(
+                        "'",
+                        "").replace(
+                            ",",
+                        " ").split()))
+        except  Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.error("Check the format of the --ssid_idx , verify there is == between keys and values in ssid_idx {ssid_idx_}".format(ssid_idx_=ssid_idx_))            
+            exit(1)
+
+
 
         _ssid_idx_dict_element_keys = list(_ssid_idx_dict_element)
+
 
         if len(ssid_idx_keys) != len(_ssid_idx_dict_element_keys):
             logger.critical("missing ssid_idx keys  , keys needed: {needed} keys input {input}".format(needed=ssid_idx_keys,input=_ssid_idx_dict_element))
