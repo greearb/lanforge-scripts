@@ -91,7 +91,7 @@ class lf_logger_config:
         # Note the propagate is tricky in the sence if not set correctly will create duplicate logs output,
         # setting to false
         logging.propagate = False
-        print(logging.propagate)
+        # used for debugging. print(logging.propagate)
 
     def set_json(self, json_file):
         if json_file:
