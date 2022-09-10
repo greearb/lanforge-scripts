@@ -89,8 +89,8 @@ def main():
 File: create lf_dut.json file for --json_dut input to lf_check.py , LANforge traffic generation system
 Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_hw A1.1 --dut_sw 3.0.0.4.386 --dut_model GT-AXE11000 
                 --dut_serial 123456 --log_level debug
-                --ssid_idx "ssid_idx==0,ssid_used==axe11000_2g,ssid_pw_used==lf_axe11000_2g,bssid==fc:34:97:2b:38:90,security_used==wpa2"
-                --ssid_idx "ssid_idx==1,ssid_used==axe11000_5g,ssid_pw_used==lf_axe11000_5g,bssid==fc:34:97:2b:38:94,security_used==wpa2"
+                --ssid_idx "ssid_idx==0,SSID_USED==axe11000_2g,SSID_PW_USED==lf_axe11000_2g,BSSID_TO_USE==fc:34:97:2b:38:90,SECURITY_USED==wpa2"
+                --ssid_idx "ssid_idx==1,SSID_USED==axe11000_5g,SSID_PW_USED==lf_axe11000_5g,BSSID_TO_USE==fc:34:97:2b:38:94,SECURITY_USED==wpa2"
             ]
 
         ''')
@@ -160,7 +160,7 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
 
     ssid_idx_lengh = len(_ssid_idx)
     for ssid_idx_ in _ssid_idx:
-        ssid_idx_keys = ['ssid_idx','ssid','ssid_pw','bssid','security']
+        ssid_idx_keys = ['ssid_idx','SSID_USED','SSID_PW_USED','BSSID_TO_USE','SECURITY_USED']
         _ssid_idx_dict_element = dict(
             map(
                 lambda x: x.split('=='),
@@ -176,12 +176,15 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
                         ",",
                     " ").split()))
 
+        _ssid_idx_dict_element_keys = list(_ssid_idx_dict_element)
 
-        for key in ssid_idx_keys:
+        if len(ssid_idx_keys) != len(_ssid_idx_dict_element_keys):
+            logger.critical("missing ssid_idx keys  , keys needed: {needed} keys input {input}".format(needed=ssid_idx_keys,input=_ssid_idx_dict_element))
+        for key in _ssid_idx_dict_element_keys:
             if key not in ssid_idx_keys:
                 logger.critical(
-                    "missing config, for the {}, all of the following need to be present {} ".format(
-                        key, ssid_idx_keys))
+                    "missing ssid_idx keys, for the {key}, all of the following need to be present {ssid_idx_keys} ".format(
+                        key=key, ssid_idx_keys=ssid_idx_keys))
 
                 exit(1)
 
@@ -190,7 +193,7 @@ Usage: lf_create_dut_json.py --file <lf_dut.json> --dut_name GT-AXE11000 --dut_h
         ssid_idx_str = "\"ssid_idx={idx}\":".format(idx=_ssid_idx_dict_element['ssid_idx'])
 
         # convert a dictionary to a string
-        ssid_idx_dict_element_str = str(_ssid_idx_dict_element)
+        ssid_idx_dict_element_str = str(_ssid_idx_dict_element) # .strip() # may not needed
         logger.debug("ssid_idx_dict_element {dict}".format(dict=_ssid_idx_dict_element))
 
         # convert string to json
