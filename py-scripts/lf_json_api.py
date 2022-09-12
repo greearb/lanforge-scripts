@@ -593,11 +593,26 @@ def main():
 
     if args.get_requests:
         get_requests = args.get_requests.split()
-
+        radios = {}
         for get_request in get_requests:
             if get_request == "radio":
                 lf_json.request = get_request
-                lf_json.get_request_radio_information()
+                lanforge_radio_json, lanforge_radio_text = lf_json.get_request_radio_information()
+                for radio in list(lanforge_radio_json):
+                    if radio != 'handler' and radio != 'uri' and radio != 'empty' and radio != 'warnings':
+                        logger.debug("{radio}: {type}".format(radio=radio,type=lanforge_radio_json[radio]['driver']))
+                        radio_result = "{radio}: {type}".format(radio=radio,type=lanforge_radio_json[radio]['driver'])
+                        radio_result = radio_result.split('Bus', 1)[0]
+                        radio_result = str(radio_result).replace('Port Type: WIFI-Radio   Driver:','')
+                        radio_update = {radio: radio_result}
+                        radios.update(radio_update)
+
+                logger.debug("radios: {radios}".format(radios=radios))
+                # used to list radios on a lanforge
+                for radio in list(radios.keys()):
+                    print("{radio}".format(radio=radios[radio]))
+                        
+
 
             elif get_request == "port":
                 lf_json.request = get_request
