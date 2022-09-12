@@ -473,14 +473,16 @@ class lf_json_api():
             request_command, auth=(self.lf_user, self.lf_passwd))
         logger.info("radio request command: {request_command}".format(request_command=request_command))
         logger.info("radio request status_code {status}".format(status=request.status_code))
-        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
-            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
-        ))
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/radiostatus/all | json_pp \n\n ".format(
+            lf_mgr=self.lf_mgr, lf_port=self.lf_port))
 
         lanforge_radio_json = request.json()
         logger.info("radio request.json: {json}".format(json=lanforge_radio_json))
         lanforge_radio_text = request.text
         logger.info("radio request.text: {text}".format(text=lanforge_radio_text))
+        lanforge_radio_json_formatted = json.dumps(lanforge_radio_json, indent=4)
+        logger.info("lanforge_json_formatted: {json}".format(json=lanforge_radio_json_formatted))
+
         return lanforge_radio_json, lanforge_radio_text
 
     def post_clear_port_counters(self,port=None):
