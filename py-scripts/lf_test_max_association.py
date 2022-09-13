@@ -305,6 +305,7 @@ class max_associate(Realm):
             # build stations for wiphy0 radio:
             if wiphy_radio in self.radio_name_list[0]:
                 num_stations = self.wiphy_info.get_max_vifs(wiphy_radio)
+                radio_driver = self.wiphy_info.get_radio_driver(wiphy_radio)
                 end_num_stations += int(num_stations)
                 station_list = LFUtils.portNameSeries(prefix_="sta",
                                                       start_id_=start_num_stations,
@@ -317,7 +318,6 @@ class max_associate(Realm):
                 wiphy_password = self.ssid_password_list[0][track_num_stations]
                 wiphy_security = self.ssid_security_list[0][track_num_stations]
                 track_num_stations += 1
-                logger.info(self.wiphy_info)
 
                 self.station_profile.lfclient_url = self.lfclient_url
                 self.station_profile.ssid = wiphy_ssid
@@ -328,6 +328,8 @@ class max_associate(Realm):
                 self.station_profile.use_security(wiphy_security, wiphy_ssid, wiphy_password)
                 # if self.wifi_mode_list
                 # TODO: check radios for 6E wifi settings "ieee80211w", and then set flags & continue
+                # if "AX210" in radio_driver:
+                #     self.station_profile.set_command_param("add_sta", "ieee80211w", 2)
                 # self.station_profile.set_number_template(self.number_template)
                 self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
                 self.station_profile.set_command_param("set_port", "report_timer", 1500)
@@ -363,9 +365,14 @@ class max_associate(Realm):
             station_names = []
             station_names.extend(self.station_profile.station_names.copy())
             # logger.info(station_names)
-            LFUtils.waitUntilPortsAdminUp(self.resource, self.lfclient_url, station_names)
+            # LFUtils.waitUntilPortsAdminUp(self.resource, self.lfclient_url, station_names)
+            if self.wait_for_ip(station_names, timeout_sec=120):
+                logger.info("All stations got IPs")
+            else:
+                # No reason to continue
+                logger.critical("ERROR: Stations failed to get IP's. Check station configuration SSID, Security, Is DHCP enabled exiting")
+                exit(1)
 
-        time.sleep(10)
         self.cx_profile.start_cx()
 
     def stop(self):
@@ -681,7 +688,7 @@ CLI Example:
     --csv_outfile lf_test_max_association.csv --test_rig CT_01 --test_tag MAX_STA
     --dut_hw_version 1.0 --dut_model_num lf0350 --dut_sw_version 5.4.5 --dut_serial_num 361c
 
-For a overnight test using chambered AP's with no security enabled:
+For an overnight test using chambered AP's with no security enabled:
 ./lf_test_max_association.py --mgr <localhost>
     --radio 'radio==wiphy0,ssid==<ssid>,ssid_pw==[BLANK],security==open'
     --radio 'radio==wiphy1,ssid==<ssid>,ssid_pw==[BLANK],security==open'
