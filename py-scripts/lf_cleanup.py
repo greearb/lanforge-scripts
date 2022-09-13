@@ -497,11 +497,13 @@ lf_cleanup.py:
 --------------------
 Generic command layout:
 
-python3 ./lf_clean.py --mgr MGR
+Example:
+This example will clean the Port Mgr, Layer-3, L3 Endps, and Layer 4-7 LF GUI tabs:
+./lf_clean.py --mgr MGR --sanitize
 
     default port is 8080
 
-    clean up stations, cxs and enspoints.
+    clean up stations, cxs and endpoints.
     NOTE: will only cleanup what is present in the GUI
             So will need to iterate multiple times with script
             ''')
