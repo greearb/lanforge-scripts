@@ -1687,9 +1687,9 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                 'WIFI-Radio Driver',
                 'Radio Capabilities',
                 'Firmware Version',
-                'max_sta',
+                'max_clients',
                 'max_vap',
-                'max_vifs'])
+                'max_sta'])
 
         for key in lanforge_radio_json:
             if 'wiphy' in key:
