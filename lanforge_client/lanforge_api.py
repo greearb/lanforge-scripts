@@ -1294,7 +1294,7 @@ class BaseSession:
             short_session = re.sub("[^A-Za-z0-9]", "", self.session_id)
         else:
             short_session = "00000"
-        return short_session+"key"+''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(12))
+        return short_session+"KEY"+''.join(random.choice(string.ascii_lowercase + string.digits) for _ in range(12))
 
     def get_proxies(self):
         return self.proxy_map
@@ -7969,6 +7969,17 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#log_capture
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    class LogCaptureType(Enum):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        adb = "adb"                  #
+        hostapd = "hostapd"          #
+        journalctl = "journalctl"    #
+        lflogs = "lflogs"            #
+        supplicant = "supplicant"    #
+
     def post_log_capture(self, 
                          destination: str = None,                  # Where to save the file to on the LANforge resource. If
                          # 'stdout', then content will be passed back as a keyed
