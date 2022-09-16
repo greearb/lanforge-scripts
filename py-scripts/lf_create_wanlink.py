@@ -5,7 +5,7 @@ NAME: lf_create_wanlink.py
 PURPOSE: create a wanlink using the lanforge api
 
 EXAMPLE:
-$ ./lf_create_wanlink.py 
+$ ./lf_create_wanlink.py
 
 NOTES:
 
@@ -27,10 +27,12 @@ import logging
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
-from lanforge_client.lanforge_api import LFSession
-from lanforge_client.lanforge_api import LFJsonCommand
-from lanforge_client.lanforge_api import LFJsonQuery
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+from lanforge_client.lanforge_api import LFJsonQuery
+from lanforge_client.lanforge_api import LFJsonCommand
+from lanforge_client.lanforge_api import LFSession
+
+
 
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
@@ -38,6 +40,8 @@ logger = logging.getLogger(__name__)
 
 # add_wanpath
 # http://www.candelatech.com/lfcli_ug.php#add_wanpath
+
+
 class lf_create_wanlink():
     def __init__(self,
                  lf_mgr=None,
@@ -76,12 +80,11 @@ class lf_create_wanlink():
     # verify set_wl_corruption side A - commented out
     # verify set_wl_corruption side B - commented out
 
-    # nc_show_endpoints 
+    # nc_show_endpoints
     # nc_show_endpoints
 
     # query.get_wl
     # query.get_wl_endp
-
 
     def add_wl_endp(self,
                     _alias: str = None,                        # Name of endpoint. [R]
@@ -99,118 +102,114 @@ class lf_create_wanlink():
                     _debug: bool = False,
                     _suppress_related_commands: bool = False):
 
-    
         if _alias is None:
             logger.error("alias in None alias must be set to end point A or end point B. Exiting")
             exit(1)
 
         self.command.post_add_wl_endp(
-                                    alias=_alias,                        # Name of endpoint. [R]
-                                    cpu_id=_cpu_id,                       # The CPU/thread that this process should run on
-                                    # (kernel-mode only).
-                                    description=_description,                  # Description for this endpoint, put in single quotes if
-                                    # it contains spaces.
-                                    latency=_latency,                      # The latency (ms) that will be added to each packet
-                                    # entering this WanLink.
-                                    max_rate=_max_rate,                     # Maximum transmit rate (bps) for this WanLink.
-                                    port=_port,                         # Port number. [W]
-                                    resource=_resource,                     # Resource number. [W]
-                                    shelf=_shelf,                           # Shelf name/id. [R][D:1]
-                                    wle_flags=_wle_flags,                    # WanLink Endpoint specific flags, see above.
-                                    debug=self.debug,
-                                    suppress_related_commands=_suppress_related_commands)
-
+            alias=_alias,                        # Name of endpoint. [R]
+            cpu_id=_cpu_id,                       # The CPU/thread that this process should run on
+            # (kernel-mode only).
+            description=_description,                  # Description for this endpoint, put in single quotes if
+            # it contains spaces.
+            latency=_latency,                      # The latency (ms) that will be added to each packet
+            # entering this WanLink.
+            max_rate=_max_rate,                     # Maximum transmit rate (bps) for this WanLink.
+            port=_port,                         # Port number. [W]
+            resource=_resource,                     # Resource number. [W]
+            shelf=_shelf,                           # Shelf name/id. [R][D:1]
+            wle_flags=_wle_flags,                    # WanLink Endpoint specific flags, see above.
+            debug=self.debug,
+            suppress_related_commands=_suppress_related_commands)
 
     def set_wanlink_info(self,
-                        _drop_freq: str = None,                    # How often, out of 1,000,000 packets, should we
-                        # purposefully drop a packet.
-                        _dup_freq: str = None,                     # How often, out of 1,000,000 packets, should we
-                        # purposefully duplicate a packet.
-                        _extra_buffer: str = None,                 # The extra amount of bytes to buffer before
-                        # dropping pkts, in units of 1024. Use -1 for AUTO.
-                        _jitter_freq: str = None,                  # How often, out of 1,000,000 packets, should we
-                        # apply jitter.
-                        _latency: str = None,                      # The base latency added to all packets, in
-                        # milliseconds (or add 'us' suffix for microseconds
-                        _max_drop_amt: str = None,                 # Maximum amount of packets to drop in a row.
-                        # Default is 1.
-                        _max_jitter: str = None,                   # The maximum jitter, in milliseconds (or ad 'us'
-                        # suffix for microseconds)
-                        _max_lateness: str = None,                 # Maximum amount of un-intentional delay before pkt
-                        # is dropped. Default is AUTO
-                        _max_reorder_amt: str = None,              # Maximum amount of packets by which to reorder,
-                        # Default is 10.
-                        _min_drop_amt: str = None,                 # Minimum amount of packets to drop in a row.
-                        # Default is 1.
-                        _min_reorder_amt: str = None,              # Minimum amount of packets by which to reorder,
-                        # Default is 1.
-                        _name: str = None,                         # The name of the endpoint we are configuring. [R]
-                        _playback_capture_file: str = None,        # Name of the WAN capture file to play back.
-                        _reorder_freq: str = None,                 # How often, out of 1,000,000 packets, should we
-                        # make a packet out of order.
-                        _speed: str = None,                        # The maximum speed of traffic this endpoint will
-                        # accept (bps).
-                        _debug: bool = False,
-                        _suppress_related_commands: bool = False):
+                         _drop_freq: str = None,                    # How often, out of 1,000,000 packets, should we
+                         # purposefully drop a packet.
+                         _dup_freq: str = None,                     # How often, out of 1,000,000 packets, should we
+                         # purposefully duplicate a packet.
+                         _extra_buffer: str = None,                 # The extra amount of bytes to buffer before
+                         # dropping pkts, in units of 1024. Use -1 for AUTO.
+                         _jitter_freq: str = None,                  # How often, out of 1,000,000 packets, should we
+                         # apply jitter.
+                         _latency: str = None,                      # The base latency added to all packets, in
+                         # milliseconds (or add 'us' suffix for microseconds
+                         _max_drop_amt: str = None,                 # Maximum amount of packets to drop in a row.
+                         # Default is 1.
+                         _max_jitter: str = None,                   # The maximum jitter, in milliseconds (or ad 'us'
+                         # suffix for microseconds)
+                         _max_lateness: str = None,                 # Maximum amount of un-intentional delay before pkt
+                         # is dropped. Default is AUTO
+                         _max_reorder_amt: str = None,              # Maximum amount of packets by which to reorder,
+                         # Default is 10.
+                         _min_drop_amt: str = None,                 # Minimum amount of packets to drop in a row.
+                         # Default is 1.
+                         _min_reorder_amt: str = None,              # Minimum amount of packets by which to reorder,
+                         # Default is 1.
+                         _name: str = None,                         # The name of the endpoint we are configuring. [R]
+                         _playback_capture_file: str = None,        # Name of the WAN capture file to play back.
+                         _reorder_freq: str = None,                 # How often, out of 1,000,000 packets, should we
+                         # make a packet out of order.
+                         _speed: str = None,                        # The maximum speed of traffic this endpoint will
+                         # accept (bps).
+                         _debug: bool = False,
+                         _suppress_related_commands: bool = False):
 
         # the LANforge api will handle the None values
         self.command.post_set_wanlink_info(
-                    drop_freq = _drop_freq,                    # How often, out of 1,000,000 packets, should we
-                    # purposefully drop a packet.
-                    dup_freq=_dup_freq,                     # How often, out of 1,000,000 packets, should we
-                    # purposefully duplicate a packet.
-                    extra_buffer=_extra_buffer,                 # The extra amount of bytes to buffer before
-                    # dropping pkts, in units of 1024. Use -1 for AUTO.
-                    jitter_freq=_jitter_freq,                  # How often, out of 1,000,000 packets, should we
-                    # apply jitter.
-                    latency=_latency,                      # The base latency added to all packets, in
-                    # milliseconds (or add 'us' suffix for microseconds
-                    max_drop_amt=_max_drop_amt,                 # Maximum amount of packets to drop in a row.
-                    # Default is 1.
-                    max_jitter=_max_jitter,                   # The maximum jitter, in milliseconds (or ad 'us'
-                    # suffix for microseconds)
-                    max_lateness=_max_lateness,                 # Maximum amount of un-intentional delay before pkt
-                    # is dropped. Default is AUTO
-                    max_reorder_amt=_max_reorder_amt,              # Maximum amount of packets by which to reorder,
-                    # Default is 10.
-                    min_drop_amt=_min_drop_amt,                 # Minimum amount of packets to drop in a row.
-                    # Default is 1.
-                    min_reorder_amt=_min_reorder_amt,              # Minimum amount of packets by which to reorder,
-                    # Default is 1.
-                    name=_name,                         # The name of the endpoint we are configuring. [R]
-                    playback_capture_file=_playback_capture_file,        # Name of the WAN capture file to play back.
-                    reorder_freq=_reorder_freq,                 # How often, out of 1,000,000 packets, should we
-                    # make a packet out of order.
-                    speed=_speed,                        # The maximum speed of traffic this endpoint will
-                    # accept (bps).
-                    debug=self.debug,
-                    suppress_related_commands=_suppress_related_commands)
-
-
+            drop_freq=_drop_freq,                    # How often, out of 1,000,000 packets, should we
+            # purposefully drop a packet.
+            dup_freq=_dup_freq,                     # How often, out of 1,000,000 packets, should we
+            # purposefully duplicate a packet.
+            extra_buffer=_extra_buffer,                 # The extra amount of bytes to buffer before
+            # dropping pkts, in units of 1024. Use -1 for AUTO.
+            jitter_freq=_jitter_freq,                  # How often, out of 1,000,000 packets, should we
+            # apply jitter.
+            latency=_latency,                      # The base latency added to all packets, in
+            # milliseconds (or add 'us' suffix for microseconds
+            max_drop_amt=_max_drop_amt,                 # Maximum amount of packets to drop in a row.
+            # Default is 1.
+            max_jitter=_max_jitter,                   # The maximum jitter, in milliseconds (or ad 'us'
+            # suffix for microseconds)
+            max_lateness=_max_lateness,                 # Maximum amount of un-intentional delay before pkt
+            # is dropped. Default is AUTO
+            max_reorder_amt=_max_reorder_amt,              # Maximum amount of packets by which to reorder,
+            # Default is 10.
+            min_drop_amt=_min_drop_amt,                 # Minimum amount of packets to drop in a row.
+            # Default is 1.
+            min_reorder_amt=_min_reorder_amt,              # Minimum amount of packets by which to reorder,
+            # Default is 1.
+            name=_name,                         # The name of the endpoint we are configuring. [R]
+            playback_capture_file=_playback_capture_file,        # Name of the WAN capture file to play back.
+            reorder_freq=_reorder_freq,                 # How often, out of 1,000,000 packets, should we
+            # make a packet out of order.
+            speed=_speed,                        # The maximum speed of traffic this endpoint will
+            # accept (bps).
+            debug=self.debug,
+            suppress_related_commands=_suppress_related_commands)
 
     def add_cx(self,
                _alias=None,
-               _rx_endp=None, # endp_A
-               _tx_endp=None, # endp_B
+               _rx_endp=None,  # endp_A
+               _tx_endp=None,  # endp_B
                _test_mgr="default_tm"):
 
         self.command.post_add_cx(alias=_alias,
-                        rx_endp=_rx_endp,
-                        tx_endp=_tx_endp,
-                        test_mgr=_test_mgr)
+                                 rx_endp=_rx_endp,
+                                 tx_endp=_tx_endp,
+                                 test_mgr=_test_mgr)
 
     def get_wl(self,
                _eid_list=None,
                _wait_sec=0.2,
                _timeout_sec=2.0,
                _errors_warnings=None):
-                          
+
         ewarn_list = []
         result = self.query.get_wl(eid_list=_eid_list,
-                          wait_sec=_wait_sec,
-                          timeout_sec=_timeout_sec,
-                          errors_warnings=ewarn_list,
-                          debug=self.debug)
+                                   wait_sec=_wait_sec,
+                                   timeout_sec=_timeout_sec,
+                                   errors_warnings=ewarn_list,
+                                   debug=self.debug)
         pprint.pprint(result)
         return result
 
@@ -220,15 +219,17 @@ class lf_create_wanlink():
                     timeout_sec=None):
 
         result = self.query.get_wl_endp(eid_list=eid_list,
-                               wait_sec=0.2,
-                               timeout_sec=15.0,
-                               debug=self.debug)
+                                        wait_sec=0.2,
+                                        timeout_sec=15.0,
+                                        debug=self.debug)
         pprint.pprint(result)
         return result
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog=__file__,
@@ -238,32 +239,32 @@ def main():
             ''')
     # http://www.candelatech.com/lfcli_ug.php#add_wl_endp
     parser.add_argument("--host", "--mgr", dest='mgr', help='specify the GUI to connect to')
-    parser.add_argument("--mgr_port", help="specify the GUI to connect to, default 8080",default="8080")
-    parser.add_argument("--lf_user", help="specify the GUI to connect to, default 8080",default="lanforge")
-    parser.add_argument("--lf_passwd", help="specify the GUI to connect to, default 8080",default="lanforge")
-    parser.add_argument('--wl_name','--alias', dest='wl_name',help='(add_wl_endp) The name of the endpoint we are configuring. [R] ', required=True)
+    parser.add_argument("--mgr_port", help="specify the GUI to connect to, default 8080", default="8080")
+    parser.add_argument("--lf_user", help="specify the GUI to connect to, default 8080", default="lanforge")
+    parser.add_argument("--lf_passwd", help="specify the GUI to connect to, default 8080", default="lanforge")
+    parser.add_argument('--wl_name', '--alias', dest='wl_name', help='(add_wl_endp) The name of the endpoint we are configuring. [R] ', required=True)
     parser.add_argument('--cpu_id', help="(add_wl_endp) The CPU/thread that this process should run on (kernel-mode only). Default = 'NA'", default='NA')
     parser.add_argument('--description', help="(add_wl_endp) Description for this endpoint, put in single quotes if it contains spaces Default = 'NA'", default='NA')
-    parser.add_argument("--latency", help="(add_wl_endp) The latency (ms) that will be added to each packet entering this WanLink. Default = 'NA' both ports",default='NA')
-    parser.add_argument("--latency_A", help="(add_wl_endp) The latency (ms) that will be added to each packet entering this WanLink. Default = None port a",default=None)
-    parser.add_argument("--latency_B", help="(add_wl_endp) The latency (ms) that will be added to each packet entering this WanLink. Default = None port b",default=None)
-    parser.add_argument("--max_rate", help="(add_wl_endp) Maximum transmit rate (bps) for this WanLink. Default = 1024000 ",default='1024000')
-    parser.add_argument("--max_rate_A", help="(add_wl_endp) Maximum transmit rate (bps) for this WanLink. Default = None ",default=None)
-    parser.add_argument("--max_rate_B", help="(add_wl_endp) Maximum transmit rate (bps) for this WanLink. Default = None ",default=None)
+    parser.add_argument("--latency", help="(add_wl_endp) The latency (ms) that will be added to each packet entering this WanLink. Default = 'NA' both ports", default='NA')
+    parser.add_argument("--latency_A", help="(add_wl_endp) The latency (ms) that will be added to each packet entering this WanLink. Default = None port a", default=None)
+    parser.add_argument("--latency_B", help="(add_wl_endp) The latency (ms) that will be added to each packet entering this WanLink. Default = None port b", default=None)
+    parser.add_argument("--max_rate", help="(add_wl_endp) Maximum transmit rate (bps) for this WanLink. Default = 1024000 ", default='1024000')
+    parser.add_argument("--max_rate_A", help="(add_wl_endp) Maximum transmit rate (bps) for this WanLink. Default = None ", default=None)
+    parser.add_argument("--max_rate_B", help="(add_wl_endp) Maximum transmit rate (bps) for this WanLink. Default = None ", default=None)
     parser.add_argument('--port_A', help='(add_wl_endp) Endpoint A', default="eth1")
     parser.add_argument('--port_B', help='(add_wl_endp) Endpoint B', default="eth2")
-    parser.add_argument("--resource", help='(add_wl_endp) LANforge resource Default',default=1)
-    parser.add_argument("--shelf", help='(add_wl_endp) LANforge Shelf name/id',default=1)
-    parser.add_argument("--wle_flags", help='(add_wl_endp) WanLink Endpoint specific flags, Default = 1, SHOW_WP = 1 .Show WanPaths in wanlink endpoint table in GUI',default=1)
+    parser.add_argument("--resource", help='(add_wl_endp) LANforge resource Default', default=1)
+    parser.add_argument("--shelf", help='(add_wl_endp) LANforge Shelf name/id', default=1)
+    parser.add_argument("--wle_flags", help='(add_wl_endp) WanLink Endpoint specific flags, Default = 1, SHOW_WP = 1 .Show WanPaths in wanlink endpoint table in GUI', default=1)
 
     # http://www.candelatech.com/lfcli_ug.php#set_wanlink_info
-    parser.add_argument('--drop_freq', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = 0 Both ports (%%)', default="0") 
+    parser.add_argument('--drop_freq', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = 0 Both ports (%%)', default="0")
     parser.add_argument('--drop_freq_A', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = None port A (%%)', default=None)
     parser.add_argument('--drop_freq_B', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = None port B (%%)', default=None)
-    parser.add_argument('--dup_freq', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = 0 Both ports (%%)', default="0") 
+    parser.add_argument('--dup_freq', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = 0 Both ports (%%)', default="0")
     parser.add_argument('--dup_freq_A', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = None port A (%%)', default=None)
     parser.add_argument('--dup_freq_B', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = None port B (%%)', default=None)
-    parser.add_argument('--extra_buffer', help='(set_wanlink_info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = -1 Both ports (%%)', default="-1") 
+    parser.add_argument('--extra_buffer', help='(set_wanlink_info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = -1 Both ports (%%)', default="-1")
     parser.add_argument('--extra_buffer_A', help='(set_wanlink_info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = None port A (%%)', default=None)
     parser.add_argument('--extra_buffer_B', help='(set_wanlink_info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = None port B (%%)', default=None)
     parser.add_argument('--jitter_freq', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we apply jitter. Default = 0 both ports (%%)', default="0")
@@ -304,7 +305,6 @@ def main():
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument('--debug', help='Legacy debug flag', action='store_true')
 
-
     args = parser.parse_args()
 
     # set up logger
@@ -320,7 +320,6 @@ def main():
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-
     if not args.wl_name:
         print("No wanlink name provided")
         exit(1)
@@ -332,8 +331,6 @@ def main():
     # set_endp_flag side A
     # set_wanlink_info side B
     # set_endp_flag side B
-
-
 
     wanlink = lf_create_wanlink(lf_mgr=args.mgr,
                                 lf_port=8080,
@@ -351,7 +348,6 @@ def main():
 
     max_rate_A = args.max_rate_A if args.max_rate_A is not None else args.max_rate
     max_rate_B = args.max_rate_B if args.max_rate_B is not None else args.max_rate
-
 
     # parameters for set_wanlink_info
     drop_freq_A = args.drop_freq_A if args.drop_freq_A is not None else args.drop_freq
@@ -393,11 +389,8 @@ def main():
     speed_A = args.speed_A if args.speed_A is not None else args.speed
     speed_B = args.speed_B if args.speed_B is not None else args.speed
 
-
     # Comment out some parameters like 'max_jitter', 'drop_freq' and 'wanlink'
     # in order to view the X-Errors headers
-
-
 
     # create side A
     wanlink.add_wl_endp(_alias=endp_A,                        # Name of endpoint. [R]
@@ -423,90 +416,85 @@ def main():
                         _wle_flags=args.wle_flags,            # WanLink Endpoint specific flags, see above.
                         _suppress_related_commands=args.suppress_related_commands)
 
-
     result = wanlink.add_cx(_alias=args.wl_name,
-                        _rx_endp=endp_A,
-                        _tx_endp=endp_B,
-                        _test_mgr="default_tm")
-
+                            _rx_endp=endp_A,
+                            _tx_endp=endp_B,
+                            _test_mgr="default_tm")
 
     pprint.pprint(result)
 
     # set_wanlink_info A
-    wanlink.set_wanlink_info(_drop_freq = drop_freq_A,                    # How often, out of 1,000,000 packets, should we
-                    # purposefully drop a packet.
-                    _dup_freq=dup_freq_A,                     # How often, out of 1,000,000 packets, should we
-                    # purposefully duplicate a packet.
-                    _extra_buffer=extra_buffer_A,                 # The extra amount of bytes to buffer before
-                    # dropping pkts, in units of 1024. Use -1 for AUTO.
-                    _jitter_freq=jitter_freq_A,                  # How often, out of 1,000,000 packets, should we
-                    # apply jitter.
-                    _latency=latency_packet_A,                      # The base latency added to all packets, in
-                    # milliseconds (or add 'us' suffix for microseconds
-                    _max_drop_amt=max_drop_amt_A,                 # Maximum amount of packets to drop in a row.
-                    # Default is 1.
-                    _max_jitter=max_jitter_A,                   # The maximum jitter, in milliseconds (or ad 'us'
-                    # suffix for microseconds)
-                    _max_lateness=max_lateness_A,                 # Maximum amount of un-intentional delay before pkt
-                    # is dropped. Default is AUTO
-                    _max_reorder_amt=max_reorder_amt_A,              # Maximum amount of packets by which to reorder,
-                    # Default is 10.
-                    _min_drop_amt=min_drop_amt_A,                 # Minimum amount of packets to drop in a row.
-                    # Default is 1.
-                    _min_reorder_amt=min_reorder_amt_A,              # Minimum amount of packets by which to reorder,
-                    # Default is 1.
-                    _name=endp_A,                         # The name of the endpoint we are configuring. [R]
-                    _playback_capture_file=args.playback_capture_file,        # Name of the WAN capture file to play back.
-                    _reorder_freq=reorder_freq_A,                 # How often, out of 1,000,000 packets, should we
-                    # make a packet out of order.
-                    _speed=speed_A,                        # The maximum speed of traffic this endpoint will
-                    # accept (bps).
-                    _debug=args.debug,
-                    _suppress_related_commands=args.suppress_related_commands)
+    wanlink.set_wanlink_info(_drop_freq=drop_freq_A,                    # How often, out of 1,000,000 packets, should we
+                             # purposefully drop a packet.
+                             _dup_freq=dup_freq_A,                     # How often, out of 1,000,000 packets, should we
+                             # purposefully duplicate a packet.
+                             _extra_buffer=extra_buffer_A,                 # The extra amount of bytes to buffer before
+                             # dropping pkts, in units of 1024. Use -1 for AUTO.
+                             _jitter_freq=jitter_freq_A,                  # How often, out of 1,000,000 packets, should we
+                             # apply jitter.
+                             _latency=latency_packet_A,                      # The base latency added to all packets, in
+                             # milliseconds (or add 'us' suffix for microseconds
+                             _max_drop_amt=max_drop_amt_A,                 # Maximum amount of packets to drop in a row.
+                             # Default is 1.
+                             _max_jitter=max_jitter_A,                   # The maximum jitter, in milliseconds (or ad 'us'
+                             # suffix for microseconds)
+                             _max_lateness=max_lateness_A,                 # Maximum amount of un-intentional delay before pkt
+                             # is dropped. Default is AUTO
+                             _max_reorder_amt=max_reorder_amt_A,              # Maximum amount of packets by which to reorder,
+                             # Default is 10.
+                             _min_drop_amt=min_drop_amt_A,                 # Minimum amount of packets to drop in a row.
+                             # Default is 1.
+                             _min_reorder_amt=min_reorder_amt_A,              # Minimum amount of packets by which to reorder,
+                             # Default is 1.
+                             _name=endp_A,                         # The name of the endpoint we are configuring. [R]
+                             _playback_capture_file=args.playback_capture_file,        # Name of the WAN capture file to play back.
+                             _reorder_freq=reorder_freq_A,                 # How often, out of 1,000,000 packets, should we
+                             # make a packet out of order.
+                             _speed=speed_A,                        # The maximum speed of traffic this endpoint will
+                             # accept (bps).
+                             _debug=args.debug,
+                             _suppress_related_commands=args.suppress_related_commands)
 
     # set_wanlink_info B
-    wanlink.set_wanlink_info(_drop_freq = drop_freq_B,                    # How often, out of 1,000,000 packets, should we
-                    # purposefully drop a packet.
-                    _dup_freq=dup_freq_B,                     # How often, out of 1,000,000 packets, should we
-                    # purposefully duplicate a packet.
-                    _extra_buffer=extra_buffer_B,                 # The extra amount of bytes to buffer before
-                    # dropping pkts, in units of 1024. Use -1 for AUTO.
-                    _jitter_freq=jitter_freq_B,                  # How often, out of 1,000,000 packets, should we
-                    # apply jitter.
-                    _latency=latency_packet_B,                      # The base latency added to all packets, in
-                    # milliseconds (or add 'us' suffix for microseconds
-                    _max_drop_amt=max_drop_amt_B,                 # Maximum amount of packets to drop in a row.
-                    # Default is 1.
-                    _max_jitter=max_jitter_B,                   # The maximum jitter, in milliseconds (or ad 'us'
-                    # suffix for microseconds)
-                    _max_lateness=max_lateness_B,                 # Maximum amount of un-intentional delay before pkt
-                    # is dropped. Default is AUTO
-                    _max_reorder_amt=max_reorder_amt_B,              # Maximum amount of packets by which to reorder,
-                    # Default is 10.
-                    _min_drop_amt=min_drop_amt_B,                 # Minimum amount of packets to drop in a row.
-                    # Default is 1.
-                    _min_reorder_amt=min_reorder_amt_B,              # Minimum amount of packets by which to reorder,
-                    # Default is 1.
-                    _name=endp_B,                         # The name of the endpoint we are configuring. [R]
-                    _playback_capture_file=args.playback_capture_file,        # Name of the WAN capture file to play back.
-                    _reorder_freq=reorder_freq_B,                 # How often, out of 1,000,000 packets, should we
-                    # make a packet out of order.
-                    _speed=speed_B,                        # The maximum speed of traffic this endpoint will
-                    # accept (bps).
-                    _debug=args.debug,
-                    _suppress_related_commands=args.suppress_related_commands)
-
-    
+    wanlink.set_wanlink_info(_drop_freq=drop_freq_B,                    # How often, out of 1,000,000 packets, should we
+                             # purposefully drop a packet.
+                             _dup_freq=dup_freq_B,                     # How often, out of 1,000,000 packets, should we
+                             # purposefully duplicate a packet.
+                             _extra_buffer=extra_buffer_B,                 # The extra amount of bytes to buffer before
+                             # dropping pkts, in units of 1024. Use -1 for AUTO.
+                             _jitter_freq=jitter_freq_B,                  # How often, out of 1,000,000 packets, should we
+                             # apply jitter.
+                             _latency=latency_packet_B,                      # The base latency added to all packets, in
+                             # milliseconds (or add 'us' suffix for microseconds
+                             _max_drop_amt=max_drop_amt_B,                 # Maximum amount of packets to drop in a row.
+                             # Default is 1.
+                             _max_jitter=max_jitter_B,                   # The maximum jitter, in milliseconds (or ad 'us'
+                             # suffix for microseconds)
+                             _max_lateness=max_lateness_B,                 # Maximum amount of un-intentional delay before pkt
+                             # is dropped. Default is AUTO
+                             _max_reorder_amt=max_reorder_amt_B,              # Maximum amount of packets by which to reorder,
+                             # Default is 10.
+                             _min_drop_amt=min_drop_amt_B,                 # Minimum amount of packets to drop in a row.
+                             # Default is 1.
+                             _min_reorder_amt=min_reorder_amt_B,              # Minimum amount of packets by which to reorder,
+                             # Default is 1.
+                             _name=endp_B,                         # The name of the endpoint we are configuring. [R]
+                             _playback_capture_file=args.playback_capture_file,        # Name of the WAN capture file to play back.
+                             _reorder_freq=reorder_freq_B,                 # How often, out of 1,000,000 packets, should we
+                             # make a packet out of order.
+                             _speed=speed_B,                        # The maximum speed of traffic this endpoint will
+                             # accept (bps).
+                             _debug=args.debug,
+                             _suppress_related_commands=args.suppress_related_commands)
 
     eid_list = [args.wl_name]
     ewarn_list = []
     result = wanlink.get_wl(_eid_list=eid_list,
-                          _wait_sec=0.2,
-                          _timeout_sec=2.0,
-                          _errors_warnings=ewarn_list)
+                            _wait_sec=0.2,
+                            _timeout_sec=2.0,
+                            _errors_warnings=ewarn_list)
     pprint.pprint(result)
 
-                          
 
 if __name__ == "__main__":
     main()
