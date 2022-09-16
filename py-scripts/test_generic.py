@@ -146,39 +146,63 @@ class GenTest(Realm):
         # protects against single endpoint field name being different
         if 'endpoints' in endps:
             endpoint_plural = 'endpoints'
+            endps = endps[endpoint_plural]
+            data = {}
+            for endp in endps:
+                data[list(endp.keys())[0]] = list(endp.values())[0]
+            for endpoint in data:
+                kpi_csv.kpi_csv_get_dict_update_time()
+                kpi_csv.kpi_dict['short-description'] = "{endp_name}".format(
+                    endp_name=data[endpoint]['name'])
+                kpi_csv.kpi_dict['numeric-score'] = "{endp_tx}".format(
+                    endp_tx=data[endpoint]['tx bytes'])
+                kpi_csv.kpi_dict['Units'] = "bps"
+                kpi_csv.kpi_dict['Graph-Group'] = "Endpoint TX bytes"
+                kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)
+
+                kpi_csv.kpi_dict['short-description'] = "{endp_name}".format(
+                    endp_name=data[endpoint]['name'])
+                kpi_csv.kpi_dict['numeric-score'] = "{endp_rx}".format(
+                    endp_rx=data[endpoint]['rx bytes'])
+                kpi_csv.kpi_dict['Units'] = "bps"
+                kpi_csv.kpi_dict['Graph-Group'] = "Endpoint RX bytes"
+
+                kpi_csv.kpi_dict['short-description'] = "{endp_name}".format(
+                    endp_name=data[endpoint]['name'])
+                kpi_csv.kpi_dict['numeric-score'] = "{last_results}".format(
+                    last_results=data[endpoint]['last results'])
+                kpi_csv.kpi_dict['Units'] = ""
+                kpi_csv.kpi_dict['Graph-Group'] = "Endpoint Last Results"
+                kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)
         else:
             endpoint_plural = 'endpoint'
-
-        endps = endps[endpoint_plural]
-        data = {}
-        for endp in endps:
-            data[list(endp.keys())[0]] = list(endp.values())[0]
-
-        for endpoint in data:
-            # print(endpoint)
+            endps = endps[endpoint_plural]
+            data = endps
             kpi_csv.kpi_csv_get_dict_update_time()
             kpi_csv.kpi_dict['short-description'] = "{endp_name}".format(
-                endp_name=data[endpoint]['name'])
+                endp_name=data['name'])
             kpi_csv.kpi_dict['numeric-score'] = "{endp_tx}".format(
-                endp_tx=data[endpoint]['tx bytes'])
+                endp_tx=data['tx bytes'])
             kpi_csv.kpi_dict['Units'] = "bps"
             kpi_csv.kpi_dict['Graph-Group'] = "Endpoint TX bytes"
             kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)
 
             kpi_csv.kpi_dict['short-description'] = "{endp_name}".format(
-                endp_name=data[endpoint]['name'])
+                endp_name=data['name'])
             kpi_csv.kpi_dict['numeric-score'] = "{endp_rx}".format(
-                endp_rx=data[endpoint]['rx bytes'])
+                endp_rx=data['rx bytes'])
             kpi_csv.kpi_dict['Units'] = "bps"
             kpi_csv.kpi_dict['Graph-Group'] = "Endpoint RX bytes"
 
             kpi_csv.kpi_dict['short-description'] = "{endp_name}".format(
-                endp_name=data[endpoint]['name'])
+                endp_name=data['name'])
             kpi_csv.kpi_dict['numeric-score'] = "{last_results}".format(
-                last_results=data[endpoint]['last results'])
+                last_results=data['last results'])
             kpi_csv.kpi_dict['Units'] = ""
             kpi_csv.kpi_dict['Graph-Group'] = "Endpoint Last Results"
             kpi_csv.kpi_csv_write_dict(kpi_csv.kpi_dict)
+
+        
 
         if csv_outfile is not None:
             current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
