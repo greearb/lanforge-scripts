@@ -1,6 +1,8 @@
 # LANForge Python Scripts
 This directory contains python scripts to intract with LANforge Wifi and Ethernet Traffic Generators for testing Access Points and other Wifi networks.
 
+The scripts are written to support functionality available in Python 3.7 for supporting backward compatibility to older LANforge systems running on Fedora 27. The scripts will run on later versions of Python which are supported on later versions of Fedora.
+
 ## LANforge Python Scripts in py-scripts General Classifications
 
 * create_ - creates network element in LANforge wiphy radio
