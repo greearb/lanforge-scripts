@@ -513,7 +513,10 @@ class BaseLFJsonRequest:
                                         data=json.dumps(post_data).encode("utf-8"),
                                         headers=self.default_headers)
 
+        if not post_data or not len(post_data.items()):
             self.logger.by_method("empty post sent to [%s]" % url)
+        else:
+            self.logger.by_method("post data "+pformat(post_data))
 
         if not connection_timeout_sec:
             if self.session_instance.get_timeout_sec():
@@ -604,7 +607,7 @@ class BaseLFJsonRequest:
                             errors_warnings.extend(jzon_data["warnings"])
                     self.logger.debug("----------------- BAD STATUS --------------------------------")
                     if die_on_error:
-                        exit(1)
+                        sys.exit(1)
                 return responses[0]
 
             except urllib.error.HTTPError as herror:
@@ -615,20 +618,27 @@ class BaseLFJsonRequest:
                                   debug_=debug,
                                   die_on_error_=die_on_error)
                 if die_on_error:
-                    exit(1)
+                    sys.exit(1)
 
             except urllib.error.URLError as uerror:
-                print_diagnostics(url_=url,
-                                  request_=myrequest,
-                                  responses_=responses,
-                                  error_=uerror,
-                                  debug_=debug,
-                                  die_on_error_=die_on_error)
+                if (url.endswith("endsession")):
+                    logging.info("lfclient close connection before script exit")
+                    die_on_error = True
+                    break
+                else:
+                    logging.error("Connection refused: "+url)
+                    print_diagnostics(url_=url,
+                                      request_=myrequest,
+                                      responses_=responses,
+                                      error_=uerror,
+                                      debug_=debug,
+                                      die_on_error_=die_on_error)
                 if die_on_error:
-                    exit(1)
-
+                    sys.exit(1)
+            # ~while
+            time.sleep(0.2)
         if die_on_error:
-            exit(1)
+            sys.exit(1)
         return None
 
     def json_post_raw(self,
@@ -764,7 +774,7 @@ class BaseLFJsonRequest:
                               debug_=debug,
                               die_on_error_=die_on_error)
             if die_on_error:
-                exit(1)
+                sys.exit(1)
         except urllib.error.URLError as uerror:
             print_diagnostics(url_=requested_url,
                               request_=myrequest,
@@ -774,9 +784,9 @@ class BaseLFJsonRequest:
                               debug_=debug,
                               die_on_error_=die_on_error)
             if die_on_error:
-                exit(1)
+                sys.exit(1)
         if die_on_error:
-            exit(1)
+            sys.exit(1)
         return None
 
     def get_as_json(self,
@@ -1069,14 +1079,14 @@ class JsonCommand(BaseLFJsonRequest):
             self.logger.debug(pformat(responses))
             self.logger.warning(pformat(errors_warnings))
             if die_without_session_id_:
-                exit(1)
+                sys.exit(1)
             return False
         # first_response.msg is HttpMessage not a string
         elif first_response.status != 200:
             self.logger.error("Error starting session msg: %s" % pformat(first_response.headers))
             self.logger.warning(pformat(errors_warnings))
             if die_without_session_id_:
-                exit(1)
+                sys.exit(1)
             return False
 
         if debug:
@@ -1089,7 +1099,7 @@ class JsonCommand(BaseLFJsonRequest):
             self.logger.error(pformat(first_response.headers))
             self.logger.warning(pformat(errors_warnings))
             if die_without_session_id_:
-                exit(1)
+                sys.exit(1)
             return False
 
         self.session_id = first_response.getheader(SESSION_HEADER)
@@ -1312,6 +1322,9 @@ class BaseSession:
         command_obj.json_post(url="endsession",
                               debug=debug,
                               response_json_list=responses,
+                              wait_sec = 0,
+                              connection_timeout_sec = 0.5,
+                              max_timeout_sec = 1,
                               session_id_=session_id_)
 
 # End of json_api.py; subclasses defined below
@@ -1452,6 +1465,63 @@ class LFJsonCommand(JsonCommand):
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/ADB_WIFI_EVENT> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#adb_wifi_event
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_adb_wifi_event(self, 
+                            device: str = None,                       # ADB device name. [R]
+                            event: str = None,                        # What happened. [R]
+                            msg: str = None,                          # Entire event in human readable form.
+                            status: str = None,                       # Status on what happened.
+                            status2: str = None,                      # Status on what happened.
+                            debug: bool = False,
+                            suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                result = post_adb_wifi_event(param=value ...)
+                pprint.pprint( result )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if device is not None:
+            data["device"] = device
+        if event is not None:
+            data["event"] = event
+        if msg is not None:
+            data["msg"] = msg
+        if status is not None:
+            data["status"] = status
+        if status2 is not None:
+            data["status2"] = status2
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/adb_wifi_event",
+                                  post_data=data,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+    #
+
+    def post_adb_wifi_event_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_adb_wifi_event(device=param_map.get("device"),
+                                 event=param_map.get("event"),
+                                 msg=param_map.get("msg"),
+                                 status=param_map.get("status"),
+                                 status2=param_map.get("status2"),
+                                 )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/ADD_ADB> type requests
 
         https://www.candelatech.com/lfcli_ug.php#add_adb
@@ -1461,6 +1531,7 @@ class LFJsonCommand(JsonCommand):
                      adb_id: str = None,                       # Android device identifier (serial number).
                      adb_model: str = None,                    # Android device model ID
                      adb_product: str = None,                  # Android device product ID
+                     app_identifier: str = None,               # Identifier that App and adb can both query (mac of wlan0)
                      lf_username: str = None,                  # LANforge Interop app user-name
                      resource: int = None,                     # Resource number. [W]
                      sdk_release: str = None,                  # Android sdk release (example: 4.4.2)
@@ -1483,6 +1554,8 @@ class LFJsonCommand(JsonCommand):
             data["adb_model"] = adb_model
         if adb_product is not None:
             data["adb_product"] = adb_product
+        if app_identifier is not None:
+            data["app_identifier"] = app_identifier
         if lf_username is not None:
             data["lf_username"] = lf_username
         if resource is not None:
@@ -1516,6 +1589,7 @@ class LFJsonCommand(JsonCommand):
                           adb_id=param_map.get("adb_id"),
                           adb_model=param_map.get("adb_model"),
                           adb_product=param_map.get("adb_product"),
+                          app_identifier=param_map.get("app_identifier"),
                           lf_username=param_map.get("lf_username"),
                           resource=param_map.get("resource"),
                           sdk_release=param_map.get("sdk_release"),
@@ -7983,16 +8057,16 @@ class LFJsonCommand(JsonCommand):
     def post_log_capture(self, 
                          destination: str = None,                  # Where to save the file to on the LANforge resource. If
                          # 'stdout', then content will be passed back as a keyed
-                         # text message.
+                         # text message. [R]
                          duration: str = None,                     # For journalctl, seconds of logs to gather, or NA if not
                          # used.
                          identifier: str = None,                   # port name or other identifier needed for some types, NA
                          # if not used.
                          resource: int = None,                     # The number of the resource in question. [W]
                          shelf: int = 1,                           # The number of the shelf in question. [R][D:1]
-                         p_type: str = None,                       # journalctl, supplicant, lflogs, adb, hostapd
+                         p_type: str = None,                       # journalctl, supplicant, lflogs, adb, hostapd [W]
                          user_key: str = None,                     # Key to use for keyed-text-message response when using
-                         # stdout destination
+                         # stdout destination [W]
                          debug: bool = False,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -17785,17 +17859,18 @@ class LFJsonQuery(JsonQuery):
         /adb/$shelf_id/$resource_id/$port_id
 
     When requesting specific column names, they need to be URL encoded:
-        api, device, model, name, phantom, product, release, user-name
-    Example URL: /adb?fields=api,device
+        api, app-id, device, model, name, phantom, product, release, user-name
+    Example URL: /adb?fields=api,app-id
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_adb(eid_list=['1.234', '1.344'],
-                                   requested_col_names=['device'], 
+                                   requested_col_names=['app-id'], 
                                    debug=True)
 
     The record returned will have these members: 
     {
         'api':       # Android SDK API Version
+        'app-id':    # Interop app identifier reported by adb.
         'device':    # Android device identifier.
         'model':     # Android device model identifier.
         'name':      # Adb device's name
@@ -20069,12 +20144,12 @@ class LFJsonQuery(JsonQuery):
         /resource/$shelf_id/$resource_id
 
     When requesting specific column names, they need to be URL encoded:
-        bps-rx-3s, bps-tx-3s, cli-port, cpu, ctrl-ip, ctrl-port, eid, entity+id, 
+        app-id, bps-rx-3s, bps-tx-3s, cli-port, cpu, ctrl-ip, ctrl-port, eid, entity+id, 
         free+mem, free+swap, gps, hostname, hw+version, load, max+if-up, max+staged, 
         mem, phantom, ports, rx+bytes, shelf, sta+up, sw+version, swap, tx+bytes, 
         user        # hidden columns:
         timestamp
-    Example URL: /resource?fields=bps-rx-3s,bps-tx-3s
+    Example URL: /resource?fields=app-id,bps-rx-3s
 
     Example py-json call (it knows the URL):
         record = LFJsonGet.get_resource(eid_list=['1.234', '1.344'],
@@ -20083,6 +20158,7 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
+        'app-id':     # Interop app ID, if this is an Interop resource.
         'bps-rx-3s':  # Rate in bits-per-second that the manager issending management data to
                       # the resource, averaged over the last 3 seconds.This is TCP payload data,
                       # and does not count the IP and Ethernet overhead.
@@ -20250,9 +20326,9 @@ class LFJsonQuery(JsonQuery):
         /stations/$mac
 
     When requesting specific column names, they need to be URL encoded:
-        ap, auth-for, capabilities, chain+rssi, entity+id, idle, roam-duration, rx+bytes, 
-        rx+pkts, rx+rate, signal, signal+avg, station+bssid, tx+bytes, tx+pkts, tx+rate, 
-        tx+retries, tx-failed
+        ap, auth-for, capabilities, chain+rssi, entity+id, idle, ip, roam-duration, 
+        rx+bytes, rx+pkts, rx+rate, signal, signal+avg, station+bssid, tx+bytes, 
+        tx+pkts, tx+rate, tx+retries, tx-failed
     Example URL: /stations?fields=ap,auth-for
 
     Example py-json call (it knows the URL):
@@ -20268,6 +20344,7 @@ class LFJsonQuery(JsonQuery):
         'chain rssi':    # Chain RSSI
         'entity id':     # Entity ID
         'idle':          # Miliseconds since this station last received a frame from the peer.
+        'ip':            # The IP Address of this port/interface, ex: 192.168.1.5
         'roam-duration': # The difference between the authenticate-time on the new APand the last
                          # frame received on old AP, in milliseconds.It is not always possible to
                          # compute this accurately,especially if traffic is not flowing during the
