@@ -21,7 +21,7 @@ if sys.version_info[0] != 3:
 
 import importlib
 import argparse
-import pprint
+from pprint import pformat
 import os
 import logging
 
@@ -214,31 +214,38 @@ class lf_create_wanlink():
 
 
     def get_wl(self,
-               _eid_list=None,
-               _wait_sec=0.2,
-               _timeout_sec=2.0,
-               _errors_warnings=None):
+               _eid_list: list = None,
+               _requested_col_names: list = None,
+               _wait_sec: float = 0.01,
+               _timeout_sec: float = 5.0,
+               _errors_warnings: list = None):
 
         ewarn_list = []
         result = self.query.get_wl(eid_list=_eid_list,
+                                   requested_col_names=_requested_col_names, 
                                    wait_sec=_wait_sec,
                                    timeout_sec=_timeout_sec,
                                    errors_warnings=ewarn_list,
                                    debug=self.debug)
-        pprint.pprint(result)
+        logger.debug(pformat(result))
         return result
 
 
     def get_wl_endp(self,
-                    eid_list=None,
-                    wait_sec=None,
-                    timeout_sec=None):
+                    _eid_list: list = None,
+                    _requested_col_names: list = None,
+                    _wait_sec: float = 0.01,
+                    _timeout_sec: float = 5.0,
+                    _errors_warnings: list = None):
 
-        result = self.query.get_wl_endp(eid_list=eid_list,
-                                        wait_sec=0.2,
-                                        timeout_sec=15.0,
-                                        debug=self.debug)
-        pprint.pprint(result)
+        result = self.query.get_wl_endp(eid_list=_eid_list,
+                    requested_col_names=_requested_col_names,
+                    wait_sec=_wait_sec,
+                    timeout_sec=_timeout_sec,
+                    errors_warnings=_errors_warnings,
+                    debug=self.debug)
+
+        logger.debug(pformat(result))
         return result
 
         
@@ -347,7 +354,7 @@ def main():
         logger_config.load_lf_logger_config()
 
     if not args.wl_name:
-        print("No wanlink name provided")
+        logger.error("No wanlink name provided")
         exit(1)
 
     # The order to creating an wanlink between two ethernet ports
@@ -447,7 +454,7 @@ def main():
                             _tx_endp=endp_B,
                             _test_mgr="default_tm")
 
-    pprint.pprint(result)
+    logger.debug(pformat(result))
 
     # set_wanlink_info A
     wanlink.set_wanlink_info(_drop_freq=drop_freq_A,                    # How often, out of 1,000,000 packets, should we
@@ -568,7 +575,15 @@ def main():
                             _wait_sec=0.2,
                             _timeout_sec=2.0,
                             _errors_warnings=ewarn_list)
-    pprint.pprint(result)
+    logger.debug(pformat(result))
+
+    eid_list = [endp_A, endp_B]
+    result = wanlink.get_wl_endp(_eid_list=eid_list,
+                            _wait_sec=0.2,
+                            _timeout_sec=2.0,
+                            _errors_warnings=ewarn_list)
+    logger.debug(pformat(result))
+
 
 
 if __name__ == "__main__":
