@@ -15,7 +15,9 @@ try:
     from geometry import Rect,Group
 
 except Exception as x:
-    print("Info:  geometer package not installed, Needed for creating virtual routers, try 'pip install simple-geometry'  ")
+    print("Warning: geometery package not installed. This package is needed for creating virtual routers. Please try 'pip install simple-geometry'")
+    # if you have a specific version of python you're using, here's a version specific example:
+    print("    Or try 'python3.10 -m pip install simple-geometry --user'")
     traceback.print_exception(Exception, x, x.__traceback__, chain=True)
 
 logger = logging.getLogger(__name__)
