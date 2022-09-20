@@ -321,6 +321,10 @@ def main():
 
     # Set Endp Flags enable KernelMode 
     parser.add_argument('--kernel_mode', help='(set endp flag) Select  kernel-mode Wanlinks , must be the same for both endpoint sets both ports, Default = False', action='store_true')
+    parser.add_argument('--pass_through_mode', help='''
+        (set endp flag) pass-through means disable all impairments and slow-downs, without having to manually zero out all of the impairments.  Good way to turn it on/off without stopping traffic., 
+        Default = False', action='store_true'
+        ''', action='store_true')
 
     # Logging Configuration
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
@@ -489,6 +493,19 @@ def main():
                             _val=0,
                             _suppress_related_commands=args.suppress_related_commands)
 
+    if args.pass_through_mode:
+        wanlink.set_endp_flag(_name=endp_A,
+                            _flag='PassthroughMode',
+                            _val=1,
+                            _suppress_related_commands=args.suppress_related_commands)
+
+    else:                                
+        wanlink.set_endp_flag(_name=endp_A,
+                            _flag='PassthroughMode',
+                            _val=0,
+                            _suppress_related_commands=args.suppress_related_commands)
+
+
     # set_wanlink_info B
     wanlink.set_wanlink_info(_drop_freq=drop_freq_B,                    # How often, out of 1,000,000 packets, should we
                              # purposefully drop a packet.
@@ -532,6 +549,18 @@ def main():
                             _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
                             _val=0,
                             _suppress_related_commands=args.suppress_related_commands)
+    if args.pass_through_mode:
+        wanlink.set_endp_flag(_name=endp_B,
+                            _flag='PassthroughMode',
+                            _val=1,
+                            _suppress_related_commands=args.suppress_related_commands)
+
+    else:                                
+        wanlink.set_endp_flag(_name=endp_B,
+                            _flag='PassthroughMode',
+                            _val=0,
+                            _suppress_related_commands=args.suppress_related_commands)
+
 
     eid_list = [args.wl_name]
     ewarn_list = []
