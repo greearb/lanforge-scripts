@@ -86,6 +86,7 @@ class lf_create_wanlink():
     # query.get_wl
     # query.get_wl_endp
 
+
     def add_wl_endp(self,
                     _alias: str = None,                        # Name of endpoint. [R]
                     _cpu_id: str = None,                       # The CPU/thread that this process should run on
@@ -187,6 +188,19 @@ class lf_create_wanlink():
             debug=self.debug,
             suppress_related_commands=_suppress_related_commands)
 
+    # set_endp_flag 
+    def set_endp_flag(self,
+                    _flag: str = None,                         # The name of the flag. [R]
+                    _name: str = None,                         # The name of the endpoint we are configuring. [R]
+                    _val: str = None,                          # Either 1 (for on), or 0 (for off). [R,0-1]
+                    _suppress_related_commands: bool = False):
+
+        self.command.post_set_endp_flag(flag=_flag,             # The name of the flag. [R]
+                                        name=_name,             # The name of the endpoint we are configuring. [R]
+                                        val=_val,               # Either 1 (for on), or 0 (for off). [R,0-1]
+                                        debug=self.debug,
+                                        suppress_related_commands=_suppress_related_commands)
+
     def add_cx(self,
                _alias=None,
                _rx_endp=None,  # endp_A
@@ -197,6 +211,7 @@ class lf_create_wanlink():
                                  rx_endp=_rx_endp,
                                  tx_endp=_tx_endp,
                                  test_mgr=_test_mgr)
+
 
     def get_wl(self,
                _eid_list=None,
@@ -213,6 +228,7 @@ class lf_create_wanlink():
         pprint.pprint(result)
         return result
 
+
     def get_wl_endp(self,
                     eid_list=None,
                     wait_sec=None,
@@ -224,6 +240,9 @@ class lf_create_wanlink():
                                         debug=self.debug)
         pprint.pprint(result)
         return result
+
+        
+
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 
@@ -242,63 +261,66 @@ def main():
     parser.add_argument("--mgr_port", help="specify the GUI to connect to, default 8080", default="8080")
     parser.add_argument("--lf_user", help="specify the GUI to connect to, default 8080", default="lanforge")
     parser.add_argument("--lf_passwd", help="specify the GUI to connect to, default 8080", default="lanforge")
-    parser.add_argument('--wl_name', '--alias', dest='wl_name', help='(add_wl_endp) The name of the endpoint we are configuring. [R] ', required=True)
-    parser.add_argument('--cpu_id', help="(add_wl_endp) The CPU/thread that this process should run on (kernel-mode only). Default = 'NA'", default='NA')
-    parser.add_argument('--description', help="(add_wl_endp) Description for this endpoint, put in single quotes if it contains spaces Default = 'NA'", default='NA')
-    parser.add_argument("--latency", help="(add_wl_endp) The latency (ms) that will be added to each packet entering this WanLink. Default = 'NA' both ports", default='NA')
-    parser.add_argument("--latency_A", help="(add_wl_endp) The latency (ms) that will be added to each packet entering this WanLink. Default = None port a", default=None)
-    parser.add_argument("--latency_B", help="(add_wl_endp) The latency (ms) that will be added to each packet entering this WanLink. Default = None port b", default=None)
-    parser.add_argument("--max_rate", help="(add_wl_endp) Maximum transmit rate (bps) for this WanLink. Default = 1024000 ", default='1024000')
-    parser.add_argument("--max_rate_A", help="(add_wl_endp) Maximum transmit rate (bps) for this WanLink. Default = None ", default=None)
-    parser.add_argument("--max_rate_B", help="(add_wl_endp) Maximum transmit rate (bps) for this WanLink. Default = None ", default=None)
-    parser.add_argument('--port_A', help='(add_wl_endp) Endpoint A', default="eth1")
-    parser.add_argument('--port_B', help='(add_wl_endp) Endpoint B', default="eth2")
-    parser.add_argument("--resource", help='(add_wl_endp) LANforge resource Default', default=1)
-    parser.add_argument("--shelf", help='(add_wl_endp) LANforge Shelf name/id', default=1)
-    parser.add_argument("--wle_flags", help='(add_wl_endp) WanLink Endpoint specific flags, Default = 1, SHOW_WP = 1 .Show WanPaths in wanlink endpoint table in GUI', default=1)
+    parser.add_argument('--wl_name', '--alias', dest='wl_name', help='(add wl endp) The name of the endpoint we are configuring. [R] ', required=True)
+    parser.add_argument('--cpu_id', help="(add wl endp) The CPU/thread that this process should run on (kernel-mode only). Default = 'NA'", default='NA')
+    parser.add_argument('--description', help="(add wl endp) Description for this endpoint, put in single quotes if it contains spaces Default = 'NA'", default='NA')
+    parser.add_argument("--latency", help="(add wl endp) The latency (ms) that will be added to each packet entering this WanLink. Default = 'NA' both ports", default='NA')
+    parser.add_argument("--latency_A", help="(add wl endp) The latency (ms) that will be added to each packet entering this WanLink. Default = None port a", default=None)
+    parser.add_argument("--latency_B", help="(add wl endp) The latency (ms) that will be added to each packet entering this WanLink. Default = None port b", default=None)
+    parser.add_argument("--max_rate", help="(add wl endp) Maximum transmit rate (bps) for this WanLink. Default = 1024000 ", default='1024000')
+    parser.add_argument("--max_rate_A", help="(add wl endp) Maximum transmit rate (bps) for this WanLink. Default = None ", default=None)
+    parser.add_argument("--max_rate_B", help="(add wl endp) Maximum transmit rate (bps) for this WanLink. Default = None ", default=None)
+    parser.add_argument('--port_A', help='(add wl endp) Endpoint A', default="eth1")
+    parser.add_argument('--port_B', help='(add wl endp) Endpoint B', default="eth2")
+    parser.add_argument("--resource", help='(add wl endp) LANforge resource Default', default=1)
+    parser.add_argument("--shelf", help='(add wl endp) LANforge Shelf name/id', default=1)
+    parser.add_argument("--wle_flags", help='(add wl endp) WanLink Endpoint specific flags, Default = 1, SHOW_WP = 1 .Show WanPaths in wanlink endpoint table in GUI', default=1)
 
     # http://www.candelatech.com/lfcli_ug.php#set_wanlink_info
-    parser.add_argument('--drop_freq', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = 0 Both ports (%%)', default="0")
-    parser.add_argument('--drop_freq_A', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = None port A (%%)', default=None)
-    parser.add_argument('--drop_freq_B', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = None port B (%%)', default=None)
-    parser.add_argument('--dup_freq', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = 0 Both ports (%%)', default="0")
-    parser.add_argument('--dup_freq_A', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = None port A (%%)', default=None)
-    parser.add_argument('--dup_freq_B', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = None port B (%%)', default=None)
-    parser.add_argument('--extra_buffer', help='(set_wanlink_info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = -1 Both ports (%%)', default="-1")
-    parser.add_argument('--extra_buffer_A', help='(set_wanlink_info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = None port A (%%)', default=None)
-    parser.add_argument('--extra_buffer_B', help='(set_wanlink_info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = None port B (%%)', default=None)
-    parser.add_argument('--jitter_freq', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we apply jitter. Default = 0 both ports (%%)', default="0")
-    parser.add_argument('--jitter_freq_A', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we apply jitter. Default = None port A (%%)', default=None)
-    parser.add_argument('--jitter_freq_B', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we apply jitter. Default = None port B (%%)', default=None)
-    parser.add_argument('--latency_packet', help="(set_wanlink_info) The base latency added to all packets, in milliseconds (or add 'us' suffix for microseconds. Default = 20 both ports", default="20")
-    parser.add_argument('--latency_packet_A', help="(set_wanlink_info) The base latency added to all packets, in milliseconds (or add 'us' suffix for microseconds. Default = None port A", default=None)
-    parser.add_argument('--latency_packet_B', help="(set_wanlink_info) The base latency added to all packets, in milliseconds (or add 'us' suffix for microseconds. Default = None port B", default=None)
-    parser.add_argument('--max_drop_amt', help='(set_wanlink_info) Maximum amount of packets to drop in a row. Default is 1. both ports', default="1")
-    parser.add_argument('--max_drop_amt_A', help='(set_wanlink_info) Maximum amount of packets to drop in a row. Default is None. port A', default=None)
-    parser.add_argument('--max_drop_amt_B', help='(set_wanlink_info) Maximum amount of packets to drop in a row. Default is None. port B', default=None)
-    parser.add_argument('--max_jitter', help="(set_wanlink_info) The maximum jitter, in milliseconds (or ad 'us' suffix for microseconds) Default = 10 both ports (ms)", default="10")
-    parser.add_argument('--max_jitter_A', help="(set_wanlink_info) The maximum jitter, in milliseconds (or ad 'us' suffix for microseconds) port A (ms)", default=None)
-    parser.add_argument('--max_jitter_B', help="(set_wanlink_info) The maximum jitter, in milliseconds (or ad 'us' suffix for microseconds) port B (ms)", default=None)
-    parser.add_argument('--max_lateness', help='(set_wanlink_info) Maximum amount of un-intentional delay before pkt both ports (ms) is dropped. Default is AUTO both ports', default="AUTO")
-    parser.add_argument('--max_lateness_A', help='(set_wanlink_info) Maximum amount of un-intentional delay before pkt both ports (ms) is dropped. Default is AUTO port A', default=None)
-    parser.add_argument('--max_lateness_B', help='(set_wanlink_info) Maximum amount of un-intentional delay before pkt both ports (ms) is dropped. Default is AUTO port B', default=None)
-    parser.add_argument('--max_reorder_amt', help='(set_wanlink_info) Maximum amount of packets by which to reorder, Default is 10. both ports (ms)', default="10")
-    parser.add_argument('--max_reorder_amt_A', help='(set_wanlink_info) Maximum amount of packets by which to reorder, Default is 10. both ports (ms) port A (ms)', default=None)
-    parser.add_argument('--max_reorder_amt_B', help='(set_wanlink_info) Maximum amount of packets by which to reorder, Default is 10. both ports (ms) port B (ms)', default=None)
-    parser.add_argument('--min_drop_amt', help='(set_wanlink_info) Minimum amount of packets to drop in a row. Default is 1. both ports (ms)', default="1")
-    parser.add_argument('--min_drop_amt_A', help='(set_wanlink_info) Minimum amount of packets to drop in a row. Default is 1. both ports (ms) port A (ms)', default=None)
-    parser.add_argument('--min_drop_amt_B', help='(set_wanlink_info) Minimum amount of packets to drop in a row. Default is 1. both ports (ms) port B (ms)', default=None)
-    parser.add_argument('--min_reorder_amt', help='(set_wanlink_info) Minimum amount of packets by which to reorder, Default is 1. both ports ', default="1")
-    parser.add_argument('--min_reorder_amt_A', help='(set_wanlink_info) Minimum amount of packets by which to reorder, Default is 1. port A', default=None)
-    parser.add_argument('--min_reorder_amt_B', help='(set_wanlink_info) Minimum amount of packets by which to reorder, Default is 1. port B', default=None)
-    parser.add_argument('--playback_capture_file', help='(set_wanlink_info) Name of the WAN capture file to play back. Default = None', default=None)
-    parser.add_argument('--reorder_freq', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we make a packet out of order. both ports Default = None', default=None)
-    parser.add_argument('--reorder_freq_A', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we make a packet out of order. port A Default = None', default=None)
-    parser.add_argument('--reorder_freq_B', help='(set_wanlink_info) How often, out of 1,000,000 packets, should we make a packet out of order. port B Default = None', default=None)
-    parser.add_argument('--speed', help='(set_wanlink_info) The maximum speed of traffic this endpoint will accept (bps). both ports', default=1000000)
-    parser.add_argument('--speed_A', help='(set_wanlink_info) The maximum speed of traffic this endpoint will accept (bps). port A', default=None)
-    parser.add_argument('--speed_B', help='(set_wanlink_info) The maximum speed of traffic this endpoint will accept (bps). port B', default=None)
-    parser.add_argument('--suppress_related_commands', help='(set_wanlink_info) Used by lanforge_api Default False if set store true', action='store_true')
+    parser.add_argument('--drop_freq', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = 0 Both ports (%%)', default="0")
+    parser.add_argument('--drop_freq_A', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = None port A (%%)', default=None)
+    parser.add_argument('--drop_freq_B', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully drop a packet. Default = None port B (%%)', default=None)
+    parser.add_argument('--dup_freq', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = 0 Both ports (%%)', default="0")
+    parser.add_argument('--dup_freq_A', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = None port A (%%)', default=None)
+    parser.add_argument('--dup_freq_B', help='(set wanlink info) How often, out of 1,000,000 packets, should we purposefully duplicate a packet. Default = None port B (%%)', default=None)
+    parser.add_argument('--extra_buffer', help='(set wanlink info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = -1 Both ports (%%)', default="-1")
+    parser.add_argument('--extra_buffer_A', help='(set wanlink info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = None port A (%%)', default=None)
+    parser.add_argument('--extra_buffer_B', help='(set wanlink info) The extra amount of bytes to buffer before dropping pkts, in units of 1024. Use -1 for AUTO. Default = None port B (%%)', default=None)
+    parser.add_argument('--jitter_freq', help='(set wanlink info) How often, out of 1,000,000 packets, should we apply jitter. Default = 0 both ports (%%)', default="0")
+    parser.add_argument('--jitter_freq_A', help='(set wanlink info) How often, out of 1,000,000 packets, should we apply jitter. Default = None port A (%%)', default=None)
+    parser.add_argument('--jitter_freq_B', help='(set wanlink info) How often, out of 1,000,000 packets, should we apply jitter. Default = None port B (%%)', default=None)
+    parser.add_argument('--latency_packet', help="(set wanlink info) The base latency added to all packets, in milliseconds (or add 'us' suffix for microseconds. Default = 20 both ports", default="20")
+    parser.add_argument('--latency_packet_A', help="(set wanlink info) The base latency added to all packets, in milliseconds (or add 'us' suffix for microseconds. Default = None port A", default=None)
+    parser.add_argument('--latency_packet_B', help="(set wanlink info) The base latency added to all packets, in milliseconds (or add 'us' suffix for microseconds. Default = None port B", default=None)
+    parser.add_argument('--max_drop_amt', help='(set wanlink info) Maximum amount of packets to drop in a row. Default is 1. both ports', default="1")
+    parser.add_argument('--max_drop_amt_A', help='(set wanlink info) Maximum amount of packets to drop in a row. Default is None. port A', default=None)
+    parser.add_argument('--max_drop_amt_B', help='(set wanlink info) Maximum amount of packets to drop in a row. Default is None. port B', default=None)
+    parser.add_argument('--max_jitter', help="(set wanlink info) The maximum jitter, in milliseconds (or ad 'us' suffix for microseconds) Default = 10 both ports (ms)", default="10")
+    parser.add_argument('--max_jitter_A', help="(set wanlink info) The maximum jitter, in milliseconds (or ad 'us' suffix for microseconds) port A (ms)", default=None)
+    parser.add_argument('--max_jitter_B', help="(set wanlink info) The maximum jitter, in milliseconds (or ad 'us' suffix for microseconds) port B (ms)", default=None)
+    parser.add_argument('--max_lateness', help='(set wanlink info) Maximum amount of un-intentional delay before pkt both ports (ms) is dropped. Default is AUTO both ports', default="AUTO")
+    parser.add_argument('--max_lateness_A', help='(set wanlink info) Maximum amount of un-intentional delay before pkt both ports (ms) is dropped. Default is AUTO port A', default=None)
+    parser.add_argument('--max_lateness_B', help='(set wanlink info) Maximum amount of un-intentional delay before pkt both ports (ms) is dropped. Default is AUTO port B', default=None)
+    parser.add_argument('--max_reorder_amt', help='(set wanlink info) Maximum amount of packets by which to reorder, Default is 10. both ports (ms)', default="10")
+    parser.add_argument('--max_reorder_amt_A', help='(set wanlink info) Maximum amount of packets by which to reorder, Default is 10. both ports (ms) port A (ms)', default=None)
+    parser.add_argument('--max_reorder_amt_B', help='(set wanlink info) Maximum amount of packets by which to reorder, Default is 10. both ports (ms) port B (ms)', default=None)
+    parser.add_argument('--min_drop_amt', help='(set wanlink info) Minimum amount of packets to drop in a row. Default is 1. both ports (ms)', default="1")
+    parser.add_argument('--min_drop_amt_A', help='(set wanlink info) Minimum amount of packets to drop in a row. Default is 1. both ports (ms) port A (ms)', default=None)
+    parser.add_argument('--min_drop_amt_B', help='(set wanlink info) Minimum amount of packets to drop in a row. Default is 1. both ports (ms) port B (ms)', default=None)
+    parser.add_argument('--min_reorder_amt', help='(set wanlink info) Minimum amount of packets by which to reorder, Default is 1. both ports ', default="1")
+    parser.add_argument('--min_reorder_amt_A', help='(set wanlink info) Minimum amount of packets by which to reorder, Default is 1. port A', default=None)
+    parser.add_argument('--min_reorder_amt_B', help='(set wanlink info) Minimum amount of packets by which to reorder, Default is 1. port B', default=None)
+    parser.add_argument('--playback_capture_file', help='(set wanlink info) Name of the WAN capture file to play back. Default = None', default=None)
+    parser.add_argument('--reorder_freq', help='(set wanlink info) How often, out of 1,000,000 packets, should we make a packet out of order. both ports Default = None', default=None)
+    parser.add_argument('--reorder_freq_A', help='(set wanlink info) How often, out of 1,000,000 packets, should we make a packet out of order. port A Default = None', default=None)
+    parser.add_argument('--reorder_freq_B', help='(set wanlink info) How often, out of 1,000,000 packets, should we make a packet out of order. port B Default = None', default=None)
+    parser.add_argument('--speed', help='(set wanlink info) The maximum speed of traffic this endpoint will accept (bps). both ports', default=1000000)
+    parser.add_argument('--speed_A', help='(set wanlink info) The maximum speed of traffic this endpoint will accept (bps). port A', default=None)
+    parser.add_argument('--speed_B', help='(set wanlink info) The maximum speed of traffic this endpoint will accept (bps). port B', default=None)
+    parser.add_argument('--suppress_related_commands', help='(set wanlink info) Used by lanforge_api Default False if set store true', action='store_true')
+
+    # Set Endp Flags enable KernelMode 
+    parser.add_argument('--kernel_mode', help='(set endp flag) Select  kernel-mode Wanlinks , must be the same for both endpoint sets both ports, Default = False', action='store_true')
 
     # Logging Configuration
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
@@ -455,6 +477,18 @@ def main():
                              _debug=args.debug,
                              _suppress_related_commands=args.suppress_related_commands)
 
+    if args.kernel_mode:
+        wanlink.set_endp_flag(_name=endp_A,
+                            _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
+                            _val=1,
+                            _suppress_related_commands=args.suppress_related_commands)
+
+    else:                                
+        wanlink.set_endp_flag(_name=endp_A,
+                            _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
+                            _val=0,
+                            _suppress_related_commands=args.suppress_related_commands)
+
     # set_wanlink_info B
     wanlink.set_wanlink_info(_drop_freq=drop_freq_B,                    # How often, out of 1,000,000 packets, should we
                              # purposefully drop a packet.
@@ -486,6 +520,18 @@ def main():
                              # accept (bps).
                              _debug=args.debug,
                              _suppress_related_commands=args.suppress_related_commands)
+
+    if args.kernel_mode:
+        wanlink.set_endp_flag(_name=endp_B,
+                            _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
+                            _val=1,
+                            _suppress_related_commands=args.suppress_related_commands)
+
+    else:                                
+        wanlink.set_endp_flag(_name=endp_B,
+                            _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
+                            _val=0,
+                            _suppress_related_commands=args.suppress_related_commands)
 
     eid_list = [args.wl_name]
     ewarn_list = []
