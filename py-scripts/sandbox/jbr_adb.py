@@ -85,13 +85,19 @@ def main():
     command.post_show_adb(shelf=1, resource=1, serno='ALL')
     adb_key = session.get_session_based_key()
     session.logger.error("adb_key: " + adb_key)
+    errors_warnings = []
+    response_list = []
     command.post_adb(shelf=1,
                      resource=1,
                      key=adb_key,
                      adb_id=args.id,
                      adb_cmd=txt_cmd,
+                     response_json_list=response_list,
                      debug=True,
+                     errors_warnings=errors_warnings,
                      suppress_related_commands=True)
+    pprint.pprint(["Response", response_list])
+
     command.post_show_adb(shelf=1, resource=1, serno='ALL')
     eid_url = "%s.%s.%s" % (1, 1, args.id)
     time.sleep(0.05)
