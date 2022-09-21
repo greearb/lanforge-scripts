@@ -6,12 +6,12 @@ PURPOSE: create a wanlink using the lanforge api
 
 EXAMPLE:
 Both port_A and port_B have the same configuraiton
-$ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A 1.1.eth1 --port_B 1.1.eth2\
+$ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --port_B eth2\
     --speed 1024000 --wl_name wanlink --latency 24 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
     --log_level debug --debug 
 
 Mixed configuration for port_A and port_B
-$ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A 1.1.eth1 --port_B 1.1.eth2\
+$ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --port_B eth2\
     --speed_A 1024000 --speed_B 2048000 --wl_name wanlink --latency_A 24 --latency_B 32 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
     --log_level debug --debug 
 
@@ -274,12 +274,12 @@ def main():
             tests creating wanlink
 
 Both port_A and port_B have the same configuraiton
-$ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A 1.1.eth1 --port_B 1.1.eth2\
+$ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --port_B eth2\
     --speed 1024000 --wl_name wanlink --latency 24 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
     --log_level debug --debug 
 
 Mixed configuration for port_A and port_B
-$ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A 1.1.eth1 --port_B 1.1.eth2\
+$ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --port_B eth2\
     --speed_A 1024000 --speed_B 2048000 --wl_name wanlink --latency_A 24 --latency_B 32 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
     --log_level debug --debug 
 
