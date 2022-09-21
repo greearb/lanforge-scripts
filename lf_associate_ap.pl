@@ -141,8 +141,9 @@ our %sec_options        = (
    "no-supp-op-class-ie"   =>    0x4000000000,  # Do not include supported-oper-class-IE in assoc requests.  May work around AP bugs.
    "txo-enable"            =>    0x8000000000,  # Enable/disable tx-offloads, typically managed by set_wifi_txo command
    "wpa3"                  =>    0x10000000000, # Enable WPA-3 (SAE Personal) mode.
+   "wpa2,wpa3"             =>    0x10000000400, # Enable wpa2,wpa3 mixed mode.
    "use-bss-transition"    =>    0x80000000000, # Enable BSS transition.
-   "disable-twt"           =>    0x100000000000, # Disable TWT mode 
+   "disable-twt"           =>    0x100000000000, # Disable TWT mode
 );
 our %ieee80211w_options = (
    "disabled"  => 0,
@@ -233,7 +234,7 @@ my $usage = qq($0   [--mgr {host-name | IP}]
       [--antenna {1,2,3,4}]      # select number of antennas
       [--ssid {ssid}]            # e.g. jedtest
       [--bssid {aa:bb:cc:00:11:22, or DEFAULT} # AP BSSID to connect to
-      [--security {open|wep|wpa|wpa2|wpa3}] # station authentication type, Default is open
+      [--security {open|wep|wpa|wpa2|wpa3|wpa2,wpa3}] # station authentication type, Default is open
       [--xsec {comma,separated,list} ] # dot1x, 11u, other features, read script {to set flags same as in add_sta}
       [--passphrase {...}]       # Set security too if you want to enable security
       [--wifi_mode {$mode_list}]
