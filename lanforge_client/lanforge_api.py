@@ -257,6 +257,7 @@ class BaseLFJsonRequest:
         self.stream_warnings = stream_warnings
         self.logger = Logg(name="LFJsonRequest-@", debug=debug)
         self.debug_on = debug
+        self.receives_async_feedback = False
 
     def get_corrected_url(self,
                           url: str = None,
@@ -553,6 +554,9 @@ class BaseLFJsonRequest:
             try:
                 response = urllib.request.urlopen(myrequest)
                 resp_data = response.read().decode('utf-8')
+                if self.receives_async_feedback and (response_json_list is None and resp_data):
+                    self.logger.warning("json_post: POST to URL has data: "+url)
+                    raise ValueError("json_post: not returning post data, no response_json_list provided")
                 jzon_data = None
                 if debug and die_on_error:
                     self.logger.warning(__name__ +
@@ -622,7 +626,7 @@ class BaseLFJsonRequest:
 
             except urllib.error.URLError as uerror:
                 if (url.endswith("endsession")):
-                    logging.info("lfclient close connection before script exit")
+                    logging.info("lfclient closed connection before script exit")
                     die_on_error = True
                     break
                 else:
@@ -1323,8 +1327,8 @@ class BaseSession:
                               debug=debug,
                               response_json_list=responses,
                               wait_sec = 0,
-                              connection_timeout_sec = 0.5,
-                              max_timeout_sec = 1,
+                              connection_timeout_sec = 0.05,
+                              max_timeout_sec = 0.1,
                               session_id_=session_id_)
 
 # End of json_api.py; subclasses defined below
@@ -1360,12 +1364,15 @@ class LFJsonCommand(JsonCommand):
                  # non-alphanumeric characters in it. [W]
                  resource: int = None,                     # Resource number. [W]
                  shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                 response_json_list: list = None,
                  debug: bool = False,
+                 errors_warnings: list = None,
                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_adb(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_adb(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -1383,6 +1390,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/adb",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -1418,12 +1427,15 @@ class LFJsonCommand(JsonCommand):
                      resource: int = None,                     # Resource number. [W]
                      screen_size_prcnt: str = None,            # 0.1 to 1.0, screen size percentage for the Android display.
                      shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_adb_gui(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_adb_gui(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -1441,6 +1453,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/adb_gui",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -1475,12 +1489,15 @@ class LFJsonCommand(JsonCommand):
                             msg: str = None,                          # Entire event in human readable form.
                             status: str = None,                       # Status on what happened.
                             status2: str = None,                      # Status on what happened.
+                            response_json_list: list = None,
                             debug: bool = False,
+                            errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_adb_wifi_event(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_adb_wifi_event(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -1498,6 +1515,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/adb_wifi_event",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -1537,12 +1556,15 @@ class LFJsonCommand(JsonCommand):
                      sdk_release: str = None,                  # Android sdk release (example: 4.4.2)
                      sdk_version: str = None,                  # Android sdk version (example: 19)
                      shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_adb(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_adb(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -1570,6 +1592,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_adb",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -1615,12 +1639,15 @@ class LFJsonCommand(JsonCommand):
                           tos: str = None,                          # The Type of Service, can be HEX. See set_endp_tos for
                           # details.
                           p_type: str = None,                       # Endpoint Type : arm_udp. [W]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_arm_endp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_arm_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -1648,6 +1675,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_arm_endp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -1718,12 +1747,15 @@ class LFJsonCommand(JsonCommand):
                           resource: int = None,                     # Resource number. [W]
                           shelf: int = 1,                           # Shelf name/id. [R][D:1]
                           vr_id: str = None,                        # Name of virtual router. [R]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_bgp_peer(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_bgp_peer(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -1755,6 +1787,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_bgp_peer",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -1796,12 +1830,15 @@ class LFJsonCommand(JsonCommand):
                       port: str = None,                         # Name of the bond device. [W]
                       resource: int = None,                     # Resource number. [W]
                       shelf: int = 1,                           # Shelf number. [R][D:1]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_bond(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_bond(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -1817,6 +1854,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_bond",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -1864,12 +1903,15 @@ class LFJsonCommand(JsonCommand):
                     port: str = None,                         # Name of the bridge device. [W]
                     resource: int = None,                     # Resource number. [W]
                     shelf: int = 1,                           # Shelf number. [R][D:1]
+                    response_json_list: list = None,
                     debug: bool = False,
+                    errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_br(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_br(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -1897,6 +1939,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_br",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -1949,12 +1993,15 @@ class LFJsonCommand(JsonCommand):
                     # start/stop.
                     p_type: str = None,                       # CD Type: WIFI, WISER_SURFACE, WISER_SURFACE_AIR,
                     # WISER_AIR_AIR, WISER_NCW
+                    response_json_list: list = None,
                     debug: bool = False,
+                    errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_cd(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_cd(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -1978,6 +2025,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_cd",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -2012,12 +2061,15 @@ class LFJsonCommand(JsonCommand):
     def post_add_cd_endp(self, 
                          cd: str = None,                           # Name of Collision Domain. [R]
                          endp: str = None,                         # Endpoint name/id. [R]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_cd_endp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_cd_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -2029,6 +2081,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_cd_endp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -2057,12 +2111,15 @@ class LFJsonCommand(JsonCommand):
     def post_add_cd_vr(self, 
                        cd: str = None,                           # Name of Collision Domain. [R]
                        vr: str = None,                           # Virtual-Router name/ID. [R]
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_cd_vr(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_cd_vr(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -2074,6 +2131,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_cd_vr",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -2166,12 +2225,15 @@ class LFJsonCommand(JsonCommand):
                          width: str = None,                        # Width to be used when drawn in the LANforge-GUI.
                          x: str = None,                            # X coordinate to be used when drawn in the LANforge-GUI.
                          y: str = None,                            # Y coordinate to be used when drawn in the LANforge-GUI.
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_chamber(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_chamber(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -2219,6 +2281,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_chamber",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -2292,12 +2356,15 @@ class LFJsonCommand(JsonCommand):
                             zrssi5: str = None,                       # Specify 5Ghz zero-attenuation RSSI in 10ths of a db.
                             # Distance logic will consider this in its
                             # calculations.
+                            response_json_list: list = None,
                             debug: bool = False,
+                            errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_chamber_cx(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_chamber_cx(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -2327,6 +2394,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_chamber_cx",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -2367,12 +2436,15 @@ class LFJsonCommand(JsonCommand):
                               # text will be appended to existing text. <tt
                               # escapearg='false'>Unescaped Value</tt>
                               path: str = None,                         # Path Name [R]
+                              response_json_list: list = None,
                               debug: bool = False,
+                              errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_chamber_path(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_chamber_path(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -2386,6 +2458,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_chamber_path",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -2444,12 +2518,15 @@ class LFJsonCommand(JsonCommand):
                                span_num: str = None,                     # The span number. First span is 1, second is 2...
                                # [W]
                                p_type: str = None,                       # The channel-type. Use 'clear' for PPP links.
+                               response_json_list: list = None,
                                debug: bool = False,
+                               errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_channel_group(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_channel_group(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -2473,6 +2550,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_channel_group",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -2509,12 +2588,15 @@ class LFJsonCommand(JsonCommand):
                     rx_endp: str = None,                      # Name of Receiving endpoint. [W]
                     test_mgr: str = None,                     # Name of test-manager to create the CX on. [W][D:default_tm]
                     tx_endp: str = None,                      # Name of Transmitting endpoint. [R]
+                    response_json_list: list = None,
                     debug: bool = False,
+                    errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_cx(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_cx(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -2530,6 +2612,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_cx",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -2620,12 +2704,15 @@ class LFJsonCommand(JsonCommand):
                      top_left_x: str = None,                   # X Location for Chamber View.
                      top_left_y: str = None,                   # X Location for Chamber View.
                      wan_port: str = None,                     # IP/Mask for WAN port
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_dut(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_dut(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -2689,6 +2776,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_dut",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -2745,12 +2834,15 @@ class LFJsonCommand(JsonCommand):
                            text: str = None,                         # [BLANK] will erase all, any other text will be
                            # appended to existing text. <tt
                            # escapearg='false'>Unescaped Value</tt>
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_dut_notes(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_dut_notes(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -2762,6 +2854,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_dut_notes",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -2821,12 +2915,15 @@ class LFJsonCommand(JsonCommand):
                           ssid_flags: str = None,                   # SSID flags, see above.
                           ssid_flags_mask: str = None,              # SSID flags mask
                           ssid_idx: str = None,                     # Index of the SSID. Zero-based indexing: (0 - 7) [W]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_dut_ssid(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_dut_ssid(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -2848,6 +2945,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_dut_ssid",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -2939,12 +3038,15 @@ class LFJsonCommand(JsonCommand):
                       ttl: str = None,                          # Time-to-live, used by UDP Multicast Endpoints only.
                       p_type: str = None,                       # Endpoint Type: See above. [W]
                       use_checksum: str = None,                 # Yes means checksum the payload, anything else means NO.
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_endp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -2986,6 +3088,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_endp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -3033,12 +3137,15 @@ class LFJsonCommand(JsonCommand):
                        # a new one. [W][D:new]
                        name: str = None,                         # Event entity name.
                        priority: str = None,                     # See set_event_priority for available priorities.
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_event(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_event(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -3054,6 +3161,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_event",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -3177,12 +3286,15 @@ class LFJsonCommand(JsonCommand):
                            shelf: int = 1,                           # Shelf name/id. [R][D:1]
                            p_type: str = None,                       # Endpoint Type (like <tt>fe_nfs</tt>) [W]
                            volume: str = None,                       # iSCSI volume to mount
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_file_endp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_file_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -3226,6 +3338,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_file_endp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -3273,12 +3387,15 @@ class LFJsonCommand(JsonCommand):
                           resource: int = None,                     # Resource number. [W]
                           shelf: int = 1,                           # Shelf name/id. [R][D:1]
                           p_type: str = None,                       # Endpoint Type : gen_generic [W][D:gen_generic]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_gen_endp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_gen_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -3296,6 +3413,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_gen_endp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -3333,12 +3452,15 @@ class LFJsonCommand(JsonCommand):
                      # defaults.
                      resource: int = None,                     # Resource number. [W]
                      shelf: int = 1,                           # Shelf number. [R][D:1]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_gre(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_gre(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -3358,6 +3480,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_gre",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -3413,12 +3537,15 @@ class LFJsonCommand(JsonCommand):
                        # leave blank for all.
                        name: str = None,                         # The name of the test group. Must be unique across all
                        # groups. [R]
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_group(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_group(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -3432,6 +3559,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_group",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -3560,12 +3689,15 @@ class LFJsonCommand(JsonCommand):
                          user_agent: str = None,                   # User-Agent string. Leave blank for default. Also
                          # SMTP-TO:
                          # &lt;a@b.com&gt;&lt;c@d.com&gt;...&lt;q@x.com&gt;
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_l4_endp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_l4_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -3615,6 +3747,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_l4_endp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -3691,12 +3825,15 @@ class LFJsonCommand(JsonCommand):
                          # wiphy0 [W]
                          resource: int = None,                     # Resource number. [W]
                          shelf: int = 1,                           # Shelf number. [R][D:1]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_monitor(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_monitor(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -3720,6 +3857,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_monitor",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -3764,12 +3903,15 @@ class LFJsonCommand(JsonCommand):
                        # defaults.
                        resource: int = None,                     # Resource number. [W]
                        shelf: int = 1,                           # Shelf number. [R][D:1]
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_mvlan(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_mvlan(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -3793,6 +3935,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_mvlan",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -3855,12 +3999,15 @@ class LFJsonCommand(JsonCommand):
                           transport_type: str = None,               # What sort of transport this ppp link uses.
                           tty_transport_device: str = None,         # TTY device for PPP links associated with TTYs.
                           unit: str = None,                         # Unit number for the PPP link. ie, the 7 in ppp7. [W]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_ppp_link(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_ppp_link(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -3910,6 +4057,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_ppp_link",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -4041,12 +4190,15 @@ class LFJsonCommand(JsonCommand):
                          ssid: str = None,                         # WiFi SSID to be used, [BLANK] means any.
                          vid: str = None,                          # Vlan-ID (only valid for vlan profiles).
                          wifi_mode: str = None,                    # WiFi Mode for this profile.
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_profile(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_profile(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -4084,6 +4236,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_profile",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -4127,12 +4281,15 @@ class LFJsonCommand(JsonCommand):
                                text: str = None,                         # [BLANK] will erase all, any other text will be
                                # appended to existing text. <tt
                                # escapearg='false'>Unescaped Value</tt>
+                               response_json_list: list = None,
                                debug: bool = False,
+                               errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_profile_notes(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_profile_notes(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -4144,6 +4301,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_profile_notes",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -4176,12 +4335,15 @@ class LFJsonCommand(JsonCommand):
                      # defaults.
                      resource: int = None,                     # Resource number. [W]
                      shelf: int = 1,                           # Shelf number. [R][D:1]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_rdd(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_rdd(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -4199,6 +4361,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_rdd",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -4233,12 +4397,15 @@ class LFJsonCommand(JsonCommand):
                         # added. [W]
                         resource: int = None,                     # Resource number. [W]
                         shelf: int = 1,                           # Shelf number. [R][D:1]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_sec_ip(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_sec_ip(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -4254,6 +4421,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_sec_ip",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -4414,12 +4583,15 @@ class LFJsonCommand(JsonCommand):
                      x_coord: str = None,                      # Floating point number.
                      y_coord: str = None,                      # Floating point number.
                      z_coord: str = None,                      # Floating point number.
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_sta(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_sta(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -4471,6 +4643,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_sta",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -4555,12 +4729,15 @@ class LFJsonCommand(JsonCommand):
                          span_num: str = None,                     # The span number. First span is 1, second is 2... [W]
                          timing: str = None,                       # Timing: 0 == do not use, 1 == primary, 2 == secondary..
                          p_type: str = None,                       # Currently supported types listed above. [W]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_t1_span(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_t1_span(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -4594,6 +4771,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_t1_span",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -4637,12 +4816,15 @@ class LFJsonCommand(JsonCommand):
                            # escapearg='false'>Unescaped Value</tt>
                            p_type: str = None,                       # Text type identifier stream, for instance
                            # 'cv-connectivity' [R]
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_text_blob(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_text_blob(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -4656,6 +4838,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_text_blob",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -4685,12 +4869,15 @@ class LFJsonCommand(JsonCommand):
     def post_add_tgcx(self, 
                       cxname: str = None,                       # The name of the CX. [R]
                       tgname: str = None,                       # The name of the test group. [R]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_tgcx(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_tgcx(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -4702,6 +4889,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_tgcx",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -4756,12 +4945,15 @@ class LFJsonCommand(JsonCommand):
                            thresh_max: str = None,                   # Maximum acceptable value for this threshold.
                            thresh_min: str = None,                   # Minimum acceptable value for this threshold.
                            thresh_type: str = None,                  # Threshold type, integer, (see above).
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_threshold(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_threshold(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -4779,6 +4971,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_threshold",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -4810,12 +5004,15 @@ class LFJsonCommand(JsonCommand):
     def post_add_tm(self, 
                     name: str = None,                         # The name of the test manager. Must be unique across test
                     # managers. [R]
+                    response_json_list: list = None,
                     debug: bool = False,
+                    errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_tm(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_tm(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -4825,6 +5022,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_tm",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -4895,12 +5094,15 @@ class LFJsonCommand(JsonCommand):
                                  # point.
                                  traffic_profile_flags_mask: str = None,   # Specify what flags to set.
                                  p_type: str = None,                       # Profile type: See above. [W]
+                                 response_json_list: list = None,
                                  debug: bool = False,
+                                 errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_traffic_profile(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_traffic_profile(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -4928,6 +5130,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_traffic_profile",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -4966,12 +5170,15 @@ class LFJsonCommand(JsonCommand):
                                        text: str = None,                         # [BLANK] will erase all, any other text
                                        # will be appended to existing text. <tt
                                        # escapearg='false'>Unescaped Value</tt>
+                                       response_json_list: list = None,
                                        debug: bool = False,
+                                       errors_warnings: list = None,
                                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_traffic_profile_notes(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_traffic_profile_notes(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -4983,6 +5190,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_traffic_profile_notes",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -5113,12 +5322,15 @@ class LFJsonCommand(JsonCommand):
                      x_coord: str = None,                      # Floating point number.
                      y_coord: str = None,                      # Floating point number.
                      z_coord: str = None,                      # Floating point number.
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_vap(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_vap(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -5166,6 +5378,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_vap",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -5290,12 +5504,15 @@ class LFJsonCommand(JsonCommand):
                        x2: str = None,                           # Floating point coordinate for upper-right corner.
                        y1: str = None,                           # Floating point coordinate for lower-left corner.
                        y2: str = None,                           # Floating point coordinate for upper-right corner.
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_venue(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_venue(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -5323,6 +5540,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_venue",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -5365,12 +5584,15 @@ class LFJsonCommand(JsonCommand):
                       resource: int = None,                     # Resource number. [W]
                       shelf: int = 1,                           # Shelf number. [R][D:1]
                       vid: str = None,                          # The VLAN-ID for this 802.1Q VLAN interface. [W]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_vlan(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_vlan(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -5390,6 +5612,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_vlan",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -5447,12 +5671,15 @@ class LFJsonCommand(JsonCommand):
                            # on.
                            vad_timer: str = None,                    # How much silence (milliseconds) before VAD is
                            # enabled.
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_voip_endp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_voip_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -5494,6 +5721,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_voip_endp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -5579,12 +5808,15 @@ class LFJsonCommand(JsonCommand):
                     width: str = None,                        # Width to be used when drawn in the LANforge-GUI.
                     x: str = None,                            # X coordinate to be used when drawn in the LANforge-GUI.
                     y: str = None,                            # Y coordinate to be used when drawn in the LANforge-GUI.
+                    response_json_list: list = None,
                     debug: bool = False,
+                    errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_vr(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_vr(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -5612,6 +5844,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_vr",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -5684,12 +5918,15 @@ class LFJsonCommand(JsonCommand):
                         shelf: int = 1,                           # Shelf name/id. [R][D:1]
                         suppress: str = None,                     # Route flag damping cutoff threshold, in minutes.
                         vr_id: str = None,                        # Name of virtual router. [R]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_vr_bgp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_vr_bgp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -5721,6 +5958,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_vr_bgp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -5827,12 +6066,15 @@ class LFJsonCommand(JsonCommand):
                       width: str = None,                        # Width to be used when drawn in the LANforge-GUI.
                       x: str = None,                            # X coordinate to be used when drawn in the LANforge-GUI.
                       y: str = None,                            # Y coordinate to be used when drawn in the LANforge-GUI.
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_vrcx(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_vrcx(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -5902,6 +6144,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_vrcx",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -5978,12 +6222,15 @@ class LFJsonCommand(JsonCommand):
                        # aaaa:bbbb::0/64,cccc:dddd:eeee::0/64...
                        vr_name: str = None,                      # Virtual Router this endpoint belongs to. Use 'FREE_LIST'
                        # to add a stand-alone endpoint. [W][D:FREE_LIST]
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_vrcx2(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_vrcx2(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6011,6 +6258,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_vrcx2",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6096,12 +6345,15 @@ class LFJsonCommand(JsonCommand):
                          # Leave blank for no restrictions.
                          wanlink: str = None,                      # Name of WanLink to which we are adding this WanPath.
                          # [R]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_wanpath(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_wanpath(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6169,6 +6421,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_wanpath",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6242,12 +6496,15 @@ class LFJsonCommand(JsonCommand):
                          resource: int = None,                     # Resource number. [W]
                          shelf: int = 1,                           # Shelf name/id. [R][D:1]
                          wle_flags: str = None,                    # WanLink Endpoint specific flags, see above.
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_add_wl_endp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_add_wl_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6273,6 +6530,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/add_wl_endp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6314,12 +6573,15 @@ class LFJsonCommand(JsonCommand):
                    arg5: str = None,                         # Argument 4: table-speed
                    cmd: str = None,                          # Admin command:
                    # resync_clock|write_xorp_cfg|scan_complete|ifup_post_complete|flush_complete|req_migrate|rfgen|chamber|clean_logs
+                   response_json_list: list = None,
                    debug: bool = False,
+                   errors_warnings: list = None,
                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_admin(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_admin(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6337,6 +6599,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/admin",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6369,12 +6633,15 @@ class LFJsonCommand(JsonCommand):
                           resource: int = None,                     # The number of the resource in question, or 'ALL'. [W]
                           shelf: int = 1,                           # The number of the shelf in question, or 'ALL'.
                           # [R][D:ALL]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_apply_vr_cfg(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_apply_vr_cfg(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6386,6 +6653,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/apply_vr_cfg",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6416,12 +6685,15 @@ class LFJsonCommand(JsonCommand):
                               serno: str = None,                        # Serial number for requested Attenuator, or 'all'.
                               # [W]
                               shelf: int = 1,                           # Shelf number, usually 1. [R][D:1]
+                              response_json_list: list = None,
                               debug: bool = False,
+                              errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_blink_attenuator(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_blink_attenuator(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6435,6 +6707,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/blink_attenuator",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6493,12 +6767,15 @@ class LFJsonCommand(JsonCommand):
                           # Leave blank if you want stats only.
                           resource: int = None,                     # Resource number, or 'all'. [W]
                           shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_c_show_ports(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_c_show_ports(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6514,6 +6791,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/c_show_ports",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6545,12 +6824,15 @@ class LFJsonCommand(JsonCommand):
                            resource: int = None,                     # The number of the resource in question, or 'ALL'. [W]
                            shelf: int = 1,                           # The number of the shelf in question, or 'ALL'.
                            # [R][D:ALL]
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_cancel_vr_cfg(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_cancel_vr_cfg(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6562,6 +6844,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/cancel_vr_cfg",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6590,12 +6874,15 @@ class LFJsonCommand(JsonCommand):
     def post_clear_cd_counters(self, 
                                cd_name: str = None,                      # Name of Collision Domain, or 'all'. Null argument
                                # is same as 'all'. [W][D:all]
+                               response_json_list: list = None,
                                debug: bool = False,
+                               errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_clear_cd_counters(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_clear_cd_counters(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6605,6 +6892,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_cd_counters",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6632,12 +6921,15 @@ class LFJsonCommand(JsonCommand):
     def post_clear_cx_counters(self, 
                                cx_name: str = None,                      # Name of Cross Connect, or 'all'. Null argument is
                                # same as 'all'. [W][D:all]
+                               response_json_list: list = None,
                                debug: bool = False,
+                               errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_clear_cx_counters(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_clear_cx_counters(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6647,6 +6939,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_cx_counters",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6678,12 +6972,15 @@ class LFJsonCommand(JsonCommand):
                                  # the cfg-seq-no.
                                  just_latency: str = None,                 # Enter 'YES' if you only want to clear latency
                                  # counters, and see above for RXGAP.
+                                 response_json_list: list = None,
                                  debug: bool = False,
+                                 errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_clear_endp_counters(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_clear_endp_counters(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6697,6 +6994,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_endp_counters",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6725,12 +7024,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_clear_group(self, 
                          name: str = None,                         # The name of the test group. [W]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_clear_group(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_clear_group(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6740,6 +7042,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_group",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6782,12 +7086,15 @@ class LFJsonCommand(JsonCommand):
                                  # 'ALL'. [W]
                                  shelf: int = 1,                           # The number of the shelf in question, or 'ALL'.
                                  # [R][D:1]
+                                 response_json_list: list = None,
                                  debug: bool = False,
+                                 errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_clear_port_counters(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_clear_port_counters(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6803,6 +7110,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_port_counters",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6835,12 +7144,15 @@ class LFJsonCommand(JsonCommand):
                                      # 'ALL'. [W]
                                      shelf: int = 1,                           # The number of the shelf in question, or
                                      # 'ALL'. [R][D:1]
+                                     response_json_list: list = None,
                                      debug: bool = False,
+                                     errors_warnings: list = None,
                                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_clear_resource_counters(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_clear_resource_counters(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6852,6 +7164,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_resource_counters",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6880,12 +7194,15 @@ class LFJsonCommand(JsonCommand):
     def post_clear_wp_counters(self, 
                                endp_name: str = None,                    # Name of WanLink Endpoint. [W]
                                wp_name: str = None,                      # Name of WanPath to clear.
+                               response_json_list: list = None,
                                debug: bool = False,
+                               errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_clear_wp_counters(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_clear_wp_counters(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6897,6 +7214,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/clear_wp_counters",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6929,12 +7248,15 @@ class LFJsonCommand(JsonCommand):
                            # must be the password. Use IGNORE for no change.
                            super_user: str = None,                   # 1 If you want this user to have Administrative
                            # powers, 0 or blank otherwise.
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_create_client(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_create_client(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -6948,6 +7270,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/create_client",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -6993,12 +7317,15 @@ class LFJsonCommand(JsonCommand):
                   arg1: str = None,                         # Optional: Endpoint name to diag.
                   p_type: str = None,                       # Default (blank) is everything, options: alerts, license,
                   # counters, fds, clients, endpoints, shelf, iobuffer.
+                  response_json_list: list = None,
                   debug: bool = False,
+                  errors_warnings: list = None,
                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_diag(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_diag(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7010,6 +7337,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/diag",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7040,12 +7369,15 @@ class LFJsonCommand(JsonCommand):
                       resource: int = None,                     # Resource ID. Use if discovering Attenuators or ADB
                       # devices. [W]
                       shelf: int = 1,                           # Shelf-ID, only used if discovering Attenuators. [R][D:1]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_discover(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_discover(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7059,6 +7391,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/discover",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7088,12 +7422,15 @@ class LFJsonCommand(JsonCommand):
     def post_do_pesq(self, 
                      endp_name: str = None,                    # Name of Endpoint. [W]
                      result_file_name: str = None,             # The name of the file received by the endpoint. [W]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_do_pesq(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_do_pesq(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7105,6 +7442,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/do_pesq",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7147,12 +7486,15 @@ class LFJsonCommand(JsonCommand):
                   req_id: str = None,                       # Request identifier, uint32. Will be passed back in response
                   # frames.
                   shelf: int = 1,                           # Shelf ID [R][D:1]
+                  response_json_list: list = None,
                   debug: bool = False,
+                  errors_warnings: list = None,
                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_file(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_file(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7174,6 +7516,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/file",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7210,12 +7554,15 @@ class LFJsonCommand(JsonCommand):
                               serno: str = None,                        # Serial number for requested Attenuator, or 'all'.
                               # [W]
                               shelf: int = 1,                           # Shelf number, usually 1. [R][D:1]
+                              response_json_list: list = None,
                               debug: bool = False,
+                              errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_flash_attenuator(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_flash_attenuator(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7231,6 +7578,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/flash_attenuator",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7261,12 +7610,15 @@ class LFJsonCommand(JsonCommand):
     def post_getavglatency(self, 
                            aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
                            cx: str = None,                           # Cross-connect or Test-Group name [W]
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_getavglatency(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_getavglatency(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7278,6 +7630,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/getavglatency",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7306,12 +7660,15 @@ class LFJsonCommand(JsonCommand):
     def post_getinrxbps(self, 
                         aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                         cx: str = None,                           # Cross-connect or Test-Group name [W]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_getinrxbps(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_getinrxbps(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7323,6 +7680,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/getinrxbps",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7351,12 +7710,15 @@ class LFJsonCommand(JsonCommand):
     def post_getinrxrate(self, 
                          aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                          cx: str = None,                           # Cross-connect or Test-Group name [W]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_getinrxrate(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_getinrxrate(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7368,6 +7730,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/getinrxrate",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7396,12 +7760,15 @@ class LFJsonCommand(JsonCommand):
     def post_getintxrate(self, 
                          aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                          cx: str = None,                           # Cross-connect or Test-Group name [W]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_getintxrate(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_getintxrate(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7413,6 +7780,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/getintxrate",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7441,12 +7810,15 @@ class LFJsonCommand(JsonCommand):
     def post_getipadd(self, 
                       aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                       cx: str = None,                           # Cross-connect name [W]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_getipadd(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_getipadd(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7458,6 +7830,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/getipadd",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7486,12 +7860,15 @@ class LFJsonCommand(JsonCommand):
     def post_getmac(self, 
                     aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                     cx: str = None,                           # Cross-connect name [W]
+                    response_json_list: list = None,
                     debug: bool = False,
+                    errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_getmac(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_getmac(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7503,6 +7880,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/getmac",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7531,12 +7910,15 @@ class LFJsonCommand(JsonCommand):
     def post_getmask(self, 
                      aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                      cx: str = None,                           # Cross-connect name
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_getmask(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_getmask(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7548,6 +7930,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/getmask",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7576,12 +7960,15 @@ class LFJsonCommand(JsonCommand):
     def post_getpktdrops(self, 
                          aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
                          cx: str = None,                           # Cross-connect or Test-Group name [W]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_getpktdrops(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_getpktdrops(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7593,6 +7980,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/getpktdrops",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7621,12 +8010,15 @@ class LFJsonCommand(JsonCommand):
     def post_getrxendperrpkts(self, 
                               aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
                               cx: str = None,                           # Cross-connect or Test-Group name [W]
+                              response_json_list: list = None,
                               debug: bool = False,
+                              errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_getrxendperrpkts(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_getrxendperrpkts(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7638,6 +8030,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/getrxendperrpkts",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7666,12 +8060,15 @@ class LFJsonCommand(JsonCommand):
     def post_getrxpkts(self, 
                        aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                        cx: str = None,                           # Cross-connect or Test-Group name [W]
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_getrxpkts(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_getrxpkts(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7683,6 +8080,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/getrxpkts",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7711,12 +8110,15 @@ class LFJsonCommand(JsonCommand):
     def post_getrxporterrpkts(self, 
                               aorb: str = None,                         # For AtoB, enter 'B', for BtoA, enter 'A'.
                               cx: str = None,                           # Cross-connect name [W]
+                              response_json_list: list = None,
                               debug: bool = False,
+                              errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_getrxporterrpkts(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_getrxporterrpkts(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7728,6 +8130,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/getrxporterrpkts",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7756,12 +8160,15 @@ class LFJsonCommand(JsonCommand):
     def post_gettxpkts(self, 
                        aorb: str = None,                         # For endpoint a, enter 'A', for endpoint b, enter 'B'.
                        cx: str = None,                           # Cross-connect or Test-Group name [W]
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_gettxpkts(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_gettxpkts(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7773,6 +8180,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/gettxpkts",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7801,12 +8210,15 @@ class LFJsonCommand(JsonCommand):
     def post_gossip(self, 
                     message: str = None,                      # Message to show to others currently logged on. <tt
                     # escapearg='false'>Unescaped Value</tt> [W]
+                    response_json_list: list = None,
                     debug: bool = False,
+                    errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_gossip(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_gossip(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7816,6 +8228,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/gossip",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7842,12 +8256,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_help(self, 
                   command: str = None,                      # The command to get help for. Can be 'all', or blank.
+                  response_json_list: list = None,
                   debug: bool = False,
+                  errors_warnings: list = None,
                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_help(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_help(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7857,6 +8274,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/help",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7888,12 +8307,15 @@ class LFJsonCommand(JsonCommand):
                         # 'NA' for empty string.
                         resource: int = None,                     # The number of the resource in question. [W]
                         shelf: int = 1,                           # The number of the shelf in question. [R][D:1]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_init_wiser(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_init_wiser(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7909,6 +8331,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/init_wiser",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7941,12 +8365,15 @@ class LFJsonCommand(JsonCommand):
                       # show text.
                       show_file: str = None,                    # If 'yes', then show the license file, not the parsed
                       # license information.
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_licenses(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_licenses(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -7958,6 +8385,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/licenses",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -7992,12 +8421,15 @@ class LFJsonCommand(JsonCommand):
                   clean_profiles: str = None,               # If yes, then clean all profiles when overwrite is selected,
                   # otherwise they will be kept.
                   name: str = None,                         # The name of the database to load. (DFLT is the default) [W]
+                  response_json_list: list = None,
                   debug: bool = False,
+                  errors_warnings: list = None,
                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_load(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_load(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8015,6 +8447,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/load",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8067,12 +8501,15 @@ class LFJsonCommand(JsonCommand):
                          p_type: str = None,                       # journalctl, supplicant, lflogs, adb, hostapd [W]
                          user_key: str = None,                     # Key to use for keyed-text-message response when using
                          # stdout destination [W]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_log_capture(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_log_capture(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8094,6 +8531,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/log_capture",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8163,12 +8602,15 @@ class LFJsonCommand(JsonCommand):
     def post_log_level(self, 
                        level: str = None,                        # Integer corresponding to the logging flags. [W]
                        target: str = None,                       # Options: 'gnu' | [file-endp-name].
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_log_level(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_log_level(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8180,6 +8622,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/log_level",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8208,12 +8652,15 @@ class LFJsonCommand(JsonCommand):
     def post_log_msg(self, 
                      message: str = None,                      # Message to log. <tt escapearg='false'>Unescaped Value</tt>
                      # [W]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_log_msg(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_log_msg(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8223,6 +8670,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/log_msg",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8252,12 +8701,15 @@ class LFJsonCommand(JsonCommand):
                    # [W]
                    password: str = None,                     # Can be blank or 'NA' if no password is set, otherwise must be
                    # the password.
+                   response_json_list: list = None,
                    debug: bool = False,
+                   errors_warnings: list = None,
                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_login(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_login(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8269,6 +8721,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/login",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8295,17 +8749,22 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#motd
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_motd(self, 
+                  response_json_list: list = None,
                   debug: bool = False,
+                  errors_warnings: list = None,
                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_motd(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_motd(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
         response = self.json_post(url="/cli-json/motd",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8333,12 +8792,15 @@ class LFJsonCommand(JsonCommand):
                         collision_domain: str = None,             # Name of the Collision Domain, or 'all'. [W]
                         resource: int = None,                     # Resource number, or 'all'. [W]
                         shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_nc_show_cd(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_nc_show_cd(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8352,6 +8814,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_cd",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8382,12 +8846,15 @@ class LFJsonCommand(JsonCommand):
                                     channel_name: str = None,                 # Name of the channel, or 'all'. [W]
                                     resource: int = None,                     # Resource number, or 'all'. [W]
                                     shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                                    response_json_list: list = None,
                                     debug: bool = False,
+                                    errors_warnings: list = None,
                                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_nc_show_channel_groups(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_nc_show_channel_groups(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8401,6 +8868,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_channel_groups",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8430,12 +8899,15 @@ class LFJsonCommand(JsonCommand):
     def post_nc_show_endpoints(self, 
                                endpoint: str = None,                     # Name of endpoint, or 'all'. [W]
                                extra: str = None,                        # See above.
+                               response_json_list: list = None,
                                debug: bool = False,
+                               errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_nc_show_endpoints(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_nc_show_endpoints(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8447,6 +8919,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_endpoints",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8474,12 +8948,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_nc_show_pesq(self, 
                           endpoint: str = None,                     # Name of endpoint, or 'all'. [W]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_nc_show_pesq(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_nc_show_pesq(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8489,6 +8966,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_pesq",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8545,12 +9024,15 @@ class LFJsonCommand(JsonCommand):
                            # Leave blank if you want stats only.
                            resource: int = None,                     # Resource number, or 'all'. [W]
                            shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_nc_show_ports(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_nc_show_ports(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8566,6 +9048,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_ports",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8597,12 +9081,15 @@ class LFJsonCommand(JsonCommand):
                                link_num: str = None,                     # Ppp-Link number of the span, or 'all'. [W]
                                resource: int = None,                     # Resource number, or 'all'. [W]
                                shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                               response_json_list: list = None,
                                debug: bool = False,
+                               errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_nc_show_ppp_links(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_nc_show_ppp_links(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8616,6 +9103,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_ppp_links",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8646,12 +9135,15 @@ class LFJsonCommand(JsonCommand):
                            resource: int = None,                     # Resource number, or 'all'. [W]
                            shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
                            span_number: str = None,                  # Span-Number of the span, or 'all'. [W]
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_nc_show_spans(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_nc_show_spans(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8665,6 +9157,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_spans",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8695,12 +9189,15 @@ class LFJsonCommand(JsonCommand):
                         resource: int = None,                     # Resource number, or 'all'. [W]
                         router: str = None,                       # Name of the Virtual Router, or 'all'. [W]
                         shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_nc_show_vr(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_nc_show_vr(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8714,6 +9211,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_vr",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8744,12 +9243,15 @@ class LFJsonCommand(JsonCommand):
                           cx_name: str = None,                      # Name of the Virtual Router Connection, or 'all'. [W]
                           resource: int = None,                     # Resource number, or 'all'. [W]
                           shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_nc_show_vrcx(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_nc_show_vrcx(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8763,6 +9265,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/nc_show_vrcx",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8801,12 +9305,15 @@ class LFJsonCommand(JsonCommand):
                          # first one.
                          port: str = None,                         # Interface name. [W]
                          reason: str = None,                       # DHCP reason, informational mostly.
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_notify_dhcp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_notify_dhcp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8832,6 +9339,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/notify_dhcp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8869,12 +9378,15 @@ class LFJsonCommand(JsonCommand):
                                   port: str = None,                         # The port in question. [W]
                                   p_type: str = None,                       # SUNOS, NORMAL, or SECIP..let us know what kind
                                   # of reset completed.
+                                  response_json_list: list = None,
                                   debug: bool = False,
+                                  errors_warnings: list = None,
                                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_port_reset_completed(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_port_reset_completed(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8888,6 +9400,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/port_reset_completed",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8921,12 +9435,15 @@ class LFJsonCommand(JsonCommand):
                         port: str = None,                         # Port number or name [W]
                         resource: int = None,                     # Resource number. [W]
                         shelf: int = 1,                           # Shelf number. [R][D:1]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_probe_port(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_probe_port(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8942,6 +9459,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/probe_port",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -8972,12 +9491,15 @@ class LFJsonCommand(JsonCommand):
     def post_probe_ports(self, 
                          resource: int = None,                     # Resource number, or 'all'. [W]
                          shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_probe_ports(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_probe_ports(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -8989,6 +9511,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/probe_ports",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9016,12 +9540,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_quiesce_endp(self, 
                           endp_name: str = None,                    # Name of the endpoint, or 'all'. [R]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_quiesce_endp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_quiesce_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9031,6 +9558,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/quiesce_endp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9057,12 +9586,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_quiesce_group(self, 
                            name: str = None,                         # The name of the test group, or 'all' [R]
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_quiesce_group(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_quiesce_group(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9072,6 +9604,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/quiesce_group",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9097,17 +9631,22 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#quit
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_quit(self, 
+                  response_json_list: list = None,
                   debug: bool = False,
+                  errors_warnings: list = None,
                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_quit(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_quit(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
         response = self.json_post(url="/cli-json/quit",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9134,12 +9673,15 @@ class LFJsonCommand(JsonCommand):
     def post_reboot_os(self, 
                        resource: int = None,                     # Resource number, or ALL. [W]
                        shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_reboot_os(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_reboot_os(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9151,6 +9693,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/reboot_os",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9182,12 +9726,15 @@ class LFJsonCommand(JsonCommand):
                     save_endps: str = None,                   # Should we save endpoint reports or not. (YES, NO or NA)
                     save_ports: str = None,                   # Should we save Port reports or not. (YES, NO or NA)
                     save_resource: str = None,                # Should we save Resource reports or not. (YES, NO or NA)
+                    response_json_list: list = None,
                     debug: bool = False,
+                    errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_report(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_report(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9205,6 +9752,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/report",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9249,12 +9798,15 @@ class LFJsonCommand(JsonCommand):
                         # Otherwise, it will be updated.
                         resource: int = None,                     # Resource number, or ALL. [W]
                         shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_reset_port(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_reset_port(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9272,6 +9824,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/reset_port",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9304,12 +9858,15 @@ class LFJsonCommand(JsonCommand):
                                resource: int = None,                     # Resource (machine) number. [W]
                                shelf: int = 1,                           # Shelf number [R][D:1]
                                span: str = None,                         # Serial-Span number to reset. [W]
+                               response_json_list: list = None,
                                debug: bool = False,
+                               errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_reset_serial_span(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_reset_serial_span(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9323,6 +9880,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/reset_serial_span",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9353,12 +9912,15 @@ class LFJsonCommand(JsonCommand):
                     adb_id: str = None,                       # Android device identifier (serial number).
                     resource: int = None,                     # Resource number. [W]
                     shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                    response_json_list: list = None,
                     debug: bool = False,
+                    errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_adb(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_adb(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9372,6 +9934,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_adb",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9402,12 +9966,15 @@ class LFJsonCommand(JsonCommand):
                            resource: int = None,                     # Resource number [W]
                            serno: str = None,                        # Serial number for requested Attenuator. [W]
                            shelf: int = 1,                           # Shelf number, usually 1 [R][D:1]
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_attenuator(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_attenuator(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9421,6 +9988,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_attenuator",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9449,12 +10018,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_cd(self, 
                    cd: str = None,                           # Name of Collision Domain. [W]
+                   response_json_list: list = None,
                    debug: bool = False,
+                   errors_warnings: list = None,
                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_cd(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_cd(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9464,6 +10036,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_cd",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9491,12 +10065,15 @@ class LFJsonCommand(JsonCommand):
     def post_rm_cd_endp(self, 
                         cd: str = None,                           # Name of Collision Domain. [W]
                         endp: str = None,                         # Endpoint name/id. [W]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_cd_endp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_cd_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9508,6 +10085,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_cd_endp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9536,12 +10115,15 @@ class LFJsonCommand(JsonCommand):
     def post_rm_cd_vr(self, 
                       cd: str = None,                           # Name of Collision Domain. [W]
                       endp: str = None,                         # Virtual-Router name/id. [W]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_cd_vr(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_cd_vr(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9553,6 +10135,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_cd_vr",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9580,12 +10164,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_chamber(self, 
                         chamber: str = None,                      # Chamber name, or 'ALL' [W]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_chamber(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_chamber(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9595,6 +10182,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_chamber",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9622,12 +10211,15 @@ class LFJsonCommand(JsonCommand):
     def post_rm_chamber_path(self, 
                              chamber: str = None,                      # Chamber Name. [W]
                              path: str = None,                         # Path Name, use 'ALL' to delete all paths. [W]
+                             response_json_list: list = None,
                              debug: bool = False,
+                             errors_warnings: list = None,
                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_chamber_path(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_chamber_path(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9639,6 +10231,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_chamber_path",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9668,12 +10262,15 @@ class LFJsonCommand(JsonCommand):
                               channel_name: str = None,                 # Name of the channel, or 'all'. [W]
                               resource: int = None,                     # Resource number, or 'all'. [W]
                               shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                              response_json_list: list = None,
                               debug: bool = False,
+                              errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_channel_group(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_channel_group(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9687,6 +10284,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_channel_group",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9716,12 +10315,15 @@ class LFJsonCommand(JsonCommand):
     def post_rm_client(self, 
                        client_name: str = None,                  # Name of the client profile you wish to remove. [W]
                        client_password: str = None,              # Client password. Not required if we are super-user.
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_client(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_client(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9733,6 +10335,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_client",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9761,12 +10365,15 @@ class LFJsonCommand(JsonCommand):
     def post_rm_cx(self, 
                    cx_name: str = None,                      # Name of the cross-connect, or 'all'. [W]
                    test_mgr: str = None,                     # Name of test-mgr, or 'all'. [W]
+                   response_json_list: list = None,
                    debug: bool = False,
+                   errors_warnings: list = None,
                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_cx(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_cx(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9778,6 +10385,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_cx",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9805,12 +10414,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_db(self, 
                    db_name: str = None,                      # Name of the database to delete. [W]
+                   response_json_list: list = None,
                    debug: bool = False,
+                   errors_warnings: list = None,
                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_db(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_db(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9820,6 +10432,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_db",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9846,12 +10460,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_dut(self, 
                     shelf: int = 1,                           # DUT name, or 'ALL' [W]
+                    response_json_list: list = None,
                     debug: bool = False,
+                    errors_warnings: list = None,
                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_dut(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_dut(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9861,6 +10478,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_dut",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9887,12 +10506,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_endp(self, 
                      endp_name: str = None,                    # Name of the endpoint, or 'YES_ALL'. [W]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_endp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9902,6 +10524,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_endp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9928,12 +10552,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_event(self, 
                       event_id: str = None,                     # Numeric event-id, or 'all' [W]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_event(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_event(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9943,6 +10570,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_event",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -9969,12 +10598,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_group(self, 
                       name: str = None,                         # The name of the test group. [W]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_group(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_group(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -9984,6 +10616,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_group",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10012,12 +10646,15 @@ class LFJsonCommand(JsonCommand):
                          resource: int = None,                     # Resource number that holds this PppLink. [W]
                          shelf: int = 1,                           # Name/id of the shelf. [R][D:1]
                          unit_num: str = None,                     # Unit-Number for the PppLink to be deleted. [W]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_ppp_link(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_ppp_link(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10031,6 +10668,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_ppp_link",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10059,12 +10698,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_profile(self, 
                         name: str = None,                         # Profile name, or 'ALL' [W]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_profile(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_profile(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10074,6 +10716,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_profile",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10101,12 +10745,15 @@ class LFJsonCommand(JsonCommand):
     def post_rm_resource(self, 
                          resource: int = None,                     # Resource number. [W]
                          shelf: int = 1,                           # Shelf number. [R][D:1]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_resource(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_resource(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10118,6 +10765,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_resource",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10146,12 +10795,15 @@ class LFJsonCommand(JsonCommand):
     def post_rm_rfgen(self, 
                       resource: int = None,                     # Resource number [W]
                       shelf: int = 1,                           # Shelf number, usually 1 [R][D:1]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_rfgen(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_rfgen(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10163,6 +10815,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_rfgen",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10194,12 +10848,15 @@ class LFJsonCommand(JsonCommand):
                        # be removed. [W]
                        resource: int = None,                     # Resource number. [W]
                        shelf: int = 1,                           # Shelf number. [R][D:1]
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_sec_ip(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_sec_ip(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10215,6 +10872,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_sec_ip",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10246,12 +10905,15 @@ class LFJsonCommand(JsonCommand):
                      resource: int = None,                     # Resource number, or 'all'. [W]
                      shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
                      span_num: str = None,                     # Span-Number of the channel, or 'all'. [W]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_span(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_span(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10265,6 +10927,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_span",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10293,12 +10957,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_test_mgr(self, 
                          test_mgr: str = None,                     # Name of the test manager to be removed. [W]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_test_mgr(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_test_mgr(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10308,6 +10975,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_test_mgr",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10335,12 +11004,15 @@ class LFJsonCommand(JsonCommand):
     def post_rm_text_blob(self, 
                           name: str = None,                         # Text Blob Name, or 'ALL' [W]
                           p_type: str = None,                       # Text Blob type, or 'ALL' [W]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_text_blob(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_text_blob(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10352,6 +11024,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_text_blob",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10380,12 +11054,15 @@ class LFJsonCommand(JsonCommand):
     def post_rm_tgcx(self, 
                      cxname: str = None,                       # The name of the CX. [W]
                      tgname: str = None,                       # The name of the test group. [W]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_tgcx(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_tgcx(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10397,6 +11074,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_tgcx",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10425,12 +11104,15 @@ class LFJsonCommand(JsonCommand):
     def post_rm_threshold(self, 
                           endp: str = None,                         # Endpoint name or ID. [W]
                           thresh_id: str = None,                    # Threshold ID to remove. Use 'all' to remove all. [W]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_threshold(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_threshold(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10442,6 +11124,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_threshold",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10469,12 +11153,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_rm_traffic_profile(self, 
                                 name: str = None,                         # Profile name, or 'ALL' [W]
+                                response_json_list: list = None,
                                 debug: bool = False,
+                                errors_warnings: list = None,
                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_traffic_profile(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_traffic_profile(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10484,6 +11171,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_traffic_profile",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10513,12 +11202,15 @@ class LFJsonCommand(JsonCommand):
                       shelf: int = 1,                           # Shelf number. [R][D:1]
                       venu_id: str = None,                      # Number to uniquely identify this venue on this resource,
                       # or 'ALL' [W]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_venue(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_venue(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10532,6 +11224,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_venue",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10562,12 +11256,15 @@ class LFJsonCommand(JsonCommand):
                      port: str = None,                         # Port number or name of the virtual interface. [W]
                      resource: int = None,                     # Resource number. [W]
                      shelf: int = 1,                           # Shelf number. [R][D:1]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_vlan(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_vlan(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10581,6 +11278,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_vlan",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10611,12 +11310,15 @@ class LFJsonCommand(JsonCommand):
                    resource: int = None,                     # Resource number, or 'all'. [W]
                    router_name: str = None,                  # Virtual Router name, or 'all'. [W]
                    shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                   response_json_list: list = None,
                    debug: bool = False,
+                   errors_warnings: list = None,
                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_vr(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_vr(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10630,6 +11332,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_vr",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10665,12 +11369,15 @@ class LFJsonCommand(JsonCommand):
                      # free-list.
                      vrcx_only: str = None,                    # If we should NOT delete underlying auto-created objects,
                      # enter 'vrcx_only' here, otherwise leave blank or use NA.
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_vrcx(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_vrcx(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10688,6 +11395,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_vrcx",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10719,12 +11428,15 @@ class LFJsonCommand(JsonCommand):
     def post_rm_wanpath(self, 
                         endp_name: str = None,                    # Name of the endpoint. [W]
                         wp_name: str = None,                      # Name of the wanpath. [W]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rm_wanpath(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rm_wanpath(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10736,6 +11448,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rm_wanpath",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10769,12 +11483,15 @@ class LFJsonCommand(JsonCommand):
                         name: str = None,                         # Script name. [W]
                         private: str = None,                      # Private encoding for the particular script.
                         p_type: str = None,                       # One of: NONE, Script2544, ScriptHunt, ScriptWL
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_rpt_script(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_rpt_script(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10796,6 +11513,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/rpt_script",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10841,12 +11560,15 @@ class LFJsonCommand(JsonCommand):
                        port: str = None,                         # Port number or name of the virtual interface. [W]
                        resource: int = None,                     # Resource number. [W]
                        shelf: int = 1,                           # Shelf number. [R][D:1]
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_scan_wifi(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_scan_wifi(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10864,6 +11586,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/scan_wifi",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -10943,12 +11667,15 @@ class LFJsonCommand(JsonCommand):
                           udp_dst_min: str = None,                  # Minimum destination UDP port.
                           udp_src_max: str = None,                  # Maximum source UDP port.
                           udp_src_min: str = None,                  # Minimum source UDP port.
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_arm_info(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_arm_info(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -10994,6 +11721,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_arm_info",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11063,12 +11792,15 @@ class LFJsonCommand(JsonCommand):
                             # [W]
                             shelf: int = 1,                           # Shelf number, usually 1. [R][D:1]
                             val: str = None,                          # Requested attenution in 1/10ths of dB (ddB). [W]
+                            response_json_list: list = None,
                             debug: bool = False,
+                            errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_attenuator(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_attenuator(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11100,6 +11832,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_attenuator",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11144,12 +11878,15 @@ class LFJsonCommand(JsonCommand):
                          speed_rpm: str = None,                    # Speed in rpm (floating point number is accepted
                          tilt: str = None,                         # Absolute tilt in degrees.
                          turntable: str = None,                    # Turn-table address, for instance: 192.168.1.22:3001
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_chamber(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_chamber(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11169,6 +11906,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_chamber",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11206,12 +11945,15 @@ class LFJsonCommand(JsonCommand):
                                  milliseconds: str = None,                 # Report timer length in milliseconds.
                                  # [W,250-60000][D:5000]
                                  test_mgr: str = None,                     # Name of the test manager, or 'all'. [W]
+                                 response_json_list: list = None,
                                  debug: bool = False,
+                                 errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_cx_report_timer(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_cx_report_timer(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11227,6 +11969,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_cx_report_timer",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11270,12 +12014,15 @@ class LFJsonCommand(JsonCommand):
                           cx_state: str = None,                     # One of: RUNNING, SWITCH, QUIESCE, STOPPED, or DELETED.
                           # [W]
                           test_mgr: str = None,                     # Name of the test-manager, or 'all'. [W]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_cx_state(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_cx_state(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11289,6 +12036,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_cx_state",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11324,12 +12073,15 @@ class LFJsonCommand(JsonCommand):
                            min_port: str = None,                     # The Minimum IP Port. Used for TCP/IP and UDP/IP
                            # protocols.
                            name: str = None,                         # The name of the endpoint we are configuring. [R]
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_endp_addr(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_endp_addr(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11347,6 +12099,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_addr",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11404,12 +12158,15 @@ class LFJsonCommand(JsonCommand):
                               tcp_min_delack: str = None,               # NA: No longer supported.
                               tcp_mss: str = None,                      # TCP Maximum Segment Size, affects packet size on
                               # the wire (88 - 32767).
+                              response_json_list: list = None,
                               debug: bool = False,
+                              errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_endp_details(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_endp_details(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11451,6 +12208,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_details",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11503,12 +12262,15 @@ class LFJsonCommand(JsonCommand):
                            file: str = None,                         # The file name to read the playback packets from.
                            name: str = None,                         # The name of the endpoint we are configuring. [R]
                            playback: str = None,                     # Should we playback the capture or not? ON or OFF. [R]
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_endp_file(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_endp_file(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11522,6 +12284,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_file",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11570,12 +12334,15 @@ class LFJsonCommand(JsonCommand):
                            flag: str = None,                         # The name of the flag. [R]
                            name: str = None,                         # The name of the endpoint we are configuring. [R]
                            val: str = None,                          # Either 1 (for on), or 0 (for off). [R,0-1]
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_endp_flag(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_endp_flag(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11589,6 +12356,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_flag",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11639,12 +12408,15 @@ class LFJsonCommand(JsonCommand):
                               # Value</tt>
                               payload_type: str = None,                 # The payload type. See help for add_endp.
                               # [W][D:increasing]
+                              response_json_list: list = None,
                               debug: bool = False,
+                              errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_endp_payload(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_endp_payload(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11658,6 +12430,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_payload",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11692,12 +12466,15 @@ class LFJsonCommand(JsonCommand):
                                  # [R]
                                  use_checksum: str = None,                 # YES if use checksum on payload, anything else
                                  # for NO.
+                                 response_json_list: list = None,
                                  debug: bool = False,
+                                 errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_endp_pld_bounds(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_endp_pld_bounds(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11715,6 +12492,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_pld_bounds",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11748,12 +12527,15 @@ class LFJsonCommand(JsonCommand):
                             endp_name: str = None,                    # Name of endpoint. [W]
                             proxy_ip: str = None,                     # Proxy IP Address.
                             proxy_ip_port: str = None,                # Proxy IP Port.
+                            response_json_list: list = None,
                             debug: bool = False,
+                            errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_endp_proxy(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_endp_proxy(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11769,6 +12551,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_proxy",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11800,12 +12584,15 @@ class LFJsonCommand(JsonCommand):
                               name: str = None,                         # The name of the endpoint we are configuring. [R]
                               quiesce: str = None,                      # The number of seconds to quiesce this endpoint
                               # when told to quiesce. [R]
+                              response_json_list: list = None,
                               debug: bool = False,
+                              errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_endp_quiesce(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_endp_quiesce(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11817,6 +12604,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_quiesce",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11846,12 +12635,15 @@ class LFJsonCommand(JsonCommand):
                                    endp_name: str = None,                    # Name of endpoint. [R]
                                    milliseconds: str = None,                 # Report timer length in milliseconds.
                                    # [W,250-60000][D:5000]
+                                   response_json_list: list = None,
                                    debug: bool = False,
+                                   errors_warnings: list = None,
                                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_endp_report_timer(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_endp_report_timer(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11863,6 +12655,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_report_timer",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11902,12 +12696,15 @@ class LFJsonCommand(JsonCommand):
                           name: str = None,                         # The name of the endpoint we are configuring. [R]
                           priority: str = None,                     # The socket priority, can be any positive number.
                           tos: str = None,                          # The Type of Service, can be HEX, see above.
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_endp_tos(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_endp_tos(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11921,6 +12718,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_tos",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -11954,12 +12753,15 @@ class LFJsonCommand(JsonCommand):
                                 min_tx_rate: str = None,                  # The minimum transmit rate, in bits per second
                                 # (bps).
                                 name: str = None,                         # The name of the endpoint we are configuring. [R]
+                                response_json_list: list = None,
                                 debug: bool = False,
+                                errors_warnings: list = None,
                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_endp_tx_bounds(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_endp_tx_bounds(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -11975,6 +12777,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_endp_tx_bounds",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -12116,12 +12920,15 @@ class LFJsonCommand(JsonCommand):
                                 events3: str = None,                      # See description for possible values.
                                 events4: str = None,                      # See description for possible values.
                                 var1: str = None,                         # Currently un-used.
+                                response_json_list: list = None,
                                 debug: bool = False,
+                                errors_warnings: list = None,
                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_event_interest(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_event_interest(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -12143,6 +12950,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_event_interest",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -12216,12 +13025,15 @@ class LFJsonCommand(JsonCommand):
                                 event: str = None,                        # Number or name for the event, see above.
                                 # [R,0-21]
                                 priority: str = None,                     # Number or name for the priority. [R,0-5]
+                                response_json_list: list = None,
                                 debug: bool = False,
+                                errors_warnings: list = None,
                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_event_priority(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_event_priority(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -12233,6 +13045,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_event_priority",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -12271,12 +13085,15 @@ class LFJsonCommand(JsonCommand):
                          prefix: str = None,                       # The prefix of the file(s) to read/write.
                          quiesce_after_files: str = None,          # If non-zero, quiesce test after this many files have
                          # been read/written.
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_fe_info(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_fe_info(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -12304,6 +13121,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_fe_info",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -12355,12 +13174,15 @@ class LFJsonCommand(JsonCommand):
                       # admin privileges.
                       flag: str = None,                         # The name of the flag. [R]
                       val: str = None,                          # Either 1 (for on), or 0 (for off). [R,0-1]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_flag(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_flag(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -12374,6 +13196,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_flag",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -12404,12 +13228,15 @@ class LFJsonCommand(JsonCommand):
                          command: str = None,                      # The rest of the command line arguments. <tt
                          # escapearg='false'>Unescaped Value</tt> [R]
                          name: str = None,                         # The name of the file endpoint we are configuring. [R]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_gen_cmd(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_gen_cmd(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -12421,6 +13248,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_gen_cmd",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -12455,12 +13284,15 @@ class LFJsonCommand(JsonCommand):
                           resource: int = None,                     # Resource number for the port to be modified. [W]
                           shelf: int = 1,                           # Shelf number for the port to be modified, or SELF.
                           # [R][D:1]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_gps_info(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_gps_info(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -12482,6 +13314,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_gps_info",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -12521,12 +13355,15 @@ class LFJsonCommand(JsonCommand):
                              # [W]
                              resource: int = None,                     # Resource number. [W]
                              shelf: int = 1,                           # Shelf number. [R][D:1]
+                             response_json_list: list = None,
                              debug: bool = False,
+                             errors_warnings: list = None,
                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_ifup_script(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_ifup_script(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -12544,6 +13381,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_ifup_script",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -12575,12 +13414,15 @@ class LFJsonCommand(JsonCommand):
     def post_set_license(self, 
                          licenses: str = None,                     # License keys all appended into a single line. <tt
                          # escapearg='false'>Unescaped Value</tt> [W]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_license(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_license(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -12590,6 +13432,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_license",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -12621,12 +13465,15 @@ class LFJsonCommand(JsonCommand):
                          name: str = None,                         # The name of the endpoint we are configuring. [R]
                          rcv_mcast: str = None,                    # Should we attempt to receive? Values: Yes or No
                          ttl: str = None,                          # Time to live for the multicast packets generated.
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_mc_endp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_mc_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -12644,6 +13491,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_mc_endp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -12677,12 +13526,15 @@ class LFJsonCommand(JsonCommand):
                           # client.
                           new_password: str = None,                 # New password, or 'NA' for blank password. [W]
                           old_password: str = None,                 # Old password, or 'NA' for blank password. [W]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_password(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_password(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -12696,6 +13548,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_password",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -12732,12 +13586,15 @@ class LFJsonCommand(JsonCommand):
 
     def post_set_poll_mode(self, 
                            mode: str = None,                         # 'polling' or 'push'. [R]
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_poll_mode(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_poll_mode(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -12747,6 +13604,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_poll_mode",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -13017,12 +13876,15 @@ class LFJsonCommand(JsonCommand):
                       sta_br_id: str = None,                    # WiFi STAtion bridge ID. Zero means none.
                       tx_queue_len: str = None,                 # Transmit Queue Length for this interface. Can be blank or
                       # NA.
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_port(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_port(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -13104,6 +13966,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_port",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -13170,12 +14034,15 @@ class LFJsonCommand(JsonCommand):
                        port: str = None,                         # Port identifier. [R]
                        resource: int = None,                     # Resource number for the port to be modified. [W]
                        shelf: int = 1,                           # Shelf number for the port to be modified. [R][D:1]
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_port2(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_port2(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -13191,6 +14058,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_port2",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -13226,12 +14095,15 @@ class LFJsonCommand(JsonCommand):
                             shelf: int = 1,                           # Shelf number for the port to be modified. [R][D:1]
                             vport: str = None,                        # Virtual port identifier. MAC for MAC-VLANs, VLAN-ID
                             # for 802.1Q vlans.
+                            response_json_list: list = None,
                             debug: bool = False,
+                            errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_port_alias(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_port_alias(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -13249,6 +14121,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_port_alias",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -13282,12 +14156,15 @@ class LFJsonCommand(JsonCommand):
                                 ppp_state: str = None,                    # One of: RUNNING, STOPPED, or DELETED. [R]
                                 resource: int = None,                     # Number of the Resource, or 'all'. [W]
                                 shelf: int = 1,                           # Name of the Shelf, or 'all'. [R][D:1]
+                                response_json_list: list = None,
                                 debug: bool = False,
+                                errors_warnings: list = None,
                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_ppp_link_state(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_ppp_link_state(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -13303,6 +14180,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_ppp_link_state",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -13356,12 +14235,15 @@ class LFJsonCommand(JsonCommand):
                           top_left_y: str = None,                   # X Location for Chamber View.
                           user_name: str = None,                    # Store user-name configured for this Resource. Only
                           # settable during DB load.
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_resource(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_resource(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -13393,6 +14275,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_resource",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -13464,12 +14348,15 @@ class LFJsonCommand(JsonCommand):
                        rfgen_flags_mask: str = None,             # Mask of what flags to set, see above.
                        shelf: int = 1,                           # Shelf number, usually 1. [R][D:1]
                        sweep_time_ms: str = None,                # Time interval between pulse groups in miliseconds
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_rfgen(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_rfgen(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -13503,6 +14390,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_rfgen",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -13596,12 +14485,15 @@ class LFJsonCommand(JsonCommand):
                         private: str = None,                      # Private encoding for the particular script.
                         p_type: str = None,                       # One of: NONE, Script2544, ScriptHunt, ScriptWL,
                         # ScriptAtten
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_script(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_script(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -13623,6 +14515,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_script",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -13659,12 +14553,15 @@ class LFJsonCommand(JsonCommand):
                         # added. [R]
                         resource: int = None,                     # Resource number. [W]
                         shelf: int = 1,                           # Shelf number. [R][D:1]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_sec_ip(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_sec_ip(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -13680,6 +14577,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_sec_ip",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -13711,12 +14610,15 @@ class LFJsonCommand(JsonCommand):
                          resource: int = None,                     # Number of the Resource, or <tt>all</tt>. [W]
                          shelf: int = 1,                           # Name of the Shelf, or <tt>all</tt>. [R][D:1]
                          test_id: str = None,                      # Up to 15 character identifier.
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_test_id(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_test_id(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -13730,6 +14632,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_test_id",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -13783,12 +14687,15 @@ class LFJsonCommand(JsonCommand):
                            # before flagging call as no-answer.
                            sound_dev: str = None,                    # Which sound device should we play sound to. (see
                            # set_endp_flags).
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_voip_info(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_voip_info(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -13832,6 +14739,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_voip_info",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -13887,12 +14796,15 @@ class LFJsonCommand(JsonCommand):
                            # [W][D:FREE_LIST]
                            wanlink: str = None,                      # The name of the WanLink that connects the two B
                            # ports.
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_vrcx_cost(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_vrcx_cost(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -13918,6 +14830,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_vrcx_cost",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -13979,12 +14893,15 @@ class LFJsonCommand(JsonCommand):
                               # make a packet out of order.
                               speed: str = None,                        # The maximum speed of traffic this endpoint will
                               # accept (bps).
+                              response_json_list: list = None,
                               debug: bool = False,
+                              errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_wanlink_info(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_wanlink_info(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -14022,6 +14939,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wanlink_info",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -14073,12 +14992,15 @@ class LFJsonCommand(JsonCommand):
                               directory: str = None,                    # The directory name in which packet capture files
                               # will be written.
                               name: str = None,                         # The name of the endpoint we are configuring. [R]
+                              response_json_list: list = None,
                               debug: bool = False,
+                              errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_wanlink_pcap(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_wanlink_pcap(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -14092,6 +15014,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wanlink_pcap",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -14155,12 +15079,15 @@ class LFJsonCommand(JsonCommand):
                                     path: str = None,                         # WanPath name [R]
                                     rate: str = None,                         # Specifies how often, per million, this
                                     # corruption should be applied.
+                                    response_json_list: list = None,
                                     debug: bool = False,
+                                    errors_warnings: list = None,
                                     suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_wanpath_corruption(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_wanpath_corruption(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -14184,6 +15111,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wanpath_corruption",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -14229,12 +15158,15 @@ class LFJsonCommand(JsonCommand):
                                 wl_name: str = None,                      # The name of the WanLink endpoint we are
                                 # configuring. [R]
                                 wp_name: str = None,                      # The name of the WanPath we are configuring. [R]
+                                response_json_list: list = None,
                                 debug: bool = False,
+                                errors_warnings: list = None,
                                 suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_wanpath_filter(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_wanpath_filter(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -14258,6 +15190,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wanpath_filter",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -14304,12 +15238,15 @@ class LFJsonCommand(JsonCommand):
                                  wl_name: str = None,                      # The name of the WanLink endpoint we are
                                  # configuring. [R]
                                  wp_name: str = None,                      # The name of the WanPath we are configuring. [R]
+                                 response_json_list: list = None,
                                  debug: bool = False,
+                                 errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_wanpath_running(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_wanpath_running(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -14323,6 +15260,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wanpath_running",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -14406,12 +15345,15 @@ class LFJsonCommand(JsonCommand):
                                   # kernel now.
                                   resource: int = None,                     # Resource number. [W]
                                   shelf: int = 1,                           # Shelf number. [R][D:1]
+                                  response_json_list: list = None,
                                   debug: bool = False,
+                                  errors_warnings: list = None,
                                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_wifi_corruptions(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_wifi_corruptions(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -14445,6 +15387,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wifi_corruptions",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -14490,12 +15434,15 @@ class LFJsonCommand(JsonCommand):
                              # escapearg='false'>Unescaped Value</tt> [W]
                              p_type: str = None,                       # NA for now, may specify specific locations later.
                              # [D:NA]
+                             response_json_list: list = None,
                              debug: bool = False,
+                             errors_warnings: list = None,
                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_wifi_custom(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_wifi_custom(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -14513,6 +15460,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wifi_custom",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -14587,12 +15536,15 @@ class LFJsonCommand(JsonCommand):
                             shelf: int = 1,                           # Shelf number. [R][D:1]
                             venue_group: str = None,                  # 802.11u Venue Group, integer. VAP only.
                             venue_type: str = None,                   # 802.11u Venue Type, integer. VAP only.
+                            response_json_list: list = None,
                             debug: bool = False,
+                            errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_wifi_extra(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_wifi_extra(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -14664,6 +15616,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wifi_extra",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -14743,12 +15697,15 @@ class LFJsonCommand(JsonCommand):
                              shelf: int = 1,                           # Shelf number. [R][D:1]
                              venue_id: str = None,                     # Venue-ID for this wifi device. VAP in same venue
                              # will share neigh reports as appropriate.
+                             response_json_list: list = None,
                              debug: bool = False,
+                             errors_warnings: list = None,
                              suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_wifi_extra2(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_wifi_extra2(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -14790,6 +15747,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wifi_extra2",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -14939,12 +15898,15 @@ class LFJsonCommand(JsonCommand):
                             txpower: str = None,                      # The transmit power setting for this radio. (AUTO for
                             # system defaults)
                             vdev_count: str = None,                   # Configure radio vdev count.
+                            response_json_list: list = None,
                             debug: bool = False,
+                            errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_wifi_radio(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_wifi_radio(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15018,6 +15980,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wifi_radio",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15092,12 +16056,15 @@ class LFJsonCommand(JsonCommand):
                           txo_sgi: str = None,                      # Should rates be sent with short-guard-interval or not?
                           txo_txpower: str = None,                  # Configure TX power in db. Use 255 for system defaults.
                           # See notes above.
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_wifi_txo(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_wifi_txo(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15127,6 +16094,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wifi_txo",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15197,12 +16166,15 @@ class LFJsonCommand(JsonCommand):
                                name: str = None,                         # WanLink name [R]
                                rate: str = None,                         # Specifies how often, per million, this corruption
                                # should be applied.
+                               response_json_list: list = None,
                                debug: bool = False,
+                               errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_wl_corruption(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_wl_corruption(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15224,6 +16196,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wl_corruption",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15265,12 +16239,15 @@ class LFJsonCommand(JsonCommand):
     def post_set_wl_qdisc(self, 
                           name: str = None,                         # WanLink name [R]
                           qdisc: str = None,                        # FIFO, WRR,a,b,c,d,e,f,g etc [R]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_set_wl_qdisc(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_set_wl_qdisc(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15282,6 +16259,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/set_wl_qdisc",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15311,12 +16290,15 @@ class LFJsonCommand(JsonCommand):
                       resource: int = None,                     # Resource number, or 'all'. [W]
                       serno: str = None,                        # Serial number for requested ADB device, or 'all'. [W]
                       shelf: int = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_adb(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_adb(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15330,6 +16312,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_adb",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15381,12 +16365,15 @@ class LFJsonCommand(JsonCommand):
                          port: str = None,                         # Alert port filter (can be port name or number).
                          shelf: int = 1,                           # Alert shelf filter.
                          p_type: str = None,                       # Alert type filter. [R]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_alerts(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_alerts(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15406,6 +16393,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_alerts",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15440,12 +16429,15 @@ class LFJsonCommand(JsonCommand):
                               serno: str = None,                        # Serial number for requested Attenuator, or 'all'.
                               # [W]
                               shelf: int = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
+                              response_json_list: list = None,
                               debug: bool = False,
+                              errors_warnings: list = None,
                               suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_attenuators(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_attenuators(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15459,6 +16451,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_attenuators",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15489,12 +16483,15 @@ class LFJsonCommand(JsonCommand):
                      collision_domain: str = None,             # Name of the Collision Domain, or 'all'. [W]
                      resource: int = None,                     # Resource number, or 'all'. [W]
                      shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_cd(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_cd(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15508,6 +16505,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_cd",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15536,12 +16535,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_chamber(self, 
                           name: str = None,                         # Chamber Name or 'ALL'. [W][D:ALL]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_chamber(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_chamber(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15551,6 +16553,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_chamber",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15579,12 +16583,15 @@ class LFJsonCommand(JsonCommand):
                                  channel_name: str = None,                 # Name of the channel, or 'all'. [W]
                                  resource: int = None,                     # Resource number, or 'all'. [W]
                                  shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                                 response_json_list: list = None,
                                  debug: bool = False,
+                                 errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_channel_groups(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_channel_groups(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15598,6 +16605,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_channel_groups",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15625,17 +16634,22 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_clients
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_clients(self, 
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_clients(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_clients(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
         response = self.json_post(url="/cli-json/show_clients",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15662,12 +16676,15 @@ class LFJsonCommand(JsonCommand):
     def post_show_cx(self, 
                      cross_connect: str = None,                # Specify cross-connect to act on, or 'all'. [W]
                      test_mgr: str = None,                     # Specify test-mgr to act on, or 'all'. [R]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_cx(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_cx(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15679,6 +16696,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_cx",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15707,12 +16726,15 @@ class LFJsonCommand(JsonCommand):
     def post_show_cxe(self, 
                       cross_connect: str = None,                # Specify cross-connect to show, or 'all'. [W]
                       test_mgr: str = None,                     # Specify test-mgr to use, or 'all'. [R]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_cxe(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_cxe(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15724,6 +16746,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_cxe",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15750,17 +16774,22 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_dbs
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_dbs(self, 
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_dbs(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_dbs(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
         response = self.json_post(url="/cli-json/show_dbs",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15786,12 +16815,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_dut(self, 
                       name: str = None,                         # DUT Name or 'ALL'. [W][D:ALL]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_dut(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_dut(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15801,6 +16833,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_dut",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15829,12 +16863,15 @@ class LFJsonCommand(JsonCommand):
                                max_bytes: str = None,                    # The max number of payload bytes to print out,
                                # default is 128. [R][D:128]
                                name: str = None,                         # The name of the endpoint we are configuring. [R]
+                               response_json_list: list = None,
                                debug: bool = False,
+                               errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_endp_payload(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_endp_payload(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15846,6 +16883,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_endp_payload",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15874,12 +16913,15 @@ class LFJsonCommand(JsonCommand):
     def post_show_endpoints(self, 
                             endpoint: str = None,                     # Name of endpoint, or 'all'. [R]
                             extra: str = None,                        # See above.
+                            response_json_list: list = None,
                             debug: bool = False,
+                            errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_endpoints(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_endpoints(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15891,6 +16933,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_endpoints",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15919,12 +16963,15 @@ class LFJsonCommand(JsonCommand):
     def post_show_err(self, 
                       message: str = None,                      # Message to show to others currently logged on. <tt
                       # escapearg='false'>Unescaped Value</tt> [R]
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_err(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_err(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -15934,6 +16981,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_err",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -15959,17 +17008,22 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#show_event_interest
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_event_interest(self, 
+                                 response_json_list: list = None,
                                  debug: bool = False,
+                                 errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_event_interest(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_event_interest(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
         response = self.json_post(url="/cli-json/show_event_interest",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16018,12 +17072,15 @@ class LFJsonCommand(JsonCommand):
                          port: str = None,                         # Event port filter (can be port name or number).
                          shelf: int = 1,                           # Event shelf filter.
                          p_type: str = None,                       # Event type filter. [R]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_events(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_events(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16043,6 +17100,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_events",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16080,12 +17139,15 @@ class LFJsonCommand(JsonCommand):
                         resource: int = None,                     # The machine to search in. [W]
                         shelf: int = 1,                           # The virtual shelf to search in. Use 0 for manager
                         # machine. [R,0-1]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_files(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_files(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16105,6 +17167,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_files",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16137,12 +17201,15 @@ class LFJsonCommand(JsonCommand):
     def post_show_group(self, 
                         group: str = None,                        # Can be name of test group. Use 'all' or leave blank for
                         # all groups.
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_group(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_group(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16152,6 +17219,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_group",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16178,12 +17247,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_pesq(self, 
                        endpoint: str = None,                     # Name of endpoint, or 'all'. [R]
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_pesq(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_pesq(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16193,6 +17265,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_pesq",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16223,12 +17297,15 @@ class LFJsonCommand(JsonCommand):
                         # Leave blank if you want stats only.
                         resource: int = None,                     # Resource number, or 'all'. [W]
                         shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_ports(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_ports(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16244,6 +17321,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_ports",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16275,12 +17354,15 @@ class LFJsonCommand(JsonCommand):
                             link_num: str = None,                     # Ppp-Link number of the span, or 'all'. [W]
                             resource: int = None,                     # Resource number, or 'all'. [W]
                             shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                            response_json_list: list = None,
                             debug: bool = False,
+                            errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_ppp_links(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_ppp_links(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16294,6 +17376,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_ppp_links",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16322,12 +17406,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_profile(self, 
                           name: str = None,                         # Profile Name or 'ALL'. [R]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_profile(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_profile(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16337,6 +17424,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_profile",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16364,12 +17453,15 @@ class LFJsonCommand(JsonCommand):
     def post_show_resources(self, 
                             resource: int = None,                     # Resource number, or 'all'. [W]
                             shelf: int = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
+                            response_json_list: list = None,
                             debug: bool = False,
+                            errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_resources(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_resources(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16381,6 +17473,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_resources",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16409,12 +17503,15 @@ class LFJsonCommand(JsonCommand):
     def post_show_rfgen(self, 
                         resource: int = None,                     # Resource number, or 'all'. [W]
                         shelf: int = 1,                           # Shelf number or alias, can be 'all'. [R][D:1]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_rfgen(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_rfgen(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16426,6 +17523,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_rfgen",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16456,12 +17555,15 @@ class LFJsonCommand(JsonCommand):
                      resource: int = None,                     # Resource number. [W]
                      shelf: int = 1,                           # Shelf number. [R][D:1]
                      virtual_router: str = None,               # Name of the virtual router. [W]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_rt(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_rt(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16477,6 +17579,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_rt",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16508,12 +17612,15 @@ class LFJsonCommand(JsonCommand):
                                  endpoint: str = None,                     # Name of endpoint, test-group, or 'all'. [R]
                                  key: str = None,                          # Optional 'key' to be used in keyed-text message
                                  # result.
+                                 response_json_list: list = None,
                                  debug: bool = False,
+                                 errors_warnings: list = None,
                                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_script_results(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_script_results(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16525,6 +17632,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_script_results",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16554,12 +17663,15 @@ class LFJsonCommand(JsonCommand):
                         resource: int = None,                     # Resource number, or 'all'. [W]
                         shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
                         span_number: str = None,                  # Span-Number of the span, or 'all'. [W]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_spans(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_spans(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16573,6 +17685,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_spans",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16604,12 +17718,15 @@ class LFJsonCommand(JsonCommand):
                             # blobs.
                             name: str = None,                         # Text Blob Name or 'ALL'. [R]
                             p_type: str = None,                       # Text Blob type or 'ALL'. [R]
+                            response_json_list: list = None,
                             debug: bool = False,
+                            errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_text_blob(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_text_blob(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16623,6 +17740,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_text_blob",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16651,12 +17770,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_tm(self, 
                      test_mgr: str = None,                     # Can be name of test manager, or 'all'. [R]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_tm(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_tm(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16666,6 +17788,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_tm",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16692,12 +17816,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_show_traffic_profile(self, 
                                   name: str = None,                         # Profile Name or 'ALL'. [R]
+                                  response_json_list: list = None,
                                   debug: bool = False,
+                                  errors_warnings: list = None,
                                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_traffic_profile(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_traffic_profile(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16707,6 +17834,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_traffic_profile",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16736,12 +17865,15 @@ class LFJsonCommand(JsonCommand):
                         shelf: int = 1,                           # Shelf number. [R][D:1]
                         venu_id: str = None,                      # Number to uniquely identify this venue on this resource,
                         # or 'ALL' [W]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_venue(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_venue(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16755,6 +17887,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_venue",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16785,12 +17919,15 @@ class LFJsonCommand(JsonCommand):
                      resource: int = None,                     # Resource number, or 'all'. [W]
                      router: str = None,                       # Name of the Virtual Router, or 'all'. [W]
                      shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_vr(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_vr(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16804,6 +17941,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_vr",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16834,12 +17973,15 @@ class LFJsonCommand(JsonCommand):
                        cx_name: str = None,                      # Name of the Virtual Router Connection, or 'all'. [W]
                        resource: int = None,                     # Resource number, or 'all'. [W]
                        shelf: int = 1,                           # Name/id of the shelf, or 'all'. [R][D:1]
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_vrcx(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_vrcx(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16853,6 +17995,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_vrcx",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16882,12 +18026,15 @@ class LFJsonCommand(JsonCommand):
     def post_show_wanpaths(self, 
                            endpoint: str = None,                     # Name of endpoint, or 'all'. [W]
                            wanpath: str = None,                      # Name of wanpath, or 'all'. [W]
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_show_wanpaths(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_show_wanpaths(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16899,6 +18046,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/show_wanpaths",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16930,12 +18079,15 @@ class LFJsonCommand(JsonCommand):
                       really: str = None,                       # Must be 'YES' for command to really work.
                       serverctl: str = None,                    # Enter 'YES' to do a ./serverctl.bash restart to restart
                       # all LANforge processes.
+                      response_json_list: list = None,
                       debug: bool = False,
+                      errors_warnings: list = None,
                       suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_shutdown(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_shutdown(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16949,6 +18101,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/shutdown",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -16978,12 +18132,15 @@ class LFJsonCommand(JsonCommand):
     def post_shutdown_os(self, 
                          resource: int = None,                     # Resource number, or ALL. [W]
                          shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_shutdown_os(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_shutdown_os(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -16995,6 +18152,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/shutdown_os",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17023,12 +18182,15 @@ class LFJsonCommand(JsonCommand):
     def post_shutdown_resource(self, 
                                resource: int = None,                     # Resource number, or ALL. [W]
                                shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
+                               response_json_list: list = None,
                                debug: bool = False,
+                               errors_warnings: list = None,
                                suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_shutdown_resource(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_shutdown_resource(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17040,6 +18202,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/shutdown_resource",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17101,12 +18265,15 @@ class LFJsonCommand(JsonCommand):
                         shelf: int = 1,                           # Shelf number. [R][D:1]
                         snaplen: str = None,                      # Amount of each packet to store. Default is to store all
                         # of it.
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_sniff_port(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_sniff_port(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17130,6 +18297,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/sniff_port",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17163,12 +18332,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_start_endp(self, 
                         endp_name: str = None,                    # Name of the cross-connect, or 'all'. [R]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_start_endp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_start_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17178,6 +18350,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/start_endp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17204,12 +18378,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_start_group(self, 
                          name: str = None,                         # The name of the test group. [R]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_start_group(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_start_group(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17219,6 +18396,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/start_group",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17247,12 +18426,15 @@ class LFJsonCommand(JsonCommand):
                             resource: int = None,                     # Resource number that holds this PppLink. [W]
                             shelf: int = 1,                           # Name/id of the shelf. [R][D:1]
                             unit_num: str = None,                     # Unit-Number for the PppLink to be started. [R]
+                            response_json_list: list = None,
                             debug: bool = False,
+                            errors_warnings: list = None,
                             suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_start_ppp_link(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_start_ppp_link(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17266,6 +18448,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/start_ppp_link",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17294,12 +18478,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_stop_endp(self, 
                        endp_name: str = None,                    # Name of the endpoint, or 'all'. [R]
+                       response_json_list: list = None,
                        debug: bool = False,
+                       errors_warnings: list = None,
                        suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_stop_endp(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_stop_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17309,6 +18496,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/stop_endp",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17335,12 +18524,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_stop_group(self, 
                         name: str = None,                         # The name of the test group, or 'all' [R]
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_stop_group(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_stop_group(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17350,6 +18542,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/stop_group",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17378,12 +18572,15 @@ class LFJsonCommand(JsonCommand):
                            resource: int = None,                     # Resource number that holds this PppLink. [W]
                            shelf: int = 1,                           # Name/id of the shelf. [R][D:1]
                            unit_num: str = None,                     # Unit-Number for the PppLink to be stopped. [W]
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_stop_ppp_link(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_stop_ppp_link(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17397,6 +18594,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/stop_ppp_link",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17430,12 +18629,15 @@ class LFJsonCommand(JsonCommand):
                   # escapearg='false'>Unescaped Value</tt>
                   resource: int = None,                     # Resource that holds the file. [W]
                   shelf: int = 1,                           # Shelf that holds the resource that holds the file. [R][D:1]
+                  response_json_list: list = None,
                   debug: bool = False,
+                  errors_warnings: list = None,
                   suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_tail(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_tail(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17453,6 +18655,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/tail",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17485,12 +18689,15 @@ class LFJsonCommand(JsonCommand):
                          client_name: str = None,                  # Name of client to be registered. (dflt is current
                          # client) [W]
                          test_mgr: str = None,                     # Name of test manager (can be all.) [R]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_tm_register(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_tm_register(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17502,6 +18709,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/tm_register",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17531,12 +18740,15 @@ class LFJsonCommand(JsonCommand):
                            client_name: str = None,                  # Name of client to be un-registered. (dflt is current
                            # client) [W]
                            test_mgr: str = None,                     # Name of test manager (can be all.) [R]
+                           response_json_list: list = None,
                            debug: bool = False,
+                           errors_warnings: list = None,
                            suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_tm_unregister(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_tm_unregister(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17548,6 +18760,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/tm_unregister",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17574,17 +18788,22 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#version
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_version(self, 
+                     response_json_list: list = None,
                      debug: bool = False,
+                     errors_warnings: list = None,
                      suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_version(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_version(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
         response = self.json_post(url="/cli-json/version",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17609,17 +18828,22 @@ class LFJsonCommand(JsonCommand):
         https://www.candelatech.com/lfcli_ug.php#who
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_who(self, 
+                 response_json_list: list = None,
                  debug: bool = False,
+                 errors_warnings: list = None,
                  suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_who(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_who(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
         response = self.json_post(url="/cli-json/who",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17650,12 +18874,15 @@ class LFJsonCommand(JsonCommand):
                           shelf: int = 1,                           # Shelf number. [R][D:1]
                           wpa_cli_cmd: str = None,                  # Command to pass to wpa_cli or hostap_cli. This must be
                           # single-quoted. [R]
+                          response_json_list: list = None,
                           debug: bool = False,
+                          errors_warnings: list = None,
                           suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_wifi_cli_cmd(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_wifi_cli_cmd(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17671,6 +18898,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/wifi_cli_cmd",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17703,12 +18932,15 @@ class LFJsonCommand(JsonCommand):
                         event: str = None,                        # What happened. [R]
                         msg: str = None,                          # Entire event in human readable form.
                         status: str = None,                       # Status on what happened.
+                        response_json_list: list = None,
                         debug: bool = False,
+                        errors_warnings: list = None,
                         suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_wifi_event(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_wifi_event(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17724,6 +18956,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/wifi_event",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17754,12 +18988,15 @@ class LFJsonCommand(JsonCommand):
     def post_wiser_reset(self, 
                          resource: int = None,                     # Resource number, or ALL. [W]
                          shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
+                         response_json_list: list = None,
                          debug: bool = False,
+                         errors_warnings: list = None,
                          suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_wiser_reset(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_wiser_reset(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17771,6 +19008,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/wiser_reset",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -17798,12 +19037,15 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_write(self, 
                    db_name: str = None,                      # The name the backup shall be saved as (blank means dflt)
+                   response_json_list: list = None,
                    debug: bool = False,
+                   errors_warnings: list = None,
                    suppress_related_commands: bool = False):
         """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Example Usage: 
-                result = post_write(param=value ...)
-                pprint.pprint( result )
+                response_json = []
+                result = post_write(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
         debug |= self.debug_on
         data = {}
@@ -17813,6 +19055,8 @@ class LFJsonCommand(JsonCommand):
             raise ValueError(__name__+": no parameters to submit")
         response = self.json_post(url="/cli-json/write",
                                   post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
                                   die_on_error=self.die_on_error,
                                   suppress_related_commands=suppress_related_commands,
                                   debug=debug)
@@ -18027,6 +19271,7 @@ class LFJsonQuery(JsonQuery):
 
     def alerts_since(self,
                      event_id: int = None,
+                     response_json_list: list = None,
                      debug : bool = False,
                      wait_sec : float = None,
                      request_timeout_sec : float = None,
@@ -18051,6 +19296,7 @@ class LFJsonQuery(JsonQuery):
 
     def alerts_last_events(self,
                            event_count: int = None,
+                           response_json_list: list = None,
                            debug : bool = False,
                            wait_sec : float = None,
                            request_timeout_sec : float = None,
@@ -18075,6 +19321,7 @@ class LFJsonQuery(JsonQuery):
 
     def alerts_before(self,
                       event_id: int = None,
+                      response_json_list: list = None,
                       debug : bool = False,
                       wait_sec : float = None,
                       request_timeout_sec : float = None,
@@ -18100,6 +19347,7 @@ class LFJsonQuery(JsonQuery):
     def events_between(self,
                        start_event_id: int = None,
                        end_event_id: int = None,
+                       response_json_list: list = None,
                        debug : bool = False,
                        wait_sec : float = None,
                        request_timeout_sec : float = None,
@@ -18125,6 +19373,7 @@ class LFJsonQuery(JsonQuery):
 
     def events_get_event(self,
                          event_id: int = None,
+                         response_json_list: list = None,
                          debug : bool = False,
                          wait_sec : float = None,
                          request_timeout_sec : float = None,
@@ -18149,6 +19398,7 @@ class LFJsonQuery(JsonQuery):
 
     def events_last_events(self,
                            event_count: int = 1,
+                           response_json_list: list = None,
                            debug : bool = False,
                            wait_sec : float = None,
                            request_timeout_sec : float = None,
@@ -18173,6 +19423,7 @@ class LFJsonQuery(JsonQuery):
 
     def events_since(self,
                      event_id: int = None,
+                     response_json_list: list = None,
                      debug : bool = False,
                      wait_sec : float = None,
                      request_timeout_sec : float = None,
@@ -20491,6 +21742,7 @@ class LFJsonQuery(JsonQuery):
 
     def status_msg_new_session(self,
                                session : str = None,
+                               response_json_list: list = None,
                                debug : bool = False,
                                wait_sec : float = None,
                                request_timeout_sec : float = None,
@@ -20512,6 +21764,7 @@ class LFJsonQuery(JsonQuery):
 
     def status_msg_delete_session(self,
                                   session : str = None,
+                                  response_json_list: list = None,
                                   debug : bool = False,
                                   wait_sec : float = None,
                                   request_timeout_sec : float = None,
@@ -20534,6 +21787,7 @@ class LFJsonQuery(JsonQuery):
     def status_msg_delete_message(self,
                                   session : str = None,
                                   key : str = None,
+                                  response_json_list: list = None,
                                   debug : bool = False,
                                   wait_sec : float = None,
                                   request_timeout_sec : float = None,
