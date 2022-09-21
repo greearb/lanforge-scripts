@@ -118,18 +118,20 @@ class InteropCommands(Realm):
                 raise ValueError("adb log capture requires log_destination")
             user_key = self.session.get_session_based_key()
             if (self.debug):
-                print ("====== ====== destination [%s] dur[%s] user_key[%s] " %
-                        (self.log_destination, self.duration, user_key))
+                print("====== ====== destination [%s] dur[%s] user_key[%s] " %
+                      (self.log_destination, self.duration, user_key))
                 self.session.logger.register_method_name("json_post")
-            response = self.command.post_log_capture(shelf=eid[0],
+            json_response = []
+            self.command.post_log_capture(shelf=eid[0],
                                           resource=eid[1],
                                           p_type="adb",
                                           identifier=eid[2],
                                           duration=self.duration,
                                           destination=self.log_destination,
                                           user_key=self.session.get_session_based_key(),
+                                          response_json_list=json_response,
                                           debug=True)
-            pprint(["RESPONSE", response])
+            pprint(json_response)
         # @TODO put modify logic here
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
