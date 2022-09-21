@@ -64,7 +64,7 @@
         -   the basis for many of the auto-generated python classes
             that follow after these class definitions.
     * client/candela/lanforge/JsonApiPythonGenerator.java
-        -   the builder class that produces lf_json_autogen
+        -   the builder class that produces lanforge_api.py
     The file json_api.py is intended to be bundled in lfclient.jar and
     not to be extracted. It is sourced during build by the JsonApiPythonGenerator
     class which appends subclasses to it.
@@ -559,17 +559,17 @@ class BaseLFJsonRequest:
                     raise ValueError("json_post: not returning post data, no response_json_list provided")
                 jzon_data = None
                 if debug and die_on_error:
-                    self.logger.warning(__name__ +
-                                        " json_post: attempt %d ---------------------" %
+                    self.logger.debug(__name__ +
+                                        " ----- json_post: %d debug: --------------------------------------------" %
                                         attempt)
-                    self.logger.warning("URL: <%s> status:%d " % (url, response.status))
-                    self.logger.warning("submitted: "+pformat(post_data))
+                    self.logger.debug("URL: <%s> status:%d " % (url, response.status))
+                    self.logger.debug(" ----- headers --------------------------------------------------")
+                    self.logger.debug(__name__ + "submitted: "+pformat(post_data))
                     if response.status != 200:
-                        self.logger.warning(" ----- headers --------------------------------------------------")
-                        self.logger.error(pformat(response.getheaders()))
-                    self.logger.error(" ----- response -------------------------------------------------")
-                    self.logger.error(pformat(resp_data))
-                    self.logger.error(" ----------------------------------------------------------------")
+                        self.logger.debug(pformat(response.getheaders()))
+                    self.logger.debug(" ----- response -------------------------------------------------")
+                    self.logger.debug(pformat(resp_data))
+                    self.logger.debug(" ----------------------------------------------------------------")
                 responses.append(response)
                 header_items = response.getheaders()
                 if debug:
