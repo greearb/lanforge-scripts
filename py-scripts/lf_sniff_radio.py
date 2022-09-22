@@ -29,8 +29,8 @@
     wiphy 9
     channel 36 (5180 MHz), width: 20 MHz (no HT), center1: 5180 MHz
     txpower 0.00 dBm
-    [lanforge@ct523c-3b7b ~]$ 
-                        
+    [lanforge@ct523c-3b7b ~]$
+
 
 """
 import sys
@@ -40,7 +40,7 @@ import argparse
 import time
 import paramiko
 
- 
+
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -56,7 +56,7 @@ class SniffRadio(Realm):
                  outfile="/home/lanforge/test_pcap.pcap",
                  duration=60,
                  channel=None,
-                 #channel_freq=None,
+                 # channel_freq=None,
                  channel_bw=None,
                  center_freq=None,
                  radio_mode="AUTO",
@@ -81,20 +81,18 @@ class SniffRadio(Realm):
         self.mode = radio_mode
         self.monitor_name = monitor_name
         # TODO allow the channel_frequency to be entered
-        #if self.channel is None and self.channel_freq is None:
+        # if self.channel is None and self.channel_freq is None:
         #    print("either --channel or --channel_freq needs to be set")
         #    exit(1)
-        #elif self.channel_freq is not None:
+        # elif self.channel_freq is not None:
         #    self.freq = self.channel_freq
         if self.channel is not None:
             self.freq = self.chan_to_freq[self.channel]
 
-
-        if self.channel_bw !=  '20':
+        if self.channel_bw != '20':
             if self.center_freq is None:
                 print("--center_freq need to be set for bw greater the 20")
                 exit(1)
-        
 
     def setup(self, ht40_value, ht80_value, ht160_value):
         # TODO: Store original channel settings so that radio can be set back to original values.
@@ -117,7 +115,6 @@ class SniffRadio(Realm):
         self.monitor.admin_down()
         time.sleep(2)
 
-
     # for 6E
     # For example for channel 7 with 80Mhz bw , here are the monitor commands possible
     # iw dev moni10a set freq 5955 80 5985
@@ -126,12 +123,12 @@ class SniffRadio(Realm):
     # iw dev moni10a set freq 6015 80 5985
 
     # for 20 MHz the center frequency does not need to be entered since it is the same
+
     def set_freq(self, ssh_root, ssh_passwd, freq=0):
         if self.channel_bw == '20':
             cmd = f'. lanforge.profile\nsudo iw dev {self.monitor_name} set freq {freq}\n'
         else:
             cmd = f'. lanforge.profile\nsudo iw dev {self.monitor_name} set freq {freq} {self.channel_bw} {self.center_freq}\n'
-
 
         cmd1 = f'iw dev {self.monitor_name} info'
         try:
@@ -171,17 +168,17 @@ def main():
 
         description='''\
         lf_sniff_radio.py will create a monitor and be able to capture wireshark pcap files:
-        
+
         The monitor also uses iw commands to set up the proper bw and frequency to be monitored
 
-        Note:	
-        
+        Note:
+
         iw [options] dev <devname> set freq <freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]
 	    dev <devname> set freq <control freq> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]
 
-        Example to monitor channel 36 (5180) 
-        sudo iw dev <monitor/devname> set freq 5180 40 5190  
-        
+        Example to monitor channel 36 (5180)
+        sudo iw dev <monitor/devname> set freq 5180 40 5190
+
         for bw of 20 do not need to set the control frequency
 
         Verify the configuration with :(need to do sudo)
@@ -189,7 +186,7 @@ def main():
 
         example:
         [lanforge@ct523c-3ba3 ~]$ sudo iw dev SNIFF_5G_40 info
-        [sudo] password for lanforge: 
+        [sudo] password for lanforge:
         Interface SNIFF_5G_40
             ifindex 49
             wdev 0x2
@@ -198,21 +195,20 @@ def main():
             wiphy 0
             channel 36 (5180 MHz), width: 20 MHz, center1: 5180 MHz
             txpower 0.00 dBm
-        [lanforge@ct523c-3ba3 ~]$ 
+        [lanforge@ct523c-3ba3 ~]$
 
 
         Help: 5Ghz frequencies
 
         ''',
 
-        usage=
-        """./lf_sniff_radio.py 
+        usage="""./lf_sniff_radio.py
         --mgr localhost
-        --mgr_port 8080 
-        --radio wiphy0  
+        --mgr_port 8080
+        --radio wiphy0
         --outfile /home/lanforge/test_sniff.pcap
         --duration 1
-        --channel 36 
+        --channel 36
         --channel_bw 40
         --center_freq 5190
         --radio_mode AUTO
@@ -232,8 +228,8 @@ def main():
                                     Must enter Channel
                                     ''',
                         default='36')
-    #parser.add_argument('--channel_freq', type=str, help='''
-    #                                --channel_freq  this is the frequency that the channel operates at 
+    # parser.add_argument('--channel_freq', type=str, help='''
+    #                                --channel_freq  this is the frequency that the channel operates at
     #                                Must enter --channel or --channel_freq
     #                                --channel takes presidence if both entered
     #                                ''',
@@ -252,14 +248,13 @@ def main():
                         default=0)
     parser.add_argument('--disable_ht80', type=str, help='Enable/Disable \"disable_ht80\" [0-disable,1-enable]',
                         default=0)
-    parser.add_argument('--ht160_enable', type=str, help='Enable/Disable \"ht160_enable\ [0-disable,1-enable]" ',
+    parser.add_argument('--ht160_enable', type=str, help='Enable/Disable \"ht160_enable\\ [0-disable,1-enable]" ',
                         default=0)
 
     args = parser.parse_args()
 
-    #if args.channel is None and args.channel_freq is None:
+    # if args.channel is None and args.channel_freq is None:
     #    print('--channel or --channel_freq most be entered')
-    
 
     obj = SniffRadio(lfclient_host=args.mgr,
                      lfclient_port=args.mgr_port,
@@ -267,7 +262,7 @@ def main():
                      outfile=args.outfile,
                      duration=args.duration,
                      channel=args.channel,
-                     #channel_freq=args.center_freq,
+                     # channel_freq=args.center_freq,
                      channel_bw=args.channel_bw,
                      center_freq=args.center_freq,
                      radio_mode=args.radio_mode,
