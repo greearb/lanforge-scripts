@@ -56,6 +56,7 @@ class max_associate(Realm):
                  ssid_security_list,
                  wifi_mode_list,
                  enable_flags_list,
+                 radio6=None,
                  resource=1,
                  upstream_port="eth1",
                  download_bps=9830,
@@ -78,6 +79,8 @@ class max_associate(Realm):
         if layer3_columns is None:
             layer3_columns = ['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate']
         super().__init__(_host, _port, debug_=debug_, _exit_on_fail=_exit_on_fail)
+        if radio6 is None:
+            radio6 = []
         self.host = _host
         self.port = _port
         self.debug = debug_
@@ -87,6 +90,7 @@ class max_associate(Realm):
         self.ssid_security_list = ssid_security_list,
         self.wifi_mode_list = wifi_mode_list,
         self.enable_flags_list = enable_flags_list,
+        self.radio6 = radio6
         self.resource = resource
         self.upstream_port = upstream_port
         self.download_bps = download_bps
@@ -173,7 +177,12 @@ class max_associate(Realm):
 
     def layer3_connections(self):
         try:
+            # TODO: break the below call up into multiple steps:
+            results = self.json_get('endp')
+            logger.info(pformat(results))
             self.layer3connections = ','.join([[*x.keys()][0] for x in self.json_get('endp')['endpoint']])
+            # self.layer3connections = ','.join([*x.keys()][0] for x in results)
+            logger.info(self.layer3connections)
         except ValueError:
             raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
 
@@ -298,6 +307,14 @@ class max_associate(Realm):
         wiphy_radio_list = self.wiphy_info.get_radios()
         # logger.info(wiphy_radio_list)
 
+        radio6e_enable = []
+        ridx = 0
+        # format --radio6 input:
+        for r in self.radio6:
+            radio6e_enable.append(str(r[0]))
+            # logger.info(radio6e_enable)
+            ridx += 1
+
         track_num_stations = 0
         start_num_stations = 0
         end_num_stations = 0
@@ -326,12 +343,20 @@ class max_associate(Realm):
                 # self.station_profile.number_template_ = self.number_template
                 self.station_profile.debug = self.debug
                 self.station_profile.use_security(wiphy_security, wiphy_ssid, wiphy_password)
-                # if self.wifi_mode_list
-                # TODO: check radios for 6E wifi settings "ieee80211w", and then set flags & continue
-                # if "AX210" in radio_driver:
-                #     self.station_profile.set_command_param("add_sta", "ieee80211w", 2)
-                # self.station_profile.set_number_template(self.number_template)
-                self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+
+                # check if radio requires 6E settings:
+                if wiphy_radio in radio6e_enable and "AX210" in radio_driver:
+                    # set_command_param:
+                    self.station_profile.set_command_param("add_sta", "ieee80211w", 2)
+                    tmp_enable_flags = ["use-wpa3", "80211u_enable", "create_admin_down"]
+                    self.station_profile.desired_add_sta_flags = tmp_enable_flags.copy()
+                    self.station_profile.desired_add_sta_flags_mask = tmp_enable_flags.copy()
+                else:
+                    # for 2.4GHz & 5GHz: using default flags that are set in station_profile.py:
+                    self.station_profile.set_command_param("add_sta", "ieee80211w", 0)
+                    # set_command_flag:
+                    self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+
                 self.station_profile.set_command_param("set_port", "report_timer", 1500)
                 self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
                 logger.info("Creating stations")
@@ -361,6 +386,8 @@ class max_associate(Realm):
             self.json_post("/cli-json/nc_show_ports", data)
             # print("start() - ln 252 - self.j")
             self.station_profile.admin_up()
+            # TODO: remove exit():
+            # exit()
             self.csv_add_column_headers()
             station_names = []
             station_names.extend(self.station_profile.station_names.copy())
@@ -726,6 +753,8 @@ For an overnight test using chambered AP's with no security enabled:
                         default=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'])
     parser.add_argument('--port_mgr_cols', help='Columns wished to be monitored from port manager tab',
                         default=['alias', 'ap', 'ip', 'parent dev', 'rx-rate'])
+    parser.add_argument("--radio6", action='append', nargs=1,
+                        help="Specify 6Ghz radio.  May be specified multiple times.")                        
 
     # kpi_csv arguments:
     parser.add_argument(
@@ -930,6 +959,7 @@ For an overnight test using chambered AP's with no security enabled:
             else:
                 wifi_mode_list.append(0)
                 wifi_enable_flags_list.append(
+                    # ["use-wpa3", "ieee80211w", "create_admin_down"])
                     ["wpa2_enable", "80211u_enable", "create_admin_down"])
 
             # check for optional radio key , currently only reset is enabled
@@ -976,6 +1006,7 @@ For an overnight test using chambered AP's with no security enabled:
                                     ssid_security_list=ssid_security_list,
                                     wifi_mode_list=wifi_mode_list,
                                     enable_flags_list=wifi_enable_flags_list,
+                                    radio6=args.radio6,
                                     resource=args.resource,
                                     upstream_port=args.upstream_port,
                                     download_bps=args.download_bps,
