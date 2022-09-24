@@ -23,7 +23,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_5g":{
                 "enabled":"TRUE",
@@ -46,7 +46,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_longevity_flags_AX200_5g":{
                 "enabled":"TRUE",
@@ -69,7 +69,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_longevity_flags_AX200_2g":{
                 "enabled":"TRUE",
@@ -92,7 +92,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_2g":{
                 "enabled":"TRUE",
@@ -116,7 +116,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_longevity_flags_5g_all":{
                 "enabled":"TRUE",
@@ -142,7 +142,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_longevity_flags_2g_all":{
                 "enabled":"TRUE",
@@ -638,7 +638,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_longevity_flags_AX200_2g":{
                 "enabled":"TRUE",
@@ -673,7 +673,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_longevity_flags_AX200_5g":{
                 "enabled":"TRUE",
@@ -696,7 +696,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_longevity_flags_AX200_2g":{
                 "enabled":"TRUE",
@@ -719,7 +719,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_longevity_flags_5g_all":{
                 "enabled":"TRUE",
@@ -745,7 +745,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sta"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_longevity_flags_2g_all":{
                 "enabled":"TRUE",
