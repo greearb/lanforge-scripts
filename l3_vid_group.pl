@@ -77,7 +77,7 @@ Examples:
 # create 30 stations emulating 720p HDR 60fps transmitted from resource 2:
  $0 --action create --buffer_size 8M --clear_group --cx_name yt1080p60.1 \\
    --endp_type udp --first_sta sta0000 --num_cx 30 \\
-   --resource 2 --speed 200M --stream yt-hdr-720p60 --test_group yt60fps \\
+   --resource 2 --speed 200000000 --stream yt-hdr-720p60 --test_group yt60fps \\
    --upstream 1.2.br0
 
 # start test group:
@@ -87,7 +87,7 @@ Examples:
  $0 -a stop -g yt60fps
 
 # add 30 more stations on resource 3 to group
- $0 -a create -b 8M -c yt1080p60.3 -t udp -i sta0100 -n 30 -r 3 \\
+ $0 -a create -b 8000000 -c yt1080p60.3 -t udp -i sta0100 -n 30 -r 3 \\
    -s 200M -e yt-hdr-720p60 -g yt60fps -u 1.2.br0
 
 # destroy test group
@@ -215,6 +215,7 @@ if ($::action eq "create") {
    if (!(defined $::cx_name) or ("" eq $::cx_name)) {
      $::cx_name = $::generic_test_grp."-";
    }
+
    if (!(defined $::buffer_size) or ($::buffer_size < 0)) {
      print ("Please set --buffer_size, bye.\n");
      exit(1);
@@ -245,8 +246,8 @@ if ($::action eq "create") {
      exit(1);
    }
 
-   if ( ! -x "./lf_firemod.pl" ) {
-     print "I don't see ./lf_firemod.pl, bye.\n";
+   if ( ! -x "/home/lanforge/scripts/lf_firemod.pl" ) {
+     print "I don't see /home/lanforge/scripts/lf_firemod.pl, bye.\n";
      exit(1);
    }
    my $upstream_resource = $::resource;
@@ -264,7 +265,7 @@ if ($::action eq "create") {
    #print Dumper($rh_eid_map);
 
    # build a list of ports -n ports long starting at -first_port
-   my @ports = ();
+   #my @ports = ();
    my $rh_first_dev = $::utils->find_by_name($rh_eid_map, $::first_sta);
    die("Unable to find dev record for port $::first_sta on resource $::resource")
      if ($rh_first_dev == -1);
@@ -303,6 +304,8 @@ if ($::action eq "create") {
    }
 
    my @next_cmds = ();
+   my @ncshow_cmds = ();
+   my @tg_cmds = ();
    for (my $i=0; $i < @selected_list; $i++) {
      my $j = 10000 + $i;
      my $cname = "_".$::cx_name . substr("$j", 1);
@@ -311,23 +314,48 @@ if ($::action eq "create") {
      #print "Connection name $name uses $ports\n";
      my $cmd = qq(/home/lanforge/scripts/lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port )
       .qq(--action create_cx --cx_name $cname --endp_type $::endp_type )
-      .qq(--use_ports $ports --use_speeds 0,0 --report_timer 3000);
+      .qq(--use_ports $ports --use_speeds 0,0 --report_timer 500);
      #print "CMD: $cmd\n";
      `$cmd`;
+     $::utils->sleep_ms(50);
+     push(@next_cmds, "gossip setting flags on $cname-X");
      push(@next_cmds, "set_endp_flag $cname-A AutoHelper 1");
      push(@next_cmds, "set_endp_flag $cname-B AutoHelper 1");
-     push(@next_cmds, $::utils->fmt_cmd("add_tgcx", $::l3_test_grp, $cname));
+     push(@ncshow_cmds, "nc_show_endpoints $cname-A");
+     push(@ncshow_cmds, "nc_show_endpoints $cname-B");
+     push(@tg_cmds, "gossip adding $cname to group $::l3_test_grp");
+     push(@tg_cmds, $::utils->fmt_cmd("add_tgcx", $::l3_test_grp, $cname));
+     push(@tg_cmds, "set_cx_report_timer default_tm CX_$::l3_test_grp 700 CXONLY");
+     push(@tg_cmds, "show_group $::l3_test_grp");
+     push(@tg_cmds, "show_tm default_tm");
    }
    sleep 1;
    $::utils->doAsyncCmd("nc_show_endpoints all"); # this helps prepare us for adding next generic connections
    print "adding L3 CX to $::l3_test_grp ";
+   for my $cmd (@ncshow_cmds) {
+      print ".";
+      $::utils->doCmd($cmd);
+   }
+   @ncshow_cmds = ();
+   $::utils->sleep_ms(50);
+
    for my $cmd (@next_cmds) {
       print ".";
       $::utils->doCmd($cmd);
    }
+   @next_cmds = ();
+   $::utils->sleep_ms(50);
+
+   for my $cmd (@tg_cmds) {
+      print ".";
+      $::utils->doCmd($cmd);
+   }
+   @tg_cmds = ();
+   $::utils->sleep_ms(50);
    print "done\n";
+
    print "Creating Generic connections for video emulation ";
-   $::utils->sleep_ms(20);
+   $::utils->sleep_ms(100);
    @next_cmds = ();
    for (my $i=0; $i < @selected_list; $i++) {
         my $j = 10000 + $i;
@@ -337,26 +365,37 @@ if ($::action eq "create") {
      my $gname = $::cx_name . substr("$j", 1);
      my $gnr_cmd = qq(/home/lanforge/scripts/l3_video_em.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port )
             .qq(--cx_name $cname --max_tx 1G --buf_size $::buffer_size )
-            .qq(--stream $::vid_mode --quiet yes );
+            .qq(--stream $::vid_mode --quiet yes --tx_style bufferfill);
 
-     $cmd = qq(./lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port)
+     $cmd = qq(/home/lanforge/scripts/lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port)
                .qq( --action create_endp --endp_name $gname --endp_type 'generic')
                .qq( --port_name ).$selected_list[$i]
                .q( --endp_cmd ").$gnr_cmd.q(");
      `$cmd`;
      print ".";
-     $::utils->sleep_ms(20);
+     $::utils->sleep_ms(40);
      #print "adding CX_$gname to $::generic_test_grp\n";
+     push(@ncshow_cmds, "nc_show_endpoints $gname");
+     push(@next_cmds, "adding $gname to test group");
      push(@next_cmds, $::utils->fmt_cmd("add_tgcx", $::generic_test_grp, "CX_".$gname));
+     push(@next_cmds, "show_group $::generic_test_grp");
    }
    print "done\n";
-   sleep 1;
+   sleep 2;
    $::utils->doAsyncCmd("nc_show_endpoints all"); # this helps prepare us for adding next generic connections
+
+   for my $cmd (@ncshow_cmds) {
+      print ".";
+      $::utils->doCmd($cmd);
+   }
+   $::utils->sleep_ms(50);
+
    print "Adding generic connections to $::generic_test_grp ";
    for my $cmd (@next_cmds) {
       print ".";
       $::utils->doCmd($cmd);
    }
+   $::utils->sleep_ms(100);
    print "done\n";
 
    exit 0;

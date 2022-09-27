@@ -46,7 +46,7 @@ our $stream_key      = undef;
 our $quit_when_const = 0;
 our $sta             = "";
 our $upstream        = "";
-our $proto           = "udp"; # for constant
+our $proto           = "lf_udp"; # for constant
 our $est_fill_time_sec = 0;
 our $last_fill_time_sec = 0;
 our $begin_running   = 1; # set to 0 to not start CX running; 0 is appropriate for batch creation or bufferfill
@@ -393,13 +393,17 @@ sub rxbytes {
 sub get_txrx_rate {
    my ($lf_host, $lf_port, $rez, $cxnam, $rx_sid) = @_;
    my $rxendp = "${cxnam}-${rx_sid}";
-   my $cmd = "./lf_firemod.pl --mgr $lf_host --mgr_port $lf_port -r $rez "
+   my $cmd = "/home/lanforge/scripts/lf_firemod.pl --mgr $lf_host --mgr_port $lf_port -r $rez "
       ."--action show_endp --endp_name $rxendp --endp_vals EID";
-   print "GET_TXRX: $cmd\n";
+   # print "GET_TXRX: $cmd\n";
    my @lines = `$cmd`;
    chomp(@lines);
+
    my @matches = grep {/EID:/} @lines;
-   return -1 if (@matches < 1);
+   if (@matches < 1) {
+       warn("no port [$rxendp]");
+       return -1;
+   }
 
    my ($discard1, $port_eid) = split(/:\s*/, $matches[0]);
    my $max_rate = 0;
@@ -409,7 +413,7 @@ sub get_txrx_rate {
    }
    # find tx/rx rate
    my ($discard2, $rez2, $portid) = split(/[.]/, $port_eid);
-   $cmd = "lf_portmod.pl --mgr $lf_host --mp $lf_port --resource $rez2"
+   $cmd = "/home/lanforge/scripts/lf_portmod.pl --mgr $lf_host --mp $lf_port --resource $rez2"
          ." --port_name $portid --show_port Probed-TX-Rate,Probed-RX-Rate";
    @lines = `$cmd`;
    chomp(@lines);
@@ -421,6 +425,7 @@ sub get_txrx_rate {
       }
       $max_rate = $rate if ($rate > $max_rate);
    }
+   # print "max rate $max_rate\n";
    #if ($max_rate > 0) {
    #   print "Adjusting max-rate closer to $max_rate\n";
    #}
@@ -562,7 +567,14 @@ if ((defined $::sta) && ("" ne $::sta)) {
       }
    }
 }
-
+if (!(defined $tx_style) || ($tx_style =~ /^\s*$/)) {
+    print "Please set --tx_style\n";
+    exit(1);
+}
+if (! -f "/home/lanforge/scripts/lf_portmod.pl") {
+    print "/home/lanforge/scripts/lf_portmod.pl not found. Are we in the scripts directory?\n";
+    exit(1);
+}
 my $endp = $::cx_name."-".$::tx_side; # change me if L4
 @hunks = ();
 if ($::tx_style =~ /^l(ayer)?[-_]?4$/i ) {
@@ -652,6 +664,8 @@ if ($::tx_style =~ /constant/) {
    $stream_kbps = $stream_bps / 1000;
 }
 else {
+   print "Using tx_style $tx_style\n";
+   sleep(2);
    # estimated fill time is probably not going to be accurate because
    # there's no way to know the txrate between the AP and station.
    $::est_fill_time_sec  = (8 * $::buf_size) / ($::max_tx * 0.5);
@@ -682,9 +696,9 @@ if (($::tx_style eq "bufferfill") && !$cx_exists) {
 }
 
 if (($::tx_style =~ /constant/) && !$cx_exists) {
-   my $cmd = "./lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port --action create_cx "
+   my $cmd = "/home/lanforge/scripts/lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port --action create_cx "
       ."--cx_name $::cx_name --use_ports $::sta,$::upstream --use_speeds 128000,$::max_tx "
-      ."--speed $::min_tx --max_speed $::max_tx --endp_type udp --report_timer 3000";
+      ."--speed $::min_tx --max_speed $::max_tx --endp_type lf_udp --report_timer 3000";
    my $result = `$cmd`;
    print "x"x72, "\n";
    print $result, "\n";
@@ -710,7 +724,7 @@ my $report_period_sec = 6;
 my $check_if_stopped = 0;
 my $cmd ="";
 my $res = 1;
-my $port = "Unknown";
+my $port = "UnknownPort";
 my $type = $::proto;
 our $stop_cx_on_exit = 1;
 
@@ -720,7 +734,7 @@ our $stop_cx_on_exit = 1;
 if ($::tx_style eq "L4") {
    # check that the upstream port has http enabled
    $::stop_cx_on_exit = 0;
-   my $cmd = "./lf_portmod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port --port_name $::upstream --show_port Current,IP";
+   my $cmd = "/home/lanforge/scripts/lf_portmod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port --port_name $::upstream --show_port Current,IP";
    my @lines = `$cmd`;
    chomp(@lines);
 
@@ -764,7 +778,8 @@ if ($::tx_style eq "L4") {
    #sleep 1;
    $cmd = $::utils->fmt_cmd("add_cx", $::cx_name, "default_tm", $tmp_ep1, "NA");
    $::utils->doAsyncCmd($cmd);
-}
+} # ~tx style L4
+
 
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
 # Layer-3 constant bufferfill
@@ -774,17 +789,23 @@ if ($::tx_style eq "L4") {
 
 @lines = split("\r?\n", $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_endp", $endp)));
 @matches = grep {/ Shelf: 1, Card: /} @lines;
+print Dumper(\@matches);
+($res, $port, $type) = $matches[0] =~ /, Card: (\d+)\s+Port: (\d+)\s+Endpoint: \d+ Type: ([^ ]+)\s+/;
+die ("No matches for show endp $endp")
+    unless($matches[0]);
+
+if (!(defined $res) || !(defined $port) || !(defined $type)) {
+    die("Unable to determine endpoint [$endp], bye");
+}
+if ($port eq "UnknownPort") {
+    die("endpoint port is not set");
+}
+print "PORT IS [$port]\n";
+
 # create a L3 connection
 if ($::tx_style =~ /constant/) {
    $::stop_cx_on_exit = 0;
 
-   die ("No matches for show endp $endp")
-     unless($matches[0]);
-   ($res, $port, $type) = $matches[0] =~ /, Card: (\d+)\s+Port: (\d+)\s+Endpoint: \d+ Type: ([^ ]+)\s+/;
-   if (!(defined $res) || !(defined $port) || !(defined $type)) {
-      die("Unable to determine endpoint [$endp], bye");
-
-   }
    $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type,
        $NA,             # ip_port
        $NA,             # is_rate_bursty
@@ -795,8 +816,6 @@ if ($::tx_style =~ /constant/) {
    sleep 5;
    $::utils->doAsyncCmd($cmd);
 }
-
-
 
 #
 #     start CX
@@ -810,6 +829,10 @@ my $rand_start_delay = rand(7);
 
 if (!(defined $endp) || !(defined $res) || !(defined $port) || !(defined $type) || !(defined $::max_tx) || !(defined $::min_tx)) {
    die("Unable to continue, missing values in: endp($endp) res($res) port($port) type($type) max_tx($::max_tx)");
+}
+
+if ($port eq "UnknownPort") {
+    die("endpoint port is not set");
 }
 
 if ($::tx_style !~ /bufferfill/) {
@@ -864,9 +887,13 @@ do {
          push(@reports, sprintf("Likely overfill detected, txsec: %.4f", ($delta2_sec - $starttime)));
          last;
       }
-      #push(@delta_reports, "z");
+      push(@delta_reports, "z");
       $::utils->sleep_ms(200);
       #$::utils->sleep_ms( 5 * ($delta2_sec - $delta1_sec));
+       for my $rep (@reports) {
+           print "$rep\n";
+       }
+      print("\n")
    }
    # startbytes is only needed on iteration 0
    $startbytes = 0;
@@ -879,7 +906,9 @@ do {
    push(@reports, sprintf("## drain_wait_seconds: %.4f; est fill: %.4f; actual fill %.4f; dev: %.4f",
       $drain_wait_sec, $est_fill_time_sec, $last_fill_time_sec, ($est_fill_time_sec - $last_fill_time_sec )));
    push(@reports, "deltas: ".join(',', @delta_reports));
-
+   for my $rep (@reports) {
+       print "$rep\n";
+   }
    if ($::quit_when_const && ($fill_stops > 1) && ($drain_wait_sec <= 0)) {
       # this is a failure condition, we are misconfigured or overloaded
       cleanexit("Constant TX Quit: Wait $drain_wait_sec = Drain $drain_time_sec - Fill time $last_fill_time_sec;\n"
@@ -891,6 +920,7 @@ do {
 
    #if ($drain_wait_sec > 0) { # we don't really want to never stop, that's not useful
    $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::min_tx, $::min_tx);
+    print ("   $cmd\n");
    $::utils->doCmd($cmd);
    $fill_stops++;
    #$ave_fill_bytes = $tt_bytes / $fill_stops;
@@ -902,6 +932,8 @@ do {
    $cmd = $::utils->fmt_cmd("add_endp", $endp, 1, $res, $port, $type, $NA, $NA, $::max_tx, $::max_tx);
    $::utils->doCmd($cmd);
    $fill_starts++;
+   print (join("\n", @reports), "\n");
+   @reports = ();
    #}
    if (($finishtime_sec - $last_report_sec) >= $report_period_sec) {
       print (join("\n", @reports), "\n");
