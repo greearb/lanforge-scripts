@@ -1255,6 +1255,7 @@ class L3VariableTime(Realm):
                                         split_row = row.split()
                                         # print("split_row {}".format(split_row))
                                         # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # in the ap_test_mode the mac's will not match so fake out with not equal
                                         if self.ap_test_mode:
                                             if split_row[0].lower(
                                             ) != mac.lower():
@@ -1353,6 +1354,7 @@ class L3VariableTime(Realm):
                                         split_ul_row = row.split()
                                         # print("split_row {}".format(split_row))
                                         # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # in the ap_test_mode the mac's will not match so fake out with not equal
                                         if self.ap_test_mode:
                                             if split_ul_row[0].lower(
                                             ) != mac.lower():
@@ -1464,6 +1466,7 @@ class L3VariableTime(Realm):
                                         split_row = row.split()
                                         # print("split_row {}".format(split_row))
                                         # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
+                                        # in the ap_test_mode the mac's will not match so fake out with not equal
                                         if self.ap_test_mode:
                                             if split_row[0].lower(
                                             ) != mac.lower():
