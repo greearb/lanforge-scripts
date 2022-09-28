@@ -1479,7 +1479,7 @@ class L3VariableTime(Realm):
                                                 # LANforge
                                                 if split_row[0].lower(
                                                 ) == mac.lower():
-                                                    ap_row = split_row
+                                                    ap_row = split_row # bs_data
                                                     mac_found_5g = True
                                             except BaseException:
                                                 print(
@@ -1541,7 +1541,7 @@ class L3VariableTime(Realm):
                                         # ap information is passed with ap_row
                                         # so all information needs to be
                                         # contained in ap_row
-                                        ap_row.append(str(channel_utilization))
+                                        ap_row.append(str(channel_utilization)) # channel_utilization from ap_chanim_stats
                                         print(
                                             "5g channel_utilization {channel_utilization}".format(
                                                 channel_utilization=channel_utilization))
@@ -1569,6 +1569,7 @@ class L3VariableTime(Realm):
                                             ap_row)
 
                             # work though the ul rx_data 5G
+                            # from wl -i <interface> rx_report
                             for port_eid in port_eids:
                                 eid = self.name_to_eid(port_eid)
                                 url = "/port/%s/%s/%s" % (eid[0],
