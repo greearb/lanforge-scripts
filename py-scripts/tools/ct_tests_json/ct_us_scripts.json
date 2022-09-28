@@ -137,7 +137,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_longevity_enable_flags":{
                 "enabled":"TRUE",
@@ -157,7 +157,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_longevity_flags_AX200_5g":{
                 "enabled":"TRUE",
@@ -180,7 +180,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_longevity_flags_AX200_2g":{
                 "enabled":"TRUE",
@@ -203,7 +203,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_longevity_flags_5g_all":{
                 "enabled":"TRUE",
@@ -229,7 +229,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l3_longevity_flags_2g_all":{
                 "enabled":"TRUE",
@@ -255,7 +255,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --cxs --sanitize"
+                    " --mgr LF_MGR_IP --cxs --sanitize --sleep 5"
                 ]
             },
             "test_ip_connection_ipv4":{
@@ -267,12 +267,12 @@
                     " use_ssid_idx=1 --radio wiphy1 --ssid SSID_USED --passwd SSID_PW_USED --security SECURITY_USED",
                     " --debug"]
             },
-            "clean_up_sanitize_ipv4_24g":{
+            "clean_up_sanitize --sleep 5_ipv4_24g":{
                 "enabled":"TRUE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
                 ]
             },
             "test_ip_variable_time_ipv4_24g":{
@@ -290,12 +290,12 @@
                     " --num_stations 1"
                 ]
             },
-            "clean_up_sanitize":{
+            "clean_up_sanitize --sleep 5":{
                 "enabled":"TRUE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_ip_variable_time_ipv4_5g":{
                 "enabled":"TRUE",
@@ -311,12 +311,12 @@
                     " --port_mgr_cols 'alias','channel','activity','mode'"
                 ]
             },
-            "clean_up_sanitize_1":{
+            "clean_up_sanitize --sleep 5_1":{
                 "enabled":"TRUE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_ip_variable_time_ipv4_5g_udp":{
                 "enabled":"TRUE",
@@ -333,7 +333,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},        
             "test_ip_variable_time_ipv4_5g_tcp":{
                 "enabled":"TRUE",
@@ -350,7 +350,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},        
             "test_ip_connection_ipv6_udp":{
                 "enabled":"FALSE",
@@ -368,7 +368,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},        
         
             "test_ip_variable_time_ipv6_tcp":{
@@ -481,7 +481,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},        
             "test_ipv4_ps":{
                 "enabled":"FALSE",
@@ -497,7 +497,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},        
             "test_ipv4_ttls":{
                 "enabled":"FALSE",
@@ -513,7 +513,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},        
             "test_l3_powersave_traffic":{
                 "enabled":"FALSE",
@@ -529,7 +529,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l4":{
                 "enabled":"TRUE",
@@ -548,7 +548,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l4_bytes_rd":{
                 "enabled":"TRUE",
@@ -567,7 +567,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l4_urls":{
                 "enabled":"TRUE",
@@ -586,7 +586,7 @@
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
-                    " --mgr LF_MGR_IP --sanitize"
+                    " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l4_ftp_bytes_rd":{
                 "enabled":"TRUE",
