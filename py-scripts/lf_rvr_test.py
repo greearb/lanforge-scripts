@@ -104,7 +104,11 @@ import importlib
 import argparse
 import time
 import json
+import logging
+import subprocess
+from time import sleep
 from os import path
+
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -118,6 +122,10 @@ cvtest = cv_test_manager.cv_test
 cv_add_base_parser = cv_test_manager.cv_add_base_parser
 cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
 
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 class RvrTest(cvtest):
     def __init__(self,
@@ -262,13 +270,24 @@ def main():
 
       """
                                      )
-
+    # more command line args in py-json/cv_test_manager.py 
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
     parser.add_argument("-u", "--upstream", type=str, default="",
                         help="Upstream port for wifi capacity test ex. 1.1.eth2")
-    parser.add_argument("--station", type=str, default="",
-                        help="Station to be used in this test, example: 1.1.sta01500")
+    parser.add_argument("--station", type=str, default="", help="Station to be used in this test, example: 1.1.sta01500")
+
+    # LANforge station configuration 
+    parser.add_argument("--band", type=str, help="band testing --band 6g", choices=["5g", "24g", "6g", "dual_band_5g", "dual_band_6g"], default='5g')
+    parser.add_argument("--radio", type=str, help="[LANforge station configuration] LANforge radio station created on --radio wiphy0")
+    parser.add_argument("--create_station", help="[LANforge station configuration] create LANforge station at the beginning of the test", action='store_true')
+    parser.add_argument("--ssid", type=str, help="[station configuration] station ssid, ssid of station must match the wlan created --ssid 6G-wpa3-AP3", required=True)
+    parser.add_argument("--ssidpw", "--security_key", dest='ssidpw', type=str, help="[station configuration]  station security key --ssidpw hello123", required=True)
+    parser.add_argument("--bssid", "--ap_bssid", dest='bssid', type=str, help="[station configuration]  station AP bssid ", required=True)
+    parser.add_argument("--security", type=str, help="[station configuration] security type open wpa wpa2 wpa3", required=True)
+    parser.add_argument("--wifi_mode", type=str, help="[station configuration] --wifi_mode auto  types auto|a|abg|abgn|abgnAC|abgnAX|an|anAC|anAX|b|bg|bgn|bgnAC|bgnAX|g ", default='auto')
+    parser.add_argument("--vht160", action='store_true', help="[station configuration] --vht160 , Enable VHT160 in lanforge ")
+    parser.add_argument("--ieee80211w", type=str, help="[station configuration] --ieee80211w 0 (Disabled) 1 (Optional) 2 (Required) (Required needs to be set to Required for 6g and wpa3 default Optional ", default='1')
 
     parser.add_argument("--dut", default="",
                         help="Specify DUT used by this test, example: linksys-8450")
@@ -281,10 +300,72 @@ def main():
     parser.add_argument("--graph_groups", help="File to save graph_groups to", default=None)
     parser.add_argument("--report_dir", default="")
     parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",default="")
+    parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
+    # logging configuration
+    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
 
     args = parser.parse_args()
 
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
+
+    # lf_logger_config_json will take presidence to changing debug levels
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
     cv_base_adjust_parser(args)
+    
+
+    # The script has the ability to create a station if one does not exist
+    if (args.create_station):
+    # go up one directory to run perl 
+    # TODO use lanforge_api
+        shelf, resource, station_name, *nil = LFUtils.name_to_eid(args.station)
+
+        cwd = os.getcwd()
+        path_parent = os.path.dirname(os.getcwd())
+        os.chdir(path_parent)
+
+        if (args.radio is None):
+            logger.info("WARNING --create needs a radio")
+            close_workbook(workbook)
+            exit(1)
+        if (args.band == '6g' or args.band == 'dual_band_6g'):
+            if (args.vht160):
+                logger.info("creating station with VHT160 set: {} on radio {}".format(station_name, args.radio))
+                logger.info("cwd lf_associate_ap.pl: {dir}".format(dir=os.getcwd()))
+                subprocess.run(["./lf_associate_ap.pl", "--mgr", args.mgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw, "--bssid", args.bssid,
+                                "--security", args.security, "--upstream", args.upstream, "--first_ip", "DHCP",
+                                "--first_sta", station_name, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=True)
+                sleep(3)
+            else:
+                logger.info("creating station: {} on radio {}".format(station_name, args.radio))
+                subprocess.run(["./lf_associate_ap.pl", "--mgr", args.mgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw, "--bssid", args.bssid,
+                                "--security", args.security, "--upstream", args.upstream, "--first_ip", "DHCP",
+                                "--first_sta", station_name, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add"], timeout=20, capture_output=True)
+
+        else:
+            if (args.vht160):
+                logger.info("creating station with VHT160 set: {} on radio {}".format(station_name, args.radio))
+                subprocess.run(["./lf_associate_ap.pl", "--mgr", args.mgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw, "--bssid", args.bssid,
+                                "--security", args.security, "--upstream", args.upstream, "--first_ip", "DHCP",
+                                "--first_sta", station_name, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add", "--xsec", "ht160_enable"], timeout=20, capture_output=False)
+                sleep(3)
+            else:
+                logger.info("creating station: {} on radio {}".format(station_name, args.radio))
+                subprocess.run(["./lf_associate_ap.pl", "--mgr", args.mgr, "--radio", args.radio, "--ssid", args.ssid, "--passphrase", args.ssidpw, "--bssid", args.bssid,
+                                "--security", args.security, "--upstream", args.upstream, "--first_ip", "DHCP",
+                                "--first_sta", station_name, "--ieee80211w", args.ieee80211w, "--wifi_mode", args.wifi_mode, "--action", "add"], timeout=20, capture_output=False)
+        sleep(3)
+        # change back to the currentl workin directory
+        os.chdir(cwd)
+
+
 
     CV_Test = RvrTest(lf_host=args.mgr,
                       lf_port=args.port,
