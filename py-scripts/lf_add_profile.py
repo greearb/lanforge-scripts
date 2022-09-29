@@ -79,11 +79,9 @@ class lf_add_profile():
                     _flags_mask: str = None,                   # Specify what flags to set.
                     _freq: str = None,                         # WiFi frequency to be used, 0 means default.
                     _instance_count: str = None,               # Number of devices (stations, vdevs, etc)
-                    _mac_pattern: str = None,                  # Optional MAC-Address pattern, for instance:
-                    # xx:xx:xx:*:*:xx
+                    _mac_pattern: str = None,                  # Optional MAC-Address pattern, for instance: xx:xx:xx:*:*:xx
                     _name: str = None,                         # Profile Name. [R]
-                    _passwd: str = None,                       # WiFi Password to be used (AP Mode), [BLANK] means no
-                    # password.
+                    _passwd: str = None,                       # WiFi Password to be used (AP Mode), [BLANK] means no password.
                     _profile_flags: str = None,                # Flags for this profile, see above.
                     _profile_type: str = None,                 # Profile type: See above. [W]
                     _ssid: str = None,                         # WiFi SSID to be used, [BLANK] means any.
@@ -93,20 +91,21 @@ class lf_add_profile():
                     _errors_warnings: list = None,
                     _suppress_related_commands: bool = False):
 
+        flag_val = 0
+        flag_val = self.command.set_flags(self.command.AddProfileProfileFlags,0, flag_names=_profile_flags)            
+
         self.command.post_add_profile(self, 
             alias_prefix=_alias_prefix,             # Port alias prefix, aka hostname prefix.
             antenna=_antenna,                       # Antenna count for this profile.
             bandwidth=_bandwidth,                   # 0 (auto), 20, 40, 80 or 160
             eap_id=_eap_id,                         # EAP Identifier
-            flags_mask=_flags_mask,                 # Specify what flags to set.
+            flags_mask=flag_val,                    # Specify what flags to set.
             freq=_freq,                             # WiFi frequency to be used, 0 means default.
             instance_count=_instance_count,         # Number of devices (stations, vdevs, etc)
-            mac_pattern=_mac_pattern,               # Optional MAC-Address pattern, for instance:
-            # xx:xx:xx:*:*:xx
+            mac_pattern=_mac_pattern,               # Optional MAC-Address pattern, for instance:   xx:xx:xx:*:*:xx
             name=_name,                             # Profile Name. [R]
-            passwd=_passwd,                         # WiFi Password to be used (AP Mode), [BLANK] means no
-            # password.
-            profile_flags=_profile_flags,           # Flags for this profile, see above.
+            passwd=_passwd,                         # WiFi Password to be used (AP Mode), [BLANK] means no password.
+            profile_flags=flag_val,                 # Flags for this profile, see above.
             profile_type=_profile_type,             # Profile type: See lanforge_api [W]
             ssid=_ssid,                             # WiFi SSID to be used, [BLANK] means any.
             vid=_vid,                               # Vlan-ID (only valid for vlan profiles).
@@ -121,20 +120,16 @@ class lf_add_profile():
 
     # http://www.candelatech.com/lfcli_ug.php#add_profile_notes
     def add_profile_notes(
-        dut: str = None,                          # Profile Name. [R]
-        text: str = None,                         # [BLANK] will erase all, any other text will be
-        # appended to existing text. <tt
-        # escapearg='false'>Unescaped Value</tt>
-        response_json_list: list = None,
-        errors_warnings: list = None,
-        suppress_related_commands: bool = False):
+        _dut: str = None,                          # Profile Name. [R]
+        _text: str = None,                         # [BLANK] will erase all, any other text will be appended to existing text. 
+        _response_json_list: list = None,
+        _errors_warnings: list = None,
+        _suppress_related_commands: bool = False):
 
         self.command.post_add_profile_notes(
-                               dut,                          # Profile Name. [R]
-                               text,                         # [BLANK] will erase all, any other text will be
-                               # appended to existing text. <tt
-                               # escapearg='false'>Unescaped Value</tt>
-                               response_json_list,
+                               dut=_dut,                          # Profile Name. [R]
+                               text=_test,                         # [BLANK] will erase all, any other text will be appended to existing text. 
+                               response_json_list=_response_json_list,
                                debug=self.debug,
                                errors_warnings=_error_warnings,
                                suppress_related_commands=_suppress_related_commands)
@@ -153,16 +148,25 @@ def main():
         description='''\
             adds a chamberview profile
 
-            add_profile Routed-AP-QA Routed-AP 0 4 0 0 vap hello123 4105
+            add_profile Routed-AP-QA Routed-AP 0 4 1 0 vap hello123 4105
 
-            profile flags            
+            profile flags   
+            4105 = 0x1009          
+
+            DHCP_SERVER = 0x1           # This should provide DHCP server.
+            SKIP_DHCP_ROAM = 0x10       # Ask station to not re-do DHCP on roam.
+            NAT = 0x100                 # Enable NAT if this object is in a virtual router
+            ENABLE_POWERSAVE = 0x1000   # Enable power-save when creating stations.
+
+            pass in --profile_flags 'DHCP_SERVER,SKIP_DHCP_ROAM,NAT,ENABLE_POWERSAVE'
+
 
             ''')
     # http://www.candelatech.com/lfcli_ug.php#add_profile
     parser.add_argument("--host", "--mgr", dest='mgr', help='specify the GUI to connect to')
     parser.add_argument("--mgr_port", help="specify the GUI to connect to, default 8080", default="8080")
-    parser.add_argument("--lf_user", help="specify the GUI to connect to, default 8080", default="lanforge")
-    parser.add_argument("--lf_passwd", help="specify the GUI to connect to, default 8080", default="lanforge")
+    parser.add_argument("--lf_user", help="lanforge user name", default="lanforge")
+    parser.add_argument("--lf_passwd", help="lanforge password", default="lanforge")
 
     # http://www.candelatech.com/lfcli_ug.php#add_profile
     parser.add_argument('--alias_prefix', dest='(add profile) alias_prefix', help='Port alias prefix, aka hostname prefix. ')
@@ -176,47 +180,49 @@ def main():
     parser.add_argument("--name", help="(add profile) Profile Name. [R] ", required=True)
     parser.add_argument('--passwd', help='(add profile) WiFi SSID to be used, [BLANK] means any.')
     parser.add_argument('--profile_flags', help=''' 
-                                    (add profile) Flags for this profilelanforge_api AddProfileProfileFlags'
-                                    enter the flags as a list 0x1009 is:
-                                        DHCP_SERVER = 0x1           # This should provide DHCP server.
-                                        SKIP_DHCP_ROAM = 0x10       # Ask station to not re-do DHCP on roam.
-                                        NAT = 0x100                 # Enable NAT if this object is in a virtual router
-                                        ENABLE_POWERSAVE = 0x1000   # Enable power-save when creating stations.
+    (add profile) Flags for this profilelanforge_api AddProfileProfileFlags'
+    enter the flags as a list 0x1009 is:
+        DHCP_SERVER = 0x1           # This should provide DHCP server.
+        SKIP_DHCP_ROAM = 0x10       # Ask station to not re-do DHCP on roam.
+        NAT = 0x100                 # Enable NAT if this object is in a virtual router
+        ENABLE_POWERSAVE = 0x1000   # Enable power-save when creating stations.
 
-                                        pass in --profile_flags 'DHCP_SERVER,SKIP_DHCP_ROAM,NAT,ENABLE_POWERSAVE'
+        pass in --profile_flags 'DHCP_SERVER,SKIP_DHCP_ROAM,NAT,ENABLE_POWERSAVE'
 
-                                    flags:
-                                            p_11r = 0x40                   # Use 802.11r roaming setup.
-                                            ALLOW_11W = 0x800              # Set 11w (MFP/PMF) to optional.
-                                            BSS_TRANS = 0x400              # Enable BSS Transition logic
-                                            DHCP_SERVER = 0x1              # This should provide DHCP server.
-                                            EAP_PEAP = 0x200               # Enable EAP-PEAP
-                                            EAP_TTLS = 0x80                # Use 802.1x EAP-TTLS
-                                            ENABLE_POWERSAVE = 0x1000      # Enable power-save when creating stations.
-                                            NAT = 0x100                    # Enable NAT if this object is in a virtual router
-                                            SKIP_DHCP_ROAM = 0x10          # Ask station to not re-do DHCP on roam.
-                                            WEP = 0x2                      # Use WEP encryption
-                                            WPA = 0x4                      # Use WPA encryption
-                                            WPA2 = 0x8                     # Use WPA2 encryption
-                                            WPA3 = 0x20                    # Use WPA3 encryption
-                                    ''')
-    parser.add_argument("--profile_type", help='''(add profile) Profile type: [W]
-                                                Bridged_AP: briged-AP
-                                                Monitor: monitor
-                                                Peer: peer
-                                                RDD: rdd
-                                                Routed_AP: routed-AP
-                                                STA: STA-AC
-                                                STA: STA-AUTO
-                                                STA: STA-AX
-                                                STA: STA-abg
-                                                STA: STA-n
-                                                Uplink: uplink-nat
-                                                Upstream: upstrream
-                                                Upstream: upstream-dhcp
-                                                as_is: as-is
-                                                NA
-                                                ''')
+    flags:
+            p_11r = 0x40                   # Use 802.11r roaming setup.
+            ALLOW_11W = 0x800              # Set 11w (MFP/PMF) to optional.
+            BSS_TRANS = 0x400              # Enable BSS Transition logic
+            DHCP_SERVER = 0x1              # This should provide DHCP server.
+            EAP_PEAP = 0x200               # Enable EAP-PEAP
+            EAP_TTLS = 0x80                # Use 802.1x EAP-TTLS
+            ENABLE_POWERSAVE = 0x1000      # Enable power-save when creating stations.
+            NAT = 0x100                    # Enable NAT if this object is in a virtual router
+            SKIP_DHCP_ROAM = 0x10          # Ask station to not re-do DHCP on roam.
+            WEP = 0x2                      # Use WEP encryption
+            WPA = 0x4                      # Use WPA encryption
+            WPA2 = 0x8                     # Use WPA2 encryption
+            WPA3 = 0x20                    # Use WPA3 encryption
+    ''')
+    parser.add_argument("--profile_type", help='''
+        (add profile) 
+        Profile type: [W]
+        Bridged_AP: briged-AP
+        Monitor: monitor
+        Peer: peer
+        RDD: rdd
+        Routed_AP: routed-AP
+        STA: STA-AC
+        STA: STA-AUTO
+        STA: STA-AX
+        STA: STA-abg
+        STA: STA-n
+        Uplink: uplink-nat
+        Upstream: upstrream
+        Upstream: upstream-dhcp
+        as_is: as-is
+        NA
+        ''')
     parser.add_argument("--ssid", help='(add profile) WiFi SSID to be used, [BLANK] means any.')
     parser.add_argument("--vid", help='(add profile) Vlan-ID (only valid for vlan profiles).')
     parser.add_argument("--wifi_mode", help='''(add profile) WiFi Mode for this profile.
@@ -253,7 +259,13 @@ def main():
 
     # http://www.candelatech.com/lfcli_ug.php#add_profile_notes
     parser.add_argument('--dut', help='(add profile notes) Profile Name. [R]', required=True)
-    parser.add_argument('--text', help='(add profile notes) [BLANK] will erase all, any other text will be  appended to existing text. must be entered line by line')
+    parser.add_argument('--text', action='append',
+                        nargs=1,
+                        help='''(add profile notes) list of lines of text  
+                                            [BLANK] will erase all, 
+                                            any other text will be appended to existing text. 
+                                            must be entered line by line
+                                        ''')
 
     # Logging Configuration
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
@@ -275,229 +287,37 @@ def main():
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-    if not args.wl_name:
-        logger.error("No wanlink name provided")
-        exit(1)
-
-    wanlink = lf_add_profile(lf_mgr=args.mgr,
-                            lf_port=8080,
+    profile = lf_add_profile(lf_mgr=args.mgr,
+                            lf_port=args.mgr_port,
                             lf_user=args.lf_user,
                             lf_passwd=args.lf_passwd,
-                            debug=True)
+                            debug=args.debug)
 
     # parameters for add_profile
     # alias
-    endp_A = args.wl_name + "-A"
-    endp_B = args.wl_name + "-B"
-
-    latency_A = args.latency_A if args.latency_A is not None else args.latency
-    latency_B = args.latency_B if args.latency_B is not None else args.latency
-
-    max_rate_A = args.max_rate_A if args.max_rate_A is not None else args.max_rate
-    max_rate_B = args.max_rate_B if args.max_rate_B is not None else args.max_rate
-
-    # parameters for set_wanlink_info
-    drop_freq_A = args.drop_freq_A if args.drop_freq_A is not None else args.drop_freq
-    drop_freq_B = args.drop_freq_B if args.drop_freq_B is not None else args.drop_freq
-
-    dup_freq_A = args.dup_freq_A if args.dup_freq_A is not None else args.dup_freq
-    dup_freq_B = args.dup_freq_B if args.dup_freq_B is not None else args.dup_freq
-
-    extra_buffer_A = args.extra_buffer_A if args.extra_buffer_A is not None else args.extra_buffer
-    extra_buffer_B = args.extra_buffer_B if args.extra_buffer_B is not None else args.extra_buffer
-
-    jitter_freq_A = args.jitter_freq_A if args.jitter_freq_A is not None else args.jitter_freq
-    jitter_freq_B = args.jitter_freq_B if args.jitter_freq_B is not None else args.jitter_freq
-
-    latency_packet_A = args.latency_packet_A if args.latency_packet_A is not None else args.latency_packet
-    latency_packet_B = args.latency_packet_B if args.latency_packet_B is not None else args.latency_packet
-
-    max_drop_amt_A = args.max_drop_amt_A if args.max_drop_amt_A is not None else args.max_drop_amt
-    max_drop_amt_B = args.max_drop_amt_B if args.max_drop_amt_B is not None else args.max_drop_amt
-
-    max_jitter_A = args.max_jitter_A if args.max_jitter_A is not None else args.max_jitter
-    max_jitter_B = args.max_jitter_B if args.max_jitter_B is not None else args.max_jitter
-
-    max_lateness_A = args.max_lateness_A if args.max_lateness_A is not None else args.max_lateness
-    max_lateness_B = args.max_lateness_B if args.max_lateness_B is not None else args.max_lateness
-
-    max_reorder_amt_A = args.max_reorder_amt_A if args.max_reorder_amt_A is not None else args.max_reorder_amt
-    max_reorder_amt_B = args.max_reorder_amt_B if args.max_reorder_amt_B is not None else args.max_reorder_amt
-
-    min_drop_amt_A = args.min_drop_amt_A if args.min_drop_amt_A is not None else args.min_drop_amt
-    min_drop_amt_B = args.min_drop_amt_B if args.min_drop_amt_B is not None else args.min_drop_amt
-
-    min_reorder_amt_A = args.min_reorder_amt_A if args.min_reorder_amt_A is not None else args.min_reorder_amt
-    min_reorder_amt_B = args.min_reorder_amt_B if args.min_reorder_amt_B is not None else args.min_reorder_amt
-
-    reorder_freq_A = args.reorder_freq_A if args.reorder_freq_A is not None else args.reorder_freq
-    reorder_freq_B = args.reorder_freq_B if args.reorder_freq_B is not None else args.reorder_freq
-
-    speed_A = args.speed_A if args.speed_A is not None else args.speed
-    speed_B = args.speed_B if args.speed_B is not None else args.speed
-
-    # Comment out some parameters like 'max_jitter', 'drop_freq' and 'wanlink'
-    # in order to view the X-Errors headers
-
     # create side A
-    wanlink.add_wl_endp(_alias=endp_A,                        # Name of endpoint. [R]
-                        _cpu_id=args.cpu_id,                  # The CPU/thread that this process should run on (kernel-mode only).
-                        _description=args.description,        # Description for this endpoint, put in single quotes if it contains spaces.
-                        _latency=latency_A,                   # The latency (ms) that will be added to each packet entering this WanLink.
-                        _max_rate=max_rate_A,                 # Maximum transmit rate (bps) for this WanLink.
-                        _port=args.port_A,                    # Port number. [W]
-                        _resource=args.resource,              # Resource number. [W]
-                        _shelf=args.shelf,                    # Shelf name/id. [R][D:1]
-                        _wle_flags=args.wle_flags,            # WanLink Endpoint specific flags, see above.
-                        _suppress_related_commands=args.suppress_related_commands)
+    profile.add_profile(
+                    _alias_prefix=args.alias_prefix,                    # Port alias prefix, aka hostname prefix.
+                    _antenna=args.antenna,                              # Antenna count for this profile.
+                    _bandwidth=args.bandwidth,                          # 0 (auto), 20, 40, 80 or 160
+                    _eap_id=args.eap_id,                                # EAP Identifier
+                    _flags_mask=args.flags_mask,                        # Specify what flags to set.
+                    _freq=args.freq,                                    # WiFi frequency to be used, 0 means default.
+                    _instance_count=args.instance_count,                # Number of devices (stations, vdevs, etc)
+                    _mac_pattern=args.mac_pattern,                      # Optional MAC-Address pattern, for instance: xx:xx:xx:*:*:xx
+                    _name=args.name,                                    # Profile Name. [R]
+                    _passwd=args.passwd,                                # WiFi Password to be used (AP Mode), [BLANK] means no password.
+                    _profile_flags=args.profile_flags,                  # Flags for this profile, see above.
+                    _profile_type=args.profile_type,                    # Profile type: See above. [W]
+                    _ssid=args.ssid,                                    # WiFi SSID to be used, [BLANK] means any.
+                    _vid=args.vid,                                      # Vlan-ID (only valid for vlan profiles).
+                    _wifi_mode=args.wifi_mode,                          # WiFi Mode for this profile.
+                    _suppress_related_commands=args.suppress_related_commands)
 
-    # endp B
-    wanlink.add_wl_endp(_alias=endp_B,                        # Name of endpoint. [R]
-                        _cpu_id=args.cpu_id,                  # The CPU/thread that this process should run on (kernel-mode only).
-                        _description=args.description,        # Description for this endpoint, put in single quotes if it contains spaces.
-                        _latency=latency_B,                   # The latency (ms) that will be added to each packet entering this WanLink.
-                        _max_rate=max_rate_B,                 # Maximum transmit rate (bps) for this WanLink.
-                        _port=args.port_B,                    # Port number. [W]
-                        _resource=args.resource,              # Resource number. [W]
-                        _shelf=args.shelf,                    # Shelf name/id. [R][D:1]
-                        _wle_flags=args.wle_flags,            # WanLink Endpoint specific flags, see above.
-                        _suppress_related_commands=args.suppress_related_commands)
-
-    result = wanlink.add_cx(_alias=args.wl_name,
-                            _rx_endp=endp_A,
-                            _tx_endp=endp_B,
-                            _test_mgr="default_tm")
-
-    logger.debug(pformat(result))
-
-    # set_wanlink_info A
-    wanlink.set_wanlink_info(_drop_freq=drop_freq_A,                    # How often, out of 1,000,000 packets, should we
-                             # purposefully drop a packet.
-                             _dup_freq=dup_freq_A,                     # How often, out of 1,000,000 packets, should we
-                             # purposefully duplicate a packet.
-                             _extra_buffer=extra_buffer_A,                 # The extra amount of bytes to buffer before
-                             # dropping pkts, in units of 1024. Use -1 for AUTO.
-                             _jitter_freq=jitter_freq_A,                  # How often, out of 1,000,000 packets, should we
-                             # apply jitter.
-                             _latency=latency_packet_A,                      # The base latency added to all packets, in
-                             # milliseconds (or add 'us' suffix for microseconds
-                             _max_drop_amt=max_drop_amt_A,                 # Maximum amount of packets to drop in a row.
-                             # Default is 1.
-                             _max_jitter=max_jitter_A,                   # The maximum jitter, in milliseconds (or ad 'us'
-                             # suffix for microseconds)
-                             _max_lateness=max_lateness_A,                 # Maximum amount of un-intentional delay before pkt
-                             # is dropped. Default is AUTO
-                             _max_reorder_amt=max_reorder_amt_A,              # Maximum amount of packets by which to reorder,
-                             # Default is 10.
-                             _min_drop_amt=min_drop_amt_A,                 # Minimum amount of packets to drop in a row.
-                             # Default is 1.
-                             _min_reorder_amt=min_reorder_amt_A,              # Minimum amount of packets by which to reorder,
-                             # Default is 1.
-                             _name=endp_A,                         # The name of the endpoint we are configuring. [R]
-                             _playback_capture_file=args.playback_capture_file,        # Name of the WAN capture file to play back.
-                             _reorder_freq=reorder_freq_A,                 # How often, out of 1,000,000 packets, should we
-                             # make a packet out of order.
-                             _speed=speed_A,                        # The maximum speed of traffic this endpoint will
-                             # accept (bps).
-                             _debug=args.debug,
-                             _suppress_related_commands=args.suppress_related_commands)
-
-    if args.kernel_mode:
-        wanlink.set_endp_flag(_name=endp_A,
-                            _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
-                            _val=1,
-                            _suppress_related_commands=args.suppress_related_commands)
-
-    else:                                
-        wanlink.set_endp_flag(_name=endp_A,
-                            _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
-                            _val=0,
-                            _suppress_related_commands=args.suppress_related_commands)
-
-    if args.pass_through_mode:
-        wanlink.set_endp_flag(_name=endp_A,
-                            _flag='PassthroughMode',
-                            _val=1,
-                            _suppress_related_commands=args.suppress_related_commands)
-
-    else:                                
-        wanlink.set_endp_flag(_name=endp_A,
-                            _flag='PassthroughMode',
-                            _val=0,
-                            _suppress_related_commands=args.suppress_related_commands)
-
-
-    # set_wanlink_info B
-    wanlink.set_wanlink_info(_drop_freq=drop_freq_B,                    # How often, out of 1,000,000 packets, should we
-                             # purposefully drop a packet.
-                             _dup_freq=dup_freq_B,                     # How often, out of 1,000,000 packets, should we
-                             # purposefully duplicate a packet.
-                             _extra_buffer=extra_buffer_B,                 # The extra amount of bytes to buffer before
-                             # dropping pkts, in units of 1024. Use -1 for AUTO.
-                             _jitter_freq=jitter_freq_B,                  # How often, out of 1,000,000 packets, should we
-                             # apply jitter.
-                             _latency=latency_packet_B,                      # The base latency added to all packets, in
-                             # milliseconds (or add 'us' suffix for microseconds
-                             _max_drop_amt=max_drop_amt_B,                 # Maximum amount of packets to drop in a row.
-                             # Default is 1.
-                             _max_jitter=max_jitter_B,                   # The maximum jitter, in milliseconds (or ad 'us'
-                             # suffix for microseconds)
-                             _max_lateness=max_lateness_B,                 # Maximum amount of un-intentional delay before pkt
-                             # is dropped. Default is AUTO
-                             _max_reorder_amt=max_reorder_amt_B,              # Maximum amount of packets by which to reorder,
-                             # Default is 10.
-                             _min_drop_amt=min_drop_amt_B,                 # Minimum amount of packets to drop in a row.
-                             # Default is 1.
-                             _min_reorder_amt=min_reorder_amt_B,              # Minimum amount of packets by which to reorder,
-                             # Default is 1.
-                             _name=endp_B,                         # The name of the endpoint we are configuring. [R]
-                             _playback_capture_file=args.playback_capture_file,        # Name of the WAN capture file to play back.
-                             _reorder_freq=reorder_freq_B,                 # How often, out of 1,000,000 packets, should we
-                             # make a packet out of order.
-                             _speed=speed_B,                        # The maximum speed of traffic this endpoint will
-                             # accept (bps).
-                             _debug=args.debug,
-                             _suppress_related_commands=args.suppress_related_commands)
-
-    if args.kernel_mode:
-        wanlink.set_endp_flag(_name=endp_B,
-                            _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
-                            _val=1,
-                            _suppress_related_commands=args.suppress_related_commands)
-
-    else:                                
-        wanlink.set_endp_flag(_name=endp_B,
-                            _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
-                            _val=0,
-                            _suppress_related_commands=args.suppress_related_commands)
-    if args.pass_through_mode:
-        wanlink.set_endp_flag(_name=endp_B,
-                            _flag='PassthroughMode',
-                            _val=1,
-                            _suppress_related_commands=args.suppress_related_commands)
-
-    else:                                
-        wanlink.set_endp_flag(_name=endp_B,
-                            _flag='PassthroughMode',
-                            _val=0,
-                            _suppress_related_commands=args.suppress_related_commands)
-
-
-    eid_list = [args.wl_name]
-    ewarn_list = []
-    result = wanlink.get_wl(_eid_list=eid_list,
-                            _wait_sec=0.2,
-                            _timeout_sec=2.0,
-                            _errors_warnings=ewarn_list)
-    logger.debug(pformat(result))
-
-    eid_list = [endp_A, endp_B]
-    result = wanlink.get_wl_endp(_eid_list=eid_list,
-                            _wait_sec=0.2,
-                            _timeout_sec=2.0,
-                            _errors_warnings=ewarn_list)
-    logger.debug(pformat(result))
-
+    if args.text is not None:
+        for text in args.text:
+            profile.add_profile_notes(_dut=args.name,
+                                    _text=text)
 
 
 if __name__ == "__main__":
