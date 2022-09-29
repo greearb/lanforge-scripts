@@ -288,8 +288,8 @@ $ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --por
     # http://www.candelatech.com/lfcli_ug.php#add_wl_endp
     parser.add_argument("--host", "--mgr", dest='mgr', help='specify the GUI to connect to')
     parser.add_argument("--mgr_port", help="specify the GUI to connect to, default 8080", default="8080")
-    parser.add_argument("--lf_user", help="specify the GUI to connect to, default 8080", default="lanforge")
-    parser.add_argument("--lf_passwd", help="specify the GUI to connect to, default 8080", default="lanforge")
+    parser.add_argument("--lf_user", help="lanforge user name default lanforge", default="lanforge")
+    parser.add_argument("--lf_passwd", help="lanforge password defualt lanforge ", default="lanforge")
     parser.add_argument('--wl_name', '--alias', dest='wl_name', help='(add wl endp) The name of the endpoint we are configuring. [R] ', required=True)
     parser.add_argument('--cpu_id', help="(add wl endp) The CPU/thread that this process should run on (kernel-mode only). Default = 'NA'", default='NA')
     parser.add_argument('--description', help="(add wl endp) Description for this endpoint, put in single quotes if it contains spaces Default = 'NA'", default='NA')
