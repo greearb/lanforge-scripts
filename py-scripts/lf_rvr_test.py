@@ -268,6 +268,15 @@ def main():
       --raw_line 'rvr_bringup_wait: 30000' \\
       --raw_line 'first_byte_wait: 30000'
 
+    To create a station 
+        --create_station
+        --band 5g
+        --radio wiphy1
+        --ssid asus_5g
+        --ssidpw lf_asus_5g
+        --bssid f0:2f:74:c7:a2:04
+        --security wpa2
+
       """
                                      )
     # more command line args in py-json/cv_test_manager.py 
