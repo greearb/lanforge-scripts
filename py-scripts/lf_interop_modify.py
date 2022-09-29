@@ -50,13 +50,13 @@ class InteropCommands(Realm):
                  _host=None,
                  _port=None,
                  device_eid=None,
-                 operation=None,
-                 display=None,
+                 launch_gui=None,
+                 install=None,
+                 install_g=None,
+                 logs=None,
                  screen_size_prcnt=None,
-                 duration=None,
                  log_destination=None,
                  install_g_opt=False,
-                 filename=None,
                  _proxy_str=None,
                  _debug_on=False,
                  _exit_on_error=False,
@@ -64,13 +64,13 @@ class InteropCommands(Realm):
         super().__init__(lfclient_host=_host,
                          debug_=_debug_on)
         self.device_eid=device_eid
-        self.display=display
         self.screen_size_prcnt=screen_size_prcnt
-        self.duration=duration
-        self.operation=operation
+        self.launch_gui=launch_gui
+        self.install=install
+        self.install_g=install_g
+        self.logs=logs
         self.log_destination=log_destination
         self.install_g_opt=install_g_opt
-        self.filename=filename
         # we cannot assume port 8080 because some labs use port translation
         self.debug = _debug_on
         self.session = LFSession(lfclient_url=_host,
@@ -92,41 +92,42 @@ class InteropCommands(Realm):
         eid = self.name_to_eid(self.device_eid)
         pprint(eid)
 
-        if self.operation == 'gui':
+        if self.launch_gui:
             self.command.post_adb_gui(shelf=eid[0],
                                       resource=eid[1],
                                       adb_id=eid[2],
-                                      display=self.display,
+                                      display=self.launch_gui,
                                       screen_size_prcnt=self.screen_size_prcnt,
                                       debug=self.debug)
 
-        elif self.operation == 'install':
+        elif self.install or self.install_g:
+            fname = self.install
             cmd = "install -r -t "
-            if self.install_g_opt:
+            if self.install_g:
+                fname=self.install_g
                 cmd += "-g "
-            cmd += "-d " + self.filename.strip()
-            print(self.adb_command)
+            cmd += "-d " + fname.strip()
+            print(cmd)
             self.command.post_adb(shelf=eid[0],
                                   resource=eid[1],
                                   adb_id=eid[2],
-                                  adb_cmd=self.adb_command,
+                                  adb_cmd=cmd,
                                   debug=self.debug)
 
-
-        elif self.operation == 'log':
+        elif self.logs > 0:
             if not self.log_destination:
                 raise ValueError("adb log capture requires log_destination")
             user_key = self.session.get_session_based_key()
-            if (self.debug):
+            if self.debug:
                 print("====== ====== destination [%s] dur[%s] user_key[%s] " %
-                      (self.log_destination, self.duration, user_key))
+                      (self.log_destination, self.logs, user_key))
                 self.session.logger.register_method_name("json_post")
             json_response = []
             self.command.post_log_capture(shelf=eid[0],
                                           resource=eid[1],
                                           p_type="adb",
                                           identifier=eid[2],
-                                          duration=self.duration,
+                                          duration=self.logs,
                                           destination=self.log_destination,
                                           user_key=self.session.get_session_based_key(),
                                           response_json_list=json_response,
@@ -139,13 +140,14 @@ def main():
     desc = """modifies interop device 
     Operations: 
     *    Example of loading Interop GUI: 
-    lf_interop_modify.py --operation gui --device 1.1.KEBE2021070849 --display 192.168.100.220 --screensize 0.4 
+    lf_interop_modify.py --show_gui 192.168.100.202:1 --device 1.1.KEBE2021070849 --screensize 0.4
     *    Example of installing APK: 
-    lf_interop_modify.py --operation install 1.1.0123456789ABCDEF -g -filename interop-new.apk 
+    lf_interop_modify.py --install_g interop-5.4.5.apk --device 1.1.KEBE2021070849
     *    Example of capturing logs 
-    lf_interop_modify.py --operation log 1.1.KEBE2021070849 --duration 5 
+    lf_interop_modify.py --logs 1 --device 1.1.KEBE2021070849 --log_destination foo4.txt
     *    Example of change other LF device settings 
-    lf_interop_modify.py --operation modify log 1.1.KEBE2021070849\n"""
+    @TODO
+    """
 
     parser = argparse.ArgumentParser(
         prog=__file__,
@@ -156,28 +158,28 @@ def main():
     parser.add_argument("--host", "--mgr", default='localhost',
                         help='specify the GUI to connect to, assumes port 8080')
 
-    parser.add_argument('--operation', '-o', '--op', type=str, default='gui',
-                        help='specify the operation to be performed: ( gui | install | log | modify )')
+    parser.add_argument('--show_gui', '--gui', type=str, default='',
+                        help='Display the Android GUI on this X-windows display address (IP:display). '
+                        'EG: 192.168.100.264:0.0')
+
+    parser.add_argument('--install', '--i', type=str, default='',
+                        help='Install apk with this filename')
+
+    parser.add_argument('--install_g', '--ig', type=str, default='',
+                        help='Install apk with this filename, adding the -g flag')
+
+    parser.add_argument('--logs', type=float, default=0,
+                        help='Gather ADB logs for a duration of this many minutes')
 
     parser.add_argument('--device', type=str, default='',
                         help='specify the EID (serial number) of the interop device (eg 1.1.91BX93V4')
 
-    parser.add_argument('--display', type=str, default='192.168.100.220:0',
-                        help='GUI: X-windows display address (IP:display) that the Android GUI will be '
-                             'displayed on. EG: 192.168.100.264:0.0')
-
     parser.add_argument('--screensize', type=float, default='0.4',
                         help='GUI: specify the Android screen size when launching the Android GUI (percent as float)')
 
-    parser.add_argument('--option_g', action='store_true',
-                        help='INSTALL: install apk with -g option')
-    parser.add_argument('--filename', type=str, default='interop-5.4.5.apk',
-                        help='INSTALL: filename of apk to be installed')
-
-    parser.add_argument('--duration', type=float, default=5,
-                        help='LOG: the amount of time for logs to be gathered (in minutes)')
     parser.add_argument('--log_destination',
-                        help='LOG: the amount of time for logs to be gathered (in minutes)')
+                        help='LOG: the filename destination on the LF device where the log file should be stored'
+                             'Give "stdout" to receive content as keyed text message')
     parser.add_argument('--log_level', default=None)
 
     args = parser.parse_args()
@@ -192,18 +194,17 @@ def main():
         myhost = "http://"+args.host
     parsed_url = urlparse(myhost)
     if not parsed_url.port:
-        parsed_url.port = 8080
+        parsed_url._replace(netloc=parsed_url.netloc.replace(str(parsed_url.port), "8080"))
 
     interop = InteropCommands(_host=parsed_url.hostname,
                               _port=parsed_url.port,
                               device_eid=args.device,
-                              display=args.display,
                               screen_size_prcnt=args.screensize,
-                              duration=args.duration,
-                              operation=args.operation,
+                              launch_gui=args.show_gui,
+                              install=args.install,
+                              install_g=args.install_g,
+                              logs=args.logs,
                               log_destination=args.log_destination,
-                              install_g_opt=args.option_g,
-                              filename=args.filename,
                               _proxy_str=None,
                               _debug_on=False,
                               _exit_on_error=False,
