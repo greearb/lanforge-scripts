@@ -7,6 +7,8 @@ PURPOSE:    Add LANforge device profile. This can give a high level description 
 
 EXAMPLE:
 
+lf_add_profile.py  , the --name refers to the profile name
+
     vscode sample:
             "args":[
             "--mgr","192.168.0.104",
@@ -15,9 +17,10 @@ EXAMPLE:
             "--lf_passwd","lanforge",
             "--antenna","4",
             "--instance_count","1",
+            // see http://www.candelatech.com/lfcli_ug.php#add_profile for the profile flags
             //"--profile_flags","DHCP_SERVER,SKIP_DHCP_ROAM,NAT,ENABLE_POWERSAVE",
             "--profile_flags","4105",
-            "--name","Routed-AP-QA13",
+            "--name","Routed-AP-QA13",  
             "--profile_type","routed_ap",
             "--ssid","vap",
             "--passwd","hello123",
@@ -26,10 +29,18 @@ EXAMPLE:
             "--log_level","debug",
             "--debug"]
 
+    Command line:
+    see see http://www.candelatech.com/lfcli_ug.php#add_profile for the profile flags
     ./lf_add_profile.py --mgr 192.168.0.104 --mgr_port 8080 --lf_user lanforge --lf_passwd lanforge --antenna 4
         --instance_count 1 --profile_flags 4105 --name Routed-AP-QA13 --profile_type routed_ap 
         --ssid vap --passwd hello123 --dut Routed-AP-13 --text 'Making a Routed-AP-13 profile' 
         --log_level debug --debug
+
+    Once the profile is created a chamberview need to be created based off that profile
+    ./create_chamberview.py --lfmgr 192.168.0.104 --port 8080 --create_scenario QA13-2 
+    --raw_line 'profile_link 1.1 Routed-AP-QA13 1 NA NA wiphy1,AUTO -1 NA' --raw_line 'resource 1.1.0 0'
+
+    The --raw_line are determined applying the profile above 
 
 
 NOTES:
@@ -184,6 +195,19 @@ def main():
 
             pass in --profile_flags 'DHCP_SERVER,SKIP_DHCP_ROAM,NAT,ENABLE_POWERSAVE'
 
+    Example:
+        Command line:
+        see see http://www.candelatech.com/lfcli_ug.php#add_profile for the profile flags
+        ./lf_add_profile.py --mgr 192.168.0.104 --mgr_port 8080 --lf_user lanforge --lf_passwd lanforge --antenna 4
+            --instance_count 1 --profile_flags 4105 --name Routed-AP-QA13 --profile_type routed_ap 
+            --ssid vap --passwd hello123 --dut Routed-AP-13 --text 'Making a Routed-AP-13 profile' 
+            --log_level debug --debug
+
+        Once the profile is created a chamberview need to be created based off that profile
+        ./create_chamberview.py --lfmgr 192.168.0.104 --port 8080 --create_scenario QA13-2 
+        --raw_line 'profile_link 1.1 Routed-AP-QA13 1 NA NA wiphy1,AUTO -1 NA' --raw_line 'resource 1.1.0 0'
+
+        The --raw_line are determined applying the profile above 
 
             ''')
     # http://www.candelatech.com/lfcli_ug.php#add_profile
