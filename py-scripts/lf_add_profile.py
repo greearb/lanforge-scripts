@@ -7,6 +7,30 @@ PURPOSE:    Add LANforge device profile. This can give a high level description 
 
 EXAMPLE:
 
+    vscode sample:
+            "args":[
+            "--mgr","192.168.0.104",
+            "--mgr_port","8080",
+            "--lf_user","lanforge",
+            "--lf_passwd","lanforge",
+            "--antenna","4",
+            "--instance_count","1",
+            //"--profile_flags","DHCP_SERVER,SKIP_DHCP_ROAM,NAT,ENABLE_POWERSAVE",
+            "--profile_flags","4105",
+            "--name","Routed-AP-QA13",
+            "--profile_type","routed_ap",
+            "--ssid","vap",
+            "--passwd","hello123",
+            "--dut","Routed-AP-13",
+            "--text","Making a Routed-AP-13",
+            "--log_level","debug",
+            "--debug"]
+
+    ./lf_add_profile.py --mgr 192.168.0.104 --mgr_port 8080 --lf_user lanforge --lf_passwd lanforge --antenna 4
+        --instance_count 1 --profile_flags 4105 --name Routed-AP-QA13 --profile_type routed_ap 
+        --ssid vap --passwd hello123 --dut Routed-AP-13 --text 'Making a Routed-AP-13 profile' 
+        --log_level debug --debug
+
 
 NOTES:
 
@@ -91,10 +115,10 @@ class lf_add_profile():
                     _errors_warnings: list = None,
                     _suppress_related_commands: bool = False):
 
-        flag_val = 0
-        flag_val = self.command.set_flags(self.command.AddProfileProfileFlags,0, flag_names=_profile_flags)            
+        flag_val = _profile_flags
+        # flag_val = self.command.set_flags(self.command.AddProfileProfileFlags,0, flag_names=_profile_flags)            
 
-        self.command.post_add_profile(self, 
+        self.command.post_add_profile(
             alias_prefix=_alias_prefix,             # Port alias prefix, aka hostname prefix.
             antenna=_antenna,                       # Antenna count for this profile.
             bandwidth=_bandwidth,                   # 0 (auto), 20, 40, 80 or 160
@@ -119,7 +143,7 @@ class lf_add_profile():
     # The text must be entered one line at a time, primarily due to CLI parsing limitations. 
 
     # http://www.candelatech.com/lfcli_ug.php#add_profile_notes
-    def add_profile_notes(
+    def add_profile_notes(self,
         _dut: str = None,                          # Profile Name. [R]
         _text: str = None,                         # [BLANK] will erase all, any other text will be appended to existing text. 
         _response_json_list: list = None,
@@ -128,10 +152,10 @@ class lf_add_profile():
 
         self.command.post_add_profile_notes(
                                dut=_dut,                          # Profile Name. [R]
-                               text=_test,                         # [BLANK] will erase all, any other text will be appended to existing text. 
+                               text=_text,                        # [BLANK] will erase all, any other text will be appended to existing text. 
                                response_json_list=_response_json_list,
                                debug=self.debug,
-                               errors_warnings=_error_warnings,
+                               errors_warnings=_errors_warnings,
                                suppress_related_commands=_suppress_related_commands)
 
 
@@ -169,7 +193,7 @@ def main():
     parser.add_argument("--lf_passwd", help="lanforge password", default="lanforge")
 
     # http://www.candelatech.com/lfcli_ug.php#add_profile
-    parser.add_argument('--alias_prefix', dest='(add profile) alias_prefix', help='Port alias prefix, aka hostname prefix. ')
+    parser.add_argument('--alias_prefix', help='(add profile) alias_prefix Port alias prefix, aka hostname prefix. ')
     parser.add_argument('--antenna', help="(add profile) Antenna count for this profile.")
     parser.add_argument('--bandwidth', help="(add profile) 0 (auto), 20, 40, 80 or 160")
     parser.add_argument("--eap_id", help="(add profile) EAP Identifier")
@@ -179,7 +203,10 @@ def main():
     parser.add_argument("--mac_pattern", help="(add profile) Optional MAC-Address pattern, for instance:  xx:xx:xx:*:*:xx")
     parser.add_argument("--name", help="(add profile) Profile Name. [R] ", required=True)
     parser.add_argument('--passwd', help='(add profile) WiFi SSID to be used, [BLANK] means any.')
-    parser.add_argument('--profile_flags', help=''' 
+    parser.add_argument('--profile_flags', 
+            # nargs='+', # trying to pass in a list
+            # action='append',
+            help=''' 
     (add profile) Flags for this profilelanforge_api AddProfileProfileFlags'
     enter the flags as a list 0x1009 is:
         DHCP_SERVER = 0x1           # This should provide DHCP server.
@@ -296,6 +323,7 @@ def main():
     # parameters for add_profile
     # alias
     # create side A
+    print("args.alias_prefix {}".format(args.alias_prefix))
     profile.add_profile(
                     _alias_prefix=args.alias_prefix,                    # Port alias prefix, aka hostname prefix.
                     _antenna=args.antenna,                              # Antenna count for this profile.
@@ -311,8 +339,8 @@ def main():
                     _profile_type=args.profile_type,                    # Profile type: See above. [W]
                     _ssid=args.ssid,                                    # WiFi SSID to be used, [BLANK] means any.
                     _vid=args.vid,                                      # Vlan-ID (only valid for vlan profiles).
-                    _wifi_mode=args.wifi_mode,                          # WiFi Mode for this profile.
-                    _suppress_related_commands=args.suppress_related_commands)
+                    _wifi_mode=args.wifi_mode                          # WiFi Mode for this profile.
+                    )
 
     if args.text is not None:
         for text in args.text:
