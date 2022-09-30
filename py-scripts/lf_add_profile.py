@@ -189,11 +189,10 @@ def main():
             4105 = 0x1009          
 
             DHCP_SERVER = 0x1           # This should provide DHCP server.
-            SKIP_DHCP_ROAM = 0x10       # Ask station to not re-do DHCP on roam.
-            NAT = 0x100                 # Enable NAT if this object is in a virtual router
+            WPA2        = 0x8
             ENABLE_POWERSAVE = 0x1000   # Enable power-save when creating stations.
 
-            pass in --profile_flags 'DHCP_SERVER,SKIP_DHCP_ROAM,NAT,ENABLE_POWERSAVE'
+            pass in --profile_flags 'DHCP_SERVER,WPA2,ENABLE_POWERSAVE'
 
     Example:
         Command line:
@@ -204,7 +203,7 @@ def main():
             --log_level debug --debug
 
         Once the profile is created a chamberview need to be created based off that profile
-        ./create_chamberview.py --lfmgr 192.168.0.104 --port 8080 --create_scenario QA13-2 
+        ./create_chamberview.py --lfmgr 192.168.0.104 --port 8080 --delete_scenario --create_scenario QA13-2 
         --raw_line 'profile_link 1.1 Routed-AP-QA13 1 NA NA wiphy1,AUTO -1 NA' --raw_line 'resource 1.1.0 0'
 
         The --raw_line are determined applying the profile above 
