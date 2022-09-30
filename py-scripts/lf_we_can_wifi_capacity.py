@@ -7,9 +7,9 @@ PURPOSE:
     This program is used for running Wi-Fi capacity test on real clients (Phones).
     The class will generate an output directory based on date and time in the /home/lanforge/html-reports/ .
 
-example: ./python python3 lf_we_can_wifi_capacity_test.py --mgr 192.168.200.85 --port 8080 --upstream 1.1.eth1
---batch_size 5 --duration 60000 --download_rate 1Gbps --upload_rate 1Gbps --protocol TCP-UDP-IPv4 --lf_user lanforge
---lf_password lanforge
+example: python3 lf_we_can_wifi_capacity.py --mgr 192.168.200.232 --port 8080 --upstream 1.1.eth1 --batch_size 2
+--duration 300000 --download_rate 210Mbps --upload_rate 210Mbps --protocol UDP-IPv4 --dut_model NETGEAR1287
+--ssid_dut_2g NETGEAR_2.4G  --ssid_dut_5g NETGEAR_5G --lf_user lanforge --lf_password lanforge
 
 Note: To Run this script gui should be opened with
 
@@ -71,7 +71,8 @@ class LfInteropWifiCapacity(Realm):
                  inp_upload_rate=None,
                  batch_size=None,
                  dut_model=None,
-                 ssid_ut=[],
+                 ssid_dut_2g=None,
+                 ssid_dut_5g=None,
                  duration=None,
                  resource=1,
                  use_ht160=False,
@@ -86,7 +87,8 @@ class LfInteropWifiCapacity(Realm):
         self.host = host
         self.port = port
         self.ssid = ssid
-        self.ssid_ut = ssid_ut
+        self.ssid_dut_2g = ssid_dut_2g
+        self.ssid_dut_5g = ssid_dut_5g
         self.dut_model = dut_model
         self.protocol = protocol,
         self.sta_list = sta_list
@@ -408,7 +410,7 @@ class LfInteropWifiCapacity(Realm):
                      "6 Ghz BSSID", "Intended Rate", "No of Stations", "No of loops", "Traffic duration",
                      "Test duration"],
             # need to make  the Netgear WAC510 dynamic
-            "Value": [self.dut_model, self.ssid_ut[0], "78:d2:94:4f:20:c5", self.ssid_ut[1], "78:d2:94:4f:20:f3", "NA",
+            "Value": [self.dut_model, self.ssid_dut_2g, "78:d2:94:4f:20:c5", self.ssid_dut_5g, "78:d2:94:4f:20:f3", "NA",
                       "NA", str(" ".split(self.inp_download_rate)[0] + " ".split(self.inp_upload_rate)[0]) + "Mbps",
                       len(phone_name), self.batch_size, str((int(self.duration) / 1000)) + " Sec", "2 Min"],
         })
@@ -502,23 +504,31 @@ def main():
     parser = argparse.ArgumentParser(description="Netgear AP DFS Test Script")
     parser.add_argument('--mgr', type=str, help='host name', default="localhost")
     parser.add_argument('--port', type=str, help='port number', default="8080")
-    parser.add_argument("--upstream", type=str, default="", help="Upstream port for wifi capacity test ex. 1.1.eth1")
-    parser.add_argument("--batch_size", type=str, default="", help="station increment ex. 1,2,3")
-    parser.add_argument("--protocol", type=str, default="", help="Protocol ex.TCP-IPv4")
-    parser.add_argument("--lf_user", type=str, default="", help="lanforge user name ex. root,lanforge")
-    parser.add_argument("--lf_password", type=str, default="", help="lanforge user password ex. root,lanforge")
-    parser.add_argument("--duration", type=str, default="60000", help="duration in ms. ex. 5000")
+    parser.add_argument("--upstream", type=str, default="",
+                        help="Upstream port for wifi capacity test ex. 1.1.eth1")
+    parser.add_argument("--batch_size", type=str, default="",
+                        help="station increment ex. 1,2,3")
+    parser.add_argument("--protocol", type=str, default="",
+                        help="Protocol ex.TCP-IPv4")
+    parser.add_argument("--lf_user", type=str, default="",
+                        help="lanforge user name ex. root,lanforge")
+    parser.add_argument("--lf_password", type=str, default="",
+                        help="lanforge user password ex. root,lanforge")
+    parser.add_argument("--duration", type=str, default="60000",
+                        help="duration in ms. ex. 5000")
     parser.add_argument("--download_rate", type=str, default="0Kbps",
                         help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 0Kbps")
     parser.add_argument("--upload_rate", type=str, default="0Kbps",
                         help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 0Kbps")
-    parser.add_argument("--dut_model", type=str, default="NA", help="AP name and Model ")
-    parser.add_argument("--ssid_ut", type=str, default="", nargs='+', help="ssid name to be tested Ex. Netgear_2G,Netgear_5G")
-
+    parser.add_argument("--dut_model", type=str, default="NA",
+                        help="AP name and Model ")
+    parser.add_argument("--ssid_dut_2g", type=str, default="NA",
+                        help="ssid name to be tested Ex. Netgear_2G")
+    parser.add_argument("--ssid_dut_5g", type=str, default="NA",
+                        help="ssid name to be tested Ex. Netgear_5G")
     parser.add_argument("--influx_host", type=str, default="localhost", help="NA")
-    parser.add_argument("--local_lf_report_dir",
-                        help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from",
-                        default="")
+    parser.add_argument("--local_lf_report_dir", default="",
+                        help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from")
 
     args = parser.parse_args()
 
@@ -543,7 +553,7 @@ def main():
     wifi_capacity = LfInteropWifiCapacity(host=args.mgr, port=args.port, protocol=args.protocol,
                                           batch_size=args.batch_size, duration=args.duration,dut_model=args.dut_model,
                                           inp_download_rate=args.download_rate, inp_upload_rate=args.upload_rate,
-                                          ssid_ut=args.ssid_ut)
+                                          ssid_dut_2g=args.ssid_dut_2g, ssid_dut_5g=args.ssid_dut_5g,)
     wifi_capacity.get_data()
     # WFC_Test.check_influx_kpi(args)
 
