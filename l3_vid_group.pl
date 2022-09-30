@@ -25,6 +25,8 @@ use LANforge::Port;
 use LANforge::Utils;
 use Net::Telnet ();
 use Getopt::Long;
+use VideoStreams;
+our %avail_stream_res = %VideoStreams::avail_stream_res;
 
 our $quiet           = "yes";
 our $lfmgr_host      = "localhost";
@@ -118,8 +120,8 @@ GetOptions
    'resource|r=i'       => \$::resource,
     # TODO: speed as integer is difficult to type, switch to string to allow scalar abbreviations
    'speed|s=i'          => \$::speed,
-   'stream|vid_mode|e'  => \$::vid_mode,
-   'test_group|test_grp|group|g=s'       => \$::generic_test_grp,
+   'stream|vid_mode|e=s'=> \$::vid_mode,
+   'test_group|test_grp|group|g=s' => \$::generic_test_grp,
    'upstream|u=s'       => \$::upstream,
 
 ) || die($::usage);
@@ -174,11 +176,12 @@ $::l3_test_grp = "_L3_".$::generic_test_grp;
 
 # get a list of test groups
 my $ra_tg_list = $::utils->test_groups();
-print Dumper($ra_tg_list) if ($::debug);
-
-my $ra_l3_cx_names = $::utils->group_items($::l3_test_grp);
-my $ra_generic_cx_names = $::utils->group_items($::generic_test_grp);
-
+my $ra_l3_cx_names = [];
+my $ra_generic_cx_names = [];
+if (@$ra_tg_list > 0) {
+    $ra_l3_cx_names = $::utils->group_items($::l3_test_grp);
+    $ra_generic_cx_names = $::utils->group_items($::generic_test_grp);
+}
 
 
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
@@ -189,8 +192,6 @@ if (($::clear_group > 0) || ($::action eq "destroy")) {
    }
 
    my @matches = grep {/^$::generic_test_grp$/} @$ra_tg_list;
-
-   print Dumper(\@matches) if ($::debug);
    if (@matches < 1) {
      print "No test group matching name [$::generic_test_grp], bye.\n";
      exit(1);
@@ -202,9 +203,16 @@ if (($::clear_group > 0) || ($::action eq "destroy")) {
 
 # ------ ------ ------ ------ ------ ------ ------ ------ ------ ------ ------
 if ($::action eq "create") {
+   if (!( defined($::avail_stream_res{ $::vid_mode }))) {
+       print "Unknown stream specified, stream styles include: \n    ";
+       foreach my $k (sort (keys(%::avail_stream_res))) {
+         print(" $k");
+       }
+       print("\nUnable to find $::vid_mode\n.");
+       exit(1);
+   }
    my $re = q(^TestGroup name:\s+).$::generic_test_grp.q(\s+[\[]);
    my @matches = grep {/$re/} @$ra_tg_list;
-   print Dumper(\@matches) if ($::debug);
    if (@matches < 1) {
      print "Creating test group [$::generic_test_grp]...";
      $::utils->doCmd($::utils->fmt_cmd("add_group", $::generic_test_grp));
@@ -215,7 +223,10 @@ if ($::action eq "create") {
    if (!(defined $::cx_name) or ("" eq $::cx_name)) {
      $::cx_name = $::generic_test_grp."-";
    }
-
+   if ($main::buffer_size =~ /[A-Za-z]/) {
+       print "Sorry, buffer_sizes need to be numbers\n";
+       exit 1;
+   }
    if (!(defined $::buffer_size) or ($::buffer_size < 0)) {
      print ("Please set --buffer_size, bye.\n");
      exit(1);
@@ -365,12 +376,13 @@ if ($::action eq "create") {
      my $gname = $::cx_name . substr("$j", 1);
      my $gnr_cmd = qq(/home/lanforge/scripts/l3_video_em.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port )
             .qq(--cx_name $cname --max_tx 1G --buf_size $::buffer_size )
-            .qq(--stream $::vid_mode --quiet yes --tx_style bufferfill);
+            .qq(--stream $::vid_mode --quiet yes --tx_style bufferfill --log_cli /tmp/$cname.log);
 
      $cmd = qq(/home/lanforge/scripts/lf_firemod.pl --mgr $::lfmgr_host --mgr_port $::lfmgr_port)
                .qq( --action create_endp --endp_name $gname --endp_type 'generic')
                .qq( --port_name ).$selected_list[$i]
                .q( --endp_cmd ").$gnr_cmd.q(");
+                # .qq( --log_cli /tmp/$gname.log )
      `$cmd`;
      print ".";
      $::utils->sleep_ms(40);
