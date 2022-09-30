@@ -659,3 +659,16 @@ class GenCXProfile(LFCliBase):
             if output_format.lower() != 'csv':
                 pandas_extensions.df_to_file(dataframe=pd.read_csv(report_file), output_f=output_format,
                                              save_path=report_file)
+
+    def standardize_json_results(self, url):
+        results = self.json_get(url)
+        if 'endpoints' not in results: 
+            tmp_results = {}
+            results = results['endpoint']
+            name = results['name']
+            tmp_results['endpoints'] = []
+            tmp_results['endpoints'].append({results['name']: results})
+            results = tmp_results
+
+        return results['endpoints']
+
