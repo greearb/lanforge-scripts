@@ -118,6 +118,7 @@ class lf_add_profile():
                     _name: str = None,                         # Profile Name. [R]
                     _passwd: str = None,                       # WiFi Password to be used (AP Mode), [BLANK] means no password.
                     _profile_flags: str = None,                # Flags for this profile, see above.
+                    _profile_flags_list: list = [],            # Flags for the profile passed as list
                     _profile_type: str = None,                 # Profile type: See above. [W]
                     _ssid: str = None,                         # WiFi SSID to be used, [BLANK] means any.
                     _vid: str = None,                          # Vlan-ID (only valid for vlan profiles).
@@ -126,7 +127,16 @@ class lf_add_profile():
                     _errors_warnings: list = None,
                     _suppress_related_commands: bool = False):
 
-        flag_val = _profile_flags
+        flag_val =  0
+        if _profile_flags is not None:
+            flag_val = _profile_flags
+            logger.debug("profile_flags used flag_val = {flag_val}".format(flag_val=flag_val))
+        elif len(_profile_flags_list) != 0:
+            flag_val = self.command.set_flags(self.command.AddProfileProfileFlags,0, flag_names=_profile_flags_list)
+            logger.debug("profile_flags_list used flag_val = {flag_val}".format(flag_val=flag_val))
+        else:
+            logger.error("_profile_flags is None and _profile_flags_list is empty")
+
         # flag_val = self.command.set_flags(self.command.AddProfileProfileFlags,0, flag_names=_profile_flags)            
 
         self.command.post_add_profile(
@@ -226,11 +236,15 @@ def main():
     parser.add_argument("--mac_pattern", help="(add profile) Optional MAC-Address pattern, for instance:  xx:xx:xx:*:*:xx")
     parser.add_argument("--name", help="(add profile) Profile Name. [R] ", required=True)
     parser.add_argument('--passwd', help='(add profile) WiFi SSID to be used, [BLANK] means any.')
-    parser.add_argument('--profile_flags', 
+    parser.add_argument('--profile_flags', help='pass in flags as a decimal value takes presidence over hex and --pf []')
+    parser.add_argument('--profile_flags_hex', help='pass in flags as a hex value')
+    parser.add_argument('--pf', 
             # nargs='+', # trying to pass in a list
-            # action='append',
+            action='append',
             help=''' 
-    (add profile) Flags for this profilelanforge_api AddProfileProfileFlags'
+    (add profile) 
+    Profile flags entered as a list
+    Flags for this profilelanforge_api AddProfileProfileFlags'
     enter the flags as a list 0x1009 is:
         DHCP_SERVER = 0x1           # This should provide DHCP server.
         SKIP_DHCP_ROAM = 0x10       # Ask station to not re-do DHCP on roam.
@@ -337,11 +351,18 @@ def main():
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
+
     profile = lf_add_profile(lf_mgr=args.mgr,
                             lf_port=args.mgr_port,
                             lf_user=args.lf_user,
                             lf_passwd=args.lf_passwd,
                             debug=args.debug)
+
+    logger.debug("profile_flags_list {pf}".format(pf=args.pf))
+    if args.pf:
+        profile_flags_list = args.pf.copy()
+    else:
+        profile_flags_list = []
 
     # parameters for add_profile
     # alias
@@ -358,6 +379,7 @@ def main():
                     _mac_pattern=args.mac_pattern,                      # Optional MAC-Address pattern, for instance: xx:xx:xx:*:*:xx
                     _name=args.name,                                    # Profile Name. [R]
                     _passwd=args.passwd,                                # WiFi Password to be used (AP Mode), [BLANK] means no password.
+                    _profile_flags_list=profile_flags_list,             # Flags for the profile passed as list
                     _profile_flags=args.profile_flags,                  # Flags for this profile, see above.
                     _profile_type=args.profile_type,                    # Profile type: See above. [W]
                     _ssid=args.ssid,                                    # WiFi SSID to be used, [BLANK] means any.
