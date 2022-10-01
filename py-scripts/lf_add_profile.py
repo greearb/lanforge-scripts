@@ -129,6 +129,9 @@ class lf_add_profile():
 
         flag_val =  0
         if _profile_flags is not None:
+            if '0x' in _profile_flags:
+                _profile_flags = str(int(_profile_flags.replace('0x',''), 16))
+
             flag_val = _profile_flags
             logger.debug("profile_flags used flag_val = {flag_val}".format(flag_val=flag_val))
         elif len(_profile_flags_list) != 0:
@@ -363,6 +366,7 @@ def main():
         profile_flags_list = args.pf.copy()
     else:
         profile_flags_list = []
+
 
     # parameters for add_profile
     # alias
