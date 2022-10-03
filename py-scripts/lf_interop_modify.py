@@ -65,6 +65,8 @@ class InteropCommands(Realm):
                  crypt=None,
                  screen_size_prcnt=None,
                  log_destination=None,
+                 adb_username=None,
+                 set_adb_user_name=False,
                  _proxy_str=None,
                  _debug_on=False,
                  _exit_on_error=False,
@@ -89,6 +91,8 @@ class InteropCommands(Realm):
         self.log_destination = log_destination
         # we cannot assume port 8080 because some labs use port translation
         self.debug = _debug_on
+        self.set_adb_user_name = set_adb_user_name
+        self.adb_username = adb_username
         self.session = LFSession(lfclient_url=_host,
                                  debug=_debug_on,
                                  connection_timeout_sec=2.0,
@@ -108,6 +112,7 @@ class InteropCommands(Realm):
         eid = self.name_to_eid(self.device_eid)
         pprint(eid)
 
+        cmd = None
         if self.launch_gui:
             self.command.post_adb_gui(shelf=eid[0],
                                       resource=eid[1],
@@ -170,12 +175,25 @@ class InteropCommands(Realm):
                 if self.crypt:
                     cmd += " --es encryption " + self.crypt
 
-            print(cmd)
+            # print(cmd)
             self.command.post_adb(shelf=eid[0],
                                   resource=eid[1],
                                   adb_id=eid[2],
                                   adb_cmd=cmd,
                                   debug=self.debug)
+
+        # to set adb_username
+        if self.set_adb_user_name:
+            self.command.post_add_adb(adb_device=None,
+                                      adb_id=eid[2],
+                                      adb_model=None,
+                                      adb_product=None,
+                                      lf_username=self.adb_username,
+                                      resource=eid[1],
+                                      shelf=eid[0],
+                                      debug=True)
+
+
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
 def main():
@@ -257,6 +275,12 @@ def main():
                         'Give "stdout" to receive content as keyed text message')
     parser.add_argument('--log_level', default=None)
 
+    parser.add_argument('--set_adb_user_name', action="store_true",
+                        help='provided when want to configure adb_username')
+
+    parser.add_argument('--adb_username',  type=str, default='',
+                        help='provide user name to adb devices')
+
     args = parser.parse_args()
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
@@ -292,7 +316,9 @@ def main():
                               _proxy_str=None,
                               _debug_on=False,
                               _exit_on_error=False,
-                              _exit_on_fail=False)
+                              _exit_on_fail=False,
+                              set_adb_user_name= args.set_adb_user_name,
+                              adb_username=args.adb_username)
     interop.run()
 
 
