@@ -315,6 +315,8 @@ class interference(cv_test):
 
         self.lfclient_host = lfclient_host
         self.lf_port = lf_port
+        self.lf_user= "lanforge"
+        self.lf_passwd = "lanforge"
         self.COMMANDS = ["set_port"]
         self.desired_set_port_cmd_flags = []
         self.desired_set_port_current_flags = ["use_dhcp","dhcp"]  # do not default down, "if_down"
@@ -334,8 +336,8 @@ class interference(cv_test):
         #             --log_level debug --debug
         profile = lf_add_profile(lf_mgr=self.lfclient_host,
                                  lf_port=self.lf_port,
-                                 lf_user="lanforge",
-                                 lf_passwd="lanforge",
+                                 lf_user=self.lf_user,
+                                 lf_passwd=self.lf_passwd,
                                  )
 
         profile.add_profile(
@@ -526,28 +528,28 @@ def main():
         prog="lf_wifi_capacity_test.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
-        ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
-             --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 \
-             --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
-             --create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK] \
-             --test_rig Testbed-01 -test_tag TAG\
-             --influx_host c7-graphana --influx_port 8086 --influx_org Candela \
-             --influx_token=-u_Wd-L8o992701QF0c5UmqEp7w7Z7YOMaWLxOMgmHfATJGnQbbmYyNxHBR9PgD6taM_tcxqJl6U8DjU1xINFQ== \
-             --influx_bucket ben \
-             --influx_tag testbed Ferndale-01
+        ./lf_interference.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge 
+        --dut_upstream 1.1.eth1 --batch_size 1 --loop_iter 1 --protocol UDP-IPv4 --duration 240000 --download_rate 1Gbps
+         --upload_rate 10Mbps --sort interleave --stations 1.1.sta0000 --create_stations --pull_report --radio "wiphy3" 
+         --ssid "NETGEAR-2G" --security "wpa2" --paswd "[BLANK]" --delete_old_scenario --scenario_name "Automation" 
+         --vap_radio "wiphy0" --vap_freq "2437" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2" 
+         --vap_sta_number 1 --vap_sta_radio "wiphy2" --vap_sta_name sta0000 --vap_sta_traffic_type lf_udp 
+         --vap_sta_upstream_port 1.1.vap0000 --vap_sta_ssid "routed-AP" --vap_sta_passwd "something" 
+         --vap_sta_security "wpa2" --vap_sta_test_duration "60s" --vap_sta_a_min 600000000 --vap_sta_b_min 600000000 
+         --vap_sta_mode 5 --vap_sta_cleanup --vap_sta_monitor_interval 10s    
                """)
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
-    parser.add_argument("-u", "--upstream", type=str, default="",
+    parser.add_argument("-u", "--dut_upstream", type=str, default="1.1.eth1",
                         help="Upstream port for wifi capacity test ex. 1.1.eth1")
-    parser.add_argument("-b", "--batch_size", type=str, default="",
+    parser.add_argument("-b", "--batch_size", type=str, default=1,
                         help="station increment ex. 1,2,3")
-    parser.add_argument("-l", "--loop_iter", type=str, default="",
+    parser.add_argument("-l", "--loop_iter", type=str, default=1,
                         help="Loop iteration ex. 1")
-    parser.add_argument("-p", "--protocol", type=str, default="",
+    parser.add_argument("-p", "--protocol", type=str, default="UDP-IPv4",
                         help="Protocol ex.TCP-IPv4")
-    parser.add_argument("-d", "--duration", type=str, default="",
+    parser.add_argument("-d", "--duration", type=str, default="240000",
                         help="duration in ms. ex. 5000")
     parser.add_argument("--download_rate", type=str, default="1Gbps",
                         help="Select requested download rate.  Kbps, Mbps, Gbps units supported.  Default is 1Gbps")
@@ -555,17 +557,19 @@ def main():
                         help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 10Mbps")
     parser.add_argument("--sort", type=str, default="interleave",
                         help="Select station sorting behaviour:  none | interleave | linear  Default is interleave.")
-    parser.add_argument("-s", "--stations", type=str, default="",
+    parser.add_argument("-s", "--stations", type=str, default="1.1.sta0000",
                         help="If specified, these stations will be used.  If not specified, all available stations will be selected.  Example: 1.1.sta001,1.1.wlan0,...")
     parser.add_argument("-cs", "--create_stations", default=False, action='store_true',
                         help="create stations in lanforge (by default: False)")
-    parser.add_argument("-radio", "--radio", default="wiphy0",
+    parser.add_argument("-prf", "--pull_report_flag", default=False, action='store_true',
+                        help="pull report from lanforge (by default: False)")
+    parser.add_argument("-radio", "--radio", default="wiphy3",
                         help="create stations in lanforge at this radio (by default: wiphy0)")
-    parser.add_argument("-ssid", "--ssid", default="",
+    parser.add_argument("-ssid", "--ssid", default="NETGEAR-2G",
                         help="ssid name")
-    parser.add_argument("-security", "--security", default="open",
+    parser.add_argument("-security", "--security", default="wpa2",
                         help="ssid Security type")
-    parser.add_argument("-paswd", "--paswd", default="[BLANK]",
+    parser.add_argument("-paswd", "--paswd", default="Password@123",
                         help="ssid Password")
     parser.add_argument("--report_dir", default="")
     parser.add_argument("--scenario", default="")
@@ -575,6 +579,83 @@ def main():
                         default="")
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
+
+
+    # delete_old_scenario=True, scenario_name="Automation", radio="wiphy0",
+    #                                         frequency="2437", vap_ssid="routed-AP", vap_pawd="something", vap_security="wpa2"
+    parser.add_argument("-dos", "--delete_old_scenario", default=True,
+                        action='store_true',
+                        help="To delete old scenarios (by default: True)")
+    parser.add_argument("-sn", "--scenario_name", default="Automation",
+                        help="Chamberview scenario name (by default: Automation")
+    parser.add_argument("-vr", "--vap_radio", default="wiphy0",
+                        help="vap radio name (by default: wiphy0")
+    parser.add_argument("-vf", "--vap_freq", default="2437",
+                        help="vap frequency (by default: 2437")
+    parser.add_argument("-vs", "--vap_ssid", default="routed-AP",
+                        help="vap ssid (by default: routed-AP")
+    parser.add_argument("-vp", "--vap_passwd", default="something",
+                        help="vap password (by default: something")
+    parser.add_argument("-vse", "--vap_security", default="wpa2",
+                        help="vap security (by default: wpa2")
+
+
+    # num_stations=1,use_existing_sta=False,radio=["wiphy2"],sta_names="sta0000",
+    #                                         traffic_type="lf_udp",ipv6=None ,upstream_port=["1.1.vap0000"],ssid=["routed-AP"],
+    #                                         passwd=["something"], security=["wpa2"],test_duration="60s",a_min="600000000",
+    #                                         b_min="600000000",mode="5",ap=None,no_cleanup=False,monitor_interval='10s',
+    #                                         layer3_cols=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'],debug=False,
+    #                                         port_mgr_cols=['alias', 'ap', 'ip', 'parent dev', 'rx-rate']
+    parser.add_argument("-vsnc", "--vap_sta_number", default=1,
+                        help="To set vap station radio (by default: wiphy2)")
+    parser.add_argument("-vsue", "--vap_sta_use_existing_sta",  default=False,
+                        action='store_true',
+                        help="To delete old scenarios (by default: True)")
+    parser.add_argument("-vsr", "--vap_sta_radio", default="wiphy2",
+                        help="To set vap station radio (by default: wiphy2)")
+    parser.add_argument("-vsname", "--vap_sta_name", default="sta0000",
+                        help="To set vap station name (by default: sta0000")
+    parser.add_argument("-vstp", "--vap_sta_traffic_type", default="lf_udp",
+                        help="To set vap station traffic (by default: lf_udp")
+    parser.add_argument("-vsipv6", "--vap_sta_ipv6", default=None,
+                        action='store_true',
+                        help="")
+    parser.add_argument("-vsupstream", "--vap_sta_upstream_port", default="1.1.vap0000",
+                        help="")
+    parser.add_argument("-vss", "--vap_sta_ssid", default="routed-AP",
+                        help="vap ssid (by default: routed-AP")
+    parser.add_argument("-vsp", "--vap_sta_passwd", default="something",
+                        help="vap password (by default: something")
+    parser.add_argument("-vssec", "--vap_sta_security", default="wpa2",
+                        help="vap security (by default: wpa2")
+    # test_duration="60s",a_min="600000000",
+    #     #                                         b_min="600000000",mode="5",ap=None,no_cleanup=False,monitor_interval='10s',
+    #     #                                         layer3_cols=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'],debug=False,
+    #     #                                         port_mgr_cols=['alias', 'ap', 'ip', 'parent dev', 'rx-rate']
+    parser.add_argument("-vstd", "--vap_sta_test_duration", default="60s",
+                        help="vap security (by default: wpa2")
+    parser.add_argument("-vsam", "--vap_sta_a_min", default="600000000",
+                        help="vap security (by default: wpa2")
+    parser.add_argument("-vsbm", "--vap_sta_b_min", default="600000000",
+                        help="vap security (by default: wpa2")
+    parser.add_argument("-vsmode", "--vap_sta_mode", default="5",
+                        help="vap security (by default: wpa2")
+    parser.add_argument("-vsap", "--vap_sta_ap", default=None,
+                        help="")
+    parser.add_argument("-vsapc", "--vap_sta_cleanup", default=True,
+                        action='store_true',
+                        help="")
+    parser.add_argument("-vsmi", "--vap_sta_monitor_interval", default="10s",
+                        help="")
+    parser.add_argument("-vsl3c", "--vap_sta_layer3_cols", default=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'],
+                        help="")
+    parser.add_argument("-vsmc", "--port_mgr_cols", default=['alias', 'ap', 'ip', 'parent dev', 'rx-rate'],
+                        help="")
+    parser.add_argument("-vsd", "--vap_sta_debug", default=False,
+                        action='store_true',
+                        help="")
+
+
 
     args = parser.parse_args()
 
@@ -590,26 +671,83 @@ def main():
 
     lf_interference = interference(lfclient_host=args.mgr, lf_port=args.port)
 
+    lf_mgr = args.mgr
+    lf_port = args.port
+    lf_user = args.lf_user
+    lf_passwd = args.lf_password
+    dut_upstreaam = args.dut_upstream
+    batch_size = args.batch_size
+    loop_iter = args.loop_iter
+    dut_protocol = args.protocol
+    dut_duration = args.duration
+    dut_stations = args.stations
+    dut_radio = args.radio
+    dut_ssid = args.ssid
+    dut_security = args.security
+    dut_password = args.paswd
+    dut_create_stations = args.create_stations
+
+    if dut_create_stations:
+        dut_create_stations = "--create_stations"
+    else:
+        dut_create_stations = ""
+
+    pull_report = args.pull_report
+    if pull_report:
+        pull_report = "--pull_report"
+    else:
+        pull_report = ""
+
     # all needs user configurable upto config name , set default to something
-    cmd_wifi_capacity = "./lf_wifi_capacity_test.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge " \
-              "--instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1 --loop_iter 1 " \
-              "--protocol UDP-IPv4 --duration 240000 --pull_report --stations 1.1.sta0000 --create_stations --radio " \
-              "wiphy3 --ssid NETGEAR-2G --security wpa2 --paswd Password@123"
+    cmd_wifi_capacity = f"./lf_wifi_capacity_test.py --mgr {lf_mgr} --port {lf_port} --lf_user {lf_user} " \
+                        f"--lf_password {lf_passwd} --instance_name wct_instance --config_name wifi_config " \
+                        f"--upstream {dut_upstreaam} --batch_size {batch_size} --loop_iter {loop_iter} " \
+                        f"--protocol {dut_protocol} --duration {dut_duration} {str(pull_report)} --stations {dut_stations} " \
+                        f"{dut_create_stations} --radio {dut_radio} --ssid {dut_ssid} --security {dut_security} " \
+                        f"--paswd {dut_password}"
 
+    delete_old_scenario = args.delete_old_scenario
+    vap_scenario_name = args.scenario_name
+    vap_radio = args.vap_radio
+    vap_freq = args.vap_freq
+    vap_ssid = args.vap_ssid
+    vap_passwd = args.vap_passwd
+    vap_security = args.vap_security
 
-    # all parameters needs user configurable
-    lf_interference.build_and_setup_vap(delete_old_scenario=True, scenario_name="Automation", radio="wiphy0",
-                                        frequency="2437", vap_ssid="routed-AP", vap_pawd="something", vap_security="wpa2")
+    lf_interference.build_and_setup_vap(delete_old_scenario=delete_old_scenario, scenario_name=vap_scenario_name, radio=vap_radio,
+                                        frequency=vap_freq, vap_ssid=vap_ssid, vap_pawd=vap_passwd, vap_security=vap_security)
 
     # --radio wiphy1 --ssid vap --test_duration 60s --traffic_type lf_udp --a_min 600000000
     #         --b_min 600000000 --upstream_port vap0000 --mode '5' --num_stations 2
     # all parameters needs to be configured through user
-    obj = lf_interference.create_layer3(num_stations=1,use_existing_sta=False,radio=["wiphy2"],sta_names="sta0000",
-                                        traffic_type="lf_udp",ipv6=None ,upstream_port=["1.1.vap0000"],ssid=["routed-AP"],
-                                        passwd=["something"], security=["wpa2"],test_duration="60s",a_min="600000000",
-                                        b_min="600000000",mode="5",ap=None,no_cleanup=False,monitor_interval='10s',
-                                        layer3_cols=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'],debug=False,
-                                        port_mgr_cols=['alias', 'ap', 'ip', 'parent dev', 'rx-rate'])
+
+    vap_sta_num = args.vap_sta_number
+    vap_sta_use_existing_sta = args.vap_sta_use_existing_sta
+    vap_sta_radio = args.vap_sta_radio
+    vap_sta_name = args.vap_sta_name
+    vap_sta_traffic_type = args.vap_sta_traffic_type
+    vap_sta_ipv6 = args.vap_sta_ipv6
+    vap_sta_upstream_port = args.vap_sta_upstream_port
+    vap_sta_ssid = args.vap_sta_ssid
+    vap_sta_passwd = args.vap_sta_passwd
+    vap_sta_security = args.vap_sta_security
+    vap_sta_test_duration = args.vap_sta_test_duration
+    vap_sta_a_min = args.vap_sta_a_min
+    vap_sta_b_min = args.vap_sta_b_min
+    vap_sta_mode = args.vap_sta_mode
+    vap_sta_ap = args.vap_sta_ap
+    vap_sta_cleanup = args.vap_sta_cleanup
+    vap_sta_monitor_interval = args.vap_sta_monitor_interval
+    vap_sta_layer3_cols = args.vap_sta_layer3_cols
+    vap_sta_port_mgr_cols = args.port_mgr_cols
+    vap_sta_debug = args.vap_sta_debug
+
+    obj = lf_interference.create_layer3(num_stations=vap_sta_num,use_existing_sta=vap_sta_use_existing_sta,radio=[vap_sta_radio],sta_names=vap_sta_name,
+                                        traffic_type=vap_sta_traffic_type,ipv6=vap_sta_ipv6 ,upstream_port=[vap_sta_upstream_port],ssid=[vap_sta_ssid],
+                                        passwd=[vap_sta_passwd], security=[vap_sta_security],test_duration=vap_sta_test_duration,a_min=vap_sta_a_min,
+                                        b_min=vap_sta_b_min,mode=vap_sta_mode,ap=vap_sta_ap,no_cleanup=vap_sta_cleanup,monitor_interval=vap_sta_monitor_interval,
+                                        layer3_cols=vap_sta_layer3_cols,debug=vap_sta_debug,
+                                        port_mgr_cols=vap_sta_port_mgr_cols)
 
     proc = subprocess.Popen([cmd_wifi_capacity], shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
     # subprocess.Popen()
@@ -617,10 +755,7 @@ def main():
     time.sleep(120)
 
     lf_interference.run_layer3(obj)
-    # lf_interference.build_vap_stations(create_vap_stations=True, vap_stations="sta0001", vap_security="wpa2",
-    #                                    vap_ssid="routed-AP", vap_paswd="something", vap_sta_radio="wiphy2")
-    # lf_interference.build_dut_stations(create_dut_stations=True, dut_stations="sta0010", dut_security="wpa2",
-    #                                    dut_ssid="dut_ssid", dut_paswd="something", dut_sta_radio="wiphy3")
+
 
 
 
