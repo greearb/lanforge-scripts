@@ -5,14 +5,11 @@ NAME:
 asus_ap.py
 
 PURPOSE:
-Generic AP library that will work for the ASUS ap's
+ap_asus_module
 
 EXAMPLE:
 
-./asus_ap.py --ap_port '/dev/ttyUSB0' --ap_baud '115200' --ap_cmd "wl -i wl1 bs_data"
-
-./asus_ap.py --ap_port '/dev/ttyUSB0' --ap_baud '115200' --ap_cmd "wl -i wl1 bs_data" --ap_file 'ap_file.txt'
-
+./ap_asus_mod.py 
 
 
 NOTES:
@@ -32,6 +29,38 @@ import pexpect
 import serial
 from pexpect_serial import SerialSpawn
 
+'''
+class APlogin():
+    def __init__(self,lanforge_ip="", username="",password="",command=""):
+        self.lanforge_ip = lanforge_ip
+        self.user = username
+        self.password=password
+        self.command=command
+
+    def lanforge_login(self):
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(self.lanforge_ip, port=22, username=self.user,
+                    password=self.password, timeout=300)
+        command=self.command
+        stdin,stdout,stderr=ssh.exec_command(command)
+        output=stdout.read()
+        ssh.close()
+        return output
+def main():
+    parser = argparse.ArgumentParser(description="")
+    parser.add_argument('--lanforge_ip', type=str, default="")
+    parser.add_argument('--username', type=str, default="lanforge")
+    parser.add_argument('--password',type=str,default="lanforge") 
+    parser.add_argument('--command',type=str,default="pwd")
+    args = parser.parse_args()
+    ap_login_obj = APlogin(lanforge_ip=args.lanforge_ip, username=args.username,password=args.password,command=args.command)
+    output=ap_login_obj.lanforge_login()
+    print(output)
+if __name__ == "__main__":
+    main()
+'''    
+
 
 # see https://stackoverflow.com/a/13306095/11014343
 class FileAdapter(object):
@@ -47,20 +76,23 @@ class FileAdapter(object):
     def flush(self):
         pass  # leave it to logging to flush properly
 
-
-class lf_ap:
+# LAN-1423
+class create_ap_obj:
     def __init__(self,
-                 _ap_test_mode=False,
-                 _ap_2G_interface="wl0",
-                 _ap_5G_interface="wl1",
-                 _ap_6G_interface="wl2",
-                 _ap_scheme='serial',
-                 _ap_serial_port='/dev/ttyUSB0',
-                 _ap_ssh_port="22",
-                 _ap_telnet_port="23",
-                 _ap_serial_baud='115200',
-                 _ap_report_dir="",
-                 _ap_log_file=""):
+                 ap_test_mode=False,
+                 ap_ip=None,
+                 ap_user=None,
+                 ap_passwd=None,
+                 ap_scheme='ssh',
+                 ap_serial_port='/dev/ttyUSB0',
+                 ap_ssh_port="22",
+                 ap_telnet_port="23",
+                 ap_serial_baud='115200',
+                 ap_2G_interface="eth6",
+                 ap_5G_interface="eth7",
+                 ap_6G_interface="eth8",
+                 ap_report_dir="",
+                 ap_log_file=""):
         self.ap_test_mode = _ap_test_mode
         self.ap_2G_interface = _ap_2G_interface
         self.ap_5G_interface = _ap_5G_interface
