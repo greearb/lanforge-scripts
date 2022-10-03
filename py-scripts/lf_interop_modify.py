@@ -213,6 +213,8 @@ def main():
     lf_interop_modify.py --stop --device 1.1.KEBE2021070849
     *    Example of applying WiFi connection changes
     lf_interop_modify.py --apply --device 1.1.KEBE2021070849 --ssid candela-10g --user_name foobar22
+    * Example for applying adb_username
+    lf_interop_modify.py --host 192.168.1.31 --device 1.1.RZ8RA1053HJ --set_adb_user_name --adb_username device_1
     """
 
     parser = argparse.ArgumentParser(
