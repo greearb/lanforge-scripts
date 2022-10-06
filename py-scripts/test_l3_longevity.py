@@ -68,7 +68,7 @@ Example : Have script use existing stations from previous run where traffic was 
         --side_a_min_bps 256000 --side_b_min_bps 102400000
         --use_existing_station_list
         --existing_station_list '1.1.sta0000,1.1.sta0001'
-        --no_stop_traffic     
+        --no_stop_traffic
 
 ## COPYRIGHT:
 Copyright 2021 Candela Technologies Inc
@@ -91,6 +91,8 @@ import pandas as pd
 import pexpect
 import serial
 from pexpect_serial import SerialSpawn
+
+import paramiko
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -161,8 +163,16 @@ class L3VariableTime(Realm):
                  ap_scheduler_stats=False,
                  ap_ofdma_stats=False,
                  ap_read=False,
+                 ap_scheme='serial',
                  ap_port='/dev/ttyUSB0',
                  ap_baud='115200',
+                 ap_ip='localhost',
+                 ap_ssh_port='22',
+                 ap_user=None,
+                 ap_passwd=None,
+                 ap_if_2g=None,
+                 ap_if_5g=None,
+                 ap_if_6g=None,
                  ap_cmd_6g='wl -i wl2 bs_data',
                  ap_cmd_5g='wl -i wl1 bs_data',
                  ap_cmd_2g='wl -i wl0 bs_data',
@@ -288,11 +298,22 @@ class L3VariableTime(Realm):
         self.cx_profile.side_b_min_bps = side_b_min_rate[0]
         self.cx_profile.side_b_max_bps = side_b_max_rate[0]
 
+        # ap interface commands
         self.ap_scheduler_stats = ap_scheduler_stats
         self.ap_ofdma_stats = ap_ofdma_stats
         self.ap_read = ap_read
+        self.ap_test_mode = ap_test_mode
         self.ap_port = ap_port
         self.ap_baud = ap_baud
+        self.ap_ip = ap_ip
+        self.ap_ssh_port = ap_ssh_port
+        self.ap_user = ap_user
+        self.ap_passwd = ap_passwd
+        # TODO refactor to be based on single command
+        # and vary interface
+        self.ap_if_6g = ap_if_6g
+        self.ap_if_5g = ap_if_5g
+        self.ap_if_2g = ap_if_2g
         self.ap_cmd_6g = ap_cmd_6g
         self.ap_cmd_5g = ap_cmd_5g
         self.ap_cmd_2g = ap_cmd_2g
@@ -302,7 +323,19 @@ class L3VariableTime(Realm):
         self.ap_chanim_cmd_6g = ap_chanim_cmd_6g
         self.ap_chanim_cmd_5g = ap_chanim_cmd_5g
         self.ap_chanim_cmd_2g = ap_chanim_cmd_2g
-        self.ap_test_mode = ap_test_mode
+        self.ap_dump_clear_6g = 'wl -i wl2 dump_clear'
+        self.ap_dump_clear_5g = 'wl -i wl1 dump_clear'
+        self.ap_dump_clear_2g = 'wl -i wl0 dump_clear'
+        self.ap_dump_umsched_6g = 'wl -i wl2 dump umsched'
+        self.ap_dump_umsched_5g = 'wl -i wl1 dump umsched'
+        self.ap_dump_umsched_2g = 'wl -i wl0 dump umsched'
+        self.ap_dump_msched_6g = 'wl -i wl2 dump msched'
+        self.ap_dump_msched_5g = 'wl -i wl1 dump msched'
+        self.ap_dump_msched_2g = 'wl -i wl0 dump msched'
+        self.ap_muinfo_6g = 'wl -i wl2 muinfo -v'
+        self.ap_muinfo_5g = 'wl -i wl1 muinfo -v'
+        self.ap_muinfo_2g = 'wl -i wl0 muinfo -v'
+
         self.ap_6g_umsched = ""
         self.ap_6g_msched = ""
         self.ap_5g_umsched = ""
@@ -312,6 +345,34 @@ class L3VariableTime(Realm):
         self.ap_ofdma_6g = ""
         self.ap_ofdma_5g = ""
         self.ap_ofdma_24g = ""
+
+        # TODO reduce commands to just vary based on interface
+        if self.ap_if_6g != 'wl2':
+            self.ap_cmd_6g = self.ap_cmd_6g.replace('wl2', self.ap_if_6g)
+            self.ap_cmd_ul_6g = self.ap_cmd_ul_6g.replace('wl2', self.ap_if_6g)
+            self.ap_chanim_cmd_6g = self.ap_chanim_cmd_6g.replace('wl2', self.ap_if_6g)
+            self.ap_dump_clear_6g = self.ap_dump_clear_6g.replace('wl2', self.ap_if_6g)
+            self.ap_dump_umsched_6g = self.ap_dump_umsched_6g.replace('wl2', self.ap_if_6g)
+            self.ap_dump_msched_6g = self.ap_dump_msched_6g.replace('wl2', self.ap_if_6g)
+            self.ap_muinfo_6g = self.ap_muinfo_6g.replace('wl2', self.ap_if_6g)
+
+        if self.ap_if_5g != 'wl1':
+            self.ap_cmd_5g = self.ap_cmd_5g.replace('wl1', self.ap_if_5g)
+            self.ap_cmd_ul_5g = self.ap_cmd_ul_5g.replace('wl1', self.ap_if_5g)
+            self.ap_chanim_cmd_5g = self.ap_chanim_cmd_5g.replace('wl1', self.ap_if_5g)
+            self.ap_dump_clear_5g = self.ap_dump_clear_5g.replace('wl1', self.ap_if_5g)
+            self.ap_dump_umsched_5g = self.ap_dump_umsched_5g.replace('wl1', self.ap_if_5g)
+            self.ap_dump_msched_5g = self.ap_dump_msched_5g.replace('wl1', self.ap_if_5g)
+            self.ap_muinfo_5g = self.ap_muinfo_5g.replace('wl1', self.ap_if_5g)
+
+        if self.ap_if_2g != 'wl0':
+            self.ap_cmd_2g = self.ap_cmd_2g.replace('wl0', self.ap_if_2g)
+            self.ap_cmd_ul_2g = self.ap_cmd_ul_2g.replace('wl0', self.ap_if_2g)
+            self.ap_chanim_cmd_2g = self.ap_chanim_cmd_2g.replace('wl0', self.ap_if_2g)
+            self.ap_dump_clear_2g = self.ap_dump_clear_2g.replace('wl0', self.ap_if_2g)
+            self.ap_dump_umsched_2g = self.ap_dump_umsched_2g.replace('wl0', self.ap_if_2g)
+            self.ap_dump_msched_2g = self.ap_dump_msched_2g.replace('wl0', self.ap_if_2g)
+            self.ap_muinfo_2g = self.ap_muinfo_2g.replace('wl0', self.ap_if_2g)
 
         # Lookup key is port-eid name
         self.port_csv_files = {}
@@ -364,8 +425,8 @@ class L3VariableTime(Realm):
 
         # Full spread-sheet data
         if self.outfile is not None:
-            #create csv results writer and open results file to be written to.
-            results = self.outfile[:-4] #take off .csv part of outfile
+            # create csv results writer and open results file to be written to.
+            results = self.outfile[:-4]  # take off .csv part of outfile
             results = results + "-results.csv"
             self.csv_results_file = open(results, "w")
             self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
@@ -430,6 +491,17 @@ class L3VariableTime(Realm):
         self.udp_endps = None
         self.tcp_endps = None
 
+    # def ap_serial(self,command)
+
+    def ap_ssh(self, command):
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(self.ap_ip, port=self.ap_ssh_port, username=self.ap_user, password=self.ap_passwd, timeout=30)
+        stdin, stdout, steerr = ssh.exec_command(command)
+        output = stdout.read()
+        ssh.close()
+        return output
+
     def get_ap_6g_umsched(self):
         return self.ap_6g_umsched
 
@@ -478,10 +550,8 @@ class L3VariableTime(Realm):
 
         return type, state, pkt_rx_a, pkt_rx_b, bps_rx_a, bps_rx_b, rx_drop_percent_a, rx_drop_percent_b, drop_pkts_a, drop_pkts_b, avg_rtt, rpt_timer, eid
 
-
-
-
     # Find avg latency, jitter for connections using specified port.
+
     def get_endp_stats_for_port(self, port_eid, endps):
         lat = 0
         jit = 0
@@ -726,7 +796,7 @@ class L3VariableTime(Realm):
                         self.lf_endps = self.eth_endps + these_endp
                     else:
                         self.tcp_endps = self.tcp_endps + these_endp
-                    #after we create cxs, append to global variable
+                    # after we create cxs, append to global variable
                     self.cx_names.append(these_cx)
 
         else:
@@ -771,7 +841,7 @@ class L3VariableTime(Realm):
                                 self.udp_endps = self.udp_endps + these_endp
                             else:
                                 self.tcp_endps = self.tcp_endps + these_endp
-                            #after we create the cxs, append to global
+                            # after we create the cxs, append to global
                             self.cx_names.append(these_cx)
 
         self.cx_count = self.cx_profile.get_cx_count()
@@ -804,36 +874,60 @@ class L3VariableTime(Realm):
 
         return ap_results
 
+    '''
+    def lanforge_login(self):
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(self.lanforge_ip, port=22, username=self.user,
+                    password=self.password, timeout=300)
+        command=self.command
+        stdin,stdout,stderr=ssh.exec_command(command)
+        output=stdout.read()
+        ssh.close()
+        return output
+    '''
+
     def read_ap_stats_6g(self):
         #  6ghz:  wl -i wl2 bs_data
         ap_stats_6g = ""
         try:
-            # configure the serial interface
-            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
-            ss = SerialSpawn(ser)
-            ss.sendline(str(self.ap_cmd_6g))
-            # do not detete line, waits for output
-            ss.expect([pexpect.TIMEOUT], timeout=1)
-            ap_stats_6g = ss.before.decode('utf-8', 'ignore')
-            print("ap_stats_6g from AP: {}".format(ap_stats_6g))
+            # TODO - add paramiko.SSHClient
+            if self.scheme == 'serial':
+                # configure the serial interface
+                ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+                ss = SerialSpawn(ser)
+                ss.sendline(str(self.ap_cmd_6g))
+                # do not detete line, waits for output
+                ss.expect([pexpect.TIMEOUT], timeout=1)
+                ap_stats_6g = ss.before.decode('utf-8', 'ignore')
+                logger.debug("ap_stats_6g serial from AP: {}".format(ap_stats_6g))
+            elif self.scheme == 'ssh':
+                ap_stats_6g = self.ap_ssh(str(self.ap_cmd_6g))
+                logger.debug("ap_stats_5g ssh from AP : {}".format(ap_stats_6g))
 
         except BaseException:
             print("WARNING: ap_stats_6g unable to read AP")
 
         return ap_stats_6g
 
+    # update for ssh
     def read_ap_stats_5g(self):
         #  5ghz:  wl -i wl1 bs_data
         ap_stats_5g = ""
         try:
-            # configure the serial interface
-            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
-            ss = SerialSpawn(ser)
-            ss.sendline(str(self.ap_cmd_5g))
-            # do not detete line, waits for output
-            ss.expect([pexpect.TIMEOUT], timeout=1)
-            ap_stats_5g = ss.before.decode('utf-8', 'ignore')
-            print("ap_stats_5g from AP: {}".format(ap_stats_5g))
+            if self.scheme == 'serial':
+                # configure the serial interface
+                ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+                ss = SerialSpawn(ser)
+                ss.sendline(str(self.ap_cmd_5g))
+                # do not detete line, waits for output
+                ss.expect([pexpect.TIMEOUT], timeout=1)
+                ap_stats_5g = ss.before.decode('utf-8', 'ignore')
+                print("ap_stats_5g serial from AP: {}".format(ap_stats_5g))
+
+            elif self.scheme == 'ssh':
+                ap_stats_5g = self.ap_ssh(str(self.ap_cmd_5g))
+                print("ap_stats_5g ssh from AP : {}".format(ap_stats_5g))
 
         except BaseException:
             print("WARNING: ap_stats_5g unable to read AP")
@@ -844,14 +938,18 @@ class L3VariableTime(Realm):
         #  2.4ghz# wl -i wl0 bs_data
         ap_stats_2g = ""
         try:
-            # configure the serial interface
-            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
-            ss = SerialSpawn(ser)
-            ss.sendline(str(self.ap_cmd_2g))
-            # do not detete line, waits for output
-            ss.expect([pexpect.TIMEOUT], timeout=1)
-            ap_stats_2g = ss.before.decode('utf-8', 'ignore')
-            print("ap_stats_2g from AP: {}".format(ap_stats_2g))
+            if self.scheme == 'serial':
+                # configure the serial interface
+                ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+                ss = SerialSpawn(ser)
+                ss.sendline(str(self.ap_cmd_2g))
+                # do not detete line, waits for output
+                ss.expect([pexpect.TIMEOUT], timeout=1)
+                ap_stats_2g = ss.before.decode('utf-8', 'ignore')
+                print("ap_stats_2g from AP: {}".format(ap_stats_2g))
+            elif self.scheme == 'ssh':
+                ap_stats_2g = self.ap_ssh(str(self.ap_cmd_2g))
+                print("ap_stats_5g ssh from AP : {}".format(ap_stats_2g))
 
         except BaseException:
             print("WARNING: ap_stats_2g unable to read AP")
@@ -862,14 +960,17 @@ class L3VariableTime(Realm):
         #  5ghz:  wl -i wl1 chanim_stats
         ap_chanim_stats_6g = ""
         try:
-            # configure the serial interface
-            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
-            ss = SerialSpawn(ser)
-            ss.sendline(str(self.ap_chanim_cmd_6g))
-            # do not detete line, waits for output
-            ss.expect([pexpect.TIMEOUT], timeout=1)
-            ap_chanim_stats_6g = ss.before.decode('utf-8', 'ignore')
-            print("read_ap_chanim_stats_6g {}".format(ap_chanim_stats_6g))
+            if self.scheme == 'serial':
+                # configure the serial interface
+                ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+                ss = SerialSpawn(ser)
+                ss.sendline(str(self.ap_chanim_cmd_6g))
+                # do not detete line, waits for output
+                ss.expect([pexpect.TIMEOUT], timeout=1)
+                ap_chanim_stats_6g = ss.before.decode('utf-8', 'ignore')
+                print("read_ap_chanim_stats_6g {}".format(ap_chanim_stats_6g))
+            elif self.scheme == 'ssh':
+                ap_chanim_stats_6g = self.ap_ssh(str(self.ap_chanim_cmd_6g))
 
         except BaseException:
             print("WARNING: read_ap_chanim_stats_6g unable to read AP")
@@ -880,14 +981,17 @@ class L3VariableTime(Realm):
         #  5ghz:  wl -i wl1 chanim_stats
         ap_chanim_stats_5g = ""
         try:
-            # configure the serial interface
-            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
-            ss = SerialSpawn(ser)
-            ss.sendline(str(self.ap_chanim_cmd_5g))
-            # do not detete line, waits for output
-            ss.expect([pexpect.TIMEOUT], timeout=1)
-            ap_chanim_stats_5g = ss.before.decode('utf-8', 'ignore')
-            print("read_ap_chanim_stats_5g {}".format(ap_chanim_stats_5g))
+            if self.scheme == 'serial':
+                # configure the serial interface
+                ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+                ss = SerialSpawn(ser)
+                ss.sendline(str(self.ap_chanim_cmd_5g))
+                # do not detete line, waits for output
+                ss.expect([pexpect.TIMEOUT], timeout=1)
+                ap_chanim_stats_5g = ss.before.decode('utf-8', 'ignore')
+                print("read_ap_chanim_stats_5g {}".format(ap_chanim_stats_5g))
+            elif self.scheme == 'ssh':
+                ap_chanim_stats_5g = self.ap_ssh(str(self.ap_chanim_cmd_5g))
 
         except BaseException:
             print("WARNING: read_ap_chanim_stats_5g unable to read AP")
@@ -898,14 +1002,17 @@ class L3VariableTime(Realm):
         #  2.4ghz# wl -i wl0 chanim_stats
         ap_chanim_stats_2g = ""
         try:
-            # configure the serial interface
-            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
-            ss = SerialSpawn(ser)
-            ss.sendline(str(self.ap_chanim_cmd_2g))
-            # do not detete line, waits for output
-            ss.expect([pexpect.TIMEOUT], timeout=1)
-            ap_chanim_stats_2g = ss.before.decode('utf-8', 'ignore')
-            print("read_ap_chanim_stats_2g {}".format(ap_chanim_stats_2g))
+            if self.scheme == 'serial':
+                # configure the serial interface
+                ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+                ss = SerialSpawn(ser)
+                ss.sendline(str(self.ap_chanim_cmd_2g))
+                # do not detete line, waits for output
+                ss.expect([pexpect.TIMEOUT], timeout=1)
+                ap_chanim_stats_2g = ss.before.decode('utf-8', 'ignore')
+                print("read_ap_chanim_stats_2g {}".format(ap_chanim_stats_2g))
+            elif self.scheme == 'ssh':
+                ap_chanim_stats_2g = self.ap_ssh(str(self.ap_chanim_cmd_2g))
 
         except BaseException:
             print("WARNING: read_ap_chanim_stats_2g unable to read AP")
@@ -916,14 +1023,17 @@ class L3VariableTime(Realm):
         #  6ghz:  wl -i wl2 rx_report
         ap_stats_ul_6g = ""
         try:
-            # configure the serial interface
-            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
-            ss = SerialSpawn(ser)
-            ss.sendline(str(self.ap_cmd_ul_6g))
-            # do not detete line, waits for output
-            ss.expect([pexpect.TIMEOUT], timeout=1)
-            ap_stats_ul_6g = ss.before.decode('utf-8', 'ignore')
-            print("ap_stats_ul_6g from AP: {}".format(ap_stats_ul_6g))
+            if self.scheme == 'serial':
+                # configure the serial interface
+                ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+                ss = SerialSpawn(ser)
+                ss.sendline(str(self.ap_cmd_ul_6g))
+                # do not detete line, waits for output
+                ss.expect([pexpect.TIMEOUT], timeout=1)
+                ap_stats_ul_6g = ss.before.decode('utf-8', 'ignore')
+                print("ap_stats_ul_6g from AP: {}".format(ap_stats_ul_6g))
+            elif self.scheme == 'ssh':
+                ap_stats_ul_6g = self.ap_ssh(str(self.ap_cmd_ul_6g))
 
         except BaseException:
             print("WARNING: ap_stats_ul_6g unable to read AP")
@@ -934,14 +1044,18 @@ class L3VariableTime(Realm):
         #  6ghz:  wl -i wl1 rx_report
         ap_stats_ul_5g = ""
         try:
-            # configure the serial interface
-            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
-            ss = SerialSpawn(ser)
-            ss.sendline(str(self.ap_cmd_ul_5g))
-            # do not detete line, waits for output
-            ss.expect([pexpect.TIMEOUT], timeout=1)
-            ap_stats_ul_5g = ss.before.decode('utf-8', 'ignore')
-            print("ap_stats_ul_5g from AP: {}".format(ap_stats_ul_5g))
+            if self.scheme == 'serial':
+                # configure the serial interface
+                ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+                ss = SerialSpawn(ser)
+                ss.sendline(str(self.ap_cmd_ul_5g))
+                # do not detete line, waits for output
+                ss.expect([pexpect.TIMEOUT], timeout=1)
+                ap_stats_ul_5g = ss.before.decode('utf-8', 'ignore')
+                print("ap_stats_ul_5g from AP: {}".format(ap_stats_ul_5g))
+
+            elif self.scheme == 'ssh':
+                ap_stats_ul_5g = self.ap_ssh(str(self.ap_cmd_ul_5g))
 
         except BaseException:
             print("WARNING: ap_stats_ul_5g unable to read AP")
@@ -952,14 +1066,18 @@ class L3VariableTime(Realm):
         #  6ghz:  wl -i wl0 rx_report
         ap_stats_ul_2g = ""
         try:
-            # configure the serial interface
-            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
-            ss = SerialSpawn(ser)
-            ss.sendline(str(self.ap_cmd_ul_2g))
-            # do not detete line, waits for output
-            ss.expect([pexpect.TIMEOUT], timeout=1)
-            ap_stats_ul_2g = ss.before.decode('utf-8', 'ignore')
-            print("ap_stats_ul_2g from AP: {}".format(ap_stats_ul_2g))
+            if self.scheme == 'serial':
+                # configure the serial interface
+                ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+                ss = SerialSpawn(ser)
+                ss.sendline(str(self.ap_cmd_ul_2g))
+                # do not detete line, waits for output
+                ss.expect([pexpect.TIMEOUT], timeout=1)
+                ap_stats_ul_2g = ss.before.decode('utf-8', 'ignore')
+                print("ap_stats_ul_2g from AP: {}".format(ap_stats_ul_2g))
+
+            elif self.scheme == 'ssh':
+                ap_stats_ul_2g = self.ap_ssh(str(self.ap_cmd_ul_2g))
 
         except BaseException:
             print("WARNING: ap_stats_ul_6g unable to read AP")
@@ -1007,7 +1125,7 @@ class L3VariableTime(Realm):
         return ap_chanim_stats_fake
 
     # Run the main body of the test logic.
-    #(Lines 983- 2220)
+    # (Lines 983- 2220)
     def start(self, print_pass=False):
         print("Bringing up stations")
         self.admin_up(self.side_b)
@@ -1027,7 +1145,7 @@ class L3VariableTime(Realm):
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
 
-        #if self.use_existing_station_lists:
+        # if self.use_existing_station_lists:
         #    # for existing_station in self.existing_station_lists:
         #    temp_stations_list.extend(self.existing_station_lists.copy())
 
@@ -1044,13 +1162,13 @@ class L3VariableTime(Realm):
         else:
             # No reason to continue
             raise ValueError("ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
-        # self.csv_generate_column_headers() 
+        # self.csv_generate_column_headers()
         # print(csv_header)
         self.csv_add_results_column_headers()
 
         # dl - ports
         port_eids = self.gather_port_eids()
-        #if self.use_existing_station_lists:
+        # if self.use_existing_station_lists:
         #    port_eids.extend(self.existing_station_lists.copy())
         for port_eid in port_eids:
             self.csv_add_dl_port_column_headers(
@@ -1063,7 +1181,7 @@ class L3VariableTime(Realm):
         # ap is read
         if self.ap_read:
             port_eids = self.gather_port_eids()
-            #if self.use_existing_station_lists:
+            # if self.use_existing_station_lists:
             #    port_eids.extend(self.existing_station_lists.copy())
 
             for port_eid in port_eids:
@@ -1118,9 +1236,9 @@ class L3VariableTime(Realm):
                 self.build(rebuild=True)
 
                 if self.ap_scheduler_stats or self.ap_ofdma_stats:
-                    self.ap_custom_cmd('wl -i wl2 dump_clear')
-                    self.ap_custom_cmd('wl -i wl1 dump_clear')
-                    self.ap_custom_cmd('wl -i wl0 dump_clear')
+                    self.ap_custom_cmd(self.ap_dump_clear_6g)
+                    self.ap_custom_cmd(self.ap_dump_clear_5g)
+                    self.ap_custom_cmd(self.ap_dump_clear_2g)
 
                 for atten_val in self.atten_vals:
                     if atten_val != -1:
@@ -1223,7 +1341,7 @@ class L3VariableTime(Realm):
                             port_eids = self.gather_port_eids()
 
                             # Add in the existing ports
-                            #if self.use_existing_station_lists:
+                            # if self.use_existing_station_lists:
                             #    port_eids.extend(self.existing_station_lists.copy())
 
                             # read find the bs_data
@@ -1479,7 +1597,7 @@ class L3VariableTime(Realm):
                                                 # LANforge
                                                 if split_row[0].lower(
                                                 ) == mac.lower():
-                                                    ap_row = split_row # bs_data
+                                                    ap_row = split_row  # bs_data
                                                     mac_found_5g = True
                                             except BaseException:
                                                 print(
@@ -1541,7 +1659,7 @@ class L3VariableTime(Realm):
                                         # ap information is passed with ap_row
                                         # so all information needs to be
                                         # contained in ap_row
-                                        ap_row.append(str(channel_utilization)) # channel_utilization from ap_chanim_stats
+                                        ap_row.append(str(channel_utilization))  # channel_utilization from ap_chanim_stats
                                         print(
                                             "5g channel_utilization {channel_utilization}".format(
                                                 channel_utilization=channel_utilization))
@@ -1927,36 +2045,36 @@ class L3VariableTime(Realm):
                                         total_dl_rate_ll,
                                         total_dl_pkts_ll,
                                         ap_row)
-                            #collect layer 3 data
+                            # collect layer 3 data
                             if (self.collect_layer3_data):
                                 for cx in self.cx_names:
                                     cx_name = cx[0]
                                     url = "/cx/%s" % (cx_name)
                                     response = self.json_get(url)
                                     if (response is None) or (
-                                        cx_name not in response):
+                                            cx_name not in response):
                                         logger.info(
-                                        "query-port: %s: incomplete response:" % url)
+                                            "query-port: %s: incomplete response:" % url)
                                         logger.info(pformat(response))
                                     else:
                                         cx_data = response[cx_name]
                                         type, state, pkt_rx_a, pkt_rx_b, bps_rx_a, bps_rx_b, rx_drop_percent_a, rx_drop_percent_b, drop_pkts_a, drop_pkts_b, avg_rtt, rpt_timer, eid = self.get_l3_stats_for_cx(cx_data)
 
                                         self.write_l3_csv(cx_name,
-                                                            type,
-                                                            state,
-                                                            pkt_rx_a,
-                                                            pkt_rx_b,
-                                                            bps_rx_a,
-                                                            bps_rx_b,
-                                                            rx_drop_percent_a,
-                                                            rx_drop_percent_b,
-                                                            drop_pkts_a,
-                                                            drop_pkts_b,
-                                                            avg_rtt,
-                                                            rpt_timer,
-                                                            eid)
-                    #ENDTIME reached                    
+                                                          type,
+                                                          state,
+                                                          pkt_rx_a,
+                                                          pkt_rx_b,
+                                                          bps_rx_a,
+                                                          bps_rx_b,
+                                                          rx_drop_percent_a,
+                                                          rx_drop_percent_b,
+                                                          drop_pkts_a,
+                                                          drop_pkts_b,
+                                                          avg_rtt,
+                                                          rpt_timer,
+                                                          eid)
+                    # ENDTIME reached
 
                     # Consolidate all the dl ports into one file
                     # Create empty dataframe
@@ -1977,7 +2095,6 @@ class L3VariableTime(Realm):
                     # if there are multiple loops then delete the df
                     del all_dl_ports_df
 
-    
                     if self.ap_read:
                         # Consolidate all the ul ports into one file
                         # Create empty dataframe
@@ -2028,80 +2145,72 @@ class L3VariableTime(Realm):
                     # stats
                     if self.ap_scheduler_stats:
                         # get the (UL) Upload 6g scheduler statistics
-                        self.ap_6g_umsched += self.ap_custom_cmd(
-                            'wl -i wl2 dump umsched')
+                        self.ap_6g_umsched += self.ap_custom_cmd(self.ap_dump_umsched_6g)
                         # get the (DL) Download 6g schduler staticstics
-                        self.ap_6g_msched += self.ap_custom_cmd(
-                            'wl -i wl2 dump msched')
+                        self.ap_6g_msched += self.ap_custom_cmd(self.ap_dump_msched_6g)
 
                         # get the (UL) Upload 5g scheduler statistics
-                        self.ap_5g_umsched += self.ap_custom_cmd(
-                            'wl -i wl1 dump umsched')
+                        self.ap_5g_umsched += self.ap_custom_cmd(self.ap_dump_umsched_5g)
                         # get the (DL) Download 5g schduler staticstics
-                        self.ap_5g_msched += self.ap_custom_cmd(
-                            'wl -i wl1 dump msched')
+                        self.ap_5g_msched += self.ap_custom_cmd(self.ap_dump_msched_5g)
 
                         # get the (UL) Upload 24g scheduler statistics
-                        self.ap_24g_umsched += self.ap_custom_cmd(
-                            'wl -i wl0 dump umsched')
+                        self.ap_24g_umsched += self.ap_custom_cmd(self.ap_dump_umsched_2g)
                         # get the (DL) Download 24g schduler staticstics
-                        self.ap_24g_msched += self.ap_custom_cmd(
-                            'wl -i wl0 dump msched')
+                        self.ap_24g_msched += self.ap_custom_cmd(self.ap_dump_msched_2g)
 
                     if self.ap_ofdma_stats:
                         # provide OFDMA stats 6GHz
-                        self.ap_ofdma_6g += self.ap_custom_cmd(
-                            'wl -i wl2 muinfo -v')
+                        self.ap_ofdma_6g += self.ap_custom_cmd(self.muinfo_6g)
 
                         # provide OFDMA stats 5GHz
-                        self.ap_ofdma_5g += self.ap_custom_cmd(
-                            'wl -i wl1 muinfo -v')
+                        self.ap_ofdma_5g += self.ap_custom_cmd(self.muinfo_5g)
 
                         # provide OFDMA stats 2.4GHz
-                        self.ap_ofdma_24g += self.ap_custom_cmd(
-                            'wl -i wl0 muinfo -v')
+                        self.ap_ofdma_24g += self.ap_custom_cmd(self.muinfo_2g)
                     # Calculate passes before moving onto next atten val.
                     if passes == expected_passes:
                         self._pass(
                             "PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" %
                             (ul, dl, ul_pdu, dl_pdu), print_pass)
+
     def write_l3_csv(self,
-                    cx_name,
-                    type, 
-                    state, 
-                    pkt_rx_a, 
-                    pkt_rx_b, 
-                    bps_rx_a, 
-                    bps_rx_b, 
-                    rx_drop_percent_a, 
-                    rx_drop_percent_b, 
-                    drop_pkts_a, 
-                    drop_pkts_b, 
-                    avg_rtt, 
-                    rpt_timer, 
-                    eid
-                    ):    
+                     cx_name,
+                     type,
+                     state,
+                     pkt_rx_a,
+                     pkt_rx_b,
+                     bps_rx_a,
+                     bps_rx_b,
+                     rx_drop_percent_a,
+                     rx_drop_percent_b,
+                     drop_pkts_a,
+                     drop_pkts_b,
+                     avg_rtt,
+                     rpt_timer,
+                     eid
+                     ):
         row = [self.epoch_time,
-                self.time_stamp(),
-                cx_name,
-                type,
-                state,
-                pkt_rx_a,
-                pkt_rx_b,
-                bps_rx_a,
-                bps_rx_b,
-                rx_drop_percent_a,
-                rx_drop_percent_b,
-                drop_pkts_a,
-                drop_pkts_b,
-                avg_rtt,
-                rpt_timer,
-                eid
-                ]
+               self.time_stamp(),
+               cx_name,
+               type,
+               state,
+               pkt_rx_a,
+               pkt_rx_b,
+               bps_rx_a,
+               bps_rx_b,
+               rx_drop_percent_a,
+               rx_drop_percent_b,
+               drop_pkts_a,
+               drop_pkts_b,
+               avg_rtt,
+               rpt_timer,
+               eid
+               ]
         writer = self.l3_csv_writers[cx_name]
         writer.writerow(row)
         self.l3_csv_files[cx_name].flush()
-    
+
     def write_port_csv(
             self,
             sta_count,
@@ -2498,9 +2607,9 @@ class L3VariableTime(Realm):
         port_csv_writer.writerow(headers)
         pfile.flush()
 
-    #write initial headers to l3 files
+    # write initial headers to l3 files
     def csv_add_l3_column_headers(self, cx, headers):
-        fname = self.outfile[:-4] #String '.csv' from file name
+        fname = self.outfile[:-4]  # String '.csv' from file name
         fname = fname + "-" + cx + "-l3-cx.csv"
         pfile = open(fname, "w")
         l3_csv_writer = csv.writer(pfile, delimiter=",")
@@ -2509,7 +2618,7 @@ class L3VariableTime(Realm):
         l3_csv_writer.writerow(headers)
         pfile.flush()
 
-    #Write initial headers to upload port csv file
+    # Write initial headers to upload port csv file
     def csv_add_ul_port_column_headers(self, port_eid, headers):
         # if self.csv_file is not None:
         fname = self.outfile[:-4]  # Strip '.csv' from file name
@@ -3014,36 +3123,28 @@ Setting wifi_settings per radio
         '--collect_layer3_data',
         help='--collect_layer3_data flag present creates csv files recording layer3 columns of cxs.',
         action='store_true')
-    parser.add_argument(
-        '--ap_read',
-        help='--ap_read  flag present enable reading ap',
-        action='store_true')
-    parser.add_argument(
-        '--ap_port',
-        help='--ap_port \'/dev/ttyUSB0\'',
-        default='/dev/ttyUSB0')
-    parser.add_argument(
-        '--ap_baud',
-        help='--ap_baud \'115200\'',
-        default='115200')
+    parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
+    parser.add_argument('--ap_scheme', help="--ap_scheme '/dev/ttyUSB0'", choices=['serial', 'telnet', 'ssh', 'mux_serial'], default='serial')
+    parser.add_argument('--ap_port', help="--ap_port '/dev/ttyUSB0'", default='/dev/ttyUSB0')
+    parser.add_argument('--ap_baud', help="--ap_baud '115200'',  default='115200", default="115200")
+    parser.add_argument('--ap_ip', help='--ap_ip', default='192.168.50.1')
+    parser.add_argument('--ap_ssh_port', help='--ap_ssh_port', default='1025')
+    parser.add_argument('--ap_user', help='--ap_user , the user name for the ap, default = lanforge', default='lanforge')
+    parser.add_argument('--ap_passwd', help='--ap_passwd, the password for the ap default = lanforge', default='lanforge')
+    # ASUS interfaces
+    parser.add_argument('--ap_if_2g', help='--ap_if_2g eth6', default='wl0')
+    parser.add_argument('--ap_if_5g', help='--ap_if_5g eth7', default='wl1')
+    parser.add_argument('--ap_if_6g', help='--ap_if_6g eth8', default='wl2')
+
     # note wl2 is the 6G interface , check the MAC ifconfig -a of the
     # interface to the AP BSSID connection (default may be eth8)
-    parser.add_argument(
-        '--ap_cmd_6g',
-        help='ap_cmd_6g \'wl -i wl2 bs_data\'',
-        default="wl -i wl2 bs_data")
+    parser.add_argument('--ap_cmd_6g', help="ap_cmd_6g 'wl -i wl2 bs_data'", default="wl -i wl2 bs_data")
     # note wl1 is the 5G interface , check the MAC ifconfig -a of the
     # interface to the AP BSSID connection (default may be eth7)
-    parser.add_argument(
-        '--ap_cmd_5g',
-        help='ap_cmd_5g \'wl -i wl1 bs_data\'',
-        default="wl -i wl1 bs_data")
+    parser.add_argument('--ap_cmd_5g', help="ap_cmd_5g 'wl -i wl1 bs_data'", default="wl -i wl1 bs_data")
     # note wl1 is the 2.4G interface , check the MAC ifconfig -a of the
     # interface to the AP BSSID connection (default may be eth6)
-    parser.add_argument(
-        '--ap_cmd_2g',
-        help='ap_cmd_2g \'wl -i wl0 bs_data\'',
-        default="wl -i wl0 bs_data")
+    parser.add_argument('--ap_cmd_2g', help="ap_cmd_2g 'wl -i wl0 bs_data'", default="wl -i wl0 bs_data")
     # note wl2 is the 6G interface , check the MAC ifconfig -a of the
     # interface to the AP BSSID connection (default may be eth8)
     parser.add_argument(
@@ -3219,11 +3320,35 @@ Setting wifi_settings per radio
     else:
         ap_test_mode = False
 
+    if args.ap_scheme:
+        ap_scheme = args.ap_scheme
+
     if args.ap_port:
         ap_port = args.ap_port
 
     if args.ap_baud:
         ap_baud = args.ap_baud
+
+    if args.ap_ip:
+        ap_ip = args.ap_ip
+
+    if args.ap_ssh_port:
+        ap_ssh_port = args.ap_ssh_port
+
+    if args.ap_user:
+        ap_user = args.ap_user
+
+    if args.ap_passwd:
+        ap_passwd = args.ap_passwd
+
+    if args.ap_if_2g:
+        ap_if_2g = args.ap_if_2g
+
+    if args.ap_if_5g:
+        ap_if_5g = args.ap_if_5g
+
+    if args.ap_if_6g:
+        ap_if_6g = args.ap_if_6g
 
     if args.ap_cmd_6g:
         ap_cmd_6g = args.ap_cmd_6g
@@ -3545,8 +3670,16 @@ Setting wifi_settings per radio
         ap_scheduler_stats=ap_scheduler_stats,
         ap_ofdma_stats=ap_ofdma_stats,
         ap_read=ap_read,
+        ap_scheme=ap_scheme,
         ap_port=ap_port,
         ap_baud=ap_baud,
+        ap_ip=ap_ip,
+        ap_ssh_port=ap_ssh_port,
+        ap_user=ap_user,
+        ap_passwd=ap_passwd,
+        ap_if_2g=ap_if_2g,
+        ap_if_5g=ap_if_5g,
+        ap_if_6g=ap_if_6g,
         ap_cmd_6g=ap_cmd_6g,
         ap_cmd_5g=ap_cmd_5g,
         ap_cmd_2g=ap_cmd_2g,
