@@ -86,6 +86,7 @@ import time
 from pprint import pformat
 import logging
 import itertools
+import traceback
 import pandas as pd
 
 import pexpect
@@ -302,6 +303,7 @@ class L3VariableTime(Realm):
         self.ap_scheduler_stats = ap_scheduler_stats
         self.ap_ofdma_stats = ap_ofdma_stats
         self.ap_read = ap_read
+        self.ap_scheme = ap_scheme
         self.ap_test_mode = ap_test_mode
         self.ap_port = ap_port
         self.ap_baud = ap_baud
@@ -494,11 +496,19 @@ class L3VariableTime(Realm):
     # def ap_serial(self,command)
 
     def ap_ssh(self, command):
+        # in python3 bytes and str are two different types.  str is used to reporesnt any
+        # type of string (also unicoe), when you encode()
+        # something, you confvert it from it's str represnetation to it's bytes reprrestnetation for a specific 
+        # endoding
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(self.ap_ip, port=self.ap_ssh_port, username=self.ap_user, password=self.ap_passwd, timeout=30)
+        ssh.connect(self.ap_ip, port=self.ap_ssh_port, username=self.ap_user, password=self.ap_passwd, timeout=5)
         stdin, stdout, steerr = ssh.exec_command(command)
         output = stdout.read()
+        logger.debug("command:  {command} output: {output}".format(command=command,output=output))
+        output = output.decode('utf-8', 'ignore')
+        logger.debug("after utf-8 ignoer output: {output}".format(command=command,output=output))
+
         ssh.close()
         return output
 
@@ -868,9 +878,9 @@ class L3VariableTime(Realm):
             logger.info(
                 "ap_custom_cmd: {ap_custom_cmd} ap_results {ap_results}".format(
                     ap_custom_cmd=ap_custom_cmd, ap_results=ap_results))
-        except BaseException:
-            print(
-                "ap_custom_cmd: {} WARNING unable to read AP ".format(ap_custom_cmd))
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.error("ap_custom_cmd: {} WARNING unable to read AP ".format(ap_custom_cmd))
 
         return ap_results
 
@@ -892,7 +902,7 @@ class L3VariableTime(Realm):
         ap_stats_6g = ""
         try:
             # TODO - add paramiko.SSHClient
-            if self.scheme == 'serial':
+            if self.ap_scheme == 'serial':
                 # configure the serial interface
                 ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
                 ss = SerialSpawn(ser)
@@ -901,12 +911,13 @@ class L3VariableTime(Realm):
                 ss.expect([pexpect.TIMEOUT], timeout=1)
                 ap_stats_6g = ss.before.decode('utf-8', 'ignore')
                 logger.debug("ap_stats_6g serial from AP: {}".format(ap_stats_6g))
-            elif self.scheme == 'ssh':
+            elif self.ap_scheme == 'ssh':
                 ap_stats_6g = self.ap_ssh(str(self.ap_cmd_6g))
                 logger.debug("ap_stats_5g ssh from AP : {}".format(ap_stats_6g))
 
-        except BaseException:
-            print("WARNING: ap_stats_6g unable to read AP")
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.error("WARNING: ap_stats_6g unable to read AP")
 
         return ap_stats_6g
 
@@ -915,7 +926,7 @@ class L3VariableTime(Realm):
         #  5ghz:  wl -i wl1 bs_data
         ap_stats_5g = ""
         try:
-            if self.scheme == 'serial':
+            if self.ap_scheme == 'serial':
                 # configure the serial interface
                 ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
                 ss = SerialSpawn(ser)
@@ -925,12 +936,13 @@ class L3VariableTime(Realm):
                 ap_stats_5g = ss.before.decode('utf-8', 'ignore')
                 print("ap_stats_5g serial from AP: {}".format(ap_stats_5g))
 
-            elif self.scheme == 'ssh':
+            elif self.ap_scheme == 'ssh':
                 ap_stats_5g = self.ap_ssh(str(self.ap_cmd_5g))
                 print("ap_stats_5g ssh from AP : {}".format(ap_stats_5g))
 
-        except BaseException:
-            print("WARNING: ap_stats_5g unable to read AP")
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.error("WARNING: ap_stats_5g unable to read AP")
 
         return ap_stats_5g
 
@@ -938,7 +950,7 @@ class L3VariableTime(Realm):
         #  2.4ghz# wl -i wl0 bs_data
         ap_stats_2g = ""
         try:
-            if self.scheme == 'serial':
+            if self.ap_scheme == 'serial':
                 # configure the serial interface
                 ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
                 ss = SerialSpawn(ser)
@@ -947,12 +959,13 @@ class L3VariableTime(Realm):
                 ss.expect([pexpect.TIMEOUT], timeout=1)
                 ap_stats_2g = ss.before.decode('utf-8', 'ignore')
                 print("ap_stats_2g from AP: {}".format(ap_stats_2g))
-            elif self.scheme == 'ssh':
+            elif self.ap_scheme == 'ssh':
                 ap_stats_2g = self.ap_ssh(str(self.ap_cmd_2g))
                 print("ap_stats_5g ssh from AP : {}".format(ap_stats_2g))
 
-        except BaseException:
-            print("WARNING: ap_stats_2g unable to read AP")
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.error("ap_stats_2g unable to read AP")
 
         return ap_stats_2g
 
@@ -960,7 +973,7 @@ class L3VariableTime(Realm):
         #  5ghz:  wl -i wl1 chanim_stats
         ap_chanim_stats_6g = ""
         try:
-            if self.scheme == 'serial':
+            if self.ap_scheme == 'serial':
                 # configure the serial interface
                 ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
                 ss = SerialSpawn(ser)
@@ -969,11 +982,12 @@ class L3VariableTime(Realm):
                 ss.expect([pexpect.TIMEOUT], timeout=1)
                 ap_chanim_stats_6g = ss.before.decode('utf-8', 'ignore')
                 print("read_ap_chanim_stats_6g {}".format(ap_chanim_stats_6g))
-            elif self.scheme == 'ssh':
+            elif self.ap_scheme == 'ssh':
                 ap_chanim_stats_6g = self.ap_ssh(str(self.ap_chanim_cmd_6g))
 
-        except BaseException:
-            print("WARNING: read_ap_chanim_stats_6g unable to read AP")
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.warning("read_ap_chanim_stats_6g unable to read AP")
 
         return ap_chanim_stats_6g
 
@@ -981,7 +995,7 @@ class L3VariableTime(Realm):
         #  5ghz:  wl -i wl1 chanim_stats
         ap_chanim_stats_5g = ""
         try:
-            if self.scheme == 'serial':
+            if self.ap_scheme == 'serial':
                 # configure the serial interface
                 ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
                 ss = SerialSpawn(ser)
@@ -990,11 +1004,12 @@ class L3VariableTime(Realm):
                 ss.expect([pexpect.TIMEOUT], timeout=1)
                 ap_chanim_stats_5g = ss.before.decode('utf-8', 'ignore')
                 print("read_ap_chanim_stats_5g {}".format(ap_chanim_stats_5g))
-            elif self.scheme == 'ssh':
+            elif self.ap_scheme == 'ssh':
                 ap_chanim_stats_5g = self.ap_ssh(str(self.ap_chanim_cmd_5g))
 
-        except BaseException:
-            print("WARNING: read_ap_chanim_stats_5g unable to read AP")
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.warning("read_ap_chanim_stats_5g unable to read AP")
 
         return ap_chanim_stats_5g
 
@@ -1002,7 +1017,7 @@ class L3VariableTime(Realm):
         #  2.4ghz# wl -i wl0 chanim_stats
         ap_chanim_stats_2g = ""
         try:
-            if self.scheme == 'serial':
+            if self.ap_scheme == 'serial':
                 # configure the serial interface
                 ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
                 ss = SerialSpawn(ser)
@@ -1011,11 +1026,12 @@ class L3VariableTime(Realm):
                 ss.expect([pexpect.TIMEOUT], timeout=1)
                 ap_chanim_stats_2g = ss.before.decode('utf-8', 'ignore')
                 print("read_ap_chanim_stats_2g {}".format(ap_chanim_stats_2g))
-            elif self.scheme == 'ssh':
+            elif self.ap_scheme == 'ssh':
                 ap_chanim_stats_2g = self.ap_ssh(str(self.ap_chanim_cmd_2g))
 
-        except BaseException:
-            print("WARNING: read_ap_chanim_stats_2g unable to read AP")
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.warning("read_ap_chanim_stats_2g unable to read AP")
 
         return ap_chanim_stats_2g
 
@@ -1023,7 +1039,7 @@ class L3VariableTime(Realm):
         #  6ghz:  wl -i wl2 rx_report
         ap_stats_ul_6g = ""
         try:
-            if self.scheme == 'serial':
+            if self.ap_scheme == 'serial':
                 # configure the serial interface
                 ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
                 ss = SerialSpawn(ser)
@@ -1032,11 +1048,12 @@ class L3VariableTime(Realm):
                 ss.expect([pexpect.TIMEOUT], timeout=1)
                 ap_stats_ul_6g = ss.before.decode('utf-8', 'ignore')
                 print("ap_stats_ul_6g from AP: {}".format(ap_stats_ul_6g))
-            elif self.scheme == 'ssh':
+            elif self.ap_scheme == 'ssh':
                 ap_stats_ul_6g = self.ap_ssh(str(self.ap_cmd_ul_6g))
 
-        except BaseException:
-            print("WARNING: ap_stats_ul_6g unable to read AP")
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.warning("ap_stats_ul_6g unable to read AP")
 
         return ap_stats_ul_6g
 
@@ -1044,7 +1061,7 @@ class L3VariableTime(Realm):
         #  6ghz:  wl -i wl1 rx_report
         ap_stats_ul_5g = ""
         try:
-            if self.scheme == 'serial':
+            if self.ap_scheme == 'serial':
                 # configure the serial interface
                 ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
                 ss = SerialSpawn(ser)
@@ -1054,11 +1071,12 @@ class L3VariableTime(Realm):
                 ap_stats_ul_5g = ss.before.decode('utf-8', 'ignore')
                 print("ap_stats_ul_5g from AP: {}".format(ap_stats_ul_5g))
 
-            elif self.scheme == 'ssh':
+            elif self.ap_scheme == 'ssh':
                 ap_stats_ul_5g = self.ap_ssh(str(self.ap_cmd_ul_5g))
 
-        except BaseException:
-            print("WARNING: ap_stats_ul_5g unable to read AP")
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.warning("ap_stats_ul_5g unable to read AP")
 
         return ap_stats_ul_5g
 
@@ -1066,7 +1084,7 @@ class L3VariableTime(Realm):
         #  6ghz:  wl -i wl0 rx_report
         ap_stats_ul_2g = ""
         try:
-            if self.scheme == 'serial':
+            if self.ap_scheme == 'serial':
                 # configure the serial interface
                 ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
                 ss = SerialSpawn(ser)
@@ -1076,11 +1094,12 @@ class L3VariableTime(Realm):
                 ap_stats_ul_2g = ss.before.decode('utf-8', 'ignore')
                 print("ap_stats_ul_2g from AP: {}".format(ap_stats_ul_2g))
 
-            elif self.scheme == 'ssh':
+            elif self.ap_scheme == 'ssh':
                 ap_stats_ul_2g = self.ap_ssh(str(self.ap_cmd_ul_2g))
 
-        except BaseException:
-            print("WARNING: ap_stats_ul_6g unable to read AP")
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.warning("ap_stats_ul_6g unable to read AP")
 
         return ap_stats_ul_2g
 
@@ -1217,9 +1236,7 @@ class L3VariableTime(Realm):
                 if dl_pdu == "AUTO" or dl_pdu == "MTU":
                     dl_pdu = "-1"
 
-                print(
-                    "ul: %s  dl: %s  cx-count: %s  rates-are-totals: %s\n" %
-                    (ul, dl, self.cx_count, self.rates_are_totals))
+                logger.info("ul: %s  dl: %s  cx-count: %s  rates-are-totals: %s\n" % (ul, dl, self.cx_count, self.rates_are_totals))
 
                 # Set rate and pdu size config
                 self.cx_profile.side_a_min_bps = ul
@@ -1322,16 +1339,13 @@ class L3VariableTime(Realm):
                                 ap_stats_ul_6g = self.read_ap_stats_ul_6g()
 
                             ap_stats_6g_rows = ap_stats_6g.splitlines()
-                            print(
-                                "From AP stats: ap_stats_6g_rows {}".format(ap_stats_6g_rows))
+                            logger.info("From AP stats: ap_stats_6g_rows {}".format(ap_stats_6g_rows))
 
                             ap_chanim_stats_rows_6g = ap_chanim_stats_6g.splitlines()
-                            print(
-                                "From AP chanim: ap_chanim_stats_rows_6g {}".format(ap_chanim_stats_rows_6g))
+                            logger.info("From AP chanim: ap_chanim_stats_rows_6g {}".format(ap_chanim_stats_rows_6g))
 
                             ap_stats_ul_6g_rows = ap_stats_ul_6g.splitlines()
-                            print(
-                                "From AP stats ul: ap_stats_ul_6g_rows {}".format(ap_stats_ul_6g_rows))
+                            logger.info("From AP stats ul: ap_stats_ul_6g_rows {}".format(ap_stats_ul_6g_rows))
 
                             channel_utilization = 0
 
@@ -1351,18 +1365,14 @@ class L3VariableTime(Realm):
                                                           eid[1], eid[2])
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
-                                if (response is None) or (
-                                        "interface" not in response):
-                                    print(
-                                        "6g query-port: %s: incomplete response:" %
-                                        url)
+                                if (response is None) or ("interface" not in response):
+                                    logger.info("6g query-port: %s: incomplete response:" % url)
                                     logger.info(pformat(response))
                                 else:
                                     # print("response".format(response))
                                     logger.info(pformat(response))
                                     port_data = response['interface']
-                                    print(
-                                        "#### 6g From LANforge: port_data, response['insterface']:{}".format(port_data))
+                                    logger.info("#### 6g From LANforge: port_data, response['insterface']:{}".format(port_data))
                                     mac = port_data['mac']
                                     # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
@@ -1375,8 +1385,7 @@ class L3VariableTime(Realm):
                                         # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         # in the ap_test_mode the mac's will not match so fake out with not equal
                                         if self.ap_test_mode:
-                                            if split_row[0].lower(
-                                            ) != mac.lower():
+                                            if split_row[0].lower() != mac.lower():
                                                 ap_row = split_row
                                                 mac_found_6g = True
                                         else:
@@ -1384,19 +1393,16 @@ class L3VariableTime(Realm):
                                                 # split_row[0].lower() , mac from AP
                                                 # mac.lower() , mac from
                                                 # LANforge
-                                                if split_row[0].lower(
-                                                ) == mac.lower():
+                                                if split_row[0].lower() == mac.lower():
                                                     ap_row = split_row
                                                     mac_found_6g = True
-                                            except BaseException:
-                                                print(
-                                                    "6g 'No stations are currently associated.'? from AP")
-                                                print(
-                                                    " since possibly no stations: excption on compare split_row[0].lower() ")
+                                            except Exception as x:
+                                                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                                logger.warning("6g 'No stations are currently associated.'? from AP")
+                                                logger.warning(" since possibly no stations: excption on compare split_row[0].lower() ")
                                     if mac_found_6g:
                                         mac_found_6g = False
-                                        print(
-                                            "6g selected ap_row (from split_row): {}".format(ap_row))
+                                        logger.info("6g selected ap_row (from split_row): {}".format(ap_row))
 
                                         # Find latency, jitter for connections
                                         # using this port.
@@ -1408,36 +1414,28 @@ class L3VariableTime(Realm):
                                         for row in ap_chanim_stats_rows_6g:
                                             split_row = row.split()
                                             if xtop_reported:
-                                                print(
-                                                    "6g xtop_reported row: {row}".format(
-                                                        row=row))
-                                                print(
-                                                    "6g xtop_reported split_row: {split_row}".format(
-                                                        split_row=split_row))
+                                                logger.info("6g xtop_reported row: {row}".format(row=row))
+                                                logger.info("6g xtop_reported split_row: {split_row}".format(split_row=split_row))
                                                 try:
                                                     xtop = split_row[7]
-                                                    print(
-                                                        "6g xtop {xtop}".format(xtop=xtop))
-                                                    channel_utilization = float(
-                                                        100) - float(xtop)
-                                                    print("6g channel_utilization {utilization}".format(utilization=channel_utilization))
-                                                except BaseException:
-                                                    print(
-                                                        "6g detected chanspec with reading chanim_stats, exception reading xtop")
+                                                    logger.info("6g xtop {xtop}".format(xtop=xtop))
+                                                    channel_utilization = float(100) - float(xtop)
+                                                    logger.info("6g channel_utilization {utilization}".format(utilization=channel_utilization))
+                                                except Exception as x:
+                                                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                                    logger.info("6g detected chanspec with reading chanim_stats, exception reading xtop")
 
                                                 # should be only one channel
                                                 # utilization
                                                 break
                                             else:
                                                 try:
-                                                    if split_row[0].lower(
-                                                    ) == 'chanspec':
-                                                        print(
-                                                            "6g chanspec found xtop_reported = True")
+                                                    if split_row[0].lower() == 'chanspec':
+                                                        logger.info("6g chanspec found xtop_reported = True")
                                                         xtop_reported = True
-                                                except BaseException:
-                                                    print(
-                                                        "6g Error reading xtop")
+                                                except Exception as x:
+                                                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                                    logger.info("6g Error reading xtop")
                                         # ap information is passed with ap_row
                                         # so all information needs to be
                                         # contained in ap_row
@@ -1450,18 +1448,14 @@ class L3VariableTime(Realm):
                                                           eid[1], eid[2])
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
-                                if (response is None) or (
-                                        "interface" not in response):
-                                    logger.info(
-                                        "6g query-port: %s: incomplete response:" %
-                                        url)
+                                if (response is None) or ("interface" not in response):
+                                    logger.info("6g query-port: %s: incomplete response:" % url)
                                     logger.info(pformat(response))
                                 else:
                                     # print("response".format(response))
                                     logger.info(pformat(response))
                                     port_data = response['interface']
-                                    logger.info(
-                                        "#### 6g From LANforge: port_data, response['insterface']:{}".format(port_data))
+                                    logger.info("#### 6g From LANforge: port_data, response['insterface']:{}".format(port_data))
                                     mac = port_data['mac']
                                     # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
@@ -1487,24 +1481,20 @@ class L3VariableTime(Realm):
                                                 ) == mac.lower():
                                                     ap_ul_row = split_ul_row
                                                     mac_found_ul_6g = True
-                                            except BaseException:
-                                                print(
-                                                    "6g ul 'No stations are currently associated.'? from AP")
-                                                print(
-                                                    " ul since possibly no stations: excption on compare split_row[0].lower() ")
+                                            except Exception as x:
+                                                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                                logger.info("6g ul 'No stations are currently associated.'? from AP")
+                                                logger.info(" ul since possibly no stations: excption on compare split_row[0].lower() ")
                                     if mac_found_ul_6g:
                                         mac_found_ul_6g = False
-                                        print(
-                                            "6g ul selected ap_ul_row (from split_ul_row): {}".format(ap_ul_row))
+                                        logger.info("6g ul selected ap_ul_row (from split_ul_row): {}".format(ap_ul_row))
 
                                         # Find latency, jitter for connections
                                         # using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
                                             port_data["port"], endps)
 
-                                        print(
-                                            "6g ap_ul_row {ap_ul_row}".format(
-                                                ap_ul_row=ap_ul_row))
+                                        logger.info("6g ap_ul_row {ap_ul_row}".format(ap_ul_row=ap_ul_row))
 
                                         self.write_port_csv(
                                             len(temp_stations_list),
@@ -1528,7 +1518,7 @@ class L3VariableTime(Realm):
                             # 5G test mode
                             if self.ap_test_mode:
                                 ap_stats_5g = self.read_ap_bs_data_test_mode()
-                                print("ap_stats 5g {}".format(ap_stats_5g))
+                                logger.info("ap_stats 5g {}".format(ap_stats_5g))
                                 ap_chanim_stats_5g = self.read_ap_chanim_stats_test_mode()
                                 ap_stats_ul_5g = self.read_ap_rx_report_test_mode()
                             else:
@@ -1538,16 +1528,13 @@ class L3VariableTime(Realm):
                                 ap_stats_ul_5g = self.read_ap_stats_ul_5g()
 
                             ap_stats_5g_rows = ap_stats_5g.splitlines()
-                            print(
-                                "From AP stats: ap_stats_5g_rows {}".format(ap_stats_5g_rows))
+                            logger.info("From AP stats: ap_stats_5g_rows {}".format(ap_stats_5g_rows))
 
                             ap_chanim_stats_rows_5g = ap_chanim_stats_5g.splitlines()
-                            print(
-                                "From AP chanim: ap_chanim_stats_rows_5g {}".format(ap_chanim_stats_rows_5g))
+                            logger.info("From AP chanim: ap_chanim_stats_rows_5g {}".format(ap_chanim_stats_rows_5g))
 
                             ap_stats_ul_5g_rows = ap_stats_ul_5g.splitlines()
-                            print(
-                                "From AP stats ul: ap_stats_ul_5g_rows {}".format(ap_stats_ul_5g_rows))
+                            logger.info("From AP stats ul: ap_stats_ul_5g_rows {}".format(ap_stats_ul_5g_rows))
 
                             channel_utilization = 0
 
@@ -1558,23 +1545,19 @@ class L3VariableTime(Realm):
 
                             for port_eid in port_eids:
                                 eid = self.name_to_eid(port_eid)
-                                url = "/port/%s/%s/%s" % (eid[0],
-                                                          eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
-                                if (response is None) or (
-                                        "interface" not in response):
-                                    logger.info(
-                                        "query-port 5g: %s: incomplete response:" %
-                                        url)
+                                if (response is None) or ("interface" not in response):
+                                    logger.info("query-port 5g: %s: incomplete response:" % url)
                                     logger.info(pformat(response))
                                 else:
                                     # print("response".format(response))
                                     logger.info(pformat(response))
                                     port_data = response['interface']
-                                    logger.info(
-                                        "#### From LANforge: port_data, response['insterface']:{}".format(port_data))
+                                    logger.info("#### From LANforge: port_data, response['insterface']:{}".format(port_data))
                                     mac = port_data['mac']
+                                    logger.info("port_data['mac']: {mac}".format(mac=mac))
                                     # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
 
@@ -1586,8 +1569,7 @@ class L3VariableTime(Realm):
                                         # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         # in the ap_test_mode the mac's will not match so fake out with not equal
                                         if self.ap_test_mode:
-                                            if split_row[0].lower(
-                                            ) != mac.lower():
+                                            if split_row[0].lower() != mac.lower():
                                                 ap_row = split_row
                                                 mac_found_5g = True
                                         else:
@@ -1595,19 +1577,18 @@ class L3VariableTime(Realm):
                                                 # split_row[0].lower() , mac from AP
                                                 # mac.lower() , mac from
                                                 # LANforge
-                                                if split_row[0].lower(
-                                                ) == mac.lower():
+                                                if split_row[0].lower() == mac.lower():
                                                     ap_row = split_row  # bs_data
                                                     mac_found_5g = True
-                                            except BaseException:
-                                                print(
-                                                    "5g 'No stations are currently associated.'? from AP")
-                                                print(
-                                                    "5g since possibly no stations: excption on compare split_row[0].lower() ")
+                                                else:
+                                                    logger.info("AP read mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0],port_mac=mac))
+                                            except Exception as x:
+                                                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                                logger.info("5g 'No stations are currently associated.'? from AP")
+                                                logger.info("5g since possibly no stations: excption on compare split_row[0].lower() ")
                                     if mac_found_5g:
                                         mac_found_5g = False
-                                        print(
-                                            "5g selected ap_row (from split_row): {}".format(ap_row))
+                                        logger.info("5g selected ap_row (from split_row): {}".format(ap_row))
 
                                         # Find latency, jitter for connections
                                         # using this port.
@@ -1620,52 +1601,38 @@ class L3VariableTime(Realm):
                                         for row in ap_chanim_stats_rows_5g:
                                             split_row = row.split()
                                             if xtop_reported:
-                                                print(
-                                                    "xtop_reported 5g row: {row}".format(
-                                                        row=row))
-                                                print(
-                                                    "xtop_reported 5g split_row: {split_row}".format(
-                                                        split_row=split_row))
+                                                logger.info("xtop_reported 5g row: {row}".format(row=row))
+                                                logger.info("xtop_reported 5g split_row: {split_row}".format(split_row=split_row))
                                                 try:
                                                     xtop = split_row[7]
-                                                    print(
-                                                        "5g xtop {xtop}".format(xtop=xtop))
-                                                except BaseException:
-                                                    print(
-                                                        "5g detected chanspec with reading chanim_stats, exception reading xtop")
+                                                    logger.info("5g xtop {xtop}".format(xtop=xtop))
+                                                except Exception as x:
+                                                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                                    logger.info("5g detected chanspec with reading chanim_stats, exception reading xtop")
 
                                                 try:
-                                                    channel_utilization = float(
-                                                        100) - float(xtop)
-                                                    print(
-                                                        "5g channel_utilization {utilization}".format(
-                                                            utilization=channel_utilization))
-                                                except BaseException:
-                                                    print(
-                                                        "5g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
+                                                    channel_utilization = float(100) - float(xtop)
+                                                    logger.info("5g channel_utilization {utilization}".format(utilization=channel_utilization))
+                                                except Exception as x:
+                                                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                                    logger.info("5g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
                                                 # should be only one channel
                                                 # utilization
                                                 break
                                             else:
                                                 try:
-                                                    if split_row[0].lower(
-                                                    ) == 'chanspec':
-                                                        print(
-                                                            "5g chanspec found xtop_reported = True")
+                                                    if split_row[0].lower() == 'chanspec':
+                                                        logger.info("5g chanspec found xtop_reported = True")
                                                         xtop_reported = True
-                                                except BaseException:
-                                                    print(
-                                                        "5g Error reading xtop")
+                                                except Exception as x:
+                                                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                                    logger.error("5g Error reading xtop")
                                         # ap information is passed with ap_row
                                         # so all information needs to be
                                         # contained in ap_row
                                         ap_row.append(str(channel_utilization))  # channel_utilization from ap_chanim_stats
-                                        print(
-                                            "5g channel_utilization {channel_utilization}".format(
-                                                channel_utilization=channel_utilization))
-                                        print(
-                                            "5g ap_row {ap_row}".format(
-                                                ap_row=ap_row))
+                                        logger.info("5g channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
+                                        logger.info("5g ap_row {ap_row}".format(ap_row=ap_row))
 
                                         self.write_port_csv(
                                             len(temp_stations_list),
@@ -1690,22 +1657,17 @@ class L3VariableTime(Realm):
                             # from wl -i <interface> rx_report
                             for port_eid in port_eids:
                                 eid = self.name_to_eid(port_eid)
-                                url = "/port/%s/%s/%s" % (eid[0],
-                                                          eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
-                                if (response is None) or (
-                                        "interface" not in response):
-                                    logger.info(
-                                        "5g query-port: %s: incomplete response:" %
-                                        url)
+                                if (response is None) or ("interface" not in response):
+                                    logger.info("5g query-port: %s: incomplete response:" % url)
                                     logger.info(pformat(response))
                                 else:
                                     # print("response".format(response))
                                     logger.info(pformat(response))
                                     port_data = response['interface']
-                                    logger.info(
-                                        "#### 5g From LANforge: port_data, response['insterface']:{}".format(port_data))
+                                    logger.info("#### 5g From LANforge: port_data, response['insterface']:{}".format(port_data))
                                     mac = port_data['mac']
                                     # print("#### From LANforge: port_data['mac']:
                                     # {mac}".format(mac=mac))
@@ -1717,8 +1679,7 @@ class L3VariableTime(Realm):
                                         # print("split_row {}".format(split_row))
                                         # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
-                                            if split_ul_row[0].lower(
-                                            ) != mac.lower():
+                                            if split_ul_row[0].lower() != mac.lower():
                                                 ap_ul_row = split_ul_row
                                                 mac_found_ul_5g = True
                                         else:
@@ -1726,28 +1687,23 @@ class L3VariableTime(Realm):
                                                 # split_ul_row[0].lower() , mac from AP
                                                 # mac.lower() , mac from
                                                 # LANforge
-                                                if split_ul_row[0].lower(
-                                                ) == mac.lower():
+                                                if split_ul_row[0].lower() == mac.lower():
                                                     ap_ul_row = split_ul_row
                                                     mac_found_ul_5g = True
-                                            except BaseException:
-                                                print(
-                                                    "5g ul 'No stations are currently associated.'? from AP")
-                                                print(
-                                                    "5g ul since possibly no stations: excption on compare split_row[0].lower() ")
+                                            except Exception as x:
+                                                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                                logger.info("5g ul 'No stations are currently associated.'? from AP")
+                                                logger.info("5g ul since possibly no stations: excption on compare split_row[0].lower() ")
                                     if mac_found_ul_5g:
                                         mac_found_ul_5g = False
-                                        print(
-                                            "5g ul selected ap_ul_row (from split_ul_row): {}".format(ap_ul_row))
+                                        logger.info("5g ul selected ap_ul_row (from split_ul_row): {}".format(ap_ul_row))
 
                                         # Find latency, jitter for connections
                                         # using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
                                             port_data["port"], endps)
 
-                                        print(
-                                            "5g ap_ul_row {ap_ul_row}".format(
-                                                ap_ul_row=ap_ul_row))
+                                        logger.info("5g ap_ul_row {ap_ul_row}".format(ap_ul_row=ap_ul_row))
                                         self.write_ul_port_csv(
                                             len(temp_stations_list),
                                             ul,
@@ -1770,7 +1726,7 @@ class L3VariableTime(Realm):
                             # 2g test mode
                             if self.ap_test_mode:
                                 ap_stats_2g = self.read_ap_bs_data_test_mode()
-                                print("ap_stats 2g {}".format(ap_stats_2g))
+                                logger.info("ap_stats 2g {}".format(ap_stats_2g))
                                 ap_chanim_stats_2g = self.read_ap_chanim_stats_test_mode()
                                 ap_stats_ul_2g = self.read_ap_rx_report_test_mode()
                             else:
@@ -1780,16 +1736,13 @@ class L3VariableTime(Realm):
                                 ap_stats_ul_2g = self.read_ap_stats_ul_2g()
 
                             ap_stats_2g_rows = ap_stats_2g.splitlines()
-                            print(
-                                "From AP stats: ap_stats_2g_rows {}".format(ap_stats_2g_rows))
+                            logger.info("From AP stats: ap_stats_2g_rows {}".format(ap_stats_2g_rows))
 
                             ap_chanim_stats_rows_2g = ap_chanim_stats_2g.splitlines()
-                            print(
-                                "From AP chanim: ap_chanim_stats_rows_2g {}".format(ap_chanim_stats_rows_2g))
+                            logger.info("From AP chanim: ap_chanim_stats_rows_2g {}".format(ap_chanim_stats_rows_2g))
 
                             ap_stats_ul_2g_rows = ap_stats_ul_2g.splitlines()
-                            print(
-                                "From AP stats ul: ap_stats_ul_2g_rows {}".format(ap_stats_ul_2g_rows))
+                            logger.info("From AP stats ul: ap_stats_ul_2g_rows {}".format(ap_stats_ul_2g_rows))
 
                             channel_utilization = 0
 
@@ -1800,15 +1753,11 @@ class L3VariableTime(Realm):
 
                             for port_eid in port_eids:
                                 eid = self.name_to_eid(port_eid)
-                                url = "/port/%s/%s/%s" % (eid[0],
-                                                          eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
-                                if (response is None) or (
-                                        "interface" not in response):
-                                    logger.info(
-                                        "2g query-port: %s: incomplete response:" %
-                                        url)
+                                if (response is None) or ("interface" not in response):
+                                    logger.info("2g query-port: %s: incomplete response:" % url)
                                     logger.info(pformat(response))
                                 else:
                                     # print("response".format(response))
@@ -1827,8 +1776,7 @@ class L3VariableTime(Realm):
                                         # print("split_row {}".format(split_row))
                                         # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
-                                            if split_row[0].lower(
-                                            ) != mac.lower():
+                                            if split_row[0].lower() != mac.lower():
                                                 ap_row = split_row
                                                 mac_found_2g = True
                                         else:
@@ -1836,19 +1784,16 @@ class L3VariableTime(Realm):
                                                 # split_row[0].lower() , mac from AP
                                                 # mac.lower() , mac from
                                                 # LANforge
-                                                if split_row[0].lower(
-                                                ) == mac.lower():
+                                                if split_row[0].lower() == mac.lower():
                                                     ap_row = split_row
                                                     mac_found_2g = True
-                                            except BaseException:
-                                                print(
-                                                    "2g 'No stations are currently associated.'? from AP")
-                                                print(
-                                                    "2g since possibly no stations: excption on compare split_row[0].lower() ")
+                                            except Exception as x:
+                                                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                                logger.info("2g 'No stations are currently associated.'? from AP")
+                                                logger.info("2g since possibly no stations: excption on compare split_row[0].lower() ")
                                     if mac_found_2g:
                                         mac_found_2g = False
-                                        print(
-                                            "2g selected ap_row (from split_row): {}".format(ap_row))
+                                        logger.info("2g selected ap_row (from split_row): {}".format(ap_row))
 
                                         # Find latency, jitter for connections
                                         # using this port.
@@ -1861,52 +1806,38 @@ class L3VariableTime(Realm):
                                         for row in ap_chanim_stats_rows_2g:
                                             split_row = row.split()
                                             if xtop_reported:
-                                                print(
-                                                    "2g xtop_reported row: {row}".format(
-                                                        row=row))
-                                                print(
-                                                    "2g xtop_reported split_row: {split_row}".format(
-                                                        split_row=split_row))
+                                                logger.info("2g xtop_reported row: {row}".format(row=row))
+                                                logger.info("2g xtop_reported split_row: {split_row}".format(split_row=split_row))
                                                 try:
                                                     xtop = split_row[7]
-                                                    print(
-                                                        "2g xtop {xtop}".format(xtop=xtop))
-                                                except BaseException:
-                                                    print(
-                                                        "2g detected chanspec with reading chanim_stats, exception reading xtop")
+                                                    logger.info("2g xtop {xtop}".format(xtop=xtop))
+                                                except Exception as x:
+                                                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                                    logger.info("2g detected chanspec with reading chanim_stats, exception reading xtop")
 
                                                 try:
-                                                    channel_utilization = float(
-                                                        100) - float(xtop)
-                                                    print(
-                                                        "2g channel_utilization {utilization}".format(
-                                                            utilization=channel_utilization))
-                                                except BaseException:
-                                                    print(
-                                                        "2g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
+                                                    channel_utilization = float(100) - float(xtop)
+                                                    logger.info("2g channel_utilization {utilization}".format(utilization=channel_utilization))
+                                                except Exception as x:
+                                                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                                    logger.info("2g detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop")
                                                 # should be only one channel
                                                 # utilization
                                                 break
                                             else:
                                                 try:
-                                                    if split_row[0].lower(
-                                                    ) == 'chanspec':
-                                                        print(
-                                                            "2g chanspec found xtop_reported = True")
+                                                    if split_row[0].lower() == 'chanspec':
+                                                        logger.info("2g chanspec found xtop_reported = True")
                                                         xtop_reported = True
-                                                except BaseException:
-                                                    print(
-                                                        "2g Error reading xtop")
+                                                except Exception as x:
+                                                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                                    logger.info("2g Error reading xtop")
                                         # ap information is passed with ap_row
                                         # so all information needs to be
                                         # contained in ap_row
                                         ap_row.append(str(channel_utilization))
-                                        print(
-                                            "2g channel_utilization {channel_utilization}".format(
-                                                channel_utilization=channel_utilization))
-                                        print(
-                                            "2g ap_row {ap_row}".format(
-                                                ap_row=ap_row))
+                                        logger.info("2g channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
+                                        logger.info("2g ap_row {ap_row}".format(ap_row=ap_row))
 
                                         self.write_port_csv(
                                             len(temp_stations_list),
@@ -1929,15 +1860,11 @@ class L3VariableTime(Realm):
                             # work though the ul rx_data 5G
                             for port_eid in port_eids:
                                 eid = self.name_to_eid(port_eid)
-                                url = "/port/%s/%s/%s" % (eid[0],
-                                                          eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
-                                if (response is None) or (
-                                        "interface" not in response):
-                                    logger.info(
-                                        "5g query-port: %s: incomplete response:" %
-                                        url)
+                                if (response is None) or ("interface" not in response):
+                                    logger.info("2g query-port: %s: incomplete response:" % url)
                                     logger.info(pformat(response))
                                 else:
                                     # print("response".format(response))
@@ -1956,8 +1883,7 @@ class L3VariableTime(Realm):
                                         # print("split_row {}".format(split_row))
                                         # print("split_row[0] {}  mac {}".format(split_row[0].lower(),mac.lower()))
                                         if self.ap_test_mode:
-                                            if split_ul_row[0].lower(
-                                            ) != mac.lower():
+                                            if split_ul_row[0].lower() != mac.lower():
                                                 ap_ul_row = split_ul_row
                                                 mac_found_ul_2g = True
                                         else:
@@ -1965,28 +1891,23 @@ class L3VariableTime(Realm):
                                                 # split_ul_row[0].lower() , mac from AP
                                                 # mac.lower() , mac from
                                                 # LANforge
-                                                if split_ul_row[0].lower(
-                                                ) == mac.lower():
+                                                if split_ul_row[0].lower() == mac.lower():
                                                     ap_ul_row = split_ul_row
                                                     mac_found_ul_2g = True
-                                            except BaseException:
-                                                print(
-                                                    "2g ul 'No stations are currently associated.'? from AP")
-                                                print(
-                                                    "2g ul since possibly no stations: excption on compare split_row[0].lower() ")
+                                            except Exception as x:
+                                                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                                logger.info("2g ul 'No stations are currently associated.'? from AP")
+                                                logger.info("2g ul since possibly no stations: excption on compare split_row[0].lower() ")
                                     if mac_found_ul_2g:
                                         mac_found_ul_2g = False
-                                        print(
-                                            "2g ul selected ap_ul_row (from split_ul_row): {}".format(ap_ul_row))
+                                        logger.info("2g ul selected ap_ul_row (from split_ul_row): {}".format(ap_ul_row))
 
                                         # Find latency, jitter for connections
                                         # using this port.
                                         latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
                                             port_data["port"], endps)
 
-                                        print(
-                                            "2g ap_ul_row {ap_ul_row}".format(
-                                                ap_ul_row=ap_ul_row))
+                                        logger.info("2g ap_ul_row {ap_ul_row}".format(ap_ul_row=ap_ul_row))
                                         self.write_ul_port_csv(
                                             len(temp_stations_list),
                                             ul,
@@ -2014,13 +1935,10 @@ class L3VariableTime(Realm):
 
                             for port_eid in port_eids:
                                 eid = self.name_to_eid(port_eid)
-                                url = "/port/%s/%s/%s" % (eid[0],
-                                                          eid[1], eid[2])
+                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
                                 response = self.json_get(url)
-                                if (response is None) or (
-                                        "interface" not in response):
-                                    logger.info(
-                                        "query-port: %s: incomplete response:" % url)
+                                if (response is None) or ("interface" not in response):
+                                    logger.info("query-port: %s: incomplete response:" % url)
                                     logger.info(pformat(response))
                                 else:
                                     port_data = response['interface']
@@ -2051,10 +1969,8 @@ class L3VariableTime(Realm):
                                     cx_name = cx[0]
                                     url = "/cx/%s" % (cx_name)
                                     response = self.json_get(url)
-                                    if (response is None) or (
-                                            cx_name not in response):
-                                        logger.info(
-                                            "query-port: %s: incomplete response:" % url)
+                                    if (response is None) or (cx_name not in response):
+                                        logger.info("query-port: %s: incomplete response:" % url)
                                         logger.info(pformat(response))
                                     else:
                                         cx_data = response[cx_name]
@@ -2784,6 +2700,18 @@ Example : Have script use existing stations from previous run where traffic was 
         --use_existing_station_list
         --existing_station_list '1.1.sta0000,1.1.sta0001'
         --no_stop_traffic
+
+Example : Add the following switches to use ssh to access ASUS (both ssh and serial supported), the interfaces need to be provided
+
+                --ap_read
+                --ap_scheme ssh
+                --ap_ip 192.168.50.1
+                --ap_ssh_port 1025
+                --ap_user lanforge
+                --ap_passwd lanforge
+                --ap_if_2g eth6
+                --ap_if_5g eth7
+                --ap_if_6g eth8
 
 
 
