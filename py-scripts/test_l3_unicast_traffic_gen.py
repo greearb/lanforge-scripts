@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+'''
+NAME: test_l3_unicaast_traffic_gen.py
+
+NOTES:  
+
+Looke at lanforge_api.py   EAP-PEAP  # Use EAP-PEAP connection logic on all ssids, deprecated, see add_dut_ssid.
+
+COPYRIGHT:
+Copyright 2022 Candela Technoligies Inc
+
+'''
 import sys
 import os
 import importlib
