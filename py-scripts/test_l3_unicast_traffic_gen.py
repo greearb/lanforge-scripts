@@ -5,6 +5,7 @@ import importlib
 import argparse
 import time
 import datetime
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -12,15 +13,19 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+
+logger = logging.getLogger(__name__)
+
 
 
 class L3VariableTimeLongevity(Realm):
     def __init__(self, host='localhost', port='8080', endp_type=None, side_b=None, radios=None, radio_name_list=None,
                  number_of_stations_per_radio_list=None,
-                 ssid_list=None, ssid_password_list=None, security=None,
+                 ssid_list=None, ssid_password_list=None, security_list=None,
                  station_lists=None, name_prefix=None, resource=None,
                  side_a_min_rate=256000, side_a_max_rate=0,
                  side_b_min_rate=256000, side_b_max_rate=0,
@@ -36,7 +41,7 @@ class L3VariableTimeLongevity(Realm):
         self.ssid_list = ssid_list
         self.ssid_password_list = ssid_password_list
         self.station_lists = station_lists
-        self.security = security
+        self.security_list = security_list
         self.number_template = number_template
         self.resource = resource
         self.debug = _debug_on
@@ -54,7 +59,7 @@ class L3VariableTimeLongevity(Realm):
             self.station_profile.lfclient_url = self.lfclient_url
             self.station_profile.ssid = ssid_list[radio]
             self.station_profile.ssid_pass = ssid_password_list[radio]
-            self.station_profile.security = self.security
+            self.station_profile.security = self.security_list[radio]
             self.station_profile.number_template = self.number_template
             self.station_profile.mode = 0
             self.station_profiles.append(self.station_profile)
@@ -240,7 +245,7 @@ def valid_endp_type(endp_type):
 
 
 def main():
-
+    # create_basic_argsparse /py-json/LANforge/lfcli_base.py
     parser = Realm.create_basic_argparse(
         prog='test_l3_unicast_traffic_gen.py',
         formatter_class=argparse.RawTextHelpFormatter,
@@ -300,7 +305,8 @@ Example:
     5. Radio #2 wiphy1 has 64 stations, ssid = candelaTech-wpa2-x2048-5-3, ssid password = candelaTech-wpa2-x2048-5-3
 
 Example: 
-python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp --upstream_port eth1 \
+Some of the command line switches are in /py-json/lfcli_base.py
+python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type lf_tcp --upstream_port eth1 \
                                 --radio wiphy0 32 candelaTech-wpa2-x2048-4-1 candelaTech-wpa2-x2048-4-1 \
                                 --radio wiphy1 64 candelaTech-wpa2-x2048-5-3 candelaTech-wpa2-x2048-5-3 
 
@@ -314,11 +320,23 @@ python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp 
                         default='lf_udp', type=valid_endp_type)
 
     requiredNamed = parser.add_argument_group('required arguments')
-    requiredNamed.add_argument('--radio_list', action='append', nargs=4,
-                               metavar=('<wiphyX>', '<number last station>', '<ssid>', '<ssid password>'),
+    requiredNamed.add_argument('--radio_list', action='append', nargs='*',
+                               metavar=('<wiphyX>', '<number last station>', '<ssid>', '<ssid password>', '<security>'),
                                help='--radio_list  <number_of_wiphy> <number of last station> <ssid>  <ssid password>',
                                required=True)
+
     args = parser.parse_args()
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    if (args.log_level):
+        logger_config.set_level(level=args.log_level)
+
+    if args.lf_logger_config_json:
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
 
     side_b = LFUtils.name_to_eid(args.upstream_port)
     resource = side_b[1]
@@ -328,6 +346,7 @@ python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp 
     number_of_stations_offset = 1
     ssid_offset = 2
     ssid_password_offset = 3
+    security_offset = 4
 
     MAX_NUMBER_OF_STATIONS = 64
 
@@ -335,8 +354,13 @@ python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp 
     number_of_stations_per_radio_list = []
     ssid_list = []
     ssid_password_list = []
+    security_list = []
+
+    logger.info("radio_list length {radio_list}".format(radio_list=len(args.radio_list)))
 
     for radio in args.radio_list:
+        radio_args_len = len(radio)
+        logger.info("radio length {radio}".format(radio=len(radio)))
         radio_name = radio[radio_offset]
         radio_name_list.append(radio_name)
         number_of_stations_per_radio = radio[number_of_stations_offset]
@@ -345,6 +369,13 @@ python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp 
         ssid_list.append(ssid)
         ssid_password = radio[ssid_password_offset]
         ssid_password_list.append(ssid_password)
+        # for backward compatibity previously nargs was on 4 (did not include security)
+        if radio_args_len == 5:
+            security = radio[security_offset]
+        else:
+            security = 'wpa2'
+
+        security_list.append(security)
 
     station_lists = []
     for radio_list in range(0, len(args.radio_list)):
@@ -361,7 +392,7 @@ python3 .\\test_l3_unicast_traffic_gen.py --test_duration 4m --endp_type lf_tcp 
                                           endp_type=args.endp_type, side_b=upstream_port, radios=args.radio_list,
                                           radio_name_list=radio_name_list,
                                           number_of_stations_per_radio_list=number_of_stations_per_radio_list,
-                                          ssid_list=ssid_list, ssid_password_list=ssid_password_list, security="wpa2",
+                                          ssid_list=ssid_list, ssid_password_list=ssid_password_list, security_list=security_list,
                                           test_duration=args.test_duration, _debug_on=args.debug)
 
     ip_var_test.pre_cleanup()
