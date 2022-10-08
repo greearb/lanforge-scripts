@@ -129,13 +129,24 @@ class create_ap_obj:
     def ap_clear_stats(self, band):
         pass
 
-    # ASUS bs_data
-    def ap_ul_data(self, band):
+    # ASUS bs_data band stearing
+    def ap_band_stearing_data(self, band):
+        pass
+    
+    # ASUS rx_data
+    def ap_rx_data(self, band):
+        pass
+
+
+    # ASUS uplink data
+    def ap_ul_data(self,band):
         pass
 
     # ASUS rx_report
     def ap_dl_data(self, band):
         pass
+
+    
 
     # ASUS chanel info (channel utilization)
     def ap_chanim(self, band):
@@ -147,7 +158,7 @@ class create_ap_obj:
     def ap_dl_stats(self, band):
         pass
 
-    @staticmethod
+    @taticmethod
     def ap_store_dl_scheduler_stats(band):
         if band is "6G":
             pass
@@ -186,12 +197,43 @@ DL scheduler statistics:: 'wl -i wl1 dump msched'
 Generic command layout:
 -----------------------
 
+Notes:
+------
+    
+        .git/bs_data Display per station band steering data
+    usage: bs_data [options]
+    options are:
+        -comma    Use commas to separate values rather than blanks.
+        -tab      Use <TAB> to separate values rather than blanks.
+        -raw      Display raw values as received from driver.
+        -noidle   Do not display idle stations
+        -nooverall  Do not display total of all stations
+        -noreset  Do not reset counters after reading
+
+    rx_report
+            Display per station live data about rx datapath
+    usage: rx_report [options]
+    options are:
+        -sta xx:xx:xx:xx:xx:xx  only display specific mac addr.
+        -comma      Use commas to separate values rather than blanks.
+        -tab        Use <TAB> to separate values rather than blanks.
+        -raw        Display raw values as received from driver.
+        -noidle     Do not display idle stations
+        -nooverall  Do not display total of all stations
+        -noreset    Do not reset counters after reading
+           
+
+
         ''')
     parser.add_argument('--ap_test_mode', help='--ap_mode ', default=True)
-    parser.add_argument('--ap_port', help='--ap_port \'/dev/ttyUSB0\'', default='/dev/ttyUSB0')
-    parser.add_argument('--ap_baud', help='--ap_baud  \'115200\'', default='115200')
-    parser.add_argument('--ap_cmd', help='--ap_cmd \'wl -i wl1 bs_data\'', default='wl -i wl1 bs_data')
+    parser.add_argument('--ap_port', help="--ap_port '/dev/ttyUSB0'", default='/dev/ttyUSB0')
+    parser.add_argument('--ap_baud', help="--ap_baud  '115200\'", default='115200')
+    # part of module parser.add_argument('--ap_cmd', help="--ap_cmd 'wl -i wl1 bs_data'", default='wl -i wl1 bs_data')
+    parser.add_argument('--ap_2g_interface', help="--ap_2g eth6")
+    parser.add_argument('--ap_5g_interface', help="--ap_5g eth7")
+    parser.add_argument('--ap_6g_interface', help="--ap_6g eth8")
     parser.add_argument('--ap_file', help='--ap_file \'ap_file.txt\'')
+
 
     args = parser.parse_args()
 
