@@ -28,38 +28,14 @@ import argparse
 import pexpect
 import serial
 from pexpect_serial import SerialSpawn
+import importlib
+from pprint import pformat
+import traceback
+import paramiko
 
-'''
-class APlogin():
-    def __init__(self,lanforge_ip="", username="",password="",command=""):
-        self.lanforge_ip = lanforge_ip
-        self.user = username
-        self.password=password
-        self.command=command
 
-    def lanforge_login(self):
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        ssh.connect(self.lanforge_ip, port=22, username=self.user,
-                    password=self.password, timeout=300)
-        command=self.command
-        stdin,stdout,stderr=ssh.exec_command(command)
-        output=stdout.read()
-        ssh.close()
-        return output
-def main():
-    parser = argparse.ArgumentParser(description="")
-    parser.add_argument('--lanforge_ip', type=str, default="")
-    parser.add_argument('--username', type=str, default="lanforge")
-    parser.add_argument('--password',type=str,default="lanforge") 
-    parser.add_argument('--command',type=str,default="pwd")
-    args = parser.parse_args()
-    ap_login_obj = APlogin(lanforge_ip=args.lanforge_ip, username=args.username,password=args.password,command=args.command)
-    output=ap_login_obj.lanforge_login()
-    print(output)
-if __name__ == "__main__":
-    main()
-'''    
+sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -88,15 +64,15 @@ class create_ap_obj:
                  ap_ssh_port="22",
                  ap_telnet_port="23",
                  ap_serial_baud='115200',
-                 ap_2G_interface="eth6",
-                 ap_5G_interface="eth7",
-                 ap_6G_interface="eth8",
+                 ap_if_2g="eth6",
+                 ap_if_5g="eth7",
+                 ap_if_6g="eth8",
                  ap_report_dir="",
                  ap_log_file=""):
         self.ap_test_mode = _ap_test_mode
-        self.ap_2G_interface = _ap_2G_interface
-        self.ap_5G_interface = _ap_5G_interface
-        self.ap_6G_interface = _ap_6G_interface
+        self.ap_if_2g = ap_if_2g
+        self.ap_if_5g = ap_if_5g
+        self.ap_if_6g = _ap_if_6g
         self.ap_scheme = _ap_scheme
         self.ap_serial_port = _ap_serial_port
         self.ap_telnet_port = _ap_ssh_port
@@ -105,36 +81,69 @@ class create_ap_obj:
         self.ap_report_dir = _ap_report_dir
         self.ap_log_file = _ap_log_file
 
-    def ap_action(self):
+        self.ap_read_stats = 'wl -i INF bs_data'
 
-        print("ap_cmd: {}".format(self.ap_cmd))
+    # For testing module
+    def ap_action(self, ap_cmd=None, ap_file=None):
+
+        if ap_cmd != None:
+            self.ap_cmd = ap_cmd
+        logger.info("ap_cmd: {}".format(ap_cmd))
         try:
-            ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
-            ss = SerialSpawn(ser)
-            ss.sendline(str(self.ap_cmd))
-            ss.expect([pexpect.TIMEOUT], timeout=2)  # do not detete line, waits for output
-            ap_results = ss.before.decode('utf-8', 'ignore')
-            print("ap_results {}".format(ap_results))
-        except:
-            ap_results = "exception on accessing {} Command: {}\r\n".format(self.ap_port, self.ap_cmd)
-            print("{}".format(ap_results))
+            # TODO - add paramiko.SSHClient
+            if self.ap_scheme == 'serial':
+                # configure the serial interface
+                ser = serial.Serial(self.ap_port, int(self.ap_baud), timeout=5)
+                ss = SerialSpawn(ser)
+                ss.sendline(str(self.ap_cmd))
+                # do not detete line, waits for output
+                ss.expect([pexpect.TIMEOUT], timeout=1)
+                ap_results = ss.before.decode('utf-8', 'ignore')
+                logger.debug("ap_stats_6g serial from AP: {}".format(ap_stats_6g))
+            elif self.ap_scheme == 'ssh':
+                results = self.ap_ssh(str(self.ap_cmd))
+                logger.debug("ap_stats_5g ssh from AP : {}".format(ap_stats_6g))
+
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.error("WARNING: ap_stats_6g unable to read AP")
 
         if self.ap_file is not None:
             ap_file = open(str(self.ap_file), "a")
-            ap_file.write(ap_results)
+            ap_file.write(results)
             ap_file.close()
-            print("ap file written {}".format(str(self.ap_file)))
+            print("ap file written {}".format(str(self.file)))
+
+    def ap_ssh(self, command):
+        # in python3 bytes and str are two different types.  str is used to reporesnt any
+        # type of string (also unicoe), when you encode()
+        # something, you confvert it from it's str represnetation to it's bytes reprrestnetation for a specific 
+        # endoding
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(self.ap_ip, port=self.ap_ssh_port, username=self.ap_user, password=self.ap_passwd, timeout=5)
+        stdin, stdout, steerr = ssh.exec_command(command)
+        output = stdout.read()
+        logger.debug("command:  {command} output: {output}".format(command=command,output=output))
+        output = output.decode('utf-8', 'ignore')
+        logger.debug("after utf-8 ignoer output: {output}".format(command=command,output=output))
+
+        ssh.close()
+        return output
+
 
     # ASUS 
-    def ap_clear_stats(self, band):
+    def clear_stats(self, band):
+        
         pass
 
-    # ASUS bs_data band stearing
-    def ap_band_stearing_data(self, band):
+
+    # ASUS bs_data,  tx_data , data transmitted from AP stats
+    def tx_stats(self, band, mac):
         pass
     
-    # ASUS rx_data
-    def ap_rx_data(self, band):
+    # ASUS rx_report,  rx_data  , receive statatistics at AP
+    def rx_stats(self, band, mac):
         pass
 
 
@@ -225,28 +234,54 @@ Notes:
 
 
         ''')
+    parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
     parser.add_argument('--ap_test_mode', help='--ap_mode ', default=True)
+
+    parser.add_argument('--ap_scheme', help="--ap_scheme '/dev/ttyUSB0'", choices=['serial', 'telnet', 'ssh', 'mux_serial'], default='serial')
     parser.add_argument('--ap_port', help="--ap_port '/dev/ttyUSB0'", default='/dev/ttyUSB0')
-    parser.add_argument('--ap_baud', help="--ap_baud  '115200\'", default='115200')
-    # part of module parser.add_argument('--ap_cmd', help="--ap_cmd 'wl -i wl1 bs_data'", default='wl -i wl1 bs_data')
-    parser.add_argument('--ap_2g_interface', help="--ap_2g eth6")
-    parser.add_argument('--ap_5g_interface', help="--ap_5g eth7")
-    parser.add_argument('--ap_6g_interface', help="--ap_6g eth8")
+    parser.add_argument('--ap_baud', help="--ap_baud '115200'',  default='115200", default="115200")
+    parser.add_argument('--ap_ip', help='--ap_ip', default='192.168.50.1')
+    parser.add_argument('--ap_ssh_port', help='--ap_ssh_port', default='1025')
+    parser.add_argument('--ap_user', help='--ap_user , the user name for the ap, default = lanforge', default='lanforge')
+    parser.add_argument('--ap_passwd', help='--ap_passwd, the password for the ap default = lanforge', default='lanforge')
+    # ASUS interfaces
+    parser.add_argument('--ap_if_2g', help='--ap_if_2g eth6', default='wl0')
+    parser.add_argument('--ap_if_5g', help='--ap_if_5g eth7', default='wl1')
+    parser.add_argument('--ap_if_6g', help='--ap_if_6g eth8', default='wl2')
     parser.add_argument('--ap_file', help='--ap_file \'ap_file.txt\'')
 
+    parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
+    # logging configuration
+    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
 
     args = parser.parse_args()
 
-    __ap_port = args.ap_port
-    __ap_baud = args.ap_baud
-    __ap_cmd = args.ap_cmd
-    __ap_file = args.ap_file
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    if (args.log_level):
+        logger_config.set_level(level=args.log_level)
+
+    if args.lf_logger_config_json:
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
 
     ap_dut = lf_ap(
-        _ap_port=__ap_port,
-        _ap_baud=__ap_baud,
-        _ap_cmd=__ap_cmd,
-        _ap_file=__ap_file)
+                ap_test_mode=args.ap_test_mode,
+                 ap_ip=args.ap_ip,
+                 ap_user=args.ap_user,
+                 ap_passwd=args.ap_passwd,
+                 ap_scheme=args.ap_scheme,
+                 ap_serial_port=args.ap_serial_port,
+                 ap_ssh_port=args.ssh_port,
+                 ap_telnet_port=args.telnet_port,
+                 ap_serial_baud=args.ap_serial_baud,
+                 ap_if_2g=args.ap_if_2g,
+                 ap_if_5g=args.ap_if_5g,
+                 ap_if_6g=args.ap_if_6g,
+                 ap_report_dir="",
+                 ap_log_file=""):
 
     ap_dut.ap_action()
 
