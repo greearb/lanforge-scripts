@@ -3075,22 +3075,13 @@ Setting wifi_settings per radio
     parser.add_argument('--ap_cmd_2g', help="ap_cmd_2g 'wl -i wl0 bs_data'", default="wl -i wl0 bs_data")
     # note wl2 is the 6G interface , check the MAC ifconfig -a of the
     # interface to the AP BSSID connection (default may be eth8)
-    parser.add_argument(
-        '--ap_cmd_ul_6g',
-        help='ap_cmd_ul_6g \'wl -i wl2 rx_report\'',
-        default="wl -i wl2 rx_report")
+    parser.add_argument('--ap_cmd_ul_6g', help="ap_cmd_ul_6g 'wl -i wl2 rx_report'", default="wl -i wl2 rx_report")
     # note wl1 is the 5G interface , check the MAC ifconfig -a of the
     # interface to the AP BSSID connection (default may be eth7)
-    parser.add_argument(
-        '--ap_cmd_ul_5g',
-        help='ap_cmd_ul_5g \'wl -i wl1 rx_report\'',
-        default="wl -i wl1 rx_report")
+    parser.add_argument('--ap_cmd_ul_5g', help="ap_cmd_ul_5g 'wl -i wl1 rx_report'", default="wl -i wl1 rx_report")
     # note wl1 is the 2.4G interface , check the MAC ifconfig -a of the
     # interface to the AP BSSID connection (default may be eth6)
-    parser.add_argument(
-        '--ap_cmd_ul_2g',
-        help='ap_cmd_ul_2g \'wl -i wl0 rx_report\'',
-        default="wl -i wl0 rx_report")
+    parser.add_argument('--ap_cmd_ul_2g', help="ap_cmd_ul_2g 'wl -i wl0 rx_report'", default="wl -i wl0 rx_report")
     parser.add_argument(
         '--ap_chanim_cmd_6g',
         help='ap_chanim_cmd_6g \'wl -i wl2 chanim_stats\'',
