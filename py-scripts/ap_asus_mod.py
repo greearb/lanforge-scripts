@@ -24,6 +24,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python3")
     exit()
 
+import os
 import argparse
 import pexpect
 import serial
@@ -32,10 +33,15 @@ import importlib
 from pprint import pformat
 import traceback
 import paramiko
+import logging
+from pprint import pformat
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
+logger = logging.getLogger(__name__)
+
 
 
 # see https://stackoverflow.com/a/13306095/11014343
@@ -68,24 +74,41 @@ class create_ap_obj:
                  ap_if_5g="eth7",
                  ap_if_6g="eth8",
                  ap_report_dir="",
-                 ap_log_file=""):
-        self.ap_test_mode = _ap_test_mode
+                 ap_file=""):
+        self.ap_test_mode = ap_test_mode
+        self.ap_ip = ap_ip
+        self.ap_user = ap_user
+        self.ap_passwd = ap_passwd
+        self.ap_scheme = ap_scheme
+        self.ap_ssh_port = ap_ssh_port
+        self.ap_serial_port = ap_serial_port
+        self.ap_telnet_port = ap_ssh_port
+        self.ap_telnet = ap_telnet_port
+        self.ap_serial_baud = ap_serial_baud
         self.ap_if_2g = ap_if_2g
         self.ap_if_5g = ap_if_5g
-        self.ap_if_6g = _ap_if_6g
-        self.ap_scheme = _ap_scheme
-        self.ap_serial_port = _ap_serial_port
-        self.ap_telnet_port = _ap_ssh_port
-        self.ap_telnet = _ap_telnet_port
-        self.ap_serial_baud = _ap_serial_baud
-        self.ap_report_dir = _ap_report_dir
-        self.ap_log_file = _ap_log_file
+        self.ap_if_6g = ap_if_6g
+        self.ap_report_dir = ap_report_dir
+        self.ap_file = ap_file
 
-        self.ap_read_stats = 'wl -i INF bs_data'
+        self.cmd_clear_stats = 'wl -i INF dump_clear'
+        self.cmd_tx_stats = 'wl -i INF bs_data'
+        self.cmd_rx_stats = 'wl -i INF rx_report'
+
+        self.tx_results = ''
+        self.tx_results_rows = ''
+        self.ap_tx_row = ''
+        self.rx_results = ''
+        self.rx_results_rows = ''
+        self.ap_rx_row = ''
+        self.chanim_results = ''
+        self.chanim_results_rows = ''
+        self.ap_chanim_row = ''
 
     # For testing module
-    def ap_action(self, ap_cmd=None, ap_file=None):
+    def action(self, ap_cmd=None, ap_file=None):
 
+        results = ''
         if ap_cmd != None:
             self.ap_cmd = ap_cmd
         logger.info("ap_cmd: {}".format(ap_cmd))
@@ -98,7 +121,7 @@ class create_ap_obj:
                 ss.sendline(str(self.ap_cmd))
                 # do not detete line, waits for output
                 ss.expect([pexpect.TIMEOUT], timeout=1)
-                ap_results = ss.before.decode('utf-8', 'ignore')
+                results = ss.before.decode('utf-8', 'ignore')
                 logger.debug("ap_stats_6g serial from AP: {}".format(ap_stats_6g))
             elif self.ap_scheme == 'ssh':
                 results = self.ap_ssh(str(self.ap_cmd))
@@ -112,7 +135,9 @@ class create_ap_obj:
             ap_file = open(str(self.ap_file), "a")
             ap_file.write(results)
             ap_file.close()
-            print("ap file written {}".format(str(self.file)))
+            print("ap file written {}".format(str(self.ap_file)))
+
+        return results
 
     def ap_ssh(self, command):
         # in python3 bytes and str are two different types.  str is used to reporesnt any
@@ -134,48 +159,95 @@ class create_ap_obj:
 
     # ASUS 
     def clear_stats(self, band):
-        
-        pass
+        if band == '2g':
+            cmd = self.cmd_clear_stats.replace('INF',self.ap_if_2g)
+        elif band == '5g':
+            cmd = self.cmd_clear_stats.replace('INF',self.ap_if_5g)
+        elif band == '6g':
+            cmd = self.cmd_clear_stats.replace('INF',self.ap_if_6g)
 
+        self.action(ap_cmd=cmd)
 
     # ASUS bs_data,  tx_data , data transmitted from AP stats
-    def tx_stats(self, band, mac):
-        pass
+    # This will gather the statistics to be read later
+    # read_ap_stats
+    def read_tx_dl_stats(self, band):
+        if band == '2g':
+            cmd = self.cmd_tx_stats.replace('INF',self.ap_if_2g)
+        elif band == '5g':
+            cmd = self.cmd_tx_stats.replace('INF',self.ap_if_5g)
+        elif band == '6g':
+            cmd = self.cmd_tx_stats.replace('INF',self.ap_if_6g)
+
+        self.tx_results = self.action(ap_cmd=cmd)
+        logger.debug(pformat(self.tx_results))
+
+    # ASUS bs_data,  tx_data , data transmitted from AP stats
+    def tx_dl_stats(self, band, mac):
+        # need to do read_tx_dl_stats first
+        self.tx_results_rows = self.tx_results.splitlines()
+        logger.debug("From AP tx_dl_stats : self.results_rows")
+
+        for row in self.tx_results_rows:
+            split_row = row.split()
+            # Test mode would go here
+            try:
+                if split_row[0].lower() == mac.lower():
+                    self.tx_ap_row = split_row
+                    mac_found = True
+                    logger.debug("AP read mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0], port_mac=mac))
+            except Exception as x:
+                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                logger.info("'No stations are currently associated.'? from AP")
+                logger.info("since possibly no stations: exception on compare split_row[0].lower() ")
+
+
+        if mac_found:
+            mac_found = False
+            logger.info("selected ap_row (from split_row): {row}".format(row=self.tx_ap_row))
+
+        return self.tx_ap_row
     
+    # report_rx
+    def read_rx_ul_stats(self, band):
+        if band == '2g':
+            cmd = self.cmd_rx_stats.replace('INF',self.ap_if_2g)
+        elif band == '5g':
+            cmd = self.cmd_rx_stats.replace('INF',self.ap_if_5g)
+        elif band == '6g':
+            cmd = self.cmd_rx_stats.replace('INF',self.ap_if_6g)
+
+        self.rx_results = self.action(ap_cmd=cmd)
+        logger.debug(pformat(self.rx_results))
+
     # ASUS rx_report,  rx_data  , receive statatistics at AP
-    def rx_stats(self, band, mac):
-        pass
+    def rx_ul_stats(self, band, mac):
+        # need to do read_rx_stats first
+        self.rx_results_rows = self.results.splitlines()
+        logger.debug("From AP rx_ul_stats : self.rx_results_rows")
+
+        for row in self.rx_results_rows:
+            split_row = row.split()
+            # Test mode would go here
+            try:
+                if split_row[0].lower() == mac.lower():
+                    ap_row = split_row
+                    mac_found = True
+                    logger.debug("AP read mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0], port_mac=mac))
+            except Exception as x:
+                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                logger.info("'No stations are currently associated.'? from AP")
+                logger.info("since possibly no stations: exception on compare split_row[0].lower() ")
 
 
-    # ASUS uplink data
-    def ap_ul_data(self,band):
-        pass
+        if mac_found:
+            mac_found = False
+            logger.info("selected ap_row (from split_row): {row}".format(row=ap_row))
 
-    # ASUS rx_report
-    def ap_dl_data(self, band):
-        pass
-
-    
+        return ap_row
 
     # ASUS chanel info (channel utilization)
     def ap_chanim(self, band):
-        pass
-
-    def ap_ul_stats(self, band):
-        pass
-
-    def ap_dl_stats(self, band):
-        pass
-
-    @taticmethod
-    def ap_store_dl_scheduler_stats(band):
-        if band is "6G":
-            pass
-
-    def ap_store_ul_scheduler_stats(self, band):
-        pass
-
-    def ap_ofdma_stats(self, band):
         pass
 
 
@@ -238,17 +310,18 @@ Notes:
     parser.add_argument('--ap_test_mode', help='--ap_mode ', default=True)
 
     parser.add_argument('--ap_scheme', help="--ap_scheme '/dev/ttyUSB0'", choices=['serial', 'telnet', 'ssh', 'mux_serial'], default='serial')
-    parser.add_argument('--ap_port', help="--ap_port '/dev/ttyUSB0'", default='/dev/ttyUSB0')
-    parser.add_argument('--ap_baud', help="--ap_baud '115200'',  default='115200", default="115200")
+    parser.add_argument('--ap_serial_port', help="--ap_serial_port '/dev/ttyUSB0'", default='/dev/ttyUSB0')
+    parser.add_argument('--ap_serial_baud', help="--ap_baud '115200'',  default='115200", default="115200")
     parser.add_argument('--ap_ip', help='--ap_ip', default='192.168.50.1')
     parser.add_argument('--ap_ssh_port', help='--ap_ssh_port', default='1025')
+    parser.add_argument('--ap_telnet_port', help='--ap_telnet_port', default='23')
     parser.add_argument('--ap_user', help='--ap_user , the user name for the ap, default = lanforge', default='lanforge')
     parser.add_argument('--ap_passwd', help='--ap_passwd, the password for the ap default = lanforge', default='lanforge')
     # ASUS interfaces
     parser.add_argument('--ap_if_2g', help='--ap_if_2g eth6', default='wl0')
     parser.add_argument('--ap_if_5g', help='--ap_if_5g eth7', default='wl1')
     parser.add_argument('--ap_if_6g', help='--ap_if_6g eth8', default='wl2')
-    parser.add_argument('--ap_file', help='--ap_file \'ap_file.txt\'')
+    parser.add_argument('--ap_file', help="--ap_file 'ap_file.txt'", default=None)
 
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     # logging configuration
@@ -267,23 +340,27 @@ Notes:
         logger_config.load_lf_logger_config()
 
 
-    ap_dut = lf_ap(
+    ap = create_ap_obj(
                 ap_test_mode=args.ap_test_mode,
-                 ap_ip=args.ap_ip,
-                 ap_user=args.ap_user,
-                 ap_passwd=args.ap_passwd,
-                 ap_scheme=args.ap_scheme,
-                 ap_serial_port=args.ap_serial_port,
-                 ap_ssh_port=args.ssh_port,
-                 ap_telnet_port=args.telnet_port,
-                 ap_serial_baud=args.ap_serial_baud,
-                 ap_if_2g=args.ap_if_2g,
-                 ap_if_5g=args.ap_if_5g,
-                 ap_if_6g=args.ap_if_6g,
-                 ap_report_dir="",
-                 ap_log_file=""):
+                ap_ip=args.ap_ip,
+                ap_user=args.ap_user,
+                ap_passwd=args.ap_passwd,
+                ap_scheme=args.ap_scheme,
+                ap_serial_port=args.ap_serial_port,
+                ap_ssh_port=args.ap_ssh_port,
+                ap_telnet_port=args.ap_telnet_port,
+                ap_serial_baud=args.ap_serial_baud,
+                ap_if_2g=args.ap_if_2g,
+                ap_if_5g=args.ap_if_5g,
+                ap_if_6g=args.ap_if_6g,
+                ap_report_dir="",
+                ap_file=args.ap_file
+                )
 
-    ap_dut.ap_action()
+
+    ap.clear_stats(band='5g')
+    ap.read_tx_dl_stats(band='5g')
+    ap.read_rx_ul_stats(band='5g')
 
 
 if __name__ == '__main__':
