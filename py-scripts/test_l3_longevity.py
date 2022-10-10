@@ -1580,6 +1580,8 @@ class L3VariableTime(Realm):
                                                 if split_row[0].lower() == mac.lower():
                                                     ap_row = split_row  # bs_data
                                                     mac_found_5g = True
+                                                    logger.info("AP read mac_found mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0],port_mac=mac))
+
                                                 else:
                                                     logger.info("AP read mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0],port_mac=mac))
                                             except Exception as x:
@@ -1592,8 +1594,7 @@ class L3VariableTime(Realm):
 
                                         # Find latency, jitter for connections
                                         # using this port.
-                                        latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(
-                                            port_data["port"], endps)
+                                        latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll = self.get_endp_stats_for_port(port_data["port"], endps)
 
                                         # now report the ap_chanim_stats along
                                         # side of the ap_stats_5g
@@ -1651,7 +1652,7 @@ class L3VariableTime(Realm):
                                             total_dl_rate,
                                             total_dl_rate_ll,
                                             total_dl_pkts_ll,
-                                            ap_row)
+                                            ap_row) # this is where the AP data is added
 
                             # work though the ul rx_data 5G
                             # from wl -i <interface> rx_report
@@ -1721,7 +1722,7 @@ class L3VariableTime(Realm):
                                             total_dl_rate,
                                             total_dl_rate_ll,
                                             total_dl_pkts_ll,
-                                            ap_ul_row)
+                                            ap_ul_row)  # ap_ul_row added
 
                             # 2g test mode
                             if self.ap_test_mode:
@@ -3082,31 +3083,13 @@ Setting wifi_settings per radio
     # note wl1 is the 2.4G interface , check the MAC ifconfig -a of the
     # interface to the AP BSSID connection (default may be eth6)
     parser.add_argument('--ap_cmd_ul_2g', help="ap_cmd_ul_2g 'wl -i wl0 rx_report'", default="wl -i wl0 rx_report")
-    parser.add_argument(
-        '--ap_chanim_cmd_6g',
-        help='ap_chanim_cmd_6g \'wl -i wl2 chanim_stats\'',
-        default="wl -i wl2 chanim_stats")
-    parser.add_argument(
-        '--ap_chanim_cmd_5g',
-        help='ap_chanim_cmd_5g \'wl -i wl1 chanim_stats\'',
-        default="wl -i wl1 chanim_stats")
-    parser.add_argument(
-        '--ap_chanim_cmd_2g',
-        help='ap_chanim_cmd_2g \'w1 -i wl0 chanim_stats\'',
-        default="wl -i wl0 chanim_stats")
-    parser.add_argument(
-        '--ap_scheduler_stats',
-        help='--ap_scheduler_stats flag to clear stats run test then dump ul and dl stats to file',
-        action='store_true')
-    parser.add_argument(
-        '--ap_ofdma_stats',
-        help='--ap_ofdma_stats flag to clear stats run test then dumps wl -i wl1 muinfo -v and wl 0i wl0 muinof -v to file',
-        action='store_true')
+    parser.add_argument('--ap_chanim_cmd_6g', help="ap_chanim_cmd_6g 'wl -i wl2 chanim_stats'", default="wl -i wl2 chanim_stats")
+    parser.add_argument('--ap_chanim_cmd_5g', help="ap_chanim_cmd_5g 'wl -i wl1 chanim_stats'", default="wl -i wl1 chanim_stats")
+    parser.add_argument('--ap_chanim_cmd_2g', help="ap_chanim_cmd_2g 'w1 -i wl0 chanim_stats'", default="wl -i wl0 chanim_stats")
+    parser.add_argument('--ap_scheduler_stats', help='--ap_scheduler_stats flag to clear stats run test then dump ul and dl stats to file', action='store_true')
+    parser.add_argument('--ap_ofdma_stats', help='--ap_ofdma_stats flag to clear stats run test then dumps wl -i wl1 muinfo -v and wl 0i wl0 muinof -v to file', action='store_true')
 
-    parser.add_argument(
-        '--ap_test_mode',
-        help='ap_test_mode flag present use ap canned data',
-        action='store_true')
+    parser.add_argument('--ap_test_mode', help='ap_test_mode flag present use ap canned data', action='store_true')
 
     parser.add_argument(
         '-amr',
