@@ -56,7 +56,7 @@ class InteropCommands(Realm):
                  wifi=None,
                  start=False,
                  stop=False,
-                 log_dur=None,
+                 log_dur=0,
                  apply=False,
                  mgr_ip=None,
                  user_name=None,
@@ -67,6 +67,9 @@ class InteropCommands(Realm):
                  log_destination=None,
                  adb_username=None,
                  set_adb_user_name=False,
+                 list_ntwk=False,
+                 forget_netwrk=False,
+                 ntwk_id=None,
                  _proxy_str=None,
                  _debug_on=False,
                  _exit_on_error=False,
@@ -93,6 +96,9 @@ class InteropCommands(Realm):
         self.debug = _debug_on
         self.set_adb_user_name = set_adb_user_name
         self.adb_username = adb_username
+        self.list_ntwk = list_ntwk
+        self.forget_netwrk = forget_netwrk
+        self.ntwk_id = ntwk_id
         self.session = LFSession(lfclient_url=_host,
                                  debug=_debug_on,
                                  connection_timeout_sec=2.0,
@@ -139,7 +145,7 @@ class InteropCommands(Realm):
                                           user_key=self.session.get_session_based_key(),
                                           response_json_list=json_response,
                                           debug=True)
-            pprint(json_response)
+            print(json_response)
 
         else:
             if self.install or self.install_g:
@@ -175,12 +181,30 @@ class InteropCommands(Realm):
                 if self.crypt:
                     cmd += " --es encryption " + self.crypt
 
+            elif self.list_ntwk:
+                # adb 1 1 RZ8RA1053HJ NA shell cmd -w wi-fi list-networks
+                cmd = "shell cmd -w wifi list-networks"
+
+            elif self.forget_netwrk:
+                cmd = "shell cmd -w wifi forget-network " + str(self.ntwk_id)
+
             # print(cmd)
+            response_list = []
+            errors_warnings = []
+
+            adb_key = self.session.get_session_based_key()
+            self.session.logger.error("adb_key: " + adb_key)
             self.command.post_adb(shelf=eid[0],
                                   resource=eid[1],
                                   adb_id=eid[2],
+                                  key=adb_key,
                                   adb_cmd=cmd,
-                                  debug=self.debug)
+                                  debug=self.debug,
+                                  response_json_list=response_list,
+                                  errors_warnings=errors_warnings,
+                                  suppress_related_commands=True)
+            # print(["Response", response_list])
+
 
         # to set adb_username
         if self.set_adb_user_name:
@@ -215,6 +239,10 @@ def main():
     lf_interop_modify.py --apply --device 1.1.KEBE2021070849 --ssid candela-10g --user_name foobar22
     * Example for applying adb_username
     lf_interop_modify.py --host 192.168.1.31 --device 1.1.RZ8RA1053HJ --set_adb_user_name --adb_username device_1
+    * Example for getting network-id list
+    lf_interop_modify.py --host 192.168.1.31 --device 1.1.RZ8RA1053HJ --list_ntw
+    * Example to forget a network
+    lf_interop_modify.py --host 192.168.1.31 --device 1.1.RZ8RA1053HJ --ntwk_id 2  --forget_netwrk
     """
 
     parser = argparse.ArgumentParser(
@@ -283,6 +311,15 @@ def main():
     parser.add_argument('--adb_username',  type=str, default='',
                         help='provide user name to adb devices')
 
+    parser.add_argument('--list_ntwk', action="store_true",
+                        help='stores true when you want to get list of networks')
+
+    parser.add_argument('--forget_netwrk', action="store_true",
+                        help='stores true when you want to forget all wifi-networks')
+
+    parser.add_argument('--ntwk_id', type=str, default='',
+                        help='provide network id which you want to forget')
+
     args = parser.parse_args()
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
@@ -320,7 +357,10 @@ def main():
                               _exit_on_error=False,
                               _exit_on_fail=False,
                               set_adb_user_name= args.set_adb_user_name,
-                              adb_username=args.adb_username)
+                              adb_username=args.adb_username,
+                              list_ntwk=args.list_ntwk,
+                              forget_netwrk=args.forget_netwrk,
+                              ntwk_id=args.ntwk_id)
     interop.run()
 
 
