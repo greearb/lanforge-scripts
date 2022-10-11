@@ -43,7 +43,7 @@ use Carp;
 use POSIX qw(ceil floor);
 use Scalar::Util; #::looks_like_number;
 use Getopt::Long;
-
+use constant NA => "NA";
 no warnings 'portable';  # Support for 64-bit ints required
 use Socket;
 #use Data::Dumper;
@@ -644,7 +644,7 @@ sub createEpPair {
 }
 
 sub fmt_port_cmd {
-   my($resource, $port_id, $ip_addr, $mac_addr) = @_;
+   my($resource, $port_id, $ip_addr, $mac_addr, $port_down) = @_;
    my $use_dhcp         = ($ip_addr =~ /\bDHCP\b/) ? 1 : 0;
    my $use_dhcp6        = ($ip_addr =~ /\bDHCP6\b/) ? 1 : 0;
    my $ip               = ($use_dhcp||$use_dhcp6) ? "0.0.0.0" : $ip_addr ;
@@ -652,6 +652,7 @@ sub fmt_port_cmd {
    #print "fmt_port_cmd: RES $resource PORT $port_id IP_A $ip_addr MAC $mac_addr -> $ip\n" unless($::quiet eq "yes");
    my $cmd_flags        = 'NA'; #0;
    my $cur_flags        = 0;
+   $cur_flags           |= 0x1           if ($port_down);
    $cur_flags           |= 0x80000000    if ($use_dhcp);
    $cur_flags           |= 0x20000000000 if ($use_dhcp6);
    #print "fmt_port_cmd: DHCP($use_dhcp) $cur_flags\n" unless($::quiet eq "yes");
@@ -806,8 +807,13 @@ sub new_wifi_station {
    # $flagsmask     |= $::sec_options{$::security};
    # We are always configuring security to one thing or another, so we need to
    # mask all of the bits properly.
-   $flagsmask |= (0x10 | 0x200 | 0x400 | 0x10000000000);
-   $flagsmask |= 0x1000000000 if ($::admin_down_on_add);
+   # wpa3=              0x10000000000
+   # create_admin_down= 0x1000000000
+   $flagsmask     |= (0x10 | 0x200 | 0x400 | 0x10000000000);
+   if ($::admin_down_on_add) {
+      $flags      |= 0x1000000000;
+      $flagsmask  |= 0x1000000000;
+   }
 
    if (defined $::xsec && "$::xsec" ne "") {
       for my $sec_op (split(',', $::xsec)) {
@@ -819,16 +825,19 @@ sub new_wifi_station {
    }
    $flags      = "+0" if ( $flags      == 0);
    $flagsmask  = "+0" if ( $flagsmask  == 0);
+   #printf("FLAGS %0x MASK %0x\n", $flags, $flagsmask);
    # perform the station create first, then assign IP as necessary
    my $sta1_cmd   = fmt_vsta_cmd($::resource, $::sta_wiphy, $sta_name,
                                  "$flags", "$::ssid", "$::passphrase",
                                  $mac_addr, "$flagsmask", $wifi_m, $::bssid);
    $::utils->doCmd($sta1_cmd);
-   #$::utils->sleep_ms(20);
-   $sta1_cmd = fmt_port_cmd($resource, $sta_name, $ip_addr, $mac_addr);
+   $::utils->sleep_ms(10);
+   # $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_port", 1, $::resource, $sta_name));
+   # $::utils->sleep_ms(20);
+   $sta1_cmd = fmt_port_cmd($resource, $sta_name, $ip_addr, $mac_addr, $::admin_down_on_add);
    $::utils->doCmd($sta1_cmd);
-   #$::utils->sleep_ms(20);
-   #$::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_port", 1, $::resource, $sta_name));
+   # $::utils->sleep_ms(20);
+   # $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_port", 1, $::resource, $sta_name));
    if ($::admin_down_on_add) {
      my $cur_flags = 0x1; # port down
      my $ist_flags = 0x800000; # port down
@@ -1256,7 +1265,6 @@ sub resetCounters {
 sub doStep_1 {
    my $sta_name   = (sort(keys %::sta_names))[0];
 
-
    removeOldCrossConnects();
    sleep(2);
    removeOldStations();
@@ -1285,25 +1293,35 @@ sub doStep_1 {
       $i++;
    }
    sleep(1);
-   #print "**************************************************\n";
    foreach my $sta_name (sort(keys %::sta_names)) {
       my $status = $::utils->doAsyncCmd($::utils->fmt_cmd("nc_show_port", 1, $::resource, $sta_name));
+      # $::utils->sleep_ms(10);
    }
-   sleep(1);
-   #print "**************************************************\n";
+
+   # $::utils->sleep_ms(75 * (1 + $#::sta_names)); # let the GUI catch up
+   if ($::admin_down_on_add) {
+      print "\n Stations were created admin down, bringing them up...\n";
+      for $sta_name (sort(keys %::sta_names)) {
+         my $status = $::utils->doAsyncCmd(
+            $::utils->fmt_cmd("set_port", 1, $::resource, $sta_name,
+            NA, NA, NA, NA, 0, NA, NA, NA, NA, 8388610)); # set port admin up
+         # $::utils->sleep_ms(10);
+      }
+   }
+   my $new_sta_count    = keys %results1;
+   #$::utils->sleep_ms(75 * (1 + $new_sta_count)); # bit of time be
 
    print " Created $::num_stations stations\n";
    sleep(1);
 
-   my $new_sta_count    = keys %results1;
    my $found_stations   = 0;
    awaitNewStations();
-   sleep 1;
+   sleep(1);
 
    # we create a pair of connection endpoints and
    # a cross-connect between them for every station
    createEndpointPairs();
-   sleep 5;
+   sleep(5);
 
    if ($::traffic_type eq "separate") {
       adjustForUpload();
