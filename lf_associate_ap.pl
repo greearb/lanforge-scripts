@@ -408,7 +408,7 @@ sub load_db {
    my $db_name = shift;
    die ("::load_db: called with blank database name. Did you mean EMPTY?") if ($db_name eq "");
    print "Loading database $db_name ...";
-   $::utils->doCmd(fmt_cmd("load", $db_name, "overwrite"));
+   $::utils->doCmd($::utils->fmt_cmd("load", $db_name, "overwrite"));
 
    for (my $i = 20 ; $i>0; $i--) {
       sleep(1);
