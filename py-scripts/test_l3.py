@@ -175,7 +175,24 @@ class L3VariableTime(Realm):
                  _capture_signal_list=None,
                  no_cleanup=False,
                  use_existing_station_lists=False,
-                 existing_station_lists=None):
+                 existing_station_lists=None,
+                 # ap module
+                 ap_module = None,
+                 ap_test_mode=False,
+                 ap_ip=None,
+                 ap_user=None,
+                 ap_passwd=None,
+                 ap_scheme='ssh',
+                 ap_serial_port='/dev/ttyUSB0',
+                 ap_ssh_port="22",
+                 ap_telnet_port="23",
+                 ap_serial_baud='115200',
+                 ap_if_2g="eth6",
+                 ap_if_5g="eth7",
+                 ap_if_6g="eth8",
+                 ap_report_dir="",
+                 ap_file=""):
+
 
         self.eth_endps = []
         self.total_stas = 0
@@ -1665,7 +1682,7 @@ Setting wifi_settings per radio
         help="dut model for kpi.csv,  test-priority is arbitrary number")
     parser.add_argument(
         "--test_id",
-        default="l3 Longevity",
+        default="test l3",
         help="test-id for kpi.csv,  script or test name")
     '''
     Other values that are included in the kpi.csv row.
@@ -1825,6 +1842,26 @@ Setting wifi_settings per radio
     parser.add_argument(
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
+
+    parser.add_argument("--ap_module", type=str, help="series module")
+    parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
+    parser.add_argument('--ap_test_mode', help='--ap_mode ', default=True)
+
+    parser.add_argument('--ap_scheme', help="--ap_scheme '/dev/ttyUSB0'", choices=['serial', 'telnet', 'ssh', 'mux_serial'], default='serial')
+    parser.add_argument('--ap_serial_port', help="--ap_serial_port '/dev/ttyUSB0'", default='/dev/ttyUSB0')
+    parser.add_argument('--ap_serial_baud', help="--ap_baud '115200'',  default='115200", default="115200")
+    parser.add_argument('--ap_ip', help='--ap_ip', default='192.168.50.1')
+    parser.add_argument('--ap_ssh_port', help='--ap_ssh_port', default='1025')
+    parser.add_argument('--ap_telnet_port', help='--ap_telnet_port', default='23')
+    parser.add_argument('--ap_user', help='--ap_user , the user name for the ap, default = lanforge', default='lanforge')
+    parser.add_argument('--ap_passwd', help='--ap_passwd, the password for the ap default = lanforge', default='lanforge')
+    # ASUS interfaces
+    parser.add_argument('--ap_if_2g', help='--ap_if_2g eth6', default='wl0')
+    parser.add_argument('--ap_if_5g', help='--ap_if_5g eth7', default='wl1')
+    parser.add_argument('--ap_if_6g', help='--ap_if_6g eth8', default='wl2')
+    parser.add_argument('--ap_file', help="--ap_file 'ap_file.txt'", default=None)
+
+
 
     args = parser.parse_args()
 
@@ -2136,7 +2173,24 @@ Setting wifi_settings per radio
         kpi_csv=kpi_csv,
         no_cleanup=args.no_cleanup,
         use_existing_station_lists=args.use_existing_station_list,
-        existing_station_lists=existing_station_lists)
+        existing_station_lists=existing_station_lists,
+        ap_module = args.ap_module,
+        ap_test_mode=args.ap_test_mode,
+        ap_ip=args.ap_ip,
+        ap_user=args.ap_user,
+        ap_passwd=args.ap_passwd,
+        ap_scheme=args.ap_scheme,
+        ap_serial_port=args.ap_serial_port,
+        ap_ssh_port=args.ap_ssh_port,
+        ap_telnet_port=args.ap_telnet_port,
+        ap_serial_baud=args.ap_serial_baud,
+        ap_if_2g=args.ap_if_2g,
+        ap_if_5g=args.ap_if_5g,
+        ap_if_6g=args.ap_if_6g,
+        ap_report_dir="",
+        ap_file=args.ap_file
+        
+        )
 
     if args.no_pre_cleanup or args.use_existing_station_list:
         logger.info("No station pre clean up any existing cxs on LANforge")
