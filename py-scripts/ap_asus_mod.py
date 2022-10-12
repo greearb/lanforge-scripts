@@ -105,7 +105,7 @@ class create_ap_obj:
         self.chanim_results_rows = ''
         self.ap_chanim_row = ''
         # the --ap_read will use these headers
-        self.ap_stats_dl_col_titles = [
+        self.dl_col_titles = [
             "Station Address",
             "Dl-PHY-Mbps",
             "Dl-Data-Mbps",
@@ -119,7 +119,7 @@ class create_ap_obj:
             "Dl-MU-MIMO",
             "Dl-Channel-Utilization"]
 
-        self.ap_stats_ul_col_titles = [
+        self.ul_col_titles = [
             "UL Station Address",
             "Ul-rssi",
             "Ul-tid",
@@ -190,13 +190,16 @@ class create_ap_obj:
         ssh.close()
         return output
 
+    def say_hi(self):
+        logger.info("HI")
+
     # ASUS dl ap column heading
-    def ap_stats_dl_col_titles(self):
-        return self.ap_stats_dl_col_titles
+    def get_dl_col_titles(self):
+        return self.dl_col_titles
 
     # ASUS ul ap column heading
-    def ap_stats_ul_col_titles(self):
-        return self.ap_stats_ul_col_titles
+    def get_ul_col_titles(self):
+        return self.ul_col_titles
 
     # ASUS 
     def clear_stats(self, band):
