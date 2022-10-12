@@ -104,6 +104,40 @@ class create_ap_obj:
         self.chanim_results = ''
         self.chanim_results_rows = ''
         self.ap_chanim_row = ''
+        # the --ap_read will use these headers
+        self.ap_stats_dl_col_titles = [
+            "Station Address",
+            "Dl-PHY-Mbps",
+            "Dl-Data-Mbps",
+            "Dl-Air-Use",
+            "Dl-Data-Use",
+            "Dl-Retries",
+            "Dl-BW",
+            "Dl-MCS",
+            "Dl-NSS",
+            "Dl-OFDMA",
+            "Dl-MU-MIMO",
+            "Dl-Channel-Utilization"]
+
+        self.ap_stats_ul_col_titles = [
+            "UL Station Address",
+            "Ul-rssi",
+            "Ul-tid",
+            "Ul-ampdu",
+            "Ul-mpdu",
+            "Ul-Data-Mbps",
+            "Ul-PHY-Mbps",
+            "UL-BW",
+            "Ul-MCS",
+            "Ul-NSS",
+            "Ul-OOW",
+            "Ul-HOLES",
+            "Ul-DUP",
+            "Ul-Retries",
+            "Ul-OFDMA",
+            "Ul-Tones",
+            "Ul-AIR"]
+
 
     # For testing module
     def action(self, ap_cmd=None, ap_file=None):
@@ -156,6 +190,13 @@ class create_ap_obj:
         ssh.close()
         return output
 
+    # ASUS dl ap column heading
+    def ap_stats_dl_col_titles(self):
+        return self.ap_stats_dl_col_titles
+
+    # ASUS ul ap column heading
+    def ap_stats_ul_col_titles(self):
+        return self.ap_stats_ul_col_titles
 
     # ASUS 
     def clear_stats(self, band):
