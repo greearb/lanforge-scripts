@@ -122,14 +122,14 @@ class create_ap_obj:
                 # do not detete line, waits for output
                 ss.expect([pexpect.TIMEOUT], timeout=1)
                 results = ss.before.decode('utf-8', 'ignore')
-                logger.debug("ap_stats_6g serial from AP: {}".format(ap_stats_6g))
+                logger.debug("ap_stats serial from AP: {}".format(results))
             elif self.ap_scheme == 'ssh':
                 results = self.ap_ssh(str(self.ap_cmd))
-                logger.debug("ap_stats_5g ssh from AP : {}".format(ap_stats_6g))
+                logger.debug("ap_stats ssh from AP : {}".format(results))
 
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            logger.error("WARNING: ap_stats_6g unable to read AP")
+            logger.error(" unable to read AP")
 
         if self.ap_file is not None:
             ap_file = open(str(self.ap_file), "a")
