@@ -176,7 +176,9 @@ class L3VariableTime(Realm):
                  no_cleanup=False,
                  use_existing_station_lists=False,
                  existing_station_lists=None,
+
                  # ap module
+                 ap_read = False,
                  ap_module = None,
                  ap_test_mode=False,
                  ap_ip=None,
@@ -304,6 +306,55 @@ class L3VariableTime(Realm):
 
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
+
+        # AP information 
+        self.ap = None
+        self.ap_obj = None
+        self.ap_read = ap_read
+        self.ap_module = ap_module
+        self.ap_test_mode=ap_test_mode
+        self.ap_ip=ap_ip
+        self.ap_user=ap_user
+        self.ap_passwd=ap_passwd
+        self.ap_scheme=ap_scheme
+        self.ap_serial_port=ap_serial_port
+        self.ap_ssh_port=ap_ssh_port
+        self.ap_telnet_port=ap_telnet_port
+        self.ap_serial_baud=ap_serial_baud
+        self.ap_if_2g=ap_if_2g
+        self.ap_if_5g=ap_if_5g
+        self.ap_if_6g=ap_if_6g
+        self.ap_report_dir=ap_report_dir
+        self.ap_file=ap_file
+
+
+        # AP information import the module
+        if self.ap_read and self.ap_module is not None:
+            ap_module = importlib.import_module(self.ap_module)
+            self.ap = ap_module.create_ap_obj(                 
+                ap_test_mode=self.ap_test_mode,
+                ap_ip=self.ap_ip,
+                ap_user=self.ap_user,
+                ap_passwd=self.ap_passwd,
+                ap_scheme=self.ap_scheme,
+                ap_serial_port=self.ap_serial_port,
+                ap_ssh_port=self.ap_ssh_port,
+                ap_telnet_port=self.ap_telnet_port,
+                ap_serial_baud=self.ap_serial_baud,
+                ap_if_2g=self.ap_if_2g,
+                ap_if_5g=self.ap_if_5g,
+                ap_if_6g=self.ap_if_6g,
+                ap_report_dir=self.ap_report_dir,
+                ap_file=self.ap_file)
+
+            # this is needed to access the methods of the imported object
+            self.ap.say_hi()
+
+
+
+        else:
+            logger.info("self.ap_read set to True and self.module is None,  will set self.ap_read to False")
+            self.ap_read = False
 
         dur = self.duration_time_to_seconds(self.test_duration)
 
@@ -992,6 +1043,7 @@ class L3VariableTime(Realm):
 
         # Add in info queried from AP.
 
+
         writer = self.port_csv_writers[port_eid]
         writer.writerow(row)
         self.port_csv_files[port_eid].flush()
@@ -1167,8 +1219,11 @@ class L3VariableTime(Realm):
             'Dl-Rx-Drop_Percent']
 
         # Add in columns we are going to query from the AP
-        # for col in self.ap_stats_col_titles:
-        #    csv_rx_headers.append(col)
+        if self.ap_read:
+            self.ap_stats_dl_col_titles = self.ap.get_dl_col_titles()
+            logger.debug("ap_stats_dl_col_titles : {col}".format(col=self.ap_stats_dl_col_titles))
+            for col in self.ap_stats_dl_col_titles:
+                csv_rx_headers.append(col)
 
         return csv_rx_headers
 
@@ -1207,6 +1262,12 @@ class L3VariableTime(Realm):
         # Add in columns we are going to query from the AP
         # for col in self.ap_stats_ul_col_titles:
         #    csv_ul_rx_headers.append(col)
+        # Add in columns we are going to query from the AP
+        if self.ap_read:
+            self.ap_stats_ul_col_titles = self.ap.get_ul_col_titles()
+            logger.debug("ap_stats_ul_col_titles : {col}".format(col=self.ap_stats_ul_col_titles))
+            for col in self.ap_stats_ul_col_titles:
+                csv_ul_rx_headers.append(col)
 
         return csv_ul_rx_headers
 
@@ -1843,8 +1904,9 @@ Setting wifi_settings per radio
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
 
-    parser.add_argument("--ap_module", type=str, help="series module")
     parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
+    parser.add_argument("--ap_module", type=str, help="series module")
+
     parser.add_argument('--ap_test_mode', help='--ap_mode ', default=True)
 
     parser.add_argument('--ap_scheme', help="--ap_scheme '/dev/ttyUSB0'", choices=['serial', 'telnet', 'ssh', 'mux_serial'], default='serial')
@@ -2174,6 +2236,7 @@ Setting wifi_settings per radio
         no_cleanup=args.no_cleanup,
         use_existing_station_lists=args.use_existing_station_list,
         existing_station_lists=existing_station_lists,
+        ap_read = args.ap_read,
         ap_module = args.ap_module,
         ap_test_mode=args.ap_test_mode,
         ap_ip=args.ap_ip,
