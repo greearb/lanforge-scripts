@@ -303,6 +303,7 @@ class create_ap_obj:
                         self.rx_ap_row = split_row
                         mac_found = True
                         logger.debug("AP read mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0], port_mac=mac))
+                        logger.debug("self.rx_ap_row {rx_ap_row}".format(rx_ap_row=self.rx_ap_row))
                         break
                     else:
                         logger.debug("AP no match read mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0], port_mac=mac))
