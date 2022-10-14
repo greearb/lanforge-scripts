@@ -499,7 +499,7 @@ class L3VariableTime(Realm):
                     total_dl_rate += int(endp["rx rate"])
                     total_dl_rate_ll += int(endp["rx rate ll"])
                     total_dl_pkts_ll += int(endp["rx pkts ll"])
-                    dl_rx_drop_percent = round(endp["rx drop %"], 2)
+                    dl_tx_drop_percent = round(endp["rx drop %"], 2)
                 # -B upload side
                 else:
                     total_ul_rate += int(endp["rx rate"])
@@ -975,7 +975,7 @@ class L3VariableTime(Realm):
                                 if rx_ul_mac_found:
                                     # Find latency, jitter for connections
                                     # using this port.
-                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
+                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_tx_drop_percent = self.get_endp_stats_for_port(
                                         port_data["port"], endps)
                                     self.write_ul_port_csv(
                                         len(temp_stations_list),
@@ -995,7 +995,7 @@ class L3VariableTime(Realm):
                                         total_dl_rate,
                                         total_dl_rate_ll,
                                         total_dl_pkts_ll,
-                                        dl_rx_drop_percent,
+                                        dl_tx_drop_percent,
                                         ap_row_rx_ul)  # ap_ul_row added
 
 
@@ -1177,11 +1177,11 @@ class L3VariableTime(Realm):
             total_ul_rate,
             total_ul_rate_ll,
             total_ul_pkts_ll,
-            ul_rx_drop_poercent,
+            ul_rx_drop_percent,
             total_dl_rate,
             total_dl_rate_ll,
             total_dl_pkts_ll,
-            dl_rx_drop_percent,
+            dl_tx_drop_percent,
             ap_row_rx_ul):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
@@ -1200,9 +1200,11 @@ class L3VariableTime(Realm):
                      total_ul_rate,
                      total_ul_rate_ll,
                      total_ul_pkts_ll,
+                     ul_rx_drop_percent,
                      total_dl_rate,
                      total_dl_rate_ll,
-                     total_dl_pkts_ll]
+                     total_dl_pkts_ll,
+                     dl_tx_drop_percent]
 
         # print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
         # print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
