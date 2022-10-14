@@ -74,7 +74,8 @@ class create_ap_obj:
                  ap_if_5g="eth7",
                  ap_if_6g="eth8",
                  ap_report_dir="",
-                 ap_file=""):
+                 ap_file="",
+                 ap_band_list=['2g','5g','6g']):
         self.ap_test_mode = ap_test_mode
         self.ap_ip = ap_ip
         self.ap_user = ap_user
@@ -90,20 +91,28 @@ class create_ap_obj:
         self.ap_if_6g = ap_if_6g
         self.ap_report_dir = ap_report_dir
         self.ap_file = ap_file
+        self.ap_band_list = ap_band_list
 
         self.cmd_clear_stats = 'wl -i INF dump_clear'
         self.cmd_tx_stats = 'wl -i INF bs_data'
         self.cmd_rx_stats = 'wl -i INF rx_report'
+        self.cmd_chanim = 'wl -i INF chanim_stats'
+        self.cmd_umsched = 'wl -i INF dump umsched'
+        self.cmd_msched = 'wl -i INF dump msched'
+        self.cmd_muinfo = 'wl -i INF muifo -v'
 
-        self.tx_results = ''
+        # need to have separate for 2g, 5g, and 6g
+        self.tx_results = {}
         self.tx_results_rows = ''
         self.ap_tx_row = ''
-        self.rx_results = ''
+        self.rx_results = {}
         self.rx_results_rows = ''
         self.ap_rx_row = ''
-        self.chanim_results = ''
+        self.chanim_results = {}
         self.chanim_results_rows = ''
         self.ap_chanim_row = ''
+
+
         # the --ap_read will use these headers
         self.dl_col_titles = [
             "Station Address",
@@ -222,35 +231,47 @@ class create_ap_obj:
             cmd = self.cmd_tx_stats.replace('INF',self.ap_if_5g)
         elif band == '6g':
             cmd = self.cmd_tx_stats.replace('INF',self.ap_if_6g)
-
-        self.tx_results = self.action(ap_cmd=cmd)
+        # may ned a copy 
+        # self.tx_results[band] = self.action(ap_cmd=cmd).copy()
+        self.tx_results[band] = self.action(ap_cmd=cmd) #.decode('utf-8', 'ignore')
         logger.debug(pformat(self.tx_results))
 
     # ASUS bs_data,  tx_data , data transmitted from AP stats
-    def tx_dl_stats(self, band, mac):
+    def tx_dl_stats(self, mac):
         # need to do read_tx_dl_stats first
-        self.tx_results_rows = self.tx_results.splitlines()
-        logger.debug("From AP tx_dl_stats : self.results_rows")
+        mac_found = False 
+        self.tx_ap_row = ''        
 
-        for row in self.tx_results_rows:
-            split_row = row.split()
-            # Test mode would go here
-            try:
-                if split_row[0].lower() == mac.lower():
-                    self.tx_ap_row = split_row
-                    mac_found = True
-                    logger.debug("AP read mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0], port_mac=mac))
-            except Exception as x:
-                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-                logger.info("'No stations are currently associated.'? from AP")
-                logger.info("since possibly no stations: exception on compare split_row[0].lower() ")
+        # the mac should only match once
+        for band in self.ap_band_list:
+            self.tx_results_rows = self.tx_results[band].splitlines()
+            logger.debug("From AP tx_dl_stats : self.tx_results_rows {tx_rows}".format(tx_rows=self.tx_results_rows))
+
+            for row in self.tx_results_rows:
+                split_row = row.split()
+                # Test mode would go here
+                try:
+                    if split_row[0].lower() == mac.lower():
+                        self.tx_ap_row = split_row
+                        mac_found = True
+                        logger.debug("AP read tx_dl_stats mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0].lower(), port_mac=mac.lower()))
+                        # the mac should only show up once
+                        break
+                    else:
+                        logger.debug("AP no match read tx_dl_stats mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0].lower(), port_mac=mac.lower()))
+                except Exception as x:
+                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                    logger.info("'No stations are currently associated.'? from AP")
+                    logger.info("since possibly no stations: exception on compare split_row[0].lower() ")
 
 
-        if mac_found:
-            mac_found = False
-            logger.info("selected ap_row (from split_row): {row}".format(row=self.tx_ap_row))
+            if mac_found:
+                # mac_found = False
+                logger.info("selected tx_ap_row (from split_row): {row}".format(row=self.tx_ap_row))
+                break
 
-        return self.tx_ap_row
+
+        return mac_found, self.tx_ap_row
     
     # report_rx
     def read_rx_ul_stats(self, band):
@@ -261,38 +282,102 @@ class create_ap_obj:
         elif band == '6g':
             cmd = self.cmd_rx_stats.replace('INF',self.ap_if_6g)
 
-        self.rx_results = self.action(ap_cmd=cmd)
+        self.rx_results[band] = self.action(ap_cmd=cmd) #.decode('utf-8', 'ignore')
         logger.debug(pformat(self.rx_results))
 
     # ASUS rx_report,  rx_data  , receive statatistics at AP
-    def rx_ul_stats(self, band, mac):
-        # need to do read_rx_stats first
-        self.rx_results_rows = self.results.splitlines()
-        logger.debug("From AP rx_ul_stats : self.rx_results_rows")
+    def rx_ul_stats(self, mac):
+        mac_found = False
+        self.rx_ap_row = ''
+        # the mac should only match once
+        for band in self.ap_band_list:
 
-        for row in self.rx_results_rows:
-            split_row = row.split()
-            # Test mode would go here
-            try:
-                if split_row[0].lower() == mac.lower():
-                    ap_row = split_row
-                    mac_found = True
-                    logger.debug("AP read mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0], port_mac=mac))
-            except Exception as x:
-                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-                logger.info("'No stations are currently associated.'? from AP")
-                logger.info("since possibly no stations: exception on compare split_row[0].lower() ")
+            # need to do read_rx_stats first
+            self.rx_results_rows = self.rx_results[band].splitlines()
+
+            for row in self.rx_results_rows:
+                split_row = row.split()
+                # Test mode would go here
+                try:
+                    if split_row[0].lower() == mac.lower():
+                        self.rx_ap_row = split_row
+                        mac_found = True
+                        logger.debug("AP read mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0], port_mac=mac))
+                        break
+                    else:
+                        logger.debug("AP no match read mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0], port_mac=mac))
+
+                except Exception as x:
+                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                    logger.info("'No stations are currently associated.'? from AP")
+                    logger.info("since possibly no stations: exception on compare split_row[0].lower() ")
 
 
-        if mac_found:
-            mac_found = False
-            logger.info("selected ap_row (from split_row): {row}".format(row=ap_row))
+            if mac_found:
+                # mac_found = False
+                logger.info("selected ap_row (from split_row): {row}".format(row=self.rx_ap_row))
+                break
 
-        return ap_row
+        return mac_found, self.rx_ap_row
 
     # ASUS chanel info (channel utilization)
-    def ap_chanim(self, band):
-        pass
+    def read_chanim_stats(self, band):
+        if band == '2g':
+            cmd = self.cmd_chanim.replace('INF',self.ap_if_2g)
+        elif band == '5g':
+            cmd = self.cmd_chanim.replace('INF',self.ap_if_5g)
+        elif band == '6g':
+            cmd = self.cmd_chanim.replace('INF',self.ap_if_6g)
+
+        self.chanim_results[band] = self.action(ap_cmd=cmd) # .decode('utf-8', 'ignore')
+        logger.debug(pformat(self.chanim_results[band]))
+
+    def chanim_stats(self, mac):
+        xtop_reported = False
+        channel_utilization = 0
+        # the mac should only match once
+        for band in self.ap_band_list:
+            for row in self.chanim_results[band]:
+                split_row = row.split()
+                if xtop_reported:
+                    logger.info("xtop_reported {band} row: {row}".format(band=band,row=row))
+                    logger.info("xtop_reported {band} split_row: {split_row}".format(band=band,split_row=split_row))
+                    try:
+                        xtop = split_row[7]
+                        logger.info("{band} xtop {xtop}".format(band=band,xtop=xtop))
+                    except Exception as x:
+                        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                        logger.info("{band} detected chanspec with reading chanim_stats, exception reading xtop".format(band=band))
+                    try:
+                        channel_utilization = float(100) - float(xtop)
+                        logger.info("{band} channel_utilization {utilization}".format(band=band,utilization=channel_utilization))
+                    except Exception as x:
+                        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                        logger.info("{band} detected chanspec with reading chanim_stats, failed calcluating channel_utilization from xtop".format(band=band))
+
+                    # should be on ly one channel utilization
+                    break
+                else:
+                    try:
+                        if split_row[0].lower() == 'chanspec':
+                            logger.info("{band} chanspec found xtop_reported = True".format(band=band))
+                            xtop_reported = True
+                    except Exception as x:
+                        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                        logger.error("{band} Error reading xtop".format(band=band))
+
+        return xtop_reported, str(channel_utilization)
+
+
+
+
+                    
+
+
+
+
+
+
 
 
 def main():
