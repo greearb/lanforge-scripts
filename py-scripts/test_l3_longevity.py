@@ -913,7 +913,7 @@ class L3VariableTime(Realm):
                 logger.debug("ap_stats_6g serial from AP: {}".format(ap_stats_6g))
             elif self.ap_scheme == 'ssh':
                 ap_stats_6g = self.ap_ssh(str(self.ap_cmd_6g))
-                logger.debug("ap_stats_5g ssh from AP : {}".format(ap_stats_6g))
+                logger.debug("ap_stats_6g ssh from AP : {}".format(ap_stats_6g))
 
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
@@ -1441,6 +1441,29 @@ class L3VariableTime(Realm):
                                         # contained in ap_row
                                         ap_row.append(str(channel_utilization))
 
+                                        logger.info("6g channel_utilization {channel_utilization}".format(channel_utilization=channel_utilization))
+                                        logger.info("6g ap_row {ap_row}".format(ap_row=ap_row))
+
+                                        self.write_port_csv(
+                                            len(temp_stations_list),
+                                            ul,
+                                            dl,
+                                            ul_pdu_str,
+                                            dl_pdu_str,
+                                            atten_val,
+                                            port_eid,
+                                            port_data,
+                                            latency,
+                                            jitter,
+                                            total_ul_rate,
+                                            total_ul_rate_ll,
+                                            total_ul_pkts_ll,
+                                            total_dl_rate,
+                                            total_dl_rate_ll,
+                                            total_dl_pkts_ll,
+                                            ap_row) # this is where the AP data is added
+
+
                             # work though the ul rx_data 6G
                             for port_eid in port_eids:
                                 eid = self.name_to_eid(port_eid)
@@ -1513,7 +1536,7 @@ class L3VariableTime(Realm):
                                             total_dl_rate,
                                             total_dl_rate_ll,
                                             total_dl_pkts_ll,
-                                            ap_row)
+                                            ap_ul_row)
                                 #####
                             # 5G test mode
                             if self.ap_test_mode:
