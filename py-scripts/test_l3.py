@@ -104,6 +104,7 @@ import random
 import sys
 import time
 from pprint import pprint
+from pprint import pformat
 import logging
 import platform
 import itertools
@@ -193,7 +194,8 @@ class L3VariableTime(Realm):
                  ap_if_5g="eth7",
                  ap_if_6g="eth8",
                  ap_report_dir="",
-                 ap_file=""):
+                 ap_file="",
+                 ap_band_list=['2g','5g','6g']):
 
 
         self.eth_endps = []
@@ -326,6 +328,7 @@ class L3VariableTime(Realm):
         self.ap_if_6g=ap_if_6g
         self.ap_report_dir=ap_report_dir
         self.ap_file=ap_file
+        self.ap_band_list=ap_band_list
 
 
         # AP information import the module
@@ -345,7 +348,8 @@ class L3VariableTime(Realm):
                 ap_if_5g=self.ap_if_5g,
                 ap_if_6g=self.ap_if_6g,
                 ap_report_dir=self.ap_report_dir,
-                ap_file=self.ap_file)
+                ap_file=self.ap_file,
+                ap_band_list=self.ap_band_list)
 
             # this is needed to access the methods of the imported object
             self.ap.say_hi()
@@ -788,24 +792,22 @@ class L3VariableTime(Realm):
             self.csv_add_port_column_headers(
                 port_eid, self.csv_generate_dl_port_column_headers())
 
-        # TODO test with LANforge VAP
-        # ul -ports (this if AP is present)
-        # port_eids = self.gather_port_eids()
-        # for port_eid in port_eids:
-        #    self.csv_add_ul_port_column_headers(
-        #        port_eid, self.csv_generate_ul_port_column_headers())
+        # ul -ports the csv will only be filled out if the
+        # ap is read
+        if self.ap_read:
+            port_eids = self.gather_port_eids()
+            # if self.use_existing_station_lists:
+            #    port_eids.extend(self.existing_station_lists.copy())
+
+            for port_eid in port_eids:
+                self.csv_add_ul_port_column_headers(port_eid, self.csv_generate_ul_port_column_headers())
 
         # looping though both A and B together,  upload direction will select A, download direction will select B
         # For each rate
-        for ul, dl in itertools.zip_longest(
-                self.side_a_min_rate,
-                self.side_b_min_rate, fillvalue=256000):
+        for ul, dl in itertools.zip_longest(self.side_a_min_rate, self.side_b_min_rate, fillvalue=256000):
 
             # For each pdu size
-            for ul_pdu, dl_pdu in itertools.zip_longest(
-                self.side_a_min_pdu,
-                self.side_b_min_pdu, fillvalue='AUTO'
-            ):
+            for ul_pdu, dl_pdu in itertools.zip_longest(self.side_a_min_pdu, self.side_b_min_pdu, fillvalue='AUTO'):
                 # Adjust rate to take into account the number of connections we
                 # have.
                 if self.cx_count > 1 and self.rates_are_totals:
@@ -841,6 +843,10 @@ class L3VariableTime(Realm):
                 # Update connections with the new rate and pdu size config.
                 self.build(rebuild=True)
 
+                if self.ap_read:
+                    for band in self.ap_band_list:
+                        self.ap.clear_stats(band)                
+
                 for atten_val in self.atten_vals:
                     if atten_val != -1:
                         for atten_idx in self.attenuators:
@@ -874,9 +880,7 @@ class L3VariableTime(Realm):
 
                     while cur_time < end_time:
                         # interval_time = cur_time + datetime.timedelta(seconds=5)
-                        interval_time = cur_time + \
-                            datetime.timedelta(
-                                seconds=self.polling_interval_seconds)
+                        interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
                         # logger.infi("polling_interval_seconds {}".format(self.polling_interval_seconds))
 
                         while cur_time < interval_time:
@@ -888,6 +892,7 @@ class L3VariableTime(Realm):
 
                         self.epoch_time = int(time.time())
                         endp_rx_map, endp_rx_drop_map, endps, total_dl_bps, total_ul_bps, total_dl_ll_bps, total_ul_ll_bps = self.__get_rx_values()
+
                         log_msg = "main loop, total-dl: {total_dl_bps} total-ul: {total_ul_bps} total-dl-ll: {total_dl_ll_bps}".format(
                             total_dl_bps=total_dl_bps, total_ul_bps=total_ul_bps, total_dl_ll_bps=total_dl_ll_bps)
 
@@ -898,44 +903,147 @@ class L3VariableTime(Realm):
                         # Query all of our ports
                         # Note: the endp eid is the
                         # shelf.resource.port.endp-id
-                        port_eids = self.gather_port_eids()
-                        if self.use_existing_station_lists:
-                            port_eids.extend(self.existing_station_lists.copy())
-                            # for existing_station in self.existing_station_lists:
-                            #    port_eids.append(self.existing_station)
-                        for port_eid in port_eids:
-                            eid = self.name_to_eid(port_eid)
-                            url = "/port/%s/%s/%s" % (eid[0],
-                                                      eid[1], eid[2])
-                            response = self.json_get(url)
-                            if (response is None) or (
-                                    "interface" not in response):
-                                logger.info(
-                                    "query-port: %s: incomplete response:" % url)
-                                pprint(response)
-                            else:
-                                port_data = response['interface']
-                                latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
-                                    port_data["port"], endps)
-                                self.write_port_csv(
-                                    len(temp_stations_list),
-                                    ul,
-                                    dl,
-                                    ul_pdu_str,
-                                    dl_pdu_str,
-                                    atten_val,
-                                    port_eid,
-                                    port_data,
-                                    latency,
-                                    jitter,
-                                    total_ul_rate,
-                                    total_ul_rate_ll,
-                                    total_ul_pkts_ll,
-                                    ul_rx_drop_percent,
-                                    total_dl_rate,
-                                    total_dl_rate_ll,
-                                    total_dl_pkts_ll,
-                                    dl_rx_drop_percent)
+                        if self.ap_read:
+                            for band in self.ap_band_list:
+                                # request the data to be read
+                                self.ap.read_tx_dl_stats(band)
+                                self.ap.read_rx_ul_stats(band)
+                                self.ap.read_chanim_stats(band)
+
+
+                            # Query all of ports
+                            # Note: the endp eid is : shelf.resource.port.endp-id
+                            port_eids = self.gather_port_eids()
+
+                            for port_eid in port_eids:
+                                eid = self.name_to_eid(port_eid)
+                                url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
+
+
+                                # read LANforge to get the mac
+                                response = self.json_get(url)
+                                if (response is None) or ("interface" not in response):
+                                    logger.info("query-port: %s: incomplete response:" % url)
+                                    logger.info(pformat(response))
+                                else:
+                                    # print("response".format(response))
+                                    logger.info(pformat(response))
+                                    port_data = response['interface']
+                                    logger.info("From LANforge: port_data, response['insterface']:{}".format(port_data))
+                                    mac = port_data['mac']
+                                    logger.debug("mac : {mac}".format(mac=mac))
+
+                                    # search for data fro the port mac 
+                                    tx_dl_mac_found, ap_row_tx_dl = self.ap.tx_dl_stats(mac)
+                                    rx_ul_mac_found, ap_row_rx_ul = self.ap.rx_ul_stats(mac)
+                                    xtop_reported, ap_row_chanim = self.ap.chanim_stats(mac)
+
+                                    self.get_endp_stats_for_port(port_data["port"], endps)
+                                    
+                                if tx_dl_mac_found:
+                                    logger.info("mac {mac} ap_row_tx_dl {ap_row_tx_dl}".format(mac=mac,ap_row_tx_dl = ap_row_tx_dl))
+                                    # Find latency, jitter for connections
+                                    # using this port.
+                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
+                                        port_data["port"], endps)
+
+                                    ap_row_tx_dl.append(ap_row_chanim)
+
+                                    self.write_port_csv(
+                                        len(temp_stations_list),
+                                        ul,
+                                        dl,
+                                        ul_pdu_str,
+                                        dl_pdu_str,
+                                        atten_val,
+                                        port_eid,
+                                        port_data,
+                                        latency,
+                                        jitter,
+                                        total_ul_rate,
+                                        total_ul_rate_ll,
+                                        total_ul_pkts_ll,
+                                        ul_rx_drop_percent,
+                                        total_dl_rate,
+                                        total_dl_rate_ll,
+                                        total_dl_pkts_ll,
+                                        dl_rx_drop_percent,
+                                        ap_row_tx_dl) # this is where the AP data is added
+
+                                    # now report the ap_chanim_stats 
+
+                                if rx_ul_mac_found:
+                                    # Find latency, jitter for connections
+                                    # using this port.
+                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
+                                        port_data["port"], endps)
+                                    self.write_ul_port_csv(
+                                        len(temp_stations_list),
+                                        ul,
+                                        dl,
+                                        ul_pdu_str,
+                                        dl_pdu_str,
+                                        atten_val,
+                                        port_eid,
+                                        port_data,
+                                        latency,
+                                        jitter,
+                                        total_ul_rate,
+                                        total_ul_rate_ll,
+                                        total_ul_pkts_ll,
+                                        ul_rx_drop_percent,                                        
+                                        total_dl_rate,
+                                        total_dl_rate_ll,
+                                        total_dl_pkts_ll,
+                                        dl_rx_drop_percent,
+                                        ap_row_rx_ul)  # ap_ul_row added
+
+
+                                logger.info("ap_row_rx_ul {ap_row_rx_ul}".format(ap_row_rx_ul=ap_row_rx_ul))
+
+                        ####################################
+                        else:
+                            # NOT Reading the AP
+                            port_eids = self.gather_port_eids()
+                            if self.use_existing_station_lists:
+                                port_eids.extend(self.existing_station_lists.copy())
+                                # for existing_station in self.existing_station_lists:
+                                #    port_eids.append(self.existing_station)
+                            for port_eid in port_eids:
+                                eid = self.name_to_eid(port_eid)
+                                url = "/port/%s/%s/%s" % (eid[0],
+                                                        eid[1], eid[2])
+                                response = self.json_get(url)
+                                if (response is None) or (
+                                        "interface" not in response):
+                                    logger.info(
+                                        "query-port: %s: incomplete response:" % url)
+                                    pprint(response)
+                                else:
+                                    port_data = response['interface']
+                                    latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
+                                        port_data["port"], endps)
+                                    self.write_port_csv(
+                                        len(temp_stations_list),
+                                        ul,
+                                        dl,
+                                        ul_pdu_str,
+                                        dl_pdu_str,
+                                        atten_val,
+                                        port_eid,
+                                        port_data,
+                                        latency,
+                                        jitter,
+                                        total_ul_rate,
+                                        total_ul_rate_ll,
+                                        total_ul_pkts_ll,
+                                        ul_rx_drop_percent,
+                                        total_dl_rate,
+                                        total_dl_rate_ll,
+                                        total_dl_pkts_ll,
+                                        dl_rx_drop_percent)
+
+                            # TODO add collect layer 3 data
 
                     # TODO make all port csv files into one concatinated csv files
                     # Create empty dataframe
@@ -1017,7 +1125,8 @@ class L3VariableTime(Realm):
             total_dl_rate,
             total_dl_rate_ll,
             total_dl_pkts_ll,
-            dl_rx_drop_percent):
+            dl_rx_drop_percent,
+            ap_row_tx_dl):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, port_eid
@@ -1042,11 +1151,75 @@ class L3VariableTime(Realm):
                      dl_rx_drop_percent]
 
         # Add in info queried from AP.
-
+        if self.ap_read:
+            if len(ap_row_tx_dl) == len(self.ap_stats_dl_col_titles):
+                # print("ap_row {}".format(ap_row))
+                for col in ap_row_tx_dl:
+                    # print("col {}".format(col))
+                    row.append(col)
 
         writer = self.port_csv_writers[port_eid]
         writer.writerow(row)
         self.port_csv_files[port_eid].flush()
+
+    def write_ul_port_csv(
+            self,
+            sta_count,
+            ul,
+            dl,
+            ul_pdu,
+            dl_pdu,
+            atten,
+            port_eid,
+            port_data,
+            latency,
+            jitter,
+            total_ul_rate,
+            total_ul_rate_ll,
+            total_ul_pkts_ll,
+            ul_rx_drop_poercent,
+            total_dl_rate,
+            total_dl_rate_ll,
+            total_dl_pkts_ll,
+            dl_rx_drop_percent,
+            ap_row_rx_ul):
+        row = [self.epoch_time, self.time_stamp(), sta_count,
+               ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
+               atten, port_eid
+               ]
+
+        row = row + [port_data['bps rx'],
+                     port_data['bps tx'],
+                     port_data['rx-rate'],
+                     port_data['tx-rate'],
+                     port_data['signal'],
+                     port_data['ap'],
+                     port_data['mode'],
+                     latency,
+                     jitter,
+                     total_ul_rate,
+                     total_ul_rate_ll,
+                     total_ul_pkts_ll,
+                     total_dl_rate,
+                     total_dl_rate_ll,
+                     total_dl_pkts_ll]
+
+        # print("ap_row length {} col_titles length {}".format(len(ap_row),len(self.ap_stats_col_titles)))
+        # print("self.ap_stats_col_titles {} ap_stats_col_titles {}".format(self.ap_stats_col_titles,ap_stats_col_titles))
+        # Add in info queried from AP.
+        if self.ap_read:
+            logger.debug("ap_row_rx_ul len {ap_row_rx_ul_len} ap_stats_ul_col_titles len {rx_col_len} ap_ul_row {ap_ul_row}".format(
+                ap_row_rx_ul_len=len(ap_row_rx_ul), rx_col_len=len(self.ap_stats_ul_col_titles), ap_ul_row = ap_row_rx_ul))
+            if len(ap_row_rx_ul) == len(self.ap_stats_ul_col_titles):
+                logger.debug("ap_row_rx_ul {}".format(ap_row_rx_ul))
+                for col in ap_row_rx_ul:
+                    logger.debug("col {}".format(col))
+                    row.append(col)
+
+        writer = self.ul_port_csv_writers[port_eid]
+        writer.writerow(row)
+        self.ul_port_csv_files[port_eid].flush()
+
 
     def record_kpi_csv(
             self,
@@ -1259,9 +1432,6 @@ class L3VariableTime(Realm):
             'Dl-Rx-Rate-ll',
             'Dl-Rx-Pkts-ll',
             'Dl-Rx-Drop_Percent']
-        # Add in columns we are going to query from the AP
-        # for col in self.ap_stats_ul_col_titles:
-        #    csv_ul_rx_headers.append(col)
         # Add in columns we are going to query from the AP
         if self.ap_read:
             self.ap_stats_ul_col_titles = self.ap.get_ul_col_titles()
@@ -1922,6 +2092,7 @@ Setting wifi_settings per radio
     parser.add_argument('--ap_if_5g', help='--ap_if_5g eth7', default='wl1')
     parser.add_argument('--ap_if_6g', help='--ap_if_6g eth8', default='wl2')
     parser.add_argument('--ap_file', help="--ap_file 'ap_file.txt'", default=None)
+    parser.add_argument('--ap_band_list', help="--ap_band_list '2g,5g,6g' supported bands", default='2g,5g,6g')
 
 
 
@@ -1985,6 +2156,7 @@ Setting wifi_settings per radio
         radios = args.radio
     else:
         radios = None
+        
 
     # Create report, when running with the test framework (lf_check.py)
     # results need to be in the same directory
@@ -2251,7 +2423,8 @@ Setting wifi_settings per radio
         ap_if_5g=args.ap_if_5g,
         ap_if_6g=args.ap_if_6g,
         ap_report_dir="",
-        ap_file=args.ap_file
+        ap_file=args.ap_file,
+        ap_band_list = args.ap_band_list.split(',')
         
         )
 
