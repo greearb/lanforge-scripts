@@ -5,8 +5,8 @@ import importlib
 import time
 import datetime
 import argparse
-import allure
-from tabulate import tabulate
+# import allure
+# from tabulate import tabulate
 import csv
 from pprint import pprint
 
@@ -170,7 +170,7 @@ class MulticastPowersaveTraffic(Realm):
         else:
             self._fail("Stations failed to get IPs")
             print("Stations didn't received ip")
-            allure.attach(name="FAILED", body="Stations didn't connected to AP")
+            # allure.attach(name="FAILED", body="Stations didn't connected to AP")
             exit(1)
 
         if self.enable_multicast_testing:
@@ -201,8 +201,8 @@ class MulticastPowersaveTraffic(Realm):
                               port_info['interface']['ap']
                 self.ap_mac = str(port_info['interface']['ap'])
                 self.sta_mac = str(port_info['interface']['mac'])
-                allure.attach(name="AP MAC", body=str(port_info['interface']['ap']))
-                allure.attach(name="Station MAC", body=str(port_info['interface']['mac']))
+                # allure.attach(name="AP MAC", body=str(port_info['interface']['ap']))
+                # allure.attach(name="Station MAC", body=str(port_info['interface']['mac']))
                 print("filter=", self.filter)
             else:
                 print('interfaces and interface not in port_mgr_response')
@@ -221,7 +221,7 @@ class MulticastPowersaveTraffic(Realm):
                 print("sta_name %s" % upstream_info['interface']['alias'])
                 print("mac      %s" % upstream_info['interface']['mac'])
                 self.upstream_mac = str(upstream_info['interface']['mac'])
-                allure.attach(name="Upstream Port MAC", body=str(upstream_info['interface']['mac']))
+                # allure.attach(name="Upstream Port MAC", body=str(upstream_info['interface']['mac']))
             else:
                 print('interfaces and interface not in port_mgr_upstream_response')
                 exit(1)
@@ -251,7 +251,7 @@ class MulticastPowersaveTraffic(Realm):
         self.pcap_file = self.report_dir + "/" + pcap_file
         if apply_filter is not None:
             self.apply_filter = apply_filter
-            allure.attach(name="Filter", body=str(self.apply_filter))
+            # allure.attach(name="Filter", body=str(self.apply_filter))
         try:
             self.pcap = ps.FileCapture(input_file=self.pcap_file, display_filter=self.apply_filter)
         except Exception as error:
@@ -420,8 +420,8 @@ class MulticastPowersaveTraffic(Realm):
 
                         csvwriter.writerow(table_values)
         print(filename)
-        allure.attach.file(source=self.pcap_file, name="pcap_file", attachment_type=allure.attachment_type.PCAP)
-        allure.attach.file(source=filename, name="Test Validation info", attachment_type=allure.attachment_type.CSV)
+        # allure.attach.file(source=self.pcap_file, name="pcap_file", attachment_type=allure.attachment_type.PCAP)
+        # allure.attach.file(source=filename, name="Test Validation info", attachment_type=allure.attachment_type.CSV)
         return end_result
 
     def start_station_profile(self):
