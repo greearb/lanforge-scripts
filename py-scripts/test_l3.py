@@ -1126,7 +1126,7 @@ class L3VariableTime(Realm):
             total_dl_rate_ll,
             total_dl_pkts_ll,
             dl_rx_drop_percent,
-            ap_row_tx_dl):
+            ap_row_tx_dl = ''):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, port_eid
