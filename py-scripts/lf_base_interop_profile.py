@@ -23,6 +23,7 @@ import shlex
 import subprocess
 import json
 import argparse
+import time
 
 if sys.version_info[0] != 3:
     print("This script requires Python3")
@@ -186,6 +187,7 @@ class BaseInteropWifi(Realm):
                               errors_warnings=errors_warnings,
                               suppress_related_commands=True)
         print(["Response", response_list])
+        return response_list
 
     # enable Wi-Fi or disable Wi-Fi
     def enable_or_disable_wifi(self, wifi=None, device=None):
@@ -285,9 +287,16 @@ class BaseInteropWifi(Realm):
             print(devices)
         else:
             devices = [device]
+        scan_dict = dict.fromkeys(devices)
         for i in devices:
-            cmd = "shell cmd -w wifi list-scan-results"
+            # start scan
+            cmd = "shell cmd -w wifi start-scan"
             self.post_adb_(device=i, cmd=cmd)
+            time.sleep(10)
+            cmd = "shell cmd -w wifi list-scan-results"
+            result = self.post_adb_(device=i, cmd=cmd)
+            scan_dict[i] = result
+        return scan_dict
 
 
 
@@ -328,8 +337,8 @@ def main():
                           screen_size_prcnt = 0.4,
                           _debug_on=False,
                           _exit_on_error=False)
-    obj.scan_results()
-
+    z = obj.scan_results()
+    print(z)
 
 if __name__ == '__main__':
     main()
