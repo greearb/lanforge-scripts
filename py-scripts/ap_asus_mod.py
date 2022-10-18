@@ -338,7 +338,9 @@ class create_ap_obj:
         channel_utilization = 0
         # the mac should only match once
         for band in self.ap_band_list:
-            for row in self.chanim_results[band]:
+            logger.debug("chanim_results [{band}] {chanim}".format(band=band,chanim=self.chanim_results[band]))
+            self.chanim_results_rows = self.chanim_results[band].splitlines()
+            for row in self.chanim_results_rows:
                 split_row = row.split()
                 if xtop_reported:
                     logger.info("xtop_reported {band} row: {row}".format(band=band,row=row))
