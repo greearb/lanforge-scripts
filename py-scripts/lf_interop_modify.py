@@ -217,6 +217,113 @@ class InteropCommands(Realm):
                                       shelf=eid[0],
                                       debug=True)
 
+    def main_adb_post(self, cmd=None):
+        print("cmd", cmd)
+        if not self.device_eid:
+            raise ValueError("device EID is required")
+
+        eid = self.name_to_eid(self.device_eid)
+        pprint(eid)
+
+        response_list = []
+        errors_warnings = []
+
+        adb_key = self.session.get_session_based_key()
+        self.session.logger.error("adb_key: " + adb_key)
+        self.command.post_adb(shelf=eid[0],
+                              resource=eid[1],
+                              key=adb_key,
+                              adb_id=eid[2],
+                              adb_cmd=cmd,
+                              debug=self.debug,
+                              response_json_list=response_list,
+                              errors_warnings=errors_warnings,
+                              suppress_related_commands=True)
+        print(["Response", response_list])
+        return response_list
+
+    def get_device_state(self):
+        cmd = 'shell dumpsys wifi | grep "mWifiInfo SSID"'
+        x = self.main_adb_post(cmd=cmd)
+        y = x[0]['LAST']['callback_message']
+        z = y.split(" ")
+        # print(z)
+        state = None
+        if 'state:' in z:
+            print("yes")
+            ind = z.index("state:")
+            print(ind)
+            st = z[(int(ind) + 1)]
+            print("state", st)
+            state = st
+
+        else:
+            print("state is not present")
+            state = "NA"
+        return state
+
+    def get_device_ssid(self):
+        cmd = 'shell dumpsys wifi | grep "mWifiInfo SSID"'
+        x = self.main_adb_post(cmd=cmd)
+        y = x[0]['LAST']['callback_message']
+        z = y.split(" ")
+        print(z)
+        ssid = None
+        if 'SSID:' in z:
+            print("yes")
+            ind = z.index("SSID:")
+            ssid  = z[(int(ind) + 1)]
+            ssid_ = ssid.strip()
+            ssid_1 = ssid_.replace('"', "")
+            ssid_2 = ssid_1.replace(",", "")
+            print("ssid", ssid_2)
+            ssid = ssid_2
+        else:
+            print("ssid is not present")
+            ssid = "NA"
+        return ssid
+
+    def get_wifi_health_monitor(self, ssid):
+        cmd = "shell dumpsys wifi | sed -n '/^WifiHealthMonitor - Log Begin ----$/,/^WifiHealthMonitor - Log End ----$/{/^WifiHealthMonitor - Log End ----$/!p;}'"
+        x = self.main_adb_post(cmd=cmd)
+        y = x[0]["LAST"]["callback_message"]
+        z = y.split(" ")
+        # print(z)
+        value = ["ConnectAttempt", "ConnectFailure", "AssocRej", "AssocTimeout" ]
+        return_dict = dict.fromkeys(value)
+        if "stats\nSSID:" in z:
+            ind = z.index("stats\nSSID:")
+            ssid_ = z[ind + 1]
+            print(ssid_)
+            ssid_1 = ssid.strip()
+            ssid_2 = ssid_1.replace('"', "")
+
+            if ssid_2 == ssid:
+                if "ConnectAttempt:" in z:
+                    connect_ind = z.index("ConnectAttempt:")
+                    connect_attempt = z[connect_ind + 1]
+                    print("connection attempts", connect_attempt)
+                    return_dict["ConnectAttempt"] = connect_attempt
+                if 'ConnectFailure:' in z:
+                    connect_fail_ind = z.index('ConnectFailure:')
+                    connect_failure = z[connect_fail_ind + 1]
+                    print("connection failure ", connect_failure)
+                    return_dict["ConnectFailure"] = connect_failure
+                if 'AssocRej:' in z:
+                    ass_rej_ind = z.index('AssocRej:')
+                    assocrej = z[ass_rej_ind + 1]
+                    print("association rejection ", assocrej)
+                    return_dict["AssocRej"] = assocrej
+                if 'AssocTimeout:' in z:
+                    ass_ind = z.index('AssocTimeout:')
+                    asso_timeout = z[ass_ind + 1]
+                    print("association timeout ", asso_timeout)
+                    return_dict["AssocTimeout"] = asso_timeout
+            else:
+                print("ssid is not present")
+        print(return_dict)
+        return return_dict
+
 
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
