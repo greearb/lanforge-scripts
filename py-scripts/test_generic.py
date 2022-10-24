@@ -48,6 +48,7 @@ import requests
 from pandas import json_normalize
 import json
 import traceback
+from lf_json_util import standardize_json_results
 
 logger = logging.getLogger(__name__)
 
@@ -141,8 +142,8 @@ class GenTest(Realm):
         generic_fields = ",".join(generic_cols)
         
         gen_url = "/generic/%s?fields=%s" % (",".join(monitor_endps), generic_fields)
-        endps = self.generic_endps_profile.standardize_json_results(gen_url)
-        print(endps)
+        endps = standardize_json_results(self.json_get(gen_url))
+
         data = {}
         for endp in endps:
             data[list(endp.keys())[0]] = list(endp.values())[0]
