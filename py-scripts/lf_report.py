@@ -329,7 +329,10 @@ class lf_report:
         return self.write_output_html
 
     def write_index_html(self):
-        self.write_output_index_html = str(self.path_date_time) + '/' + str("index.html")
+        # LAN-1535 scripting: test_l3.py output masks other output when browsing.
+        # consider renaming index.html to readme.html
+        # self.write_output_index_html = str(self.path_date_time) + '/' + str("index.html")
+        self.write_output_index_html = str(self.path_date_time) + '/' + str("readme.html")
         logger.info("write_output_index_html: {}".format(self.write_output_index_html))
         try:
             test_file = open(self.write_output_index_html, "w")
