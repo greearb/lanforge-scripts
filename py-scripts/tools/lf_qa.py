@@ -217,17 +217,37 @@ class csv_sql:
                 if "check" in str(pdf_base_name):
                     pass
                 else:
-                    parent_path = os.path.dirname(pdf_info)
-                    pdf_path = os.path.join(parent_path, pdf_base_name)
-                    pdf_path = self.server + pdf_path.replace(self.cut, '')
-                    html_path = os.path.join(parent_path, "index.html")
-                    html_path = self.server + html_path.replace(self.cut, '')
+                    abs_path = False
+                    if abs_path:
+                        parent_path = os.path.dirname(pdf_info)
+                        dir_path = self.server + parent_path.replace(self.cut, '')
+
+                        pdf_path = os.path.join(parent_path, pdf_base_name)
+                        pdf_path = self.server + pdf_path.replace(self.cut, '')
+
+                        # LAN-1535 scripting: test_l3.py output masks other output when browsing.
+                        # consider renaming index.html to readme.html
+                        # html_path = os.path.join(parent_path, "index.html")
+                        html_path = os.path.join(parent_path, "readme.html")
+                        html_path = self.server + html_path.replace(self.cut, '')
+                    else:
+                        # try relative path
+                        parent_path = os.path.dirname(pdf_info)
+                        parent_name = os.path.basename(parent_path)
+
+                        dir_path = '../' + parent_name 
+                        pdf_path = '../' + parent_name + "/" +  pdf_base_name
+                        html_path = "../" + parent_name + "/readme.html"
+
+
                     kpi_path = os.path.join(parent_path, "kpi.csv")
                     test_id, test_tag = self.get_test_id_test_tag(kpi_path)
                     suite_html_results += """
                     <tr style="text-align: center; margin-bottom: 0; margin-top: 0;">
-                        <td>{test_id}</td><td>{test_tag}</td><td><a href="{html_path}" target="_blank">html</a> / <a href="{pdf_path}" target="_blank">pdf</a></td></tr>
-                    """.format(test_id=test_id, test_tag=test_tag, html_path=html_path, pdf_path=pdf_path)
+                        <td>{test_id}</td><td>{test_tag}</td><td><a href="{html_path}" target="_blank">html</a> / 
+                        <a href="{pdf_path}" target="_blank">pdf</a> / 
+                        <a href="{dir_path}" target="_blank">results_dir</a></td></tr> 
+                    """.format(test_id=test_id, test_tag=test_tag, html_path=html_path, pdf_path=pdf_path, dir_path=dir_path)
         suite_html_results += """
                     </tbody>
                 </table>
