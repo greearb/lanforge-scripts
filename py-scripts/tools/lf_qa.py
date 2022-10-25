@@ -384,7 +384,10 @@ class csv_sql:
             # if self.server == '':
             #    report_index_html_path = self.server + kpi_path_list[-1] 
             # else:
-            report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
+
+            # LAN-1535 scripting: test_l3.py output masks other output when browsing (index.html) create relative paths in reports
+            # report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
+            report_index_html_path = self.server + kpi_path_list[-1] + "readme.html"
             report_index_html_path = report_index_html_path.replace(self.cut, '')
             self.html_results += """<a href={report_index_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_Report </a>
             """.format(report_index_html_path=report_index_html_path, test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
@@ -742,18 +745,40 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         report.set_table_title("Test Rig: {} Links".format(test_rig_list[-1]))
         report.build_table_title()
 
-        pdf_link_path = report.get_pdf_path()
-        pdf_link_path = __server + pdf_link_path.replace(__cut, '')
-        report.build_pdf_link("PDF_Report", pdf_link_path)
+        abs_path = False
+        if abs_path:
+            pdf_link_path = report.get_pdf_path()
+            pdf_link_path = __server + pdf_link_path.replace(__cut, '')
+            report.build_pdf_link("PDF_Report", pdf_link_path)
 
-        report_path = report.get_path()
-        report_path = __server + report_path.replace(__cut, '')
-        report.build_link("Current Test Suite Results Directory", report_path)
+            report_path = report.get_path()
+            report_path = __server + report_path.replace(__cut, '')
+            report.build_link("Current Test Suite Results Directory", report_path)
 
-        report_parent_path = report.get_parent_path()
-        report_parent_path = __server + report_parent_path.replace(__cut, '')
-        report.build_link(
-            "All Test-Rig Test Suites Results Directory", report_parent_path)
+            report_parent_path = report.get_parent_path()
+            report_parent_path = __server + report_parent_path.replace(__cut, '')
+            report.build_link(
+                "All Test-Rig Test Suites Results Directory", report_parent_path)
+        else:
+            # use relative paths
+            pdf_file = report.get_pdf_file()
+            # pdf_parent_path = os.path.dirname(pdf_link_path)
+            # pdf_parent_name = os.path.basename(pdf_parent_path)
+            
+            
+            pdf_url = './' + pdf_file
+            report.build_pdf_link("PDF_Report", pdf_url)
+
+            report_path = report.get_path()
+            report_basename = os.path.basename(report_path)
+            report_url = './../../' + report_basename
+            report.build_link("Current Test Suite Results Directory", report_url)
+
+            report_parent_path = report.get_parent_path()
+            report_parent_basename = os.path.basename(report_parent_path)
+            report_parent_url = './../../../' + report_parent_basename
+            report.build_link("All Test-Rig Test Suites Results Directory", report_parent_url)
+
 
         # links table for tests TODO : can this be a table
         report.set_table_title("Test Suite")
