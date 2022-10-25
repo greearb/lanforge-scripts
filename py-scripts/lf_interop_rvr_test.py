@@ -6,7 +6,7 @@ NAME: lf_interop_rvr_test.py
 PURPOSE: lf_interop_rvr_test.py will measure the performance of stations over a certain distance of the DUT. Distance is emulated
         using programmable attenuators and throughput test is run at each distance/RSSI step.
 
-python3 lf_interop_rvr_test.py --mgr 192.168.200.21 --mgr_port 8080 --upstream eth1 --security wpa2 --ssid ct-523 --password ct-523-ps --radio wiphy3 --atten_serno 84 --atten_idx all --atten_val 10,20,30 --test_duration 1m --ap_model WAC505 --traffic 500
+python3 lf_interop_rvr_test.py --mgr 192.168.200.232 --mgr_port 8080 --upstream eth1 --security wpa2 --ssid NETGEAR63 --password Password@123 --atten_serno 3104 --atten_idx all --atten_val 0..5..5 --test_duration 1m --ap_model NETGEAR63 --traffic 10 --traffic_type lf_tcp --traffic_direction bidirectional
 
 Use './lf_interop_rvr_test.py --help' to see command line usage and options
 Copyright 2021 Candela Technologies Inc
@@ -38,6 +38,8 @@ cv_add_base_parser = cv_test_manager.cv_add_base_parser
 cv_base_adjust_parser = cv_test_manager.cv_base_adjust_parser
 lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_bar_graph = lf_graph.lf_bar_graph
+interop_modify = importlib.import_module("py-scripts.lf_interop_modify")
+
 import time
 from datetime import datetime, timedelta
 
@@ -416,16 +418,33 @@ class RvR(Realm):
             report.set_csv_filename(graph_png)
             report.move_csv_file()
             report.build_graph()
+
+            len_data = len(res["graph_df"][traffic_type]["dataset"][0])
+            print("Upload: ", [res["graph_df"][traffic_type]["dataset"][0][i] for i in range(len_data)])
+            print("Download: ", [res["graph_df"][traffic_type]["dataset"][1][i] for i in range(len_data)])
+            report.start_content_div()
+            report.set_table_title("<h3>Table for Graph")
+            report.build_table_title()
+            data = pd.DataFrame({
+                "Attenuation Step(dB)": self.attenuator_db_signal,
+                "Upload Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][0][i] for i in range(len_data)],
+                "Download Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][1][i] for i in range(len_data)],
+            })
+            report.set_table_dataframe(data)
+            report.build_table()
+            report.end_content_div()
+
         self.generate_individual_graphs(report, res, each_phone_data)
-        report.test_setup_table(test_setup_data=input_setup_info, value="Information")
         report.set_table_title("<h3>Supported Device information:")
         report.build_table_title()
-        report.set_table_dataframe(phone_details)
-        report.build_table()
-        report.set_text("<h5> The above table shows a list of all the Real clients which are connected to LANForge "
-                        "server in the tabular format which also show the various details of the real-client (phones) "
+        report.set_text("<h5> The below table shows a list of all the Real clients which are connected to LANForge "
+                        "server in the tabular format which also show the various details of the real-clients (phones) "
                         "such as phone name, MAC address, Username, Phone Radio, Rx link rate, Tx link rate and "
                         "Resource id.")
+        report.build_text()
+        report.set_table_dataframe(phone_details)
+        report.build_table()
+        report.test_setup_table(test_setup_data=input_setup_info, value="Information")
         report.build_custom()
         report.build_footer()
         report.write_html()
@@ -438,6 +457,23 @@ class RvR(Realm):
         if len(res.keys()) > 0:
             if "graph_df" in phone_x:
                 phone_x.pop("graph_df")
+        RSSISignal = {}
+        Throughput = {}
+        for traffic_type in phone_x:
+            for phone in phone_x[traffic_type]:
+                for direction in phone_x[traffic_type][phone]:
+                    if "RSSI Strength(in dBm)" == 'Throughput(in Mbps)' if (direction == 'upload' or direction == 'download') else 'RSSI Strength(in dBm)':
+                        RSSISignal[phone] = phone_x[traffic_type][phone][direction]
+                    else:
+                        Throughput[phone] = phone_x[traffic_type][phone][direction]
+
+
+        # for traffic_type in phone_x:
+        #     for phone in phone_x[traffic_type]:
+        #         for direction in phone_x[traffic_type][phone]:
+        #             if 'RSSI Strength(in dBm)' is not 'Throughput(in Mbps)' if (direction == 'upload' or direction == 'download') else 'RSSI Strength(in dBm)':
+        #                 Throughput[phone] = phone_x[traffic_type][phone][direction]
+
         for traffic_type in phone_x:
             for phone in phone_x[traffic_type]:
                 for direction in phone_x[traffic_type][phone]:
@@ -477,6 +513,21 @@ class RvR(Realm):
                     report.move_csv_file()
                     report.build_graph()
 
+                    print("Attenuator ", self.attenuator_db_signal)
+                    print("Data ", phone_x[traffic_type][phone][direction])
+                    print("Signal ", self.list_of_data[1])
+                    report.start_content_div()
+                    report.set_table_title("<h3>Table for Graph")
+                    report.build_table_title()
+                    data = pd.DataFrame({
+                        "Attenuation Step(dB)": self.attenuator_db_signal,
+                        "RSSI Strength (in dBm)": RSSISignal[phone],
+                        "Throughput(in Mbps)": Throughput[phone],
+                    })
+                    report.set_table_dataframe(data)
+                    report.build_table()
+                    report.end_content_div()
+
         for traffic_type in res:
             for attenuation in res[traffic_type]:
                 for direction in res[traffic_type][attenuation]:
@@ -514,6 +565,21 @@ class RvR(Realm):
                         report.set_csv_filename(graph_png)
                         report.move_csv_file()
                         report.build_graph()
+
+                        print("Attenuation Step(dB) ", self.attenuator_db_signal, "\nThroughput(mbps) ", res[traffic_type][attenuation][direction],)
+                        report.start_content_div()
+                        report.set_table_title("<h3>Table for Graph")
+                        report.build_table_title()
+                        data = pd.DataFrame({
+                            "Attenuation Step(dB)": [attenuation] * len(res[traffic_type][attenuation][direction]),
+                            "Phone": self.list_of_data[1],
+                            "Throughput(mbps)": res[traffic_type][attenuation][direction],
+                            "Traffic Direction": ['upload' if direction == 'upload' else 'download'] * len(res[traffic_type][attenuation][direction]),
+                            "Traffic type": ['TCP' if traffic_type == 'lf_tcp' else 'UDP' if traffic_type == 'lf_udp' else 'TCP and UDP']*len(res[traffic_type][attenuation][direction]),
+                        })
+                        report.set_table_dataframe(data)
+                        report.build_table()
+                        report.end_content_div()
 
 
 def main():
@@ -556,7 +622,8 @@ def main():
                           help='Attenuator index eg. For module 1 = 0,module 2 = 1 --> --atten_idx 0,1',
                           default='all')
     optional.add_argument('-av', '--atten_val',
-                          help='Requested attenuation in dB ex:--> --atten_val 0, 10', default='0')
+                          help='Requested attenuation in dB ex:--> --atten_val 0..10..40 (here attenuation start '
+                               'from 0 and end with 50 with increment value of 10 each time)', default='0')
     optional.add_argument('--debug', help="to enable debug", default=False)
     # logging configuration:
     parser.add_argument('--log_level', default=None,
@@ -590,13 +657,14 @@ def main():
     elif args.test_duration.endswith(''):
         args.test_duration = abs(int(float(args.test_duration)))
 
-    if args.atten_val:
-        if args.atten_val.split(',')[0] != '0':
-            temp = ['0']
-            temp.extend(args.atten_val.split(','))
-            args.atten_val = temp
-        else:
-            args.atten_val = args.atten_val.split(',')
+    start = int(args.atten_val.split('..')[0])
+    interval = int(args.atten_val.split('..')[1])
+    end = int(args.atten_val.split('..')[2])
+    temp = ['0']
+    for i in range(start, end+1, interval):
+        if str(i) not in temp:
+            temp.append(str(i))
+    args.atten_val = temp
 
     if args.traffic is not None and int(args.traffic) < 0:
         raise ValueError("Traffic should be greater than 0 Mbps")
@@ -644,6 +712,7 @@ def main():
         "AP Model": rvr_obj.ap_model,
         "Number of Real Stations": len(rvr_obj.list_of_data[0]),
         "SSID": rvr_obj.ssid,
+        "Password": rvr_obj.password,
         "Traffic Pumped for each Station": f"{rvr_obj.traffic} Mbps",
         "Test Duration": datetime.strptime(test_end_time, "%b %d %H:%M:%S") - datetime.strptime(
             test_start_time, "%b %d %H:%M:%S")
