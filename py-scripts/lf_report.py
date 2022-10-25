@@ -387,6 +387,11 @@ class lf_report:
         pdf_link_path = "{}/{}-{}".format(self.path_date_time, self.date, self.output_pdf)
         return pdf_link_path
 
+    # used for relative pathing
+    def get_pdf_file(self):
+        pdf_file = "{}-{}".format(self.date, self.output_pdf)
+        return pdf_file
+
     def build_pdf_link(self, _pdf_link_name, _pdf_link_path):
         self.pdf_link_html = """
             <!-- pdf link -->
