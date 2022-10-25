@@ -1786,11 +1786,24 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     report.set_table_dataframe(lf_suite_time)
     report.build_table()
     if "NA" not in qa_report_html:
-        qa_url = qa_report_html.replace('/home/lanforge', '')
         report.set_table_title("LF Check QA ")
         report.build_table_title()
-        logger.info("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
-        report.build_link("QA Test Results", qa_url)
+
+        abs_path = False
+        if abs_path:
+            qa_url = qa_report_html.replace('/home/lanforge', '')
+            logger.info("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
+            report.build_link("QA Test Results", qa_url)
+        else:
+            # try relative path
+            parent_path = os.path.dirname(qa_report_html)
+            parent_name = os.path.basename(parent_path)
+            qa_report_base_name = os.path.basename(qa_report_html)
+            
+            qa_url = './' + parent_name + '/' + qa_report_base_name
+            logger.info("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
+            report.build_link("QA Test Results", qa_url)
+
 
     report.set_table_title("LF Check Suite Summary: {suite}".format(suite=test_suite))
     report.build_table_title()
