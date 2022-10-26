@@ -681,10 +681,6 @@ class IPVariableTime(Realm):
 
         # now = str(datetime.datetime.utcnow().isoformat())
 
-        print(
-            "NOTE:  Adding results to influx, total-download-bps: %s  upload: %s  bi-directional: %s\n" %
-            (total_dl_bps, total_ul_bps, (total_ul_bps + total_dl_bps)))
-
         if self.traffic_type.endswith("tcp"):
             if self.csv_results_file:
                 row = [self.epoch_time, self.time_stamp(), sta_count,
