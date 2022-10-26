@@ -96,7 +96,7 @@ Starting LANforge:
 # seeing some dhcp exhaustion and high latency values for testbeds that have been running
 # for a while that appear to clear up once the entire testbed is power cycled
 
-# Capture the LANforge client output sdtout and stdwrr
+# Capture the LANforge client output sdtout and stderr
 /home/lanforge/LANforgeGUI/lfclient.bash -cli-socket 3990 -s LF_MGR command > >(tee -a stdout.log) 2> >(tee -a stderr.log >&2)
 
 # To get the --raw_line commands
@@ -1220,10 +1220,24 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 'html report: ', '')
         # stdout_log_link is used for the email reporting to have
         # the corrected path
-        stdout_log_link = str(stdout_log_txt).replace(
-            '/home/lanforge', '')
-        stderr_log_link = str(stderr_log_txt).replace(
-            '/home/lanforge', '')
+        abs_path = False
+        if abs_path:
+            stdout_log_link = str(stdout_log_txt).replace(
+                '/home/lanforge', '')
+            stderr_log_link = str(stderr_log_txt).replace(
+                '/home/lanforge', '')
+        # use relative path for reporting
+        else:
+            stdout_log_basename =  os.path.basename(stdout_log_txt)
+            stdout_log_parent_path = os.path.dirname(stdout_log_txt)
+            stdout_log_parent_basename = os.path.basename(stdout_log_parent_path)
+            stdout_log_link = "./" + stdout_log_parent_basename + "/" + stdout_log_basename
+
+            stderr_log_basename =  os.path.basename(stderr_log_txt)
+            stderr_log_parent_path = os.path.dirname(stderr_log_txt)
+            stderr_log_parent_basename = os.path.basename(stderr_log_parent_path)
+            stderr_log_link = "./" + stderr_log_parent_basename + "/" + stderr_log_basename
+                        
         if command.find(' ') > 1:
             short_cmd = command[0:command.find(' ')]
         else:
