@@ -343,6 +343,7 @@ class csv_sql:
         # generate the png files
         logger.info("generate png and kpi images from kpi kpi_path:{}".format(
             df_tmp['kpi_path']))
+            # LAN-1535 scripting: test_l3.py output masks other output when browsing (index.html) create relative paths in reports
         # generate png img path
         png_path = os.path.join(
             kpi_path_list[-1], "{}_{}_{}_kpi.png".format(group, test_tag, test_rig))
@@ -353,6 +354,7 @@ class csv_sql:
         html_path = html_path.replace(' ', '')
         # NOTE: html links to png do not like spaces
         png_server_img = self.server + png_path.replace(self.cut, '')
+
         # generate png image
         png_present = True
         try:
@@ -368,34 +370,87 @@ class csv_sql:
         # generate html image (interactive)
         # TODO Do not crash if a PNG is not present
         if png_present:
-            kpi_fig.write_html(html_path)
-            img_kpi_html_path = self.server + html_path
-            img_kpi_html_path = img_kpi_html_path.replace(self.cut, '')
-            self.html_results += """
-            <a href={img_kpi_html_path} target="_blank">
-                <img src={png_server_img}>
-            </a>
-            """.format(img_kpi_html_path=img_kpi_html_path, png_server_img=png_server_img)
-            # link to interactive results
-            kpi_html_path = self.server + html_path
-            kpi_html_path = kpi_html_path.replace(self.cut, '')
-            # self.html_results +="""<br>"""
-            # link to full test results
-            # if self.server == '':
-            #    report_index_html_path = self.server + kpi_path_list[-1] 
-            # else:
+            abs_path = False
+            if abs_path:
+                kpi_fig.write_html(html_path)
+                img_kpi_html_path = self.server + html_path
+                img_kpi_html_path = img_kpi_html_path.replace(self.cut, '')
+                self.html_results += """
+                <a href={img_kpi_html_path} target="_blank">
+                    <img src={png_server_img}>
+                </a>
+                """.format(img_kpi_html_path=img_kpi_html_path, png_server_img=png_server_img)
+                # link to interactive results
+                kpi_html_path = self.server + html_path
+                kpi_html_path = kpi_html_path.replace(self.cut, '')
+                # self.html_results +="""<br>"""
+                # link to full test results
+                # if self.server == '':
+                #    report_index_html_path = self.server + kpi_path_list[-1] 
+                # else:
 
-            # LAN-1535 scripting: test_l3.py output masks other output when browsing (index.html) create relative paths in reports
-            # report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
-            report_index_html_path = self.server + kpi_path_list[-1] + "readme.html"
-            report_index_html_path = report_index_html_path.replace(self.cut, '')
-            self.html_results += """<a href={report_index_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_Report </a>
-            """.format(report_index_html_path=report_index_html_path, test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
-            self.html_results += """<br>"""
-            self.html_results += """<br>"""
-            self.html_results += """<br>"""
-            self.html_results += """<br>"""
-            self.html_results += """<br>"""
+                # LAN-1535 scripting: test_l3.py output masks other output when browsing (index.html) create relative paths in reports
+                # report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
+                report_index_html_path = self.server + kpi_path_list[-1] + "readme.html"
+                report_index_html_path = report_index_html_path.replace(self.cut, '')
+                self.html_results += """<a href={report_index_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_Report </a>
+                """.format(report_index_html_path=report_index_html_path, test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
+                self.html_results += """<br>"""
+                self.html_results += """<br>"""
+                self.html_results += """<br>"""
+                self.html_results += """<br>"""
+                self.html_results += """<br>"""
+            else:
+                kpi_fig.write_html(html_path)
+                # Relative path
+                img_kpi_html_path = self.server + html_path
+                img_kpi_html_path = img_kpi_html_path.replace(self.cut, '')
+
+                # get the file and parent directory for html
+                img_kpi_html_basename = os.path.basename(img_kpi_html_path)
+                img_kpi_html_parent_path = os.path.dirname(img_kpi_html_path)
+                img_kpi_html_parent_basename = os.path.basename(img_kpi_html_parent_path)
+                img_kpi_html_path_relative = "../" + img_kpi_html_parent_basename + "/" + img_kpi_html_basename
+
+                # get the file and parent directory for png
+                png_server_img_basename = os.path.basename(png_server_img)
+                png_server_img_parent_path = os.path.dirname(png_server_img)
+                png_server_img_parent_basename = os.path.basename(png_server_img_parent_path)
+                png_server_img_path_relative = "../" + png_server_img_parent_basename + "/" + png_server_img_basename
+                self.html_results += """
+                <a href={img_kpi_html_path} target="_blank">
+                    <img src={png_server_img}>
+                </a>
+                """.format(img_kpi_html_path=img_kpi_html_path_relative, png_server_img=png_server_img_path_relative)
+                # link to interactive results
+                kpi_html_path = self.server + html_path
+                kpi_html_path = kpi_html_path.replace(self.cut, '')
+                # self.html_results +="""<br>"""
+                # link to full test results
+                # if self.server == '':
+                #    report_index_html_path = self.server + kpi_path_list[-1] 
+                # else:
+
+                # LAN-1535 scripting: test_l3.py output masks other output when browsing (index.html) create relative paths in reports
+                # report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
+                report_index_html_path = self.server + kpi_path_list[-1] + "readme.html"
+                report_index_html_path = report_index_html_path.replace(self.cut, '')
+
+                # relative path 
+                report_index_html_basename = os.path.basename(report_index_html_path)
+                report_index_html_parent_path = os.path.dirname(report_index_html_path)
+                report_index_html_parent_basename = os.path.basename(report_index_html_parent_path)
+                relative_report_index_html = "../" + report_index_html_parent_basename + "/" + report_index_html_basename
+
+                self.html_results += """<a href={report_index_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_Report </a>
+                """.format(report_index_html_path=relative_report_index_html, test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
+                self.html_results += """<br>"""
+                self.html_results += """<br>"""
+                self.html_results += """<br>"""
+                self.html_results += """<br>"""
+                self.html_results += """<br>"""
+
+
     
     # TODO determin the subtest pass and fail graph
     # df is sorted by date oldest to newest
