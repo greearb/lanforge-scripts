@@ -307,7 +307,10 @@ class IPVariableTime(Realm):
         # if self.use_existing_station:
         # to-do- check here if upstream port got IP
         self.station_profile.admin_up()
-        self.csv_add_column_headers()
+        try:
+            self.csv_add_column_headers()
+        except:
+            logger.debug("csv result file is None")
         temp_stas = self.station_profile.station_names.copy()
         # logger.info("temp_stas {temp_stas}".format(temp_stas=temp_stas))
         if self.wait_for_ip(temp_stas, ipv4=not self.ipv6, ipv6=self.ipv6, debug=self.debug):
@@ -533,6 +536,86 @@ class IPVariableTime(Realm):
             self.cleanup()
         logger.info("Leaving existing stations...")
         logger.info("IP Variable Time Test Report Data: {}".format(report_f))
+
+    def run_only(self):
+        # CMR What is this code doing
+        if not self.use_existing_sta:
+            if not self.passes():
+                logger.error(self.get_fail_message())
+                self.exit_fail()
+
+        try:
+            layer3connections = ','.join([[*x.keys()][0] for x in self.json_get('endp')['endpoint']])
+        except ValueError:
+            raise ValueError('Try setting the upstream port flag if your device does not have an eth1 port')
+
+        if type(self.layer3_cols) is not list:
+            layer3_cols = list(self.layer3_cols.split(","))
+            # send col names here to file to reformat
+        else:
+            layer3_cols = self.layer3_cols
+
+            # send col names here to file to reformat
+        if type(self.port_mgr_cols) is not list:
+            port_mgr_cols = list(self.port_mgr_cols.split(","))
+            # send col names here to file to reformat
+        else:
+            port_mgr_cols = self.port_mgr_cols
+            # send col names here to file to reformat
+        if self.debug:
+            logger.debug("Layer 3 Endp column names are...")
+            logger.debug(layer3_cols)
+            logger.debug("Port Manager column names are...")
+            logger.debug(port_mgr_cols)
+
+        try:
+            monitor_interval = Realm.parse_time(self.monitor_interval).total_seconds()
+        except ValueError as error:
+            logger.critical(error)
+            logger.critical(
+                "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. ")
+            return ValueError(
+                "The time string provided for monitor_interval argument is invalid. Please see supported time stamp increments and inputs for monitor_interval in --help. ")
+
+        self.start()
+
+        split_l3_endps = layer3connections.split(",")
+        new_l3_endps_list = []
+
+        for item in split_l3_endps:
+            if item.startswith('VT'):
+                new_l3_endps_list.append(item)
+                layer3endps = ','.join(str(l3endps) for l3endps in new_l3_endps_list)
+
+
+        comp_sta_list = []
+        list(map(comp_sta_list.extend, self.sta_list))
+        self.cx_profile.monitor_without_disturbing_other_monitor(layer3_cols=layer3_cols,
+                                sta_list=comp_sta_list,
+                                port_mgr_cols=port_mgr_cols,
+                                duration_sec=self.test_duration,
+                                monitor_interval_ms=monitor_interval,
+                                created_cx=layer3endps,
+                                script_name='test_ip_variable_time2',
+                                debug=self.debug)
+
+        # fill out data kpi.csv and results reports
+        temp_stations_list = []
+        temp_stations_list.extend(self.station_profile.station_names.copy())
+
+        self.stop()
+
+        if not self.use_existing_sta:
+            if not self.passes():
+                logger.info(self.get_fail_message())
+                self.exit_fail()
+
+            if self.passes():
+                self.success()
+
+        if not self.no_cleanup:
+            self.cleanup()
+            logger.info("Leaving existing stations...")
 
     # builds test data into kpi.csv report
     def record_kpi_csv(
