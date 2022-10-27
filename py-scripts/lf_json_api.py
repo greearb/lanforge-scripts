@@ -616,7 +616,7 @@ def main():
 
             elif get_request == "port":
                 lf_json.request = get_request
-                lanforge_port_json, lanforge_port_text, lanforge_port_json_formatted = lf_json.get_request_port_information()
+                lanforge_port_json, csv_file_port, lanforge_port_text, lanforge_port_json_formatted = lf_json.get_request_port_information()
 
                 logger.debug("lanforge_port_json = {lanforge_port_json}".format(lanforge_port_json=lanforge_port_json))
                 logger.debug("lanforge_port_text = {lanforge_port_text}".format(lanforge_port_text=lanforge_port_text))
@@ -624,7 +624,7 @@ def main():
 
             elif get_request == "port_rssi":
                 lf_json.request = get_request
-                lanforge_port_json, lanforge_port_text, lanforge_port_json_formatted = lf_json.get_request_port_information()
+                lanforge_port_json, csv_file_port, lanforge_port_text, lanforge_port_json_formatted = lf_json.get_request_port_information()
                 logger.debug("lanforge_port_json = {lanforge_port_json}".format(lanforge_port_json=lanforge_port_json))
                 logger.debug("lanforge_port_json_formatted = {lanforge_port_json_formatted}".format(lanforge_port_json_formatted=lanforge_port_json_formatted))
 
