@@ -897,8 +897,8 @@ python3 ./test_ip_variable_time.py
     Using the layer3_cols flag:
 
     Currently the output function does not support inputting the columns in layer3_cols the way they are displayed in the GUI. This quirk is under construction. To output
-    certain columns in the GUI in your final report, please match the according GUI column display to it's counterpart to have the columns correctly displayed in
-    your report.
+    certain columns in the GUI in your final report, please match the according GUI column displayed to it's counterpart to have the additional columns correctly displayed
+    in your report. Note that the report will prepend "l3-" to the supplied layer3_col flags.
 
     GUI Column Display       Layer3_cols argument to type in (to print in report)
 
@@ -1126,9 +1126,9 @@ python3 ./test_ip_variable_time.py
     optional.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=256000)
     optional.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=256000)
     optional.add_argument('--test_duration', help='--test_duration sets the duration of the test', default="2m")
-    optional.add_argument('--layer3_cols', help='Columns wished to be monitored from layer 3 endpoint tab',
+    optional.add_argument('--layer3_cols', help='Additional columns wished to be monitored from the layer 3 endpoint tab for reporting',
                         default=['name', 'tx bytes', 'rx bytes', 'tx rate', 'rx rate'])
-    optional.add_argument('--port_mgr_cols', help='Columns wished to be monitored from port manager tab',
+    optional.add_argument('--port_mgr_cols', help='Additional columns wished to be monitored from port manager tab for reporting',
                         default=['alias', 'ap', 'ip', 'parent dev', 'rx-rate'])
     optional.add_argument('--compared_report', help='report path and file which is wished to be compared with new report',
                         default=None)
