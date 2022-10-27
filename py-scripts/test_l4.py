@@ -606,9 +606,7 @@ Generic command example:
     parser.add_argument('--mode', help='Used to force mode of stations')
     parser.add_argument('--ap', help='Used to force a connection to a particular AP')
     parser.add_argument('--report_file', help='where you want to store monitor results in output_format')
-    # TODO not all these formats work
-    # parser.add_argument('--output_format', help="'csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'parquet', 'png', 'df', 'xlsx'")  
-    parser.add_argument('--output_format', help="'csv', 'json', 'html', 'stata', 'pickle','parquet', 'xlsx'")  
+    parser.add_argument('--output_format', help="'csv', 'json', 'html', 'stata', 'pickle', 'xlsx'")  
     parser.add_argument('--ftp', help='Use ftp for the test', action='store_true')
     parser.add_argument('--test_type', help='Choose type of test to run {urls, bytes-rd, bytes-wr}',
                         default='bytes-rd')
@@ -723,7 +721,7 @@ Generic command example:
     logger.info("csv output file : {}".format(csv_outfile))
 
 
-    supported_formats =  ['csv', 'json', 'html', 'stata', 'pickle', 'parquet', 'xlsx']
+    supported_formats =  ['csv', 'json', 'html', 'stata', 'pickle', 'xlsx']
     # the output format
     # The following will align the file extension with the output_format , 
     #   if the report file does not have an extension the output format will become the extension
@@ -783,7 +781,7 @@ Generic command example:
     # check for extension on report_file  hopefully there are not intermediat '.'
 
     #if report_file is None:
-    #    if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'parquet', 'png', 'df', 'xlsx']:
+    #    if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'xlsx']:
     #        output_form = args.output_format.lower()
     #    else:
     #        logger.info("Defaulting data file output type to .csv")

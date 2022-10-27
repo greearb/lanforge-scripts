@@ -18,8 +18,6 @@ setup(
         'numpy',
         'cryptography',
         'paramiko',
-        'bokeh',
-        'pyarrow',
         'websocket-client',
         'xlsxwriter',
         'pyshark',

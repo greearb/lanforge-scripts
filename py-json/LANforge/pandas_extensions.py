@@ -10,8 +10,6 @@ class pandas_extensions:
     def df_to_file(self, output_f=None, dataframe=None, save_path=None):
         if output_f.lower() == 'hdf':
             dataframe.to_hdf(save_path.replace('csv', 'h5', 1), 'table', append=True)
-        if output_f.lower() == 'parquet':
-            dataframe.to_parquet(save_path.replace('csv', 'parquet', 1), engine='pyarrow')
         if output_f.lower() == 'png':
             fig = dataframe.plot().get_figure()
             fig.savefig(save_path.replace('csv', 'png', 1))

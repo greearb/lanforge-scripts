@@ -387,8 +387,7 @@ python3 ./test_generic.py
             os.mkdir(path)
         systeminfopath = str(path) + '/systeminfo.txt'
 
-        if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'parquet',
-                                  'xlsx']:
+        if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'xlsx']:
             report_f = str(path) + '/data.' + args.output_format
             output = args.output_format
         else:
@@ -410,7 +409,7 @@ python3 ./test_generic.py
     compared_rept = None
     if args.compared_report:
         compared_report_format = args.compared_report.split('.')[-1]
-        # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
+        # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','h5']:
         if compared_report_format != 'csv':
             raise ValueError("Cannot process this file type. Please select a different file and re-run script.")
         else:

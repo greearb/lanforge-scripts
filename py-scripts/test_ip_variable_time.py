@@ -389,8 +389,7 @@ class IPVariableTime(Realm):
             # systeminfopath = str(path) + '/systeminfo.txt'
             systeminfopath = str(new_file_path) + '/systeminfo.txt'
 
-            if self.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'parquet',
-                                      'xlsx']:
+            if self.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'xlsx']:
                 # report_f = str(path) + '/data.' + self.output_format
                 report_f = str(new_file_path) + '/data.' + self.output_format
                 output = self.output_format
@@ -472,7 +471,7 @@ class IPVariableTime(Realm):
         compared_rept = None
         if self.compared_report:
             compared_report_format = self.compared_report.split('.')[-1]
-            # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
+            # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','h5']:
             if compared_report_format != 'csv':
                 logger.critical("Cannot process this file type. Please select a different file and re-run script.")
                 raise ValueError("Cannot process this file type. Please select a different file and re-run script.")

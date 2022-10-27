@@ -24,10 +24,10 @@ def main():
     args = parser.parse_args()
 
     print("Installing Script Python3 Dependencies")
-    packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'pyarrow', 'websocket-client',
+    packages = ['pandas', 'plotly', 'numpy', 'cryptography', 'paramiko', 'websocket-client',
                 'xlsxwriter', 'pyshark', 'influxdb', 'influxdb-client', 'matplotlib', 'pdfkit', 'pip-search',
                 'pyserial',
-                'pexpect-serial', 'scp', 'dash','scipy','simple-geometry']
+                'pexpect-serial', 'scp','scipy','simple-geometry']
     if args.pyjwt:
         packages.append('pyjwt')
     else:

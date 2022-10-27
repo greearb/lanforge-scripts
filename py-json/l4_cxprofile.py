@@ -365,8 +365,6 @@ class L4CXProfile(LFCliBase):
 
         if output_format == 'hdf':
             df.to_hdf(report_file, 'table', append=True)
-        if output_format == 'parquet':
-            df.to_parquet(report_file, engine='pyarrow')
         if output_format == 'png':
             fig = df.plot().get_figure()
             fig.savefig(report_file)

@@ -96,7 +96,7 @@ class BaseProfile:
     #             path = os.path.join(curr_dir_path, new_file_path)
     #             os.mkdir(path)
 
-    #         if args.output_format in ['csv', 'json', 'html', 'hdf','stata', 'pickle', 'pdf', 'png', 'parquet',
+    #         if args.output_format in ['csv', 'json', 'html', 'hdf','stata', 'pickle', 'pdf', 'png',
     #                                 'xlsx']:
     #             report_f = str(path) + '/data.' + args.output_format
     #             output = args.output_format
@@ -116,7 +116,7 @@ class BaseProfile:
     #     compared_rept=None
     #     if args.compared_report:
     #         compared_report_format=args.compared_report.split('.')[-1]
-    #         #if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
+    #         #if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','h5']:
     #         if compared_report_format != 'csv':
     #             print(ValueError("Cannot process this file type. Please select a different file and re-run script."))
     #             exit(1)
