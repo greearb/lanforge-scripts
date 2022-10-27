@@ -7,8 +7,8 @@ PURPOSE:The LANforge interop port reset test allows user to use lots of real Wi-
 stations at random intervals
 
 EXAMPLE:
-$ ./lf_interop_port_reset_test.py --host 192.168.1.31 --dut TestAp --ssid testssid --passwd testpass --encryp psk2
- --band 5G --clients 2 -- reset 10 --time_int 60
+$ ./ python3 lf_interop_port_reset_test.py  --host 192.168.1.31 --dut TestDut --ssid Airtel_9755718444_5GHz
+--passwd air29723 --encryp psk2 --band 5G --reset 1 --time_int 60 --wait_time 60 --release 11 12
 
 NOTES:
 #Currently this script will forget all network and then apply batch modify on real devices connected to LANforge
@@ -20,9 +20,6 @@ import sys
 import os
 import importlib
 import argparse
-import shlex
-import subprocess
-import json
 import time
 import datetime
 from datetime import datetime
@@ -33,6 +30,7 @@ if sys.version_info[0] != 3:
     exit()
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 interop_modify = importlib.import_module("py-scripts.lf_interop_modify")
+base = importlib.import_module('py-scripts.lf_base_interop_profile')
 lf_csv = importlib.import_module("py-scripts.lf_csv")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
@@ -47,9 +45,10 @@ class InteropPortReset(Realm):
                  passwd=None,
                  encryp=None,
                  band=None,
-                 clients=None,
                  reset=None,
-                 time_int=None
+                 time_int=None,
+                 wait_time=None,
+                 suporrted_release=None
                  ):
         super().__init__(lfclient_host=host,
                          lfclient_port=8080)
@@ -61,36 +60,28 @@ class InteropPortReset(Realm):
         self.passwd = passwd
         self.encryp = encryp
         self.band = band
-        self.clients = clients
+        self.clients = None
         self.reset = reset
         self.time_int = time_int
+        self.wait_time = wait_time
+        self.supported_release = suporrted_release
+        self.device_name = []
 
-    def get_device_details(self, query="name"):
-        # query device related details like name, phantom, model name etc
-        value = []
-        cmd = '''curl -H 'Accept: application/json' http://''' + str(self.host) + ''':8080/adb/'''
-        args = shlex.split(cmd)
-        process = subprocess.Popen(args, shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = process.communicate()
-        output = (stdout.decode("utf-8"))
-        out = json.loads(output)
-        final = out["devices"]
-        print("response", final)
-        if type(final) == list:
-            # print(len(final))
-            keys_lst = []
-            for i in range(len(final)):
-                keys_lst.append(list(final[i].keys())[0])
-            # print(keys_lst)
 
-            for i, j in zip(range(len(keys_lst)), keys_lst):
-                value.append(final[i][j][query])
+        self.interop = base.BaseInteropWifi(manager_ip=self.host,
+                                            port=8080,
+                                            ssid=self.ssid,
+                                            passwd=self.passwd,
+                                            encryption=self.encryp,
+                                            release=self.supported_release,
+                                            screen_size_prcnt = 0.4,
+                                            _debug_on=False,
+                                            _exit_on_error=False)
 
-        else:
-            #  only one device is present
-            value.append(final[query])
-        return value
+        self.utility = base.UtilityInteropWifi(host_ip=self.host)
 
+
+    @property
     def run(self):
         # start timer
         test_time = datetime.now()
@@ -98,15 +89,20 @@ class InteropPortReset(Realm):
         print("Test started at ", test_time)
 
         # get the list of adb devices
-        self.adb_device_list = self.get_device_details(query="name")
+        self.adb_device_list = self.interop.check_sdk_release()
         print(self.adb_device_list)
-
-        for i in range(len(self.adb_device_list)):
-            self.phn_name.append(self.adb_device_list[i].split(".")[2])
-        print("phn_name", self.phn_name)
+        if len(self.adb_device_list) == 0:
+            print("there is no active adb devices please check system")
+            exit(1)
+        else:
+            for i in range(len(self.adb_device_list)):
+                self.phn_name.append(self.adb_device_list[i].split(".")[2])
+                print("phn_name", self.phn_name)
 
         # check status of devices
-        phantom = self.get_device_details(query="phantom")
+        phantom = []
+        for i in self.adb_device_list:
+            phantom.append(self.interop.get_device_details(device=i, query="phantom"))
         print(phantom)
         state = None
         for i in phantom:
@@ -117,61 +113,42 @@ class InteropPortReset(Realm):
                 print("all devices are not up")
                 exit(1)
         if state == "up":
-            device_name = []
+            self.interop.set_user_name(device=self.adb_device_list)
+            for i in self.adb_device_list:
+                self.device_name.append(self.interop.get_device_details(device=i, query="user-name"))
+            print("device name", self.device_name)
 
-            # provide device name
-            for i, j in zip(self.adb_device_list, range(len(self.adb_device_list))):
-                device_name.append("device_" + str(int(j + 1)))
-                modify = interop_modify.InteropCommands(_host=self.host,
-                                                        _port=8080,
-                                                        device_eid=i,
-                                                        set_adb_user_name=True,
-                                                        adb_username="device_" + str(int(j + 1)))
-
-                modify.run()
-            print("device name", device_name)
+            print("forget all previous connected networks")
+            for i in self.adb_device_list:
+                self.utility.forget_netwrk(device=i)
 
             print("connect all phones to a particular ssid")
             print("apply ssid using batch modify")
-            for i, y in zip(self.adb_device_list, device_name):
-                modify_2 = interop_modify.InteropCommands(_host=self.host,
-                                                          _port=8080,
-                                                          device_eid=i,
-                                                          user_name=y,
-                                                          mgr_ip=self.host,
-                                                          ssid=self.ssid,
-                                                          passwd=self.passwd,
-                                                          crypt=self.encryp,
-                                                          apply=True)
-                modify_2.run()
+            self.interop.batch_modify_apply(device=self.adb_device_list)
             print("check heath data")
             health = dict.fromkeys(self.adb_device_list)
             print(health)
 
             for i in self.adb_device_list:
-
-                modi = interop_modify.InteropCommands(_host=self.host,
-                                                      _port=8080,
-                                                      device_eid=i)
-                dev_state = modi.get_device_state()
+                dev_state = self.utility.get_device_state(device=i)
                 print("device state", dev_state)
                 if dev_state == "COMPLETED,":
                     print("phone is in connected state")
-                    ssid = modi.get_device_ssid()
+                    ssid = self.utility.get_device_ssid(device=i)
                     if ssid == self.ssid:
                         print("device is connected to expected ssid")
-                        health[i] = modi.get_wifi_health_monitor(ssid=self.ssid)
+                        health[i] = self.utility.get_wifi_health_monitor(device=i, ssid=self.ssid)
                 else:
                     print("wait for some time and check again")
-                    time.sleep(120)
-                    dev_state = modi.get_device_state()
+                    time.sleep(int(self.wait_time))
+                    dev_state = self.utility.get_device_state(device=i)
                     print("device state", dev_state)
                     if dev_state == "COMPLETED,":
                         print("phone is in connected state")
-                        ssid = modi.get_device_ssid()
+                        ssid = self.utility.get_device_ssid(device=i)
                         if ssid == self.ssid:
                             print("device is connected to expected ssid")
-                            health[i] = modi.get_wifi_health_monitor(ssid=self.ssid)
+                            health[i] = self.utility.get_wifi_health_monitor(device=i, ssid=self.ssid)
                     else:
                         print("device state", dev_state)
                         health[i] = {'ConnectAttempt': '0', 'ConnectFailure': '0', 'AssocRej': '0', 'AssocTimeout': '0'}
@@ -191,23 +168,14 @@ class InteropPortReset(Realm):
             for r, final in zip(range(self.reset), reset_dict):
                 con_atempt, con_fail, assrej, asso_timeout = None, None, None, None
                 print("r", r)
-                for i, y in zip(self.adb_device_list, device_name):
+                for i, y in zip(self.adb_device_list, self.device_name):
                     # enable and disable Wi-Fi
                     print("disable wifi")
-                    modify_1 = interop_modify.InteropCommands(_host=self.host,
-                                                              _port=8080,
-                                                              device_eid=i,
-                                                              wifi="disable")
-                    modify_1.run()
-
+                    self.interop.enable_or_disable_wifi(device=i, wifi="disable")
                     time.sleep(5)
 
                     print("enable wifi")
-                    modify_3 = interop_modify.InteropCommands(_host=self.host,
-                                                              _port=8080,
-                                                              device_eid=i,
-                                                              wifi="enable")
-                    modify_3.run()
+                    self.interop.enable_or_disable_wifi(device=i, wifi="enable")
                 health1 = dict.fromkeys(self.adb_device_list)
                 in_dict_per_device = dict.fromkeys(self.adb_device_list)
 
@@ -222,48 +190,69 @@ class InteropPortReset(Realm):
 
                     value = ["ConnectAttempt", "ConnectFailure", "AssocRej", "AssocTimeout", "Connected"]
                     sub_dict = dict.fromkeys(value)
-                    modi = interop_modify.InteropCommands(_host=self.host,
-                                                          _port=8080,
-                                                          device_eid=i)
-                    dev_state = modi.get_device_state()
+                    dev_state = self.utility.get_device_state(device=i)
                     print("device state", dev_state)
                     if dev_state == "COMPLETED,":
                         print("phone is in connected state")
                         sub_dict["Connected"] = True
-                        ssid = modi.get_device_ssid()
+                        sub_dict["State"] = dev_state
+                        ssid = self.utility.get_device_ssid(device=i)
                         if ssid == self.ssid:
                             print("device is connected to expected ssid")
-                            health1[i] = modi.get_wifi_health_monitor(ssid=self.ssid)
+                            health1[i] = self.utility.get_wifi_health_monitor(device=i, ssid=self.ssid)
                     else:
                         print("wait for some time and check again")
-                        time.sleep(120)
-                        dev_state = modi.get_device_state()
+                        time.sleep(int(self.wait_time))
+                        dev_state = self.utility.get_device_state(device=i)
                         print("device state", dev_state)
                         if dev_state == "COMPLETED,":
                             print("phone is in connected state")
                             sub_dict["Connected"] = True
-                            ssid = modi.get_device_ssid()
+                            sub_dict["State"] = dev_state
+                            ssid = self.utility.get_device_ssid(device=i)
                             if ssid == self.ssid:
                                 print("device is connected to expected ssid")
-                                health1[i] = modi.get_wifi_health_monitor(ssid=self.ssid)
+                                health1[i] = self.utility.get_wifi_health_monitor(device=i, ssid=self.ssid)
                         else:
                             print("device state", dev_state)
                             health1[i] = {'ConnectAttempt': '0', 'ConnectFailure': '0', 'AssocRej': '0',
                                           'AssocTimeout': '0'}
                             sub_dict["Connected"] = False
+                            sub_dict["State"] = dev_state
                     print("health1", health1)
 
                     if r == 0:
-                        if int(health[i]['ConnectAttempt']) == 0:
+                        if int(health[i]['ConnectAttempt']) == 0 and int(health1[i]['ConnectAttempt']) == 1:
                             con_atempt = 1
                         elif int(health1[i]['ConnectAttempt']) == 0:
                             con_atempt = 0
                         else:
                             con_atempt = int(health1[i]['ConnectAttempt']) - int(health[i]['ConnectAttempt'])
 
-                        con_fail = int(health1[i]['ConnectFailure']) - int(health[i]['ConnectFailure'])
-                        assrej = int(health1[i]['AssocRej']) - int(health[i]['AssocRej'])
-                        asso_timeout = int(health1[i]['AssocTimeout']) - int(health[i]['AssocTimeout'])
+                        if int(health[i]['ConnectFailure']) == 0 and int(health1[i]['ConnectFailure']) == 1:
+                            con_fail = 1
+                        elif int(health1[i]['ConnectFailure']) == 0:
+                            con_fail = 0
+                        else:
+                            con_fail = int(health1[i]['ConnectFailure']) - int(health[i]['ConnectFailure'])
+
+                        # con_fail = int(health1[i]['ConnectFailure']) - int(health[i]['ConnectFailure'])
+
+                        if int(health[i]['AssocRej']) == 0 and int(health1[i]['AssocRej']) == 1:
+                            assrej = 1
+                        elif int(health1[i]['AssocRej']) == 0:
+                            assrej = 0
+                        else:
+                            assrej = int(health1[i]['AssocRej']) - int(health[i]['AssocRej'])
+                        # assrej = int(health1[i]['AssocRej']) - int(health[i]['AssocRej'])
+
+                        if int(health[i]['AssocTimeout']) == 0 and int(health1[i]['AssocTimeout']) == 1:
+                            asso_timeout = 1
+                        elif int(health1[i]['AssocTimeout']) == 0:
+                            asso_timeout = 0
+                        else:
+                            asso_timeout = int(health1[i]['AssocTimeout']) - int(health[i]['AssocTimeout'])
+                        # asso_timeout = int(health1[i]['AssocTimeout']) - int(health[i]['AssocTimeout'])
                         # print(con_atempt, con_fail, assrej, asso_timeout)
                         local_dict[i]["pre_con_atempt"] = con_atempt
                         local_dict[i]["prev_con_fail"] = con_fail
@@ -279,8 +268,11 @@ class InteropPortReset(Realm):
                             con_atempt = 0
                         else:
                             if int(pre_heath[i]['ConnectAttempt']) == 0:
-                                con_atempt = int(health1[i]['ConnectAttempt']) - int(health[i]['ConnectAttempt']) - int(
-                                    prev_dict[i]["pre_con_atempt"])
+                                if int(health1[i]['ConnectAttempt']) == 1:
+                                    con_atempt = int(health1[i]['ConnectAttempt'])
+                                else:
+                                    con_atempt = int(health1[i]['ConnectAttempt']) - int(health[i]['ConnectAttempt']) - int(
+                                     prev_dict[i]["pre_con_atempt"])
                             else:
                                 con_atempt = int(health1[i]['ConnectAttempt']) - int(pre_heath[i]['ConnectAttempt'])
                         local_dict[i]["pre_con_atempt"] = con_atempt
@@ -289,8 +281,11 @@ class InteropPortReset(Realm):
                             con_fail = 0
                         else:
                             if pre_heath[i]['ConnectFailure'] == 0:
-                                con_fail = int(health1[i]['ConnectFailure']) - int(health[i]['ConnectFailure']) - int(
-                                    prev_dict[i]["prev_con_fail"])
+                                if int(health1[i]['ConnectFailure']) == 1:
+                                    con_fail = int(health1[i]['ConnectFailure'])
+                                else:
+                                    con_fail = int(health1[i]['ConnectFailure']) - int(health[i]['ConnectFailure']) - int(
+                                        prev_dict[i]["prev_con_fail"])
                             else:
                                 con_fail = int(health1[i]['ConnectFailure']) - int(pre_heath[i]['ConnectFailure'])
                         local_dict[i]["prev_con_fail"] = con_fail
@@ -299,8 +294,11 @@ class InteropPortReset(Realm):
                             assrej = 0
                         else:
                             if pre_heath[i]['AssocRej'] == 0:
-                                assrej = int(health1[i]['AssocRej']) - int(health[i]['AssocRej']) - int(
-                                    prev_dict[i]["prev_assrej"])
+                                if int(health1[i]['AssocRej']) == 1:
+                                    assrej = int(health1[i]['AssocRej'])
+                                else:
+                                    assrej = int(health1[i]['AssocRej']) - int(health[i]['AssocRej']) - int(
+                                        prev_dict[i]["prev_assrej"])
                             else:
                                 assrej = int(health1[i]['AssocRej']) - int(health1[i]['AssocRej'])
                         local_dict[i]["prev_assrej"] = assrej
@@ -309,8 +307,11 @@ class InteropPortReset(Realm):
                             asso_timeout = 0
                         else:
                             if pre_heath[i]['AssocTimeout'] == 0:
-                                asso_timeout = int(health1[i]['AssocTimeout']) - int(health[i]['AssocTimeout']) - int(
-                                    prev_dict[i]["prev_asso_timeout"])
+                                if int(health1[i]['AssocTimeout']) == 1:
+                                    asso_timeout = int(health1[i]['AssocTimeout'])
+                                else:
+                                    asso_timeout = int(health1[i]['AssocTimeout']) - int(health[i]['AssocTimeout']) - int(
+                                        prev_dict[i]["prev_asso_timeout"])
                             else:
                                 asso_timeout = int(health1[i]['AssocTimeout']) - pre_heath[i]['AssocTimeout']
                         local_dict[i]["prev_asso_timeout"] = asso_timeout
@@ -391,8 +392,6 @@ class InteropPortReset(Realm):
                             " connect and depart in quick succession. A successful test result would be that "
                             "AP remains stable over the duration of the test and that stations can continue to reconnect to the AP.")
         report.build_objective()
-        user_name = self.get_device_details(query="user-name")
-        print("user name", user_name)
 
         # data set logic
         conected_list = []
@@ -412,26 +411,19 @@ class InteropPortReset(Realm):
                         local_2.append("yes")
             conected_list.append(local)
             disconnected_list.append(local_2)
-        # print(conected_list)
-        # print(disconnected_list)
 
         # count connects and disconnects
         conects = []
         disconnects = []
         for i, y in zip(range(len(conected_list)), range(len(disconnected_list))):
-            # print(i)
             x = conected_list[i].count("yes")
             conects.append(x)
             z = disconnected_list[y].count("yes")
-            # print("z", z)
             disconnects.append(z)
 
-        # print(conects)
-        # print(disconnects)
         dataset = []
         dataset.append(conects)
         dataset.append(disconnects)
-        # print(dataset)
 
         report.set_obj_html("Connection Graph",
                             "The below graph provides information regarding per station connection/disconnection count")
@@ -453,7 +445,7 @@ class InteropPortReset(Realm):
             reset_count = []
             for i in reset_count_:
                 reset_count.append(int(i) + 1)
-            asso_attempts, conn_fail, asso_rej, asso_timeout, connected = [], [], [], [], []
+            asso_attempts, conn_fail, asso_rej, asso_timeout, connected, state = [], [], [], [], [], []
 
             for i in reset_dict:
                 asso_attempts.append(reset_dict[i][y]["ConnectAttempt"])
@@ -461,13 +453,15 @@ class InteropPortReset(Realm):
                 asso_rej.append(reset_dict[i][y]["AssocRej"])
                 asso_timeout.append(reset_dict[i][y]["AssocTimeout"])
                 connected.append(reset_dict[i][y]["Connected"])
+                state.append(reset_dict[i][y]["State"])
             table_1 = {
                 "Reset Count": reset_count,
                 "Association attempts": asso_attempts,
                 "Connection Failure": conn_fail,
                 "Association Rejection Count": asso_rej,
                 "Association Timeout Count": asso_timeout,
-                "Connected": connected
+                "Connected": connected,
+                "State": state
             }
             test_setup = pd.DataFrame(table_1)
             report.set_table_dataframe(test_setup)
@@ -476,19 +470,22 @@ class InteropPortReset(Realm):
         report.set_obj_html("Real Client Detail Info",
                             "The below table shows detail information of real clients")
         report.build_objective()
-        d_name = self.get_device_details(query="name")
-        # print(d_name)
-        device = self.get_device_details(query="device")
-        # print(device)
-        model = self.get_device_details(query="model")
-        # print(model)
-        user_name = self.get_device_details(query="user-name")
-        # print(user_name)
-        release = self.get_device_details(query="release")
-        # print(release)
+        d_name, device, model, user_name, release = [], [], [], [], []
+        for y in self.adb_device_list:
+            print("ins", y)
+            print(self.adb_device_list)
+            d_name.append(self.interop.get_device_details(device=y, query="name"))
+            device.append(self.interop.get_device_details(device=y, query="device"))
+            model.append(self.interop.get_device_details(device=y, query="model"))
+            user_name.append(self.interop.get_device_details(device=y, query="user-name"))
+            release.append(self.interop.get_device_details(device=y, query="release"))
+
         s_no = []
         for i in range(len(d_name)):
             s_no.append(i + 1)
+
+
+        self.clients = len(self.adb_device_list)
 
         table_2 = {
             "S.No": s_no,
@@ -510,6 +507,7 @@ class InteropPortReset(Realm):
             "reset count": self.reset,
             "time interval between every reset(sec)": self.time_int,
             "No of Clients": self.clients,
+            "Wait Time": self.wait_time,
             "Contact": "support@candelatech.com"
         }
         report.set_table_title("Test basic Input Information")
@@ -548,14 +546,17 @@ def main():
     parser.add_argument("--band", default="5G",
                         help='specify the type of band you want to perform testing eg 5G|2G|Dual')
 
-    parser.add_argument("--clients", type=str, default="2",
-                        help='specify the no of clients you want to perform test on')
-
     parser.add_argument("--reset", type=int, default=2,
                         help='specify the number of time you want to reset eg 2')
 
     parser.add_argument("--time_int", type=int, default=2,
                         help='specify the time interval in secs after which reset should happen')
+
+    parser.add_argument("--wait_time", type=int, default=60,
+                        help='specify the time interval or wait time in secs after enabling wifi')
+
+    parser.add_argument("--release", nargs='+', default=["12"],
+                        help='specify the sdk release version of real clients to be supported in test')
 
     args = parser.parse_args()
     obj = InteropPortReset(host=args.host,
@@ -564,11 +565,12 @@ def main():
                            passwd=args.passwd,
                            encryp=args.encryp,
                            band=args.band,
-                           clients=args.clients,
                            reset=args.reset,
-                           time_int=args.time_int
+                           time_int=args.time_int,
+                           wait_time=args.wait_time,
+                           suporrted_release=args.release
                            )
-    reset_dict, duration = obj.run()
+    reset_dict, duration = obj.run
     obj.generate_report(reset_dict=reset_dict, test_dur=duration)
 
 
