@@ -228,6 +228,16 @@ class csv_sql:
                         # LAN-1535 scripting: test_l3.py output masks other output when browsing.
                         # consider renaming index.html to readme.html
                         # html_path = os.path.join(parent_path, "index.html")
+
+                        # for the chamberview tests the results is in index.html
+                        # so need to move index.html to readme.html
+                        # use os.rename(source,destination) , 
+                        # check for index
+                        index_html_file = parent_path + "/index.html"
+                        if os.path.exists(index_html_file):
+                            readme_html_file = parent_path + "/readme.html"
+                            os.rename(index_html_file,readme_html_file)
+
                         html_path = os.path.join(parent_path, "readme.html")
                         html_path = self.server + html_path.replace(self.cut, '')
                     else:
@@ -235,10 +245,18 @@ class csv_sql:
                         parent_path = os.path.dirname(pdf_info)
                         parent_name = os.path.basename(parent_path)
 
+                        # for the chamberview tests the results is in index.html
+                        # so need to move index.html to readme.html
+                        # use os.rename(source,destination) , 
+                        # check for index
+                        index_html_file = parent_path + "/index.html"
+                        if os.path.exists(index_html_file):
+                            readme_html_file = parent_path + "/readme.html"
+                            os.rename(index_html_file,readme_html_file)
+
                         dir_path = '../' + parent_name 
                         pdf_path = '../' + parent_name + "/" +  pdf_base_name
                         html_path = "../" + parent_name + "/readme.html"
-
 
                     kpi_path = os.path.join(parent_path, "kpi.csv")
                     test_id, test_tag = self.get_test_id_test_tag(kpi_path)
