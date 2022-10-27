@@ -43,8 +43,8 @@ class BaseInteropWifi(Realm):
                  ssid=None,
                  passwd=None,
                  encryption=None,
-                 release="12",
-                 screen_size_prcnt = 0.4,
+                 release=["11", "12"],
+                 screen_size_prcnt=0.4,
                  _debug_on=False,
                  _exit_on_error=False, ):
         super().__init__(lfclient_host=manager_ip,
@@ -94,7 +94,6 @@ class BaseInteropWifi(Realm):
         self.supported_devices_names = value
         print(self.supported_devices_names)
 
-
     def get_device_details(self, query="name", device="1.1.RZ8N70TVABP"):
         # query device related details like name, phantom, model name etc
         value = None
@@ -140,14 +139,15 @@ class BaseInteropWifi(Realm):
         rel_dev = []
         for i in devices:
             release_ver = self.get_device_details(query="release", device=i)
-            if release_ver == self.release:
-                # check if the release is supported in supported sdk  version
-                if release_ver in self.supported_sdk:
-                    print("this release is supported in available sdk version")
-                    print("device " + str(i) + " has " + self.release + " sdk release")
-                    rel_dev.append(i)
-            else:
-                print("device " + str(i) + " has different sdk release")
+            for j in self.release:
+                if release_ver == j:
+                    # check if the release is supported in supported sdk  version
+                    if release_ver in self.supported_sdk:
+                        print("this release is supported in available sdk version")
+                        print("device " + str(i) + " has " + j + " sdk release")
+                        rel_dev.append(i)
+                else:
+                    print("device " + str(i) + " has different sdk release")
         self.supported_devices_names = rel_dev
         return self.supported_devices_names
 
@@ -209,15 +209,18 @@ class BaseInteropWifi(Realm):
             devices = self.check_sdk_release()
             print(devices)
         else:
-            devices = [device]
-            if user_name is None:
-                user_name = "device_1"
+            if type(device) is list:
+                devices = device
             else:
-                user_name = user_name
+                devices = [device]
+                if user_name is None:
+                    user_name = "device_1"
+                else:
+                    user_name = user_name
         for i, x in zip(devices, range(len(devices))):
             eid = self.name_to_eid(i)
             if user_name is None:
-                user_name = "device_" + x
+                user_name = "device_" + str(x)
             self.command.post_add_adb(adb_device=None,
                                       adb_id=eid[2],
                                       adb_model=None,
@@ -234,8 +237,11 @@ class BaseInteropWifi(Realm):
             print(devices)
             self.set_user_name()
         else:
-            devices = [device]
-            self.set_user_name(device=device)
+            if type(device) is list:
+                devices = device
+            else:
+                devices = [device]
+                self.set_user_name(device=device)
 
         user_list = []
         for i in devices:
@@ -255,7 +261,7 @@ class BaseInteropWifi(Realm):
             if self.passwd:
                 cmd += "--es password " + self.passwd
             if self.encryp:
-                cmd += " --es encryption " + self.crypt
+                cmd += " --es encryption " + self.encryp
             self.post_adb_(device=x, cmd=cmd)
 
     # start
@@ -299,13 +305,106 @@ class BaseInteropWifi(Realm):
         return scan_dict
 
 
+class UtilityInteropWifi(BaseInteropWifi):
+    def __init__(self, host_ip=None):
+        super().__init__(manager_ip=host_ip)
+        self.host = host_ip
+
+    def get_device_state(self, device=None):
+        cmd = 'shell dumpsys wifi | grep "mWifiInfo SSID"'
+        x = self.post_adb_(device=device, cmd=cmd)
+        y = x[0]['LAST']['callback_message']
+        z = y.split(" ")
+        # print(z)
+        state = None
+        if 'state:' in z:
+            print("yes")
+            ind = z.index("state:")
+            print(ind)
+            st = z[(int(ind) + 1)]
+            print("state", st)
+            state = st
+
+        else:
+            print("state is not present")
+            state = "NA"
+        return state
+
+    def get_device_ssid(self, device=None):
+        cmd = 'shell dumpsys wifi | grep "mWifiInfo SSID"'
+        x = self.post_adb_(device=device, cmd=cmd)
+        y = x[0]['LAST']['callback_message']
+        z = y.split(" ")
+        print(z)
+        ssid = None
+        if 'SSID:' in z:
+            print("yes")
+            ind = z.index("SSID:")
+            ssid = z[(int(ind) + 1)]
+            ssid_ = ssid.strip()
+            ssid_1 = ssid_.replace('"', "")
+            ssid_2 = ssid_1.replace(",", "")
+            print("ssid", ssid_2)
+            ssid = ssid_2
+        else:
+            print("ssid is not present")
+            ssid = "NA"
+        return ssid
+
+    def get_wifi_health_monitor(self, device=None, ssid=None):
+        cmd = "shell dumpsys wifi | sed -n '/^WifiHealthMonitor - Log Begin ----$/,/^WifiHealthMonitor - Log End ----$/{/^WifiHealthMonitor - Log End ----$/!p;}'"
+        x = self.post_adb_(device=device, cmd=cmd)
+        y = x[0]["LAST"]["callback_message"]
+        z = y.split(" ")
+        # print(z)
+        value = ["ConnectAttempt", "ConnectFailure", "AssocRej", "AssocTimeout"]
+        return_dict = dict.fromkeys(value)
+        if "stats\nSSID:" in z:
+            ind = z.index("stats\nSSID:")
+            ssid_ = z[ind + 1]
+            print(ssid_)
+            ssid_1 = ssid.strip()
+            ssid_2 = ssid_1.replace('"', "")
+
+            if ssid_2 == ssid:
+                if "ConnectAttempt:" in z:
+                    connect_ind = z.index("ConnectAttempt:")
+                    connect_attempt = z[connect_ind + 1]
+                    print("connection attempts", connect_attempt)
+                    return_dict["ConnectAttempt"] = connect_attempt
+                if 'ConnectFailure:' in z:
+                    connect_fail_ind = z.index('ConnectFailure:')
+                    connect_failure = z[connect_fail_ind + 1]
+                    print("connection failure ", connect_failure)
+                    return_dict["ConnectFailure"] = connect_failure
+                if 'AssocRej:' in z:
+                    ass_rej_ind = z.index('AssocRej:')
+                    assocrej = z[ass_rej_ind + 1]
+                    print("association rejection ", assocrej)
+                    return_dict["AssocRej"] = assocrej
+                if 'AssocTimeout:' in z:
+                    ass_ind = z.index('AssocTimeout:')
+                    asso_timeout = z[ass_ind + 1]
+                    print("association timeout ", asso_timeout)
+                    return_dict["AssocTimeout"] = asso_timeout
+            else:
+                print("ssid is not present")
+        print(return_dict)
+        return return_dict
+
+    # forget network id upto 20
+    def forget_netwrk(self, device=None):
+        for ntwk_id in range(20):
+            cmd = cmd = "shell cmd -w wifi forget-network " + str(ntwk_id)
+            self.post_adb_(device=device, cmd=cmd)
+
 
 def main():
     desc = """standard library which supports different functionality of interop
         Operations: 
         *    Example of scan results: 
         lf_base_interop_profile.py --host 192.168.1.31 --ssid Airtel_9755718444_5GHz --passwd xyz --crypt psk2
-       
+
         """
 
     parser = argparse.ArgumentParser(
@@ -326,7 +425,6 @@ def main():
     parser.add_argument('--passwd', '--pw', type=str, default='',
                         help='APPLY: Password for Interop device WiFi connection')
 
-
     args = parser.parse_args()
     obj = BaseInteropWifi(manager_ip=args.host,
                           port=8080,
@@ -334,11 +432,12 @@ def main():
                           passwd=args.passwd,
                           encryption=args.crypt,
                           release="12",
-                          screen_size_prcnt = 0.4,
+                          screen_size_prcnt=0.4,
                           _debug_on=False,
                           _exit_on_error=False)
     z = obj.scan_results()
     print(z)
+
 
 if __name__ == '__main__':
     main()
