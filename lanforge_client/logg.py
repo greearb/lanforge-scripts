@@ -84,7 +84,7 @@ class Logg:
 
         # self.start_time = datetime.now() # py 3.9 maybe?
         self.start_time = datetime.datetime.now() # py 3.9 maybe?
-        self.start_time_str = time.strftime("%Y%m%d-%I:%M%:%S")
+        self.start_time_str = time.strftime("%Y%m%d-%I:%M:%S")
         if name:
             self.name = name
             if "@" in name:
