@@ -54,12 +54,12 @@ if ($lastexitcode -ne 0){
 Write-Output "Upgrading pip..."
 C:\Python311\python -m pip install --upgrade pip
 
-Invoke-WebRequest -URI 'http://ctweb/lfs/setup_lanforge_python2.ps1' -OutFile 'setup_lanforge_python2.ps1'
+Invoke-WebRequest -URI 'https://www.candelatech.com/download/setup_win_py.ps1' -OutFile 'setup_lanforge_python2.ps1'
 
 # At this point we do not want to be Administrator anymore.
 # we should exit with a message to start the next user-level stage
 Write-Output "This ends the Administrator level requirements."
 Write-Output "Next: close all your powershell windows"
-Write-Output "Open a new powershell window and run the setup_lanforge_python2 script as a user."
+Write-Output "Open a new powershell window and run setup_win_py.ps1 script as a user."
 exit 0
 
