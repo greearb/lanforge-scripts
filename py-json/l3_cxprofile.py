@@ -368,7 +368,6 @@ class L3CXProfile(LFCliBase):
             df = pd.concat(timestamp_data)
             df = df.drop('alias', axis=1)
             df.to_csv(str(report_file), index=False)
-            logger.critical("No csv generated. Check test input configuration (ssid, ssid-passwd, did stations get ip?)")
 
         # comparison to last report / report inputted
         if compared_report:
