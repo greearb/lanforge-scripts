@@ -23,7 +23,7 @@ if ($lastexitcode -ne 0){
     Write-Output "Seems Chocolatey is not installed, installing now"
     Set-ExecutionPolicy Bypass -Scope Process -Force
 	[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
-	iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+	Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 	choco upgrade chocolatey
 	Write-Output "Re-run this script now that Chocolatey is installed."
 	exit
@@ -32,8 +32,8 @@ else{
     Write-Output "Chocolatey Version $testchoco is already installed"
 }
 
-choco install microsoft-windows-terminal
-refreshenv
+# choco install microsoft-windows-terminal
+# refreshenv
 choco install git.install
 RefreshEnv.cmd
 $env:PATH += ";C:\Program Files\Git\bin"
@@ -45,33 +45,21 @@ if ($lastexitcode -ne 0){
 
 choco install -y python3
 RefreshEnv.cmd
-$testpy = powershell python --version
+$env:PATH += ";C:\Python311\"
+$testpy = powershell C:\Python311\python -V
 if ($lastexitcode -ne 0){
 	Write-Output "git was not installed or is not in your path, bye."
 	exit 1
 }
+Write-Output "Upgrading pip..."
+C:\Python311\python -m pip install --upgrade pip
 
-python -m pip install --upgrade pip
+Invoke-WebRequest -URI 'http://ctweb/lfs/setup_lanforge_python2.ps1' -OutFile 'setup_lanforge_python2.ps1'
 
-cd $Home\Documents
-if (-not(test-path "$Home\Documents\lanforge-scripts")) {
-	git clone 'https://github.com/greearb/lanforge-scripts'
-}
-
-if (-not(test-path "$Home\Documents\venv_lanforge")) {
-	mkdir venv_lanforge
-	python -m venv_lanforge
-	if ($lastexitcode -ne 0) {
-		Write-Output "Problems creating python virtual environment, bye."
-		exit 1
-	}
-}
-if (-not(test-path ".\venv_lanforge\Scripts\Activate")) {
-	Write-Output "No virtual python environment to activate, bye."
-	exit 1
-}
-.\venv_lanforge\Scripts\Activate
-
-cd $Home\Documents\lanforge-scripts
-python .\update_dependencies.py
+# At this point we do not want to be Administrator anymore.
+# we should exit with a message to start the next user-level stage
+Write-Output "This ends the Administrator level requirements."
+Write-Output "Next: close all your powershell windows"
+Write-Output "Open a new powershell window and run the setup_lanforge_python2 script as a user."
+exit 0
 
