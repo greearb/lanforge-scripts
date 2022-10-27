@@ -1420,10 +1420,18 @@ class LFJsonCommand(JsonCommand):
 
         https://www.candelatech.com/lfcli_ug.php#adb_gui
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    class AdbGuiFlags(Enum):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        USE_SCRCPY = 1      # Use scrcpy instead of MonkeyRemote
+
     def post_adb_gui(self, 
                      adb_id: str = None,                       # Android device identifier.
                      display: str = None,                      # The DISPLAY option, for example: 192.168.1.5:0.0. Will
                      # guess if left blank.
+                     flags: str = None,                        # See flags defined above.
                      resource: int = None,                     # Resource number. [W]
                      screen_size_prcnt: str = None,            # 0.1 to 1.0, screen size percentage for the Android display.
                      shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
@@ -1443,6 +1451,8 @@ class LFJsonCommand(JsonCommand):
             data["adb_id"] = adb_id
         if display is not None:
             data["display"] = display
+        if flags is not None:
+            data["flags"] = flags
         if resource is not None:
             data["resource"] = resource
         if screen_size_prcnt is not None:
@@ -1472,6 +1482,7 @@ class LFJsonCommand(JsonCommand):
         TODO: fix comma counting
         self.post_adb_gui(adb_id=param_map.get("adb_id"),
                           display=param_map.get("display"),
+                          flags=param_map.get("flags"),
                           resource=param_map.get("resource"),
                           screen_size_prcnt=param_map.get("screen_size_prcnt"),
                           shelf=param_map.get("shelf"),
@@ -4112,19 +4123,20 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(AddProfileProfileFlags0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-        p_11r = 0x40                   # Use 802.11r roaming setup.
-        ALLOW_11W = 0x800              # Set 11w (MFP/PMF) to optional.
-        BSS_TRANS = 0x400              # Enable BSS Transition logic
-        DHCP_SERVER = 0x1              # This should provide DHCP server.
-        EAP_PEAP = 0x200               # Enable EAP-PEAP
-        EAP_TTLS = 0x80                # Use 802.1x EAP-TTLS
-        ENABLE_POWERSAVE = 0x1000      # Enable power-save when creating stations.
-        NAT = 0x100                    # Enable NAT if this object is in a virtual router
-        SKIP_DHCP_ROAM = 0x10          # Ask station to not re-do DHCP on roam.
-        WEP = 0x2                      # Use WEP encryption
-        WPA = 0x4                      # Use WPA encryption
-        WPA2 = 0x8                     # Use WPA2 encryption
-        WPA3 = 0x20                    # Use WPA3 encryption
+        p_11r = 0x40                        # Use 802.11r roaming setup.
+        ALLOW_11W = 0x800                   # Set 11w (MFP/PMF) to optional.
+        BSS_TRANS = 0x400                   # Enable BSS Transition logic
+        DHCP_SERVER = 0x1                   # This should provide DHCP server.
+        EAP_PEAP = 0x200                    # Enable EAP-PEAP
+        EAP_TTLS = 0x80                     # Use 802.1x EAP-TTLS
+        ENABLE_POWERSAVE = 0x1000           # Enable power-save when creating stations.
+        NAT = 0x100                         # Enable NAT if this object is in a virtual router
+        RRM_IGNORE_BEACON_REQ = 0x2000      # Request station ignore RRM beacon measurement request.
+        SKIP_DHCP_ROAM = 0x10               # Ask station to not re-do DHCP on roam.
+        WEP = 0x2                           # Use WEP encryption
+        WPA = 0x4                           # Use WPA encryption
+        WPA2 = 0x8                          # Use WPA2 encryption
+        WPA3 = 0x20                         # Use WPA3 encryption
 
         # use to get in value of flag
         @classmethod
@@ -4459,53 +4471,56 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(AddStaFlags0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-        p_80211r_pmska_cache = 0x4000000          # Enable oportunistic PMSKA caching for WPA2 (Related to
+        p_80211r_pmska_cache = 0x4000000               # Enable oportunistic PMSKA caching for WPA2 (Related to
         # +802.11r).
-        p_80211u_additional = 0x100000            # AP requires additional step for access (802.11u Interworking)
-        p_80211u_auto = 0x40000                   # Enable 802.11u (Interworking) Auto-internetworking feature.
-        # +Always enabled currently.
-        p_80211u_e911 = 0x200000                  # AP claims emergency services reachable (802.11u Interworking)
-        p_80211u_e911_unauth = 0x400000           # AP provides Unauthenticated emergency services (802.11u
+        p_80211u_additional = 0x100000                 # AP requires additional step for access (802.11u
         # +Interworking)
-        p_80211u_enable = 0x20000                 # Enable 802.11u (Interworking) feature.
-        p_80211u_gw = 0x80000                     # AP Provides access to internet (802.11u Interworking)
-        p_8021x_radius = 0x2000000                # Use 802.1x (RADIUS for AP).
-        create_admin_down = 0x1000000000          # Station should be created admin-down.
-        custom_conf = 0x20                        # Use Custom wpa_supplicant config file.
-        disable_obss_scan = 0x400000000000        # Disable OBSS SCAN feature in supplicant.
-        disable_ofdma = 0x200000000000            # Disable OFDMA mode
-        disable_twt = 0x100000000000              # Disable TWT mode
-        disable_fast_reauth = 0x200000000         # Disable fast_reauth option for virtual stations.
-        disable_gdaf = 0x1000000                  # AP: Disable DGAF (used by HotSpot 2.0).
-        disable_ht80 = 0x8000000                  # Disable HT80 (for AC chipset NICs only)
-        disable_roam = 0x80000000                 # Disable automatic station roaming based on scan results.
-        disable_sgi = 0x4000                      # Disable SGI (Short Guard Interval).
-        ft_roam_over_ds = 0x800000000000          # Roam over DS when AP supports it.
-        hs20_enable = 0x800000                    # Enable Hotspot 2.0 (HS20) feature. Requires WPA-2.
-        ht160_enable = 0x100000000                # Enable HT160 mode.
-        ht40_disable = 0x800                      # Disable HT-40 even if hardware and AP support it.
-        ibss_mode = 0x20000000                    # Station should be in IBSS mode.
-        lf_sta_migrate = 0x8000                   # OK-To-Migrate (Allow station migration between LANforge
+        p_80211u_auto = 0x40000                        # Enable 802.11u (Interworking) Auto-internetworking
+        # +feature. Always enabled currently.
+        p_80211u_e911 = 0x200000                       # AP claims emergency services reachable (802.11u
+        # +Interworking)
+        p_80211u_e911_unauth = 0x400000                # AP provides Unauthenticated emergency services (802.11u
+        # +Interworking)
+        p_80211u_enable = 0x20000                      # Enable 802.11u (Interworking) feature.
+        p_80211u_gw = 0x80000                          # AP Provides access to internet (802.11u Interworking)
+        p_8021x_radius = 0x2000000                     # Use 802.1x (RADIUS for AP).
+        create_admin_down = 0x1000000000               # Station should be created admin-down.
+        custom_conf = 0x20                             # Use Custom wpa_supplicant config file.
+        disable_obss_scan = 0x400000000000             # Disable OBSS SCAN feature in supplicant.
+        disable_ofdma = 0x200000000000                 # Disable OFDMA mode
+        disable_twt = 0x100000000000                   # Disable TWT mode
+        disable_fast_reauth = 0x200000000              # Disable fast_reauth option for virtual stations.
+        disable_gdaf = 0x1000000                       # AP: Disable DGAF (used by HotSpot 2.0).
+        disable_ht80 = 0x8000000                       # Disable HT80 (for AC chipset NICs only)
+        disable_roam = 0x80000000                      # Disable automatic station roaming based on scan results.
+        disable_sgi = 0x4000                           # Disable SGI (Short Guard Interval).
+        ft_roam_over_ds = 0x800000000000               # Roam over DS when AP supports it.
+        hs20_enable = 0x800000                         # Enable Hotspot 2.0 (HS20) feature. Requires WPA-2.
+        ht160_enable = 0x100000000                     # Enable HT160 mode.
+        ht40_disable = 0x800                           # Disable HT-40 even if hardware and AP support it.
+        ibss_mode = 0x20000000                         # Station should be in IBSS mode.
+        lf_sta_migrate = 0x8000                        # OK-To-Migrate (Allow station migration between LANforge
         # +radios)
-        mesh_mode = 0x400000000                   # Station should be in MESH mode.
-        no_supp_op_class_ie = 0x4000000000        # Do not include supported-oper-class-IE in assoc requests. May
-        # +work around AP bugs.
-        osen_enable = 0x40000000                  # Enable OSEN protocol (OSU Server-only Authentication)
-        passive_scan = 0x2000                     # Use passive scanning (don't send probe requests).
-        power_save_enable = 0x800000000           # Station should enable power-save. May not work in all
+        mesh_mode = 0x400000000                        # Station should be in MESH mode.
+        no_supp_op_class_ie = 0x4000000000             # Do not include supported-oper-class-IE in assoc
+        # +requests. May work around AP bugs.
+        osen_enable = 0x40000000                       # Enable OSEN protocol (OSU Server-only Authentication)
+        passive_scan = 0x2000                          # Use passive scanning (don't send probe requests).
+        power_save_enable = 0x800000000                # Station should enable power-save. May not work in all
         # +drivers/configurations.
-        scan_ssid = 0x1000                        # Enable SCAN-SSID flag in wpa_supplicant.
-        txo_enable = 0x8000000000                 # Enable/disable tx-offloads, typically managed by set_wifi_txo
-        # +command
-        use_bss_transition = 0x80000000000        # Enable BSS transition.
-        use_wpa3 = 0x10000000000                  # Enable WPA-3 (SAE Personal) mode.
-        verbose = 0x10000                         # Verbose-Debug: Increase debug info in wpa-supplicant and
+        rrm_ignore_beacon_req = 0x1000000000000        # Ignore (reject) RRM Beacon measurement request.
+        scan_ssid = 0x1000                             # Enable SCAN-SSID flag in wpa_supplicant.
+        txo_enable = 0x8000000000                      # Enable/disable tx-offloads, typically managed by
+        # +set_wifi_txo command
+        use_bss_transition = 0x80000000000             # Enable BSS transition.
+        use_wpa3 = 0x10000000000                       # Enable WPA-3 (SAE Personal) mode.
+        verbose = 0x10000                              # Verbose-Debug: Increase debug info in wpa-supplicant and
         # +hostapd logs.
-        wds_mode = 0x2000000000                   # WDS station (sort of like a lame mesh), not supported on
+        wds_mode = 0x2000000000                        # WDS station (sort of like a lame mesh), not supported on
         # +ath10k
-        wep_enable = 0x200                        # Use wpa_supplicant configured for WEP encryption.
-        wpa2_enable = 0x400                       # Use wpa_supplicant configured for WPA2 encryption.
-        wpa_enable = 0x10                         # Enable WPA
+        wep_enable = 0x200                             # Use wpa_supplicant configured for WEP encryption.
+        wpa2_enable = 0x400                            # Use wpa_supplicant configured for WPA2 encryption.
+        wpa_enable = 0x10                              # Enable WPA
 
         # use to get in value of flag
         @classmethod
@@ -19446,6 +19461,211 @@ class LFJsonQuery(JsonQuery):
                                    plural_key="events")
         #
 
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <ARM> type requests
+
+    If you need to call the URL directly,
+    request one of these URLs:
+        /arm
+        /arm-endp
+        /arm-endp/$endp_name
+        /arm/$cx_name
+
+    When requesting specific column names, they need to be URL encoded:
+        avg+rtt, bps+a%C2%A0%E2%86%90%C2%A0b, bps+a%C2%A0%E2%86%92%C2%A0b, eid, endpoints+%28a%C2%A0%E2%86%94%C2%A0b%29, 
+        name, pkt+tx+a%C2%A0%E2%86%90%C2%A0b, pkt+tx+a%C2%A0%E2%86%92%C2%A0b, req+a%C2%A0%E2%86%90%C2%A0b, 
+        req+a%C2%A0%E2%86%92%C2%A0b, rpt+timer, state
+    Example URL: /arm?fields=avg+rtt,bps+a%C2%A0%E2%86%90%C2%A0b
+
+    Example py-json call (it knows the URL):
+        record = LFJsonGet.get_arm(eid_list=['1.234', '1.344'],
+                                   requested_col_names=['rpt timer'], 
+                                   debug=True)
+
+    The record returned will have these members: 
+    {
+        'avg rtt':                            # Average Round-Trip-Time (latency) for this connection (micro-seconds).
+        'bps a&nbsp;&#x2190;&nbsp;b':         # Bits-per-second received by A from B over the last 3 seconds.
+        'bps a&nbsp;&#x2192;&nbsp;b':         # Bits-per-second received by B from A over the last 3 seconds.
+        'eid':                                # Entity ID
+        'endpoints (a&nbsp;&#x2194;&nbsp;b)': # Endpoints that make up this connection.
+        'name':                               # Name of Armageddon Connection.
+        'pkt tx a&nbsp;&#x2190;&nbsp;b':      # Packets sent from B to A.
+        'pkt tx a&nbsp;&#x2192;&nbsp;b':      # Packets sent from A to B.
+        'req a&nbsp;&#x2190;&nbsp;b':         # Requested packets-per-second transmit rate from B to A.
+        'req a&nbsp;&#x2192;&nbsp;b':         # Requested packets-per-second transmit rate from A to B.
+        'rpt timer':                          # Cross Connect's Report Timer (milliseconds).This is how often the GUI
+                                              # will ask for updates from the LANforge processes.If the GUI is sluggish,
+                                              # increasing the report timers may help.
+        'state':                              # Current state of the Connection.
+    }
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    def get_arm(self, 
+                eid_list: list = None,
+                requested_col_names: list = None,
+                wait_sec: float = 0.01,
+                timeout_sec: float = 5.0,
+                errors_warnings: list = None,
+                debug: bool = False):
+        """
+        :param eid_list: list of entity IDs to query for
+        :param requested_col_names: list of column names to return
+        :param wait_sec: duration to wait between retries if no response or response is HTTP 404
+        :param timeout_sec: duration in which to keep querying before returning
+        :param errors_warnings: optional list to extend with errors and warnings from response
+        :param debug: print diagnostic info if true
+        :return: dictionary of results
+        """
+        debug |= self.debug_on
+        url = "/arm"
+        if (eid_list is None) or (len(eid_list) < 1):
+            raise ValueError("no entity id in request")
+        trimmed_fields = []
+        if isinstance(requested_col_names, str):
+            if not requested_col_names.strip():
+                raise ValueError("column name cannot be blank")
+            trimmed_fields.append(requested_col_names.strip())
+        if isinstance(requested_col_names, list):
+            for field in requested_col_names:
+                if not field.strip():
+                    raise ValueError("column names cannot be blank")
+                field = field.strip()
+                if field.find(" ") > -1:
+                    raise ValueError("field should be URL encoded: [%s]" % field)
+                trimmed_fields.append(field)
+        url += self.create_port_eid_url(eid_list=eid_list)
+
+        if len(trimmed_fields) > 0:
+            url += "?fields=%s" % (",".join(trimmed_fields))
+
+        response = self.json_get(url=url,
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=timeout_sec,
+                                 max_timeout_sec=timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if response is None:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="connection",
+                                   plural_key="connections")
+    #
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <ARM-ENDP> type requests
+
+    If you need to call the URL directly,
+    request one of these URLs:
+        /arm-endp
+        /arm-endp/$endp_name
+
+    When requesting specific column names, they need to be URL encoded:
+        bps-rx-3s, bps-tx-3s, crc+fail, cx+drop+%25, cx+dropped, delay+%28us%29, destination+mac, 
+        dropped, dup+pkts, eid, elapsed, jitter+%28us%29, ll+bps+a%C2%A0%E2%86%92%C2%A0b, 
+        max+pkt+size, min+pkt+size, name, ooo+pkts, pps+rx, pps+tx, req+bps, run, 
+        rx+bytes, rx+drop+%25, rx+dup+%25, rx+ooo+%25, rx+pkts, rx+rate+%28last%29, script, 
+        thread-id, tx+bytes, tx+pkts, tx+rate+%28last%29
+    Example URL: /arm-endp?fields=bps-rx-3s,bps-tx-3s
+
+    Example py-json call (it knows the URL):
+        record = LFJsonGet.get_arm_endp(eid_list=['1.234', '1.344'],
+                                        requested_col_names=['destination mac'], 
+                                        debug=True)
+
+    The record returned will have these members: 
+    {
+        'bps-rx-3s':                     # Bits-per-second received over the last 3 seconds.
+        'bps-tx-3s':                     # Bits-per-second transmitted over the last 3 seconds.
+        'crc fail':                      # Number of packets received with bad UDP checksum.
+        'cx drop %':                     # Percentage of packets dropped (based on send v/s received packet
+                                         # counts).
+        'cx dropped':                    # Total dropped packets, as calculated by sent - received packet counts.
+        'delay (us)':                    # Average latency in micro-seconds (1/1000000 of a second) for received
+                                         # packets.
+        'destination mac':               # The Destination MAC address reported for this endpoint.
+        'dropped':                       # Total dropped packets, as detected by sequence number gaps.
+        'dup pkts':                      # Total duplicated packets, as detected by sequence numbers.
+        'eid':                           # Entity ID
+        'elapsed':                       # Amount of time (seconds) this endpoint has been running (or ran.)
+        'jitter (us)':                   # Exponential decaying average jitter calculated per RFC3393(old_jitter *
+                                         # 15/16 + new_jitter * 1/16)
+        'll bps a&nbsp;&#x2192;&nbsp;b': # Bits per second transmitted, including low-level framing (Ethernet
+                                         # Only).
+        'max pkt size':                  # The maximum packet size in bytes, including Ethernet header (but not
+                                         # Ethernet CRC).
+        'min pkt size':                  # The minimum packet size in bytes, including Ethernet header (but not
+                                         # Ethernet CRC).
+        'name':                          # Endpoint's Name.
+        'ooo pkts':                      # Total out-of-order packets, as detected by sequence numbers.
+        'pps rx':                        # Packets-per-second received over the last 30 seconds.
+        'pps tx':                        # Packets-per-second transmitted over the last 30 seconds.
+        'req bps':                       # Requested bits-per-second transmit rate.
+        'run':                           # Is the Endpoint is Running or not.
+        'rx bytes':                      # Total bytes received sofar.
+        'rx drop %':                     # Percentage of packets dropped (based on sequence number gaps).
+        'rx dup %':                      # Percentage of duplicate packets, as detected by sequence numbers.
+        'rx ooo %':                      # Percentage of packets received out of order, as detected by sequence
+                                         # numbers.
+        'rx pkts':                       # Total packets received sofar.
+        'rx rate (last)':                # Bits-per-second received over the last reporting interval.
+        'script':                        # Endpoint script state.
+        'thread-id':                     # The thread on which this endpoint is running.
+        'tx bytes':                      # Total bytes transmitted sofar.
+        'tx pkts':                       # Total packets transmitted sofar.
+        'tx rate (last)':                # Bits-per-second transmitted over the last reporting interval.
+    }
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+
+    def get_arm_endp(self, 
+                     eid_list: list = None,
+                     requested_col_names: list = None,
+                     wait_sec: float = 0.01,
+                     timeout_sec: float = 5.0,
+                     errors_warnings: list = None,
+                     debug: bool = False):
+        """
+        :param eid_list: list of entity IDs to query for
+        :param requested_col_names: list of column names to return
+        :param wait_sec: duration to wait between retries if no response or response is HTTP 404
+        :param timeout_sec: duration in which to keep querying before returning
+        :param errors_warnings: optional list to extend with errors and warnings from response
+        :param debug: print diagnostic info if true
+        :return: dictionary of results
+        """
+        debug |= self.debug_on
+        url = "/arm-endp"
+        if (eid_list is None) or (len(eid_list) < 1):
+            raise ValueError("no entity id in request")
+        trimmed_fields = []
+        if isinstance(requested_col_names, str):
+            if not requested_col_names.strip():
+                raise ValueError("column name cannot be blank")
+            trimmed_fields.append(requested_col_names.strip())
+        if isinstance(requested_col_names, list):
+            for field in requested_col_names:
+                if not field.strip():
+                    raise ValueError("column names cannot be blank")
+                field = field.strip()
+                if field.find(" ") > -1:
+                    raise ValueError("field should be URL encoded: [%s]" % field)
+                trimmed_fields.append(field)
+        url += self.create_port_eid_url(eid_list=eid_list)
+
+        if len(trimmed_fields) > 0:
+            url += "?fields=%s" % (",".join(trimmed_fields))
+
+        response = self.json_get(url=url,
+                                 debug=debug,
+                                 wait_sec=wait_sec,
+                                 request_timeout_sec=timeout_sec,
+                                 max_timeout_sec=timeout_sec,
+                                 errors_warnings=errors_warnings)
+        if response is None:
+            return None
+        return self.extract_values(response=response,
+                                   singular_key="endpoint",
+                                   plural_key="endpoints")
+    #
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <ATTENUATOR> type requests
 
