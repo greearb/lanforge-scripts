@@ -359,36 +359,34 @@ class UtilityInteropWifi(BaseInteropWifi):
         # print(z)
         value = ["ConnectAttempt", "ConnectFailure", "AssocRej", "AssocTimeout"]
         return_dict = dict.fromkeys(value)
-        if "stats\nSSID:" in z:
-            ind = z.index("stats\nSSID:")
-            ssid_ = z[ind + 1]
-            print(ssid_)
-            ssid_1 = ssid.strip()
-            ssid_2 = ssid_1.replace('"', "")
-
-            if ssid_2 == ssid:
-                if "ConnectAttempt:" in z:
-                    connect_ind = z.index("ConnectAttempt:")
-                    connect_attempt = z[connect_ind + 1]
-                    print("connection attempts", connect_attempt)
-                    return_dict["ConnectAttempt"] = connect_attempt
-                if 'ConnectFailure:' in z:
-                    connect_fail_ind = z.index('ConnectFailure:')
-                    connect_failure = z[connect_fail_ind + 1]
-                    print("connection failure ", connect_failure)
-                    return_dict["ConnectFailure"] = connect_failure
-                if 'AssocRej:' in z:
-                    ass_rej_ind = z.index('AssocRej:')
-                    assocrej = z[ass_rej_ind + 1]
-                    print("association rejection ", assocrej)
-                    return_dict["AssocRej"] = assocrej
-                if 'AssocTimeout:' in z:
-                    ass_ind = z.index('AssocTimeout:')
-                    asso_timeout = z[ass_ind + 1]
-                    print("association timeout ", asso_timeout)
-                    return_dict["AssocTimeout"] = asso_timeout
-            else:
-                print("ssid is not present")
+        if '"' + ssid + '"' + "\n" in z:
+            print("yes")
+            ind = z.index( '"' + ssid + '"' + "\n")
+            # print(z[271])
+            m = z[ind:]
+            print(m)
+            if "ConnectAttempt:" in m:
+                connect_ind = m.index("ConnectAttempt:")
+                connect_attempt = m[connect_ind + 1]
+                print("connection attempts", connect_attempt)
+                return_dict["ConnectAttempt"] = connect_attempt
+            if 'ConnectFailure:' in m:
+                connect_fail_ind = m.index('ConnectFailure:')
+                connect_failure = m[connect_fail_ind + 1]
+                print("connection failure ", connect_failure)
+                return_dict["ConnectFailure"] = connect_failure
+            if 'AssocRej:' in m:
+                ass_rej_ind = m.index('AssocRej:')
+                assocrej = m[ass_rej_ind + 1]
+                print("association rejection ", assocrej)
+                return_dict["AssocRej"] = assocrej
+            if 'AssocTimeout:' in m:
+                ass_ind = m.index('AssocTimeout:')
+                asso_timeout = m[ass_ind + 1]
+                print("association timeout ", asso_timeout)
+                return_dict["AssocTimeout"] = asso_timeout
+        else:
+            print("ssid is not present")
         print(return_dict)
         return return_dict
 
