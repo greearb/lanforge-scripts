@@ -1103,6 +1103,27 @@ class L3VariableTime(Realm):
                     # if there are multiple loops then delete the df
                     del all_dl_ports_df
 
+                    if self.ap_read:
+                        # Consolidate all the ul ports into one file
+                        # Create empty dataframe
+                        all_ul_ports_df = pd.DataFrame()
+                        port_eids = self.gather_port_eids()
+
+                        for port_eid in port_eids:
+                            logger.debug("ul port files: {port_file}".format(port_file=self.ul_port_csv_files[port_eid]))
+                            name = self.ul_port_csv_files[port_eid].name
+                            logger.debug("name : {name}".format(name=name))
+                            df_ul_tmp = pd.read_csv(name)
+                            all_ul_ports_df = pd.concat([all_ul_ports_df, df_ul_tmp], axis=0)
+
+                        all_ul_ports_file_name = self.outfile[:-4]
+                        all_ul_port_file_name = all_ul_ports_file_name + "-ul-all-eids.csv"
+                        all_ul_ports_df.to_csv(all_ul_port_file_name)
+
+                        # if there are multiple loops then delete the df
+                        del all_ul_ports_df
+
+
                     # At end of test step, record KPI into kpi.csv
                     self.record_kpi_csv(
                         len(temp_stations_list),
