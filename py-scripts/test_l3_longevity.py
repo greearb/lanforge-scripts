@@ -2032,6 +2032,42 @@ class L3VariableTime(Realm):
                     all_dl_port_file_name = all_dl_ports_file_name + "-dl-all-eids.csv"
                     all_dl_ports_df.to_csv(all_dl_port_file_name)
 
+                    # process "-dl-all-eids.csv to have per iteration loops deltas"
+                    all_dl_ports_df.to_csv(all_dl_port_file_name)
+
+                    # copy the above pandas dataframe 
+                    all_dl_ports_stations_df = all_dl_ports_df.copy(deep=True)
+                    # drop rows that have
+                    all_dl_ports_stations_df = all_dl_ports_stations_df[~all_dl_ports_stations_df['Name'].str.contains('eth')]
+                    logger.info(pformat(all_dl_ports_stations_df))
+
+                    # save to csv file
+                    all_dl_ports_stations_file_name = self.outfile[:-4]
+                    all_dl_port_stations_file_name = all_dl_ports_stations_file_name + "-dl-all-eids-stations.csv"
+                    all_dl_ports_stations_df.to_csv(all_dl_port_stations_file_name)
+
+                    # we should be able to add the values for each eid
+                    all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])['Rx-Bps','Tx-Bps','Rx-Latency','Rx-Jitter',
+                        'Ul-Rx-Goodput-bps','Ul-Rx-Rate-ll','Ul-Rx-Pkts-ll','Dl-Rx-Goodput-bps','Dl-Rx-Rate-ll','Dl-Rx-Pkts-ll'].sum()
+                    all_dl_ports_stations_sum_file_name = self.outfile[:-4]
+                    all_dl_port_stations_sum_file_name = all_dl_ports_stations_sum_file_name + "-dl-all-eids-sum-per-interval.csv"
+
+                    # add some calculations, will need some selectable graphs
+                    all_dl_ports_stations_sum_df['Rx-Bps-Diff'] = all_dl_ports_stations_sum_df['Rx-Bps'].diff()
+                    all_dl_ports_stations_sum_df['Tx-Bps-Diff'] = all_dl_ports_stations_sum_df['Tx-Bps'].diff()
+                    all_dl_ports_stations_sum_df['Rx-Latency-Diff'] = all_dl_ports_stations_sum_df['Rx-Latency'].diff()
+                    all_dl_ports_stations_sum_df['Rx-Jitter-Diff'] = all_dl_ports_stations_sum_df['Rx-Jitter'].diff()
+                    all_dl_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff()
+                    all_dl_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff()
+                    all_dl_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_dl_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff()
+                    all_dl_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff()
+                    all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff()
+                    all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff()
+                    
+                    # write out the data
+                    all_dl_ports_stations_sum_df.to_csv(all_dl_port_stations_sum_file_name)
+
+
                     # if there are multiple loops then delete the df
                     del all_dl_ports_df
 
