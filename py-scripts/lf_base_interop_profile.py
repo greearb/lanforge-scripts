@@ -205,6 +205,8 @@ class BaseInteropWifi(Realm):
 
     # set username
     def set_user_name(self, device=None, user_name=None):
+        print("device", device)
+        user_name_ = []
         if device is None:
             devices = self.check_sdk_release()
             print(devices)
@@ -213,22 +215,30 @@ class BaseInteropWifi(Realm):
                 devices = device
             else:
                 devices = [device]
-                if user_name is None:
-                    user_name = "device_1"
-                else:
-                    user_name = user_name
+            if user_name is None:
+                for i in range(len(devices)):
+                    user_name = "device_" + str(i)
+                    print(user_name)
+                    user_name_.append(user_name)
+                print(user_name)
+
+            else:
+                user_name_.append(user_name)
+        print("devices", devices)
+        print(user_name_)
+
+
         for i, x in zip(devices, range(len(devices))):
             eid = self.name_to_eid(i)
-            if user_name is None:
-                user_name = "device_" + str(x)
             self.command.post_add_adb(adb_device=None,
                                       adb_id=eid[2],
                                       adb_model=None,
                                       adb_product=None,
-                                      lf_username=user_name,
+                                      lf_username=user_name_[x],
                                       resource=eid[1],
                                       shelf=eid[0],
                                       debug=True)
+
 
     # apk apply
     def batch_modify_apply(self, device):
