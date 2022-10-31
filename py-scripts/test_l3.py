@@ -1066,9 +1066,9 @@ class L3VariableTime(Realm):
                     # process "-dl-all-eids.csv to have per iteration loops deltas"
                     all_dl_ports_df.to_csv(all_dl_port_file_name)
 
-                    # copy the above pandas dataframe 
+                    # copy the above pandas dataframe (all_dl_ports_df)
                     all_dl_ports_stations_df = all_dl_ports_df.copy(deep=True)
-                    # drop rows that have
+                    # drop rows that have eth
                     all_dl_ports_stations_df = all_dl_ports_stations_df[~all_dl_ports_stations_df['Name'].str.contains('eth')]
                     logger.info(pformat(all_dl_ports_stations_df))
 
@@ -1120,9 +1120,40 @@ class L3VariableTime(Realm):
                         all_ul_port_file_name = all_ul_ports_file_name + "-ul-all-eids.csv"
                         all_ul_ports_df.to_csv(all_ul_port_file_name)
 
+                        # copy over all_ul_ports_df so as create a dataframe summ of the data for each iteration
+                        all_ul_ports_stations_df = all_ul_ports_df.copy(deep=True)
+                        # drop rows that have eth 
+                        all_ul_ports_stations_df = all_ul_ports_stations_df[~all_ul_ports_stations_df['Name'].str.contains('eth')]
+                        logger.info(pformat(all_ul_ports_stations_df))
+
+                        # save to csv
+                        all_ul_ports_stations_file_name = self.outfile[:-4]
+                        all_ul_ports_stations_file_name = all_ul_ports_stations_file_name + "-ul-all-eids-stations.csv"
+                        all_ul_ports_stations_df.to_csv(all_ul_port_stations_file_name)
+
+                        # we add all the values based on the epoch time
+                        all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])['Rx-Bps','Tx-Bps','Rx-Latency','Rx-Jitter',
+                        'Ul-Rx-Goodput-bps','Ul-Rx-Rate-ll','Ul-Rx-Pkts-ll','Dl-Rx-Goodput-bps','Dl-Rx-Rate-ll','Dl-Rx-Pkts-ll'].sum()
+                        all_ul_ports_stations_sum_file_name = self.outfile[:-4]
+                        all_ul_port_stations_sum_file_name = all_ul_ports_stations_sum_file_name + "-ul-all-eids-sum-per-interval.csv"
+
+                        # add some calculations, will need some selectable graphs
+                        all_ul_ports_stations_sum_df['Rx-Bps-Diff'] = all_ul_ports_stations_sum_df['Rx-Bps'].diff()
+                        all_ul_ports_stations_sum_df['Tx-Bps-Diff'] = all_ul_ports_stations_sum_df['Tx-Bps'].diff()
+                        all_ul_ports_stations_sum_df['Rx-Latency-Diff'] = all_ul_ports_stations_sum_df['Rx-Latency'].diff()
+                        all_ul_ports_stations_sum_df['Rx-Jitter-Diff'] = all_ul_ports_stations_sum_df['Rx-Jitter'].diff()
+                        all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Goodput-bps'].diff()
+                        all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Rate-ll'].diff()
+                        all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Ul-Rx-Pkts-ll'].diff()
+                        all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff()
+                        all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff()
+                        all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_ul_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff()
+
+                        # write out the data
+                        all_ul_ports_stations_sum_df.to_csv(all_ul_port_stations_sum_file_name)
+
                         # if there are multiple loops then delete the df
                         del all_ul_ports_df
-
 
                     # At end of test step, record KPI into kpi.csv
                     self.record_kpi_csv(
