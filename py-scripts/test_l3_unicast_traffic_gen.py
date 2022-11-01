@@ -122,12 +122,12 @@ class L3VariableTimeLongevity(Realm):
             station_profile.admin_up()
             if self.wait_for_ip(station_list=station_list, timeout_sec=10 * len(station_list)):
                 if self.debug:
-                    print("ips acquired {}".format(station_list))
+                    logger_info("ips acquired {}".format(station_list))
             else:
-                print("print failed to get IP's: {}".format(station_list))
-                if self.wait_for_ip(station_list=station_list, timeout_sec=120):
-                    print("tried again:  print failed to get IP's: {}".format(station_list))
-                    exit(1)
+                if self.wait_for_ip(station_list=station_list):
+                    logger.info("tried again, ip qcquired {}".format(station_list))
+                else:
+                    logger.error("station failed to get ip {}".format(station_list))
 
         self.cx_profile.start_cx()
 
@@ -332,7 +332,6 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
 
     requiredNamed = parser.add_argument_group('required arguments')
     requiredNamed.add_argument('--radio_list', action='append', nargs='*',
-                               metavar=('<wiphyX>', '<number last station>', '<ssid>', '<ssid password>', '<security>'),
                                help='--radio_list  <number_of_wiphy> <number of last station> <ssid>  <ssid password>',
                                required=True)
 
@@ -392,7 +391,7 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
     for radio_list in range(0, len(args.radio_list)):
         number_of_stations = int(number_of_stations_per_radio_list[radio_list])
         if number_of_stations > MAX_NUMBER_OF_STATIONS:
-            print("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
+            logger.error("number of stations per radio exceeded max of : {}".format(MAX_NUMBER_OF_STATIONS))
             quit(1)
         station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=1 + radio_list * 1000,
                                               end_id_=number_of_stations + radio_list * 1000, padding_number_=10000)
@@ -409,7 +408,7 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
     ip_var_test.pre_cleanup()
     ip_var_test.build()
     if not ip_var_test.passes():
-        print(ip_var_test.get_fail_message())
+        logger.info(ip_var_test.get_fail_message())
         exit(1)
     ip_var_test.start()
     ip_var_test.stop()
