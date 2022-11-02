@@ -24,6 +24,7 @@ import subprocess
 import json
 import argparse
 import time
+import logging
 
 if sys.version_info[0] != 3:
     print("This script requires Python3")
@@ -93,6 +94,7 @@ class BaseInteropWifi(Realm):
             value.append(final["name"])
         self.supported_devices_names = value
         print(self.supported_devices_names)
+        logging.info(self.supported_devices_names)
 
     def get_device_details(self, query="name", device="1.1.RZ8N70TVABP"):
         # query device related details like name, phantom, model name etc
@@ -114,6 +116,7 @@ class BaseInteropWifi(Realm):
             for i, j in zip(range(len(keys_lst)), keys_lst):
                 if j == device:
                     print("getting " + str(query) + " details for device " + str(device))
+                    logging.info("getting " + str(query) + " details for device " + str(device))
                     value = final[i][j][query]
         else:
             #  only one device is present
@@ -127,9 +130,11 @@ class BaseInteropWifi(Realm):
             phantom = self.get_device_details(query="phantom", device=i)
             if not phantom:
                 print("device " + str(i) + " is active")
+                logging.info("device " + str(i) + " is active")
                 active_device.append(i)
             else:
                 print("device " + str(i) + " is in phantom state")
+                logging.info("device " + str(i) + " is in phantom state")
         self.supported_devices_names = active_device
         return self.supported_devices_names
 
@@ -144,10 +149,13 @@ class BaseInteropWifi(Realm):
                     # check if the release is supported in supported sdk  version
                     if release_ver in self.supported_sdk:
                         print("this release is supported in available sdk version")
+                        logging.info("this release is supported in available sdk version")
                         print("device " + str(i) + " has " + j + " sdk release")
+                        logging.info("device " + str(i) + " has " + j + " sdk release")
                         rel_dev.append(i)
                 else:
                     print("device " + str(i) + " has different sdk release")
+                    logging.info("device " + str(i) + " has different sdk release")
         self.supported_devices_names = rel_dev
         return self.supported_devices_names
 
@@ -156,9 +164,11 @@ class BaseInteropWifi(Realm):
         if device is None:
             devices = self.check_sdk_release()
             print(devices)
+            logging.info(devices)
         else:
             devices = [device]
         if not devices:
+            logging.warning("device EID is required")
             raise ValueError("device EID is required")
         for i in devices:
             # print(i)
@@ -187,6 +197,7 @@ class BaseInteropWifi(Realm):
                               errors_warnings=errors_warnings,
                               suppress_related_commands=True)
         print(["Response", response_list])
+        logging.info("Response " + str(response_list))
         return response_list
 
     # enable Wi-Fi or disable Wi-Fi
@@ -194,22 +205,27 @@ class BaseInteropWifi(Realm):
         if device is None:
             devices = self.check_sdk_release()
             print(devices)
+            logging.info(devices)
         else:
             devices = [device]
         if not (wifi == "enable" or wifi == "disable"):
+            logging.warning("wifi arg value must either be enable or disable")
             raise ValueError("wifi arg value must either be enable or disable")
         cmd = "shell svc wifi " + wifi
         for i in devices:
             print(wifi + " wifi  " + i)
+            logging.info(wifi + " wifi  " + i)
             self.post_adb_(device=i, cmd=cmd)
 
     # set username
     def set_user_name(self, device=None, user_name=None):
         print("device", device)
+        logging.info("device " + str(device))
         user_name_ = []
         if device is None:
             devices = self.check_sdk_release()
             print(devices)
+            logging.info(devices)
         else:
             if type(device) is list:
                 devices = device
@@ -219,13 +235,17 @@ class BaseInteropWifi(Realm):
                 for i in range(len(devices)):
                     user_name = "device_" + str(i)
                     print(user_name)
+                    logging.info(user_name)
                     user_name_.append(user_name)
                 print(user_name)
+                logging.info(user_name)
 
             else:
                 user_name_.append(user_name)
         print("devices", devices)
+        logging.info("devices " + str(devices))
         print(user_name_)
+        logging.info(user_name_)
 
 
         for i, x in zip(devices, range(len(devices))):
@@ -245,6 +265,7 @@ class BaseInteropWifi(Realm):
         if device is None:
             devices = self.check_sdk_release()
             print(devices)
+            logging.info(devices)
             self.set_user_name()
         else:
             if type(device) is list:
@@ -261,6 +282,7 @@ class BaseInteropWifi(Realm):
         for i, x in zip(user_list, devices):
             user_name = i
             if not user_name:
+                logging.warning("please specify a user-name when configuring this Interop device")
                 raise ValueError("please specify a user-name when configuring this Interop device")
             cmd = "shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity "
             cmd += "--es auto_start 1 --es username " + user_name
@@ -279,6 +301,7 @@ class BaseInteropWifi(Realm):
         if device is None:
             devices = self.check_sdk_release()
             print(devices)
+            logging.info(devices)
         else:
             devices = [device]
         for i in devices:
@@ -290,6 +313,7 @@ class BaseInteropWifi(Realm):
         if device is None:
             devices = self.check_sdk_release()
             print(devices)
+            logging.info(devices)
         else:
             devices = [device]
         for i in devices:
@@ -301,6 +325,7 @@ class BaseInteropWifi(Realm):
         if device is None:
             devices = self.check_sdk_release()
             print(devices)
+            logging.info(devices)
         else:
             devices = [device]
         scan_dict = dict.fromkeys(devices)
@@ -333,10 +358,12 @@ class UtilityInteropWifi(BaseInteropWifi):
             print(ind)
             st = z[(int(ind) + 1)]
             print("state", st)
+            logging.info("state" + st)
             state = st
 
         else:
             print("state is not present")
+            logging.info("state is not present")
             state = "NA"
         return state
 
@@ -355,9 +382,11 @@ class UtilityInteropWifi(BaseInteropWifi):
             ssid_1 = ssid_.replace('"', "")
             ssid_2 = ssid_1.replace(",", "")
             print("ssid", ssid_2)
+            logging.info("ssid " + ssid_2)
             ssid = ssid_2
         else:
             print("ssid is not present")
+            logging.info("ssid is not present")
             ssid = "NA"
         return ssid
 
@@ -371,32 +400,39 @@ class UtilityInteropWifi(BaseInteropWifi):
         return_dict = dict.fromkeys(value)
         if '"' + ssid + '"' + "\n" in z:
             print("yes")
+            logging.info("yes")
             ind = z.index( '"' + ssid + '"' + "\n")
             # print(z[271])
             m = z[ind:]
             print(m)
+            logging.info(m)
             if "ConnectAttempt:" in m:
                 connect_ind = m.index("ConnectAttempt:")
                 connect_attempt = m[connect_ind + 1]
                 print("connection attempts", connect_attempt)
+                logging.info("connection attempts " + connect_attempt)
                 return_dict["ConnectAttempt"] = connect_attempt
             if 'ConnectFailure:' in m:
                 connect_fail_ind = m.index('ConnectFailure:')
                 connect_failure = m[connect_fail_ind + 1]
                 print("connection failure ", connect_failure)
+                logging.info("connection failure " + connect_failure)
                 return_dict["ConnectFailure"] = connect_failure
             if 'AssocRej:' in m:
                 ass_rej_ind = m.index('AssocRej:')
                 assocrej = m[ass_rej_ind + 1]
                 print("association rejection ", assocrej)
+                logging.info("association rejection " + assocrej)
                 return_dict["AssocRej"] = assocrej
             if 'AssocTimeout:' in m:
                 ass_ind = m.index('AssocTimeout:')
                 asso_timeout = m[ass_ind + 1]
                 print("association timeout ", asso_timeout)
+                logging.info("association timeout " +  asso_timeout)
                 return_dict["AssocTimeout"] = asso_timeout
         else:
             print("ssid is not present")
+            logging.info("ssid is not present")
         print(return_dict)
         return return_dict
 
