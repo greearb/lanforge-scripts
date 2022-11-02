@@ -134,9 +134,12 @@ class lf_report:
         shutil.copy(banner_src_file, banner_dst_file)
 
     def move_data(self, directory=None, _file_name=None, directory_name=None):
-        if directory_name is  None:
-            _src_file = str(self.current_path) +  '/' + str(_file_name)
-            _dst_file = str(self.path_date_time) + '/' + str(directory) + '/' + str(_file_name)
+        if directory_name is None:
+            _src_file = str(self.current_path) + '/' + str(_file_name)
+            if directory is None:
+                _dst_file = str(self.path_date_time)
+            else:
+                _dst_file = str(self.path_date_time) + '/' + str(directory) + '/' + str(_file_name)
         else:
             _src_file = str(self.current_path) + '/' + str(directory_name)
             _dst_file = str(self.path_date_time) +  '/' + str(directory_name)
