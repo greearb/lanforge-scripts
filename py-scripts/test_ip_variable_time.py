@@ -171,11 +171,22 @@ class IPVariableTime(Realm):
         self.cx_profile.side_b_max_bps = side_b_max_rate
         self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port)
 
-        if self.outfile is not None:
-            results = self.outfile[:-4]
-            results = results + "-results.csv"
-            self.csv_results_file = open(results, "w")
-            self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
+        # if self.outfile is not None:
+        #     results = self.outfile[:-4]
+        #     results = results + "-results.csv"
+        #     self.csv_results_file = open(results, "w")
+        #     self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
+
+        # TODO: check for the various extentions 
+        results = self.outfile
+        if results.split('.')[-1] == '':
+            logger.debug("report_file has no file extension will add .csv")
+
+        # check the file extension and compare to the mode set
+
+        self.csv_results_file = open(results, "w")
+        self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
+
 
     def get_kpi_results(self):
         # make json call to get kpi results
@@ -389,7 +400,8 @@ class IPVariableTime(Realm):
             # systeminfopath = str(path) + '/systeminfo.txt'
             systeminfopath = str(new_file_path) + '/systeminfo.txt'
 
-            if self.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'xlsx']:
+            if self.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'parquet',
+                                      'xlsx']:
                 # report_f = str(path) + '/data.' + self.output_format
                 report_f = str(new_file_path) + '/data.' + self.output_format
                 output = self.output_format
@@ -471,7 +483,7 @@ class IPVariableTime(Realm):
         compared_rept = None
         if self.compared_report:
             compared_report_format = self.compared_report.split('.')[-1]
-            # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','h5']:
+            # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
             if compared_report_format != 'csv':
                 logger.critical("Cannot process this file type. Please select a different file and re-run script.")
                 raise ValueError("Cannot process this file type. Please select a different file and re-run script.")
@@ -1183,8 +1195,8 @@ python3 ./test_ip_variable_time.py
         help="dut model for kpi.csv,  test-priority is arbitrary number")
     parser.add_argument(
         '--csv_outfile',
-        help="--csv_outfile <Output file for csv data>",
-        default="")
+        help="--csv_outfile <prepend input to generated file for csv data>",
+        default="csv_outfile")
 
     args = parser.parse_args()
 
@@ -1237,12 +1249,12 @@ python3 ./test_ip_variable_time.py
         _kpi_dut_serial_num=dut_serial_num,
         _kpi_test_id=test_id)
 
-    if args.csv_outfile is None:
-        current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        csv_outfile = "{}_{}-test_ip_variable_time.csv".format(
-            args.csv_outfile, current_time)
-        csv_outfile = report.file_add_path(csv_outfile)
-        logger.info("csv output file : {}".format(csv_outfile))
+    # if args.csv_outfile is None:
+    current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+    csv_outfile = "{}_{}-test_ip_variable_time.csv".format(
+        args.csv_outfile, current_time)
+    csv_outfile = report.file_add_path(csv_outfile)
+    logger.info("csv output file : {}".format(csv_outfile))
 
     if len(args.upstream_port) and len(args.radio) and len(args.ssid) and len(args.security) != len(args.passwd):
         raise ValueError(f"Upstream-ports - {args.upstream_port}\nradio - {args.radio}\nSSID - {args.ssid}\n"
@@ -1314,7 +1326,7 @@ python3 ./test_ip_variable_time.py
                                  monitor_interval=args.monitor_interval,
                                  kpi_csv=kpi_csv,
                                  kpi_path=kpi_path,
-                                 outfile=args.csv_outfile,
+                                 outfile=csv_outfile,
                                  influx_host=args.influx_host,
                                  influx_port=args.influx_port,
                                  influx_org=args.influx_org,
