@@ -658,7 +658,7 @@ Generic command example:
     # Used to report 
     parser.add_argument(
         '--csv_outfile',
-        help="--csv_outfile <Output file for csv data>",
+        help="--csv_outfile <prepend input to generated file for csv data>",
         default="csv_outfile")
 
 
