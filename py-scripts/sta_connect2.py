@@ -128,12 +128,22 @@ class StaConnect2(Realm):
         self.cx_profile.port = self.port
         self.cx_profile.name_prefix = self.name_prefix
 
-        if self.outfile is not None:
-            results = self.outfile[:-4]
-            results = results + "-results.csv"
-            self.csv_results_file = open(results, "w")
-            self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
-        
+        # if self.outfile is not None:
+        #     results = self.outfile[:-4]
+        #     results = results + "-results.csv"
+        #     self.csv_results_file = open(results, "w")
+        #     self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
+
+        # TODO: check for the various extentions
+        results = self.outfile
+        if results.split('.')[-1] == '':
+            logger.debug("report_file has no file extension will add .csv")
+
+        # check the file extension and compare to the mode set
+
+        self.csv_results_file = open(results, "w")
+        self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
+
         if self.sta_prefix is None:
             self.sta_prefix = "1.%s.sta" % (self.resource)
 
@@ -929,7 +939,7 @@ CLI Example:
         help="test-id for kpi.csv,  script or test name")
     parser.add_argument(
         '--csv_outfile',
-        help="--csv_outfile <Output file for csv data>",
+        help="--csv_outfile <prepend input to generated file for csv data>",
         default="")
     # logging configuration:
     parser.add_argument('--log_level', default=None, 
@@ -991,12 +1001,12 @@ CLI Example:
         _kpi_dut_serial_num=dut_serial_num,
         _kpi_test_id=test_id)
 
-    if args.csv_outfile is not None:
-        current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        csv_outfile = "{}_{}-sta_connect2.csv".format(
-            args.csv_outfile, current_time)
-        csv_outfile = report.file_add_path(csv_outfile)
-        logger.info("csv output file : {}".format(csv_outfile))
+    # if args.csv_outfile is None:
+    current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+    csv_outfile = "{}_{}-test_ip_variable_time.csv".format(
+        args.csv_outfile, current_time)
+    csv_outfile = report.file_add_path(csv_outfile)
+    logger.info("csv output file : {}".format(csv_outfile))
 
     upstream_port = LFUtils.name_to_eid(args.upstream_port)
     logger.info("upstream_port: %s", upstream_port)
@@ -1017,7 +1027,7 @@ CLI Example:
                              _influx_user=args.influx_user,
                              _influx_host=args.influx_host,
                              kpi_csv=kpi_csv,
-                             outfile=args.csv_outfile,
+                             outfile=csv_outfile,
                              download_bps=args.download_bps,
                              upload_bps=args.upload_bps,
                              side_a_pdu=args.side_a_pdu,
