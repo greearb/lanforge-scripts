@@ -752,7 +752,11 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         ''')
     parser.add_argument(
         '--path',
-        help='--path top directory path to kpi if regererating database or png files',
+        help='''
+            --path top directory path to kpi if regererating database or png files,
+            for example /html-reports/TEST_RUNS , this will collect all the results for all the 
+            the runs under TEST_RUNS.  
+            ''',
         default='')
     parser.add_argument('--file', help='--file kpi.csv  default: kpi.csv',
                         default='kpi.csv')  # TODO is this needed
@@ -861,8 +865,21 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
 
         test_rig_list = csv_dash.get_test_rig_list()
         # keep the list, currently one test bed results
-        report.set_table_title("Test Rig: {} Links".format(test_rig_list[-1]))
-        report.build_table_title()
+        if test_rig_list:
+            report.set_table_title("Test Rig: {} Links".format(test_rig_list[-1]))
+            report.build_table_title()
+        else:
+            note = '''
+                lf_qa.py Test Rig field is empty , 
+                for wifi_capacity consider setting Test Rig ID and Test Tag under Select Output tab
+                for dataplane and ap_auto set Test Rig ID and Test Tag under the Report Configuration tab
+                No reaults will be generated for Test Rig field empty
+                '''
+
+            logger.info("lf_qa.py Test Rig field in empty")
+            logger.info(note)
+            report.set_table_title("Test Rig field in kpi is empty")
+            report.build_table_title
 
         abs_path = False
         if abs_path:
