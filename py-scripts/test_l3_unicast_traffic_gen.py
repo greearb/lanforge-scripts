@@ -17,6 +17,7 @@ import argparse
 import time
 import datetime
 import logging
+import copy
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -34,25 +35,48 @@ logger = logging.getLogger(__name__)
 
 
 class L3VariableTimeLongevity(Realm):
-    def __init__(self, host='localhost', port='8080', endp_type=None, side_b=None, radios=None, radio_name_list=None,
-                 number_of_stations_per_radio_list=None,
-                 ssid_list=None, ssid_password_list=None, security_list=None,
-                 station_lists=None, name_prefix=None, resource=None,
-                 side_a_min_rate=256000, side_a_max_rate=0,
-                 side_b_min_rate=256000, side_b_max_rate=0,
-                 number_template="00", test_duration="125s",
-                 _debug_on=False,
-                 _exit_on_error=False,
-                 _exit_on_fail=False):
+    def __init__(self, 
+                host='localhost',
+                port='8080',
+                endp_type=None,
+                side_b=None,
+                radios=None, 
+                radio_name_list=None,
+                number_of_stations_per_radio_list=None,
+                ssid_list=[],
+                ssid_password_list=[],
+                security_list=[],
+                station_lists=[],
+                key_mgt_list=[],
+                pairwise_list=[],
+                group_list=None,
+                eap_list=None,
+                name_prefix=None,
+                resource=None,
+                side_a_min_rate=256000,
+                side_a_max_rate=0,
+                side_b_min_rate=256000,
+                side_b_max_rate=0,
+                number_template="00",
+                test_duration="125s",
+                _debug_on=False,
+                _exit_on_error=False,
+                _exit_on_fail=False):
         super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on, _exit_on_fail=_exit_on_fail)
         self.host = host
         self.port = port
         self.endp_type = endp_type
         self.side_b = side_b
-        self.ssid_list = ssid_list
+        self.ssid_list = ssid_list,
+        self.ssid_password_list = []
+        self.ssid_password_list = ssid_password_list
         self.ssid_password_list = ssid_password_list
         self.station_lists = station_lists
         self.security_list = security_list
+        self.key_mgt_list = key_mgt_list
+        self.pairwise_list = pairwise_list
+        self.group_list = group_list
+        self.eap_list = eap_list
         self.number_template = number_template
         self.resource = resource
         self.debug = _debug_on
@@ -70,7 +94,20 @@ class L3VariableTimeLongevity(Realm):
             self.station_profile.lfclient_url = self.lfclient_url
             self.station_profile.ssid = ssid_list[radio]
             self.station_profile.ssid_pass = ssid_password_list[radio]
-            self.station_profile.security = self.security_list[radio]
+            self.station_profile.security = security_list[radio]
+            self.station_profile.set_wifi_extra(key_mgmt=key_mgt_list[radio],
+                                                pairwise=pairwise_list[radio],
+                                                group=group_list[radio],
+                                                psk="",
+                                                eap=group_list[radio],
+                                                identity="",
+                                                passwd="",
+                                                pin="")
+            if key_mgt_list[radio] != "":
+                self.station_profile.set_command_flag("add_sta","80211u_enable", 0)
+                self.station_profile.set_command_flag("add_sta","8021x_radius", 1)
+
+
             self.station_profile.number_template = self.number_template
             self.station_profile.mode = 0
             self.station_profiles.append(self.station_profile)
@@ -330,9 +367,22 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
                         help='--endp_type <type of traffic> example --endp_type lf_udp, default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6',
                         default='lf_udp', type=valid_endp_type)
 
+
+
     requiredNamed = parser.add_argument_group('required arguments')
     requiredNamed.add_argument('--radio_list', action='append', nargs='*',
-                               help='--radio_list  <number_of_wiphy> <number of last station> <ssid>  <ssid password>',
+                                help='''
+                                --radio_list  <number_of_wiphy> <number of last station> <ssid> <ssid password> <security> <key_management> <pairwise_ciphers>  <group_ciphers> <eap_methods>
+                                if radio list is 4 in length the security defaults to wpa2,  all other parameters are 'DEFAULT'
+
+                                if radio list is 5 in length, security is set, all other parameters are 'DEFAULT' 
+
+                                if radio list is 6 in length, key management is set to OWE, security needs to be set so radio list
+
+                                if radio list is 9 then all parameters are set
+
+                                Acceptable lengths are 4,5,6,9
+                                ''',
                                required=True)
 
     args = parser.parse_args()
@@ -357,6 +407,10 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
     ssid_offset = 2
     ssid_password_offset = 3
     security_offset = 4
+    key_mgt_offset = 5
+    pairwise_offset = 6
+    group_offset = 7
+    eap_offset = 8
 
     MAX_NUMBER_OF_STATIONS = 64
 
@@ -365,6 +419,10 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
     ssid_list = []
     ssid_password_list = []
     security_list = []
+    key_mgt_list = []
+    pairwise_list = []
+    group_list = []
+    eap_list = [] 
 
     logger.info("radio_list length {radio_list}".format(radio_list=len(args.radio_list)))
 
@@ -380,12 +438,38 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
         ssid_password = radio[ssid_password_offset]
         ssid_password_list.append(ssid_password)
         # for backward compatibity previously nargs was on 4 (did not include security)
-        if radio_args_len == 5:
+        key_mgt = ""
+        pairwise = ""
+        group = ""
+        eap = ""
+
+        if radio_args_len == 4:
+            security = "wpa2"
+        elif radio_args_len == 5:
             security = radio[security_offset]
+        elif radio_args_len == 6:
+            eap = radio[eap_offset]
+        elif radio_args_len == 9:
+            key_mgt = radio[key_mgt_offset]
+            pairwise = radio[pairwise_offset]
+            group = radio[group_offset]
+            eap = radio[eap_offset]
         else:
-            security = 'wpa2'
+            logger.info('''
+            if radio list is 4 in length the security defaults to wpa2,  all other parameters are 'DEFAULT'
+            if radio list is 5 in length, security is set, all other parameters are 'DEFAULT' 
+            if radio list is 6 in length, key management is set to OWE, security needs to be set so radio list
+            if radio list is 9 then all parameters are set
+            Acceptable lengths are 4,5,6,9
+            ''' )
+            exit(2)
 
         security_list.append(security)
+        key_mgt_list.append(key_mgt)
+        pairwise_list.append(pairwise)
+        group_list.append(group)
+        eap_list.append(eap)
+
 
     station_lists = []
     for radio_list in range(0, len(args.radio_list)):
@@ -397,13 +481,25 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
                                               end_id_=number_of_stations + radio_list * 1000, padding_number_=10000)
         station_lists.append(station_list)
 
-    ip_var_test = L3VariableTimeLongevity(host=args.mgr, port=args.mgr_port, station_lists=station_lists,
-                                          name_prefix="var_time", resource=resource,
-                                          endp_type=args.endp_type, side_b=upstream_port, radios=args.radio_list,
-                                          radio_name_list=radio_name_list,
-                                          number_of_stations_per_radio_list=number_of_stations_per_radio_list,
-                                          ssid_list=ssid_list, ssid_password_list=ssid_password_list, security_list=security_list,
-                                          test_duration=args.test_duration, _debug_on=args.debug)
+    ip_var_test = L3VariableTimeLongevity(host=args.mgr, 
+                                            port=args.mgr_port, 
+                                            station_lists=station_lists,
+                                            name_prefix="var_time", 
+                                            resource=resource,
+                                            endp_type=args.endp_type, 
+                                            side_b=upstream_port, 
+                                            radios=args.radio_list,
+                                            radio_name_list=radio_name_list,
+                                            number_of_stations_per_radio_list=number_of_stations_per_radio_list,
+                                            ssid_list=ssid_list, 
+                                            ssid_password_list=ssid_password_list, 
+                                            security_list=security_list,
+                                            key_mgt_list=key_mgt_list,
+                                            pairwise_list=pairwise_list,
+                                            group_list=group_list,
+                                            eap_list=eap_list,
+                                            test_duration=args.test_duration, 
+                                            _debug_on=args.debug)
 
     ip_var_test.pre_cleanup()
     ip_var_test.build()
