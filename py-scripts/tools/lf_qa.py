@@ -201,6 +201,7 @@ class csv_sql:
                           <th>Test</th>
                           <th>Test_Tag</th>
                           <th>Links</th>
+                          <th>Directory Name</th>
                         </tr>
                     </thead>
                 <tbody>
@@ -264,8 +265,9 @@ class csv_sql:
                     <tr style="text-align: center; margin-bottom: 0; margin-top: 0;">
                         <td>{test_id}</td><td>{test_tag}</td><td><a href="{html_path}" target="_blank">html</a> / 
                         <a href="{pdf_path}" target="_blank">pdf</a> / 
-                        <a href="{dir_path}" target="_blank">results_dir</a></td></tr> 
-                    """.format(test_id=test_id, test_tag=test_tag, html_path=html_path, pdf_path=pdf_path, dir_path=dir_path)
+                        <a href="{dir_path}" target="_blank">results_dir</a></td>
+                        <td>{parent_name}</td></tr> 
+                    """.format(test_id=test_id, test_tag=test_tag, html_path=html_path, pdf_path=pdf_path, dir_path=dir_path, parent_name=parent_name)
         suite_html_results += """
                     </tbody>
                 </table>
