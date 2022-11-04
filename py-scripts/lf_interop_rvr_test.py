@@ -47,8 +47,10 @@ logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 import argparse
+
 if 'py-json' not in sys.path:
     sys.path.append(os.path.join(os.path.abspath('..'), 'py-json'))
+
 
 # from lf_graph import lf_bar_graph, lf_line_graph
 # from datetime import datetime, timedelta
@@ -420,16 +422,35 @@ class RvR(Realm):
             report.build_graph()
 
             len_data = len(res["graph_df"][traffic_type]["dataset"][0])
-            print("Upload: ", [res["graph_df"][traffic_type]["dataset"][0][i] for i in range(len_data)])
-            print("Download: ", [res["graph_df"][traffic_type]["dataset"][1][i] for i in range(len_data)])
+            # print("Upload: ", [res["graph_df"][traffic_type]["dataset"][0][i] for i in range(len_data)])
+            # print("Download: ", [res["graph_df"][traffic_type]["dataset"][1][i] for i in range(len_data)])
             report.start_content_div()
             report.set_table_title("<h3>Table for Graph")
             report.build_table_title()
-            data = pd.DataFrame({
-                "Attenuation Step(dB)": self.attenuator_db_signal,
-                "Upload Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][0][i] for i in range(len_data)],
-                "Download Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][1][i] for i in range(len_data)],
-            })
+            if self.traffic_direction == "bidirectional":
+                data = pd.DataFrame({
+                    "Attenuation Step(dB)": self.attenuator_db_signal,
+                    "Upload Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][0][i] for i in
+                                                range(len_data)],
+                    "Download Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][1][i] for i in
+                                                  range(len_data)],
+                })
+            elif self.traffic_direction == "upload":
+                data = pd.DataFrame({
+                    "Attenuation Step(dB)": self.attenuator_db_signal,
+                    "Upload Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][0][i] for i in
+                                                range(len_data)],
+                    # "Download Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][1][i] for i in
+                    #                               range(len_data)],
+                })
+            elif self.traffic_direction == "download":
+                data = pd.DataFrame({
+                    "Attenuation Step(dB)": self.attenuator_db_signal,
+                    # "Upload Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][0][i] for i in
+                    #                             range(len_data)],
+                    "Download Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][1][i] for i in
+                                                  range(len_data)],
+                })
             report.set_table_dataframe(data)
             report.build_table()
             report.end_content_div()
@@ -462,11 +483,11 @@ class RvR(Realm):
         for traffic_type in phone_x:
             for phone in phone_x[traffic_type]:
                 for direction in phone_x[traffic_type][phone]:
-                    if "RSSI Strength(in dBm)" == 'Throughput(in Mbps)' if (direction == 'upload' or direction == 'download') else 'RSSI Strength(in dBm)':
+                    if "RSSI Strength(in dBm)" == 'Throughput(in Mbps)' if (
+                            direction == 'upload' or direction == 'download') else 'RSSI Strength(in dBm)':
                         RSSISignal[phone] = phone_x[traffic_type][phone][direction]
                     else:
                         Throughput[phone] = phone_x[traffic_type][phone][direction]
-
 
         # for traffic_type in phone_x:
         #     for phone in phone_x[traffic_type]:
@@ -478,13 +499,13 @@ class RvR(Realm):
             for phone in phone_x[traffic_type]:
                 for direction in phone_x[traffic_type][phone]:
                     traffic_name = "TCP" if (traffic_type == "lf_tcp") else "UDP" if (
-                                traffic_type == "lf_udp") else "TCP and UDP"
+                            traffic_type == "lf_udp") else "TCP and UDP"
                     report.set_obj_html(_obj_title=f"{phone} : {traffic_name} {direction}", _obj="")
                     report.build_objective()
                     line_graph = lf_graph.lf_line_graph(_data_set=[phone_x[traffic_type][phone][direction]],
                                                         _xaxis_name="Attenuation",
                                                         _yaxis_name='Throughput(in Mbps)' if (
-                                                                    direction == 'upload' or direction == 'download') else 'RSSI Strength(in dBm)',
+                                                                direction == 'upload' or direction == 'download') else 'RSSI Strength(in dBm)',
                                                         _xaxis_categories=self.attenuator_db_signal,
                                                         _graph_image_name=f"rvr_{traffic_type}_{phone}_{direction}",
                                                         _label=[
@@ -493,7 +514,7 @@ class RvR(Realm):
                                                             'olivedrab' if direction == 'upload' else 'orangered' if direction == 'download' else 'mediumblue'],
                                                         _xaxis_step=1,
                                                         _graph_title="Throughput vs Attenuation" if (
-                                                                    direction == 'upload' or direction == 'download') else "RSSI Signal Strength(in dBm)",
+                                                                direction == 'upload' or direction == 'download') else "RSSI Signal Strength(in dBm)",
                                                         _title_size=16,
                                                         _figsize=(18, 6),
                                                         _legend_loc="best",
@@ -566,7 +587,8 @@ class RvR(Realm):
                         report.move_csv_file()
                         report.build_graph()
 
-                        print("Attenuation Step(dB) ", self.attenuator_db_signal, "\nThroughput(mbps) ", res[traffic_type][attenuation][direction],)
+                        print("Attenuation Step(dB) ", self.attenuator_db_signal, "\nThroughput(mbps) ",
+                              res[traffic_type][attenuation][direction], )
                         report.start_content_div()
                         report.set_table_title("<h3>Table for Graph")
                         report.build_table_title()
@@ -574,8 +596,11 @@ class RvR(Realm):
                             "Attenuation Step(dB)": [attenuation] * len(res[traffic_type][attenuation][direction]),
                             "Phone": self.list_of_data[1],
                             "Throughput(mbps)": res[traffic_type][attenuation][direction],
-                            "Traffic Direction": ['upload' if direction == 'upload' else 'download'] * len(res[traffic_type][attenuation][direction]),
-                            "Traffic type": ['TCP' if traffic_type == 'lf_tcp' else 'UDP' if traffic_type == 'lf_udp' else 'TCP and UDP']*len(res[traffic_type][attenuation][direction]),
+                            "Traffic Direction": ['upload' if direction == 'upload' else 'download'] * len(
+                                res[traffic_type][attenuation][direction]),
+                            "Traffic type": [
+                                                'TCP' if traffic_type == 'lf_tcp' else 'UDP' if traffic_type == 'lf_udp' else 'TCP and UDP'] * len(
+                                res[traffic_type][attenuation][direction]),
                         })
                         report.set_table_dataframe(data)
                         report.build_table()
@@ -661,7 +686,7 @@ def main():
     interval = int(args.atten_val.split('..')[1])
     end = int(args.atten_val.split('..')[2])
     temp = ['0']
-    for i in range(start, end+1, interval):
+    for i in range(start, end + 1, interval):
         if str(i) not in temp:
             temp.append(str(i))
     args.atten_val = temp
