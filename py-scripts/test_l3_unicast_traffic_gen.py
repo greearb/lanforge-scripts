@@ -68,8 +68,6 @@ class L3VariableTimeLongevity(Realm):
         self.endp_type = endp_type
         self.side_b = side_b
         self.ssid_list = ssid_list,
-        self.ssid_password_list = []
-        self.ssid_password_list = ssid_password_list
         self.ssid_password_list = ssid_password_list
         self.station_lists = station_lists
         self.security_list = security_list
@@ -95,33 +93,6 @@ class L3VariableTimeLongevity(Realm):
             self.station_profile.ssid = ssid_list[radio]
             self.station_profile.ssid_pass = ssid_password_list[radio]
             self.station_profile.security = security_list[radio]
-            self.station_profile.set_wifi_extra(key_mgmt=key_mgt_list[radio],
-                                                pairwise=pairwise_list[radio],
-                                                group=group_list[radio],
-                                                psk='[BLANK]',
-                                                eap=group_list[radio],
-                                                identity='[BLANK]',
-                                                anonymous_identity="[BLANK]",
-                                                phase1="[BLANK]",
-                                                phase2="[BLANK]",
-                                                passwd='[BLANK]',
-                                                pin='[BLANK]',
-                                                pac_file='[BLANK]',
-                                                private_key='[BLANK]',
-                                                pk_password='[BLANK]',
-                                                hessid="00:00:00:00:00:00",
-                                                realm="[BLANK]",
-                                                client_cert="[BLANK]",
-                                                imsi="[BLANK]",
-                                                milenage="[BLANK]",
-                                                domain="[BLANK]",
-                                                roaming_consortium="[BLANK]",
-                                                venue_group="[BLANK]",
-                                                network_type="[BLANK]",
-                                                ipaddr_type_avail="[BLANK]",
-                                                network_auth_type="[BLANK]",
-                                                anqp_3gpp_cell_net="[BLANK]"
-                                            )
             # self.station_profile.set_wifi_extra(key_mgmt=key_mgt_list[radio],
             #                                     pairwise=pairwise_list[radio],
             #                                     group=group_list[radio],
@@ -132,6 +103,34 @@ class L3VariableTimeLongevity(Realm):
             #                                     pin="")
 
             if key_mgt_list[radio] != "":
+                self.station_profile.set_wifi_extra(key_mgmt=key_mgt_list[radio],
+                                                    pairwise=pairwise_list[radio],
+                                                    group=group_list[radio],
+                                                    psk='[BLANK]',
+                                                    eap=group_list[radio],
+                                                    identity='[BLANK]',
+                                                    anonymous_identity="[BLANK]",
+                                                    phase1="[BLANK]",
+                                                    phase2="[BLANK]",
+                                                    passwd='[BLANK]',
+                                                    pin='[BLANK]',
+                                                    pac_file='[BLANK]',
+                                                    private_key='[BLANK]',
+                                                    pk_password='[BLANK]',
+                                                    hessid="00:00:00:00:00:00",
+                                                    realm="[BLANK]",
+                                                    client_cert="[BLANK]",
+                                                    imsi="[BLANK]",
+                                                    milenage="[BLANK]",
+                                                    domain="[BLANK]",
+                                                    roaming_consortium="[BLANK]",
+                                                    venue_group="[BLANK]",
+                                                    network_type="[BLANK]",
+                                                    ipaddr_type_avail="[BLANK]",
+                                                    network_auth_type="[BLANK]",
+                                                    anqp_3gpp_cell_net="[BLANK]"
+                                                )
+
                 self.station_profile.set_command_flag("add_sta","80211u_enable", 0)
                 self.station_profile.set_command_flag("add_sta","8021x_radius", 1)
 
@@ -484,7 +483,7 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
 
         if radio_args_len == 4:
             security = "wpa2"
-            eap = radio[eap_offset]
+            # eap = radio[eap_offset]
         elif radio_args_len == 5:
             security = radio[security_offset]
         elif radio_args_len == 6:
