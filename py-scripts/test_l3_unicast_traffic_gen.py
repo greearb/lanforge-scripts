@@ -98,11 +98,39 @@ class L3VariableTimeLongevity(Realm):
             self.station_profile.set_wifi_extra(key_mgmt=key_mgt_list[radio],
                                                 pairwise=pairwise_list[radio],
                                                 group=group_list[radio],
-                                                psk="",
+                                                psk='[BLANK]',
                                                 eap=group_list[radio],
-                                                identity="",
-                                                passwd="",
-                                                pin="")
+                                                identity='[BLANK]',
+                                                anonymous_identity="[BLANK]",
+                                                phase1="[BLANK]",
+                                                phase2="[BLANK]",
+                                                passwd='[BLANK]',
+                                                pin='[BLANK]',
+                                                pac_file='[BLANK]',
+                                                private_key='[BLANK]',
+                                                pk_password='[BLANK]',
+                                                hessid="00:00:00:00:00:00",
+                                                realm="[BLANK]",
+                                                client_cert="[BLANK]",
+                                                imsi="[BLANK]",
+                                                milenage="[BLANK]",
+                                                domain="[BLANK]",
+                                                roaming_consortium="[BLANK]",
+                                                venue_group="[BLANK]",
+                                                network_type="[BLANK]",
+                                                ipaddr_type_avail="[BLANK]",
+                                                network_auth_type="[BLANK]",
+                                                anqp_3gpp_cell_net="[BLANK]"
+                                            )
+            # self.station_profile.set_wifi_extra(key_mgmt=key_mgt_list[radio],
+            #                                     pairwise=pairwise_list[radio],
+            #                                     group=group_list[radio],
+            #                                     psk="",
+            #                                     eap=group_list[radio],
+            #                                     identity="",
+            #                                     passwd="",
+            #                                     pin="")
+
             if key_mgt_list[radio] != "":
                 self.station_profile.set_command_flag("add_sta","80211u_enable", 0)
                 self.station_profile.set_command_flag("add_sta","8021x_radius", 1)
@@ -303,8 +331,10 @@ Useful Information:
 1. Polling interval for checking traffic is fixed at 1 minute
 2. The test will exit when traffic has not changed on a station for 1 minute
 3. The tx/rx rates are fixed at 256000 bits per second
-4. Security is fixed at WPA2
-5. Maximum stations per radio is 64
+4. Maximum stations per radio is 64
+
+5. radio list order  --radio_list  <number_of_wiphy> <number of last station> <ssid> <ssid password> <security> <key_management> <pairwise_ciphers>  <group_ciphers> <eap_methods>
+
             ''',
 
         description='''\
@@ -383,8 +413,12 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
                                 if radio list is 9 then all parameters are set
                                     Key_management = WPA-EAP-SHA256
                                     pairwise_ciphers = CCMP-256
-                                    group_cipher = 'GCMP-256 (wpa3)'
+                                    group_cipher = 'GCMP-256'
                                     eap_methods = EAP-PEAP
+
+                                    example:
+                                --radio_list wiphy0 1 axe11000_6g lf_axe11000_6g wpa3 WPA-EAP-SHA256 CCMP-256 GCMP-256 PEAP
+
 
                                 Acceptable lengths are 4,5,6,9
                                 ''',
