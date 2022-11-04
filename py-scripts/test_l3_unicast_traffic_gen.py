@@ -378,8 +378,13 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
                                 if radio list is 5 in length, security is set, all other parameters are 'DEFAULT' 
 
                                 if radio list is 6 in length, key management is set to OWE, security needs to be set so radio list
+                                    key_management = OWE
 
                                 if radio list is 9 then all parameters are set
+                                    Key_management = WPA-EAP-SHA256
+                                    pairwise_ciphers = CCMP-256
+                                    group_cipher = 'GCMP-256 (wpa3)'
+                                    eap_methods = EAP-PEAP
 
                                 Acceptable lengths are 4,5,6,9
                                 ''',
@@ -445,11 +450,14 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
 
         if radio_args_len == 4:
             security = "wpa2"
+            eap = radio[eap_offset]
         elif radio_args_len == 5:
             security = radio[security_offset]
         elif radio_args_len == 6:
-            eap = radio[eap_offset]
+            security = radio[security_offset]
+            key_mgt = radio[key_mgt_offset]
         elif radio_args_len == 9:
+            security = radio[security_offset]
             key_mgt = radio[key_mgt_offset]
             pairwise = radio[pairwise_offset]
             group = radio[group_offset]
