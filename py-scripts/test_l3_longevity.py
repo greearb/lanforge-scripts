@@ -2785,6 +2785,8 @@ Setting wifi_settings per radio
     enable_flags==('ht160_enable'|'wpa2_enable'|'80211u_enable'|'create_admin_down'|'ht160_enable') "
 --endp_type lf_udp --rates_are_totals --side_a_min_bps=20000 --side_b_min_bps=300000000 --test_rig CT-US-001 --test_tag 'l3_longevity'
 
+Note: for enable flags can us && as separator in vscode
+
         wifi_mode
         Input       : Enum Val  : Shown by nc_show_ports
 
