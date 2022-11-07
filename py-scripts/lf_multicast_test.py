@@ -29,9 +29,9 @@ lf_rpt = cv_test_reports.lanforge_reports
 import pyshark as ps
 
 '''
-Usage: python3 lf_power_save_test_cases_cisco.py --mgr 192.168.200.229 --ssid Endurance1 --radio wiphy0 
-       --upstream_port 1.1.eth1 --monitor_radio wiphy0 
-       --report_path /home/mahesh/Desktop/lanforge-scripts/lanforge-scripts/py-scripts
+Usage: python3 lf_multicast_test.py --mgr 192.168.200.37 
+    --ssid ASUS_5G --passwd Password@123 --security wpa2 --radio wiphy1 
+    --upstream_port eth1 --num_stations 2
 '''
 
 
