@@ -151,11 +151,21 @@ class max_associate(Realm):
         self.cx_profile.side_a_min_bps = self.download_bps
         self.cx_profile.side_b_min_bps = self.upload_bps
 
-        if self.outfile is not None:
-            results = self.outfile[:-4]
-            results = results + "-results.csv"
-            self.csv_results_file = open(results, "w")
-            self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
+        # if self.outfile is not None:
+        #     results = self.outfile[:-4]
+        #     results = results + "-results.csv"
+        #     self.csv_results_file = open(results, "w")
+        #     self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
+
+        # TODO: check for the various extentions
+        results = self.outfile
+        if results.split('.')[-1] == '':
+            logger.debug("report_file has no file extension will add .csv")
+
+        # check the file extension and compare to the mode set
+
+        self.csv_results_file = open(results, "w")
+        self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
 
     def get_kpi_results(self):
         # make json call to get kpi results
@@ -181,7 +191,8 @@ class max_associate(Realm):
 
             self.systeminfopath = str(new_file_path) + '/systeminfo.txt'
 
-            if self.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'xlsx']:
+            if self.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'parquet',
+                                      'xlsx']:
                 # self.report_path_format = str(path) + '/data.' + self.output_format
                 self.report_path_format = str(new_file_path) + '/data.' + self.output_format
                 self.report_file_format = self.output_format
@@ -447,7 +458,7 @@ class max_associate(Realm):
         compared_rept = None
         if self.compared_report:
             compared_report_format = self.compared_report.split('.')[-1]
-            # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','h5']:
+            # if compared_report_format not in ['csv', 'json', 'dta', 'pkl','html','xlsx','parquet','h5']:
             if compared_report_format != 'csv':
                 logger.critical("Cannot process this file type. Please select a different file and re-run script.")
                 raise ValueError("Cannot process this file type. Please select a different file and re-run script.")
@@ -843,7 +854,7 @@ For an overnight test with a ct523c system and a 6e network:
         help="test-id for kpi.csv,  script or test name")
     parser.add_argument(
         '--csv_outfile',
-        help="--csv_outfile <Output file for csv data>",
+        help="--csv_outfile <prepend input to generated file for csv data>",
         default="")
 
     # logging configuration:
@@ -924,12 +935,12 @@ For an overnight test with a ct523c system and a 6e network:
         _kpi_dut_serial_num=dut_serial_num,
         _kpi_test_id=test_id)
 
-    if args.csv_outfile is None:
-        current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        csv_outfile = "{}_{}-test_ip_variable_time.csv".format(
-            args.csv_outfile, current_time)
-        csv_outfile = report.file_add_path(csv_outfile)
-        logger.info("csv output file : {}".format(csv_outfile))
+    # if args.csv_outfile is None:
+    current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
+    csv_outfile = "{}_{}-test_ip_variable_time.csv".format(
+        args.csv_outfile, current_time)
+    csv_outfile = report.file_add_path(csv_outfile)
+    logger.info("csv output file : {}".format(csv_outfile))
 
     # Lists to help with station creation
     radio_name_list = []
@@ -1074,7 +1085,7 @@ For an overnight test with a ct523c system and a 6e network:
                                     output_format=args.output_format,
                                     port_mgr_columns=args.port_mgr_cols,
                                     compared_report=args.compared_report,
-                                    outfile=args.csv_outfile,
+                                    outfile=csv_outfile,
                                     clean_profile=clean_profile,
                                     debug_=args.debug,
                                     _exit_on_fail=True)
