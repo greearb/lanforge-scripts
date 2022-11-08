@@ -440,15 +440,11 @@ class RvR(Realm):
                     "Attenuation Step(dB)": self.attenuator_db_signal,
                     "Upload Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][0][i] for i in
                                                 range(len_data)],
-                    # "Download Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][1][i] for i in
-                    #                               range(len_data)],
                 })
             elif self.traffic_direction == "download":
                 data = pd.DataFrame({
                     "Attenuation Step(dB)": self.attenuator_db_signal,
-                    # "Upload Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][0][i] for i in
-                    #                             range(len_data)],
-                    "Download Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][1][i] for i in
+                    "Download Throughput(mbps)": [res["graph_df"][traffic_type]["dataset"][0][i] for i in
                                                   range(len_data)],
                 })
             report.set_table_dataframe(data)
