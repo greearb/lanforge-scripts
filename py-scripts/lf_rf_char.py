@@ -206,16 +206,20 @@ class lf_rf_char(Realm):
             return False
 
         # get the IP from port mode
-        summary_output = ""
-        errs_warns = []
-        self.command.post_probe_port(shelf=1,
-                                     resource=self.resource,
-                                     port=self.port_name,
-                                     key="probe_port.quiet.1.{}.{}".format(self.resource, self.port_name),
-                                     suppress_related_commands=True)
-        # response = self.query.get_probe(eid_list=[self.vap], errors_warnings=errs_warns, wait_sec=1, debug=True)
-        response = self.query.json_get("/probe/1/{}/{}".format(self.resource, self.port_name),
-                                       wait_sec=1, debug=True, errors_warnings=errs_warns)
+        self.lf_command = ["../lf_portmod.pl", "--manager", self.lf_mgr, "--card", str(self.resource), "--port_name", self.port_name,
+                           "--cli_cmd", "probe_port 1 {resource} {port}".format(resource=self.resource, port=self.port_name)]
+        logger.info("command: {cmd}".format(cmd=self.lf_command))
+        summary_output = ''
+        # summary = subprocess.Popen(["../lf_portmod.pl", "--manager", self.lf_mgr, "--card",str(self.resource),"--port_name",self.port_name,
+        #            "--cli_cmd","probe_port 1 {resource} {port}".format(resource=self.resource,port=self.port_name)], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        summary = subprocess.Popen(self.lf_command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+        for line in iter(summary.stdout.readline, ''):
+            logger.debug(line)
+            summary_output += line
+            # sys.stdout.flush() # please see comments regarding the necessity of this line
+        summary.wait()
+        logger.debug(summary_output)  # .decode('utf-8', 'ignore'))
 
         dut_ip = ''
         dut_mac = ''
@@ -246,9 +250,9 @@ class lf_rf_char(Realm):
                         dut_ip = m.group(2)
             # there should only be one connection
 
-        logger.debug("probe mac:[{mac}] ip:[{ip}]".format(mac=dut_mac, ip=dut_ip))
+        logger.debug("probe mac : {mac} ip : {ip}".format(mac=dut_mac, ip=dut_ip))
         if dut_mac != self.dut_mac:
-            logger.error("mac mismatch test cannot continue: probe mac:[{mac}] stations mac:[{station_mac}]".
+            logger.error("mac mismatch test cannot continue: probe mac : {mac} stations mac : {station_mac}".
                          format(mac=dut_mac, station_mac=self.dut_mac))
             return False
 
