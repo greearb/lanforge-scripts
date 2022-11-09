@@ -46,6 +46,8 @@ class BaseInteropWifi(Realm):
                  encryption=None,
                  release=["11", "12"],
                  screen_size_prcnt=0.4,
+                 log_dur=0,
+                 log_destination=None,
                  _debug_on=False,
                  _exit_on_error=False, ):
         super().__init__(lfclient_host=manager_ip,
@@ -60,6 +62,8 @@ class BaseInteropWifi(Realm):
         self.screen_size_prcnt = screen_size_prcnt
         self.supported_sdk = ["11", "12"]
         self.supported_devices_names = []
+        self.log_dur = log_dur
+        self.log_destination = log_destination
         self.session = LFSession(lfclient_url=self.manager_ip,
                                  debug=_debug_on,
                                  connection_timeout_sec=2.0,
@@ -261,7 +265,7 @@ class BaseInteropWifi(Realm):
 
 
     # apk apply
-    def batch_modify_apply(self, device):
+    def batch_modify_apply(self, device=None):
         if device is None:
             devices = self.check_sdk_release()
             print(devices)
@@ -338,6 +342,103 @@ class BaseInteropWifi(Realm):
             result = self.post_adb_(device=i, cmd=cmd)
             scan_dict[i] = result
         return scan_dict
+
+    def clean_phantom_resources(self):
+        lf_query_resource = self.json_get("/resource/all")
+        print(lf_query_resource)
+        print("\n Now validating Resource manager ports \n")
+        if 'resources' in list(lf_query_resource):
+            for i in range(len(list(lf_query_resource['resources']))):
+                id = (list(list(lf_query_resource['resources'])[i])[0])
+                resource = list(lf_query_resource['resources'])[i].get(id)["phantom"]
+                print('The', id, 'port is in PHANTOM:-', resource)
+                while resource:
+                    print('Deleting the resource', id)
+                    info = id.split('.')
+                    req_url = "cli-json/rm_resource"
+                    data = {
+                        "shelf": int(info[0]),
+                        "resource": int(info[1])
+                    }
+                    self.json_post(req_url, data)
+                    break
+        else:
+            print("No phantom resources")
+
+        lf_query_resource = self.json_get("/resource/all")
+        print(lf_query_resource)
+        # time.sleep(1)
+
+    # get eid username and phantom state of resources from resource manager
+    # output {'1.1': {'user_name': '', 'phantom': False}, '1.16': {'user_name': 'device_0', 'phantom': True}}
+    def get_resource_id_phantom_user_name(self):
+        lf_query_resource = self.json_get("/resource/all")
+        print(lf_query_resource)
+        keys = list(lf_query_resource.keys())
+        if "resources" in keys:
+            res = lf_query_resource["resources"]
+            if type(res) is list:
+                sec_key = []
+                for i in res:
+                    sec_key.append(list(i.keys()))
+                new_list =[]
+                for z in sec_key:
+                    for y in z:
+                        new_list.append(y)
+                loc_dict = dict.fromkeys(new_list)
+                for i in loc_dict:
+                    lst = ["user_name", "phantom"]
+                    loc_dict[i] = dict.fromkeys(lst)
+                for n, m in zip(range(len(new_list)), new_list):
+                    loc_dict[m]['user_name'] = res[n][m]['user']
+                    loc_dict[m]['phantom'] = res[n][m]['phantom']
+                print(loc_dict)
+                return loc_dict
+        else:
+            print("No resources present")
+
+    def get_mac_address_from_port_mgr(self, eid="1.16.wlan0"):
+        resources = self.json_get("port/all")
+        keys = []
+        if "interfaces" in list(resources.keys()):
+            if type(resources['interfaces']) is list:
+                for i in resources['interfaces']:
+                    keys.append(list(i.keys()))
+            new_keys = []
+            for i in keys:
+                for z in i:
+                    new_keys.append(z)
+            for i,z in zip(range(len(new_keys)), new_keys):
+                if z == eid:
+                    mac = resources['interfaces'][i][z]['ap']
+                    print(mac)
+                    return mac
+        else:
+            print("interfaces is not present")
+        # print(resources["interfaces"].key())
+
+    def get_log_batch_modify(self, device=None):
+        eid = self.name_to_eid(device)
+        if self.log_dur > 0:
+            if not self.log_destination:
+                raise ValueError("adb log capture requires log_destination")
+        user_key = self.session.get_session_based_key()
+        if self.debug:
+            print("====== ====== destination [%s] dur[%s] user_key[%s] " %
+                  (self.log_destination, self.log_dur, user_key))
+            self.session.logger.register_method_name("json_post")
+        json_response = []
+        self.command.post_log_capture(shelf=eid[0],
+                                      resource=eid[1],
+                                      p_type="adb",
+                                      identifier=eid[2],
+                                      duration=self.log_dur,
+                                      destination=self.log_destination,
+                                      user_key=self.session.get_session_based_key(),
+                                      response_json_list=json_response,
+                                      debug=True)
+        print(json_response)
+
 
 
 class UtilityInteropWifi(BaseInteropWifi):
@@ -468,6 +569,13 @@ def main():
 
     parser.add_argument('--passwd', '--pw', type=str, default='',
                         help='APPLY: Password for Interop device WiFi connection')
+
+    parser.add_argument('--log_dur', '--ld', type=float, default=0,
+                        help='LOG: Gather ADB logs for a duration of this many minutes')
+
+    parser.add_argument('--log_destination', '--log_dest',
+                        help='LOG: the filename destination on the LF device where the log file should be stored'
+                             'Give "stdout" to receive content as keyed text message')
 
     args = parser.parse_args()
     obj = BaseInteropWifi(manager_ip=args.host,
