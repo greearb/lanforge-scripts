@@ -159,17 +159,17 @@ class lf_json_api():
                 key = "interface"
             else:
                 key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
-            df = json_normalize(lanforge_json[key])
-            # TODO defaulting to the normal behavior
-            df.to_csv(csv_file_port.format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request), 
-                    mode = self.csv_mode, header = self.csv_header, index=False)
+            if key in lanforge_json:
+                df = json_normalize(lanforge_json[key])
+                # TODO defaulting to the normal behavior
+                df.to_csv(csv_file_port.format(shelf=self.shelf, resource=self.resource, port_name=self.port_name,
+                                               request=self.request),
+                          mode=self.csv_mode, header=self.csv_header, index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
 
         logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request))
-
-
         return lanforge_json, csv_file_port, lanforge_text, lanforge_json_formatted
 
     def get_request_wifi_stats_information(self,port=None):
@@ -330,13 +330,16 @@ class lf_json_api():
         try:
             key = "stations"
             lines = []
-            for i in lanforge_json[key]:
-                inner_data = i[list(i.keys())[0]]  # getting the data under each device/port/object name in list
+            if key in lanforge_json:
+                for i in lanforge_json[key]:
+                    inner_data = i[list(i.keys())[0]]  # getting the data under each device/port/object name in list
+                    lines.append(pandas.json_normalize(inner_data))
+            if "station" in lanforge_json:
+                inner_data = lanforge_json["station"]
                 lines.append(pandas.json_normalize(inner_data))
-            df3 = pandas.concat(lines, ignore_index=True)
-            df3.to_csv("{request}.csv".format(request=self.request), index=False)
-
-
+            if len(lines) > 0:
+                df3 = pandas.concat(lines, ignore_index=True)
+                df3.to_csv("{request}.csv".format(request=self.request), index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
