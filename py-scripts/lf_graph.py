@@ -191,7 +191,7 @@ class lf_bar_graph:
                     raise ValueError(
                         "Length and x-axis values and y-axis values should be same.")
             else:
-                # print("No Dataset Found")
+                 print("No Dataset Found")
         # print("{}.csv".format(self.graph_image_name))
         return "%s.png" % self.graph_image_name
 
