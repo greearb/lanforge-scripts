@@ -175,7 +175,7 @@ class lf_bar_graph:
         plt.gcf()
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
-        print("{}.png".format(self.graph_image_name))
+        # print("{}.png".format(self.graph_image_name))
         if self.enable_csv:
             if self.data_set is not None and self.xaxis_categories is not None:
                 if len(self.xaxis_categories) == len(self.data_set[0]):
@@ -191,8 +191,8 @@ class lf_bar_graph:
                     raise ValueError(
                         "Length and x-axis values and y-axis values should be same.")
             else:
-                print("No Dataset Found")
-        print("{}.csv".format(self.graph_image_name))
+                # print("No Dataset Found")
+        # print("{}.csv".format(self.graph_image_name))
         return "%s.png" % self.graph_image_name
 
 
@@ -266,7 +266,7 @@ class lf_scatter_graph:
             plt.legend(handles=scatter.legend_elements()[0], labels=self.label)
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
-        print("{}.png".format(self.graph_image_name))
+        # print("{}.png".format(self.graph_image_name))
         if self.enable_csv:
             self.lf_csv.columns = self.label
             self.lf_csv.rows = self.y_data_set
@@ -493,7 +493,7 @@ class lf_bar_line_graph:
         plt.gcf()
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
-        print("{}.png".format(self.graph_image_name))
+        # print("{}.png".format(self.graph_image_name))
         # TODO work though this for two axis
         if self.enable_csv:
             if self.data_set is not None and self.xaxis_categories is not None:
@@ -510,8 +510,8 @@ class lf_bar_line_graph:
                     raise ValueError(
                         "Length and x-axis values and y-axis values should be same.")
             else:
-                print("No Dataset Found")
-        print("{}.csv".format(self.graph_image_name))
+                # print("No Dataset Found")
+        # print("{}.csv".format(self.graph_image_name))
         return "%s.png" % self.graph_image_name
 
 
@@ -565,7 +565,7 @@ class lf_stacked_graph:
         plt.legend(self.label)
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
-        print("{}.png".format(self.graph_image_name))
+        # print("{}.png".format(self.graph_image_name))
         if self.enable_csv:
             self.lf_csv.columns = self.label
             self.lf_csv.rows = self.data_set
@@ -665,7 +665,7 @@ class lf_horizontal_stacked_graph:
                 labelbottom=False)  # disable x-axis
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
-        print("{}.png".format(self.graph_image_name))
+        # print("{}.png".format(self.graph_image_name))
         if self.enable_csv:
             self.lf_csv.columns = self.label
             self.lf_csv.rows = self.data_set
@@ -764,7 +764,7 @@ class lf_line_graph:
         plt.gcf()
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
-        print("{}.png".format(self.graph_image_name))
+        # print("{}.png".format(self.graph_image_name))
         if self.enable_csv:
             if self.data_set is not None:
                 self.lf_csv.columns = self.label
@@ -772,8 +772,8 @@ class lf_line_graph:
                 self.lf_csv.filename = f"{self.graph_image_name}.csv"
                 self.lf_csv.generate_csv()
             else:
-                print("No Dataset Found")
-        print("{}.csv".format(self.graph_image_name))
+                # print("No Dataset Found")
+        # print("{}.csv".format(self.graph_image_name))
         return "%s.png" % self.graph_image_name
 
 
@@ -814,7 +814,7 @@ INCLUDE_IN_README
     # the args parser is not really used , this is so the report is not generated when testing
     # the imports with --help
     args = parser.parse_args()
-    print("LANforge manager {lfmgr}".format(lfmgr=args.lfmgr))
+    # print("LANforge manager {lfmgr}".format(lfmgr=args.lfmgr))
 
     output_html_1 = "graph_1.html"
     output_pdf_1 = "graph_1.pdf"
