@@ -510,7 +510,7 @@ class lf_bar_line_graph:
                     raise ValueError(
                         "Length and x-axis values and y-axis values should be same.")
             else:
-                # print("No Dataset Found")
+                 print("No Dataset Found")
         # print("{}.csv".format(self.graph_image_name))
         return "%s.png" % self.graph_image_name
 
@@ -772,7 +772,7 @@ class lf_line_graph:
                 self.lf_csv.filename = f"{self.graph_image_name}.csv"
                 self.lf_csv.generate_csv()
             else:
-                # print("No Dataset Found")
+                 print("No Dataset Found")
         # print("{}.csv".format(self.graph_image_name))
         return "%s.png" % self.graph_image_name
 
