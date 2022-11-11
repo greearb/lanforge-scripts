@@ -2,6 +2,8 @@
 """
 ## NAME: test_l3_longevity.py
 
+Host AP reference : https://w1.fi/cgit/hostap/plain/hostapd/hostapd.conf
+
 ## PURPOSE:
 
  Supports creating user-specified amount stations on multiple radios
