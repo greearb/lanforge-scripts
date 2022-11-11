@@ -252,7 +252,7 @@ class lf_rf_char(Realm):
 
         logger.debug("probe mac : {mac} ip : {ip}".format(mac=dut_mac, ip=dut_ip))
         if dut_mac != self.dut_mac:
-            logger.error("mac mismatch test cannot continue: probe mac : {mac} stations mac : {station_mac}".
+            logger.error("mac mismatch: probe mac:[{mac}] stations mac:[{station_mac}]".
                          format(mac=dut_mac, station_mac=self.dut_mac))
             return False
 
