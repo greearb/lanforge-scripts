@@ -610,7 +610,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     parser.add_argument("--vap_antenna", help='number of spatial streams: 0 Diversity (All), 1 Fixed-A (1x1), 4 AB (2x2), 7 ABC (3x3), 8 ABCD (4x4), 9 (8x8)')
 
     # Reporting Configuration
-    parser.add_argument('--local_lf_report_dir', help='--local_lf_report_dir override the report path, primary use when running test in test suite', default="")
+    parser.add_argument('--local_lf_report_dir',
+                        help='--local_lf_report_dir override the report path, primary use when running test in test suite',
+                        default="")
     parser.add_argument("--test_rig", default="lanforge",
                         help="test rig for kpi.csv, testbed that the tests are run on")
     parser.add_argument("--test_tag", default="kpi_generation",
