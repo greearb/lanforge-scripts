@@ -1722,9 +1722,9 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                      'WIFI-Radio Driver': driver,
                      'Radio Capabilities': lanforge_radio_json[key]['capabilities'],
                      'Firmware Version': firmware_version,
-                     'max_sta': lanforge_radio_json[key]['max_sta'],
+                     'max_clients': lanforge_radio_json[key]['max_sta'],
                      'max_vap': lanforge_radio_json[key]['max_vap'],
-                     'max_vifs': lanforge_radio_json[key]['max_vifs']}, ignore_index=True)
+                     'max_sta': lanforge_radio_json[key]['max_vifs']}, ignore_index=True)
         logger.info("lf_radio_df:: {lf_radio_df}".format(lf_radio_df=lf_radio_df))
 
     except Exception as error:
