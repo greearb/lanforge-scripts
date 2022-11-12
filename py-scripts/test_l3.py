@@ -1972,11 +1972,15 @@ Setting wifi_settings per radio
 
 
         ''')
-
-    parser.add_argument(
-        '--local_lf_report_dir',
-        help='--local_lf_report_dir override the report path, primary use when running test in test suite',
+    # the local_lf_report_dir is the parent directory of where the results are used with lf_check.py
+    parser.add_argument('--local_lf_report_dir', 
+        help='--local_lf_report_dir override the report path (lanforge/html-reports), primary used when making another directory lanforge/html-report/<test_rig>', 
         default="")
+    parser.add_argument(
+        "--results_dir_name",
+        default="test_l3",
+        help="the name of the directory that contains the output from the test /lanforge/html-reports/<results_dir_name> default: test_l3")
+
     parser.add_argument(
         "--test_rig",
         default="",
@@ -2258,14 +2262,14 @@ Setting wifi_settings per radio
     if local_lf_report_dir != "":
         report = lf_report.lf_report(
             _path=local_lf_report_dir,
-            _results_dir_name="test_l3",
-            _output_html="test_l3.html",
-            _output_pdf="test_l3.pdf")
+            _results_dir_name=args.results_dir_name,
+            _output_html="{results_dir_name}.html".format(results_dir_name=args.results_dir_name),
+            _output_pdf="{results_dir_name}.pdf".format(results_dir_name=args.results_dir_name))
     else:
         report = lf_report.lf_report(
-            _results_dir_name="test_l3",
-            _output_html="test_l3.html",
-            _output_pdf="test_l3.pdf")
+            _results_dir_name=args.results_dir_name,
+            _output_html="{results_dir_name}.html".format(results_dir_name=args.results_dir_name),
+            _output_pdf="{results_dir_name}.pdf".format(results_dir_name=args.results_dir_name))
 
     kpi_path = report.get_report_path()
     logger.info("Report and kpi_path :{kpi_path}".format(kpi_path=kpi_path))
