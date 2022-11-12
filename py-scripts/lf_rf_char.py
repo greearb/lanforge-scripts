@@ -196,8 +196,8 @@ class lf_rf_char(Realm):
                 pass
 
             if sta_ap == "":
-                logger.error("Stations table not as expected:")
-                pprint(json_stations)
+                logger.info("Stations table not as expected:")
+                logger.info(pformat(json_stations))
                 return False
 
         # Make sure the station is on correct IP vap
