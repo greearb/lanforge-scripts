@@ -611,8 +611,14 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     # Reporting Configuration
     parser.add_argument('--local_lf_report_dir',
-                        help='--local_lf_report_dir override the report path, primary use when running test in test suite',
+                        help="""--local_lf_report_dir override the report path, primary use when running test in test suite.
+                        The lowest actual directory will be <local_lf_report_dir>/<time-date>_rf_characteristics/
+                        If you specify final_report_dir, that directory will be moved the the <final_report_dir> directory""",
                         default="")
+    parser.add_argument('--final_report_dir',
+                        help="""moves the default report directory (mv <time-date>_rf_characteristics) to new name.
+                        If this is not a full qualified path, it will default to /home/lanforge/html-reports/<final_report_dir>
+                        """)
     parser.add_argument("--test_rig", default="lanforge",
                         help="test rig for kpi.csv, testbed that the tests are run on")
     parser.add_argument("--test_tag", default="kpi_generation",
@@ -1815,6 +1821,15 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     if platform.system() == 'Linux':
         report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+
+    if args.final_report_dir != "":
+        if args.final_report_dir[0] == "/":
+            print("moving the report directory to "+args.final_report_dir)
+            os.rename(report.get_report_path(), args.final_report_dir)
+        else:
+            print("final dir: /home/lanforge/html-reports/"+args.final_report_dir)
+            os.rename(report.get_report_path(),
+                      "/home/lanforge/html-reports/"+args.final_report_dir)
 
 
 if __name__ == "__main__":
