@@ -295,7 +295,7 @@ class BaseInteropWifi(Realm):
             if self.ssid:
                 cmd += " --es ssid " + self.ssid
             if self.passwd:
-                cmd += "--es password " + self.passwd
+                cmd += " --es password " + self.passwd
             if self.encryp:
                 cmd += " --es encryption " + self.encryp
             self.post_adb_(device=x, cmd=cmd)
