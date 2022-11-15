@@ -60,6 +60,7 @@ class lf_json_api():
                  lf_user='lanforge',
                  lf_passwd='lanforge',
                  port=None,
+                 endpoint=None,
                  csv_mode='write'):
 
         self.lf_mgr = lf_mgr
@@ -71,6 +72,8 @@ class lf_json_api():
         self.shelf = ''
         self.resource = ''
         self.port_name = ''
+        self.endpoint_name = ''
+        self.endpoint = endpoint
         # TODO support qvlan
         self.qval = ''
         self.request = ''
@@ -97,6 +100,18 @@ class lf_json_api():
         #logger.error("update-port-info, port: %s  non-port: %s"%(self.port, self.non_port));
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.port)
         logger.debug("shelf : {shelf} , resource : {resource}, port_name : {port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name))
+        # the request can change
+
+    def update_endpoint_info(self):
+        # TODO add support for non-endpoint
+        # TODO add support for qvan or attenuator
+        # rv short for return value
+        if not self.endpoint:
+            return
+
+        #logger.error("update-endpoint-info, endpoint: %s  non-endpoint: %s"%(self.endpoint, self.non_endpoint));
+        self.shelf, self.resource, self.port_name, self.endpoint_name, *nil = LFUtils.name_to_eid(self.endpoint, non_port=True)
+        logger.debug("shelf : {shelf} , resource : {resource}, port_name : {port_name}, endpoint_name : {endpoint_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, endpoint_name=self.endpoint_name))
         # the request can change
 
     def reformat_json(self, json_data ):
@@ -223,6 +238,61 @@ class lf_json_api():
 
         # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
         return lanforge_json, csv_file_wifi_stats, lanforge_text, lanforge_json_formatted
+
+    def get_request_layer4_information(self,endpoint=None):
+        # endpoint passed in with command
+        # this is needed for backward compatibility
+        if endpoint is not None:
+            self.endpoint = endpoint
+            logger.info("self.endpoint updated to : {endpoint}".format(endpoint=self.endpoint))
+            self.update_endpoint_info()
+
+        # https://docs.python-requests.org/en/latest/
+        # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
+        # station command
+        # curl -H 'Accept: application/json' 'http://localhost:8080/layer4/1178' | json_pp
+        # a radio command
+        # curl --user "lanforge:lanforge" -H 'Accept: application/json'
+        # http://192.168.100.116:8080/layer4/1178 | json_pp  , where --user
+        # "USERNAME:PASSWORD"
+        request_command = 'http://{lfmgr}:{lfport}/layer4/{endpoint_name}'.format(
+            lfmgr=self.lf_mgr, lfport=self.lf_port, endpoint_name=self.endpoint_name)
+        request = requests.get(
+            request_command, auth=(
+                self.lf_user, self.lf_passwd))
+
+        logger.info(
+            "layer4 request command: {request_command}".format(
+                request_command=request_command))
+        logger.info(
+            "layer4 request status_code {status}".format(
+                status=request.status_code))
+
+        lanforge_json = request.json()
+        logger.debug("layer4 request.json: {json}".format(json=lanforge_json))
+        lanforge_text = request.text
+        logger.debug("layer4 request.text: {text}".format(text=lanforge_text))
+        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
+        logger.info("layer4 lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
+
+        logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{endpoint_name} | json_pp  ".format(
+            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, endpoint_name=self.endpoint_name
+        ))
+
+        csv_file_layer4 = ""
+        try:
+            # key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
+            key = 'endpoint'
+            df = json_normalize(lanforge_json[key])
+            csv_file_layer4 = "{shelf}.{resource}.{port_name}.{endpoint_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name,endpoint_name=self.endpoint_name, request=self.request)
+            # TODO: self.csv_mode & self.csv_header have not been instantiated:
+            # df.to_csv(csv_file_layer4, mode = self.csv_mode, header = self.csv_header, index=False)
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+
+        # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
+        return lanforge_json, lanforge_text, lanforge_json_formatted, csv_file_layer4
 
     # give information on a single station if the mac is entered.
     def get_request_single_station_information(self,port=None):
@@ -560,6 +630,7 @@ def main():
     parser.add_argument("--lf_user", type=str, help="user: lanforge")
     parser.add_argument("--lf_passwd", type=str, help="passwd: lanforge")
     parser.add_argument("--port", type=str, help=" port : 1.2.wlan3  provide full eid  (endpoint id")
+    parser.add_argument("--endpoint", type=str, help=" endpoint : shelf.resource.port.endpoint, provide full eid: 1.1.9.1178  (endpoint id)")
     parser.add_argument("--radio", type=str, help=" --radio wiphy0")
     # TODO should be parsed from EID
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
@@ -592,6 +663,7 @@ def main():
                           args.lf_user,
                           args.lf_passwd,
                           args.port,
+                          args.endpoint,
                           args.csv_mode)
 
     if args.get_requests:
@@ -651,6 +723,14 @@ def main():
                 logger.debug("lanforge_wifi_stats_json = {lanforge_wifi_stats_json}".format(lanforge_wifi_stats_json=lanforge_wifi_stats_json))
                 logger.debug("lanforge_wifi_stats_text = {lanforge_wifi_stats_text}".format(lanforge_wifi_stats_text=lanforge_wifi_stats_text))
                 logger.debug("lanforge_wifi_stats_json_formatted = {lanforge_wifi_stats_json_formatted}".format(lanforge_wifi_stats_json_formatted=lanforge_wifi_stats_json_formatted))
+
+            elif get_request == "layer4":
+                lf_json.request = get_request
+                lanforge_layer4_json, lanforge_layer4_text, lanforge_layer4_json_formatted, csv_file_layer4 = lf_json.get_request_layer4_information(args.endpoint)
+
+                logger.debug("lanforge_layer4_json = {lanforge_layer4_json}".format(lanforge_layer4_json=lanforge_layer4_json))
+                logger.debug("lanforge_layer4_text = {lanforge_layer4_text}".format(lanforge_layer4_text=lanforge_layer4_text))
+                logger.debug("lanforge_layer4_json_formatted = {lanforge_layer4_json_formatted}".format(lanforge_layer4_json_formatted=lanforge_layer4_json_formatted))
 
             elif get_request == "adb":
                 lf_json.request = get_request
