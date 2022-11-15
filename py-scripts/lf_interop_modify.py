@@ -177,7 +177,7 @@ class InteropCommands(Realm):
                 if self.ssid:
                     cmd += " --es ssid " + self.ssid
                 if self.passwd:
-                    cmd += "--es password " + self.passwd
+                    cmd += " --es password " + self.passwd
                 if self.crypt:
                     cmd += " --es encryption " + self.crypt
 
