@@ -1771,7 +1771,7 @@ Setting wifi_settings per radio
         wifi_mode
         Input       : Enum Val  : Shown by nc_show_ports
 
-        AUTO        |  0        #  802.11g
+        AUTO        |  0        #  802.11
         802.11a     |  1        #  802.11a
         b           |  2        #  802.11b
         g           |  3        #  802.11g
