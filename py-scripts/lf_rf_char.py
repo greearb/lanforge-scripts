@@ -531,7 +531,7 @@ class lf_rf_char(Realm):
 
             # json_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
             interval += float(polling_interval_milliseconds) / 1000
-            self.tx_interval.append(interval)
+            self.tx_interval.append(round(interval, 2))
             current_time = current_time_stamp.split()
             self.tx_interval_time.append(current_time[1])
             # print(json_vap_port_stats["interface"]["tx pkts"])
