@@ -50,7 +50,7 @@ lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
 from lanforge_client.lanforge_api import LFSession
 from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFJsonQuery
-
+from lanforge_client.logg import Logg
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 lf_json_api = importlib.import_module("py-scripts.lf_json_api")
@@ -93,6 +93,7 @@ class lf_rf_char(Realm):
         self.vap_port = ''
         self.radio = ''
         self.vap = ''
+        self.mode = ''
         self.port = ''
         self.shelf = ''
         self.resource = ''
@@ -123,6 +124,9 @@ class lf_rf_char(Realm):
                                  stream_warnings=True,
                                  require_session=True,
                                  exit_on_error=True)
+        Logg.register_method_name("json_post")
+        Logg.register_method_name("json_get")
+        Logg.register_method_name("get_as_json")
         # type hinting
         self.command: LFJsonCommand
         self.command = self.session.get_command()
@@ -135,6 +139,7 @@ class lf_rf_char(Realm):
         self.port_name = ''
         self.vap_radio = ''
         self.vap_channel = ''
+        self.vap_mode = 0
         self.vap_antenna = ''
 
         # get dut information
@@ -299,6 +304,29 @@ class lf_rf_char(Realm):
                                    report_timer=int(milliseconds),
                                    debug=self.debug)
 
+    def set_vap_mode(self):
+        logger.warning("set vap mode to {}".format(self.vap_mode))
+        self.command.post_add_vap(shelf=self.shelf,
+                                  resource=self.resource,
+                                  ap_name=self.port_name,
+                                  mode=self.vap_mode)
+        self.command.post_show_ports(shelf=self.shelf,
+                                    resource=self.resource,
+                                    name=self.port_name)
+        queried_mode = "none"
+        target_mode = "802.11a"
+        info = ""
+        while queried_mode.find(target_mode) < 0:
+            time.sleep(1)
+            (info, nil, nil, nil) = self.query.get_port(eid_list=["1.1.vap0000"], requested_col_names=["alias", "mode"], debug=True)
+            logger.info("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ")
+            logger.info(pformat(info))
+            logger.info("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - ")
+            queried_mode = info.interface.mode
+
+        logger.info("done polling")
+
+
     # enable extra_rxstatus extra_txstatus
     def set_wifi_radio(self, radio=None, flags_list=[]):
         if radio is not None:
@@ -313,6 +341,7 @@ class lf_rf_char(Realm):
                                          radio=self.port_name,
                                          flags=flag_val,
                                          flags_mask=flag_val,
+                                         # do not adjust radio mode
                                          debug=self.debug)
 
     def generic_ping(self):
@@ -385,13 +414,63 @@ class lf_rf_char(Realm):
 
     def modify_radio(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
-        self.command.post_set_wifi_radio(
-            shelf=self.shelf,
-            resource=self.resource,
-            radio=self.port_name,
-            antenna=self.vap_antenna,
-            channel=self.vap_channel,
-            debug=self.debug)
+        self.command.post_set_wifi_radio(shelf=self.shelf,
+                                         resource=self.resource,
+                                         radio=self.port_name,
+                                         antenna=self.vap_antenna,
+                                         channel=self.vap_channel,
+                                         # do not set radio mode here
+                                         debug=self.debug)
+        if self.vap_mode != 0:
+            v_name = self.vap_port
+            if self.vap_port.find('.') > -1:
+                v_name = self.vap_port[self.vap_port.rindex('.')+1:]
+            r_name = self.vap_radio
+            if self.vap_radio.find('.') > -1:
+                r_name = self.vap_radio[self.vap_radio.rindex('.')+1:]
+            logger.warning("modify_ratio: setting vap mode to [{}]".format(self.vap_mode))
+            logger.warning("modify_ratio: vap_radio           [{}]".format(self.vap_radio))
+            logger.warning("modify_ratio: vap                 [{}]".format(self.vap))
+            logger.warning("modify_ratio: vap_port            [{}]".format(self.vap_port))
+            logger.warning("modify_ratio: port_name           [{}]".format(self.port_name))
+            self.command.post_add_vap(shelf=1,
+                                      resource=self.resource,
+                                      radio=r_name,
+                                      ap_name=v_name,
+                                      mode=self.vap_mode,
+                                      debug=True)
+            logger.info("polling for vap mode")
+            queried_mode = "none"
+            target_mode = "802.11a"
+            e_w : list = []
+            response = self.query.get_port(eid_list=["1.1.vap0000"],
+                                           requested_col_names=["alias", "mode"],
+                                           errors_warnings=e_w,
+                                           debug=True)
+            if e_w:
+                pprint(e_w)
+
+            while queried_mode.find(target_mode) < 0:
+                self.command.post_add_vap(shelf=1,
+                                          resource=self.resource,
+                                          radio=r_name,
+                                          ap_name=v_name,
+                                          mode=self.vap_mode,
+                                          debug=True)
+                time.sleep(1)
+                response = self.query.get_port(eid_list=["1.1.vap0000"],
+                                               requested_col_names=["alias", "mode"],
+                                               errors_warnings=e_w,
+                                               debug=True)
+                logger.warning("- - - - - get_port 1.1.vap0000 - - - - - - - - - - - - - - - - - - - - - - - - - ")
+                logger.warning(pformat(response))
+                logger.warning(pformat(e_w))
+                logger.warning("- - - - - !get_port - - - - - - - - - - - - - - - - - - - - - - - - - ")
+                queried_mode = response["mode"]
+
+            logger.info("done polling")
+
+        logger.info("resetting port")
         self.command.post_reset_port(shelf=self.shelf,
                                      resource=self.resource,
                                      port=self.port_name)
@@ -608,16 +687,20 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     parser.add_argument("--vap_radio", type=str, help=" --vap_radio wiphy0", required=True)
     parser.add_argument("--vap_channel", type=str, help=" --vap_channel '36'  channel of the radio e.g. 6 (2.4G) , 36 (5G), ")
     parser.add_argument("--vap_antenna", help='number of spatial streams: 0 Diversity (All), 1 Fixed-A (1x1), 4 AB (2x2), 7 ABC (3x3), 8 ABCD (4x4), 9 (8x8)')
-
+    parser.add_argument("--vap_mode",
+                        default="AUTO",
+                        help="""WiFi modes defined by www.candelatech.com/lfcli_ug.php#add_vap
+            Includes 802.11a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX, aAX
+            """)
     # Reporting Configuration
     parser.add_argument('--local_lf_report_dir',
                         help="""--local_lf_report_dir override the report path, primary use when running test in test suite.
-                        The lowest actual directory will be <local_lf_report_dir>/<time-date>_rf_characteristics/
-                        If you specify final_report_dir, that directory will be moved the the <final_report_dir> directory""",
+        The lowest actual directory will be <local_lf_report_dir>/<time-date>_rf_characteristics/
+        If you specify final_report_dir, that directory will be moved the the <final_report_dir> directory""",
                         default="")
     parser.add_argument('--final_report_dir',
                         help="""moves the default report directory (mv <time-date>_rf_characteristics) to new name.
-                        If this is not a full qualified path, it will default to /home/lanforge/html-reports/<final_report_dir>
+        If this is not a full qualified path, it will default to /home/lanforge/html-reports/<final_report_dir>
                         """)
     parser.add_argument("--test_rig", default="lanforge",
                         help="test rig for kpi.csv, testbed that the tests are run on")
@@ -742,6 +825,18 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     rf_char.vap_channel = args.vap_channel
     rf_char.vap_antenna = args.vap_antenna
     rf_char.vap_port = args.vap_port
+    rf_char.vap_port = args.vap_port
+    if args.vap_mode:
+        if args.vap_mode in ("a", "802.11a"):
+            args.vap_mode = "p_802_11a"
+        if args.vap_mode not in rf_char.command.AddVapMode.__members__:
+            logger.error("""Unable to find mode [{}] in AddVapMode.
+     Please see https://www.candelatech.com/lfcli_ug.php#add_vap
+     Availble values: """.format(args.vap_mode))
+            pprint(rf_char.command.AddVapMode.__members__)
+            exit(1)
+        rf_char.vap_mode = rf_char.command.AddVapMode[args.vap_mode].value
+        logger.debug("Set vap_mode to {} => {}".format(args.vap_mode, rf_char.vap_mode))
 
     logger.info("clear dhcp leases")
     rf_char.clear_dhcp_lease()
@@ -781,9 +876,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     # polling_interval_milliseconds = polling_interval_seconds*1000
     rf_char.set_port_report_timer(port=args.vap_port, milliseconds=polling_interval_milliseconds)
     rf_char.set_port_report_timer(port=args.vap_radio, milliseconds=polling_interval_milliseconds)
+    rf_char.set_vap_mode()
 
     flags_list = ['extra_rxstatus', 'extra_txstatus']
-
     rf_char.set_wifi_radio(radio=args.vap_radio, flags_list=flags_list)
 
     test_input_info = {
@@ -792,7 +887,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         "Test Duration": args.duration,
         "Polling Interval": args.polling_interval,
         "GUI Report Interval (ms) vap and vap radio": str(polling_interval_milliseconds),
-        "vAP Channel": args.vap_channel
+        "vAP Channel": args.vap_channel,
+        "vAP Mode:": args.vap_mode
     }
 
     report.set_table_title("Test Configuration")
