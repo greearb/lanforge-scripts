@@ -658,7 +658,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     parser.add_argument("--vap_mode",
                         default="AUTO",
                         help="""WiFi modes defined by www.candelatech.com/lfcli_ug.php#add_vap
-            Includes 802.11a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX, aAX
+            Includes 802.11a, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX, aAX
             """)
     # Reporting Configuration
     parser.add_argument('--local_lf_report_dir',
