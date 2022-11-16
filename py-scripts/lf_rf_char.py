@@ -142,6 +142,7 @@ class lf_rf_char(Realm):
         self.vap_channel = ''
         self.vap_mode = 0
         self.vap_antenna = ''
+        self.vap_txpower = -1
 
         # get dut information
         self.lf_command = ''
@@ -392,11 +393,37 @@ class lf_rf_char(Realm):
 
     def modify_radio(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
+        # tx power is value can be any integer between -1 and 30, inclusive
+        # or a value in this table:
+        tx_powers = {
+            "auto" : -1,
+            "default" : -1,
+        }
+        tx_pow = -1 #default
+        self.vap_txpower = str(self.vap_txpower).lower()
+        if self.vap_txpower in tx_powers:
+            tx_pow = tx_powers[self.vap_txpower]
+            logger.info("setting vap_txpower to default")
+            self.vap_txpower = "default"
+        elif "d" in self.vap_txpower:
+            tx_pow = self.vap_txpower[0 : self.vap_txpower.find('d')]
+            if (int(tx_pow) > -2) and (int(tx_pow) < 31):
+                logger.info("setting vap_txpower to [{}]".format(tx_pow))
+                self.vap_txpower = tx_pow
+            else:
+                logger.error("vap_txpower[{}] out of range, using default".format(self.vap_txpower))
+                tx_pow = -1
+                self.vap_txpower = "default"
+        else:
+            logger.warning("Do not understand value of vap_txpower[{}], using default".format(self.vap_txpower))
+            self.vap_txpower = "default"
+
         self.command.post_set_wifi_radio(shelf=self.shelf,
                                          resource=self.resource,
                                          radio=self.port_name,
                                          antenna=self.vap_antenna,
                                          channel=self.vap_channel,
+                                         txpower=tx_pow,
                                          # do not set radio mode here
                                          debug=self.debug)
         if self.vap_mode != 0:
@@ -660,6 +687,11 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                         help="""WiFi modes defined by www.candelatech.com/lfcli_ug.php#add_vap
             Includes 802.11a, a, b, g, abg, abgn, bgn, bg, abgnAC, anAC, an, bgnAC, abgnAX, bgnAX, anAX, aAX
             """)
+    parser.add_argument('--vap_txpower',
+                        help="""set a custom level for tx power on vap_radio. Values include:
+            DEFAULT, 0dBm, 1dBm, 2dBm, 5dBm, 10dBm, 15dBm, 20dBm, 25dBm
+            The values may be any integer between -1(auto/default) and 30
+            """)
     # Reporting Configuration
     parser.add_argument('--local_lf_report_dir',
                         help="""--local_lf_report_dir override the report path, primary use when running test in test suite.
@@ -793,7 +825,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     rf_char.vap_channel = args.vap_channel
     rf_char.vap_antenna = args.vap_antenna
     rf_char.vap_port = args.vap_port
-    rf_char.vap_port = args.vap_port
+    rf_char.vap_txpower = args.vap_txpower
     if args.vap_mode:
         if args.vap_mode in ("a", "802.11a"):
             args.vap_mode = "p_802_11a"
@@ -855,7 +887,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         "Polling Interval": args.polling_interval,
         "GUI Report Interval (ms) vap and vap radio": str(polling_interval_milliseconds),
         "vAP Channel": args.vap_channel,
-        "vAP Mode:": args.vap_mode
+        "vAP Mode:": args.vap_mode,
+        "vAP TX Power (dBm):": "Requested: {}<br/>\nApplied: {}".format(args.vap_txpower, rf_char.vap_txpower)
     }
 
     report.set_table_title("Test Configuration")
