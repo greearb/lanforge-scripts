@@ -901,8 +901,11 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("TX pkts , TX retries, TX Failed %")
     report.build_table_title()
 
-    df_tx_info = pd.DataFrame({" Time Interval (s) ": [ti for ti in tx_interval], " Time ": [k for k in tx_interval_time], " TX Packets ": [i for i in tx_pkts],
-                               " TX Retries ": [j for j in tx_retries], " TX Failed % ": [m for m in tx_failed]})
+    df_tx_info = pd.DataFrame({" Time Interval (s) ": [ti for ti in tx_interval],
+                               " Time ": [k for k in tx_interval_time],
+                               " TX Packets ": [i for i in tx_pkts],
+                               " TX Retries ": [j for j in tx_retries],
+                               " TX Failed % ": [m for m in tx_failed]})
 
     report.set_table_dataframe(df_tx_info)
     report.build_table()
