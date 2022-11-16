@@ -109,7 +109,7 @@ def _now_ms() -> int:
 
 
 def _now_sec() -> int:
-    return round(time.time() * 1000 * 1000)
+    return round(time.time())
 
 
 def default_proxies() -> dict:
@@ -868,9 +868,18 @@ class BaseLFJsonRequest:
 
         url = self.get_corrected_url(url=url)
 
-        deadline_sec: float = (_now_ms() * 1000) + max_timeout_sec
+        deadline_sec: float = _now_sec() + max_timeout_sec
         self.error_list.clear()
         attempt_counter = 1
+        self.logger.debug(" request_timeout_sec[{}] max_timeout_sec[{}] deadline_sec[{}] ".format(
+            request_timeout_sec, max_timeout_sec, deadline_sec))
+        if _now_sec() >= deadline_sec:
+            self.logger.error("url[{}]".format(url))
+            self.logger.error("request_timeout_sec[{}] max_timeout_sec[{}] deadline_sec[{}] ".format(
+                request_timeout_sec, max_timeout_sec, deadline_sec))
+            raise Exception("_now_sec()[{}] >= deadline_sec[{}] before starting".format(
+                _now_sec(), deadline_sec))
+
         while _now_sec() < deadline_sec:
             if wait_sec:
                 time.sleep(wait_sec)
@@ -3637,6 +3646,8 @@ class LFJsonCommand(JsonCommand):
         GSSNEGOTIATE = 0x4                    # 4 GSS authentication
         INCLUDE_HEADERS = 0x100               # 256 especially for IMAP
         LF_L4_REAL_BROWSER_TEST = 0x2000      # 8192 Enable Real Browser Test
+        MEDIA_PLAYBACKS_RANDOM = 0x4000       # Select random playback between 0 and media_playbacks
+        MEDIA_SEEKS_RANDOM = 0x8000           # Select random media seek count between 0 and media_random_seeks
         NTLM = 0x8                            # 8 NTLM authentication
         USE_DEFLATE_COMPRESSION = 0x80        # 128 Use deflate compression
         USE_GZIP_COMPRESSION = 0x40           # 64 Use gzip compression
@@ -6583,11 +6594,12 @@ class LFJsonCommand(JsonCommand):
                    arg1: str = None,                         # Argument 1: xorp-port | scan-rslts-file | iface-name |
                    # iface-eid | rfgen-message | id | log_file_name
                    arg2: str = None,                         # Argument 2: scan key | message | angle | dest-radio |
-                   # adb-filename
-                   arg3: str = None,                         # Argument 3: noprobe | migrate-sta-mac-pattern | adb-key
-                   arg5: str = None,                         # Argument 4: table-speed
+                   # adb-filename | lfver
+                   arg3: str = None,                         # Argument 3: noprobe | migrate-sta-mac-pattern | adb-key |
+                   # kver
+                   arg5: str = None,                         # Argument 4: table-speed | extra-upgrade-args
                    cmd: str = None,                          # Admin command:
-                   # resync_clock|write_xorp_cfg|scan_complete|ifup_post_complete|flush_complete|req_migrate|rfgen|chamber|clean_logs
+                   # resync_clock|write_xorp_cfg|scan_complete|ifup_post_complete|flush_complete|req_migrate|rfgen|chamber|clean_logs|upgrade
                    response_json_list: list = None,
                    debug: bool = False,
                    errors_warnings: list = None,
@@ -13422,6 +13434,76 @@ class LFJsonCommand(JsonCommand):
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/SET_L4_ENDP> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#set_l4_endp
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_set_l4_endp(self, 
+                         alias: str = None,                        # Name of endpoint. [R]
+                         duration_max: str = None,                 # Maximum duration of media playback, in seconds
+                         duration_min: str = None,                 # Minimum duration of media playback, in seconds
+                         media_playbacks: str = None,              # Maximum number of media playbacks
+                         media_quality: str = None,                # Specify media quality, see above
+                         media_random_seeks: str = None,           # Maximum number of media random seeks
+                         media_source: str = None,                 # Specify media source, see above
+                         response_json_list: list = None,
+                         debug: bool = False,
+                         errors_warnings: list = None,
+                         suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                response_json = []
+                result = post_set_l4_endp(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if alias is not None:
+            data["alias"] = alias
+        if duration_max is not None:
+            data["duration_max"] = duration_max
+        if duration_min is not None:
+            data["duration_min"] = duration_min
+        if media_playbacks is not None:
+            data["media_playbacks"] = media_playbacks
+        if media_quality is not None:
+            data["media_quality"] = media_quality
+        if media_random_seeks is not None:
+            data["media_random_seeks"] = media_random_seeks
+        if media_source is not None:
+            data["media_source"] = media_source
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/set_l4_endp",
+                                  post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+    #
+
+    def post_set_l4_endp_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_set_l4_endp(alias=param_map.get("alias"),
+                              duration_max=param_map.get("duration_max"),
+                              duration_min=param_map.get("duration_min"),
+                              media_playbacks=param_map.get("media_playbacks"),
+                              media_quality=param_map.get("media_quality"),
+                              media_random_seeks=param_map.get("media_random_seeks"),
+                              media_source=param_map.get("media_source"),
+                              )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
             Notes for <CLI-JSON/SET_LICENSE> type requests
 
         https://www.candelatech.com/lfcli_ug.php#set_license
@@ -15872,7 +15954,7 @@ class LFJsonCommand(JsonCommand):
                             channel: str = None,                      # Channel number for this radio device. Frequency
                             # takes precedence if both are set to non-default
                             # values. <tt>0xFFFF, AUTO or DEFAULT</tt> means ANY.
-                            const_tx: str = None,                     # RF Pattern Generator , encoded as a single 32-bit
+                            const_tx: str = None,                     # RF Pattern Generator: encoded as a single 32-bit
                             # integer. See above.
                             country: str = None,                      # Country number for this radio device.
                             flags: str = None,                        # Flags for this interface (see above.)
@@ -15888,7 +15970,8 @@ class LFJsonCommand(JsonCommand):
                             # (2.6.34+ kernels).
                             max_amsdu: str = None,                    # Maximum number of frames per AMSDU that may be
                             # transmitted. See above.
-                            mode: str = None,                         # WiFi mode, see table
+                            mode: str = None,                         # RF Pattern Generator: WiFi mode for radar emulation,
+                            # see table. Do not use for vAPs.
                             peer_count: str = None,                   # Number of peer objects for this radio.
                             pref_ap: str = None,                      # Preferred AP BSSID for all station vdevs on this
                             # radio.
@@ -21616,9 +21699,9 @@ class LFJsonQuery(JsonQuery):
 
     When requesting specific column names, they need to be URL encoded:
         app-id, bps-rx-3s, bps-tx-3s, cli-port, cpu, ctrl-ip, ctrl-port, eid, entity+id, 
-        free+mem, free+swap, gps, hostname, hw+version, load, max+if-up, max+staged, 
-        mem, phantom, ports, rx+bytes, shelf, sta+up, sw+version, swap, tx+bytes, 
-        user        # hidden columns:
+        free+mem, free+swap, gps, hostname, hw+version, kernel, load, max+if-up, 
+        max+staged, mem, phantom, ports, rx+bytes, shelf, sta+up, sw+version, swap, 
+        tx+bytes, user        # hidden columns:
         timestamp
     Example URL: /resource?fields=app-id,bps-rx-3s
 
@@ -21649,6 +21732,7 @@ class LFJsonQuery(JsonQuery):
         'gps':        # GPS Info for this machine, if GPS is attached.
         'hostname':   # The name for this resource, as reported by the resource.
         'hw version': # Hardware version on the machine.
+        'kernel':     # Kernel version
         'load':       # Unix process load..
         'max if-up':  # Max number of interface-config scripts try to run at once.
         'max staged': # Max number of interfaces the system will try to bringup at once.
