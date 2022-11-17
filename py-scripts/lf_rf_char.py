@@ -143,6 +143,7 @@ class lf_rf_char(Realm):
         self.vap_mode = 0
         self.vap_antenna = ''
         self.vap_txpower = -1
+        self.reset_vap = False
 
         # get dut information
         self.lf_command = ''
@@ -259,8 +260,9 @@ class lf_rf_char(Realm):
 
         logger.debug("probe mac : {mac} ip : {ip}".format(mac=dut_mac, ip=dut_ip))
         if dut_mac != self.dut_mac:
-            logger.error("mac mismatch: probe mac:[{mac}] stations mac:[{station_mac}]".
-                         format(mac=dut_mac, station_mac=self.dut_mac))
+            logger.info("mac mismatch: probe mac:[{mac}] stations mac:[{station_mac}]".
+                        format(mac=dut_mac, station_mac=self.dut_mac))
+            logger.warning("waiting for mac:[{station_mac}]".format(station_mac=self.dut_mac))
             return False
 
         self.dut_ip = dut_ip
@@ -466,9 +468,11 @@ class lf_rf_char(Realm):
             logger.info("done polling for vap mode")
 
         logger.info("resetting port")
-        self.command.post_reset_port(shelf=self.shelf,
-                                     resource=self.resource,
-                                     port=self.port_name)
+        if self.reset_vap:
+            logger.warning("resetting vap [{}]".format(self.port_name))
+            self.command.post_reset_port(shelf=self.shelf,
+                                         resource=self.resource,
+                                         port=self.port_name)
 
     def start(self):
         # first read with
@@ -692,6 +696,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             DEFAULT, 0dBm, 1dBm, 2dBm, 5dBm, 10dBm, 15dBm, 20dBm, 25dBm
             The values may be any integer between -1(auto/default) and 30
             """)
+    parser.add_argument('--reset_vap', action='store_true',
+                        help="""Specify this if DHCP leases do not disappear from the vAP.
+            Default behavior is to not reset the vAP""")
     # Reporting Configuration
     parser.add_argument('--local_lf_report_dir',
                         help="""--local_lf_report_dir override the report path, primary use when running test in test suite.
@@ -842,6 +849,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     rf_char.vap_antenna = args.vap_antenna
     rf_char.vap_port = args.vap_port
     rf_char.vap_txpower = args.vap_txpower
+    rf_char.reset_vap = args.reset_vap
     if args.vap_mode:
         if args.vap_mode in ("a", "802.11a"):
             args.vap_mode = "p_802_11a"
@@ -865,8 +873,15 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         if rf_char.dut_info():
             break
         print("Could not query DUT info from DHCP, waiting %s/100" % (try_count))
-        time.sleep(3)
-        try_count = try_count + 1
+        time.sleep(1)
+        try_count += 1
+        if (try_count % 6) == 0:
+            v_name = args.vap_port
+            if v_name.find('.') > -1:
+                v_name = args.vap_port[ args.vap_port.rindex('.')+1 :]
+            logger.warning("resetting "+v_name)
+            rf_char.command.post_reset_port(shelf=1, resource=rf_char.resource, port=v_name)
+            time.sleep(2)
 
     dut_mac = rf_char.dut_mac
     dut_ip = rf_char.dut_ip
