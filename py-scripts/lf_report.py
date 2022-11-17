@@ -365,7 +365,9 @@ class lf_report:
         # write logic to generate pdf here
         # wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb
         # sudo apt install ./wkhtmltox_0.12.6-1.focal_amd64.deb
-
+        if not self.output_pdf:
+            logger.info("write_pdf: no pdf file name, skipping pdf output")
+            return
         options = {"enable-local-file-access": None,
                    'orientation': _orientation,
                    'page-size': _page_size}  # prevent error Blocked access to file
@@ -379,7 +381,9 @@ class lf_report:
         # write logic to generate pdf here
         # wget https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6-1/wkhtmltox_0.12.6-1.focal_amd64.deb
         # sudo apt install ./wkhtmltox_0.12.6-1.focal_amd64.deb
-
+        if not self.output_pdf:
+            logger.info("write_pdf_with_timestamp: no pdf file name, skipping pdf output")
+            return
         options = {"enable-local-file-access": None,
                    'orientation': _orientation,
                    'page-size': _page_size}  # prevent error Blocked access to file
@@ -392,6 +396,9 @@ class lf_report:
 
     # used for relative pathing
     def get_pdf_file(self):
+        if not self.output_pdf:
+            logger.info("get_pdf_file: no pdf name, returning None")
+            return None
         pdf_file = "{}-{}".format(self.date, self.output_pdf)
         return pdf_file
 
@@ -413,7 +420,8 @@ class lf_report:
 
     def generate_report(self):
         self.write_html()
-        self.write_pdf()
+        if self.output_pdf:
+            self.write_pdf()
 
     def build_all(self):
         self.build_banner()
