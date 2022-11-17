@@ -320,6 +320,9 @@ class lf_report:
         return output_file
 
     def write_html(self):
+        if not self.output_html:
+            logger.info("no html file name, skipping report generation")
+            return
         self.write_output_html = str(self.path_date_time) + '/' + str(self.output_html)
         logger.info("write_output_html: {}".format(self.write_output_html))
         try:
@@ -335,6 +338,9 @@ class lf_report:
         # LAN-1535 scripting: test_l3.py output masks other output when browsing.
         # consider renaming index.html to readme.html
         # self.write_output_index_html = str(self.path_date_time) + '/' + str("index.html")
+        if not self.output_html:
+            logger.info("no html file name, skipping report generation")
+            return
         self.write_output_index_html = str(self.path_date_time) + '/' + str("readme.html")
         logger.info("write_output_index_html: {}".format(self.write_output_index_html))
         try:
@@ -347,6 +353,9 @@ class lf_report:
         return self.write_output_index_html
 
     def write_html_with_timestamp(self):
+        if not self.output_html:
+            logger.info("no html file name, skipping report generation")
+            return
         self.write_output_html = "{}/{}-{}".format(self.path_date_time, self.date, self.output_html)
         logger.info("write_output_html: {}".format(self.write_output_html))
         try:
