@@ -704,6 +704,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                         """)
     parser.add_argument('--no_pdf', action='store_true',
                         help="specify this to skip PDF generation")
+    parser.add_argument('--no_html', action='store_true',
+                        help="""specify this to skip generating a HTML report and charts, only csv output would be created.
+     Implies --no_pdf as HTML report is basis for PDF report""")
     parser.add_argument("--test_rig", default="lanforge",
                         help="test rig for kpi.csv, testbed that the tests are run on")
     parser.add_argument("--test_tag", default="kpi_generation",
@@ -771,20 +774,27 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     # Create report, when running with the test framework (lf_check.py)
     # results need to be in the same directory
     logger.info("configure reporting")
+
+    do_html = True
+    html_file = "rf_char.pdf"
+    if args.no_html:
+        do_html = False
+        html_file = None
+
     do_pdf = True
     pdf_file = "rf_char.pdf"
     if args.no_pdf:
-        do_pdf: False
+        do_pdf = False
         pdf_file = None
 
     if local_lf_report_dir != "":
         report = lf_report.lf_report(_path=local_lf_report_dir,
                                      _results_dir_name="rf_char",
-                                     _output_html="rf_char.html",
+                                     _output_html=html_file,
                                      _output_pdf=pdf_file)
     else:
         report = lf_report.lf_report(_results_dir_name="rf_characteristics_test",
-                                     _output_html="rf_char.html",
+                                     _output_html=html_file,
                                      _output_pdf=pdf_file)
 
     kpi_path = report.get_report_path()
@@ -955,46 +965,47 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     # lf_bar_line_graph
     # failed %
-    graph = lf_bar_line_graph(
-        _data_set1=[tx_pkts, tx_retries],
-        _data_set2=[tx_failed],
-        _data_set2_poly=[args.polynomial],
-        _data_set2_poly_degree=[3],
-        _data_set2_interp1d=[args.interpolate],  # interpolate 1d
-        _xaxis_name="Time Interval (s)",
-        _y1axis_name="TX Packets",
-        _y2axis_name="TX Failed %",
-        _xaxis_categories=tx_interval,
-        _graph_image_name="TX Info bar line",
-        _label1=[" TX Packets ", " TX Retries "],
-        _label2=[" TX Failed % "],
-        _label2_poly=["% plynomial fit"],
-        _label2_interp1d=[" % interpolate"],
-        _color1=['blue', 'red'],
-        _color2=['orange'],
-        _color2_poly=['green'],
-        _color2_interp1d=['cyan'],
-        _marker=['o'],
-        _color_edge='black',
-        _figsize=(17, 7),
-        _grp_title='TX ',
-        _xaxis_step=1,
-        _show_bar_value=True,
-        _text_font=7,
-        _text_rotation=45,
-        _xticks_font=7,
-        _legend_loc1="upper right",
-        _legend_loc2="upper left",
-        _legend_box1=(0, 0),
-        _legend_box2=(1, 0),
-        _legend_ncol=1,
-        _legend_fontsize=None,
-        _enable_csv=False)
+    if html_file:
+        graph = lf_bar_line_graph(
+            _data_set1=[tx_pkts, tx_retries],
+            _data_set2=[tx_failed],
+            _data_set2_poly=[args.polynomial],
+            _data_set2_poly_degree=[3],
+            _data_set2_interp1d=[args.interpolate],  # interpolate 1d
+            _xaxis_name="Time Interval (s)",
+            _y1axis_name="TX Packets",
+            _y2axis_name="TX Failed %",
+            _xaxis_categories=tx_interval,
+            _graph_image_name="TX Info bar line",
+            _label1=[" TX Packets ", " TX Retries "],
+            _label2=[" TX Failed % "],
+            _label2_poly=["% plynomial fit"],
+            _label2_interp1d=[" % interpolate"],
+            _color1=['blue', 'red'],
+            _color2=['orange'],
+            _color2_poly=['green'],
+            _color2_interp1d=['cyan'],
+            _marker=['o'],
+            _color_edge='black',
+            _figsize=(17, 7),
+            _grp_title='TX ',
+            _xaxis_step=1,
+            _show_bar_value=True,
+            _text_font=7,
+            _text_rotation=45,
+            _xticks_font=7,
+            _legend_loc1="upper right",
+            _legend_loc2="upper left",
+            _legend_box1=(0, 0),
+            _legend_box2=(1, 0),
+            _legend_ncol=1,
+            _legend_fontsize=None,
+            _enable_csv=False)
 
-    graph_png = graph.build_bar_line_graph()
-    report.set_graph_image(graph_png)
-    report.move_graph_image()
-    report.build_graph()
+        graph_png = graph.build_bar_line_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
 
     # RSSI line graphs
     rssi_signal = rf_char.rssi_signal
@@ -1021,30 +1032,31 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.write_dataframe_to_csv()
 
     # graph RSSI
-    graph = lf_line_graph(
-        _data_set=data_set,
-        _xaxis_name="Time Interval (s)",
-        _yaxis_name="RSSI dBm",
-        _reverse_y=False,
-        _xaxis_categories=tx_interval,
-        _graph_title="RSSI",
-        _title_size=16,
-        _graph_image_name="rssi",
-        _label=label,
-        _font_weight='bold',
-        _color=['blue', 'orange', 'green', 'red', 'cyan'],
-        _figsize=(17, 12),
-        _xaxis_step=1,
-        _text_font=7,
-        _legend_loc="upper left",
-        _legend_box=(1, 0),
-        _legend_ncol=1
-    )
+    if html_file:
+        graph = lf_line_graph(
+            _data_set=data_set,
+            _xaxis_name="Time Interval (s)",
+            _yaxis_name="RSSI dBm",
+            _reverse_y=False,
+            _xaxis_categories=tx_interval,
+            _graph_title="RSSI",
+            _title_size=16,
+            _graph_image_name="rssi",
+            _label=label,
+            _font_weight='bold',
+            _color=['blue', 'orange', 'green', 'red', 'cyan'],
+            _figsize=(17, 12),
+            _xaxis_step=1,
+            _text_font=7,
+            _legend_loc="upper left",
+            _legend_box=(1, 0),
+            _legend_ncol=1
+        )
 
-    graph_png = graph.build_line_graph()
-    report.set_graph_image(graph_png)
-    report.move_graph_image()
-    report.build_graph()
+        graph_png = graph.build_line_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
 
     # retrieve rx data from json for MODE
     rx_mode = []
@@ -1107,31 +1119,32 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.write_dataframe_to_csv()
 
     # RX MODE
-    graph = lf_bar_graph(_data_set=[rx_mode_value_percent],
-                         _xaxis_name="RX Mode",
-                         _yaxis_name="Percent Packets RX per Mode",
-                         _xaxis_categories=rx_mode,
-                         _graph_image_name="RX Mode",
-                         _label=["% Total Packets"],
-                         _color=['blue'],
-                         _color_edge='black',
-                         _figsize=(18, 7),
-                         _grp_title='RX Mode',
-                         _xaxis_step=1,
-                         _show_bar_value=True,
-                         _text_font=7,
-                         _text_rotation=45,
-                         _xticks_font=7,
-                         _legend_loc="best",
-                         _legend_box=(1, 1),
-                         _legend_ncol=1,
-                         _legend_fontsize=None,
-                         _enable_csv=False)
+    if html_file:
+        graph = lf_bar_graph(_data_set=[rx_mode_value_percent],
+                             _xaxis_name="RX Mode",
+                             _yaxis_name="Percent Packets RX per Mode",
+                             _xaxis_categories=rx_mode,
+                             _graph_image_name="RX Mode",
+                             _label=["% Total Packets"],
+                             _color=['blue'],
+                             _color_edge='black',
+                             _figsize=(18, 7),
+                             _grp_title='RX Mode',
+                             _xaxis_step=1,
+                             _show_bar_value=True,
+                             _text_font=7,
+                             _text_rotation=45,
+                             _xticks_font=7,
+                             _legend_loc="best",
+                             _legend_box=(1, 1),
+                             _legend_ncol=1,
+                             _legend_fontsize=None,
+                             _enable_csv=False)
 
-    graph_png = graph.build_bar_graph()
-    report.set_graph_image(graph_png)
-    report.move_graph_image()
-    report.build_graph()
+        graph_png = graph.build_bar_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
 
     # retrieve tx data from json for MODE
     tx_mode = []
@@ -1195,31 +1208,32 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.write_dataframe_to_csv()
 
     # TX MODE
-    graph = lf_bar_graph(_data_set=[tx_mode_value_percent],
-                         _xaxis_name="TX Mode",
-                         _yaxis_name="Percent Packets TX per Mode",
-                         _xaxis_categories=tx_mode,
-                         _graph_image_name="TX Mode",
-                         _label=["% Total Packets"],
-                         _color=['blue'],
-                         _color_edge='black',
-                         _figsize=(17, 7),
-                         _grp_title='TX Mode',
-                         _xaxis_step=1,
-                         _show_bar_value=True,
-                         _text_font=7,
-                         _text_rotation=45,
-                         _xticks_font=7,
-                         _legend_loc="best",
-                         _legend_box=(1, 1),
-                         _legend_ncol=1,
-                         _legend_fontsize=None,
-                         _enable_csv=False)
+    if html_file:
+        graph = lf_bar_graph(_data_set=[tx_mode_value_percent],
+                             _xaxis_name="TX Mode",
+                             _yaxis_name="Percent Packets TX per Mode",
+                             _xaxis_categories=tx_mode,
+                             _graph_image_name="TX Mode",
+                             _label=["% Total Packets"],
+                             _color=['blue'],
+                             _color_edge='black',
+                             _figsize=(17, 7),
+                             _grp_title='TX Mode',
+                             _xaxis_step=1,
+                             _show_bar_value=True,
+                             _text_font=7,
+                             _text_rotation=45,
+                             _xticks_font=7,
+                             _legend_loc="best",
+                             _legend_box=(1, 1),
+                             _legend_ncol=1,
+                             _legend_fontsize=None,
+                             _enable_csv=False)
 
-    graph_png = graph.build_bar_graph()
-    report.set_graph_image(graph_png)
-    report.move_graph_image()
-    report.build_graph()
+        graph_png = graph.build_bar_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
 
     # retrieve rx data from json for BW
     rx_bw = []
@@ -1279,31 +1293,32 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.write_dataframe_to_csv()
 
     # RX BW
-    graph = lf_bar_graph(_data_set=[rx_bw_value_percent],
-                         _xaxis_name="RX BW",
-                         _yaxis_name="Percent Packets RX per BW",
-                         _xaxis_categories=rx_bw,
-                         _graph_image_name="RX BW",
-                         _label=["% Total Packets"],
-                         _color=['blue'],
-                         _color_edge='black',
-                         _figsize=(17, 7),
-                         _grp_title='RX BW',
-                         _xaxis_step=1,
-                         _show_bar_value=True,
-                         _text_font=7,
-                         _text_rotation=45,
-                         _xticks_font=7,
-                         _legend_loc="best",
-                         _legend_box=(1, 1),
-                         _legend_ncol=1,
-                         _legend_fontsize=None,
-                         _enable_csv=False)
+    if html_file:
+        graph = lf_bar_graph(_data_set=[rx_bw_value_percent],
+                             _xaxis_name="RX BW",
+                             _yaxis_name="Percent Packets RX per BW",
+                             _xaxis_categories=rx_bw,
+                             _graph_image_name="RX BW",
+                             _label=["% Total Packets"],
+                             _color=['blue'],
+                             _color_edge='black',
+                             _figsize=(17, 7),
+                             _grp_title='RX BW',
+                             _xaxis_step=1,
+                             _show_bar_value=True,
+                             _text_font=7,
+                             _text_rotation=45,
+                             _xticks_font=7,
+                             _legend_loc="best",
+                             _legend_box=(1, 1),
+                             _legend_ncol=1,
+                             _legend_fontsize=None,
+                             _enable_csv=False)
 
-    graph_png = graph.build_bar_graph()
-    report.set_graph_image(graph_png)
-    report.move_graph_image()
-    report.build_graph()
+        graph_png = graph.build_bar_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
 
     # retrieve tx data from json for BW
     tx_bw = []
@@ -1358,31 +1373,32 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.write_dataframe_to_csv()
 
     # TX BW
-    graph = lf_bar_graph(_data_set=[tx_bw_value_percent],
-                         _xaxis_name="TX BW",
-                         _yaxis_name="Percent Packets TX per BW",
-                         _xaxis_categories=tx_bw,
-                         _graph_image_name="TX BW",
-                         _label=["% Total Packets"],
-                         _color=['blue'],
-                         _color_edge='black',
-                         _figsize=(17, 7),
-                         _grp_title='TX BW',
-                         _xaxis_step=1,
-                         _show_bar_value=True,
-                         _text_font=7,
-                         _text_rotation=45,
-                         _xticks_font=7,
-                         _legend_loc="best",
-                         _legend_box=(1, 1),
-                         _legend_ncol=1,
-                         _legend_fontsize=None,
-                         _enable_csv=False)
+    if html_file:
+        graph = lf_bar_graph(_data_set=[tx_bw_value_percent],
+                             _xaxis_name="TX BW",
+                             _yaxis_name="Percent Packets TX per BW",
+                             _xaxis_categories=tx_bw,
+                             _graph_image_name="TX BW",
+                             _label=["% Total Packets"],
+                             _color=['blue'],
+                             _color_edge='black',
+                             _figsize=(17, 7),
+                             _grp_title='TX BW',
+                             _xaxis_step=1,
+                             _show_bar_value=True,
+                             _text_font=7,
+                             _text_rotation=45,
+                             _xticks_font=7,
+                             _legend_loc="best",
+                             _legend_box=(1, 1),
+                             _legend_ncol=1,
+                             _legend_fontsize=None,
+                             _enable_csv=False)
 
-    graph_png = graph.build_bar_graph()
-    report.set_graph_image(graph_png)
-    report.move_graph_image()
-    report.build_graph()
+        graph_png = graph.build_bar_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
 
     # retrieve rx data from json for NSS
     rx_nss = []
@@ -1429,31 +1445,32 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.write_dataframe_to_csv()
 
     # RX NSS
-    graph = lf_bar_graph(_data_set=[rx_nss_value_percent],
-                         _xaxis_name="RX NSS",
-                         _yaxis_name="Percent RX Packets of NSS",
-                         _xaxis_categories=rx_nss,
-                         _graph_image_name="RX NSS",
-                         _label=["% Total Packets"],
-                         _color=['blue'],
-                         _color_edge='black',
-                         _figsize=(17, 7),
-                         _grp_title='RX NSS',
-                         _xaxis_step=1,
-                         _show_bar_value=True,
-                         _text_font=7,
-                         _text_rotation=45,
-                         _xticks_font=7,
-                         _legend_loc="best",
-                         _legend_box=(1, 1),
-                         _legend_ncol=1,
-                         _legend_fontsize=None,
-                         _enable_csv=False)
+    if html_file:
+        graph = lf_bar_graph(_data_set=[rx_nss_value_percent],
+                             _xaxis_name="RX NSS",
+                             _yaxis_name="Percent RX Packets of NSS",
+                             _xaxis_categories=rx_nss,
+                             _graph_image_name="RX NSS",
+                             _label=["% Total Packets"],
+                             _color=['blue'],
+                             _color_edge='black',
+                             _figsize=(17, 7),
+                             _grp_title='RX NSS',
+                             _xaxis_step=1,
+                             _show_bar_value=True,
+                             _text_font=7,
+                             _text_rotation=45,
+                             _xticks_font=7,
+                             _legend_loc="best",
+                             _legend_box=(1, 1),
+                             _legend_ncol=1,
+                             _legend_fontsize=None,
+                             _enable_csv=False)
 
-    graph_png = graph.build_bar_graph()
-    report.set_graph_image(graph_png)
-    report.move_graph_image()
-    report.build_graph()
+        graph_png = graph.build_bar_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
 
     # retrieve tx data from json for NSS
     tx_nss = []
@@ -1500,31 +1517,32 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.write_dataframe_to_csv()
 
     # TX NSS
-    graph = lf_bar_graph(_data_set=[tx_nss_value_percent],
-                         _xaxis_name="TX NSS",
-                         _yaxis_name="Percent TX Packets of NSS",
-                         _xaxis_categories=tx_nss,
-                         _graph_image_name="TX NSS",
-                         _label=["% Total Packets"],
-                         _color=['blue'],
-                         _color_edge='black',
-                         _figsize=(17, 7),
-                         _grp_title='TX NSS',
-                         _xaxis_step=1,
-                         _show_bar_value=True,
-                         _text_font=7,
-                         _text_rotation=45,
-                         _xticks_font=7,
-                         _legend_loc="best",
-                         _legend_box=(1, 1),
-                         _legend_ncol=1,
-                         _legend_fontsize=None,
-                         _enable_csv=False)
+    if html_file:
+        graph = lf_bar_graph(_data_set=[tx_nss_value_percent],
+                             _xaxis_name="TX NSS",
+                             _yaxis_name="Percent TX Packets of NSS",
+                             _xaxis_categories=tx_nss,
+                             _graph_image_name="TX NSS",
+                             _label=["% Total Packets"],
+                             _color=['blue'],
+                             _color_edge='black',
+                             _figsize=(17, 7),
+                             _grp_title='TX NSS',
+                             _xaxis_step=1,
+                             _show_bar_value=True,
+                             _text_font=7,
+                             _text_rotation=45,
+                             _xticks_font=7,
+                             _legend_loc="best",
+                             _legend_box=(1, 1),
+                             _legend_ncol=1,
+                             _legend_fontsize=None,
+                             _enable_csv=False)
 
-    graph_png = graph.build_bar_graph()
-    report.set_graph_image(graph_png)
-    report.move_graph_image()
-    report.build_graph()
+        graph_png = graph.build_bar_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
 
     # retrieve rx data from json for MCS
     rx_mcs = []
@@ -1593,31 +1611,32 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.write_dataframe_to_csv()
 
     # RX MCS encoding
-    graph = lf_bar_graph(_data_set=[rx_mcs_value_percent],
-                         _xaxis_name="RX MCS encoding",
-                         _yaxis_name="Percent RX Packets per MCS encoding",
-                         _xaxis_categories=rx_mcs,
-                         _graph_image_name="RX MCS encoding",
-                         _label=["% Total Packets"],
-                         _color=['blue'],
-                         _color_edge='black',
-                         _figsize=(17, 7),
-                         _grp_title='RX MCS encoding',
-                         _xaxis_step=1,
-                         _show_bar_value=True,
-                         _text_font=7,
-                         _text_rotation=45,
-                         _xticks_font=7,
-                         _legend_loc="best",
-                         _legend_box=(1, 1),
-                         _legend_ncol=1,
-                         _legend_fontsize=None,
-                         _enable_csv=False)
+    if html_file:
+        graph = lf_bar_graph(_data_set=[rx_mcs_value_percent],
+                             _xaxis_name="RX MCS encoding",
+                             _yaxis_name="Percent RX Packets per MCS encoding",
+                             _xaxis_categories=rx_mcs,
+                             _graph_image_name="RX MCS encoding",
+                             _label=["% Total Packets"],
+                             _color=['blue'],
+                             _color_edge='black',
+                             _figsize=(17, 7),
+                             _grp_title='RX MCS encoding',
+                             _xaxis_step=1,
+                             _show_bar_value=True,
+                             _text_font=7,
+                             _text_rotation=45,
+                             _xticks_font=7,
+                             _legend_loc="best",
+                             _legend_box=(1, 1),
+                             _legend_ncol=1,
+                             _legend_fontsize=None,
+                             _enable_csv=False)
 
-    graph_png = graph.build_bar_graph()
-    report.set_graph_image(graph_png)
-    report.move_graph_image()
-    report.build_graph()
+        graph_png = graph.build_bar_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
 
     # retrieve tx  mcs value from json
     tx_mcs = []
@@ -1667,31 +1686,32 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.write_dataframe_to_csv()
 
     # TX MCS encoding
-    graph = lf_bar_graph(_data_set=[tx_mcs_value_percent],
-                         _xaxis_name="TX MCS encoding",
-                         _yaxis_name="Percentage Received Packets with MCS encoding",
-                         _xaxis_categories=tx_mcs,
-                         _graph_image_name="TX MCS encoding",
-                         _label=["% Total Packets"],
-                         _color=['blue'],
-                         _color_edge='black',
-                         _figsize=(17, 7),
-                         _grp_title='TX MCS encoding',
-                         _xaxis_step=1,
-                         _show_bar_value=True,
-                         _text_font=7,
-                         _text_rotation=45,
-                         _xticks_font=7,
-                         _legend_loc="best",
-                         _legend_box=(1, 1),
-                         _legend_ncol=1,
-                         _legend_fontsize=None,
-                         _enable_csv=False)
+    if html_file:
+        graph = lf_bar_graph(_data_set=[tx_mcs_value_percent],
+                             _xaxis_name="TX MCS encoding",
+                             _yaxis_name="Percentage Received Packets with MCS encoding",
+                             _xaxis_categories=tx_mcs,
+                             _graph_image_name="TX MCS encoding",
+                             _label=["% Total Packets"],
+                             _color=['blue'],
+                             _color_edge='black',
+                             _figsize=(17, 7),
+                             _grp_title='TX MCS encoding',
+                             _xaxis_step=1,
+                             _show_bar_value=True,
+                             _text_font=7,
+                             _text_rotation=45,
+                             _xticks_font=7,
+                             _legend_loc="best",
+                             _legend_box=(1, 1),
+                             _legend_ncol=1,
+                             _legend_fontsize=None,
+                             _enable_csv=False)
 
-    graph_png = graph.build_bar_graph()
-    report.set_graph_image(graph_png)
-    report.move_graph_image()
-    report.build_graph()
+        graph_png = graph.build_bar_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
 
     # retrieve rx data from json for ampdu
     rx_ampdu = []
@@ -1750,31 +1770,32 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.write_dataframe_to_csv()
 
     # RX ampdu encoding
-    graph = lf_bar_graph(_data_set=[rx_ampdu_value_percent],
-                         _xaxis_name="RX ampdu",
-                         _yaxis_name="Percent Packets RX with AMPDU Count",
-                         _xaxis_categories=rx_ampdu,
-                         _graph_image_name="RX AMPDU Count",
-                         _label=["% Total Packets"],
-                         _color=['blue'],
-                         _color_edge='black',
-                         _figsize=(17, 7),
-                         _grp_title='RX ampdu',
-                         _xaxis_step=1,
-                         _show_bar_value=True,
-                         _text_font=7,
-                         _text_rotation=45,
-                         _xticks_font=7,
-                         _legend_loc="best",
-                         _legend_box=(1, 1),
-                         _legend_ncol=1,
-                         _legend_fontsize=None,
-                         _enable_csv=False)
+    if html_file:
+        graph = lf_bar_graph(_data_set=[rx_ampdu_value_percent],
+                             _xaxis_name="RX ampdu",
+                             _yaxis_name="Percent Packets RX with AMPDU Count",
+                             _xaxis_categories=rx_ampdu,
+                             _graph_image_name="RX AMPDU Count",
+                             _label=["% Total Packets"],
+                             _color=['blue'],
+                             _color_edge='black',
+                             _figsize=(17, 7),
+                             _grp_title='RX ampdu',
+                             _xaxis_step=1,
+                             _show_bar_value=True,
+                             _text_font=7,
+                             _text_rotation=45,
+                             _xticks_font=7,
+                             _legend_loc="best",
+                             _legend_box=(1, 1),
+                             _legend_ncol=1,
+                             _legend_fontsize=None,
+                             _enable_csv=False)
 
-    graph_png = graph.build_bar_graph()
-    report.set_graph_image(graph_png)
-    report.move_graph_image()
-    report.build_graph()
+        graph_png = graph.build_bar_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
 
     # retrieve tx ampdu value from json
     tx_ampdu = []
@@ -1828,31 +1849,32 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.write_dataframe_to_csv()
 
     # TX ampdu
-    graph = lf_bar_graph(_data_set=[tx_ampdu_value_percent],
-                         _xaxis_name="TX ampdu",
-                         _yaxis_name="Percent Packets TX with AMPDU Count",
-                         _xaxis_categories=tx_ampdu,
-                         _graph_image_name="TX ampdu encoding",
-                         _label=["% Total Packets"],
-                         _color=['blue'],
-                         _color_edge='black',
-                         _figsize=(17, 7),
-                         _grp_title='TX ampdu',
-                         _xaxis_step=1,
-                         _show_bar_value=True,
-                         _text_font=7,
-                         _text_rotation=45,
-                         _xticks_font=7,
-                         _legend_loc="best",
-                         _legend_box=(1, 1),
-                         _legend_ncol=1,
-                         _legend_fontsize=None,
-                         _enable_csv=False)
+    if html_file:
+        graph = lf_bar_graph(_data_set=[tx_ampdu_value_percent],
+                             _xaxis_name="TX ampdu",
+                             _yaxis_name="Percent Packets TX with AMPDU Count",
+                             _xaxis_categories=tx_ampdu,
+                             _graph_image_name="TX ampdu encoding",
+                             _label=["% Total Packets"],
+                             _color=['blue'],
+                             _color_edge='black',
+                             _figsize=(17, 7),
+                             _grp_title='TX ampdu',
+                             _xaxis_step=1,
+                             _show_bar_value=True,
+                             _text_font=7,
+                             _text_rotation=45,
+                             _xticks_font=7,
+                             _legend_loc="best",
+                             _legend_box=(1, 1),
+                             _legend_ncol=1,
+                             _legend_fontsize=None,
+                             _enable_csv=False)
 
-    graph_png = graph.build_bar_graph()
-    report.set_graph_image(graph_png)
-    report.move_graph_image()
-    report.build_graph()
+        graph_png = graph.build_bar_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
 
     # retrieve tx msdu value from json
     tx_msdu = []
@@ -1891,31 +1913,32 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.write_dataframe_to_csv()
 
     # TX msdu
-    graph = lf_bar_graph(_data_set=[tx_msdu_value_percent],
-                         _xaxis_name="TX MSDU",
-                         _yaxis_name="Percent Packets TX per MSDU",
-                         _xaxis_categories=tx_msdu,
-                         _graph_image_name="TX MSDU",
-                         _label=["% Total Packets"],
-                         _color=['blue'],
-                         _color_edge='black',
-                         _figsize=(17, 7),
-                         _grp_title='TX msdu',
-                         _xaxis_step=1,
-                         _show_bar_value=True,
-                         _text_font=7,
-                         _text_rotation=45,
-                         _xticks_font=7,
-                         _legend_loc="best",
-                         _legend_box=(1, 1),
-                         _legend_ncol=1,
-                         _legend_fontsize=None,
-                         _enable_csv=False)
+    if html_file:
+        graph = lf_bar_graph(_data_set=[tx_msdu_value_percent],
+                             _xaxis_name="TX MSDU",
+                             _yaxis_name="Percent Packets TX per MSDU",
+                             _xaxis_categories=tx_msdu,
+                             _graph_image_name="TX MSDU",
+                             _label=["% Total Packets"],
+                             _color=['blue'],
+                             _color_edge='black',
+                             _figsize=(17, 7),
+                             _grp_title='TX msdu',
+                             _xaxis_step=1,
+                             _show_bar_value=True,
+                             _text_font=7,
+                             _text_rotation=45,
+                             _xticks_font=7,
+                             _legend_loc="best",
+                             _legend_box=(1, 1),
+                             _legend_ncol=1,
+                             _legend_fontsize=None,
+                             _enable_csv=False)
 
-    graph_png = graph.build_bar_graph()
-    report.set_graph_image(graph_png)
-    report.move_graph_image()
-    report.build_graph()
+        graph_png = graph.build_bar_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
 
     # Finish the report
     report.build_footer()
