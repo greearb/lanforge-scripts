@@ -702,6 +702,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                         help="""moves the default report directory (mv <time-date>_rf_characteristics) to new name.
         If this is not a full qualified path, it will default to /home/lanforge/html-reports/<final_report_dir>
                         """)
+    parser.add_argument('--no_pdf', action='store_true',
+                        help="specify this to skip PDF generation")
     parser.add_argument("--test_rig", default="lanforge",
                         help="test rig for kpi.csv, testbed that the tests are run on")
     parser.add_argument("--test_tag", default="kpi_generation",
@@ -769,17 +771,21 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     # Create report, when running with the test framework (lf_check.py)
     # results need to be in the same directory
     logger.info("configure reporting")
+    do_pdf = True
+    pdf_file = "rf_char.pdf"
+    if args.no_pdf:
+        do_pdf: False
+        pdf_file = None
+
     if local_lf_report_dir != "":
-        report = lf_report.lf_report(
-            _path=local_lf_report_dir,
-            _results_dir_name="rf_char",
-            _output_html="rf_char.html",
-            _output_pdf="rf_char.pdf")
+        report = lf_report.lf_report(_path=local_lf_report_dir,
+                                     _results_dir_name="rf_char",
+                                     _output_html="rf_char.html",
+                                     _output_pdf=pdf_file)
     else:
-        report = lf_report.lf_report(
-            _results_dir_name="rf_characteristics_test",
-            _output_html="rf_char.html",
-            _output_pdf="rf_char.pdf")
+        report = lf_report.lf_report(_results_dir_name="rf_characteristics_test",
+                                     _output_html="rf_char.html",
+                                     _output_pdf=pdf_file)
 
     kpi_path = report.get_report_path()
     logger.info("Report and kpi_path :{kpi_path}".format(kpi_path=kpi_path))
