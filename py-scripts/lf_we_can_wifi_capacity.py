@@ -192,10 +192,10 @@ class LfInteropWifiCapacity(Realm):
             down_rate = float("{:.2f}".format(int("".join([i for i in [i for i in self.inp_download_rate] if i.isdigit()]))/len(phone_name)))
             up_rate = float("{:.2f}".format(int("".join([i for i in [i for i in self.inp_upload_rate] if i.isdigit()]))/len(phone_name)))
             link_rate_df = pd.DataFrame({
-                "Expected Link rate Rx": [down_rate for i in range(int(self.batch_size))],
-                "Expected Link rate Tx": [up_rate for i in range(int(self.batch_size))],
-                "Achieved Link rate Rx": [download_rate[i] for i in range(int(self.batch_size))],
-                "Achieved Link rate Tx": [upload_rate[i] for i in range(int(self.batch_size))],
+                "Expected throughput Rx": [down_rate for i in range(int(self.batch_size))],
+                "Expected throughput Tx": [up_rate for i in range(int(self.batch_size))],
+                "Achieved throughput Rx": [download_rate[i] for i in range(int(self.batch_size))],
+                "Achieved throughput Tx": [upload_rate[i] for i in range(int(self.batch_size))],
             }, index=[phone_name[i] for i in range(int(self.batch_size))])
 
             link_rate_phone_df = pd.DataFrame({
@@ -322,7 +322,7 @@ class LfInteropWifiCapacity(Realm):
             "Mode": phone_radio,
             "Rx Rate (Mbps)": rx_rate,
             "Tx Rate (Mbps)": tx_rate,
-            "Band": phone_radio_bandwidth,
+            "Bandwidth": phone_radio_bandwidth,
             "Direction": [direction for i in range(len(ssid))],
             "Traffic": [str(self.protocol).replace(')','').replace('(','').replace("'",'').strip() for i in range(len(ssid))],
 
