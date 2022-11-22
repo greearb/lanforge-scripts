@@ -256,7 +256,7 @@ class lf_json_api():
         # http://192.168.100.116:8080/layer4/1178 | json_pp  , where --user
         # "USERNAME:PASSWORD"
         request_command = 'http://{lfmgr}:{lfport}/layer4/{endpoint_name}'.format(
-            lfmgr=self.lf_mgr, lfport=self.lf_port, endpoint_name=self.endpoint_name)
+            lfmgr=self.lf_mgr, lfport=self.lf_port, endpoint_name=self.endpoint)
         request = requests.get(
             request_command, auth=(
                 self.lf_user, self.lf_passwd))
