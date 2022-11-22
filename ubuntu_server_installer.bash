@@ -1,5 +1,5 @@
 #!/bin/bash
-set -veux
+# set -veux
 
 # for ip in "${list[@]}"; do echo $ip ; sshpass -p sitindia123 ssh -o StrictHostKeyChecking=no sitindia@$ip "lsb_release -a"; done | awk '/Release:/{print $2}'
 helpFunction() {
@@ -118,9 +118,9 @@ LF_AUTO_INSTALL=1 ./install.bash /home/lanforge
 # fi
 
 cd /home/lanforge/
-echo "====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== "
+# echo "====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== "
 ./lfconfig < /home/lanforge/lfconfig_answers.txt
-echo "====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== "
+# echo "====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== "
 
 systemctl stop NetworkManager ||:
 systemctl disable NetworkManager ||:
