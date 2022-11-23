@@ -45,7 +45,7 @@ fi
 apt update
 # libnet-dev should be bundled
 # curl should also be bundled, we don't really want it
-apt install -y bridge-utils
+apt install -y bridge-utils libnet-dev
 apt dist-upgrade -y
 apt -f install
 apt autoremove -y
@@ -86,6 +86,11 @@ if [[ ! -f $server_pkg ]]; then
     wget http://www.candelatech.com/private/downloads/r5.4.6/$server_pkg
 fi
 #    "\n"
+
+systemctl stop NetworkManager ||:
+systemctl disable NetworkManager ||:
+systemctl mask NetworkManager ||:
+
 [[ -f /home/lanforge/lfconfig_answers.txt ]] && rm -f /home/lanforge/lfconfig_answers.txt ||:
 
 cat > /home/lanforge/lfconfig_answers.txt <<EOF
@@ -122,9 +127,6 @@ cd /home/lanforge/
 ./lfconfig < /home/lanforge/lfconfig_answers.txt
 # echo "====== ====== ====== ====== ====== ====== ====== ====== ====== ====== ====== "
 
-systemctl stop NetworkManager ||:
-systemctl disable NetworkManager ||:
-systemctl mask NetworkManager ||:
 
 ./serverctl.bash start
 
