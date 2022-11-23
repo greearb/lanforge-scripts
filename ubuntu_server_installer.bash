@@ -61,10 +61,11 @@ fi
 x=`lsb_release -r | awk '{print $2}'`
 echo "VERSION: [$x]"
 server_pkg="LANforgeServer-5.4.6_Linux-F27-x64.tar.gz"
+cp lib* /home/lanforge/
 cd /home/lanforge
 case "$x" in
     16.04)
-        server_pkg="LANforgeServer-5.4.6_Linux-F27-x64.tar.gz"
+        server_pkg="LANforgeServer-5.4.6_Linux-F21-x64.tar.gz"
         ;;
     18.04)
         server_pkg="LANforgeServer-5.4.6_Linux-F27-x64.tar.gz"
