@@ -72,7 +72,7 @@ Example command using attenuator
     --radio 'radio==wiphy3,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --radio 'radio==wiphy4,stations==1,ssid==TCH-XB7,ssid_pw==comcast123,security==wpa2' \
     --endp_type lf_udp --side_a_min_bps=20000 --side_b_min_bps=400000000 \
-    --attenuators 1.1.<serial number>.1 \
+    --attenuators 1.1.<serial number>.<module , module 1 : 0, module 2 : 1, Module 3 : 2 , Module 4 : 3, All : 7 \
     --atten_vals 20,21,40,41
 
 Example using upsteam eth1 downstream eth2
@@ -165,6 +165,8 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 
+lf_attenuator = importlib.import_module("py-scripts.lf_atten_mod_test")
+
 Realm = realm.Realm
 
 logger = logging.getLogger(__name__)
@@ -239,7 +241,8 @@ class lf_rssi_check(Realm):
                  ap_file="",
                  ap_band_list=['2g','5g','6g']):
 
-
+        self.lfclient_host=lfclient_host
+        self.lfclient_port=lfclient_port
         self.eth_endps = []
         self.total_stas = 0
         if side_a_min_rate is None:
@@ -887,12 +890,18 @@ class lf_rssi_check(Realm):
 
                 if self.ap_read:
                     for band in self.ap_band_list:
-                        self.ap.clear_stats(band)                
-
+                        self.ap.clear_stats(band)        
+                                
+                # Set the Attenuation CMR
                 for atten_val in self.atten_vals:
                     if atten_val != -1:
+                        # TODO Need to be able to work with multiple attenuators
                         for atten_idx in self.attenuators:
-                            self.set_atten(atten_idx, atten_val)
+                            atten_mod_test = lf_attenuator.CreateAttenuator(host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
+                            atten_mod_test.build()
+
+                            # TODO the realm version does not work 
+                            # self.set_atten(atten_idx, atten_val)
 
                     logger.info("Starting multicast traffic (if any configured)")
                     self.multicast_profile.start_mc(debug_=self.debug)
@@ -1236,7 +1245,7 @@ class lf_rssi_check(Realm):
                         self._pass(
                             "PASS: Requested-Rate: %s <-> %s  PDU: %s <-> %s   All tests passed" %
                             (ul, dl, ul_pdu, dl_pdu), print_pass)
-
+    # dl_values
     def write_port_csv(
             self,
             sta_count,
@@ -1263,12 +1272,19 @@ class lf_rssi_check(Realm):
                atten, port_eid
                ]
 
+        # TODO 
+        # curl -XGET http://"$HOST":8080/port/1/2/"$STA_NAMES"?fields=rx-rate,signal,channel,ssid,ap,chain+rssi,avg+chain+rssi,mode | json_pp > "$OUTPUT_DIR/sta_data$TEST_INDEX.json"
+
         row = row + [port_data['bps rx'],
                      port_data['bps tx'],
                      port_data['rx-rate'],
                      port_data['tx-rate'],
-                     port_data['signal'],
+                     port_data['signal'],  #RSSI
+                     port_data['channel'],
+                     port_data['ssid'],
                      port_data['ap'],
+                     port_data['chain rssi'],
+                     port_data['avg chain rssi'],
                      port_data['mode'],
                      latency,
                      jitter,
@@ -1511,7 +1527,11 @@ class lf_rssi_check(Realm):
             'Rx-Link-Rate',
             'Tx-Link-Rate',
             'RSSI',
+            'CHANNEL',
+            'SSID',
             'AP',
+            'CHAIN_RSSI',
+            'AVE-CHAIN-RSSI',
             'Mode',
             'Rx-Latency',
             'Rx-Jitter',
