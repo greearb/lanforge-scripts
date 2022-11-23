@@ -63,6 +63,16 @@ echo "VERSION: [$x]"
 server_pkg="LANforgeServer-5.4.6_Linux-F27-x64.tar.gz"
 cp lib* /home/lanforge/
 cd /home/lanforge
+download_these=(
+    libcrypto.so.1.1
+    libcrypt.so.2
+    libnet.so.1
+    libpcap.so.1
+    libssh2.so.1
+    libssl.so.1.1
+    libstdc++.so.6
+    libtinfo.so.6
+)
 case "$x" in
     16.04)
         server_pkg="LANforgeServer-5.4.6_Linux-F21-x64.tar.gz"
@@ -82,10 +92,17 @@ esac
 if ((do_upgrade == 1)); then
     [[ ! -f $server_pkg ]] && rm -f $server_pkg ||:
 fi
+
 if [[ ! -f $server_pkg ]]; then
     echo "Downloading new $server_pkg"
-    wget http://www.candelatech.com/private/downloads/r5.4.6/$server_pkg
+    wget https://www.candelatech.com/private/downloads/r5.4.6/$server_pkg
 fi
+
+for f in "${download_these[@]}"; do
+    if [[ ! -f "/home/lanforge/$f" ]]; then
+        wget -O "/home/lanforge/$f" https://www.candelatech.com/downloads/f21/$f
+    fi
+done
 #    "\n"
 
 systemctl stop NetworkManager ||:
