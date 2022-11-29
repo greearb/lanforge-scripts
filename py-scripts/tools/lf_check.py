@@ -267,7 +267,7 @@ class lf_check():
         # dut selection
         # note the name will be set as --set DUT_NAME ASUSRT-AX88U, this is not
         # dut_name (see above)
-        self.dut_set_name = 'DUT_NAME ASUSRT-AX88U'
+        self.dut_set_name = 'DUT_NAME DUT_NAME_NA'
         self.use_dut_name = "DUT_NAME_NA"  # "ASUSRT-AX88U" note this is not dut_set_name
         self.dut_hw = "DUT_HW_NA"
         self.dut_sw = "DUT_SW_NA"
@@ -594,29 +594,36 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
     # Reading the test rig configuration
     def read_json_rig(self):
         # self.logger.info("read_config_json_contents {}".format(self.json_rig))
-        if "test_rig_parameters" in self.json_rig:
-            self.logger.info("json: read test_rig_parameters")
-            # self.logger.info("test_rig_parameters {}".format(self.json_rig["test_rig_parameters"]))
-            self.read_test_rig_parameters()
+        if self.json_rig != "":
+            if "test_rig_parameters" in self.json_rig:
+                self.logger.info("json: read test_rig_parameters")
+                # self.logger.info("test_rig_parameters {}".format(self.json_rig["test_rig_parameters"]))
+                self.read_test_rig_parameters()
+            else:
+                self.logger.info(
+                    "EXITING test_rig_parameters not in json {}".format(
+                        self.json_rig))
+                self.logger.info(
+                    "EXITING ERROR test_rig_parameters not in rig json")
+                exit(1)
         else:
-            self.logger.info(
-                "EXITING test_rig_parameters not in json {}".format(
-                    self.json_rig))
-            self.logger.info(
-                "EXITING ERROR test_rig_parameters not in rig json")
-            exit(1)
+            self.logger.info("rig json file not present, Are you running with only a test.json file")                
 
     # read dut configuration
     def read_json_dut(self):
-        if "test_dut" in self.json_dut:
-            self.logger.info("json: read test_dut")
-            self.read_dut_parameters()
+        if self.json_dut != "":
+            if "test_dut" in self.json_dut:
+                self.logger.info("json: read test_dut")
+                self.read_dut_parameters()
+            else:
+                self.logger.info(
+                    "EXITING test_dut not in json {}".format(
+                        self.json_dut))
+                self.logger.info("EXITING ERROR test_dut not in dut json {}")
+                exit(1)
         else:
-            self.logger.info(
-                "EXITING test_dut not in json {}".format(
-                    self.json_dut))
-            self.logger.info("EXITING ERROR test_dut not in dut json {}")
-            exit(1)
+            self.logger.info("dut json file not present, Are you running with only a test.json file")                
+
 
     # Top Level for reading the tests to run
     def read_json_test(self):
@@ -1464,12 +1471,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         default="/home/lanforge/html-results")
     parser.add_argument(
         '--json_rig',
-        help="--json_rig <rig json config> ",
-        required=True)
+        help="--json_rig <rig json config> ")
     parser.add_argument(
         '--json_dut',
-        help="--json_dut <dut json config> ",
-        required=True)
+        help="--json_dut <dut json config> ")
     parser.add_argument(
         '--json_test',
         help="--json_test <test json config> ",
@@ -1530,22 +1535,24 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
     # load test config file information either <config>.json
     json_rig = ""
-    try:
-        logger.info("reading json_rig: {rig}".format(rig=args.json_rig))
-        with open(args.json_rig, 'r') as json_rig_config:
-            json_rig = json.load(json_rig_config)
-    except json.JSONDecodeError as err:
-        logger.error("ERROR reading {json}, ERROR: {error} ".format(json=args.json_rig, error=err))
-        exit(1)
+    if args.json_rig is not None:
+        try:
+            logger.info("reading json_rig: {rig}".format(rig=args.json_rig))
+            with open(args.json_rig, 'r') as json_rig_config:
+                json_rig = json.load(json_rig_config)
+        except json.JSONDecodeError as err:
+            logger.error("ERROR reading {json}, ERROR: {error} ".format(json=args.json_rig, error=err))
+            exit(1)
 
     json_dut = ""
-    try:
-        logger.info("reading json_dut: {dut}".format(dut=args.json_dut))
-        with open(args.json_dut, 'r') as json_dut_config:
-            json_dut = json.load(json_dut_config)
-    except json.JSONDecodeError as err:
-        logger.error("ERROR reading {json}, ERROR: {error} ".format(json=args.json_dut, error=err))
-        exit(1)
+    if args.json_dut is not None:
+        try:
+            logger.info("reading json_dut: {dut}".format(dut=args.json_dut))
+            with open(args.json_dut, 'r') as json_dut_config:
+                json_dut = json.load(json_dut_config)
+        except json.JSONDecodeError as err:
+            logger.error("ERROR reading {json}, ERROR: {error} ".format(json=args.json_dut, error=err))
+            exit(1)
 
     json_test = ""
     try:
