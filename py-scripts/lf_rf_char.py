@@ -135,14 +135,15 @@ class lf_rf_char(Realm):
         self.query = self.session.get_query()
 
         # vap configuration
-        self.shelf = ''
-        self.resource = ''
-        self.port_name = ''
-        self.vap_radio = ''
-        self.vap_channel = ''
-        self.vap_mode = 0
+        self.shelf : int = 1
+        self.resource : int = ''
+        self.port_name : str = ''
+        self.vap_radio : str = ''
+        self.vap_channel : str = ''
+        self.vap_bw : int = 0 # 20, 40, 80, 160
+        self.vap_mode : str = 0
         self.vap_antenna = ''
-        self.vap_txpower = -1
+        self.vap_txpower : int = -1
         self.reset_vap = False
 
         # get dut information
@@ -428,6 +429,86 @@ class lf_rf_char(Realm):
                                          txpower=tx_pow,
                                          # do not set radio mode here
                                          debug=self.debug)
+        vap_flags = "NA"
+        vap_flagmask = "NA"
+        t_channel : int = 0
+        t_band : int = 0
+        if self.vap_bw:
+            if not self.vap_channel:
+                raise Exception("setting bandwidth requires --vap_channel parameter")
+            if "e" in self.vap_channel:
+                # we are 6Ghz
+                t_channel = int( self.vap_channel[0:-1])
+                logger.warning("6gz channel is {}".format(t_channel))
+                if (t_channel >= 1) and (t_channel <= 233):
+                    t_band=6
+            else:
+                t_channel = int(self.vap_channel)
+                if (t_channel >= 1) and (t_channel <= 15):
+                    t_band=2
+                elif (t_channel >= 32) and (t_channel <= 177):
+                    t_band=5
+            if t_channel == 0:
+                raise Exception("strange channel: {}".format(self.vap_channel))
+            if t_band < 2:
+                raise Exception("strange bandwidth: {}".format(t_band))
+
+            default_flags_24g = self.command.AddVapFlags.use_bss_load \
+                | self.command.AddVapFlags.use_bss_transition \
+                | self.command.AddVapFlags.use_rrm_report
+            default_flags_5g = self.command.AddVapFlags.enable_80211d \
+                | self.command.AddVapFlags.p_80211h_enable \
+                | self.command.AddVapFlags.use_bss_load \
+                | self.command.AddVapFlags.use_bss_transition \
+                | self.command.AddVapFlags.use_rrm_report
+            default_flags_6g = self.command.AddVapFlags.hostapd_config \
+                | self.command.AddVapFlags.use_bss_load \
+                | self.command.AddVapFlags.use_bss_transition \
+                | self.command.AddVapFlags.use_rrm_report
+            t_flags: int = -1
+            t_flagmask: int = self.command.AddVapFlags.disable_ht40 \
+                              | self.command.AddVapFlags.disable_ht80 \
+                              | self.command.AddVapFlags.ht160_enable
+            if self.vap_bw and (not t_band or self.vap_bw == "NA"):
+                # logger.error("unable to set bandwidth without knowing channel")
+                raise Exception("unable to set bandwidth without knowing channel")
+            if self.vap_bw:
+                if t_band == 2:
+                    t_flags = default_flags_24g
+                    t_flagmask |= default_flags_24g
+                elif t_band == 5:
+                    t_flags = default_flags_5g
+                    t_flagmask |= default_flags_5g
+                elif t_band == 6:
+                    t_flags = default_flags_6g
+                    t_flagmask |= default_flags_6g
+                else:
+                    raise ValueError("Unknown band %s" % t_band)
+
+                if self.vap_bw == "20":
+                    t_flags |= self.command.AddVapFlags.disable_ht40 \
+                        | self.command.AddVapFlags.disable_ht80
+                if self.vap_bw == "40":
+                    t_flags |= self.command.AddVapFlags.disable_ht80
+                if self.vap_bw == "80":
+                    t_flags |= self.command.AddVapFlags.disable_ht40
+                    if t_band in (2):
+                        raise ValueError("80 mhz bandwidth only available within 5ghz and 6gz frequencies")
+                if self.vap_bw == "160":
+                    if t_band == 2:
+                        raise ValueError("80 mhz bandwidth only available within 5ghz and 6gz frequencies")
+                    if t_band == 5 and not (t_channel in (36, 100)):
+                        raise ValueError("160 mhz bandwidth only available within 5ghz channels 36 and 100")
+                    t_flags |= self.command.AddVapFlags.ht160_enable \
+                        | self.command.AddVapFlags.disable_ht80 \
+                        | self.command.AddVapFlags.disable_ht40
+            if t_flags > -1:
+                vap_flags = str(hex(t_flags))
+                vap_flagmask = str(hex(t_flagmask))
+            else:
+                logger.warning("t_flags does not look right: %s" % t_flags)
+                time.sleep(5)
+            
         if self.vap_mode != 0:
             v_name = self.vap_port
             if self.vap_port.find('.') > -1:
@@ -435,16 +516,23 @@ class lf_rf_char(Realm):
             r_name = self.vap_radio
             if self.vap_radio.find('.') > -1:
                 r_name = self.vap_radio[self.vap_radio.rindex('.')+1:]
-            # logger.warning("modify_ratio: setting vap mode to [{}]".format(self.vap_mode))
-            # logger.warning("modify_ratio: vap_radio           [{}]".format(self.vap_radio))
-            # logger.warning("modify_ratio: vap                 [{}]".format(self.vap))
-            # logger.warning("modify_ratio: vap_port            [{}]".format(self.vap_port))
-            # logger.warning("modify_ratio: port_name           [{}]".format(self.port_name))
+            if self.debug:
+                logger.warning("modify_ratio: setting vap mode to [{}]".format(self.vap_mode))
+                logger.warning("modify_ratio: vap_radio           [{}]".format(self.vap_radio))
+                logger.warning("modify_ratio: vap                 [{}]".format(self.vap))
+                logger.warning("modify_ratio: vap_port            [{}]".format(self.vap_port))
+                logger.warning("modify_ratio: port_name           [{}]".format(self.port_name))
+                logger.warning("modify_ratio: vap_channel         [{}]".format(self.vap_channel))
+                logger.warning("modify_ratio: vap_bw              [{}]".format(self.vap_bw))
+                logger.warning("modify_ratio: vap_flags           [{}]".format(self.vap_flags))
+                logger.warning("modify_ratio: vap_flagmask        [{}]".format(self.vap_flagmask))
             self.command.post_add_vap(shelf=1,
                                       resource=self.resource,
                                       radio=r_name,
                                       ap_name=v_name,
                                       mode=self.vap_mode,
+                                      flags=vap_flags,
+                                      flags_mask=vap_flagmask,
                                       debug=True)
             queried_mode = "none"
             e_w : list = []
@@ -578,15 +666,15 @@ class lf_rf_char(Realm):
             # port not needed for all
             json_stations, *nil = self.json_vap_api.get_request_stations_information()
             logger.info("json_stations {json}".format(json=pformat(json_stations)))
-            try:
+            if "station" in json_stations:
                 self.rssi_signal.append(json_stations['station']['signal'])
                 chain_rssi_str = json_stations['station']['chain rssi']
                 chain_rssi = chain_rssi_str.split(',')
-            except BaseException:
+            else:
                 # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
                 # pprint(json_stations)
                 # This should give us faster lookup if I knew how to use it.
-                #sta_key = "0.0.0.%s"%(self.dut_mac)
+                # sta_key = "0.0.0.%s"%(self.dut_mac)
                 #pprint("key: %s"%(sta_key))
                 for s in json_stations['stations']:
                     keys = list(s.keys())
@@ -684,7 +772,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     parser.add_argument("--lf_passwd", type=str, help="passwd: lanforge", default='lanforge')
     parser.add_argument("--vap_port", type=str, help=" port : 1.1.vap3  provide full eid  (endpoint id", required=True)
     parser.add_argument("--vap_radio", type=str, help=" --vap_radio wiphy0", required=True)
-    parser.add_argument("--vap_channel", type=str, help=" --vap_channel '36'  channel of the radio e.g. 6 (2.4G) , 36 (5G), ")
+    parser.add_argument("--vap_channel", type=str,
+                        help="""Specify the channel of the radio e.g. 6 (2.4G), 36 (5G), 1e(6G)
+            Please append 'e' for all 6Ghz channels.
+            This parameter is required to use --vap_bw parammeter.""")
     parser.add_argument("--vap_antenna", help='number of spatial streams: 0 Diversity (All), 1 Fixed-A (1x1), 4 AB (2x2), 7 ABC (3x3), 8 ABCD (4x4), 9 (8x8)')
     parser.add_argument("--vap_mode",
                         default="AUTO",
@@ -696,6 +787,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             DEFAULT, 0dBm, 1dBm, 2dBm, 5dBm, 10dBm, 15dBm, 20dBm, 25dBm
             The values may be any integer between -1(auto/default) and 30
             """)
+    parser.add_argument('--vap_bw',
+                        help="""Specify the bandwidth for the vAP. Options: 
+            20 | 40 | 80 | 160
+            Not all bandwidth settings are available for all radios.""")
     parser.add_argument('--reset_vap', action='store_true',
                         help="""Specify this if DHCP leases do not disappear from the vAP.
             Default behavior is to not reset the vAP""")
@@ -849,6 +944,12 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     rf_char.vap_antenna = args.vap_antenna
     rf_char.vap_port = args.vap_port
     rf_char.vap_txpower = args.vap_txpower
+    bw_list = ( "20", "40", "80", "160" )
+    if args.vap_bw not in bw_list:
+        print("vAP bandwidth [{}] unknown. Please choose from: {}".format(
+            args.vap_bw, ", ".join(bw_list)))
+        exit(1)
+    rf_char.vap_bw = args.vap_bw
     rf_char.reset_vap = args.reset_vap
     if args.vap_mode:
         if args.vap_mode in ("a", "802.11a"):
