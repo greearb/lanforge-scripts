@@ -1317,7 +1317,22 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             if ((self.test_dict[self.test]['enabled'] == "TRUE" and self.use_test_list is False) or 
                 (self.use_test_list is True and self.test in self.test_list)):
                         
-                        
+
+                # LAN-1697 
+                # Customer Request: lf_check ability to have user input (pause) between a test to allow for user configuration
+                # "user_intervention":"TRUE",
+                # "user_prompt":"Be sure 2G and 5G have same ssid , then hit enter",
+
+                if 'user_intervention' in self.test_dict[self.test]:
+                    if self.test_dict[self.test]['user_intervention'] == 'TRUE':
+                        if 'user_prompt' in self.test_dict[self.test]:
+                            user_prompt = self.test_dict[self.test]['user_prompt']
+                        else:
+                            user_prompt = 'Default prompt User Intervention requested for test: {test}, hit enter to continue: '.format(test=self.test)
+
+                        user_input = input(user_prompt)
+                        logger.info("user input received {input}".format(input=user_input))
+
                 # TODO Place test interations here
                 if 'iterations' in self.test_dict[self.test]:
                     self.logger.info("iterations : {}".format(self.test_dict[self.test]['iterations']))
@@ -1343,6 +1358,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     self.tx_power_list = self.test_dict[self.test]['batch_tx_power'].split()
 
                 # TODO have addional methods
+                # TODO refactor 
                 # in python an empty list returns false .
                 # If channel_list and bandwidth_list are populated then
                 if self.channel_list and self.nss_list and self.bandwidth_list and self.tx_power_list:
