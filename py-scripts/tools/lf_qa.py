@@ -106,7 +106,7 @@ class csv_sql:
             test_id = test_id[-1]  # done to get element of list
         except BaseException:
             logger.info(
-                "exception reading test_id in csv _kpi_path {kpi_path}".format(
+                "WARNING: Is test_id set in Manual Test?  exception reading test_id in csv _kpi_path {kpi_path}".format(
                     kpi_path=_kpi_path))
         try:
             test_tag_list = list(kpi_df['test-tag'])
@@ -114,7 +114,7 @@ class csv_sql:
             test_tag = test_tag[-1]  # done to get element of list
         except BaseException:
             logger.info(
-                "exception reading test-tag in csv _kpi_path {kpi_path}, try meta.txt".format(
+                "WARNING: is test-tag set in Manual Test?, exception reading test-tag in csv _kpi_path {kpi_path}, try meta.txt".format(
                     kpi_path=_kpi_path))
 
         # if test_tag still NA then try meta file
@@ -151,7 +151,7 @@ class csv_sql:
         if test_run == "NA":
             try:
                 test_run = _kpi_path.rsplit('/', 2)[0]
-                logger.info("try harder test_run {test_run}".format(test_run=test_run))
+                logger.info("try harder test_run: {test_run}".format(test_run=test_run))
             except BaseException:
                 logger.info("exception getting test_run from kpi_path")
             logger.info("Try harder test_run: {test_run} _kpi_path: {_kpi_path}".format(test_run=test_run, _kpi_path=_kpi_path))
