@@ -499,9 +499,8 @@ class lf_rf_char(Realm):
                         raise ValueError("80 mhz bandwidth only available within 5ghz and 6gz frequencies")
                     if t_band == 5 and not (t_channel in (36, 100)):
                         raise ValueError("160 mhz bandwidth only available within 5ghz channels 36 and 100")
-                    t_flags |= self.command.AddVapFlags.ht160_enable \
-                        | self.command.AddVapFlags.disable_ht80 \
-                        | self.command.AddVapFlags.disable_ht40
+                    t_flags |= self.command.AddVapFlags.ht160_enable
+
             if t_flags > -1:
                 vap_flags = str(hex(t_flags))
                 vap_flagmask = str(hex(t_flagmask))
