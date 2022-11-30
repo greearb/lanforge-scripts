@@ -1036,7 +1036,7 @@ class lf_rssi_check(Realm):
                                                                 _enable_flags = ['disable_ht80','disable_ht40'],
                                                                 _disable_flags = ['ht160_enable']
                                                                 )
-
+                                lf_modify_vap.set_vap()
                             elif bandwidth == '40':
                                 lf_modify_vap = modify_vap.ModifyVAP(_host=self.lfclient_host,
                                                                 _port=self.lfclient_port,
