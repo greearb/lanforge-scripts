@@ -661,7 +661,7 @@ class L3VariableTime(Realm):
         for endp_name in endp_list['endpoint']:
             if endp_name != 'uri' and endp_name != 'handler':
                 for item, endp_value in endp_name.items():
-                    if item in our_endps:
+                    if item in our_endps or self.use_existing_station_lists:
                         endps.append(endp_value)
                         logger.info("endpoint: {item} value:\n".format(item=item))
                         logger.info(pformat(endp_value))
@@ -3578,19 +3578,14 @@ Note: for enable flags can us && as separator in vscode
         atten_vals = args.atten_vals.split(",")
 
     if len(ul_rates) != len(dl_rates):
-        raise ValueError(
-            "ERROR:  ul_rates %s and dl_rates %s arrays must be same length\n" %
+        # todo make fill assignable
+        logger.info(
+            "ul_rates %s and dl_rates %s arrays are of different length will fill shorter list with 256000\n" %
             (len(ul_rates), len(dl_rates)))
     if len(ul_pdus) != len(dl_pdus):
-        raise ValueError("ERROR:  ul_rates %s and dl_rates %s arrays must be same length\n" %
-                         (len(ul_rates), len(dl_rates)))
-        logger.error(
-            "ERROR:  ul_rates %s and dl_rates %s arrays must be same length\n" %
-            (len(ul_rates), len(dl_rates)))
-    if len(ul_pdus) != len(dl_pdus):
-        logger.error(
-            "ERROR:  ul_pdus %s and dl_pdus %s arrays must be same length\n" %
-            (len(ul_rates), len(dl_rates)))
+        logger.info(
+            "ul_pdus %s and dl_pdus %s arrays are of different lengths will fill shorter list with size AUTO \n" %
+            (len(ul_pdus), len(dl_pdus)))
 
     ip_var_test = L3VariableTime(
         endp_types=endp_types,
