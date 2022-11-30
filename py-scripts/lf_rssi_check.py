@@ -637,7 +637,8 @@ class lf_rssi_check(Realm):
         for endp_name in endp_list['endpoint']:
             if endp_name != 'uri' and endp_name != 'handler':
                 for item, endp_value in endp_name.items():
-                    if item in our_endps:
+                    # if using existing stations list then the endpoints were existing
+                    if item in our_endps or self.use_existing_station_lists:
                         endps.append(endp_value)
                         logger.debug("endpoint: {item} value:\n".format(item=item))
                         logger.debug(endp_value)
