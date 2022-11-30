@@ -159,6 +159,13 @@ if sys.version_info[0] != 3:
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
+lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
+from lanforge_client.lanforge_api import LFSession
+from lanforge_client.lanforge_api import LFJsonCommand
+from lanforge_client.lanforge_api import LFJsonQuery
+from lanforge_client.logg import Logg
+
+
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -256,6 +263,27 @@ class lf_rssi_check(Realm):
         self.lfclient_port=lfclient_port
         self.lf_user = lf_user
         self.lf_passwd = lf_passwd
+
+        # Create a LFSession
+        # self.session = LFSession(lfclient_url="http://{lf_mgr}:{lf_port}".format(lf_mgr=self.lf_mgr, lf_port=self.lf_port),
+        self.session = LFSession(lfclient_url="http://%s:8080" % self.lfclient_host,
+                                 debug=debug,
+                                 connection_timeout_sec=4.0,
+                                 stream_errors=True,
+                                 stream_warnings=True,
+                                 require_session=True,
+                                 exit_on_error=True)
+
+        if debug:
+            Logg.register_method_name("json_post")
+            Logg.register_method_name("json_get")
+            Logg.register_method_name("get_as_json")
+        # type hinting
+        self.command: LFJsonCommand
+        self.command = self.session.get_command()
+        self.query: LFJsonQuery
+        self.query = self.session.get_query()
+
 
         self.eth_endps = []
         self.total_stas = 0
@@ -490,6 +518,18 @@ class lf_rssi_check(Realm):
         self.lf_endps = None
         self.udp_endps = None
         self.tcp_endps = None
+
+    def set_port_report_timer(self, port=None, milliseconds=1000):
+        if port is not None:
+            self.port = port
+            self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.port)
+        self.command.post_set_port(shelf=self.shelf,
+                                   resource=self.resource,
+                                   port=self.port_name,
+                                   interest=32768,
+                                   report_timer=int(milliseconds),
+                                   debug=self.debug)
+
 
     def get_results_csv(self):
         # print("self.csv_results_file {}".format(self.csv_results_file.name))
@@ -857,6 +897,9 @@ class lf_rssi_check(Realm):
             self.csv_add_port_column_headers(
                 port_eid, self.csv_generate_dl_port_column_headers())
 
+            # set the report timers
+            self.set_port_report_timer(port=port_eid, milliseconds=1000)
+
         # ul -ports the csv will only be filled out if the
         # ap is read
         if self.ap_read:
@@ -939,6 +982,10 @@ class lf_rssi_check(Realm):
                         vap_radio = f"{shelf}.{resource}.{vap_radio_name}"
 
                         #             "endp?fields=name,eid,delay,jitter,rx+rate,rx+rate+ll,rx+bytes,rx+drop+%25,rx+pkts+ll",
+                        # set the report timer for both the vap and vap radio
+                        # TODO change so the polling interval may be used to set the report timer
+                        self.set_port_report_timer(port=vap_radio, milliseconds=1000)
+                        self.set_port_report_timer(port=vap, milliseconds=1000)
 
 
 
@@ -982,35 +1029,35 @@ class lf_rssi_check(Realm):
                         # set the bandwidth if not set to 'NA'
                         for bandwidth in self.bandwidths_list:
                             if bandwidth == '20':
-                                lf_modify_vap = modify_vap.ModifyVAP(_hosts=self.lfclient_host,
+                                lf_modify_vap = modify_vap.ModifyVAP(_host=self.lfclient_host,
                                                                 _port=self.lfclient_port,
-                                                                _vap_list=self.vap_list,
+                                                                _vap_list=vap,
                                                                 _enable_flags = ['disable_ht80','disable_ht40'],
                                                                 _disable_flags = ['ht160_enable']
                                                                 )
 
                             elif bandwidth == '40':
-                                lf_modify_vap = modify_vap.ModifyVAP(_hosts=self.lfclient_host,
+                                lf_modify_vap = modify_vap.ModifyVAP(_host=self.lfclient_host,
                                                                 _port=self.lfclient_port,
-                                                                _vap_list=self.vap_list,
+                                                                _vap_list=vap, # it is not a list it is a single vap 
                                                                 _enable_flags = ['disable_ht80'],
                                                                 _disable_flags = ['disable_ht40','ht160_enable'],
                                                                 )
                                 lf_modify_vap.set_vap()
                             elif bandwidth == '80':
-                                lf_modify_vap = modify_vap.ModifyVAP(_hosts=self.lfclient_host,
+                                lf_modify_vap = modify_vap.ModifyVAP(_host=self.lfclient_host,
                                                                 _port=self.lfclient_port,
-                                                                _vap_list=self.vap_list,
+                                                                _vap_list=vap,
                                                                 _enable_flags = ['disable_ht40'],
-                                                                _disable_flags = ['diable_ht80','ht160_enable'],
+                                                                _disable_flags = ['disable_ht80','ht160_enable'],
                                                                 )
                                 lf_modify_vap.set_vap()
                             elif bandwidth == '160':
-                                lf_modify_vap = modify_vap.ModifyVAP(_hosts=self.lfclient_host,
+                                lf_modify_vap = modify_vap.ModifyVAP(_host=self.lfclient_host,
                                                                 _port=self.lfclient_port,
-                                                                _vap_list=self.vap_list,
+                                                                _vap_list=vap,
                                                                 _enable_flags = ['ht160_enable'],
-                                                                _disable_flags = ['diable_ht80','disable_ht40'],
+                                                                _disable_flags = ['disable_ht80','disable_ht40'],
                                                                 )
                                 lf_modify_vap.set_vap()
                             else:
@@ -1071,6 +1118,7 @@ class lf_rssi_check(Realm):
                                         interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
                                         # logger.infi("polling_interval_seconds {}".format(self.polling_interval_seconds))
 
+                                        # TODO use time stamp to determing when data has changed
                                         while cur_time < interval_time:
                                             cur_time = datetime.datetime.now()
                                             time.sleep(.2)
