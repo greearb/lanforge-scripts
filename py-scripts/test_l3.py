@@ -2466,7 +2466,7 @@ Setting wifi_settings per radio
     if len(ul_pdus) != len(dl_pdus):
         logger.info(
             "ul_pdus %s and dl_pdus %s arrays are of different lengths will fill shorter list with size AUTO \n" %
-            (len(ul_rates), len(dl_rates)))
+            (len(ul_pdus), len(dl_pdus)))
 
     logger.info("configure and create test object")
     ip_var_test = L3VariableTime(
