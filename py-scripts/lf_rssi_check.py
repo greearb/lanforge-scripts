@@ -8,7 +8,8 @@ PURPOSE: Validate RSSI for specific radios
 EXAMPLE:
     Usage something like:  rssi_check.py --channels “6 36” --nss “1 2 3 4” --bw “20 40 80” --vap 1.1.vap0 --stas “1.2.wlan0 1.2.wlan1” --attenuator 1.1.xxxx --attenuation_step 1  --step_duration 
     Skip bw that does not match selected channels.
-
+    
+increase attenuation until STA disconnects, then stop recording data there.  It should be around RSSI -88, but part of this is to verify that.
 
 Implementation should be something like:
 Select LF VAP on one system
@@ -221,6 +222,9 @@ class lf_rssi_check(Realm):
                  nss_list='0',
                  attenuators=None,
                  atten_vals=None,
+                 atten_start=None,
+                 atten_stop=None,
+                 atten_step=None,
                  number_template="00",
                  test_duration="256s",
                  polling_interval="60s",
@@ -309,6 +313,13 @@ class lf_rssi_check(Realm):
             attenuators = []
         if atten_vals is None:
             atten_vals = []
+        if atten_start is None:
+            atten_start = -1
+        if atten_stop is None:
+            atten_stop = -1
+        if atten_step is None:
+            atten_step = -1
+
         if _capture_signal_list is None:
             _capture_signal_list = []
         super().__init__(lfclient_host=lfclient_host,
@@ -383,6 +394,9 @@ class lf_rssi_check(Realm):
         self.nss_list = nss_list
         self.attenuators = attenuators
         self.atten_vals = atten_vals
+        self.atten_start = atten_start
+        self.atten_stop = atten_stop
+        self.atten_step = atten_step
         if ((len(self.atten_vals) > 0) and (
                 self.atten_vals[0] != -1) and (len(self.attenuators) == 0)):
             logger.error(
@@ -1078,9 +1092,19 @@ class lf_rssi_check(Realm):
 
                                 # Set the Attenuation Create the loops 
                                 # need to have atten start and atten step
+                                if len(self.atten_vals) == 0:
+                                    atten = self.start_atten
+                                    atten_int = int(atten)
+                                    stop_atten_int = int(self.stop_atten)
+                                    step_atten_int = int(self.atten_step)
+                                    while atten_int <= stop_atten_int:
+                                        self.atten_vals.append(str(atten_int))
+                                        atten_int = atten_int + step_atten_int
+
                                 for atten_val in self.atten_vals:
                                     if atten_val != -1:
                                         # TODO Need to be able to work with multiple attenuators
+                                        # TODO the index is currently set to all
                                         for atten_idx in self.attenuators:
                                             atten_mod_test = lf_attenuator.CreateAttenuator(host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
                                             atten_mod_test.build()
@@ -2415,10 +2439,26 @@ Setting wifi_settings per radio
         '--attenuators',
         help='--attenuators,  comma separated list of attenuator module eids:  shelf.resource.atten-serno.atten-idx',
         default="")
+
     parser.add_argument(
         '--atten_vals',
-        help='--atten_vals,  comma separated list of attenuator settings in ddb units (1/10 of db)',
+        help='--atten_vals,  comma separated list of attenuator settings in ddb units (1/10 of db) atten_vals takes presidence to atten_start and atten_step',
         default="")
+
+    parser.add_argument(
+        '--atten_start',
+        help='--atten_start,  start of attenuator settings in ddb units (1/10 of db) , 200 is 20 dBm default: 200',
+        default='200')
+    
+    parser.add_argument(
+        '--atten_stop',
+        help='--atten_stop,  stop of attenuator settings in ddb units (1/10 of db) , 800 is 80 dBm default: 880, this is 88 dBm where the station should disconnect',
+        default='880')
+
+    parser.add_argument(
+        '--atten_step',
+        help='--atten_step,  step size of attenuator settings in ddb units (1/10 of db) , 100 is 10 dBm, default: 100',
+        default='100')
 
     parser.add_argument(
         "--wait",
@@ -2761,6 +2801,10 @@ Setting wifi_settings per radio
     else:
         atten_vals = args.atten_vals.split(",")
 
+    atten_start = args.atten_start
+    atten_stop = args.atten_stop
+    atten_step = args.atten_step
+
     if len(ul_rates) != len(dl_rates):
         # todo make fill assignable
         logger.info(
@@ -2804,6 +2848,9 @@ Setting wifi_settings per radio
         nss_list=nss_list,
         attenuators=attenuators,
         atten_vals=atten_vals,
+        atten_start=atten_start,
+        atten_stop=atten_stop,
+        atten_step=atten_step,
         number_template="00",
         test_duration=test_duration,
         polling_interval=polling_interval,
