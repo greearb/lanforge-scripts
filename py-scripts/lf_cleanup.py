@@ -56,7 +56,7 @@ class lf_clean(Realm):
         self.br_done = False
         self.misc_done = False
 
-    # clenaup LF gui Layer 4-7 tab (--layer4):
+    # removes the endps from the LF gui Layer 4-7 tab (--layer4):
     def layer4_endp_clean(self):
         still_looking_endp = True
         iterations_endp = 0
@@ -65,34 +65,54 @@ class lf_clean(Realm):
             iterations_endp += 1
             logger.info("layer4_endp_clean: iterations_endp: {iterations_endp}".format(iterations_endp=iterations_endp))
             layer4_endp_json = super().json_get("layer4")
-            logger.info(layer4_endp_json)
+            # logger.info(layer4_endp_json)
             if layer4_endp_json is not None:
                 logger.info("Removing old Layer 4-7 endpoints")
                 for name in list(layer4_endp_json):
                     # if name != 'handler' and name != 'uri' and name != 'empty':
                     if name == 'endpoint':
-                        for endp_num in layer4_endp_json['endpoint']:
-                            # get L4-Endp name:
-                            for endp_values in endp_num.values():
-                                #endp_eid = endp_val['entity id']
-                                #logger.info(endp_eid)
-                                endp_name = endp_values['name']
-                                # Remove Layer 4-7 cross connections:
-                                req_url = "cli-json/rm_cx"
-                                data = {
-                                    "test_mgr": "default_tm",
-                                    "cx_name": "CX_" + endp_name
-                                }
-                                logger.info("Removing {endp_name}...".format(endp_name="CX_" + endp_name))
-                                super().json_post(req_url, data)
+                        # if there is only a single endpoint:
+                        if type(layer4_endp_json['endpoint']) is dict:
+                            endp_name = layer4_endp_json['endpoint']['name']
+                            # Remove Layer 4-7 cross connection:
+                            req_url = "cli-json/rm_cx"
+                            data = {
+                                "test_mgr": "default_tm",
+                                "cx_name": "CX_" + endp_name
+                            }
+                            logger.info("Removing {endp_name}...".format(endp_name="CX_" + endp_name))
+                            super().json_post(req_url, data)
 
-                                # Remove Layer 4-7 endpoint
-                                req_url = "cli-json/rm_endp"
-                                data = {
-                                    "endp_name": endp_name
-                                }
-                                logger.info("Removing {endp_name}...".format(endp_name=endp_name))
-                                super().json_post(req_url, data)
+                            # Remove Layer 4-7 endpoint
+                            req_url = "cli-json/rm_endp"
+                            data = {
+                                "endp_name": endp_name
+                            }
+                            logger.info("Removing {endp_name}...".format(endp_name=endp_name))
+                            super().json_post(req_url, data)
+
+                        # if there are > 1 endpoints:
+                        else:
+                            for endp_num in layer4_endp_json['endpoint']:
+                                # get L4-Endp name:
+                                for endp_values in endp_num.values():
+                                    endp_name = endp_values['name']
+                                    # Remove Layer 4-7 cross connections:
+                                    req_url = "cli-json/rm_cx"
+                                    data = {
+                                        "test_mgr": "default_tm",
+                                        "cx_name": "CX_" + endp_name
+                                    }
+                                    logger.info("Removing {endp_name}...".format(endp_name="CX_" + endp_name))
+                                    super().json_post(req_url, data)
+
+                                    # Remove Layer 4-7 endpoint
+                                    req_url = "cli-json/rm_endp"
+                                    data = {
+                                        "endp_name": endp_name
+                                    }
+                                    logger.info("Removing {endp_name}...".format(endp_name=endp_name))
+                                    super().json_post(req_url, data)
                 time.sleep(1)
             else:
                 logger.info("No endpoints found to cleanup")
@@ -102,6 +122,7 @@ class lf_clean(Realm):
                 self.endp_done = True
             return still_looking_endp
 
+    # removes cxs from the Layer-3 gui tab, and the related l3-endps from the L3 Endps gui tab.
     def cxs_clean(self):
         still_looking_cxs = True
         iterations_cxs = 1
@@ -118,22 +139,19 @@ class lf_clean(Realm):
                 # delete L3-CX based upon the L3-Endp name & the resource value from
                 # the e.i.d of the associated L3-Endps
                 for cx_name in list(cx_json):
-                    # logger.info(cx_name)
                     if cx_name != 'handler' and cx_name != 'uri' and cx_name != 'empty' and cx_name != 'warnings':
-                        for endp_num in endp_json['endpoint']:
-                            # get L3-Endp e.i.d & name:
-                            for endp_val in endp_num.values():
-                                endp_eid = endp_val['entity id']
-                                # logger.info(endp_eid)
-                                endp_name = endp_val['name']
-                                # logger.info(endp_name)
-                                # if name + '-A' in endp_name or name + '-B' in endp_name:
-                                if cx_name + '-A' in endp_name:
+                        # if there are L3 Endps, check relation to Layer-3 cxs:
+                        if endp_json is not None:
+                            # if there is only a single endpoint:
+                            if type(endp_json['endpoint']) is dict:
+                                endp_name = endp_json['endpoint']['name']
+                                if cx_name + '-A' in endp_name or cx_name + '-B' in endp_name:
+                                    # if cx_name + '-A' in endp_name:
                                     endp_eid_split = endp_eid.split('.')
                                     # endp_eid_split[1] == realm resource value:
                                     resource_eid = str(endp_eid_split[1])
-                                    # logger.info(resource_eid)
                                     if resource_eid in self.resource or 'all' in self.resource:
+                                        # remove Layer-3 cx:
                                         req_url = "cli-json/rm_cx"
                                         data = {
                                             "test_mgr": "default_tm",
@@ -142,6 +160,66 @@ class lf_clean(Realm):
                                         # logger.info(data)
                                         logger.info("Removing {cx_name}...".format(cx_name=cx_name))
                                         super().json_post(req_url, data)
+
+                                        # remove associated L3-Endp:
+                                        req_url = "cli-json/rm_endp"
+                                        data = {
+                                            "endp_name": endp_name
+                                        }
+                                        # logger.info(data)
+                                        logger.info("Removing {endp_name}...".format(endp_name=endp_name))
+                                        super().json_post(req_url, data)
+
+                            # if there are > 1 endpoints:
+                            else:
+                                for endp_num in endp_json['endpoint']:
+                                    # get L3-Endp e.i.d & name:
+                                    for endp_val in endp_num.values():
+                                        endp_eid = endp_val['entity id']
+                                        endp_name = endp_val['name']
+                                        if cx_name + '-A' in endp_name or cx_name + '-B' in endp_name:
+                                        # if cx_name + '-A' in endp_name:
+                                            endp_eid_split = endp_eid.split('.')
+                                            # endp_eid_split[1] == realm resource value:
+                                            resource_eid = str(endp_eid_split[1])
+                                            # The L3 Endps are removed with their related Layer-3 cx by default:
+                                            if resource_eid in self.resource or 'all' in self.resource:
+                                                # remove Layer-3 cx:
+                                                req_url = "cli-json/rm_cx"
+                                                data = {
+                                                    "test_mgr": "default_tm",
+                                                    "cx_name": cx_name
+                                                }
+                                                # logger.info(data)
+                                                logger.info("Removing {cx_name}...".format(cx_name=cx_name))
+                                                super().json_post(req_url, data)
+
+                                                # remove associated L3-Endp:
+                                                req_url = "cli-json/rm_endp"
+                                                data = {
+                                                    "endp_name": endp_name
+                                                }
+                                                # logger.info(data)
+                                                logger.info("Removing {endp_name}...".format(endp_name=endp_name))
+                                                super().json_post(req_url, data)
+
+                        # if there are no L3 Endps, just remove the Layer-3 cxs:
+                        else:
+                            cxs_eid = cx_json[cx_name]['entity id']
+                            cxs_eid_split = cxs_eid.split('.')
+                            # cxs_eid_split[1] == realm resource value:
+                            resource_eid = str(cxs_eid_split[1])
+                            # logger.info(resource_eid)
+                            if resource_eid in self.resource or 'all' in self.resource:
+                                # remove Layer-3 cx:
+                                req_url = "cli-json/rm_cx"
+                                data = {
+                                    "test_mgr": "default_tm",
+                                    "cx_name": cx_name
+                                }
+                                # logger.info(data)
+                                logger.info("Removing {cx_name}...".format(cx_name=cx_name))
+                                super().json_post(req_url, data)
                 time.sleep(1)
             else:
                 logger.info("No cross connects found to cleanup")
@@ -151,46 +229,38 @@ class lf_clean(Realm):
                 self.cxs_done = True
             return still_looking_cxs
 
-    def endp_clean(self):
+    # removes endpoints that do not have a related Layer-3 cxs from the L3 Endps gui tab.
+    def layer3_endp_clean(self):
         still_looking_endp = True
         iterations_endp = 0
 
         while still_looking_endp and iterations_endp <= 10:
             iterations_endp += 1
-            logger.info("endp_clean: iterations_endp: {iterations_endp}".format(iterations_endp=iterations_endp))
+            logger.info("layer3_endp_clean: iterations_endp: {iterations_endp}".format(iterations_endp=iterations_endp))
             endp_json = super().json_get("endp")
             # logger.info(endp_json)
-            cx_json = super().json_get("cx")
-            # logger.info(cx_json)
             if endp_json is not None:
-                logger.info("Removing old endpoints")
-                for name in list(endp_json['endpoint']):
-                    endp_name = list(name)[0]
-                    # logger.info(endp_name)
-                    # get existing L3-CX names:
-                    if cx_json is not None and cx_json['empty'] != 'please ignore':
-                        # logger.info(cx_json['empty'])
-                        for cx_name in list(cx_json):
-                            # logger.info(cx_name)
-                            if cx_name != 'handler' and cx_name != 'uri' and cx_name != 'empty':
-                                # remove all L3-endps without an associated L3-CX:
-                                if cx_name + '-A' not in endp_name and cx_name + '-B' not in endp_name:
-                                    if name[list(name)[0]]["name"] == '':
-                                        continue
-                                    req_url = "cli-json/rm_endp"
-                                    data = {
-                                        "endp_name": list(name)[0]
-                                    }
-                                    # logger.info(data)
-                                    logger.info("Removing {endp_name}...".format(endp_name=endp_name))
-                                    super().json_post(req_url, data)
-                    # if there are no L3-CX's, remove all L3-Endps:
-                    else:
+                logger.info("Removing old Layer 3 endpoints")
+                # if there is only a single endpoint:
+                if type(endp_json['endpoint']) is dict:
+                    endp_name = endp_json['endpoint']['name']
+                    req_url = "cli-json/rm_endp"
+                    data = {
+                        "endp_name": endp_name
+                    }
+                    # logger.info(data)
+                    logger.info("Removing {endp_name}...".format(endp_name=endp_name))
+                    super().json_post(req_url, data)
+
+                # if there are > 1 endpoints:
+                else:
+                    for name in list(endp_json['endpoint']):
+                        endp_name = list(name)[0]
                         if name[list(name)[0]]["name"] == '':
                             continue
                         req_url = "cli-json/rm_endp"
                         data = {
-                            "endp_name": list(name)[0]
+                            "endp_name": endp_name
                         }
                         # logger.info(data)
                         logger.info("Removing {endp_name}...".format(endp_name=endp_name))
@@ -199,7 +269,7 @@ class lf_clean(Realm):
             else:
                 logger.info("No endpoints found to cleanup")
                 still_looking_endp = False
-                logger.info("clean_endp still_looking_endp {ednp_looking}".format(ednp_looking=still_looking_endp))
+                logger.info("layer3_clean_endp still_looking_endp {ednp_looking}".format(ednp_looking=still_looking_endp))
             if not still_looking_endp:
                 self.endp_done = True
             return still_looking_endp
@@ -444,28 +514,28 @@ class lf_clean(Realm):
         when deleting sta first, you will end up with phantom CX
     '''
     def sanitize_all(self):
-        # clean Layer-3 tab:
+        # 1. clean Layer-3 tab:
         finished_clean_cxs = self.cxs_clean()
         logger.info("clean_cxs: finished_clean_cxs {looking_cxs}".format(looking_cxs=finished_clean_cxs))
-        # clean L3 Endps tab:
-        finished_clean_endp = self.endp_clean()
-        logger.info("clean_endp: finished_clean_endp {looking_endp}".format(looking_endp=finished_clean_endp))
-        # clean Layer 4-7 tab:
+        # 2. clean L3 Endps tab:
+        finished_clean_endp = self.layer3_endp_clean()
+        logger.info("layer3_clean_endp: finished_clean_endp {looking_endp}".format(looking_endp=finished_clean_endp))
+        # 3. clean Layer 4-7 tab:
         finished_clean_l4 = self.layer4_endp_clean()
         logger.info("clean_l4_endp: finished_clean_l4 {looking_l4}".format(looking_l4=finished_clean_l4))
-        # clean Port Mgr tab:
+        # 4. clean Port Mgr tab:
         finished_clean_port_mgr = self.port_mgr_clean()
         logger.info("clean_sta: finished_clean_port_mgr {looking_port_mgr}".format(looking_port_mgr=finished_clean_port_mgr))
         '''
         if self.clean_cxs:
             # also clean the endp when cleaning cxs
             still_looking_cxs = self.cxs_clean()
-            still_looking_endp = self.endp_clean()
+            still_looking_endp = self.layer3_endp_clean()
             logger.info("clean_cxs: still_looking_cxs {looking_cxs} still_looking_endp {looking_endp}".format(
                 looking_cxs=still_looking_cxs, looking_endp=still_looking_endp))
 
         if self.clean_endp and not self.clean_cxs:
-            still_looking_endp = self.endp_clean()
+            still_looking_endp = self.layer3_endp_clean()
             logger.info("clean_endp: still_looking_endp {looking_endp}".format(looking_endp=still_looking_endp))
 
         if self.clean_port_mgr:
@@ -522,7 +592,7 @@ This example will clean the Port Mgr, Layer-3, L3 Endps, and Layer 4-7 LF GUI ta
         help="--cxs, this will clear all the Layer-3 cxs and endps",
         action='store_true')
     parser.add_argument(
-        '--endp',
+        '--l3_endp',
         help="--endp, this will clear all the Layer-3 endps",
         action='store_true')
     parser.add_argument(
@@ -571,21 +641,20 @@ This example will clean the Port Mgr, Layer-3, L3 Endps, and Layer 4-7 LF GUI ta
         logger_config.set_level("debug")
 
     # if args.cxs or args.endp or args.sta or args.br or args.misc:
-    if args.cxs or args.endp or args.sta or args.br or args.misc or args.port_mgr or args.layer4 or args.sanitize:
+    if args.cxs or args.l3_endp or args.sta or args.br or args.misc or args.port_mgr or args.layer4 or args.sanitize:
         clean = lf_clean(host=args.mgr,
                          resource=args.resource,
                          clean_cxs=args.cxs,
-                         clean_endp=args.endp,
+                         clean_endp=args.l3_endp,
                          clean_sta=args.sta,
                          clean_port_mgr=args.port_mgr,
                          clean_misc=args.misc)
-        logger.info("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.endp, sta=args.sta))
+        logger.info("cleaning cxs: {cxs} endpoints: {endp} stations: {sta} start".format(cxs=args.cxs, endp=args.l3_endp, sta=args.sta))
         if args.cxs:
             logger.info("cleaning cxs will also clean endp")
             clean.cxs_clean()
-            clean.endp_clean()
-        if args.endp and not args.cxs:
-            clean.endp_clean()
+        if args.l3_endp:
+            clean.layer3_endp_clean()
         if args.sta:
             clean.sta_clean()
         if args.port_mgr:
