@@ -1972,44 +1972,46 @@ Setting wifi_settings per radio
 
 
         ''')
+    test_l3_parser = parser.add_argument_group('arguments defined in test_l3.py file')
+    # add argument group
     # the local_lf_report_dir is the parent directory of where the results are used with lf_check.py
-    parser.add_argument('--local_lf_report_dir', 
+    test_l3_parser.add_argument('--local_lf_report_dir', 
         help='--local_lf_report_dir override the report path (lanforge/html-reports), primary used when making another directory lanforge/html-report/<test_rig>', 
         default="")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         "--results_dir_name",
         default="test_l3",
         help="the name of the directory that contains the output from the test /lanforge/html-reports/<results_dir_name> default: test_l3")
 
-    parser.add_argument(
+    test_l3_parser.add_argument(
         "--test_rig",
         default="",
         help="test rig for kpi.csv, testbed that the tests are run on")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         "--test_tag",
         default="",
         help="test tag for kpi.csv,  test specific information to differenciate the test")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         "--dut_hw_version",
         default="",
         help="dut hw version for kpi.csv, hardware version of the device under test")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         "--dut_sw_version",
         default="",
         help="dut sw version for kpi.csv, software version of the device under test")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         "--dut_model_num",
         default="",
         help="dut model for kpi.csv,  model number / name of the device under test")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         "--dut_serial_num",
         default="",
         help="dut serial for kpi.csv, serial number / serial number of the device under test")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         "--test_priority",
         default="",
         help="dut model for kpi.csv,  test-priority is arbitrary number")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         "--test_id",
         default="test l3",
         help="test-id for kpi.csv,  script or test name")
@@ -2023,49 +2025,49 @@ Setting wifi_settings per radio
     Graph-Group - For the lf_qa.py dashboard
 
     '''
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '-o',
         '--csv_outfile',
         help="--csv_outfile <Output file for csv data>",
         default="")
 
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '--tty',
         help='--tty \"/dev/ttyUSB2\" the serial interface to the AP',
         default="")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '--baud',
         help='--baud \"9600\"  AP baud rate for the serial interface',
         default="9600")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '--mgr',
         '--lfmgr',
         dest='lfmgr',
         help='--lfmgr <hostname for where LANforge GUI is running>',
         default='localhost')
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '--mgr_port',
         '--lfmgr_port',
         dest='lfmgr_port',
         help='--lfmgr_port <port LANforge GUI HTTP service is running on>',
         default=8080)
 
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '--test_duration',
         help='--test_duration <how long to run>  example --time 5d (5 days) default: 3m options: number followed by d, h, m or s',
         default='3m')
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '--tos',
         help='--tos:  Support different ToS settings: BK,BE,VI,VO,numeric',
         default="BE")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '--debug',
         help='--debug this will enable debugging in py-json method',
         action='store_true')
-    parser.add_argument('--log_level',
+    test_l3_parser.add_argument('--log_level',
                         default=None,
                         help='Set logging level: debug | info | warning | error | critical')
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '-t',
         '--endp_type',
         help=(
@@ -2073,20 +2075,20 @@ Setting wifi_settings per radio
             ' Default: lf_udp , options: lf_udp, lf_udp6, lf_tcp, lf_tcp6, mc_udp, mc_udp6'),
         default='lf_udp',
         type=valid_endp_types)
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '-u',
         '--upstream_port',
         help='--upstream_port <cross connect upstream_port> example: --upstream_port eth1',
         default='eth1')
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '--downstream_port',
         help='--downstream_port <cross connect downstream_port> example: --downstream_port eth2', default=None)
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '--polling_interval',
         help="--polling_interval <seconds>",
         default='60s')
 
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '-r', '--radio',
         action='append',
         nargs=1,
@@ -2098,99 +2100,99 @@ Setting wifi_settings per radio
               ' reset_port_enable==True reset_port_time_min==<min>s'
               ' reset_port_time_max==<max>s" ')
     )
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '-amr',
         '--side_a_min_bps',
         help='--side_a_min_bps, requested downstream min tx rate, comma separated list for multiple iterations.  Default 256k',
         default="256000")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '-amp',
         '--side_a_min_pdu',
         help='--side_a_min_pdu, downstream pdu size, comma separated list for multiple iterations.  Default MTU',
         default="MTU")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '-bmr',
         '--side_b_min_bps',
         help='--side_b_min_bps, requested upstream min tx rate, comma separated list for multiple iterations.  Default 256000',
         default="256000")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '-bmp',
         '--side_b_min_pdu',
         help='--side_b_min_pdu, upstream pdu size, comma separated list for multiple iterations. Default MTU',
         default="MTU")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         "--rates_are_totals",
         default=False,
         help="Treat configured rates as totals instead of using the un-modified rate for every connection.",
         action='store_true')
-    parser.add_argument(
+    test_l3_parser.add_argument(
         "--multiconn",
         default=1,
         help="Configure multi-conn setting for endpoints.  Default is 1 (auto-helper is enabled by default as well).")
 
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '--attenuators',
         help='--attenuators,  comma separated list of attenuator module eids:  shelf.resource.atten-serno.atten-idx',
         default="")
-    parser.add_argument(
+    test_l3_parser.add_argument(
         '--atten_vals',
         help='--atten_vals,  comma separated list of attenuator settings in ddb units (1/10 of db)',
         default="")
 
-    parser.add_argument(
+    test_l3_parser.add_argument(
         "--wait",
         help="--wait <time> , time to wait at the end of the test",
         default='0')
 
-    parser.add_argument('--sta_start_offset', help='Station start offset for building stations',
+    test_l3_parser.add_argument('--sta_start_offset', help='Station start offset for building stations',
                         default='0')
 
-    parser.add_argument('--no_pre_cleanup', help='Do not pre cleanup stations on start',
+    test_l3_parser.add_argument('--no_pre_cleanup', help='Do not pre cleanup stations on start',
                         action='store_true')
 
-    parser.add_argument('--no_cleanup', help='Do not cleanup before exit',
+    test_l3_parser.add_argument('--no_cleanup', help='Do not cleanup before exit',
                         action='store_true')
 
-    parser.add_argument('--no_stop_traffic', help='leave traffic running',
+    test_l3_parser.add_argument('--no_stop_traffic', help='leave traffic running',
                         action='store_true')
 
-    parser.add_argument('--quiesce_cx', help='--quiesce store true,  allow the cx to drain then stop so as to not have rx drop pkts',
+    test_l3_parser.add_argument('--quiesce_cx', help='--quiesce store true,  allow the cx to drain then stop so as to not have rx drop pkts',
                         action='store_true')
 
-    parser.add_argument('--use_existing_station_list', help='--use_station_list ,full eid must be given,'
+    test_l3_parser.add_argument('--use_existing_station_list', help='--use_station_list ,full eid must be given,'
                         'the script will use stations from the list, no configuration on the list, also prevents pre_cleanup',
                         action='store_true')
 
     # TODO pass in the station list
-    parser.add_argument('--existing_station_list',
+    test_l3_parser.add_argument('--existing_station_list',
                         action='append',
                         nargs=1,
                         help='--station_list [list of stations] , use the stations in the list , multiple station lists may be entered')
 
     # logging configuration
-    parser.add_argument(
+    test_l3_parser.add_argument(
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
 
-    parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
-    parser.add_argument("--ap_module", type=str, help="series module")
+    test_l3_parser.add_argument('--ap_read', help='--ap_read  flag present enable reading ap', action='store_true')
+    test_l3_parser.add_argument("--ap_module", type=str, help="series module")
 
-    parser.add_argument('--ap_test_mode', help='--ap_mode ', default=True)
+    test_l3_parser.add_argument('--ap_test_mode', help='--ap_mode ', default=True)
 
-    parser.add_argument('--ap_scheme', help="--ap_scheme '/dev/ttyUSB0'", choices=['serial', 'telnet', 'ssh', 'mux_serial'], default='serial')
-    parser.add_argument('--ap_serial_port', help="--ap_serial_port '/dev/ttyUSB0'", default='/dev/ttyUSB0')
-    parser.add_argument('--ap_serial_baud', help="--ap_baud '115200'',  default='115200", default="115200")
-    parser.add_argument('--ap_ip', help='--ap_ip', default='192.168.50.1')
-    parser.add_argument('--ap_ssh_port', help='--ap_ssh_port', default='1025')
-    parser.add_argument('--ap_telnet_port', help='--ap_telnet_port', default='23')
-    parser.add_argument('--ap_user', help='--ap_user , the user name for the ap, default = lanforge', default='lanforge')
-    parser.add_argument('--ap_passwd', help='--ap_passwd, the password for the ap default = lanforge', default='lanforge')
+    test_l3_parser.add_argument('--ap_scheme', help="--ap_scheme '/dev/ttyUSB0'", choices=['serial', 'telnet', 'ssh', 'mux_serial'], default='serial')
+    test_l3_parser.add_argument('--ap_serial_port', help="--ap_serial_port '/dev/ttyUSB0'", default='/dev/ttyUSB0')
+    test_l3_parser.add_argument('--ap_serial_baud', help="--ap_baud '115200'',  default='115200", default="115200")
+    test_l3_parser.add_argument('--ap_ip', help='--ap_ip', default='192.168.50.1')
+    test_l3_parser.add_argument('--ap_ssh_port', help='--ap_ssh_port', default='1025')
+    test_l3_parser.add_argument('--ap_telnet_port', help='--ap_telnet_port', default='23')
+    test_l3_parser.add_argument('--ap_user', help='--ap_user , the user name for the ap, default = lanforge', default='lanforge')
+    test_l3_parser.add_argument('--ap_passwd', help='--ap_passwd, the password for the ap default = lanforge', default='lanforge')
     # ASUS interfaces
-    parser.add_argument('--ap_if_2g', help='--ap_if_2g eth6', default='wl0')
-    parser.add_argument('--ap_if_5g', help='--ap_if_5g eth7', default='wl1')
-    parser.add_argument('--ap_if_6g', help='--ap_if_6g eth8', default='wl2')
-    parser.add_argument('--ap_file', help="--ap_file 'ap_file.txt'", default=None)
-    parser.add_argument('--ap_band_list', help="--ap_band_list '2g,5g,6g' supported bands", default='2g,5g,6g')
+    test_l3_parser.add_argument('--ap_if_2g', help='--ap_if_2g eth6', default='wl0')
+    test_l3_parser.add_argument('--ap_if_5g', help='--ap_if_5g eth7', default='wl1')
+    test_l3_parser.add_argument('--ap_if_6g', help='--ap_if_6g eth8', default='wl2')
+    test_l3_parser.add_argument('--ap_file', help="--ap_file 'ap_file.txt'", default=None)
+    test_l3_parser.add_argument('--ap_band_list', help="--ap_band_list '2g,5g,6g' supported bands", default='2g,5g,6g')
 
 
 
