@@ -7,7 +7,7 @@ PURPOSE:The LANforge interop port reset test allows user to use lots of real Wi-
 stations at random intervals
 
 EXAMPLE:
-$ ./ python3 lf_interop_port_reset_test.py  --host 192.168.1.31 --dut TestDut --ssid Airtel_9755718444_5GHz
+$ ./ python3 lf_interop_port_reset_test.py  --host 192.168.1.31 --mgr_ip 192.168.1.31  --dut TestDut --ssid Airtel_9755718444_5GHz
 --passwd air29723 --encryp psk2 --band 5G --reset 1 --time_int 60 --wait_time 60 --release 11 12 --clients 1
 
 NOTES:
@@ -50,6 +50,7 @@ class InteropPortReset(Realm):
                  band=None,
                  reset=None,
                  clients= None,
+                 mgr_ip=None,
                  time_int=None,
                  wait_time=None,
                  suporrted_release=None
@@ -65,6 +66,7 @@ class InteropPortReset(Realm):
         self.encryp = encryp
         self.band = band
         self.clients = clients
+        self.mgr_ip = mgr_ip
         self.reset = reset
         self.time_int = time_int
         self.wait_time = wait_time
@@ -85,6 +87,77 @@ class InteropPortReset(Realm):
         self.utility = base.UtilityInteropWifi(host_ip=self.host)
         logging.basicConfig(filename='reset.log', filemode='w', level=logging.INFO, force=True)
 
+
+
+    def get_last_wifi_msg(self):
+        a = self.json_get("/wifi-msgs/last/1", debug_=True)
+        last = a['wifi-messages']['time-stamp']
+        print(a)
+        logging.info(str(a))
+        print(last)
+        logging.info(str(last))
+        return last
+
+    def get_count(self, filter=None, value=None, keys_list=None):
+        count_ = []
+        for i, y in zip(keys_list, range(len(keys_list))):
+            b = value[y][i]['text']
+            if type(b) == str:
+                variable = value[y][i]['text'].split(" ")
+                # print("variable", variable)
+                if filter in variable:
+                    # print("yes")
+                    count_.append("yes")
+            else:
+                for a in b:
+                    y = a.split(" ")
+                    # print("y", y)
+                    if filter in y:
+                        count_.append("yes")
+
+        print(count_)
+        logging.info(str(count_))
+        counting = count_.count("yes")
+        print(counting)
+        logging.info(str(counting))
+        return counting
+
+    def get_time_from_wifi_msgs(self, local_dict=None, phn_name=None, timee=None):
+        time.sleep(20)
+        a = self.json_get("/wifi-msgs/since=time/" + str(timee), debug_=True)
+        values = a['wifi-messages']
+        print("values", values)
+        logging.info("values" + str(values))
+        keys_list = []
+
+
+        for i in range(len(values)):
+            keys_list.append(list(values[i].keys())[0])
+
+        disconnect_count = self.get_count(value=values, keys_list=keys_list, filter="Terminating...")
+        print(disconnect_count)
+
+        print(local_dict[phn_name])
+        local_dict[phn_name]["Disconnected"] = disconnect_count
+        print(local_dict[phn_name])
+        print(local_dict)
+
+        scan_count = self.get_count(value=values, keys_list=keys_list, filter="SCAN_STARTED")
+        print(scan_count)
+        local_dict[str(phn_name)]["Scanning"] = scan_count
+        association_attempt = self.get_count(value=values, keys_list=keys_list, filter="ASSOCIATING")
+        print(association_attempt)
+        local_dict[str(phn_name)]["ConnectAttempt"] = association_attempt
+        conected_count = self.get_count(value=values, keys_list=keys_list, filter="CTRL-EVENT-CONNECTED")
+        print("conected_count", conected_count)
+        local_dict[str(phn_name)]["Connected"] = conected_count
+        assorej_count = self.get_count(value=values, keys_list=keys_list, filter="ASSOC_REJECT")
+        print("asso rej", assorej_count)
+        local_dict[str(phn_name)][ "Association Rejection"] = assorej_count
+        print("local_dict", local_dict)
+        logging.info("local_dict " + str(local_dict))
+
+        return local_dict
 
 
     @property
@@ -161,7 +234,7 @@ class InteropPortReset(Realm):
                 logging.info("connect all phones to a particular ssid")
                 print("apply ssid using batch modify")
                 logging.info("apply ssid using batch modify")
-                self.interop.batch_modify_apply(device=self.adb_device_list)
+                self.interop.batch_modify_apply(device=self.adb_device_list, manager_ip=self.mgr_ip)
                 print("check heath data")
                 logging.info("check heath data")
                 health = dict.fromkeys(self.adb_device_list)
@@ -208,17 +281,21 @@ class InteropPortReset(Realm):
                 print("reset list", reset_list)
                 logging.info("reset list" + str(reset_list))
                 reset_dict = dict.fromkeys(reset_list)
-
-                # previous ki dict
-                prev_dict = {}
-                pre_heath = {}
-                pre_con_atempt, prev_con_fail, prev_assrej, prev_asso_timeout = None, None, None, None
-
                 for r, final in zip(range(self.reset), reset_dict):
-                    con_atempt, con_fail, assrej, asso_timeout = None, None, None, None
+                    time.sleep(int(self.time_int))
                     print("r", r)
                     logging.info("r " + str(r))
+                    local_dict = dict.fromkeys(self.adb_device_list)
+
+                    list_ = ["ConnectAttempt", "Disconnected", "Scanning", "Association Rejection", "Connected"]
+                    sec_dict = dict.fromkeys(list_)
+                    for i in self.adb_device_list:
+                        local_dict[i] = sec_dict.copy()
+                    print(local_dict)
+                    logging.info(str(local_dict))
                     for i, y in zip(self.adb_device_list, self.device_name):
+                        # note last  log time
+                        timee = self.get_last_wifi_msg()
                         # enable and disable Wi-Fi
                         print("disable wifi")
                         logging.info("disable wifi")
@@ -228,186 +305,25 @@ class InteropPortReset(Realm):
                         print("enable wifi")
                         logging.info("enable wifi")
                         self.interop.enable_or_disable_wifi(device=i, wifi="enable")
-                    health1 = dict.fromkeys(self.adb_device_list)
-                    in_dict_per_device = dict.fromkeys(self.adb_device_list)
-
-                    # print(in_dict_per_device)
-
-                    local_dict = dict.fromkeys(self.adb_device_list)
-                    val = ["pre_con_atempt", "prev_con_fail", "prev_assrej", "prev_asso_timeout"]
-                    for i in local_dict:
-                        local_dict[i] = dict.fromkeys(val)
-                    # print("local dict", local_dict)
-                    for i, adb in zip(self.adb_device_list, in_dict_per_device):
-
-                        value = ["ConnectAttempt", "ConnectFailure", "AssocRej", "AssocTimeout", "Connected"]
-                        sub_dict = dict.fromkeys(value)
-                        dev_state = self.utility.get_device_state(device=i)
-                        print("device state", dev_state)
-                        logging.info("device state" + str(dev_state))
-                        if dev_state == "COMPLETED,":
-                            print("phone is in connected state")
-                            logging.info("phone is in connected state")
-                            sub_dict["Connected"] = True
-                            sub_dict["State"] = dev_state
-                            ssid = self.utility.get_device_ssid(device=i)
-                            if ssid == self.ssid:
-                                print("device is connected to expected ssid")
-                                logging.info("device is connected to expected ssid")
-                                health1[i] = self.utility.get_wifi_health_monitor(device=i, ssid=self.ssid)
-                        else:
-                            print("wait for some time and check again")
-                            logging.info("wait for some time and check again")
-                            time.sleep(int(self.wait_time))
-                            dev_state = self.utility.get_device_state(device=i)
-                            print("device state", dev_state)
-                            logging.info("device state" + str(dev_state))
-
-                            if dev_state == "COMPLETED,":
-                                print("phone is in connected state")
-                                logging.info("phone is in connected state")
-                                sub_dict["Connected"] = True
-                                sub_dict["State"] = dev_state
-                                ssid = self.utility.get_device_ssid(device=i)
-                                if ssid == self.ssid:
-                                    print("device is connected to expected ssid")
-                                    logging.info("device is connected to expected ssid")
-                                    health1[i] = self.utility.get_wifi_health_monitor(device=i, ssid=self.ssid)
-                            else:
-                                print("device state", dev_state)
-                                logging.info("device state" + str(dev_state))
-                                health1[i] = {'ConnectAttempt': '0', 'ConnectFailure': '0', 'AssocRej': '0',
-                                              'AssocTimeout': '0'}
-                                sub_dict["Connected"] = False
-                                sub_dict["State"] = dev_state
-                        print("health1", health1)
-                        logging.info("health1" + str(health1))
-
-                        if r == 0:
-                            if int(health[i]['ConnectAttempt']) == 0 and int(health1[i]['ConnectAttempt']) == 1:
-                                con_atempt = 1
-                            elif int(health1[i]['ConnectAttempt']) == 0:
-                                con_atempt = 0
-                            else:
-                                con_atempt = int(health1[i]['ConnectAttempt']) - int(health[i]['ConnectAttempt'])
-
-                            if int(health[i]['ConnectFailure']) == 0 and int(health1[i]['ConnectFailure']) == 1:
-                                con_fail = 1
-                            elif int(health1[i]['ConnectFailure']) == 0:
-                                con_fail = 0
-                            else:
-                                con_fail = int(health1[i]['ConnectFailure']) - int(health[i]['ConnectFailure'])
-
-                            # con_fail = int(health1[i]['ConnectFailure']) - int(health[i]['ConnectFailure'])
-
-                            if int(health[i]['AssocRej']) == 0 and int(health1[i]['AssocRej']) == 1:
-                                assrej = 1
-                            elif int(health1[i]['AssocRej']) == 0:
-                                assrej = 0
-                            else:
-                                assrej = int(health1[i]['AssocRej']) - int(health[i]['AssocRej'])
-                            # assrej = int(health1[i]['AssocRej']) - int(health[i]['AssocRej'])
-
-                            if int(health[i]['AssocTimeout']) == 0 and int(health1[i]['AssocTimeout']) == 1:
-                                asso_timeout = 1
-                            elif int(health1[i]['AssocTimeout']) == 0:
-                                asso_timeout = 0
-                            else:
-                                asso_timeout = int(health1[i]['AssocTimeout']) - int(health[i]['AssocTimeout'])
-                            # asso_timeout = int(health1[i]['AssocTimeout']) - int(health[i]['AssocTimeout'])
-                            # print(con_atempt, con_fail, assrej, asso_timeout)
-                            local_dict[i]["pre_con_atempt"] = con_atempt
-                            local_dict[i]["prev_con_fail"] = con_fail
-                            local_dict[i]["prev_assrej"] = assrej
-                            local_dict[i]["prev_asso_timeout"] = asso_timeout
-
-                            pre_con_atempt, prev_con_fail, prev_assrej, prev_asso_timeout = con_atempt, con_fail, assrej, asso_timeout
-                            # print("previous stage",  pre_con_atempt, prev_con_fail, prev_assrej, prev_asso_timeout)
-
-                        else:
-                            print("prev health", pre_heath)
-                            logging.info("prev health" + str(pre_heath))
-                            if int(health1[i]['ConnectAttempt']) == 0:
-                                con_atempt = 0
-                            else:
-                                if int(pre_heath[i]['ConnectAttempt']) == 0:
-                                    if int(health1[i]['ConnectAttempt']) == 1:
-                                        con_atempt = int(health1[i]['ConnectAttempt'])
-                                    else:
-                                        con_atempt = int(health1[i]['ConnectAttempt']) - int(health[i]['ConnectAttempt']) - int(
-                                         prev_dict[i]["pre_con_atempt"])
-                                else:
-                                    con_atempt = int(health1[i]['ConnectAttempt']) - int(pre_heath[i]['ConnectAttempt'])
-                            local_dict[i]["pre_con_atempt"] = con_atempt
-
-                            if int(health1[i]['ConnectFailure']) == 0:
-                                con_fail = 0
-                            else:
-                                if pre_heath[i]['ConnectFailure'] == 0:
-                                    if int(health1[i]['ConnectFailure']) == 1:
-                                        con_fail = int(health1[i]['ConnectFailure'])
-                                    else:
-                                        con_fail = int(health1[i]['ConnectFailure']) - int(health[i]['ConnectFailure']) - int(
-                                            prev_dict[i]["prev_con_fail"])
-                                else:
-                                    con_fail = int(health1[i]['ConnectFailure']) - int(pre_heath[i]['ConnectFailure'])
-                            local_dict[i]["prev_con_fail"] = con_fail
-
-                            if int(health1[i]['AssocRej']) == 0:
-                                assrej = 0
-                            else:
-                                if pre_heath[i]['AssocRej'] == 0:
-                                    if int(health1[i]['AssocRej']) == 1:
-                                        assrej = int(health1[i]['AssocRej'])
-                                    else:
-                                        assrej = int(health1[i]['AssocRej']) - int(health[i]['AssocRej']) - int(
-                                            prev_dict[i]["prev_assrej"])
-                                else:
-                                    assrej = int(health1[i]['AssocRej']) - int(health1[i]['AssocRej'])
-                            local_dict[i]["prev_assrej"] = assrej
-
-                            if int(health1[i]['AssocTimeout']) == 0:
-                                asso_timeout = 0
-                            else:
-                                if pre_heath[i]['AssocTimeout'] == 0:
-                                    if int(health1[i]['AssocTimeout']) == 1:
-                                        asso_timeout = int(health1[i]['AssocTimeout'])
-                                    else:
-                                        asso_timeout = int(health1[i]['AssocTimeout']) - int(health[i]['AssocTimeout']) - int(
-                                            prev_dict[i]["prev_asso_timeout"])
-                                else:
-                                    asso_timeout = int(health1[i]['AssocTimeout']) - pre_heath[i]['AssocTimeout']
-                            local_dict[i]["prev_asso_timeout"] = asso_timeout
-                            pre_con_atempt, prev_con_fail, prev_assrej, prev_asso_timeout = con_atempt, con_fail, assrej, asso_timeout
-
-                        sub_dict["ConnectAttempt"] = con_atempt
-                        sub_dict["ConnectFailure"] = con_fail
-                        sub_dict["AssocRej"] = assrej
-                        sub_dict["AssocTimeout"] = asso_timeout
-                        # print("sub dictionary", sub_dict)
-                        in_dict_per_device[adb] = sub_dict
-                        # print(in_dict_per_device)
-                    pre_heath = health1
-                    prev_dict = local_dict
-                    reset_dict[final] = in_dict_per_device
-                    print("provide time interval between every reset")
-                    logging.info("provide time interval between every reset")
-                    time.sleep(self.time_int)
-
-                print("reset dict", reset_dict)
+                        time.sleep(int(self.wait_time))
+                        # log reading
+                        get_dicct = self.get_time_from_wifi_msgs(local_dict=local_dict, phn_name=i, timee=timee)
+                        reset_dict[r] = get_dicct
+                print("reset_dict", reset_dict)
+                logging.info("reset dict " +  str(reset_dict))
                 logging.info("reset dict" + str(reset_dict))
                 test_end = datetime.now()
                 test_end = test_end.strftime("%b %d %H:%M:%S")
                 print("Test ended at ", test_end)
-                logging.info("Test ended at " +  test_end)
+                logging.info("Test ended at " + test_end)
                 s1 = test_time
                 s2 = test_end  # for example
                 FMT = '%b %d %H:%M:%S'
                 test_duration = datetime.strptime(s2, FMT) - datetime.strptime(s1, FMT)
                 return reset_dict, test_duration
         except Exception as e:
-            logging.warning(str(e))
-            print(str(e))
+            print(e)
+
 
     def generate_per_station_graph(self, device_names=None, dataset=None, labels=None):
 
@@ -437,7 +353,7 @@ class InteropPortReset(Realm):
         return graph_png
 
     def generate_overall_graph(self, reset_dict=None):
-        dict_ = ['Port Resets', 'Disconnected', 'Scans', 'Assoc Attempts', 'Assoc Timeout', 'Assoc Rejection', 'Connected' ]
+        dict_ = ['Port Resets', 'Disconnected', 'Scans', 'Assoc Attempts', "Association Rejection", 'Connected']
         data = dict.fromkeys(dict_)
         data['Port Resets'] = self.reset
 
@@ -445,49 +361,32 @@ class InteropPortReset(Realm):
         disconnected_list = []
         scan_state = []
         asso_attempt = []
-        asso_timeout = []
-        asso_rejec =[]
-        # self.adb_device_list = ['1.1.RZ8N70TVABP', '1.1.RZ8RA1053HJ']
+        asso_rej = []
+
+        # self.adb_device_list = ['1.1.RZ8RA1053HJ']
 
         for j in self.adb_device_list:
-            # print(j)
+            print(j)
             local = []
             local_2, local_3, local_4, local_5, local_6 = [], [], [], [], []
             for i in reset_dict:
                 print(i)
                 if j in list(reset_dict[i].keys()):
-                    if reset_dict[i][j]['Connected']:
-                        local.append("yes")
-                    else:
-                        local.append("No")
-                    if reset_dict[i][j]['Connected']:
-                        local_2.append("No")
-                    else:
-                        local_2.append("yes")
-                    if reset_dict[i][j]['State'] == "SCANNING,":
-                        local_3.append(1)
-                    else:
-                        local_3.append(0)
+                    local.append(reset_dict[i][j]['Connected'])
+                    local_2.append(reset_dict[i][j]['Disconnected'])
+                    local_3.append(reset_dict[i][j]['Scanning'])
                     local_4.append(reset_dict[i][j]['ConnectAttempt'])
-                    local_5.append(reset_dict[i][j]['AssocTimeout'])
-                    local_6.append(reset_dict[i][j]['AssocRej'])
+                    local_5.append(reset_dict[i][j]["Association Rejection"])
+
             conected_list.append(local)
             disconnected_list.append(local_2)
             scan_state.append(local_3)
             asso_attempt.append(local_4)
-            asso_timeout.append(local_5)
-            asso_rejec.append(local_6)
-        print("list ", conected_list, disconnected_list, scan_state, asso_attempt, asso_timeout, asso_rejec)
+            asso_rej.append(local_5)
+
+        print("list ", conected_list, disconnected_list, scan_state, asso_attempt, asso_rej)
 
         # count connects and disconnects
-        conects = []
-        disconnects = []
-
-        for i, y in zip(range(len(conected_list)), range(len(disconnected_list))):
-            x = conected_list[i].count("yes")
-            conects.append(x)
-            z = disconnected_list[y].count("yes")
-            disconnects.append(z)
         scan, ass_atmpt = 0, 0
         for i, y in zip(range(len(scan_state)), range(len(asso_attempt))):
             for m in scan_state[i]:
@@ -495,44 +394,45 @@ class InteropPortReset(Realm):
             for n in asso_attempt[i]:
                 ass_atmpt = ass_atmpt + int(n)
 
-        ass_time, ass_rej = 0, 0
-        for i, y in zip(range(len(asso_timeout)), range(len(asso_rejec))):
-            for m in asso_timeout[i]:
-                ass_time = ass_time + m
-            for n in asso_rejec[i]:
-                ass_rej = ass_rej + n
+        conects, disconnects = 0, 0
+        for i, y in zip(range(len(conected_list)), range(len(disconnected_list))):
+            for m in conected_list[i]:
+                conects = conects + m
+            for n in disconnected_list[i]:
+                disconnects = disconnects + n
+
+        assorej = 0
+        for i in (range(len(asso_rej))):
+            for m in asso_rej[i]:
+                assorej = assorej + m
+
 
         print("scan", scan)
         print(ass_atmpt)
-        print(ass_time)
-        print(ass_rej)
+        print(conects)
+        print(disconnects)
+        print(assorej)
 
-        connect = 0
-        for i in conects:
-            connect = connect + i
-        print(connect)
-        disco = 0
-        for i in disconnects:
-            disco = disco + i
-        print(disco)
-        # print(disconnects)
+        # print("hi")
         print(data)
-        data['Disconnected'] = disco
+        data['Disconnected'] = disconnects
         data['Scans'] = scan
         data['Assoc Attempts'] = ass_atmpt
-        data[ 'Assoc Timeout'] = ass_time
-        data['Assoc Rejection']= ass_rej
-        data['Connected'] = connect
+        data['Connected'] = conects
+        data["Association Rejection"] = assorej
         print(data)
+
         # creating the dataset
         self.graph_image_name = "overall"
         courses = list(data.keys())
         values = list(data.values())
+        print(courses)
+        print(values)
 
         fig = plt.figure(figsize=(12, 4))
 
         # creating the bar plot
-        plt.bar(courses, values, color=('maroon', 'green', 'blue', 'red', 'purple', 'orange', 'pink'),
+        plt.bar(courses, values, color=('plum', 'lawngreen', 'skyblue', 'pink', 'yellow', "cyan"),
                 width=0.4)
         for item, value in enumerate(values):
             plt.text(item, value, "{value}".format(value=value), ha='center', rotation=30, fontsize=8)
@@ -552,7 +452,7 @@ class InteropPortReset(Realm):
         fig = plt.figure(figsize=(12, 4))
 
         # creating the bar plot
-        plt.bar(courses, values, color=('maroon', 'green', 'blue', 'red', 'purple', 'orange', 'pink'),
+        plt.bar(courses, values, color=('plum', 'lawngreen', 'skyblue', 'pink', 'yellow', "cyan"),
                 width=0.4)
         for item, value in enumerate(values):
             plt.text(item, value, "{value}".format(value=value), ha='center', rotation=30, fontsize=8)
@@ -597,39 +497,15 @@ class InteropPortReset(Realm):
                                 "AP remains stable over the duration of the test and that stations can continue to reconnect to the AP.")
             report.build_objective()
 
-            # data set logic
-            conected_list = []
-            disconnected_list = []
-            for j in self.adb_device_list:
-                # print(j)
-                local = []
-                local_2 = []
-                for i in reset_dict:
-                    print(i)
-                    if j in list(reset_dict[i].keys()):
-                        if reset_dict[i][j]['Connected']:
-                            local.append("yes")
-                        if reset_dict[i][j]['Connected']:
-                            local_2.append("No")
-                        else:
-                            local_2.append("yes")
-                conected_list.append(local)
-                disconnected_list.append(local_2)
-
-            # count connects and disconnects
-            conects = []
-            disconnects = []
-            for i, y in zip(range(len(conected_list)), range(len(disconnected_list))):
-                x = conected_list[i].count("yes")
-                conects.append(x)
-                z = disconnected_list[y].count("yes")
-                disconnects.append(z)
-
-            dataset = []
-            dataset.append(conects)
-            dataset.append(disconnects)
             report.set_obj_html("Port Reset Total Graph",
-                                "The below graph provides overall information regarding all the reset count")
+                                "The below graph provides overall information regarding all the reset count where"
+                                "Port resets=Total resets provided as test input, Disconnected=It is the total number "
+                                "of disconnects happened for all clients during the test when WiFi was disabled , Scans=It is the"
+                                "total number of scanning state achieved by all clients during the test when network is enabled back"
+                                " again, Association attempts=It is the total number of association attempts(Associating state) achieved  by"
+                                " all client after the WiFi is enabled back again in full test, Connected=It is the total number"
+                                "of connection(Associated state) achieved by all clients during the test when Wifi is enabled back again."
+                                " Here real clients used is "+ str(self.clients) + "and number of resets provided is " + str(self.reset))
             report.build_objective()
             graph2 = self.generate_overall_graph(reset_dict=reset_dict)
             # graph1 = self.generate_per_station_graph()
@@ -637,64 +513,63 @@ class InteropPortReset(Realm):
             report.move_graph_image()
             report.build_graph()
 
+
             for y, z in zip(self.adb_device_list, range(len(self.adb_device_list))):
                 reset_count_ = list(reset_dict.keys())
                 reset_count = []
                 for i in reset_count_:
                     reset_count.append(int(i) + 1)
-                asso_attempts, conn_fail, asso_rej, asso_timeout, connected, state = [], [], [], [], [], []
+                asso_attempts, disconnected, scanning, connected, assorej = [], [], [], [], []
 
                 for i in reset_dict:
                     asso_attempts.append(reset_dict[i][y]["ConnectAttempt"])
-                    conn_fail.append(reset_dict[i][y]["ConnectFailure"])
-                    asso_rej.append(reset_dict[i][y]["AssocRej"])
-                    asso_timeout.append(reset_dict[i][y]["AssocTimeout"])
+                    disconnected.append(reset_dict[i][y]["Disconnected"])
+                    scanning.append(reset_dict[i][y]["Scanning"])
                     connected.append(reset_dict[i][y]["Connected"])
-                    state.append(reset_dict[i][y]["State"])
+                    assorej.append(reset_dict[i][y]["Association Rejection"])
+
 
                 # graph calculation
-                dict_ = ['Port Resets', 'Disconnected', 'Scans', 'Assoc Attempts', 'Assoc Timeout', 'Assoc Rejection',
-                         'Connected']
+                dict_ = ['Port Resets', 'Disconnected', 'Scans', 'Assoc Attempts', "Association Rejection", 'Connected']
                 data = dict.fromkeys(dict_)
                 data['Port Resets'] = self.reset
-                cx, dx = [], []
-                for i in connected:
-                    if i:
-                        cx.append("yes")
-                        dx.append("np")
-                    else:
-                        cx.append("no")
-                        dx.append("yes")
-                print(cx, dx)
-                dis = dx.count("yes")
-                con = cx.count("yes")
+                dis = 0
+                for i in disconnected:
+                    dis = dis + i
+
                 data['Disconnected'] = dis
-                sx = []
-                for i in state:
-                    if i == 'SCANNING,':
-                        sx.append("yes")
-                    else:
-                        sx.append("no")
-                sta = sx.count("yes")
-                data['Scans'] = sta
+                scan = 0
+                for i in scanning:
+                    scan = scan + i
+
+                data['Scans'] = scan
                 asso = 0
                 for i in asso_attempts:
                     asso = asso + i
                 data['Assoc Attempts'] = asso
 
-                ass_tim = 0
-                for i in asso_timeout:
-                    ass_tim = ass_tim + i
-                data['Assoc Timeout'] = ass_tim
+                con = 0
+                for i in connected:
+                    con = con + i
 
-                as_rej = 0
-                for i in asso_rej:
-                    as_rej = as_rej + i
-                data['Assoc Rejection'] = as_rej
+                # data['Disconnected'] = dis
                 data['Connected'] = con
+                asso_rej = 0
+                for i in assorej:
+                    asso_rej = asso_rej + i
+
+                data["Association Rejection"] = asso_rej
                 print("data ", data)
                 report.set_obj_html("Per Client Graph for client " + str(y.split(".")[2]),
-                                    "The below graph provides information regarding per station behaviour for every reset count")
+                                    "The below graph provides information regarding per station behaviour for every reset count"
+                                    " where"
+                                "Port resets=Total resets provided as test input, Disconnected=It is the total number "
+                                "of disconnects happened for a client  during every reset when WiFi was disabled , Scans=It is the"
+                                "total number of scanning state achieved by a client during the test when network is enabled back for "
+                                    "every reset"
+                                " again, Association attempts=It is the total number of association attempts(Associating state) achieved  by"
+                                " a client after the WiFi is enabled back again in full test, Connected=It is the total number"
+                                "of connection(Associated state) achieved by a client during the test when Wifi is enabled back again.")
                 report.build_objective()
                 graph1 = self.per_client_graph(data=data, name="per_client_" + str(z))
                 # graph1 = self.generate_per_station_graph()
@@ -710,11 +585,10 @@ class InteropPortReset(Realm):
                 table_1 = {
                     "Reset Count": reset_count,
                     "Association attempts": asso_attempts,
-                    "Connection Failure": conn_fail,
-                    "Association Rejection Count": asso_rej,
-                    "Association Timeout Count": asso_timeout,
+                    "Disconnected": disconnected,
+                    "Scanning": scanning,
+                    "Association Rejection" : assorej,
                     "Connected": connected,
-                    "State": state
                 }
                 test_setup = pd.DataFrame(table_1)
                 report.set_table_dataframe(test_setup)
@@ -787,6 +661,9 @@ def main():
     parser.add_argument("--host", "--mgr", default='192.168.1.31',
                         help='specify the GUI to connect to, assumes port 8080')
 
+    parser.add_argument("--mgr_ip", default='192.168.1.31',
+                        help='specify the interop manager ip')
+
     parser.add_argument("--dut", default="TestDut",
                         help='specify DUT name on which the test will be running')
 
@@ -828,11 +705,13 @@ def main():
                            clients=args.clients,
                            time_int=args.time_int,
                            wait_time=args.wait_time,
-                           suporrted_release=args.release
+                           suporrted_release=args.release,
+                           mgr_ip=args.mgr_ip
                            )
     reset_dict, duration = obj.run
+    # reset_dict = {0: {'1.1.RZ8RA1053HJ': {'ConnectAttempt': 2, 'Disconnected': 1, 'Scanning': 2, 'Connected': 1}}, 1: {'1.1.RZ8RA1053HJ': {'ConnectAttempt': 2, 'Disconnected': 1, 'Scanning': 3, 'Connected': 1}}}
+    # duration = "xyz"
     obj.generate_report(reset_dict=reset_dict, test_dur=duration)
-    # obj.generate_overall_graph()
 
 
 if __name__ == '__main__':
