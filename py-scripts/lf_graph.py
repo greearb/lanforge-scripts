@@ -27,6 +27,7 @@ from matplotlib.colors import ListedColormap
 import matplotlib.ticker as mticker
 import argparse
 import traceback
+import logging
 
 
 # TODO have scipy be part of the base install
@@ -39,6 +40,9 @@ except Exception as x:
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
+
+logger = logging.getLogger(__name__)
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 lf_csv = importlib.import_module("py-scripts.lf_csv")
 lf_csv = lf_csv.lf_csv
@@ -175,7 +179,7 @@ class lf_bar_graph:
         plt.gcf()
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
-        # print("{}.png".format(self.graph_image_name))
+        logger.debug("{}.png".format(self.graph_image_name))
         if self.enable_csv:
             if self.data_set is not None and self.xaxis_categories is not None:
                 if len(self.xaxis_categories) == len(self.data_set[0]):
@@ -191,8 +195,8 @@ class lf_bar_graph:
                     raise ValueError(
                         "Length and x-axis values and y-axis values should be same.")
             else:
-                 print("No Dataset Found")
-        # print("{}.csv".format(self.graph_image_name))
+                 logger.debug("No Dataset Found")
+        logger.debug("{}.csv".format(self.graph_image_name))
         return "%s.png" % self.graph_image_name
 
 
@@ -266,7 +270,7 @@ class lf_scatter_graph:
             plt.legend(handles=scatter.legend_elements()[0], labels=self.label)
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
-        # print("{}.png".format(self.graph_image_name))
+        logger.debug("{}.png".format(self.graph_image_name))
         if self.enable_csv:
             self.lf_csv.columns = self.label
             self.lf_csv.rows = self.y_data_set
@@ -493,7 +497,7 @@ class lf_bar_line_graph:
         plt.gcf()
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
-        # print("{}.png".format(self.graph_image_name))
+        logger.debug("{}.png".format(self.graph_image_name))
         # TODO work though this for two axis
         if self.enable_csv:
             if self.data_set is not None and self.xaxis_categories is not None:
@@ -510,8 +514,8 @@ class lf_bar_line_graph:
                     raise ValueError(
                         "Length and x-axis values and y-axis values should be same.")
             else:
-                 print("No Dataset Found")
-        # print("{}.csv".format(self.graph_image_name))
+                 logger.debug("No Dataset Found")
+        logger.debug("{}.csv".format(self.graph_image_name))
         return "%s.png" % self.graph_image_name
 
 
@@ -565,7 +569,7 @@ class lf_stacked_graph:
         plt.legend(self.label)
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
-        # print("{}.png".format(self.graph_image_name))
+        logger.debug("{}.png".format(self.graph_image_name))
         if self.enable_csv:
             self.lf_csv.columns = self.label
             self.lf_csv.rows = self.data_set
@@ -665,7 +669,7 @@ class lf_horizontal_stacked_graph:
                 labelbottom=False)  # disable x-axis
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
-        # print("{}.png".format(self.graph_image_name))
+        logger.debug("{}.png".format(self.graph_image_name))
         if self.enable_csv:
             self.lf_csv.columns = self.label
             self.lf_csv.rows = self.data_set
@@ -764,7 +768,7 @@ class lf_line_graph:
         plt.gcf()
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
-        # print("{}.png".format(self.graph_image_name))
+        logger.debug("{}.png".format(self.graph_image_name))
         if self.enable_csv:
             if self.data_set is not None:
                 self.lf_csv.columns = self.label
@@ -772,8 +776,8 @@ class lf_line_graph:
                 self.lf_csv.filename = f"{self.graph_image_name}.csv"
                 self.lf_csv.generate_csv()
             else:
-                 print("No Dataset Found")
-        # print("{}.csv".format(self.graph_image_name))
+                logger.debug("No Dataset Found")
+        logger.debug("{}.csv".format(self.graph_image_name))
         return "%s.png" % self.graph_image_name
 
 
@@ -811,10 +815,37 @@ INCLUDE_IN_README
         dest='lfmgr',
         help='sample argument: where LANforge GUI is running',
         default='localhost')
+    # logging configuration
+    parser.add_argument(
+        '--debug',
+        help='--debug this will enable debugging in py-json method',
+        action='store_true')
+    parser.add_argument('--log_level',
+                        default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
+
+    parser.add_argument(
+        "--lf_logger_config_json",
+        help="--lf_logger_config_json <json file> , json configuration of logger")
+
     # the args parser is not really used , this is so the report is not generated when testing
     # the imports with --help
     args = parser.parse_args()
-    # print("LANforge manager {lfmgr}".format(lfmgr=args.lfmgr))
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    # set the logger level to debug
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
+
+    # lf_logger_config_json will take presidence to changing debug levels
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
+    logger.debug("LANforge manager {lfmgr}".format(lfmgr=args.lfmgr))
 
     output_html_1 = "graph_1.html"
     output_pdf_1 = "graph_1.pdf"
