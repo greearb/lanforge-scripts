@@ -93,7 +93,10 @@ def main():
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
-        description='modifies radio antenna')
+        description='''
+        modifies radio configuration , antenna, radio, channel or txpower
+            lf_modify_radio.py --mgr 192.168.0.104 --radio 1.1.wiphy6 --txpower 17 --debug
+        ''')
     parser.add_argument("--host", "--mgr", dest='mgr', help='specify the GUI to connect to')
     parser.add_argument("--mgr_port", help="specify the GUI to connect to, default 8080", default="8080")
     parser.add_argument("--lf_user", help="lanforge user name, default : lanforge", default="lanforge")
