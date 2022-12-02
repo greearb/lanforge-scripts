@@ -589,74 +589,76 @@ Generic command example:
 ---------------------------
 
             ''')
-    parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes',
+    test_l4_parser = parser.add_argument_group('arguments defined in test_l4.py file')
+
+    test_l4_parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes',
                         default=600)
-    parser.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes',
+    test_l4_parser.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes',
                         default=1)
-    parser.add_argument('--url', help='''
+    test_l4_parser.add_argument('--url', help='''
                         --url specifies upload/download, IP of upstream eth port connected to Access Point
                         /dev/null to discard the data example: 
                         Example 'dl http://upstream_port_ip /dev/null'  if the upsteam_port_ip is the string
                         'upstream_port_ip' then the upstream port ip will be read at run time ''',
                         default=None)
-    parser.add_argument('--test_duration', help='duration of test', default="2m")
-    parser.add_argument('--target_per_ten',
+    test_l4_parser.add_argument('--test_duration', help='duration of test', default="2m")
+    test_l4_parser.add_argument('--target_per_ten',
                         help='--target_per_ten target number of request per ten minutes. test will check for 90 percent this value',
                         default=600)
-    parser.add_argument('--mode', help='Used to force mode of stations')
-    parser.add_argument('--ap', help='Used to force a connection to a particular AP')
-    parser.add_argument('--report_file', help='where you want to store monitor results in output_format')
-    parser.add_argument('--output_format', help="'csv', 'json', 'html', 'stata', 'pickle', 'xlsx'")  
-    parser.add_argument('--ftp', help='Use ftp for the test', action='store_true')
-    parser.add_argument('--test_type', help='Choose type of test to run {urls, bytes-rd, bytes-wr}',
+    test_l4_parser.add_argument('--mode', help='Used to force mode of stations')
+    test_l4_parser.add_argument('--ap', help='Used to force a connection to a particular AP')
+    test_l4_parser.add_argument('--report_file', help='where you want to store monitor results in output_format')
+    test_l4_parser.add_argument('--output_format', help="'csv', 'json', 'html', 'stata', 'pickle', 'xlsx'")  
+    test_l4_parser.add_argument('--ftp', help='Use ftp for the test', action='store_true')
+    test_l4_parser.add_argument('--test_type', help='Choose type of test to run {urls, bytes-rd, bytes-wr}',
                         default='bytes-rd')
-    parser.add_argument('--ftp_user', help='--ftp_user sets the username to be used for ftp', default=None)
-    parser.add_argument('--ftp_passwd', help='--ftp_user sets the password to be used for ftp', default=None)
-    parser.add_argument('--dest',
+    test_l4_parser.add_argument('--ftp_user', help='--ftp_user sets the username to be used for ftp', default=None)
+    test_l4_parser.add_argument('--ftp_passwd', help='--ftp_user sets the password to be used for ftp', default=None)
+    test_l4_parser.add_argument('--dest',
                         help='--dest specifies the destination for the file, should be used when downloading',
                         default="/dev/null")
-    parser.add_argument('--source',
+    test_l4_parser.add_argument('--source',
                         help='--source specifies the source of the file, should be used when uploading',
                         default="/var/www/html/data_slug_4K.bin")
-    parser.add_argument('--local_lf_report_dir',
+    test_l4_parser.add_argument('--local_lf_report_dir',
                         help='--local_lf_report_dir override the report path, primary use when running test in test suite',
                         default="")
-    parser.add_argument("--lf_user", type=str, help="--lf_user lanforge user name ",)
-    parser.add_argument("--lf_passwd", type=str, help="--lf_passwd lanforge password ")
+    test_l4_parser.add_argument("--lf_user", type=str, help="--lf_user lanforge user name ",)
+    test_l4_parser.add_argument("--lf_passwd", type=str, help="--lf_passwd lanforge password ")
 
 
 
     # kpi_csv arguments
-    parser.add_argument(
+    test_l4_parser.add_argument(
         "--test_rig",
         default="",
         help="test rig for kpi.csv, testbed that the tests are run on")
-    parser.add_argument(
+    test_l4_parser.add_argument(
         "--test_tag",
         default="",
         help="test tag for kpi.csv,  test specific information to differenciate the test")
-    parser.add_argument(
+    test_l4_parser.add_argument(
         "--dut_hw_version",
         default="",
         help="dut hw version for kpi.csv, hardware version of the device under test")
-    parser.add_argument(
+    test_l4_parser.add_argument(
         "--dut_sw_version",
         default="",
         help="dut sw version for kpi.csv, software version of the device under test")
-    parser.add_argument(
+    test_l4_parser.add_argument(
         "--dut_model_num",
         default="",
         help="dut model for kpi.csv,  model number / name of the device under test")
-    parser.add_argument(
+    test_l4_parser.add_argument(
         "--dut_serial_num",
         default="",
         help="dut serial for kpi.csv, serial number / serial number of the device under test")
-    parser.add_argument(
+    test_l4_parser.add_argument(
         "--test_priority",
         default="",
         help="dut model for kpi.csv,  test-priority is arbitrary number")
     # Used to report 
-    parser.add_argument(
+    test_l4_parser.add_argument(
         '--csv_outfile',
         help="--csv_outfile <prepend input to generated file for csv data>",
         default="csv_outfile")
