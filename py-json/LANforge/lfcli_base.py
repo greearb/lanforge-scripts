@@ -678,8 +678,8 @@ class LFCliBase:
                                              description=description)
         else:
             parser = argparse.ArgumentParser()
-        optional = parser.add_argument_group('optional arguments')
-        required = parser.add_argument_group('required arguments')
+        optional = parser.add_argument_group('arguments defined by create_bare_argparse found in /lanforge-scripts/py-json/LANforge/lfcli_base.py')
+        required = parser.add_argument_group('arguments defined by create_bare_argparse found in  /lanforge-scripts/py-json/LANforge/lfcli_base.py')
         optional.add_argument('--mgr',
                               default='localhost',
                               help='hostname for where LANforge GUI is running')
@@ -719,8 +719,8 @@ class LFCliBase:
                                              description=description)
         else:
             parser = argparse.ArgumentParser()
-        optional = parser.add_argument_group('optional arguments')
-        required = parser.add_argument_group('required arguments')
+        optional = parser.add_argument_group('arguments defined by create_basic_argparse found in /lanforge-scripts/py-json/LANforge/lfcli_base.py')
+        required = parser.add_argument_group('arguments defined by create_basic_argparse found in /lanforge-scripts/py-json/LANforge/lfcli_base.py')
 
         # Optional Args
         optional.add_argument('--mgr',
