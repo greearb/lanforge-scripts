@@ -265,7 +265,11 @@ class BaseInteropWifi(Realm):
 
 
     # apk apply
-    def batch_modify_apply(self, device=None):
+    def batch_modify_apply(self, device=None, manager_ip=None):
+        if manager_ip is None:
+            mgr_ip = self.manager_ip
+        else:
+            mgr_ip = manager_ip
         if device is None:
             devices = self.check_sdk_release()
             print(devices)
@@ -291,11 +295,11 @@ class BaseInteropWifi(Realm):
             cmd = "shell am start -n com.candela.wecan/com.candela.wecan.StartupActivity "
             cmd += "--es auto_start 1 --es username " + user_name
             if self.manager_ip:
-                cmd += " --es serverip " + self.manager_ip
+                cmd += " --es serverip " + mgr_ip
             if self.ssid:
                 cmd += " --es ssid " + self.ssid
             if self.passwd:
-                cmd += " --es password " + self.passwd
+                cmd += "--es password " + self.passwd
             if self.encryp:
                 cmd += " --es encryption " + self.encryp
             self.post_adb_(device=x, cmd=cmd)
