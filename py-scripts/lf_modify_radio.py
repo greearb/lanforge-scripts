@@ -76,7 +76,8 @@ class lf_modify_radio():
                         _radio=None,
                         _shelf=None,
                         _antenna=None,
-                        _channel=None):
+                        _channel=None,
+                        _txpower=None):
 
         self.command.post_set_wifi_radio(
                                 resource=_resource,
@@ -84,6 +85,7 @@ class lf_modify_radio():
                                 shelf=_shelf,
                                 antenna=_antenna,
                                 channel=_channel,
+                                txpower=_txpower,
                                 debug=self.debug)
 
 
@@ -97,10 +99,10 @@ def main():
     parser.add_argument("--lf_user", help="lanforge user name, default : lanforge", default="lanforge")
     parser.add_argument("--lf_passwd", help="lanforge password, default : lanforge", default="lanforge")
     parser.add_argument("--radio", help='name of the radio to modify: e.g. 1.1.wiphy0')
-    parser.add_argument("--antenna", help='number of spatial streams: 0 Diversity (All), 1 Fixed-A (1x1), 4 AB (2x2), 7 ABC (3x3), 8 ABCD (4x4), 9 (8x8)')
-    parser.add_argument("--channel", help='channel of the radio: e.g. 6 (2.4G) or 36 (5G)')
-
-    # Logging Configuration
+    parser.add_argument("--antenna", help='number of spatial streams: 0 Diversity (All), 1 Fixed-A (1x1), 4 AB (2x2), 7 ABC (3x3), 8 ABCD (4x4), 9 (8x8) default = -1',default='-1')
+    parser.add_argument("--channel", help='channel of the radio: e.g. 6 (2.4G) or 36 (5G) default: AUTO',default='AUTO')
+    parser.add_argument("--txpower", help='radio tx power default: AUTO system defaults',default='AUTO')
+# Logging Configuration
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument('--debug', help='Legacy debug flag, turnn on legacy debug ', action='store_true')
@@ -137,7 +139,8 @@ def main():
                                 _radio=radio,
                                 _shelf=shelf,
                                 _antenna=args.antenna,
-                                _channel=args.channel)
+                                _channel=args.channel,
+                                _txpower=args.txpower)
 
     '''
     session = LFSession(lfclient_url="http://%s:8080" % args.host,
@@ -159,6 +162,7 @@ def main():
                                 shelf=shelf,
                                 antenna=args.antenna,
                                 channel=args.channel,
+                                txpower=args.txpower,
                                 debug=args.debug)
     '''
 
