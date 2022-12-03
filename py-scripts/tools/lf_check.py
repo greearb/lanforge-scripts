@@ -246,6 +246,7 @@ class lf_check():
         self.test_start_time = ""
         self.test_end_time = ""
         self.duration = ""
+        self.duration_sec_us = ""
 
         self.http_test_ip = ""
         self.ftp_test_ip = ""
@@ -1078,9 +1079,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             "Test end time {time}".format(
                 time=self.test_end_time))
         time_delta = end_time - start_time
+        self.duration_sec_us = "{seconds}.{micro_sec}".format(seconds=time_delta.seconds,micro_sec=time_delta.microseconds)
         minutes, seconds = divmod(time_delta.seconds, 60)
         hours, minutes = divmod(minutes, 60)
-        self.duration = "{day}d {hours}h {minutes}m {seconds}s {msec} ms".format(
+        self.duration = "{day}d {hours}h {minutes}m {seconds}s {msec} us".format(
             day=time_delta.days, hours=hours, minutes=minutes, seconds=seconds, msec=time_delta.microseconds)
         # If collect meta data is set
         meta_data_path = ""
@@ -1280,7 +1282,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # junit results
         self.junit_results += """
             <testcase name="{name}" id="{command}" time="{time}">
-            """.format(name=self.test,command=command,time=self.duration)
+            """.format(name=self.test,command=command,time=self.duration_sec_us)
 
         # need to have tests return error messages
         if self.test_result != "Success":
