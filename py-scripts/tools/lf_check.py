@@ -205,6 +205,7 @@ class lf_check():
         self.tests_timeout = 0
         self.results_col_titles = [
             "Test", "Command", "Result", "STDOUT", "STDERR"]
+        self.junit_results = ""
         self.html_results = ""
         self.background_green = "background-color:green"
         self.background_red = "background-color:red"
@@ -555,6 +556,32 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             'Test', 'Command', 'Result', 'STDOUT', 'STDERR']
         self.csv_results_writer.writerow(self.csv_results_column_headers)
         self.csv_results_file.flush()
+
+    def get_junit_results(self):
+        return self.junit_results
+
+    # TODO allow for running of multiple test suites
+    def start_junit_testsuites(self):
+        self.junit_results += """<?xml version="1.0" encoding="UTF-8" ?>
+            <testsuites>
+        """
+
+    def finish_junit_testsuites(self):
+        self.junit_results += """
+        </testsuites>
+        """        
+    def start_junit_testsuite(self):
+        self.junit_results += """
+        <testsuite name="{suite}">
+        """.format(suite=self.test_suite)        
+
+    def finish_junit_testsuite(self):
+        self.junit_results += """
+        </testsuite>
+        """
+
+    def get_junit_results(self):
+        return self.junit_results
 
     def get_html_results(self):
         return self.html_results
@@ -1249,6 +1276,21 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             short_cmd = command[0:command.find(' ')]
         else:
             short_cmd = command
+
+        # junit results
+        self.junit_results += """
+            <testcase name="{name}" id="{command}" time="{time}">
+            """.format(name=self.test,command=command,time=self.duration)
+
+        # need to have tests return error messages
+        if self.test_result != "Success":
+            self.junit_results += """
+                <failure message="{result} {link}">
+                </failure>""".format(result=self.test_result,link=stdout_log_link)
+        self.junit_results += """
+            </testcase>
+            """
+
         self.html_results += """
         <tr><td>""" + str(self.test) + """</td>
         <td>""" + str(short_cmd) + """</td>
@@ -1304,6 +1346,8 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
     def run_script_test(self):
         self.start_html_results()
         self.start_csv_results()
+        self.start_junit_testsuites()
+        self.start_junit_testsuite()
         # Suite start time
         suite_start_time = datetime.datetime.now()
         self.suite_start_time = str(datetime.datetime.now().strftime(
@@ -1439,6 +1483,11 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             else:
                 self.logger.warning(
                     "enable value {} for test: {} ".format(self.test_dict[self.test]['enabled'], self.test))
+
+        # The test suite has run
+        self.finish_junit_testsuite()
+        self.finish_junit_testsuites()
+
 
         suite_end_time = datetime.datetime.now()
         self.suite_end_time = str(datetime.datetime.now().strftime(
@@ -1853,6 +1902,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     report.build_custom()
     report.build_footer()
     report.copy_js()
+
     html_report = report.write_html_with_timestamp()
     logger.info("html report: {}".format(html_report))
     try:
@@ -1865,7 +1915,14 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         logger.info("send email not set or email_list_test not set")
     else:
         check.send_results_email(report_file=html_report)
-    #
+    
+    # save the juni.xml file
+    junit_results = check.get_junit_results()
+    report.set_junit_results(junit_results)
+    junit_xml = report.write_junit_results()
+    logger.info("junit.xml: allure serve {}".format(junit_xml))
+
+
     if args.update_latest:
         report_path = os.path.dirname(html_report)
         parent_report_dir = os.path.dirname(report_path)
