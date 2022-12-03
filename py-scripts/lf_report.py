@@ -97,6 +97,8 @@ class lf_report:
         self.graph_image = ""
         self.csv_file_name = ""
         self.html = ""
+        self.junit = ""
+        self.write_output_junit = ""
         self.custom_html = ""
         self.pdf_link_html = ""
         self.objective = _obj
@@ -366,6 +368,23 @@ class lf_report:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.warning("write_html failed")
         return self.write_output_html
+
+    # will put the set here
+    def set_junit_results(self,junit_results):
+        self.junit = junit_results
+
+    def write_junit_results(self):
+        self.write_output_junit = "{}/junit.xml".format(self.path_date_time)
+        logger.info("write_output_html: {}".format(self.write_output_html))
+        try:
+            test_file = open(self.write_output_junit, "w")
+            test_file.write(self.junit)
+            test_file.close()
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.warning("write_junit failed")
+        return self.write_output_junit
+
 
     # https://wkhtmltopdf.org/usage/wkhtmltopdf.txt
     # page_size A4, A3, Letter, Legal
