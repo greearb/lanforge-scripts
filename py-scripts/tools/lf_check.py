@@ -131,6 +131,7 @@ import os
 import datetime
 import sys
 import traceback
+from pprint import pformat
 
 if sys.version_info[0] != 3:
     print("This script requires Python3")
@@ -1280,9 +1281,16 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             short_cmd = command
 
         # junit results
+        # need to remove quotes from commands in junit 
+        command_quotes_removed = command.replace('"','&quot;')
         self.junit_results += """
             <testcase name="{name}" id="{command}" time="{time}">
             """.format(name=self.test,command=command,time=self.duration_sec_us)
+
+        self.junit_results += """
+            <system-out> {stdout}
+            </system-out>
+            """.format(stdout=pformat(summary_output))
 
         # need to have tests return error messages
         if self.test_result != "Success":
