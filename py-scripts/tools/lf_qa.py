@@ -30,6 +30,7 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 class csv_sql:
     def __init__(self,
                  _path='.',
+                 _path_comp='',
                  _file='kpi.csv',
                  _database='qa_db',
                  _table='qa_table',
@@ -37,6 +38,7 @@ class csv_sql:
                  _cut='/home/lanforge/',
                  _png=False):
         self.path = _path
+        self.path_comp = _path_comp
         self.file = _file
         self.database = _database
         self.table = _table
@@ -276,6 +278,8 @@ class csv_sql:
 
         return suite_html_results
 
+    # this is used for absolute paths which was originally used
+    # this made it difficult when viewing on local machine
     def get_kpi_chart_html(self):
         kpi_chart_html = """
             <table border="0">
@@ -314,6 +318,93 @@ class csv_sql:
             kpi_chart_html += """</tr>"""
         kpi_chart_html += """</tbody></table>"""
         return kpi_chart_html
+
+    # TODO can use alternate path passed in as a comparison directory
+    # Would need to figure out how to do the relative paths
+    # Or figure out a way to 
+    # os.path.relpath(path1, path2)
+    # os.path.exists 
+    # https://docs.python.org/3.10/library/os.path.html
+    def get_kpi_chart_html_relative_compare(self):       
+        kpi_chart_html = """
+            <table border="0">
+                <tbody>
+        """
+        # this gets the path to the data used 
+        path = Path(self.path)
+        path_comp = Path(self.path_comp)
+        # Hard code for now
+        kpi_chart_list = list(path.glob('**/kpi-chart*.png'))
+        kpi_chart_comp_list = list(path_comp.glob('**/kpi-chart*.png'))
+        table_index = 0
+        for kpi_chart in kpi_chart_list:
+            parent_path = os.path.dirname(kpi_chart)
+            kpi_path = os.path.join(parent_path, "kpi.csv")
+            test_tag, test_id = self.get_test_id_test_tag(kpi_path)
+            # Path returns a list of objects
+            kpi_chart = os.path.abspath(kpi_chart)
+            kpi_chart = self.server + kpi_chart.replace(self.cut, '')
+            if "print" in kpi_chart:
+                pass
+            else:
+                # do relative paths
+                kpi_chart_basename = os.path.basename(kpi_chart) # granted this is kpi.csv 
+                kpi_chart_parent_path = os.path.dirname(kpi_chart)
+                kpi_chart_parent_basename = os.path.basename(kpi_chart_parent_path)
+                kpi_chart_relative = "../" + kpi_chart_parent_basename + "/" + kpi_chart_basename
+                logger.info("kpi_chart_relative {kpi}".format(kpi=kpi_chart_relative))
+
+                if (table_index % 2) == 0:
+                    kpi_chart_html += """<tr>"""
+                kpi_chart_html += """
+                    <td>
+                        {test_tag}  {test_id}
+                    </td>
+                    <td>
+                        <a href="{kpi_chart_0}"  target="_blank">
+                            <img src="{kpi_chart_1}" style="width:400px;max-width:400px" title="{kpi_chart_2}">
+                        </a>
+                    </td>
+                """.format(test_tag=test_tag, test_id=test_id, kpi_chart_0=kpi_chart_relative, kpi_chart_1=kpi_chart_relative, kpi_chart_2=kpi_chart_relative)
+
+                # see if there is a matching chart in the comparison directory
+                # will need to refactor into separate method
+                for kpi_chart_comp in kpi_chart_comp_list:
+                    parent_path_comp = os.path.dirname(kpi_chart_comp)
+                    kpi_path_comp = os.path.join(parent_path, "kpi.csv")
+                    test_tag_comp, test_id_comp = self.get_test_id_test_tag(kpi_path)
+                    if test_tag == test_tag_comp and test_id == test_id_comp:
+                        logger.info("kpi_path {kpi_path}".format(kpi_path=kpi_path))
+                        logger.info("kpi_path_comp {kpi_path_comp}".format(kpi_path_comp=kpi_path_comp))
+                        kpi_chart_comp_relative = os.path.relpath(kpi_path_comp, kpi_path)
+                        logger.info("kpi_comp_rel : {comp_rel}".format(comp_rel=kpi_chart_comp_relative))
+                        logger.info("kpi_comp_path: {comp_path}".format(comp_path=kpi_path_comp))
+                        logger.info("kpi_path     : {kpi_path}".format(kpi_path=kpi_path))
+                        kpi_chart_html += """
+                            <td>
+                                {test_tag}  {test_id}  {comp}
+                            </td>
+                            <td>
+                                <a href="{kpi_chart_0}"  target="_blank">
+                                    <img src="{kpi_chart_1}" style="width:400px;max-width:400px" title="{kpi_chart_2}">
+                                </a>
+                            </td>
+                        """.format(test_tag=test_tag_comp, test_id=test_id_comp, comp=" compare ",kpi_chart_0=kpi_chart_comp_relative, kpi_chart_1=kpi_chart_comp_relative, kpi_chart_2=kpi_chart_relative)
+                        break
+                        #exit(1)
+
+
+                    # even if comparison not found increase the index
+                    table_index += 1
+                    if (table_index % 2) == 0:
+                        kpi_chart_html += """</tr>"""
+
+
+        if (table_index % 2) != 0:
+            kpi_chart_html += """</tr>"""
+        kpi_chart_html += """</tbody></table>"""
+        return kpi_chart_html
+
 
     def get_kpi_chart_html_relative(self):
         kpi_chart_html = """
@@ -370,6 +461,8 @@ class csv_sql:
     def store(self):
         logger.info("reading kpi and storing in db {}".format(self.database))
         path = Path(self.path)
+        logger.info("store path {path}".format(path=path))
+        logger.info("self.path  {path}".format(path=self.path))
         self.kpi_list = list(path.glob('**/kpi.csv'))  # Hard code for now
 
         if not self.kpi_list:
@@ -760,6 +853,17 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
             the runs under TEST_RUNS.  
             ''',
         default='')
+    parser.add_argument(
+        '--path_comp',
+        help='''
+            --path_comp , this is the directory to compare results from a previous run.
+            top directory path to kpi if regererating database or png files,
+            for example /html-reports/TEST_RUNS , this will collect all the results for all the 
+            the runs under TEST_RUNS.  
+            default: ''
+            ''',
+        default='')
+
     parser.add_argument('--file', help='--file kpi.csv  default: kpi.csv',
                         default='kpi.csv')  # TODO is this needed
     parser.add_argument(
@@ -804,6 +908,13 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         logger_config.load_lf_logger_config()
 
     __path = args.path
+    if args.path_comp != '' and os.path.exists(args.path_comp):
+        __path_comp = args.path_comp
+    elif args.path_comp == '':
+        __path_comp = ''
+    else:
+        __path_comp = ''
+        logger.warning("Comparison path does not exist, entered: {path_comp}".format(path_comp=args.path_comp))
     __file = args.file
     __database = args.database
     __table = args.table
@@ -838,6 +949,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
 
     csv_dash = csv_sql(
         _path=__path,
+        _path_comp = __path_comp,
         _file=__file,
         _database=__database,
         _table=__table,
@@ -940,9 +1052,12 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         # png summary of test
         report.set_table_title("Suite Summary")
         report.build_table_title()
+        #TODO leave the aps_path False in 
         abs_path = False
         if abs_path:
             kpi_chart_html = csv_dash.get_kpi_chart_html()
+        elif args.path_comp != '':
+            kpi_chart_html = csv_dash.get_kpi_chart_html_relative_compare()
         else:
             kpi_chart_html = csv_dash.get_kpi_chart_html_relative()
 
