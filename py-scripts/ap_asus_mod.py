@@ -172,7 +172,7 @@ class create_ap_obj:
 
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            logger.error(" unable to read AP")
+            logger.error(" unable to read AP : Check AP connection , No data is gathered")
 
         if self.ap_file is not None:
             ap_file = open(str(self.ap_file), "a")
