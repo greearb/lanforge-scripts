@@ -3,6 +3,9 @@
 File: read kpi.csv place in sql database, create png of historical kpi and present graph on dashboard
 Usage: lf_qa.py --store --png --show --path <path to directories to traverse> --database <name of database>
 
+Usage for comparison, not both directories need to be under html-reports 
+    lf_qa.py --path <path to directories to traverse> --path_comp <path to compare report> --store --png --database <test.db>
+
 TODO :  Add to help how to run or which parameters needed to run: on lanforge, a server that is not lanforge, At a desktop
 '''
 import sys
