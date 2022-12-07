@@ -331,6 +331,7 @@ class csv_sql:
                 <tbody>
         """
         # this gets the path to the data used 
+        # reportes need to be relative to path
         path = Path(self.path)
         path_comp = Path(self.path_comp)
         # Hard code for now
@@ -352,6 +353,7 @@ class csv_sql:
                 kpi_chart_parent_path = os.path.dirname(kpi_chart)
                 kpi_chart_parent_basename = os.path.basename(kpi_chart_parent_path)
                 kpi_chart_relative = "../" + kpi_chart_parent_basename + "/" + kpi_chart_basename
+
                 logger.info("kpi_chart_relative {kpi}".format(kpi=kpi_chart_relative))
 
                 if (table_index % 2) == 0:
@@ -361,44 +363,50 @@ class csv_sql:
                         {test_tag}  {test_id}
                     </td>
                     <td>
-                        <a href="{kpi_chart_0}"  target="_blank">
-                            <img src="{kpi_chart_1}" style="width:400px;max-width:400px" title="{kpi_chart_2}">
+                        <a href="{kpi_chart_ref}"  target="_blank">
+                            <img src="{kpi_chart_src}" style="width:400px;max-width:400px" title="{kpi_chart_title}">
                         </a>
                     </td>
-                """.format(test_tag=test_tag, test_id=test_id, kpi_chart_0=kpi_chart_relative, kpi_chart_1=kpi_chart_relative, kpi_chart_2=kpi_chart_relative)
+                """.format(test_tag=test_tag, test_id=test_id, kpi_chart_ref=kpi_chart_relative, kpi_chart_src=kpi_chart_relative, kpi_chart_title=kpi_chart_relative)
 
                 # see if there is a matching chart in the comparison directory
                 # will need to refactor into separate method
+                kpi_chart_comp_found = False
                 for kpi_chart_comp in kpi_chart_comp_list:
                     parent_path_comp = os.path.dirname(kpi_chart_comp)
-                    kpi_path_comp = os.path.join(parent_path, "kpi.csv")
-                    test_tag_comp, test_id_comp = self.get_test_id_test_tag(kpi_path)
+                    kpi_path_comp = os.path.join(parent_path_comp, "kpi.csv")
+                    test_tag_comp, test_id_comp = self.get_test_id_test_tag(kpi_path_comp)
                     if test_tag == test_tag_comp and test_id == test_id_comp:
-                        logger.info("kpi_path {kpi_path}".format(kpi_path=kpi_path))
-                        logger.info("kpi_path_comp {kpi_path_comp}".format(kpi_path_comp=kpi_path_comp))
-                        kpi_chart_comp_relative = os.path.relpath(kpi_path_comp, kpi_path)
-                        logger.info("kpi_comp_rel : {comp_rel}".format(comp_rel=kpi_chart_comp_relative))
-                        logger.info("kpi_comp_path: {comp_path}".format(comp_path=kpi_path_comp))
-                        logger.info("kpi_path     : {kpi_path}".format(kpi_path=kpi_path))
+                        kpi_chart_comp_found = True
+                        logger.debug("test_tag : {tag} test_tag_comp : {ctag} test_id : {test_id} test_id_comp : {test_id_comp}".format(
+                            tag=test_tag,ctag=test_tag_comp,test_id=test_id,test_id_comp=test_id_comp
+                        ) )
+                        # get relative path 
+                        kpi_chart_comp_relative = os.path.relpath(kpi_chart_comp, os.curdir)
+                        logger.debug("kpi_chart_comp_relative: {r_chart}".format(r_chart=kpi_chart_comp_relative))
+
                         kpi_chart_html += """
                             <td>
                                 {test_tag}  {test_id}  {comp}
                             </td>
                             <td>
-                                <a href="{kpi_chart_0}"  target="_blank">
-                                    <img src="{kpi_chart_1}" style="width:400px;max-width:400px" title="{kpi_chart_2}">
+                                <a href="{kpi_chart_ref}"  target="_blank">
+                                    <img src="{kpi_chart_src}" style="width:400px;max-width:400px" title="{kpi_chart_title}">
                                 </a>
                             </td>
-                        """.format(test_tag=test_tag_comp, test_id=test_id_comp, comp=" compare ",kpi_chart_0=kpi_chart_comp_relative, kpi_chart_1=kpi_chart_comp_relative, kpi_chart_2=kpi_chart_relative)
+                        """.format(test_tag=test_tag_comp, test_id=test_id_comp, comp=" compare ",kpi_chart_ref=kpi_chart_comp_relative, kpi_chart_src=kpi_chart_comp_relative, kpi_chart_title=kpi_chart_comp_relative)
                         break
-                        #exit(1)
-
-
+                    if kpi_chart_comp_found:
+                        # even if comparison not found increase the index
+                        table_index += 1
+                        if (table_index % 2) == 0:
+                            kpi_chart_html += """</tr>"""
+                
+                if not kpi_chart_comp_found:
                     # even if comparison not found increase the index
                     table_index += 1
                     if (table_index % 2) == 0:
                         kpi_chart_html += """</tr>"""
-
 
         if (table_index % 2) != 0:
             kpi_chart_html += """</tr>"""
