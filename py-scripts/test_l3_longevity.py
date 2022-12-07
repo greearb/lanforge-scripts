@@ -115,6 +115,12 @@ InfluxRequest = importlib.import_module("py-dashboard.InfluxRequest")
 influx_add_parser_args = InfluxRequest.influx_add_parser_args
 RecordInflux = InfluxRequest.RecordInflux
 
+# used for Attenuator and possible vap testing testing
+lf_attenuator = importlib.import_module("py-scripts.lf_atten_mod_test")
+modify_vap = importlib.import_module("py-scripts.modify_vap")
+lf_modify_radio = importlib.import_module("py-scripts.lf_modify_radio")
+
+
 logger = logging.getLogger(__name__)
 
 # This class handles running the test and generating reports.
@@ -1262,7 +1268,8 @@ class L3VariableTime(Realm):
                 for atten_val in self.atten_vals:
                     if atten_val != -1:
                         for atten_idx in self.attenuators:
-                            self.set_atten(atten_idx, atten_val)
+                            atten_mod_test = lf_attenuator.CreateAttenuator(host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
+                            atten_mod_test.build()
 
                     print("Starting multicast traffic (if any configured)")
                     self.multicast_profile.start_mc(debug_=self.debug)
