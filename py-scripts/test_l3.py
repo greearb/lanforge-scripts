@@ -126,6 +126,12 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 
+# additional imports for testing with vap
+lf_attenuator = importlib.import_module("py-scripts.lf_atten_mod_test")
+modify_vap = importlib.import_module("py-scripts.modify_vap")
+lf_modify_radio = importlib.import_module("py-scripts.lf_modify_radio")
+
+
 Realm = realm.Realm
 
 logger = logging.getLogger(__name__)
@@ -853,7 +859,9 @@ class L3VariableTime(Realm):
                 for atten_val in self.atten_vals:
                     if atten_val != -1:
                         for atten_idx in self.attenuators:
-                            self.set_atten(atten_idx, atten_val)
+                            atten_mod_test = lf_attenuator.CreateAttenuator(host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
+                            atten_mod_test.build()
+
 
                     logger.info("Starting multicast traffic (if any configured)")
                     self.multicast_profile.start_mc(debug_=self.debug)
