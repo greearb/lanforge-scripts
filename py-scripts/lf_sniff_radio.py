@@ -31,6 +31,13 @@
     txpower 0.00 dBm
     [lanforge@ct523c-3b7b ~]$
 
+    # manual way to set the center frequency
+     iw dev moni10a set freq <control frequency> <Band width> <center frequency>
+
+    # sometimes the radio wiphy 9 (above) may not match the wiphy radio
+        when iw parent is not matching, can be show with command:
+        cat /sys/class/ieee80211/wiphy0/index    
+
 
 """
 import sys
@@ -56,7 +63,7 @@ class SniffRadio(Realm):
                  outfile="/home/lanforge/test_pcap.pcap",
                  duration=60,
                  channel=None,
-                 # channel_freq=None,
+                 channel_freq=None,
                  channel_bw=None,
                  center_freq=None,
                  radio_mode="AUTO",
@@ -75,6 +82,7 @@ class SniffRadio(Realm):
         self.outfile = outfile
         self.radio = radio
         self.channel = channel
+        self.channel_freq = channel_freq
         self.channel_bw = channel_bw
         self.center_freq = center_freq
         self.duration = duration
@@ -86,8 +94,14 @@ class SniffRadio(Realm):
         #    exit(1)
         # elif self.channel_freq is not None:
         #    self.freq = self.channel_freq
-        if self.channel is not None:
-            self.freq = self.chan_to_freq[self.channel]
+        if self.channel_freq is not None:
+            self.freq = self.channel_freq
+        elif self.channel is not None:
+            if 'e' in self.channel:
+                channel_6e = int(self.channel.replance('e','')) + 190
+                self.freq = self.chan_to_freq[channel_6e]
+            else:
+                self.freq = self.chan_to_freq[self.channel]
 
         if self.channel_bw != '20':
             if self.center_freq is None:
@@ -228,12 +242,11 @@ def main():
                                     Must enter Channel
                                     ''',
                         default='36')
-    # parser.add_argument('--channel_freq', type=str, help='''
-    #                                --channel_freq  this is the frequency that the channel operates at
-    #                                Must enter --channel or --channel_freq
-    #                                --channel takes presidence if both entered
-    #                                ''',
-    #                    default=0)
+    parser.add_argument('--channel_freq', type=str, help='''
+                                   --channel_freq  this is the frequency that the channel operates at
+                                   Must enter --channel or --channel_freq
+                                   --channel_freq takes presidence if both entered if value not zero 
+                                   ''')
     parser.add_argument('--channel_bw', type=str, help='--channel_bw select the bandwidth to be monitored, [ [20|40|80|80+80|160]], default=20',
                         default='20')
     parser.add_argument('--center_freq', type=str, help='''
@@ -262,7 +275,7 @@ def main():
                      outfile=args.outfile,
                      duration=args.duration,
                      channel=args.channel,
-                     # channel_freq=args.center_freq,
+                     channel_freq=args.center_freq,
                      channel_bw=args.channel_bw,
                      center_freq=args.center_freq,
                      radio_mode=args.radio_mode,
