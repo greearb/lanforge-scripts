@@ -419,6 +419,7 @@ class LFCliBase:
         # will use the absolute value of this.
         naptime = -5
         warnings = list()
+        info = list()
         for _ in range(0, int(timeout / 2)):
             lic_json = self.json_get("/misc/license", debug_=self.debug)
             if lic_json:
@@ -443,7 +444,7 @@ class LFCliBase:
                                                 time.strftime('%Y-%m-%d %H:%M', time.localtime(expire_at))))
                             naptime = abs(naptime)
                         elif expire_at <= in30d_time:
-                            warnings.append("** License item %s WILL expire on %s"
+                            info.append("** License item %s WILL expire on %s"
                                             % ( hunks[0],
                                                 time.strftime('%Y-%m-%d %H:%M', time.localtime(expire_at))))
                     if len(warnings) > 0:
@@ -454,6 +455,10 @@ class LFCliBase:
                             time.sleep(naptime)
                         else:
                             logger.warning(combined_warn)
+                    if len(info) > 0:
+                        combined_info = "\nScripts active licenses:\n" \
+                                        +("\n".join(info))
+                        logger.debug(combined_info)
                     return True
                 else:
                     logging.error("System lacks a license. Scripts might fail because of unavailable features.")
