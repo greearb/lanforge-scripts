@@ -205,6 +205,9 @@ class Realm(LFCliBase):
         self.chan_to_freq[196] = 4980
 
         #6E
+
+        self.chan_to_freq[191] = 5955
+        self.chan_to_freq[195] = 5975
         self.chan_to_freq[199] = 5995
         self.chan_to_freq[203] = 6015
         self.chan_to_freq[207] = 6035
@@ -276,6 +279,8 @@ class Realm(LFCliBase):
         self.freq_to_chan[4980] = 196
 
         #6E
+        self.freq_to_chan[5955] = 191
+        self.freq_to_chan[5975] = 195
         self.freq_to_chan[5995] = 199
         self.freq_to_chan[6015] = 203
         self.freq_to_chan[6035] = 207
