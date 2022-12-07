@@ -46,6 +46,7 @@ import importlib
 import argparse
 import time
 import paramiko
+import logging
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
@@ -53,7 +54,6 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
-
 
 class SniffRadio(Realm):
     def __init__(self,
@@ -77,8 +77,6 @@ class SniffRadio(Realm):
         #                                lfclient_port=self.lfclient_port,
         #                                debug_=self.debug)
         self.monitor = self.new_wifi_monitor_profile()
-        if channel != "AUTO":
-            channel = int(channel)
         self.outfile = outfile
         self.radio = radio
         self.channel = channel
@@ -96,12 +94,27 @@ class SniffRadio(Realm):
         #    self.freq = self.channel_freq
         if self.channel_freq is not None:
             self.freq = self.channel_freq
+        # conversion of 6e channel to frequency
+        # ch_6e = (f - 5000 )  / 5
+        # f = (ch_6e * 5) + 5000
         elif self.channel is not None:
-            if 'e' in self.channel:
-                channel_6e = int(self.channel.replance('e','')) + 190
-                self.freq = self.chan_to_freq[channel_6e]
-            else:
-                self.freq = self.chan_to_freq[self.channel]
+            if self.channel != 'AUTO':
+                if 'e' in self.channel:
+                    channel_6e = self.channel.replace('e','')
+                    self.freq = ((int(channel_6e)+190) * 5) + 5000
+                    lf_6e_chan = int(channel_6e) + 190
+                    print("6e_chan: {chan} lf_6e_chan: {lf_chan} frequency: {freq}".format(chan=self.channel,lf_chan=lf_6e_chan,freq=self.freq))
+                    self.channel = lf_6e_chan
+                else:
+                    if int(self.channel) <= 13:
+                        # channel 1 is 2412 ,
+                        self.freq = 2407 + int(self.channel) * 5
+                    elif int(self.channel) == 14:
+                        self.freq = 2484
+                    # 5g or 6g Candela numbering
+                    else:
+                        self.freq = int(self.channel) * 5 + 5000
+                    print("channel: {chan}  frequency: {freq}".format(chan=self.channel,freq=self.freq))
 
         if self.channel_bw != '20':
             if self.center_freq is None:
@@ -113,7 +126,7 @@ class SniffRadio(Realm):
         self.monitor.set_flag(param_name="disable_ht40", value=ht40_value)
         self.monitor.set_flag(param_name="disable_ht80", value=ht80_value)
         self.monitor.set_flag(param_name="ht160_enable", value=ht160_value)
-        self.monitor.create(radio_=self.radio, channel=self.channel, mode=self.mode, name_=self.monitor_name)
+        self.monitor.create(radio_=self.radio, channel=self.channel, frequency=self.freq, mode=self.mode, name_=self.monitor_name)
 
     def start(self):
         self.monitor.admin_up()
@@ -275,7 +288,7 @@ def main():
                      outfile=args.outfile,
                      duration=args.duration,
                      channel=args.channel,
-                     channel_freq=args.center_freq,
+                     channel_freq=args.channel_freq,
                      channel_bw=args.channel_bw,
                      center_freq=args.center_freq,
                      radio_mode=args.radio_mode,
