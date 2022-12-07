@@ -1276,21 +1276,28 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             stderr_log_link = "./" + stderr_log_parent_basename + "/" + stderr_log_basename
                         
         if command.find(' ') > 1:
-            short_cmd = command[0:command.find(' ')]
+            short_cmd = command[0:command.find(' ')] 
         else:
             short_cmd = command
 
         # junit results
         # need to remove quotes from commands in junit 
+        # https://gist.github.com/ix4/344cdfce79cb5510094e5005d5db2c70
         command_quotes_removed = command.replace('"','&quot;')
+        summary_output_updated = summary_output.replace('&','and').replace('<','&lt;').replace('>','&gt;')
         self.junit_results += """
             <testcase name="{name}" id="{command}" time="{time}">
-            """.format(name=self.test,command=command,time=self.duration_sec_us)
+            """.format(name=self.test,command=short_cmd,time=self.duration_sec_us)
 
         self.junit_results += """
-            <system-out> {stdout}
+            <system-out> 
+            Command:
+            {stdout}
+            link
+            {link}
             </system-out>
-            """.format(stdout=pformat(summary_output))
+            """.format(stdout=command_quotes_removed,link=stdout_log_link)
+
 
         # need to have tests return error messages
         if self.test_result != "Success":
