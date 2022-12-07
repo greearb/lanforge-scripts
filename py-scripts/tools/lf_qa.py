@@ -348,11 +348,12 @@ class csv_sql:
             if "print" in kpi_chart:
                 pass
             else:
-                # do relative paths
+                # do relative paths TODO use os.path.relpath
                 kpi_chart_basename = os.path.basename(kpi_chart) # granted this is kpi.csv 
                 kpi_chart_parent_path = os.path.dirname(kpi_chart)
                 kpi_chart_parent_basename = os.path.basename(kpi_chart_parent_path)
                 kpi_chart_relative = "../" + kpi_chart_parent_basename + "/" + kpi_chart_basename
+                kpi_chart_results_dir = "../" + kpi_chart_parent_basename
 
                 logger.info("kpi_chart_relative {kpi}".format(kpi=kpi_chart_relative))
 
@@ -360,14 +361,15 @@ class csv_sql:
                     kpi_chart_html += """<tr>"""
                 kpi_chart_html += """
                     <td>
-                        {test_tag}  {test_id}
+                        {test_tag}  {test_id} 
+                        <a href="{dir_path}" target="_blank">results_dir</a>
                     </td>
                     <td>
                         <a href="{kpi_chart_ref}"  target="_blank">
                             <img src="{kpi_chart_src}" style="width:400px;max-width:400px" title="{kpi_chart_title}">
                         </a>
                     </td>
-                """.format(test_tag=test_tag, test_id=test_id, kpi_chart_ref=kpi_chart_relative, kpi_chart_src=kpi_chart_relative, kpi_chart_title=kpi_chart_relative)
+                """.format(test_tag=test_tag, test_id=test_id, dir_path=kpi_chart_results_dir, kpi_chart_ref=kpi_chart_relative, kpi_chart_src=kpi_chart_relative, kpi_chart_title=kpi_chart_relative)
 
                 # see if there is a matching chart in the comparison directory
                 # will need to refactor into separate method
@@ -385,16 +387,20 @@ class csv_sql:
                         kpi_chart_comp_relative = os.path.relpath(kpi_chart_comp, os.curdir)
                         logger.debug("kpi_chart_comp_relative: {r_chart}".format(r_chart=kpi_chart_comp_relative))
 
+                        compare_results_dir = os.path.dirname(kpi_chart_comp_relative)
+                        logger.debug("compare_results_dir: {dir_path}".format(dir_path=compare_results_dir))
+                        
                         kpi_chart_html += """
                             <td>
-                                {test_tag}  {test_id}  {comp}
+                                {test_tag}  {test_id} 
+                                <a href="{dir_path}" target="_blank">compare_results_dir</a>
                             </td>
                             <td>
                                 <a href="{kpi_chart_ref}"  target="_blank">
                                     <img src="{kpi_chart_src}" style="width:400px;max-width:400px" title="{kpi_chart_title}">
                                 </a>
                             </td>
-                        """.format(test_tag=test_tag_comp, test_id=test_id_comp, comp=" compare ",kpi_chart_ref=kpi_chart_comp_relative, kpi_chart_src=kpi_chart_comp_relative, kpi_chart_title=kpi_chart_comp_relative)
+                        """.format(test_tag=test_tag_comp, test_id=test_id_comp, dir_path=compare_results_dir,kpi_chart_ref=kpi_chart_comp_relative, kpi_chart_src=kpi_chart_comp_relative, kpi_chart_title=kpi_chart_comp_relative)
                         break
                     if kpi_chart_comp_found:
                         # even if comparison not found increase the index
@@ -1038,7 +1044,7 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
             report.build_link("All Test-Rig Test Suites Results Directory", report_parent_url)
 
 
-        # links table for tests TODO : can this be a table
+        # links table for tests 
         report.set_table_title("Test Suite")
         report.build_table_title()
         suite_html = csv_dash.get_suite_html()
