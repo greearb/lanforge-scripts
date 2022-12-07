@@ -36,7 +36,7 @@
 
     # sometimes the radio wiphy 9 (above) may not match the wiphy radio
         when iw parent is not matching, can be show with command:
-        cat /sys/class/ieee80211/wiphy0/index    
+        cat /sys/class/ieee80211/wiphy0/index
 
 
 """
@@ -54,6 +54,7 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+
 
 class SniffRadio(Realm):
     def __init__(self,
@@ -100,10 +101,10 @@ class SniffRadio(Realm):
         elif self.channel is not None:
             if self.channel != 'AUTO':
                 if 'e' in self.channel:
-                    channel_6e = self.channel.replace('e','')
-                    self.freq = ((int(channel_6e)+190) * 5) + 5000
+                    channel_6e = self.channel.replace('e', '')
+                    self.freq = ((int(channel_6e) + 190) * 5) + 5000
                     lf_6e_chan = int(channel_6e) + 190
-                    print("6e_chan: {chan} lf_6e_chan: {lf_chan} frequency: {freq}".format(chan=self.channel,lf_chan=lf_6e_chan,freq=self.freq))
+                    print("6e_chan: {chan} lf_6e_chan: {lf_chan} frequency: {freq}".format(chan=self.channel, lf_chan=lf_6e_chan, freq=self.freq))
                     self.channel = lf_6e_chan
                 else:
                     if int(self.channel) <= 13:
@@ -114,7 +115,7 @@ class SniffRadio(Realm):
                     # 5g or 6g Candela numbering
                     else:
                         self.freq = int(self.channel) * 5 + 5000
-                    print("channel: {chan}  frequency: {freq}".format(chan=self.channel,freq=self.freq))
+                    print("channel: {chan}  frequency: {freq}".format(chan=self.channel, freq=self.freq))
 
         if self.channel_bw != '20':
             if self.center_freq is None:
@@ -258,7 +259,7 @@ def main():
     parser.add_argument('--channel_freq', type=str, help='''
                                    --channel_freq  this is the frequency that the channel operates at
                                    Must enter --channel or --channel_freq
-                                   --channel_freq takes presidence if both entered if value not zero 
+                                   --channel_freq takes presidence if both entered if value not zero
                                    ''')
     parser.add_argument('--channel_bw', type=str, help='--channel_bw select the bandwidth to be monitored, [ [20|40|80|80+80|160]], default=20',
                         default='20')
