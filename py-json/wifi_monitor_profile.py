@@ -30,7 +30,7 @@ class WifiMonitor:
         self.aid = "NA"  # used when sniffing /ax radios
         self.bssid = "00:00:00:00:00:00"  # used when sniffing on /ax radios
 
-    def create(self, resource_=1, channel=None, mode="AUTO", radio_="wiphy0", name_="moni0"):
+    def create(self, resource_=1, channel=None, frequency=None, mode="AUTO", radio_="wiphy0", name_="moni0"):
         radio_eid = self.local_realm.name_to_eid(radio_)
         radio_shelf = radio_eid[0]
         self.resource = radio_eid[1]
@@ -54,16 +54,26 @@ class WifiMonitor:
         if radio_ in jr:
             country = jr[radio_]["country"]
 
-        data = {
-            "shelf": radio_shelf,
-            "resource": self.resource,
-            "radio": radio_,
-            "mode": set_radio_mode[mode],  # "NA", #0 for AUTO or "NA"
-            "channel": channel,
-            "country": country,
-            "frequency": self.local_realm.channel_freq(channel_=channel)
-
-        }
+        if frequency is not None:
+            data = {
+                "shelf": radio_shelf,
+                "resource": self.resource,
+                "radio": radio_,
+                "mode": set_radio_mode[mode],  # "NA", #0 for AUTO or "NA"
+                "channel": channel,
+                "country": country,
+                "frequency": frequency
+            }
+        else:
+            data = {
+                "shelf": radio_shelf,
+                "resource": self.resource,
+                "radio": radio_,
+                "mode": set_radio_mode[mode],  # "NA", #0 for AUTO or "NA"
+                "channel": channel,
+                "country": country,
+                "frequency": self.local_realm.channel_freq(channel_=channel)
+            }
         self.local_realm.json_post("/cli-json/set_wifi_radio", _data=data)
         time.sleep(1)
         self.local_realm.json_post("/cli-json/add_monitor", {
