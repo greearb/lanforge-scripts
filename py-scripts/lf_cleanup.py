@@ -145,8 +145,8 @@ class lf_clean(Realm):
                             # if there is only a single endpoint:
                             if type(endp_json['endpoint']) is dict:
                                 endp_name = endp_json['endpoint']['name']
-                                if cx_name + '-A' in endp_name or cx_name + '-B' in endp_name:
-                                    # if cx_name + '-A' in endp_name:
+                                # if cx_name + '-A' in endp_name or cx_name + '-B' in endp_name:
+                                if cx_name + '-A' in endp_name:
                                     endp_eid_split = endp_eid.split('.')
                                     # endp_eid_split[1] == realm resource value:
                                     resource_eid = str(endp_eid_split[1])
@@ -177,8 +177,8 @@ class lf_clean(Realm):
                                     for endp_val in endp_num.values():
                                         endp_eid = endp_val['entity id']
                                         endp_name = endp_val['name']
-                                        if cx_name + '-A' in endp_name or cx_name + '-B' in endp_name:
-                                        # if cx_name + '-A' in endp_name:
+                                        # if cx_name + '-A' in endp_name or cx_name + '-B' in endp_name:
+                                        if cx_name + '-A' in endp_name:
                                             endp_eid_split = endp_eid.split('.')
                                             # endp_eid_split[1] == realm resource value:
                                             resource_eid = str(endp_eid_split[1])
