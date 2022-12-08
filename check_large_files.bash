@@ -453,7 +453,7 @@ clean_var_log() {
     cd /var/log
     while read file; do
         if [[ $file = /var/log/messages ]]; then
-            echo "" > /var/log/messages
+            truncate -s0 /var/log/messages
         else
             rm -f $vee "$file"
         fi
