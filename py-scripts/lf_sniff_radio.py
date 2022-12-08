@@ -95,6 +95,7 @@ class SniffRadio(Realm):
         #    self.freq = self.channel_freq
         if self.channel_freq is not None:
             self.freq = self.channel_freq
+            print("channel frequency {freq}".format(freq=self.channel_freq))
         # conversion of 6e channel to frequency
         # ch_6e = (f - 5000 )  / 5
         # f = (ch_6e * 5) + 5000
@@ -202,7 +203,7 @@ def main():
         Note:
 
         iw [options] dev <devname> set freq <freq> [NOHT|HT20|HT40+|HT40-|5MHz|10MHz|80MHz]
-	    dev <devname> set freq <control freq> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]
+        dev <devname> set freq <control freq> [5|10|20|40|80|80+80|160] [<center1_freq> [<center2_freq>]]
 
         Example to monitor channel 36 (5180)
         sudo iw dev <monitor/devname> set freq 5180 40 5190
