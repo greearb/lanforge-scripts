@@ -81,7 +81,7 @@ class lf_json_api():
         self.request = ''
         # since the port may change we will initially us update_port_info to set initial values
         self.update_port_info()
-        self.extra = '' # to be used for clearing ports
+        self.extra = ''  # to be used for clearing ports
         self.csv_mode = csv_mode
         # convert write to w and append to a
         self.update_csv_mode()
@@ -93,7 +93,6 @@ class lf_json_api():
         else:
             self.csv_mode = 'w'
             self.csv_header = True
-
 
     def update_port_info(self):
         # TODO add support for non-port
@@ -119,7 +118,7 @@ class lf_json_api():
         logger.debug("shelf : {shelf} , resource : {resource}, port_name : {port_name}, endpoint_name : {endpoint_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, endpoint_name=self.endpoint_name))
         # the request can change
 
-    def reformat_json(self, json_data ):
+    def reformat_json(self, json_data):
         lines = []
         key = list(dict(json_data).keys())[-1]
 
@@ -131,8 +130,6 @@ class lf_json_api():
                 inner_data = i[list(i.keys())[0]]  # getting the data under each device/port/object name in list
                 lines.append(pandas.json_normalize(inner_data))
             return pandas.concat(lines, ignore_index=True)
-
-
 
     def get_request_port_information(self, port=None):
         # port passed in with command
@@ -167,7 +164,7 @@ class lf_json_api():
         logger.debug("port request.text: {text}".format(text=lanforge_text))
         lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
         logger.debug("port request lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
-        
+
         logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
             lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
         ))
@@ -192,7 +189,7 @@ class lf_json_api():
         logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request))
         return lanforge_json, csv_file_port, lanforge_text, lanforge_json_formatted
 
-    def get_request_wifi_stats_information(self,port=None):
+    def get_request_wifi_stats_information(self, port=None):
         # port passed in with command
         # this is needed for backward compatibility
         if port is not None:
@@ -236,7 +233,7 @@ class lf_json_api():
             key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
             df = json_normalize(lanforge_json[key])
             csv_file_wifi_stats = "{shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request)
-            df.to_csv(csv_file_wifi_stats, mode = self.csv_mode, header = self.csv_header, index=False)
+            df.to_csv(csv_file_wifi_stats, mode=self.csv_mode, header=self.csv_header, index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
@@ -244,7 +241,7 @@ class lf_json_api():
         # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
         return lanforge_json, csv_file_wifi_stats, lanforge_text, lanforge_json_formatted
 
-    def get_request_layer4_information(self,endpoint=None):
+    def get_request_layer4_information(self, endpoint=None):
         # endpoint passed in with command
         # this is needed for backward compatibility
         if endpoint is not None:
@@ -289,7 +286,7 @@ class lf_json_api():
             # key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
             key = 'endpoint'
             df = json_normalize(lanforge_json[key])
-            csv_file_layer4 = "{shelf}.{resource}.{port_name}.{endpoint_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name,endpoint_name=self.endpoint_name, request=self.request)
+            csv_file_layer4 = "{shelf}.{resource}.{port_name}.{endpoint_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, endpoint_name=self.endpoint_name, request=self.request)
             # TODO: self.csv_mode & self.csv_header have not been instantiated:
             # df.to_csv(csv_file_layer4, mode = self.csv_mode, header = self.csv_header, index=False)
         except Exception as x:
@@ -300,14 +297,14 @@ class lf_json_api():
         return lanforge_json, lanforge_text, lanforge_json_formatted, csv_file_layer4
 
     # give information on a single station if the mac is entered.
-    def get_request_generic_information(self,endpoint=None):
+    def get_request_generic_information(self, endpoint=None):
         # port passed in with command
         # this is needed for backward compatibility
         if endpoint is not None:
             self.endpoint = endpoint
             logger.info("updated to : {endpoint}".format(endpoint=self.endpoint))
             self.update_endpoint_info()
-            
+
         self.update_csv_mode()
 
         # https://docs.python-requests.org/en/latest/
@@ -318,15 +315,14 @@ class lf_json_api():
         # where --user "USERNAME:PASSWORD"
 
         # generic fields
-        fields='name,eid,status,rpt%23,tx+bytes,rx+bytes,tx+pkts,pdu/s+tx,rx+pkts,pdu/s+rx,dropped,bps+tx,bps+rx,command,rpt+timer,elapsed,type'
+        fields = 'name,eid,status,rpt%23,tx+bytes,rx+bytes,tx+pkts,pdu/s+tx,rx+pkts,pdu/s+rx,dropped,bps+tx,bps+rx,command,rpt+timer,elapsed,type'
         request_command = 'http://{lfmgr}:{lfport}/{request}/{endpoint_name}?fields={fields}'.format(
             lfmgr=self.lf_mgr, lfport=self.lf_port, request=self.request, endpoint_name=self.endpoint_name, fields=fields)
         logger.debug("request_command: {request_command}".format(request_command=request_command))
         request = requests.get(request_command, auth=(self.lf_user, self.lf_passwd))
 
-
         logger.info("{request} request command: {request_command}".format(request=self.request, request_command=request_command))
-        logger.info("{request} request status_code {status}".format(request=self.request,status=request.status_code))
+        logger.info("{request} request status_code {status}".format(request=self.request, status=request.status_code))
 
         lanforge_json = request.json()
         logger.debug("{request} request.json: {json}".format(request=self.request, json=lanforge_json))
@@ -336,12 +332,12 @@ class lf_json_api():
         logger.info("lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
 
         logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/{endpoint_name}/{fields} | json_pp  ".format(
-            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, endpoint_name=self.endpoint_name,fields=fields))
+            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, endpoint_name=self.endpoint_name, fields=fields))
 
         try:
             key = "endpoint"
             df = json_normalize(lanforge_json[key])
-            df.to_csv("{request}_{endpoint}.csv".format(request=self.request,endpoint=self.endpoint), mode = self.csv_mode, header=self.csv_header, index=False)
+            df.to_csv("{request}_{endpoint}.csv".format(request=self.request, endpoint=self.endpoint), mode=self.csv_mode, header=self.csv_header, index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
@@ -350,9 +346,8 @@ class lf_json_api():
 
         return lanforge_json, lanforge_text, lanforge_json_formatted
 
-
     # give information on a single station if the mac is entered.
-    def get_request_single_station_information(self,port=None):
+    def get_request_single_station_information(self, port=None):
         # port passed in with command
         # this is needed for backward compatibility
         if port is not None:
@@ -404,8 +399,8 @@ class lf_json_api():
             key = "station"
             df = json_normalize(lanforge_json[key])
             df.to_csv("{shelf}.{resource}.{port_name}.{mac}_{request}.csv".
-                format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request, mac=self.mac), 
-                    mode = self.csv_mode, header = self.csv_header, index=False)
+                      format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request, mac=self.mac),
+                      mode=self.csv_mode, header=self.csv_header, index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
@@ -413,7 +408,6 @@ class lf_json_api():
         logger.info("csv output:   {shelf}.{resource}.{port_name}_{request}.csv".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request))
 
         return lanforge_json, lanforge_text, lanforge_json_formatted
-
 
     def get_request_stations_information(self):
 
@@ -434,7 +428,7 @@ class lf_json_api():
                 self.lf_user, self.lf_passwd))
 
         logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/all | json_pp  ".format(
-            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request ))
+            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request))
 
         logger.info(
             "{request} request command: {request_command}".format(request=self.request,
@@ -449,7 +443,7 @@ class lf_json_api():
         logger.info("lanforge_json_formatted: {json}".format(json=lanforge_json_formatted))
 
         logger.info("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' http://{lf_mgr}:{lf_port}/{request}/all | json_pp  ".format(
-            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request ))
+            lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request))
 
         # TODO just return lanforge_json and lanforge_txt, lanfore_json_formated to is may be the same for all commands
         # TODO check for "status": "NOT_FOUND"
@@ -475,7 +469,7 @@ class lf_json_api():
 
         return lanforge_json, lanforge_text, lanforge_json_formatted
 
-    def get_request_adb_information(self,port=None):
+    def get_request_adb_information(self, port=None):
         # port passed in with command
         # this is needed for backward compatibility
         if port is not None:
@@ -515,8 +509,8 @@ class lf_json_api():
         try:
             df = self.reformat_json(lanforge_json)
             df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".
-                format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request), 
-                    mode = self.csv_mode, header = self.csv_header, index=False)
+                      format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request),
+                      mode=self.csv_mode, header=self.csv_header, index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
@@ -528,7 +522,7 @@ class lf_json_api():
     # TODO this is a generic one.
 
     def get_request_information(self, port=None
-    ):
+                                ):
         # port passed in with command
         # this is needed for backward compatibility
         if port is not None:
@@ -573,8 +567,8 @@ class lf_json_api():
                 key = "{shelf}.{resource}.{port_name}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
             df = json_normalize(lanforge_json[key])
             df.to_csv("{shelf}.{resource}.{port_name}_{request}.csv".
-                format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request), 
-                    mode = self.csv_mode, header = self.csv_header, index=False)
+                      format(shelf=self.shelf, resource=self.resource, port_name=self.port_name, request=self.request),
+                      mode=self.csv_mode, header=self.csv_header, index=False)
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
@@ -585,7 +579,7 @@ class lf_json_api():
 
     # TODO This method is left in for an example it was taken from
 
-    def get_request_radio_information(self,port=None):
+    def get_request_radio_information(self, port=None):
         # port passed in with command
         # this is needed for backward compatibility
         if port is not None:
@@ -615,7 +609,7 @@ class lf_json_api():
 
         return lanforge_radio_json, lanforge_radio_text
 
-    def post_clear_port_counters(self,port=None):
+    def post_clear_port_counters(self, port=None):
         # port passed in with command
         # this is needed for backward compatibility
         if port is not None:
@@ -632,14 +626,14 @@ class lf_json_api():
         '''
         request_url = 'http://{lfmgr}:{port}/cli-json/clear_port_counters'.format(lfmgr=self.lf_mgr, port=self.lf_port)
         json_data = "{{'shelf':{shelf},'resource':{resource},'port':{port_name}}}".format(shelf=self.shelf, resource=self.resource, port_name=self.port_name)
-        
-        request = requests.post(request_url, json = json_data, auth=(self.lf_user, self.lf_passwd))
+
+        request = requests.post(request_url, json=json_data, auth=(self.lf_user, self.lf_passwd))
 
         logger.info("request url: {request_url}".format(request_url=request_url))
         logger.info("request status_code {status}".format(status=request.status_code))
 
-        logger_msg =("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' -H 'Content-type: application/json' -X POST -d \"{json_data} http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
-            json_data=json_data,lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
+        logger_msg = ("equivalent curl command: curl --user \"lanforge:lanforge\" -H 'Accept: application/json' -H 'Content-type: application/json' -X POST -d \"{json_data} http://{lf_mgr}:{lf_port}/{request}/{shelf}/{resource}/{port_name} | json_pp  ".format(
+            json_data=json_data, lf_mgr=self.lf_mgr, lf_port=self.lf_port, request=self.request, shelf=self.shelf, resource=self.resource, port_name=self.port_name
         ))
         logger.info(logger_msg)
 
@@ -679,8 +673,8 @@ def main():
         --port 1.1.vap0000 --get_request 'wifi-stats'
 
     # retrieve information form generic tab , generic tab need to be enabled
-    ./lf_json_api.py --lf_mgr 192.168.100.116 --lf_port 8080 --log_level info --endpoint 1.1.21.5386 --lf_user lanforge --lf_passwd lanforge
-        --get_request generic --csv_mode write  (use --csv_mode append to append data) write will include the headers 
+    ./lf_json_api.py --lf_mgr 192.168.100.116 --lf_port 8080 --log_level info --endpoint 1.1.21.5386 --lf_user lanforge --lf_passwd lanforge \
+        --get_request generic --csv_mode write  (use --csv_mode append to append data) write will include the headers
 
         This will generate a csv file generic_<endpoint>.csv
 
@@ -705,7 +699,7 @@ def main():
     # parser.add_argument("--mac", type=str, help="--mac <station bssid> for vap stations")
     parser.add_argument("--post_requests", type=str, help="perform set request may be a list:  nss , in development")
     parser.add_argument("--nss", type=str, help="--nss 4  set the number of spatial streams for a speific antenna ")
-    parser.add_argument("--csv_mode", type=str, help="--csv_mode 'write' or 'append' default: write",choices = ['append' , 'write'],default='write')
+    parser.add_argument("--csv_mode", type=str, help="--csv_mode 'write' or 'append' default: write", choices=['append', 'write'], default='write')
 
     args = parser.parse_args()
 
@@ -738,10 +732,10 @@ def main():
                 lanforge_radio_json, lanforge_radio_text = lf_json.get_request_radio_information()
                 for radio in list(lanforge_radio_json):
                     if radio != 'handler' and radio != 'uri' and radio != 'empty' and radio != 'warnings':
-                        logger.debug("{radio}: {type}".format(radio=radio,type=lanforge_radio_json[radio]['driver']))
-                        radio_result = "{radio}: {type}".format(radio=radio,type=lanforge_radio_json[radio]['driver'])
+                        logger.debug("{radio}: {type}".format(radio=radio, type=lanforge_radio_json[radio]['driver']))
+                        radio_result = "{radio}: {type}".format(radio=radio, type=lanforge_radio_json[radio]['driver'])
                         radio_result = radio_result.split('Bus', 1)[0]
-                        radio_result = str(radio_result).replace('Port Type: WIFI-Radio   Driver:','')
+                        radio_result = str(radio_result).replace('Port Type: WIFI-Radio   Driver:', '')
                         radio_update = {radio: radio_result}
                         radios.update(radio_update)
 
@@ -749,8 +743,6 @@ def main():
                 # used to list radios on a lanforge
                 for radio in list(radios.keys()):
                     print("{radio}".format(radio=radios[radio]))
-                        
-
 
             elif get_request == "port":
                 lf_json.request = get_request
@@ -811,7 +803,6 @@ def main():
                 logger.debug("lanforge_wifi_stats_text = {lanforge_wifi_stats_text}".format(lanforge_wifi_stats_text=lanforge_wifi_stats_text))
                 logger.debug("lanforge_wifi_stats_json_formatted = {lanforge_wifi_stats_json_formatted}".format(lanforge_wifi_stats_json_formatted=lanforge_wifi_stats_json_formatted))
 
-
             elif "single_station" in get_request:
                 lf_json.request, mac = get_request.split(',')
                 lf_json.mac = mac
@@ -820,7 +811,6 @@ def main():
                 logger.debug("lanforge_wifi_stats_json = {lanforge_wifi_stats_json}".format(lanforge_wifi_stats_json=lanforge_wifi_stats_json))
                 logger.debug("lanforge_wifi_stats_text = {lanforge_wifi_stats_text}".format(lanforge_wifi_stats_text=lanforge_wifi_stats_text))
                 logger.debug("lanforge_wifi_stats_json_formatted = {lanforge_wifi_stats_json_formatted}".format(lanforge_wifi_stats_json_formatted=lanforge_wifi_stats_json_formatted))
-
 
             elif get_request == "stations":
                 lf_json.request = get_request
@@ -861,7 +851,7 @@ def main():
                 lf_json.post_wifi_cli_cmd(wifi_cli_cmd=wifi_cli_cmd)
 
             if post_request == "clear_port_counters":
-                lf_json.post_clear_port_counters()               
+                lf_json.post_clear_port_counters()
 
     # sample of creating layer 3
 
