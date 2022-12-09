@@ -678,6 +678,12 @@ def main():
     ./lf_json_api.py --lf_mgr 192.168.100.116 --lf_port 8080 --log_level debug --port wlan3 --lf_user lanforge --lf_passwd lanforge
         --port 1.1.vap0000 --get_request 'wifi-stats'
 
+    # retrieve information form generic tab , generic tab need to be enabled
+    ./lf_json_api.py --lf_mgr 192.168.100.116 --lf_port 8080 --log_level info --endpoint 1.1.21.5386 --lf_user lanforge --lf_passwd lanforge
+        --get_request generic --csv_mode write  (use --csv_mode append to append data) write will include the headers 
+
+        This will generate a csv file generic_<endpoint>.csv
+
         """)
 
     parser.add_argument("--lf_mgr", type=str, help="address of the LANforge GUI machine (localhost is default)",
