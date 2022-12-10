@@ -1655,9 +1655,18 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # select test suite
     test_suite = args.suite
     if args.dir == "":
-        __dir = "lf_check_{suite}".format(suite=test_suite)
+        if args.outfile == "":
+            __dir = "lf_check_{suite}".format(suite=test_suite)
+        else: 
+            __dir = "lf_ch_{outfile}_{suite}".format(outfile=args.outfile,suite=test_suite)
+
     else:
-        __dir = args.dir
+        if args.outfile == "":
+            __dir = args.dir
+        else:
+            __dir = "{dir}_{outfile}_{suite}".format(dir=args.dir,outfile=args.outfile,suite=test_suite)
+
+
     __path = args.path
 
     server_override = args.server_override
