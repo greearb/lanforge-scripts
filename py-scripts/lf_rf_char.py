@@ -492,7 +492,7 @@ class lf_rf_char(Realm):
                     t_flags |= self.command.AddVapFlags.disable_ht80
                 if self.vap_bw == "80":
                     t_flags |= self.command.AddVapFlags.disable_ht40
-                    if t_band in (2):
+                    if t_band == 2:
                         raise ValueError("80 mhz bandwidth only available within 5ghz and 6gz frequencies")
                 if self.vap_bw == "160":
                     if t_band == 2:
