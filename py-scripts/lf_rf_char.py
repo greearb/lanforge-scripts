@@ -537,7 +537,7 @@ class lf_rf_char(Realm):
             queried_mode = "none"
             e_w : list = []
             poll_start_sec = lanforge_api._now_sec()
-            deadline_sec = poll_start_sec + 10
+            deadline_sec = poll_start_sec + 16
             while (queried_mode == "none") and (deadline_sec > lanforge_api._now_sec()):
                 response = self.query.get_port(eid_list=["1.1.vap0000"],
                                                requested_col_names=["alias", "mode"],
