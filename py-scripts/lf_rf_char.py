@@ -1141,8 +1141,13 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     # TODO:  There is almost certainly a cleaner way to do this.
     # if (rf_char.rssi_4_count > 0):
-    df_rssi_info = pd.DataFrame({" Time Interval (s)": [t for t in tx_interval], " Time ": [it for it in tx_interval_time], " RSSI Signal ": [k for k in rssi_signal], " RSSI 1 ": [i for i in rssi_1],
-                                " RSSI 2 ": [j for j in rssi_2], " RSSI 3 ": [m for m in rssi_3], " RSSI 4 ": [l for l in rssi_4]})
+    df_rssi_info = pd.DataFrame({" Time Interval (s)": [t for t in tx_interval],
+                                 " Time ": [it for it in tx_interval_time],
+                                 " RSSI Signal ": [k for k in rssi_signal],
+                                 " RSSI 1 ": [i for i in rssi_1],
+                                 " RSSI 2 ": [j for j in rssi_2],
+                                 " RSSI 3 ": [m for m in rssi_3],
+                                 " RSSI 4 ": [l for l in rssi_4]})
 
     report.set_table_dataframe(df_rssi_info.replace(np.nan, ''))
     report.build_table()
@@ -1268,7 +1273,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("RX Mode Histogram")
     report.build_table_title()
 
-    df_rx_mode = pd.DataFrame({" RX Mode ": [k for k in rx_mode], " Total Packets ": [i for i in rx_mode_value],
+    df_rx_mode = pd.DataFrame({" RX Mode ": [k for k in rx_mode],
+                               " Total Packets ": [i for i in rx_mode_value],
                                " Percentage ": [j for j in rx_mode_value_percent]})
 
     report.set_table_dataframe(df_rx_mode)
@@ -1340,13 +1346,23 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     # tx_mode.sort(key=length_sort)
     logger.debug("Before sort: {tx_mode} : {tx_mode_value_str} : {tx_mode_value} : {tx_mode_value_percent}".
-                 format(tx_mode=tx_mode, tx_mode_value_str=tx_mode_value_str, tx_mode_value=tx_mode_value, tx_mode_value_percent=tx_mode_value_percent))
+                 format(tx_mode=tx_mode,
+                        tx_mode_value_str=tx_mode_value_str,
+                        tx_mode_value=tx_mode_value,
+                        tx_mode_value_percent=tx_mode_value_percent))
 
     # see rx_mcs for detales
-    tx_mode, tx_mode_value_str, tx_mode_value, tx_mode_value_percent = map(list, zip(*sorted(zip(tx_mode, tx_mode_value_str, tx_mode_value, tx_mode_value_percent), key=length_sort)))
+    tx_mode, tx_mode_value_str, tx_mode_value, tx_mode_value_percent = map(list,
+                                                                           zip(*sorted(zip(tx_mode, tx_mode_value_str,
+                                                                                           tx_mode_value,
+                                                                                           tx_mode_value_percent),
+                                                                                       key=length_sort)))
 
     logger.debug("After sort: {tx_mode} : {tx_mode_value_str} : {tx_mode_value} : {tx_mode_value_percent}".
-                 format(tx_mode=tx_mode, tx_mode_value_str=tx_mode_value_str, tx_mode_value=tx_mode_value, tx_mode_value_percent=tx_mode_value_percent))
+                 format(tx_mode=tx_mode,
+                        tx_mode_value_str=tx_mode_value_str,
+                        tx_mode_value=tx_mode_value,
+                        tx_mode_value_percent=tx_mode_value_percent))
 
     tx_mode = [s.replace('v_tx_mode_', '') for s in tx_mode]
     tx_mode = [s.replace('AAA', '') for s in tx_mode]
@@ -1357,7 +1373,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("TX Mode Histogram")
     report.build_table_title()
 
-    df_tx_mode = pd.DataFrame({" TX Mode ": [k for k in tx_mode], " Total Packets ": [i for i in tx_mode_value],
+    df_tx_mode = pd.DataFrame({" TX Mode ": [k for k in tx_mode],
+                               " Total Packets ": [i for i in tx_mode_value],
                                " Percentage ": [j for j in tx_mode_value_percent]})
 
     report.set_table_dataframe(df_tx_mode)
@@ -1424,13 +1441,21 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             rx_bw_value_percent.append(round((rx_bw_count / rx_bw_total_count) * 100, 2))
 
     logger.debug("Before sort rx bw: {rx_bw} : {rx_bw_value_str} : {rx_bw_value} : {rx_bw_value_percent}".
-                 format(rx_bw=rx_bw, rx_bw_value_str=rx_bw_value_str, rx_bw_value=rx_bw_value, rx_bw_value_percent=rx_bw_value_percent))
+                 format(rx_bw=rx_bw,
+                        rx_bw_value_str=rx_bw_value_str,
+                        rx_bw_value=rx_bw_value,
+                        rx_bw_value_percent=rx_bw_value_percent))
 
     # see rx_mcs for detales
-    rx_bw, rx_bw_value_str, rx_bw_value, rx_bw_value_percent = map(list, zip(*sorted(zip(rx_bw, rx_bw_value_str, rx_bw_value, rx_bw_value_percent), key=num_sort)))
+    rx_bw, rx_bw_value_str, rx_bw_value, rx_bw_value_percent = map(list,
+                                                                   zip(*sorted(zip(rx_bw, rx_bw_value_str, rx_bw_value,
+                                                                                   rx_bw_value_percent), key=num_sort)))
 
     logger.debug("After sort rx bw: {rx_bw} : {rx_bw_value_str} : {rx_bw_value} : {rx_bw_value_percent}".
-                 format(rx_bw=rx_bw, rx_bw_value_str=rx_bw_value_str, rx_bw_value=rx_bw_value, rx_bw_value_percent=rx_bw_value_percent))
+                 format(rx_bw=rx_bw,
+                        rx_bw_value_str=rx_bw_value_str,
+                        rx_bw_value=rx_bw_value,
+                        rx_bw_value_percent=rx_bw_value_percent))
 
     # rx_bw.sort(key=num_sort)
 
@@ -1506,13 +1531,21 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             tx_bw_value_percent.append(round((tx_bw_count / tx_bw_total_count) * 100, 2))
 
     logger.debug("Before sort tx bw: {tx_bw} : {tx_bw_value_str} : {tx_bw_value} : {tx_bw_value_percent}".
-                 format(tx_bw=tx_bw, tx_bw_value_str=tx_bw_value_str, tx_bw_value=tx_bw_value, tx_bw_value_percent=tx_bw_value_percent))
+                 format(tx_bw=tx_bw,
+                        tx_bw_value_str=tx_bw_value_str,
+                        tx_bw_value=tx_bw_value,
+                        tx_bw_value_percent=tx_bw_value_percent))
 
     # see rx_mcs for detales
-    tx_bw, tx_bw_value_str, tx_bw_value, tx_bw_value_percent = map(list, zip(*sorted(zip(tx_bw, tx_bw_value_str, tx_bw_value, tx_bw_value_percent), key=num_sort)))
+    tx_bw, tx_bw_value_str, tx_bw_value, tx_bw_value_percent = map(list,
+                                                                   zip(*sorted(zip(tx_bw, tx_bw_value_str, tx_bw_value,
+                                                                                   tx_bw_value_percent), key=num_sort)))
 
     logger.debug("After sort tx bw: {tx_bw} : {tx_bw_value_str} : {tx_bw_value} : {tx_bw_value_percent}".
-                 format(tx_bw=tx_bw, tx_bw_value_str=tx_bw_value_str, tx_bw_value=tx_bw_value, tx_bw_value_percent=tx_bw_value_percent))
+                 format(tx_bw=tx_bw,
+                        tx_bw_value_str=tx_bw_value_str,
+                        tx_bw_value=tx_bw_value,
+                        tx_bw_value_percent=tx_bw_value_percent))
 
     # tx_bw.sort(key=num_sort)
 
@@ -1522,7 +1555,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("TX BW Histogram")
     report.build_table_title()
 
-    df_tx_bw = pd.DataFrame({"TX BW": [k for k in tx_bw], " Total Packets ": [i for i in tx_bw_value],
+    df_tx_bw = pd.DataFrame({"TX BW": [k for k in tx_bw],
+                             " Total Packets ": [i for i in tx_bw_value],
                              " Percentage ": [j for j in tx_bw_value_percent]})
 
     report.set_table_dataframe(df_tx_bw)
@@ -1594,7 +1628,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("RX NSS Histogram")
     report.build_table_title()
 
-    df_rx_nss = pd.DataFrame({" RX NSS ": [k for k in rx_nss], " Total Packets ": [i for i in rx_nss_value],
+    df_rx_nss = pd.DataFrame({" RX NSS ": [k for k in rx_nss],
+                              " Total Packets ": [i for i in rx_nss_value],
                               " Percentage ": [j for j in rx_nss_value_percent]})
 
     report.set_table_dataframe(df_rx_nss)
@@ -1666,7 +1701,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("TX NSS Histogram")
     report.build_table_title()
 
-    df_tx_nss = pd.DataFrame({" TX NSS ": [k for k in tx_nss], " Total Packets ": [i for i in tx_nss_value],
+    df_tx_nss = pd.DataFrame({" TX NSS ": [k for k in tx_nss],
+                              " Total Packets ": [i for i in tx_nss_value],
                               " Percentage ": [j for j in tx_nss_value_percent]})
 
     report.set_table_dataframe(df_tx_nss)
@@ -1731,7 +1767,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             rx_mcs_value_percent.append(round((rx_mcs_count / rx_mcs_total_count) * 100, 2))
 
     logger.info("Before sort rx MCS {rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
-                format(rx_mcs=rx_mcs, rx_mcs_value_str=rx_mcs_value_str, rx_mcs_value=rx_mcs_value, rx_mcs_value_percent=rx_mcs_value_percent))
+                format(rx_mcs=rx_mcs,
+                       rx_mcs_value_str=rx_mcs_value_str,
+                       rx_mcs_value=rx_mcs_value,
+                       rx_mcs_value_percent=rx_mcs_value_percent))
 
     #
     zip_rx_mcs = zip(rx_mcs, rx_mcs_value_str, rx_mcs_value, rx_mcs_value_percent)
@@ -1749,7 +1788,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     rx_mcs, rx_mcs_value_str, rx_mcs_value, rx_mcs_value_percent = map(list, res_mcs)
 
     logger.info("After sort rx MCS {rx_mcs} : {rx_mcs_value_str} : {rx_mcs_value} : {rx_mcs_value_percent}".
-                format(rx_mcs=rx_mcs, rx_mcs_value_str=rx_mcs_value_str, rx_mcs_value=rx_mcs_value, rx_mcs_value_percent=rx_mcs_value_percent))
+                format(rx_mcs=rx_mcs,
+                       rx_mcs_value_str=rx_mcs_value_str,
+                       rx_mcs_value=rx_mcs_value,
+                       rx_mcs_value_percent=rx_mcs_value_percent))
 
     rx_mcs = [s.replace('v_rx_mcs_', 'MCS ') for s in rx_mcs]
 
@@ -1760,7 +1802,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("RX MCS Histogram")
     report.build_table_title()
 
-    df_rx_mcs = pd.DataFrame({" RX MCS ": [k for k in rx_mcs], " Total Packets ": [i for i in rx_mcs_value],
+    df_rx_mcs = pd.DataFrame({" RX MCS ": [k for k in rx_mcs],
+                              " Total Packets ": [i for i in rx_mcs_value],
                               " Percentage ": [j for j in rx_mcs_value_percent]})
 
     report.set_table_dataframe(df_rx_mcs)
@@ -1819,13 +1862,22 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             tx_mcs_value_percent.append(round((tx_mcs_count / tx_mcs_total_count) * 100, 2))
 
     logger.debug("Before sort tx MCS: {tx_mcs} : {tx_mcs_value_str} : {tx_mcs_value} : {tx_mcs_value_percent}".
-                 format(tx_mcs=tx_mcs, tx_mcs_value_str=tx_mcs_value_str, tx_mcs_value=tx_mcs_value, tx_mcs_value_percent=tx_mcs_value_percent))
+                 format(tx_mcs=tx_mcs,
+                        tx_mcs_value_str=tx_mcs_value_str,
+                        tx_mcs_value=tx_mcs_value,
+                        tx_mcs_value_percent=tx_mcs_value_percent))
 
     # see rx_mcs for details
-    tx_mcs, tx_mcs_value_str, tx_mcs_value, tx_mcs_value_percent = map(list, zip(*sorted(zip(tx_mcs, tx_mcs_value_str, tx_mcs_value, tx_mcs_value_percent), key=num_sort)))
+    tx_mcs, tx_mcs_value_str, tx_mcs_value, tx_mcs_value_percent = map(list,
+                                                                       zip(*sorted(
+                                                                           zip(tx_mcs, tx_mcs_value_str, tx_mcs_value,
+                                                                               tx_mcs_value_percent), key=num_sort)))
 
     logger.debug("After sort tx MCS: {tx_mcs} : {tx_mcs_value_str} : {tx_mcs_value} : {tx_mcs_value_percent}".
-                 format(tx_mcs=tx_mcs, tx_mcs_value_str=tx_mcs_value_str, tx_mcs_value=tx_mcs_value, tx_mcs_value_percent=tx_mcs_value_percent))
+                 format(tx_mcs=tx_mcs,
+                        tx_mcs_value_str=tx_mcs_value_str,
+                        tx_mcs_value=tx_mcs_value,
+                        tx_mcs_value_percent=tx_mcs_value_percent))
 
     # tx_mcs.sort(key=num_sort)
 
@@ -1835,7 +1887,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("TX MCS Histogram")
     report.build_table_title()
 
-    df_tx_mcs = pd.DataFrame({" TX MCS ": [k for k in tx_mcs], " Total Packets ": [i for i in tx_mcs_value],
+    df_tx_mcs = pd.DataFrame({" TX MCS ": [k for k in tx_mcs],
+                              " Total Packets ": [i for i in tx_mcs_value],
                               " Percentage ": [j for j in tx_mcs_value_percent]})
 
     report.set_table_dataframe(df_tx_mcs)
@@ -1894,10 +1947,14 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                  format(rx_ampdu=rx_ampdu, rx_ampdu_value_str=rx_ampdu_value_str, rx_ampdu_value=rx_ampdu_value))
 
     # see rx_mcs for detales
-    rx_ampdu, rx_ampdu_value_str, rx_ampdu_value = map(list, zip(*sorted(zip(rx_ampdu, rx_ampdu_value_str, rx_ampdu_value), key=num_sort)))
+    rx_ampdu, rx_ampdu_value_str, rx_ampdu_value = map(list,
+                                                       zip(*sorted(zip(rx_ampdu, rx_ampdu_value_str, rx_ampdu_value),
+                                                                   key=num_sort)))
 
     logger.debug("After sort rx AMPDU: {rx_ampdu} : {rx_ampdu_value_str} : {rx_ampdu_value}".
-                 format(rx_ampdu=rx_ampdu, rx_ampdu_value_str=rx_ampdu_value_str, rx_ampdu_value=rx_ampdu_value))
+                 format(rx_ampdu=rx_ampdu,
+                        rx_ampdu_value_str=rx_ampdu_value_str,
+                        rx_ampdu_value=rx_ampdu_value))
 
     # rx_ampdu.sort(key=num_sort)
 
@@ -1919,7 +1976,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("Packets RX with AMPDU Count")
     report.build_table_title()
 
-    df_rx_ampdu = pd.DataFrame({" RX AMPDU ": [k for k in rx_ampdu], " Total Packets ": [i for i in rx_ampdu_value],
+    df_rx_ampdu = pd.DataFrame({" RX AMPDU ": [k for k in rx_ampdu],
+                                " Total Packets ": [i for i in rx_ampdu_value],
                                 " Percentage ": [j for j in rx_ampdu_value_percent]})
 
     report.set_table_dataframe(df_rx_ampdu)
@@ -1980,13 +2038,19 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     logger.debug(tx_ampdu)
 
     logger.debug("Before sort tx AMPDU: {tx_ampdu} : {tx_ampdu_value_str} : {tx_ampdu_value}".
-                 format(tx_ampdu=tx_ampdu, tx_ampdu_value_str=tx_ampdu_value_str, tx_ampdu_value=tx_ampdu_value))
+                 format(tx_ampdu=tx_ampdu,
+                        tx_ampdu_value_str=tx_ampdu_value_str,
+                        tx_ampdu_value=tx_ampdu_value))
 
     # see rx_mcs for detales
-    tx_ampdu, tx_ampdu_value_str, tx_ampdu_value = map(list, zip(*sorted(zip(tx_ampdu, tx_ampdu_value_str, tx_ampdu_value), key=num_sort)))
+    tx_ampdu, tx_ampdu_value_str, tx_ampdu_value = map(list,
+                                                       zip(*sorted(zip(tx_ampdu, tx_ampdu_value_str, tx_ampdu_value),
+                                                                   key=num_sort)))
 
     logger.debug("After sort tx AMPDU: {tx_ampdu} : {tx_ampdu_value_str} : {tx_ampdu_value}".
-                 format(tx_ampdu=tx_ampdu, tx_ampdu_value_str=tx_ampdu_value_str, tx_ampdu_value=tx_ampdu_value))
+                 format(tx_ampdu=tx_ampdu,
+                        tx_ampdu_value_str=tx_ampdu_value_str,
+                        tx_ampdu_value=tx_ampdu_value))
 
     # tx_ampdu.sort(key=num_sort)
     tx_ampdu = [s.replace('tx_ampdu_len_', '') for s in tx_ampdu]
@@ -1998,7 +2062,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("Percent Packets TX with AMPDU Count")
     report.build_table_title()
 
-    df_tx_ampdu = pd.DataFrame({" TX AMPDU ": [k for k in tx_ampdu], " Total Packets ": [i for i in tx_ampdu_value],
+    df_tx_ampdu = pd.DataFrame({" TX AMPDU ": [k for k in tx_ampdu],
+                                " Total Packets ": [i for i in tx_ampdu_value],
                                 " Percentage ": [j for j in tx_ampdu_value_percent]})
 
     report.set_table_dataframe(df_tx_ampdu)
@@ -2062,7 +2127,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.set_table_title("TX MSDU Histogram")
     report.build_table_title()
 
-    df_tx_msdu = pd.DataFrame({" TX MSDU ": [k for k in tx_msdu], " Total Packets ": [i for i in tx_msdu_value],
+    df_tx_msdu = pd.DataFrame({" TX MSDU ": [k for k in tx_msdu],
+                               " Total Packets ": [i for i in tx_msdu_value],
                                " Percentage ": [j for j in tx_msdu_value_percent]})
 
     report.set_table_dataframe(df_tx_msdu)
