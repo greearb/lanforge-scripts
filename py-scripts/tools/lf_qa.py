@@ -18,6 +18,8 @@ import argparse
 from pathlib import Path
 import time
 import logging
+import re
+
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../../")))
 
@@ -100,6 +102,122 @@ class csv_sql:
         parent_path = os.path.dirname(_path)
         return parent_path
 
+    # TODO put a wrapper around all the LANforge pertinate information 
+    # TODO put in traceback on the exceptions.
+    def get_kernel_version_from_meta(sefl, _kpi_path):
+        kernel_version = "NA"
+        logger.info("read meta path for kernel version:  {_kpi_path}".format(_kpi_path=_kpi_path))
+        try:
+            meta_data_path = _kpi_path + '/' + '/meta.txt'
+            meta_data_fd = open(meta_data_path, 'r')
+            for line in meta_data_fd:
+                if "lanforge_kernel_version:" in line:
+                    kernel_version = line.replace("lanforge_kernel_version:", "")
+                    kernel_version = test_run.strip()
+                    logger.info("meta_data_path: {meta_data_path} Kernel Version: {kernel}".format(
+                        meta_data_path=meta_data_path, kernel=kernel_version))
+                    break
+            meta_data_fd.close()
+        except BaseException:
+            logger.info("exception reading meta get_kernel_version_from_meta {_kpi_path}".format(
+                _kpi_path=_kpi_path))
+        return kernel_version                 
+
+    def get_gui_info_from_meta(sefl, _kpi_path):
+        gui_version = "NA"
+        gui_build_date = "NA"
+        gui_build_date
+        logger.debug("read meta path for gui version:  {_kpi_path}".format(_kpi_path=_kpi_path))
+        try:
+            meta_data_path = _kpi_path + '/' + '/meta.txt'
+            meta_data_fd = open(meta_data_path, 'r')
+            for line in meta_data_fd:
+                if "lanforge_gui_version_full:" in line:
+                    # gui_version = line.replace("lanforge_gui_version_full:", "")
+                    # gui_version = test_run.strip()
+
+                    pattern = "\"BuildVersion\" : \"(\\S+)\""
+                    match = re.search(pattern, line)
+                    if (match is not None):
+                        gui_version = match.group(1)
+
+                    pattern = "\"BuildDate\" : \"(\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+)\""
+                    match = re.search(pattern, line)
+                    if (match is not None):
+                        gui_build_date = match.group(1)
+
+
+                    logger.info("meta_data_path: {meta_data_path} GUI Version: {gui_version} GUI Build Date {gui_build_date}".format(
+                        meta_data_path=meta_data_path, gui_version=gui_version,gui_build_date=gui_build_date))
+
+                    break
+            meta_data_fd.close()
+        
+        except BaseException:
+            logger.info("exception reading meta get_gui_version_from_meta {_kpi_path}".format(
+                _kpi_path=_kpi_path))
+        return gui_version, gui_build_date                 
+
+    def get_server_info_from_meta(sefl, _kpi_path):
+        server_version = "NA"
+        server_build_date = "NA"
+        logger.debug("read meta path for server version:  {_kpi_path}".format(_kpi_path=_kpi_path))
+        try:
+            meta_data_path = _kpi_path + '/' + '/meta.txt'
+            meta_data_fd = open(meta_data_path, 'r')
+            for line in meta_data_fd:
+                if "lanforge_server_version_full:" in line:
+
+                    pattern = "Version: (\\S+)"
+                    match = re.search(pattern, line)
+                    if (match is not None):
+                        server_version = match.group(1)
+
+                    pattern = "Compiled on:  (\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+)"
+
+                    match = re.search(pattern, line)
+                    if (match  is not None):
+                        server_build_date = match.group(1)
+
+
+                    logger.info("meta_data_path: {meta_data_path} server Version: {server_version}".format(
+                        meta_data_path=meta_data_path, server_version=server_version))
+                    logger.info("meta_data_path: {meta_data_path} server_build_date: {server_build}".format(
+                        meta_data_path=meta_data_path, server_build=server_build_date))
+                    
+                    break
+
+            meta_data_fd.close()
+        except BaseException:
+            logger.info("exception reading meta get_gui_server_from_meta {_kpi_path}".format(
+                _kpi_path=_kpi_path))
+        return server_version, server_build_date                
+
+    def get_test_dir_info_from_meta(sefl, _kpi_path):
+        test_dir = "NA"
+        logger.debug("read meta path for test dir:  {_kpi_path}".format(_kpi_path=_kpi_path))
+        try:
+            meta_data_path = _kpi_path + '/' + '/meta.txt'
+            meta_data_fd = open(meta_data_path, 'r')
+            for line in meta_data_fd:
+                if "file_meta:" in line:
+                    split_line = line.split('/')
+                    test_dir = split_line[-2]
+                    logger.info("meta_data_path: {meta_data_path} test_dir: {test_dir}".format(
+                        meta_data_path=meta_data_path, test_dir=test_dir))
+                    break                        
+
+            meta_data_fd.close()
+        except BaseException:
+            logger.info("exception reading meta get_gui_server_from_meta {_kpi_path}".format(
+                _kpi_path=_kpi_path))
+        return test_dir                
+
+
+    #def get_server_from_meta(sefl, _kpi_path):
+    #def get_gui_from_meta(sefl, _kpi_path):
+
+
     def get_test_id_test_tag(self, _kpi_path):
         test_id = "NA"
         test_tag = "NA"
@@ -122,7 +240,7 @@ class csv_sql:
                 "WARNING: is test-tag set in Manual Test?, exception reading test-tag in csv _kpi_path {kpi_path}, try meta.txt".format(
                     kpi_path=_kpi_path))
 
-        # if test_tag still NA then try meta file
+        # if test_tag still NA then try meta file after 5.4.3 the test_tag should be in meta.txt
         try:
             if test_tag == "NA":
                 _kpi_path = _kpi_path.replace('kpi.csv', '')
@@ -148,6 +266,7 @@ class csv_sql:
                     test_run = test_run.strip()
                     logger.info("meta_data_path: {meta_data_path} test_run: {test_run}".format(
                         meta_data_path=meta_data_path, test_run=test_run))
+                    break
             meta_data_fd.close()
         except BaseException:
             logger.info("exception reading test_run from {_kpi_path}".format(
@@ -161,6 +280,8 @@ class csv_sql:
                 logger.info("exception getting test_run from kpi_path")
             logger.info("Try harder test_run: {test_run} _kpi_path: {_kpi_path}".format(test_run=test_run, _kpi_path=_kpi_path))
         return test_run
+
+    # TODO retrieve the kernel, GUI, and Server information
 
     def get_test_tag_from_meta(self, _kpi_path):
         test_tag = "NA"
@@ -247,6 +368,7 @@ class csv_sql:
                         html_path = os.path.join(parent_path, "readme.html")
                         html_path = self.server + html_path.replace(self.cut, '')
                     else:
+                        # TODO remove the fixed path code
                         # try relative path
                         parent_path = os.path.dirname(pdf_info)
                         parent_name = os.path.basename(parent_path)
@@ -492,9 +614,21 @@ class csv_sql:
             df_kpi_tmp['kpi_path'] = _kpi_path
             test_run = self.get_test_run_from_meta(_kpi_path)
             df_kpi_tmp['test_run'] = test_run
+
             use_meta_test_tag, test_tag = self.get_test_tag_from_meta(_kpi_path)
             if use_meta_test_tag:
                 df_kpi_tmp['test-tag'] = test_tag
+
+            test_dir = self.get_test_dir_info_from_meta(_kpi_path)
+            # test_dir = test_dir.replace('-',' ')
+            df_kpi_tmp['test_dir'] = test_dir
+
+            logger.info("test_dir: {test_dir}".format(test_dir=test_dir))
+
+            df_kpi_tmp['kernel'] = self.get_kernel_version_from_meta(_kpi_path)
+            df_kpi_tmp['gui_ver'], df_kpi_tmp['gui_build_date'] = self.get_gui_info_from_meta(_kpi_path)
+            df_kpi_tmp['server_ver'], df_kpi_tmp['server_build_date'] = self.get_server_info_from_meta(_kpi_path)
+
             df_kpi_tmp = df_kpi_tmp.append(df_kpi_tmp, ignore_index=True)
             self.df = self.df.append(df_kpi_tmp, ignore_index=True)
 
@@ -786,7 +920,9 @@ class csv_sql:
                                     custom_data=[
                                         'numeric-score',
                                         'Subtest-Pass',
-                                        'Subtest-Fail'],
+                                        'Subtest-Fail',
+                                        'kernel'
+                                        ],
                                     color="short-description",
                                     hover_name="short-description",
                                     size_max=60)).update_traces(
@@ -794,6 +930,7 @@ class csv_sql:
 
                             kpi_fig.update_traces(
                                 hovertemplate="<br>".join([
+                                    "kernel-version: %{customdata[4]}",
                                     "numeric-score: %{customdata[0]}",
                                     "Subtest-Pass: %{customdata[1]}",
                                     "Subtest-Fail: %{customdata[2]}"
@@ -823,6 +960,16 @@ class csv_sql:
                                     df_tmp,
                                     x="Date",
                                     y="numeric-score",
+                                    custom_data=[
+                                        'Date',
+                                        'test_dir',
+                                        'numeric-score',
+                                        'kernel',
+                                        'gui_ver',
+                                        'gui_build_date',
+                                        'server_ver',
+                                        'server_build_date'
+                                        ],
                                     color="short-description",
                                     hover_name="short-description",
                                     size_max=60)).update_traces(
@@ -835,6 +982,20 @@ class csv_sql:
                                 yaxis_title="{units}".format(units=units_list[-1]),
                                 xaxis={'type': 'date'}
                             )
+
+                            kpi_fig.update_traces(
+                                hovertemplate="<br>".join([
+                                    "Date: %{customdata[0]}",
+                                    "test_dir: %{customdata[1]}",
+                                    "numeric-score: %{customdata[2]}",
+                                    "kernel-version: %{customdata[3]}",
+                                    "gui-version: %{customdata[4]}",
+                                    "gui-build-date: %{customdata[5]}",
+                                    "server-version: %{customdata[6]}",
+                                    "server-build-date: %{customdata[7]}",
+                                ])
+                            )
+
                             kpi_fig.update_layout(autotypenumbers='convert types')
 
                             self.generate_png(df_tmp=df_tmp,
