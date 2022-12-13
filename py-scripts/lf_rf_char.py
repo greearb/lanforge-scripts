@@ -1184,8 +1184,23 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         report.build_graph()
 
     # tx-rate / rx-rate negotiated rates line chart
-    tx_rates = [float(r[0: r.find(" ")]) for r in rf_char.tx_rate if "Mbps" in r]
-    rx_rates = [float(r[0: r.find(" ")]) for r in rf_char.rx_rate if "Mbps" in r]
+    rx_rates : list[float] = []
+    tx_rates : list[float] = []
+
+    for index in range(0, min(len(rf_char.rx_rate), len(rf_char.tx_rate))):
+        rx_str = rf_char.rx_rate[index]
+        tx_str = rf_char.tx_rate[index]
+        # print ("t:[{}] r:[{}] ".format(tx_str, rx_str))
+        if "Mbps" in rx_str:
+            rx_rates.append(float(rx_str[0 : rx_str.find(" ")]))
+        else:
+            rx_rates.append(0.0)
+
+        if "Mbps" in tx_str:
+            tx_rates.append(float(tx_str[0 : tx_str.find(" ")]))
+        else:
+            tx_rates.append(0.0)
+
     data_set = [tx_rates, rx_rates]
     label = ["TX-Rate", "RX-Rate"]
     report.set_table_title("Negotiated TX/RX-Rates")
