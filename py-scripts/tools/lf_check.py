@@ -1194,19 +1194,19 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 text = open(stdout_log_txt).read()
                 # for 5.4.3 only TestTag was not present
                 if 'ERROR:  Could not find component: TestTag' in text:
-                    self.test_result = "Success"
+                    self.test_result = "Finished"
                     background = self.background_green
                 # probe command for test_ip_variable_time.py has
                 # the word alloc error and erros in it
                 elif 'alloc error' in text:
-                    self.test_result = "Success"
+                    self.test_result = "Finished"
                     background = self.background_green
                 # leave the space in after error to not pick up tx
                 # errors or rx errors
                 elif 'ERROR: ' in text:
                     # TODO check for return code from script
                     if 'New and Old channel width are same' in text:
-                        self.test_result = "Success"
+                        self.test_result = "Finished"
                         background = self.background_green
                     else:
                         self.test_result = "Some Tests Failed"
@@ -1219,7 +1219,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     background = self.background_orange
                 elif 'error ' in text.lower():
                     if 'passes: zero test results' in text:
-                        self.test_result = "Success"
+                        self.test_result = "Finished"
                         background = self.background_green
                     else:
                         self.test_result = "Test Errors"
@@ -1228,7 +1228,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     self.test_result = "Some Tests Failed"
                     background = self.background_orange
                 else:
-                    self.test_result = "Success"
+                    self.test_result = "Finished"
                     background = self.background_green
             else:
                 # if stdout empty that is a failure also
@@ -1237,7 +1237,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # Total up test, tests success, tests failure, tests
         # timeouts
         self.tests_run += 1
-        if self.test_result == "Success":
+        if self.test_result == "Finished":
             self.tests_success += 1
         elif self.test_result == "Failure":
             self.tests_failure += 1
@@ -1307,7 +1307,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
 
         # need to have tests return error messages
-        if self.test_result != "Success":
+        if self.test_result != "Finished":
             self.junit_results += """
                 <failure message="{result} {link}">
                 </failure>""".format(result=self.test_result,link=stdout_log_link)
@@ -1874,7 +1874,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
     lf_test_summary = pd.DataFrame()
     lf_test_summary['Tests Run'] = [check.tests_run]
-    lf_test_summary['Success'] = [check.tests_success]
+    lf_test_summary['Finished'] = [check.tests_success]
     lf_test_summary['Some Tests Failed'] = [check.tests_some_failure]
     lf_test_summary['Failure'] = [check.tests_failure]
     lf_test_summary['Timeout'] = [check.tests_timeout]
