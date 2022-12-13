@@ -580,6 +580,8 @@ class lf_rf_char(Realm):
         self.tx_pkts = []
         self.tx_retries = []
         self.tx_failed = []
+        self.tx_rate = []
+        self.rx_rate = []
 
         self.rssi_signal = []
         self.rssi_1 = []
@@ -658,6 +660,8 @@ class lf_rf_char(Realm):
             self.tx_retries.append(json_vap_port_stats["interface"]["wifi retries"] - tx_retries_previous)
             tx_retries_previous = json_vap_port_stats["interface"]["wifi retries"]
             self.tx_failed.append(round(json_vap_port_stats["interface"]["tx-failed %"], 2))
+            self.rx_rate.append(json_vap_port_stats["interface"]["rx-rate"])
+            self.tx_rate.append(json_vap_port_stats["interface"]["tx-rate"])
             # calculated the transmitted packets compared to number of retries
 
             # take samples of RSSI
@@ -1168,6 +1172,46 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             _legend_ncol=1
         )
 
+        graph_png = graph.build_line_graph()
+        report.set_graph_image(graph_png)
+        report.move_graph_image()
+        report.build_graph()
+
+    # tx-rate / rx-rate negotiated rates line chart
+    tx_rates = [float(r[0: r.find(" ")]) for r in rf_char.tx_rate if "Mbps" in r]
+    rx_rates = [float(r[0: r.find(" ")]) for r in rf_char.rx_rate if "Mbps" in r]
+    data_set = [tx_rates, rx_rates]
+    label = ["TX-Rate", "RX-Rate"]
+    report.set_table_title("Negotiated TX/RX-Rates")
+    report.build_table_title()
+    data_rates_frame = pd.DataFrame({" Time Interval (s)": [t for t in tx_interval],
+                                     " Time ": [it for it in tx_interval_time],
+                                     " TX-Rate ": [k for k in tx_rates],
+                                     " RX-Rate ": [i for i in rx_rates]})
+    report.set_table_dataframe(data_rates_frame)
+    report.build_table()
+    report.set_csv_filename("data-rates.csv")
+    report.write_dataframe_to_csv()
+    if html_file:
+        graph = lf_line_graph(
+            _data_set=data_set,
+            _xaxis_name="Time Interval (s)",
+            _yaxis_name="Mbps",
+            _reverse_y=False,
+            _xaxis_categories=tx_interval,
+            _graph_title="Negotiated TX/RX rates",
+            _title_size=16,
+            _graph_image_name="data-rates",
+            _label=label,
+            _font_weight='bold',
+            _color=['blue', 'orange', 'green', 'red', 'cyan'],
+            _figsize=(17, 12),
+            _xaxis_step=1,
+            _text_font=7,
+            _legend_loc="upper left",
+            _legend_box=(1, 0),
+            _legend_ncol=1
+        )
         graph_png = graph.build_line_graph()
         report.set_graph_image(graph_png)
         report.move_graph_image()
