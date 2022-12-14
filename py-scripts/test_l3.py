@@ -186,6 +186,7 @@ class L3VariableTime(Realm):
                  no_cleanup=False,
                  use_existing_station_lists=False,
                  existing_station_lists=None,
+                 wait_for_ip_sec="120s",
 
                  # ap module
                  ap_read = False,
@@ -265,8 +266,7 @@ class L3VariableTime(Realm):
         self.radio_name_list = radio_name_list
         self.number_of_stations_per_radio_list = number_of_stations_per_radio_list
         # self.local_realm = realm.Realm(lfclient_host=self.host, lfclient_port=self.port, debug_=debug_on)
-        self.polling_interval_seconds = self.duration_time_to_seconds(
-            polling_interval)
+        self.polling_interval_seconds = self.duration_time_to_seconds(polling_interval)
         self.cx_profile = self.new_l3_cx_profile()
         self.multicast_profile = self.new_multicast_profile()
         self.multicast_profile.name_prefix = "MLT-"
@@ -296,6 +296,9 @@ class L3VariableTime(Realm):
         self.no_cleanup = no_cleanup
         self.use_existing_station_lists = use_existing_station_lists
         self.existing_station_lists = existing_station_lists
+
+        self.wait_for_ip_sec = self.duration_time_to_seconds(wait_for_ip_sec)
+
 
         self.attenuators = attenuators
         self.atten_vals = atten_vals
@@ -782,7 +785,7 @@ class L3VariableTime(Realm):
         logger.debug("temp_stations_list_with_side_b {temp_stations_list_with_side_b}".format(
             temp_stations_list_with_side_b=temp_stations_list_with_side_b))
 
-        if self.wait_for_ip(temp_stations_list_with_side_b, timeout_sec=120):
+        if self.wait_for_ip(temp_stations_list_with_side_b, timeout_sec=self.wait_for_ip_sec):
             logger.info("ip's acquired")
         else:
             # No reason to continue
@@ -893,7 +896,7 @@ class L3VariableTime(Realm):
                     while cur_time < end_time:
                         # interval_time = cur_time + datetime.timedelta(seconds=5)
                         interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
-                        # logger.infi("polling_interval_seconds {}".format(self.polling_interval_seconds))
+                        # logger.info("polling_interval_seconds {}".format(self.polling_interval_seconds))
 
                         while cur_time < interval_time:
                             cur_time = datetime.datetime.now()
@@ -2194,6 +2197,10 @@ Setting wifi_settings per radio
                         nargs=1,
                         help='--station_list [list of stations] , use the stations in the list , multiple station lists may be entered')
 
+    # Wait for IP made configurable
+    test_l3_parser.add_argument('--wait_for_ip_sec', help='--wait_for_ip_sec <seconds>  default : 120s ', default="120s")
+
+
     # logging configuration
     test_l3_parser.add_argument(
         "--lf_logger_config_json",
@@ -2533,6 +2540,7 @@ Setting wifi_settings per radio
         no_cleanup=args.no_cleanup,
         use_existing_station_lists=args.use_existing_station_list,
         existing_station_lists=existing_station_lists,
+        wait_for_ip_sec=args.wait_for_ip_sec,
         ap_read = args.ap_read,
         ap_module = args.ap_module,
         ap_test_mode=args.ap_test_mode,
