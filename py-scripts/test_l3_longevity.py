@@ -198,7 +198,8 @@ class L3VariableTime(Realm):
                  _capture_signal_list=None,
                  no_cleanup=False,
                  use_existing_station_lists=False,
-                 existing_station_lists=None):
+                 existing_station_lists=None,
+                 wait_for_ip_sec="120s"):
         self.eth_endps = []
         self.cx_names = []
         self.total_stas = 0
@@ -292,6 +293,8 @@ class L3VariableTime(Realm):
         self.no_cleanup = no_cleanup
         self.use_existing_station_lists = use_existing_station_lists
         self.existing_station_lists = existing_station_lists
+
+        self.wait_for_ip_sec = self.duration_time_to_seconds(wait_for_ip_sec)
 
         self.attenuators = attenuators
         self.atten_vals = atten_vals
@@ -1184,7 +1187,7 @@ class L3VariableTime(Realm):
         print("temp_stations_list_with_side_b {temp_stations_list_with_side_b}".format(
             temp_stations_list_with_side_b=temp_stations_list_with_side_b))
 
-        if self.wait_for_ip(temp_stations_list_with_side_b, timeout_sec=120):
+        if self.wait_for_ip(temp_stations_list_with_side_b, timeout_sec=self.wait_for_ip_sec):
             print("ip's acquired")
         else:
             # No reason to continue
@@ -3233,11 +3236,14 @@ Note: for enable flags can us && as separator in vscode
                         nargs=1,
                         help='--station_list [list of stations] , use the stations in the list , multiple station lists may be entered')
 
+    # Wait for IP made configurable
+    parser.add_argument('--wait_for_ip_sec', help='--wait_for_ip_sec <seconds>  default : 120s ', default="120s")
+
+    # logging configuration
     parser.add_argument('--log_level',
                         default=None,
                         help='Set logging level: debug | info | warning | error | critical')
 
-    # logging configuration
     parser.add_argument(
         "--lf_logger_config_json",
         help="--lf_logger_config_json <json file> , json configuration of logger")
@@ -3634,6 +3640,7 @@ Note: for enable flags can us && as separator in vscode
         collect_layer3_data=collect_layer3_data,
         use_existing_station_lists=args.use_existing_station_list,
         existing_station_lists=existing_station_lists,
+        wait_for_ip_sec=args.wait_for_ip_sec,
         ap_scheduler_stats=ap_scheduler_stats,
         ap_ofdma_stats=ap_ofdma_stats,
         ap_read=ap_read,
