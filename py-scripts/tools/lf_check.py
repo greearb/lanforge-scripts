@@ -1153,10 +1153,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 # LANforge information is a list thus [0]
                 meta_data_fd.write('$ LANforge Information\n')
                 meta_data_fd.write(
-                    "lanforge_system_node: {lanforge_system_node}\n".format(
+                    "$ lanforge_system_node: {lanforge_system_node}\n".format(
                         lanforge_system_node=self.lanforge_system_node_version[0]))
                 meta_data_fd.write(
-                    "lanforge_kernel_version: {lanforge_kernel_version}\n".format(
+                    "$ lanforge_kernel_version: {lanforge_kernel_version}\n".format(
                         lanforge_kernel_version=self.lanforge_kernel_version[0]))
 
                 meta_data_fd.write(
