@@ -36,7 +36,7 @@ NOTES: getting radio information:
  http://192.168.100.116:8080/radiostatus/all | json_pp  , where --user
  "USERNAME:PASSWORD"
 
-2. (using Python) 
+2. (using Python)
     request_command = 'http://{lfmgr}:{port}/radiostatus/all'.format(lfmgr=self.lf_mgr, port=self.lf_port)
     request = requests.get( request_command, auth=(self.lf_user, self.lf_passwd))
     lanforge_radio_json = request.json()
@@ -68,7 +68,7 @@ user@user:~/git/lf-scripts/py-json/LANforge$ curl -H 'Accept: application/json' 
       "GitVersion" : "0aab99fc6974b6abf805a05dadacf78dec228f94",
       "JsonVersion" : "1.0.26808"
    },
-user@user:~/git/lf-scripts/py-json/LANforge$ 
+user@user:~/git/lf-scripts/py-json/LANforge$
 
 
 curl -u 'user:pass' -H 'Accept: application/json' http://<lanforge ip>:8080 | json_pp  | grep -A 7 "VersionInfo"
@@ -310,7 +310,7 @@ class lf_check():
         self.test_run = ""
         self.hostname = ""
 
-    def set_radio_firmware_list(self,radio_firmware_list):
+    def set_radio_firmware_list(self, radio_firmware_list):
         self.radio_firmware_list = radio_firmware_list.copy()
 
     def get_test_rig(self):
@@ -499,7 +499,6 @@ http://{hostname}/{report}
 
 """.format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, suite=self.test_suite, db=self.database_sqlite, hostname=self.hostname, report=report_url)
 
-
         else:
             message_txt = """Results from {hostname}:
 Suite: {suite}
@@ -513,7 +512,7 @@ http://{hostname}/{report}
         # Put in report information current two methods supported,
         if "NA" not in self.qa_report_html:
             message_txt += """
-            
+
 QA Report Dashboard:
 http://{ip_qa}/{qa_url}
 
@@ -577,11 +576,12 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
     def finish_junit_testsuites(self):
         self.junit_results += """
         </testsuites>
-        """        
+        """
+
     def start_junit_testsuite(self):
         self.junit_results += """
         <testsuite name="{suite}">
-        """.format(suite=self.test_suite)        
+        """.format(suite=self.test_suite)
 
     def finish_junit_testsuite(self):
         self.junit_results += """
@@ -642,7 +642,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     "EXITING ERROR test_rig_parameters not in rig json")
                 exit(1)
         else:
-            self.logger.info("rig json file not present, Are you running with only a test.json file")                
+            self.logger.info("rig json file not present, Are you running with only a test.json file")
 
     # read dut configuration
     def read_json_dut(self):
@@ -657,10 +657,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 self.logger.info("EXITING ERROR test_dut not in dut json {}")
                 exit(1)
         else:
-            self.logger.info("dut json file not present, Are you running with only a test.json file")                
-
+            self.logger.info("dut json file not present, Are you running with only a test.json file")
 
     # Top Level for reading the tests to run
+
     def read_json_test(self):
         if "test_suites" in self.json_test:
             self.logger.info(
@@ -1048,7 +1048,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         except IsADirectoryError:
             self.logger.info("IsADirectoryError on execution of {command}".format(command=command_to_run))
 
-        # This code will read the output as the script is running and log 
+        # This code will read the output as the script is running and log
         for line in iter(summary.stdout.readline, ''):
             self.logger.info(line)
             summary_output += line
@@ -1065,13 +1065,13 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         os.chdir(self.scripts_wd)
         self.logger.info("Current Working Directory {}".format(os.getcwd()))
 
-        # Since using "wait" above the return code will be set. 
+        # Since using "wait" above the return code will be set.
         try:
-            return_code = summary.returncode 
+            return_code = summary.returncode
             if return_code == '0':
-                self.logger.info("Script returned pass return code: {return_code} for test: {command}".format(return_code=return_code,command=command_to_run))
-            else: 
-                self.logger.info("Script returned non-zero return code: {return_code} for test: {command}".format(return_code=return_code,command=command_to_run))
+                self.logger.info("Script returned pass return code: {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
+            else:
+                self.logger.info("Script returned non-zero return code: {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
 
         except BaseException as err:
             self.logger.info("issue reading return code err:{err}".format(err=err))
@@ -1086,7 +1086,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             "Test end time {time}".format(
                 time=self.test_end_time))
         time_delta = end_time - start_time
-        self.duration_sec_us = "{seconds}.{micro_sec}".format(seconds=time_delta.seconds,micro_sec=time_delta.microseconds)
+        self.duration_sec_us = "{seconds}.{micro_sec}".format(seconds=time_delta.seconds, micro_sec=time_delta.microseconds)
         minutes, seconds = divmod(time_delta.seconds, 60)
         hours, minutes = divmod(minutes, 60)
         self.duration = "{day}d {hours}h {minutes}m {seconds}s {msec} us".format(
@@ -1160,8 +1160,8 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                         lanforge_kernel_version=self.lanforge_kernel_version[0]))
 
                 meta_data_fd.write(
-                    "$ radio_firmware:  {radio_firmware}\n".format( radio_firmware=self.radio_firmware_list)
-                )                        
+                    "$ radio_firmware:  {radio_firmware}\n".format(radio_firmware=self.radio_firmware_list)
+                )
                 meta_data_fd.write(
                     "$ lanforge_fedora_version: {lanforge_fedora_version}\n".format(
                         lanforge_fedora_version=self.lanforge_fedora_version[0]))
@@ -1171,14 +1171,14 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 meta_data_fd.write(
                     "$ lanforge_server_version_full: {lanforge_server_version_full}\n".format(
                         lanforge_server_version_full=self.lanforge_server_version_full[0]))
-                
+
                 meta_data_fd.close()
             except ValueError as err:
                 self.logger.critical("unable to write meta {meta_data_path} : {msg})".format(meta_data_path=meta_data_path, msg=err))
             except BaseException as err:
                 self.logger.critical("BaseException unable to write meta {meta_data_path} : {msg}".format(meta_data_path=meta_data_path, msg=err))
 
-        # Code for checking if the script passed or failed much of the 
+        # Code for checking if the script passed or failed much of the
         # code is checking the output.
         # Timeout needs to be reported and not overwriten
         if self.test_result == "TIMEOUT":
@@ -1187,15 +1187,15 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             self.test_result = "Time Out"
             background = self.background_purple
         elif return_code == 1:
-            self.logger.error("Test returne fail  return code {return_code} for test: {command}".format(return_code=return_code,command=command_to_run))
+            self.logger.error("Test returne fail  return code {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
             self.test_result = "Script retured Fail"
             background = self.background_red
         elif return_code == 2:
-            self.logger.error("Incorrect args:  return code {return_code} for test: {command}".format(return_code=return_code,command=command_to_run))
+            self.logger.error("Incorrect args:  return code {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
             self.test_result = "Incorrect args"
             background = self.background_orange
         elif return_code != 0:
-            self.logger.error("None zero return code:  return code {return_code} for test: {command}".format(return_code=return_code,command=command_to_run))
+            self.logger.error("None zero return code:  return code {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
             self.test_result = "return code {return_code}".format(return_code=return_code)
             background = self.background_orange
         else:
@@ -1257,7 +1257,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             self.tests_failure += 1
         elif self.test_result == "Incorrect args":
             self.tests_failure += 1
-        elif "return code" in self.test_result: 
+        elif "return code" in self.test_result:
             self.tests_failure += 1
         elif self.test_result == "TIMEOUT":
             self.tests_timeout += 1
@@ -1282,45 +1282,44 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 '/home/lanforge', '')
         # use relative path for reporting
         else:
-            stdout_log_basename =  os.path.basename(stdout_log_txt)
+            stdout_log_basename = os.path.basename(stdout_log_txt)
             stdout_log_parent_path = os.path.dirname(stdout_log_txt)
             stdout_log_parent_basename = os.path.basename(stdout_log_parent_path)
             stdout_log_link = "./" + stdout_log_parent_basename + "/" + stdout_log_basename
 
-            stderr_log_basename =  os.path.basename(stderr_log_txt)
+            stderr_log_basename = os.path.basename(stderr_log_txt)
             stderr_log_parent_path = os.path.dirname(stderr_log_txt)
             stderr_log_parent_basename = os.path.basename(stderr_log_parent_path)
             stderr_log_link = "./" + stderr_log_parent_basename + "/" + stderr_log_basename
-                        
+
         if command.find(' ') > 1:
-            short_cmd = command[0:command.find(' ')] 
+            short_cmd = command[0:command.find(' ')]
         else:
             short_cmd = command
 
         # junit results
-        # need to remove quotes from commands in junit 
+        # need to remove quotes from commands in junit
         # https://gist.github.com/ix4/344cdfce79cb5510094e5005d5db2c70
-        command_quotes_removed = command.replace('"','&quot;')
-        summary_output_updated = summary_output.replace('&','and').replace('<','&lt;').replace('>','&gt;')
+        command_quotes_removed = command.replace('"', '&quot;')
+        summary_output_updated = summary_output.replace('&', 'and').replace('<', '&lt;').replace('>', '&gt;')
         self.junit_results += """
             <testcase name="{name}" id="{command}" time="{time}">
-            """.format(name=self.test,command=short_cmd,time=self.duration_sec_us)
+            """.format(name=self.test, command=short_cmd, time=self.duration_sec_us)
 
         self.junit_results += """
-            <system-out> 
+            <system-out>
             Command:
             {stdout}
             link
             {link}
             </system-out>
-            """.format(stdout=command_quotes_removed,link=stdout_log_link)
-
+            """.format(stdout=command_quotes_removed, link=stdout_log_link)
 
         # need to have tests return error messages
         if self.test_result != "Finished":
             self.junit_results += """
                 <failure message="{result} {link}">
-                </failure>""".format(result=self.test_result,link=stdout_log_link)
+                </failure>""".format(result=self.test_result, link=stdout_log_link)
         self.junit_results += """
             </testcase>
             """
@@ -1392,11 +1391,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # Configure Tests
         for self.test in self.test_dict:
 
-            if ((self.test_dict[self.test]['enabled'] == "TRUE" and self.use_test_list is False) or 
-                (self.use_test_list is True and self.test in self.test_list)):
-                        
+            if ((self.test_dict[self.test]['enabled'] == "TRUE" and self.use_test_list is False) or
+                    (self.use_test_list is True and self.test in self.test_list)):
 
-                # LAN-1697 
+                # LAN-1697
                 # Customer Request: lf_check ability to have user input (pause) between a test to allow for user configuration
                 # "user_intervention":"TRUE",
                 # "user_prompt":"Be sure 2G and 5G have same ssid , then hit enter",
@@ -1436,7 +1434,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     self.tx_power_list = self.test_dict[self.test]['batch_tx_power'].split()
 
                 # TODO have addional methods
-                # TODO refactor 
+                # TODO refactor
                 # in python an empty list returns false .
                 # If channel_list and bandwidth_list are populated then
                 if self.channel_list and self.nss_list and self.bandwidth_list and self.tx_power_list:
@@ -1507,7 +1505,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                         self.run_script()
             # Using use_test_list is True and test is not in test_list
             elif self.use_test_list is True and self.test not in self.test_list:
-                self.logger.info("use_test_list set TRUE test: {test} not in {list} skipping".format(test=self.test,list=self.test_list))
+                self.logger.info("use_test_list set TRUE test: {test} not in {list} skipping".format(test=self.test, list=self.test_list))
 
             # Test disabled
             elif self.test_dict[self.test]['enabled'] == "FALSE":
@@ -1521,7 +1519,6 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # The test suite has run
         self.finish_junit_testsuite()
         self.finish_junit_testsuites()
-
 
         suite_end_time = datetime.datetime.now()
         self.suite_end_time = str(datetime.datetime.now().strftime(
@@ -1589,7 +1586,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
             for targeted testing.
         ''',
         action='store_true'
-        )
+    )
     parser.add_argument(
         '--test_list',
         help='''
@@ -1597,8 +1594,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
             specific tests in a test list.
         ''',
         default=[]
-        )
-    parser.add_argument('--flat_dir', help="--flat_dir , will place the results in the top directory",action='store_true')
+    )
+    parser.add_argument('--flat_dir', help="--flat_dir , will place the results in the top directory", action='store_true')
     parser.add_argument(
         '--server_override',
         help="--server_override http://<server ip>/  example: http://192.168.95.6/",
@@ -1674,15 +1671,14 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     if args.dir == "":
         if args.outfile == "":
             __dir = "lf_check_{suite}".format(suite=test_suite)
-        else: 
-            __dir = "lf_ch_{outfile}_{suite}".format(outfile=args.outfile,suite=test_suite)
+        else:
+            __dir = "lf_ch_{outfile}_{suite}".format(outfile=args.outfile, suite=test_suite)
 
     else:
         if args.outfile == "":
             __dir = args.dir
         else:
-            __dir = "{dir}_{outfile}_{suite}".format(dir=args.dir,outfile=args.outfile,suite=test_suite)
-
+            __dir = "{dir}_{outfile}_{suite}".format(dir=args.dir, outfile=args.outfile, suite=test_suite)
 
     __path = args.path
 
@@ -1711,10 +1707,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         report_path = report.get_flat_dir_report_path()
     else:
         report_path = report.get_report_path()
-       
+
     log_path = report.get_log_path()
 
-    # Check if a test_list passed as the user would like to do a selected 
+    # Check if a test_list passed as the user would like to do a selected
     # set of tests from the test list
     use_test_list = args.use_test_list
     test_list = args.test_list
@@ -1835,7 +1831,6 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                     firmware_version = "5.4.3 N/A"
                     #radio_firmware_list = radio_firmware_list.append("NA")
 
-
                 lf_radio_df = lf_radio_df.append(
                     {'Radio': lanforge_radio_json[key]['entity id'],
                      'WIFI-Radio Driver': driver,
@@ -1851,8 +1846,6 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         radio_firmware_list = list(set(radio_firmware_list))
 
         check.set_radio_firmware_list(radio_firmware_list)
-
-
 
     except Exception as error:
         logger.error("print_exc(): {error}".format(error=error))
@@ -1941,11 +1934,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
             parent_path = os.path.dirname(qa_report_html)
             parent_name = os.path.basename(parent_path)
             qa_report_base_name = os.path.basename(qa_report_html)
-            
+
             qa_url = './' + parent_name + '/' + qa_report_base_name
             logger.info("QA Test Results qa_run custom: {qa_url}".format(qa_url=qa_url))
             report.build_link("QA Test Results", qa_url)
-
 
     report.set_table_title("LF Check Suite Summary: {suite}".format(suite=test_suite))
     report.build_table_title()
@@ -1971,13 +1963,12 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         logger.info("send email not set or email_list_test not set")
     else:
         check.send_results_email(report_file=html_report)
-    
+
     # save the juni.xml file
     junit_results = check.get_junit_results()
     report.set_junit_results(junit_results)
     junit_xml = report.write_junit_results()
     logger.info("junit.xml: allure serve {}".format(junit_xml))
-
 
     if args.update_latest:
         report_path = os.path.dirname(html_report)
