@@ -742,12 +742,20 @@ class lf_rf_char(Realm):
         # TODO make the get_request more generic just set the request
         self.json_rad_api.request = 'wifi-stats'
         # Read the vap device stats, it will also be able to report underlying radio stats as needed.
-        json_wifi_stats, *nil = self.json_rad_api.get_request_wifi_stats_information(port=self.vap_port)
-        if not json_wifi_stats:
-            raise ValueError("__name__ get_request_wifi_stats_information unable to create json_wifi_stats")
-        if self.port_name not in json_wifi_stats:
-            raise ValueError("port %s not in json_wifi_stats" % self.port_name)
-        #print("wifi-stats output, vap-radio: %s radio port name %s:"%(self.vap_radio, self.json_api.port_name))
+        request_attempts : int = 6
+        json_wifi_stats : dict = None
+        while request_attempts >= 0:
+            request_attempts -= 1
+            json_wifi_stats, *nil = self.json_rad_api.get_request_wifi_stats_information(port=self.vap_port)
+            if not json_wifi_stats:
+                raise ValueError("__name__ get_request_wifi_stats_information unable to create json_wifi_stats")
+            if self.port_name not in json_wifi_stats:
+                # raise ValueError("port %s not in json_wifi_stats" % self.port_name)
+                time.sleep(1)
+                continue
+            request_attempts = -1
+
+        logger.debug("wifi-stats output, vap-radio: %s radio port name %s:"%(self.vap_radio, self.port_name))
         # pprint(json_wifi_stats)
 
         # Stop Traffic
