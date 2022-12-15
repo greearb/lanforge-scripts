@@ -881,7 +881,19 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         logger_config.load_lf_logger_config()
 
     if not args.vap_radio:
-        logger.info("No radio name provided")
+        logger.error("No radio name provided")
+        exit(1)
+    vap_radio : str = args.vap_radio
+    if not vap_radio.startswith("1."):
+        logger.error("--vap_radio requires EID format: 1.1.wiphy0")
+        exit(1)
+
+    if not args.vap_port:
+        logger.error("No --vap_port vAP name provided, please use EID format, e.g.: 1.1.vap0000")
+        exit(1)
+    vap_port : str = args.vap_port
+    if not vap_port.startswith("1."):
+        logger.error("--vap_port requires EID format: 1.1.vap0000")
         exit(1)
 
     # Gather data for test reporting
