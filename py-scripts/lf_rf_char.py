@@ -2191,7 +2191,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     if platform.system() == 'Linux':
         report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
-    if args.final_report_dir != "":
+    if args.final_report_dir:
         if args.final_report_dir[0] == "/":
             print("moving the report directory to "+args.final_report_dir)
             os.rename(report.get_report_path(), args.final_report_dir)
