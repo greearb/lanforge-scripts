@@ -141,7 +141,7 @@ class lf_rf_char(Realm):
         self.vap_radio : str = ''
         self.vap_channel : str = ''
         self.vap_bw : int = 0 # 20, 40, 80, 160
-        self.vap_mode : str = 0
+        self.vap_mode : str = "0"
         self.vap_antenna = ''
         self.vap_txpower : int = -1
         self.reset_vap = False
