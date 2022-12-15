@@ -508,52 +508,52 @@ class lf_rf_char(Realm):
             else:
                 logger.warning("t_flags does not look right: %s" % t_flags)
                 time.sleep(5)
-            
-        if self.vap_mode != 0:
-            v_name = self.vap_port
-            if self.vap_port.find('.') > -1:
-                v_name = self.vap_port[self.vap_port.rindex('.')+1:]
-            r_name = self.vap_radio
-            if self.vap_radio.find('.') > -1:
-                r_name = self.vap_radio[self.vap_radio.rindex('.')+1:]
-            if self.debug:
-                logger.warning("modify_ratio: setting vap mode to [{}]".format(self.vap_mode))
-                logger.warning("modify_ratio: vap_radio           [{}]".format(self.vap_radio))
-                logger.warning("modify_ratio: vap                 [{}]".format(self.vap))
-                logger.warning("modify_ratio: vap_port            [{}]".format(self.vap_port))
-                logger.warning("modify_ratio: port_name           [{}]".format(self.port_name))
-                logger.warning("modify_ratio: vap_channel         [{}]".format(self.vap_channel))
-                logger.warning("modify_ratio: vap_bw              [{}]".format(self.vap_bw))
-                logger.warning("modify_ratio: vap_flags           [{}]".format(self.vap_flags))
-                logger.warning("modify_ratio: vap_flagmask        [{}]".format(self.vap_flagmask))
-            self.command.post_add_vap(shelf=1,
-                                      resource=self.resource,
-                                      radio=r_name,
-                                      ap_name=v_name,
-                                      mode=self.vap_mode,
-                                      flags=vap_flags,
-                                      flags_mask=vap_flagmask,
-                                      debug=True)
-            queried_mode = "none"
-            e_w : list = []
-            poll_start_sec = lanforge_api._now_sec()
-            deadline_sec = poll_start_sec + 16
-            while (queried_mode == "none") and (deadline_sec > lanforge_api._now_sec()):
-                response = self.query.get_port(eid_list=["1.1.vap0000"],
-                                               requested_col_names=["alias", "mode"],
-                                               errors_warnings=e_w,
-                                               debug=True)
-                if not response:
-                    logger.error("No response to query get_port()")
-                else:
-                    logger.debug(" Response: %s"        % pformat(response))
-                if e_w:
-                    logger.warning("get_port warnings: %s" % pformat(e_w))
-                if "mode" in response:
-                    queried_mode = response["mode"]
-                else:
-                    logger.warning("get_port did not provide vap[mode]")
-            logger.info("done polling for vap mode")
+
+        v_name = self.vap_port
+        if self.vap_port.find('.') > -1:
+            v_name = self.vap_port[self.vap_port.rindex('.')+1:]
+        r_name = self.vap_radio
+        if self.vap_radio.find('.') > -1:
+            r_name = self.vap_radio[self.vap_radio.rindex('.')+1:]
+        if self.debug:
+            logger.warning("modify_radio: setting vap mode to [{}]".format(self.vap_mode))
+            logger.warning("modify_radio: vap_radio           [{}]".format(self.vap_radio))
+            logger.warning("modify_radio: vap                 [{}]".format(self.vap))
+            logger.warning("modify_radio: vap_port            [{}]".format(self.vap_port))
+            logger.warning("modify_radio: port_name           [{}]".format(self.port_name))
+            logger.warning("modify_radio: vap_channel         [{}]".format(self.vap_channel))
+            logger.warning("modify_radio: vap_bw              [{}]".format(self.vap_bw))
+            logger.warning("modify_radio: vap_flags           [{}]".format(vap_flags))
+            logger.warning("modify_radio: vap_flagmask        [{}]".format(vap_flagmask))
+
+        self.command.post_add_vap(shelf=1,
+                                  resource=self.resource,
+                                  radio=r_name,
+                                  ap_name=v_name,
+                                  mode=self.vap_mode,
+                                  flags=vap_flags,
+                                  flags_mask=vap_flagmask,
+                                  debug=True)
+        queried_mode = "none"
+        e_w : list = []
+        poll_start_sec = lanforge_api._now_sec()
+        deadline_sec = poll_start_sec + 16
+        while (queried_mode == "none") and (deadline_sec > lanforge_api._now_sec()):
+            response = self.query.get_port(eid_list=["1.1.vap0000"],
+                                           requested_col_names=["alias", "mode"],
+                                           errors_warnings=e_w,
+                                           debug=True)
+            if not response:
+                logger.error("No response to query get_port()")
+            else:
+                logger.debug(" Response: %s"        % pformat(response))
+            if e_w:
+                logger.warning("get_port warnings: %s" % pformat(e_w))
+            if "mode" in response:
+                queried_mode = response["mode"]
+            else:
+                logger.warning("get_port did not provide vap[mode]")
+        logger.info("done polling for vap mode")
 
         logger.info("resetting port")
         if self.reset_vap:
