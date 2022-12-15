@@ -883,6 +883,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     parser.add_argument('--frame', help="--frame <bytes>  , e.g. --frame 1400", default='1400')
     parser.add_argument('--frame_interval', help="--frame_interval <fractions of second>  , e.g. --frame_interval .01 ", default='.01')
 
+    # TODO
+    parser.add_argument('--timeout_sec', help="number of seconds before _____ step aborts and throws and exception")
+
     args = parser.parse_args()
 
     # set up logger
