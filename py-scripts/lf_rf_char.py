@@ -932,7 +932,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     logger.info("configure reporting")
 
     do_html = True
-    html_file = "rf_char.pdf"
+    html_file = "rf_char.html"
     if args.no_html:
         do_html = False
         html_file = None
@@ -2233,6 +2233,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     # Finish the report
     report.build_footer()
     report.copy_js()
+
+    if report.output_html.lower().endswith(".pdf"):
+        raise ValueError("this report is misconfigured, HTML files should not have PDF suffixes")
 
     report.write_html_with_timestamp()
     report.write_index_html()
