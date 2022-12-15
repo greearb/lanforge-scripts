@@ -86,6 +86,8 @@ class lf_report:
         self.graph_title = _graph_title
         self.date = _date
         self.output_html = _output_html
+        if _output_html.lower().endswith(".pdf"):
+            raise ValueError("HTML output file cannot end with suffix '.pdf'")
         self.path_date_time = _path_date_time
         self.write_output_html = ""
         self.write_output_index_html = ""
@@ -325,6 +327,10 @@ class lf_report:
         if not self.output_html:
             logger.info("no html file name, skipping report generation")
             return
+        if self.output_html.lower().endswith(".pdf"):
+            raise ValueError("write_html: HTML filename [%s] should not end with .pdf" % self.output_html)
+        if self.write_output_html.endswith(".pdf"):
+            raise ValueError("wrong suffix for an HTML file: %s" % self.write_output_html)
         self.write_output_html = str(self.path_date_time) + '/' + str(self.output_html)
         logger.info("write_output_html: {}".format(self.write_output_html))
         try:
@@ -358,6 +364,8 @@ class lf_report:
         if not self.output_html:
             logger.info("no html file name, skipping report generation")
             return
+        if self.output_html.lower().endswith(".pdf"):
+            raise ValueError("write_html_with_timestamp: will not save file with PDF suffix [%s]" % self.output_html)
         self.write_output_html = "{}/{}-{}".format(self.path_date_time, self.date, self.output_html)
         logger.info("write_output_html: {}".format(self.write_output_html))
         try:
