@@ -448,6 +448,8 @@ class lf_rf_char(Realm):
                     t_band=2
                 elif (t_channel >= 32) and (t_channel <= 177):
                     t_band=5
+                elif (t_channel >= 191):
+                    t_band=6
             if t_channel == 0:
                 raise Exception("strange channel: {}".format(self.vap_channel))
             if t_band < 2:
@@ -461,14 +463,17 @@ class lf_rf_char(Realm):
                 | self.command.AddVapFlags.use_bss_load \
                 | self.command.AddVapFlags.use_bss_transition \
                 | self.command.AddVapFlags.use_rrm_report
-            default_flags_6g = self.command.AddVapFlags.hostapd_config \
-                | self.command.AddVapFlags.use_bss_load \
+            default_flags_6g = self.command.AddVapFlags.use_bss_load \
                 | self.command.AddVapFlags.use_bss_transition \
                 | self.command.AddVapFlags.use_rrm_report
             t_flags: int = -1
             t_flagmask: int = self.command.AddVapFlags.disable_ht40 \
                               | self.command.AddVapFlags.disable_ht80 \
                               | self.command.AddVapFlags.ht160_enable
+            if t_band == 6:
+                # have to specify hostapd_config in flags to make sure that custom config
+                # checkbox gets turned off
+                t_flagmask |= self.command.AddVapFlags.hostapd_config
             if self.vap_bw and (not t_band or self.vap_bw == "NA"):
                 # logger.error("unable to set bandwidth without knowing channel")
                 raise Exception("unable to set bandwidth without knowing channel")
