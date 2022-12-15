@@ -486,8 +486,9 @@ class lf_rf_char(Realm):
                     raise ValueError("Unknown band %s" % t_band)
 
                 if self.vap_bw == "20":
-                    t_flags |= self.command.AddVapFlags.disable_ht40 \
-                        | self.command.AddVapFlags.disable_ht80
+                    t_flags |= self.command.AddVapFlags.disable_ht40
+                        # disabling ht80 appears to remove usefulness of disable_ht40
+                        # | self.command.AddVapFlags.disable_ht80
                 if self.vap_bw == "40":
                     t_flags |= self.command.AddVapFlags.disable_ht80
                 if self.vap_bw == "80":
