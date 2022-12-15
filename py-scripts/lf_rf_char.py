@@ -616,6 +616,9 @@ class lf_rf_char(Realm):
         self.clear_port_counters()
 
         jason_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
+        if not jason_vap_port_stats:
+            raise ValueError("json_vap_api.get_request_port_information returned nothing")
+
         tx_pkts_previous = 0
         tx_retries_previous = 0
 
@@ -722,6 +725,10 @@ class lf_rf_char(Realm):
         self.json_rad_api.request = 'wifi-stats'
         # Read the vap device stats, it will also be able to report underlying radio stats as needed.
         json_wifi_stats, *nil = self.json_rad_api.get_request_wifi_stats_information(port=self.vap_port)
+        if not json_wifi_stats:
+            raise ValueError("__name__ get_request_wifi_stats_information unable to create json_wifi_stats")
+        if self.port_name not in json_wifi_stats:
+            raise ValueError("port %s not in json_wifi_stats" % self.port_name)
         #print("wifi-stats output, vap-radio: %s radio port name %s:"%(self.vap_radio, self.json_api.port_name))
         # pprint(json_wifi_stats)
 
@@ -1057,7 +1064,19 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     json_port_stats, json_wifi_stats, *nil = rf_char.start()
 
     # get dataset for the radio
+    if args.vap_port not in json_wifi_stats:
+        pprint(json_wifi_stats)
+        raise ValueError("lf_rf_char: radio dataset for [%s] not found:" % args.vap_port)
+
     wifi_stats_json = json_wifi_stats[args.vap_port]
+    if not wifi_stats_json:
+        pprint(json_wifi_stats)
+        raise ValueError("lf_rf_char: skipping empty wifi_stats_json:")
+
+    if not wifi_stats_json:
+        logger.error("unable to find json_wifi_stats[%s]: " % args.vap_port)
+        pprint(json_wifi_stats)
+        raise ValueError("wifi_stats_json empty")
 
     # transmitted packets per polling interval
     tx_pkts = rf_char.tx_pkts
@@ -1246,6 +1265,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     rx_mode_total_count = 0
 
     # retrieve each mode value from json
+    if not wifi_stats_json:
+        raise ValueError("wifi_stats_json empty")
     for iterator in wifi_stats_json:
         if 'rx_mode' in iterator:
             rx_mode.append(iterator)
