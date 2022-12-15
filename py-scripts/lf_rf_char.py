@@ -562,6 +562,23 @@ class lf_rf_char(Realm):
             self.command.post_reset_port(shelf=self.shelf,
                                          resource=self.resource,
                                          port=self.port_name)
+        # Port reset can make everything kinda hang in limbo
+        # because we wait for report_timer seconds for ports to report
+        # again. Lets prompt the port and the virtual router to
+        # refresh to help get our dhcp leases visible as soon as possible
+        time.sleep(1)
+        ncsp_flags : int = LFJsonCommand.NcShowPortsProbeFlags.WIFI \
+                            | LFJsonCommand.NcShowPortsProbeFlags.MII \
+                            | LFJsonCommand.NcShowPortsProbeFlags.BRIDGE \
+                            | LFJsonCommand.NcShowPortsProbeFlags.GW
+        self.command.post_nc_show_ports(shelf=1,
+                                        resource=self.resource,
+                                        port=self.port_name,
+                                        probe_flags=ncsp_flags)
+        time.sleep(1)
+        self.command.post_show_vr(shelf=1, resource=self.resource, router='all')
+        self.command.post_show_vrcx(shelf=1, resource=self.resource, cx_name='all')
+
 
     def start(self):
         # first read with
