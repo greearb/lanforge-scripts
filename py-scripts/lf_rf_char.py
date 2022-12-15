@@ -742,6 +742,19 @@ class lf_rf_char(Realm):
         pass
 
 
+# sort the values when in a list
+def num_sort(strn):
+    # getting number using isdigit() and split()
+    computed_num = [ele for ele in strn[0].split('_') if ele.isdigit()]
+    # assigning lowest weightage to strings
+    # with no numbers
+    if len(computed_num) > 0:
+        return int(computed_num[0])
+    return -1
+
+def length_sort(strn):
+    return len(strn[0])
+
 def main():
     # arguments
     parser = argparse.ArgumentParser(
@@ -1042,19 +1055,6 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     # run the test
     json_port_stats, json_wifi_stats, *nil = rf_char.start()
-
-    # sort the values when in a list
-    def num_sort(strn):
-        # getting number using isdigit() and split()
-        computed_num = [ele for ele in strn[0].split('_') if ele.isdigit()]
-        # assigning lowest weightage to strings
-        # with no numbers
-        if len(computed_num) > 0:
-            return int(computed_num[0])
-        return -1
-
-    def length_sort(strn):
-        return len(strn[0])
 
     # get dataset for the radio
     wifi_stats_json = json_wifi_stats[args.vap_port]
