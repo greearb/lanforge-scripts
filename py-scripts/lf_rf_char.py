@@ -920,10 +920,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         do_html = False
         html_file = None
 
-    do_pdf = True
     pdf_file = "rf_char.pdf"
     if args.no_pdf:
-        do_pdf = False
         pdf_file = None
 
     if local_lf_report_dir != "":
