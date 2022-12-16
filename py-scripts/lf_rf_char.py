@@ -1100,8 +1100,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         # a vAP can take about 15 seconds to aquire a lease, hopefully 10
         # do not reset a vAP sooner than that or it just takes longer
         if now_millis() > (begin_lease_lookup_ms + 16000):
-            logger.warning("resetting "+v_name)
             v_name = args.vap_port
+            logger.warning("resetting "+v_name)
             if v_name.find('.') > -1:
                 v_name = args.vap_port[ args.vap_port.rindex('.')+1 :]
             rf_char.command.post_reset_port(shelf=1, resource=rf_char.resource, port=v_name)
