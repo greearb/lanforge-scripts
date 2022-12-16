@@ -189,7 +189,7 @@ class lf_rf_char(Realm):
             logger.info("DUT MAC: {mac}".format(mac=self.dut_mac))
         except BaseException:
             # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
-            print("Looking for vap-eid: %s" % (vap_eid))
+            logger.info("Looking for vap-eid: %s" % (vap_eid))
             try:
                 for s in json_stations['stations']:
                     keys = list(s.keys())
@@ -201,7 +201,7 @@ class lf_rf_char(Realm):
                         print("found sta, ap: %s  mac: %s" % (sta_ap, self.dut_mac))
                         break
             except BaseException:
-                print("waiting on stations")
+                logger.info("waiting on stations")
                 pass
 
             if sta_ap == "":
@@ -263,7 +263,7 @@ class lf_rf_char(Realm):
         if dut_mac != self.dut_mac:
             logger.info("mac mismatch: probe mac:[{mac}] stations mac:[{station_mac}]".
                         format(mac=dut_mac, station_mac=self.dut_mac))
-            logger.warning("waiting for mac:[{station_mac}]".format(station_mac=self.dut_mac))
+            logger.info("waiting for mac:[{station_mac}]".format(station_mac=self.dut_mac))
             return False
 
         self.dut_ip = dut_ip
@@ -1005,6 +1005,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                          lf_user=args.lf_user,
                          lf_passwd=args.lf_passwd,
                          debug=args.debug)
+
 
     # TODO need to get the DUT IP and put into test_input infor
     rf_char.vap_radio = args.vap_radio
