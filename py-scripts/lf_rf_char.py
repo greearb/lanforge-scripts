@@ -191,7 +191,14 @@ class lf_rf_char(Realm):
             # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
             logger.info("Looking for vap-eid: %s" % (vap_eid))
             try:
-                for s in json_stations['stations']:
+                pronoun = "stations"
+                if pronoun not in json_stations:
+                    pronoun = "station"
+                if pronoun not in json_stations:
+                    logger.warnign("no station info in json_stations, try again...")
+                    return False
+
+                for s in json_stations[pronoun]:
                     keys = list(s.keys())
                     vals = s[keys[0]]
 
@@ -700,7 +707,7 @@ class lf_rf_char(Realm):
                 self.rssi_signal.append(json_stations['station']['signal'])
                 chain_rssi_str = json_stations['station']['chain rssi']
                 chain_rssi = chain_rssi_str.split(',')
-            else:
+            elif "stations" in json_stations:
                 # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
                 # pprint(json_stations)
                 # This should give us faster lookup if I knew how to use it.
@@ -714,6 +721,9 @@ class lf_rf_char(Realm):
                         chain_rssi_str = vals['chain rssi']
                         chain_rssi = chain_rssi_str.split(',')
                         break
+            else:
+                logger.info("json_stations lacks station info, next...")
+                continue
 
             logger.info("RSSI chain length {chain}".format(chain=len(chain_rssi)))
             if len(chain_rssi) == 1:
