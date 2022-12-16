@@ -889,7 +889,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                         help="dut hw version for kpi.csv, hardware version of the device under test")
     parser.add_argument("--dut_sw_version", default="",
                         help="dut sw version for kpi.csv, software version of the device under test")
-    parser.add_argument("--dut_model_num", default="",
+    parser.add_argument("--dut_model_num", "--dut_model_no", default="",
                         help="dut model for kpi.csv,  model number / name of the device under test")
     parser.add_argument("--dut_serial_num", "--dut_serial_no", default="",
                         help="dut serial num for kpi.csv,  model serial number ")
