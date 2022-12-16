@@ -51,7 +51,7 @@ class Logg:
     https://stackoverflow.com/a/20112491/11014343:
     logging.basicConfig(format="[%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s")
     """
-    DEFAULT_LEVEL = logging.WARNING
+    DEFAULT_LEVEL = logging.INFO
     DefaultLogger = logging.getLogger(__name__)
     method_name_list: list = []  # list[str]
     tag_list: list = []  # list[str]
@@ -102,7 +102,7 @@ class Logg:
 
     @classmethod
     def logg(cls,
-             level: int = logging.WARNING,
+             level: int = logging.INFO,
              tag: str = None,
              msg: str = None) -> None:
         """
