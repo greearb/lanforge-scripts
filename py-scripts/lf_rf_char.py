@@ -412,6 +412,8 @@ class lf_rf_char(Realm):
             "default" : -1,
         }
         tx_pow = -1 #default
+        if not self.vap_txpower:
+            self.vap_txpower = "default"
         self.vap_txpower = str(self.vap_txpower).lower()
         if self.vap_txpower in tx_powers:
             tx_pow = tx_powers[self.vap_txpower]
