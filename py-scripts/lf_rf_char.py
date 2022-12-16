@@ -176,6 +176,34 @@ class lf_rf_char(Realm):
         # logging
         self.debug = debug
 
+
+    def remove_generic_cx(self):
+        logger.warning("Stopping generic connections")
+        generics = self.json_get("/generic/list")
+        if generics:
+            cx_list = []
+            ep_list = []
+            noun = "endpoints"
+            if noun not in generics:
+                noun = "endpoint"
+            if noun in generics:
+                for item in generics[noun]:
+                    k = next(iter(item))
+                    if item[k]['name']:
+                        cx_list.append("CX_" + item[k]['name'])
+                        ep_list.append(item[k]['name'])
+            if len(cx_list):
+                for cx in cx_list:
+                    self.command.post_rm_cx(cx_name=cx,
+                                               test_mgr='all',
+                                               suppress_related_commands=True,
+                                               debug=True)
+                for ep in ep_list:
+                    self.command.post_rm_endp(endp_name=ep,
+                                                 suppress_related_commands=True,
+                                                 debug=True)
+
+
     def dut_info(self):
         self.json_vap_api.request = 'stations'
         json_stations = []
@@ -1046,6 +1074,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                          lf_user=args.lf_user,
                          lf_passwd=args.lf_passwd,
                          debug=args.debug)
+
+    rf_char.remove_generic_cx()
 
 
     # TODO need to get the DUT IP and put into test_input infor
@@ -2347,6 +2377,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             print("final dir: /home/lanforge/html-reports/"+args.final_report_dir)
             os.rename(report.get_report_path(),
                       "/home/lanforge/html-reports/"+args.final_report_dir)
+
+    # remove previous generic endpoints
+    rf_char.remove_generic_cx()
 
 
 if __name__ == "__main__":
