@@ -707,6 +707,7 @@ class lf_rf_char(Realm):
             # port not needed for all
             json_stations, *nil = self.json_vap_api.get_request_stations_information()
             logger.info("json_stations {json}".format(json=pformat(json_stations)))
+            chain_rssi : list = []
             if "station" in json_stations:
                 self.rssi_signal.append(json_stations['station']['signal'])
                 chain_rssi_str = json_stations['station']['chain rssi']
@@ -728,32 +729,32 @@ class lf_rf_char(Realm):
             else:
                 logger.info("json_stations lacks station info, next...")
                 continue
-
-            logger.info("RSSI chain length {chain}".format(chain=len(chain_rssi)))
-            if len(chain_rssi) == 1:
-                self.rssi_1.append(int(chain_rssi[0].lstrip()))
-                self.rssi_2.append(np.nan)
-                self.rssi_3.append(np.nan)
-                self.rssi_4.append(np.nan)
-                self.rssi_1_count = self.rssi_1_count + 1
-            elif len(chain_rssi) == 2:
-                self.rssi_1.append(int(chain_rssi[0].lstrip()))
-                self.rssi_2.append(int(chain_rssi[1].lstrip()))
-                self.rssi_3.append(np.nan)
-                self.rssi_4.append(np.nan)
-                self.rssi_2_count = self.rssi_2_count + 1
-            elif len(chain_rssi) == 3:
-                self.rssi_1.append(int(chain_rssi[0].lstrip()))
-                self.rssi_2.append(int(chain_rssi[1].lstrip()))
-                self.rssi_3.append(int(chain_rssi[2].lstrip()))
-                self.rssi_4.append(np.nan)
-                self.rssi_3_count = self.rssi_3_count + 1
-            elif len(chain_rssi) == 4:
-                self.rssi_1.append(int(chain_rssi[0].lstrip()))
-                self.rssi_2.append(int(chain_rssi[1].lstrip()))
-                self.rssi_3.append(int(chain_rssi[2].lstrip()))
-                self.rssi_4.append(int(chain_rssi[3].lstrip()))
-                self.rssi_4_count = self.rssi_4_count + 1
+            if chain_rssi:
+                logger.info("RSSI chain length {chain}".format(chain=len(chain_rssi)))
+                if len(chain_rssi) == 1:
+                    self.rssi_1.append(int(chain_rssi[0].lstrip()))
+                    self.rssi_2.append(np.nan)
+                    self.rssi_3.append(np.nan)
+                    self.rssi_4.append(np.nan)
+                    self.rssi_1_count = self.rssi_1_count + 1
+                elif len(chain_rssi) == 2:
+                    self.rssi_1.append(int(chain_rssi[0].lstrip()))
+                    self.rssi_2.append(int(chain_rssi[1].lstrip()))
+                    self.rssi_3.append(np.nan)
+                    self.rssi_4.append(np.nan)
+                    self.rssi_2_count = self.rssi_2_count + 1
+                elif len(chain_rssi) == 3:
+                    self.rssi_1.append(int(chain_rssi[0].lstrip()))
+                    self.rssi_2.append(int(chain_rssi[1].lstrip()))
+                    self.rssi_3.append(int(chain_rssi[2].lstrip()))
+                    self.rssi_4.append(np.nan)
+                    self.rssi_3_count = self.rssi_3_count + 1
+                elif len(chain_rssi) == 4:
+                    self.rssi_1.append(int(chain_rssi[0].lstrip()))
+                    self.rssi_2.append(int(chain_rssi[1].lstrip()))
+                    self.rssi_3.append(int(chain_rssi[2].lstrip()))
+                    self.rssi_4.append(int(chain_rssi[3].lstrip()))
+                    self.rssi_4_count = self.rssi_4_count + 1
 
         self.json_vap_api.csv_mode = 'write'
         self.json_vap_api.update_csv_mode()
