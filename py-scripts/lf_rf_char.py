@@ -85,6 +85,9 @@ class lf_rf_char(Realm):
                  lf_passwd=None,
                  debug=False
                  ):
+        super().__init__(lfclient_host=lf_mgr,
+                         lfclient_port=lf_port,
+                         debug_=True)
         self.lf_mgr = lf_mgr
         self.lf_port = lf_port
         self.lf_user = lf_user
@@ -196,7 +199,7 @@ class lf_rf_char(Realm):
                 if pronoun not in json_stations:
                     pronoun = "station"
                 if pronoun not in json_stations:
-                    logger.warnign("no station info in json_stations, try again...")
+                    logger.warning("no station info in json_stations, try again...")
                     return False
 
                 for s in json_stations[pronoun]:
@@ -395,7 +398,6 @@ class lf_rf_char(Realm):
             name=self.gen_endpoint,
             debug=self.debug)
 
-    # set_cx_state
 
     def set_cx_state(self):
         self.command.post_set_cx_state(cx_name=self.gen_endpoint,
