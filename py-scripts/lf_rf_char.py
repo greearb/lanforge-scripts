@@ -103,6 +103,7 @@ class lf_rf_char(Realm):
         self.frame_interval = ''
         self.gen_endpoint = ''
         self.cx_state = ''
+        self.timeout_sec = 30 # max seconds to establish the traffic command
 
         # create api_json
         self.json_vap_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
@@ -912,7 +913,12 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     parser.add_argument('--frame_interval', help="--frame_interval <fractions of second>  , e.g. --frame_interval .01 ", default='.01')
 
     # TODO
-    parser.add_argument('--timeout_sec', help="number of seconds before _____ step aborts and throws and exception")
+    parser.add_argument('--timeout_sec',
+                        help="number of seconds to allow for starting traffic; if traffic has not started by this time, script will abort")
+    parser.add_argument('--dhcp_poll_ms',
+                        help="wait between checking vap probe results for new DHCP leases (milliseconds)")
+    parser.add_argument('--dhcp_lookup_attempts',
+                        help="number of attempts to check for DHCP lease before aborting script")
 
     args = parser.parse_args()
 
@@ -957,6 +963,20 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     dut_serial_num = args.dut_serial_num
     # test_priority = args.test_priority  # this may need to be set per test
     test_id = args.test_id
+
+    max_dhcp_lookups : int = 20
+    if args.dhcp_lookup_attempts:
+        max_dhcp_lookups = int(args.dhcp_lookup_attempts)
+
+    timeout_sec : int = 30
+    if args.timeout_sec:
+        timeout_sec = int(args.timeout_sec)
+
+    deadline_millis : int = now_millis() + (timeout_sec * 1000)
+
+    dhcp_lookup_ms : int = 250
+    if args.dhcp_poll_ms:
+        dhcp_lookup_ms = int(args.dhcp_poll_ms)
 
     # Create report, when running with the test framework (lf_check.py)
     # results need to be in the same directory
@@ -1052,22 +1072,49 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     # modify and reset
     rf_char.modify_radio()
-
-    try_count = 0
-    while try_count < 100:
+    begin_lease_lookup_ms = now_millis()
+    try_count = int(max_dhcp_lookups)
+    found_station : bool = False
+    while try_count > 0:
         if rf_char.dut_info():
+            found_station = True
             break
-        print("Could not query DUT info from DHCP, waiting %s/100" % (try_count))
-        time.sleep(1)
-        try_count += 1
-        if (try_count % 6) == 0:
+        logger.warning("Looking for DUT info from DHCP data, attempt %s/%s" %
+                       ((1 + max_dhcp_lookups - try_count), max_dhcp_lookups))
+        # logger.warning("now_millis[%d] deadline_millis[%d]" % (now_millis(), deadline_millis))
+        if now_millis() >= deadline_millis:
+            raise ValueError("time expired for DHCP lease lookups")
+        rf_char.command.post_nc_show_ports(shelf=1,
+                                           resource=rf_char.resource,
+                                           port=rf_char.port_name,
+                                           probe_flags=(LFJsonCommand.NcShowPortsProbeFlags.WIFI \
+                                                        | LFJsonCommand.NcShowPortsProbeFlags.MII \
+                                                        | LFJsonCommand.NcShowPortsProbeFlags.ETHTOOL \
+                                                        | LFJsonCommand.NcShowPortsProbeFlags.EASY_IP_INFO),
+                                           debug=rf_char.debug)
+        rf_char.command.post_show_vr(shelf=1, resource=rf_char.resource, router='all', debug=rf_char.debug)
+        time.sleep(dhcp_lookup_ms/1000)
+        try_count -= 1
+
+        # a vAP can take about 15 seconds to aquire a lease, hopefully 10
+        # do not reset a vAP sooner than that or it just takes longer
+        if now_millis() > (begin_lease_lookup_ms + 16000):
+            logger.warning("resetting "+v_name)
             v_name = args.vap_port
             if v_name.find('.') > -1:
                 v_name = args.vap_port[ args.vap_port.rindex('.')+1 :]
-            logger.warning("resetting "+v_name)
             rf_char.command.post_reset_port(shelf=1, resource=rf_char.resource, port=v_name)
-            time.sleep(2)
+            time.sleep(1)
+    # ~while
+    if found_station:
+        logger.warning("found station")
+        logger.warning("lease lookup time took %f s" % float((now_millis() - begin_lease_lookup_ms)/1000.0))
+    else:
+        logger.error("Unable to find station using %s inspections of dhcp table" % max_dhcp_lookups);
+        sys.exit(1)
 
+    if now_millis() >= deadline_millis:
+        raise ValueError("time expired for DHCP lease lookups")
     dut_mac = rf_char.dut_mac
     dut_ip = rf_char.dut_ip
 
@@ -1096,6 +1143,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     flags_list = ['extra_rxstatus', 'extra_txstatus']
     rf_char.set_wifi_radio(radio=args.vap_radio, flags_list=flags_list)
 
+    if now_millis() > deadline_millis:
+        raise ValueError("Time expired to start traffic")
+
     test_input_info = {
         "LANforge ip": args.lf_mgr,
         "LANforge port": args.lf_port,
@@ -1111,6 +1161,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.build_table_title()
     report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
 
+    if now_millis() > deadline_millis:
+        raise ValueError("Time expired to start traffic")
     # Start traffic : Currently manually done
     rf_char.clear_port_counters()
 
@@ -1120,6 +1172,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     rf_char.frame = args.frame
     rf_char.frame_interval = args.frame_interval
 
+    if now_millis() > deadline_millis:
+        raise ValueError("Time expired to start traffic")
     # run the test
     json_port_stats, json_wifi_stats, *nil = rf_char.start()
 
