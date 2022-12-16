@@ -803,6 +803,11 @@ def num_sort(strn):
 def length_sort(strn):
     return len(strn[0])
 
+
+def now_millis() -> int:
+    return round(time.time() * 1000)
+
+
 def main():
     # arguments
     parser = argparse.ArgumentParser(
