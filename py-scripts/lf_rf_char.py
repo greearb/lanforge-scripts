@@ -221,7 +221,7 @@ class lf_rf_char(Realm):
             logger.info("DUT MAC: {mac}".format(mac=self.dut_mac))
         except BaseException:
             # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
-            logger.info("Looking for vap-eid: %s" % (vap_eid))
+            logger.info("Looking for vap-eid: %s" % vap_eid)
             try:
                 pronoun = "stations"
                 if pronoun not in json_stations:
