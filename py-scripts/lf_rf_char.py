@@ -227,8 +227,7 @@ class lf_rf_char(Realm):
                            "--cli_cmd", "probe_port 1 {resource} {port}".format(resource=self.resource, port=self.port_name)]
         logger.info("command: {cmd}".format(cmd=self.lf_command))
         summary_output = ''
-        # summary = subprocess.Popen(["../lf_portmod.pl", "--manager", self.lf_mgr, "--card",str(self.resource),"--port_name",self.port_name,
-        #            "--cli_cmd","probe_port 1 {resource} {port}".format(resource=self.resource,port=self.port_name)], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        process_begin_ms = now_millis()
         summary = subprocess.Popen(self.lf_command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         for line in iter(summary.stdout.readline, ''):
@@ -236,6 +235,8 @@ class lf_rf_char(Realm):
             summary_output += line
             # sys.stdout.flush() # please see comments regarding the necessity of this line
         summary.wait()
+        process_end_ms = now_millis()
+        logger.info("lfportmod took %d ms" % (process_end_ms - process_begin_ms))
         logger.debug(summary_output)  # .decode('utf-8', 'ignore'))
 
         dut_ip = ''
@@ -1165,7 +1166,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         raise ValueError("Time expired to start traffic")
     # Start traffic : Currently manually done
     rf_char.clear_port_counters()
-
+    logger.info("cleared port counters")
     rf_char.duration = args.duration
     rf_char.polling_interval = args.polling_interval
     logger.debug("frame size {frame}".format(frame=args.frame))
@@ -1174,7 +1175,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     if now_millis() > deadline_millis:
         raise ValueError("Time expired to start traffic")
+    begin_traffic_ms = now_millis()
     # run the test
+    logger.warning("starting traffic")
     json_port_stats, json_wifi_stats, *nil = rf_char.start()
 
     # get dataset for the radio
@@ -1200,6 +1203,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     tx_interval_time = rf_char.tx_interval_time
 
     # TX pkts, TX retries,  TX Failed %
+    logger.warning("testing time took %f s" % float((now_millis() - begin_traffic_ms)/1000))
+    logger.warning("building report")
     report.set_table_title("TX pkts , TX retries, TX Failed %")
     report.build_table_title()
 
