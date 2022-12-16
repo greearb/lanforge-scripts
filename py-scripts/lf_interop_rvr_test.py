@@ -742,8 +742,9 @@ def main():
     input_setup_info = {
         "contact": "support@candelatech.com"
     }
-    rvr_obj.generate_report(data=data, test_setup_info=test_setup_info, input_setup_info=input_setup_info, )
     rvr_obj.cleanup()
+    rvr_obj.generate_report(data=data, test_setup_info=test_setup_info, input_setup_info=input_setup_info, )
+    
 
 
 if __name__ == "__main__":
