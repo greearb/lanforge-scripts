@@ -8,7 +8,7 @@
         "TEST_BED": "CT-US-004",
         "TEST_RIG": "CT-US-004",
         "TEST_SERVER": "http://192.168.95.6/",
-        "DATABASE_SQLITE": "./tools/qa_004.db",
+        "DATABASE_SQLITE": "./tools/qa_004_v2.db",
         "LF_MGR_IP": "192.168.100.194",
         "LF_MGR_PORT": "8080",
         "LF_MGR_USER": "lanforge",
