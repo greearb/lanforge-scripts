@@ -259,6 +259,8 @@ class lf_rf_char(Realm):
         logger.info("command: {cmd}".format(cmd=self.lf_command))
         summary_output = ''
         process_begin_ms = now_millis()
+        snc = subprocess.Popen("sync")
+        snc.wait()
         summary = subprocess.Popen(self.lf_command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
         for line in iter(summary.stdout.readline, ''):
@@ -1190,6 +1192,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         "GUI Report Interval (ms) vap and vap radio": str(polling_interval_milliseconds),
         "vAP Channel": args.vap_channel,
         "vAP Mode:": args.vap_mode,
+        "vAP Bandwidth:": args.vap_bw,
         "vAP TX Power (dBm):": "Requested: {}<br/>\nApplied: {}".format(args.vap_txpower, rf_char.vap_txpower)
     }
 
