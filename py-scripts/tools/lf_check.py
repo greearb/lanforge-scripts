@@ -1104,14 +1104,16 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # some results on longer tests
         # TODO use the summary
         stdout_log_size = os.path.getsize(stdout_log_txt)
+        # reset the report_index if there are multiple iterations
+        self.report_index = 0
         if stdout_log_size > 0:
             stdout_log_fd = open(stdout_log_txt)
             # "Report Location:::/home/lanforge/html-reports/wifi-capacity-2021-08-17-04-02-56"
             #
             for line in stdout_log_fd:
                 if "Report Location" in line:
-                    self.report_index += 1
                     # TODO Is there a simpler way do get the report path
+                    self.report_index += 1
                     if self.iteration == self.report_index:
                         meta_data_path = line.replace('"', '')
                         meta_data_path = meta_data_path.replace(
@@ -1461,6 +1463,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                                         self.iteration += 1
                                         # Runs the scripts
                                         self.run_script()
+
                     # once done clear out the lists
                     self.channel_list = []
                     self.nss_list = []
@@ -1476,10 +1479,11 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                                 self.iteration = 0
                                 self.report_index = 0
                                 for self.iteration in range(self.test_iterations):
-                                    self.iteration += 1
                                     # in batch mode need to set the VARIABLES back into the test
+                                    self.iteration += 1
                                     # Runs the scripts
                                     self.run_script()
+                                    # start counting from zero
                     self.channel_list = []
                     self.nss_list = []
                     self.bandwidth_list = []
@@ -1498,6 +1502,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                                 self.iteration += 1
                                 # Runs the scripts
                                 self.run_script()
+
                     self.channel_list = []
                     self.nss_list = []
                     self.bandwidth_list = []
@@ -1509,10 +1514,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     self.iteration = 0
                     self.report_index = 0
                     for self.iteration in range(self.test_iterations):
-                        self.iteration += 1
-
                         # Runs the scripts
+                        self.iteration += 1
                         self.run_script()
+
             # Using use_test_list is True and test is not in test_list
             elif self.use_test_list is True and self.test not in self.test_list:
                 self.logger.info("use_test_list set TRUE test: {test} not in {list} skipping".format(test=self.test, list=self.test_list))
