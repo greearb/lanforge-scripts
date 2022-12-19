@@ -132,6 +132,7 @@ import datetime
 import sys
 import traceback
 from pprint import pformat
+import copy
 
 if sys.version_info[0] != 3:
     print("This script requires Python3")
@@ -269,6 +270,9 @@ class lf_check():
         # radio firmware list
         self.radio_firmware_list = ["NA"]
 
+        # radio firmware dict
+        self.radio_fw_dict = {}
+
         # section DUT
         # dut selection
         # note the name will be set as --set DUT_NAME ASUSRT-AX88U, this is not
@@ -312,6 +316,9 @@ class lf_check():
 
     def set_radio_firmware_list(self, radio_firmware_list):
         self.radio_firmware_list = radio_firmware_list.copy()
+
+    def set_radio_fw_dict(self, radio_fw_dict):
+        self.radio_fw_dict =  copy.deepcopy(radio_fw_dict)       
 
     def get_test_rig(self):
         return self.test_rig
@@ -1163,6 +1170,9 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     "$ radio_firmware:  {radio_firmware}\n".format(radio_firmware=self.radio_firmware_list)
                 )
                 meta_data_fd.write(
+                    "$ radio_fw_dict: {radio_fw_dict}\n".format(radio_fw_dict=self.radio_fw_dict)
+                )
+                meta_data_fd.write(
                     "$ lanforge_fedora_version: {lanforge_fedora_version}\n".format(
                         lanforge_fedora_version=self.lanforge_fedora_version[0]))
                 meta_data_fd.write(
@@ -1817,6 +1827,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                 'max_sta'])
 
         radio_firmware_list = []
+        radio_fw_dict = {}
         for key in lanforge_radio_json:
             if 'wiphy' in key:
                 # self.logger.info("key {}".format(key))
@@ -1826,6 +1837,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                 try:
                     firmware_version = lanforge_radio_json[key]['firmware version']
                     radio_firmware_list.append(firmware_version)
+                    radio_fw_dict[key] = firmware_version.replace('release/','')
                 except BaseException:
                     logger.info("5.4.3 radio fw version not in /radiostatus/all ")
                     firmware_version = "5.4.3 N/A"
@@ -1840,12 +1852,15 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                      'max_vap': lanforge_radio_json[key]['max_vap'],
                      'max_sta': lanforge_radio_json[key]['max_vifs']}, ignore_index=True)
 
+
         logger.info("lf_radio_df:: {lf_radio_df}".format(lf_radio_df=lf_radio_df))
+        logger.info("radio_fw_dict:: {radio_fw_dict}".format(radio_fw_dict=radio_fw_dict))
 
         # using set() to remove duplicated entries
         radio_firmware_list = list(set(radio_firmware_list))
 
         check.set_radio_firmware_list(radio_firmware_list)
+        check.set_radio_fw_dict(radio_fw_dict)
 
     except Exception as error:
         logger.error("print_exc(): {error}".format(error=error))
