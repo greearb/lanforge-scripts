@@ -1836,6 +1836,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                     'Driver:', maxsplit=1)[-1].split(maxsplit=1)[0]
                 try:
                     firmware_version = lanforge_radio_json[key]['firmware version']
+                    firmware_version = firmware_version.replace('release/','')
                     radio_firmware_list.append(firmware_version)
                     radio_fw_dict[key] = firmware_version.replace('release/','')
                 except BaseException:
