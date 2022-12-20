@@ -107,6 +107,7 @@ class lf_rf_char(Realm):
         self.gen_endpoint = ''
         self.cx_state = ''
         self.timeout_sec = 30 # max seconds to establish the traffic command
+        self.bookmark_event_id : int = 0
 
         # create api_json
         self.json_vap_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
@@ -204,6 +205,28 @@ class lf_rf_char(Realm):
                                                  debug=True)
 
 
+    def get_recent_lease_events(self):
+        # check lease info from dhcp events
+        events_rec = self.json_get("/events/since/%d" % self.bookmark_event_id, debug_=self.debug)
+        if not events_rec:
+            return None
+        noun = 'events'
+        if noun not in events_rec:
+            noun = 'event'
+        if noun not in events_rec:
+            return None
+        dhcp_events = []
+
+        for event_entry in events_rec[noun]:
+            event = event_entry[next(iter(event_entry))]
+            # pprint(event)
+            if event['event description'].startswith("DHCPACK on"):
+                dhcp_events.append(event)
+
+        # pprint(["events", dhcp_events])
+        return dhcp_events
+
+
     def dut_info(self):
         self.json_vap_api.request = 'stations'
         json_stations = []
@@ -253,63 +276,85 @@ class lf_rf_char(Realm):
             logger.error("Detected STA on AP: %s, expected it to be on AP: %s" % (sta_ap, vap_eid))
             return False
 
-        # get the IP from port mode
-        self.lf_command = ["../lf_portmod.pl", "--manager", self.lf_mgr, "--card", str(self.resource), "--port_name", self.port_name,
-                           "--cli_cmd", "probe_port 1 {resource} {port}".format(resource=self.resource, port=self.port_name)]
-        logger.info("command: {cmd}".format(cmd=self.lf_command))
-        summary_output = ''
-        process_begin_ms = now_millis()
-        snc = subprocess.Popen("sync")
-        snc.wait()
-        summary = subprocess.Popen(self.lf_command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-
-        for line in iter(summary.stdout.readline, ''):
-            logger.debug(line)
-            summary_output += line
-            # sys.stdout.flush() # please see comments regarding the necessity of this line
-        summary.wait()
-        process_end_ms = now_millis()
-        logger.info("lfportmod took %d ms" % (process_end_ms - process_begin_ms))
-        logger.debug(summary_output)  # .decode('utf-8', 'ignore'))
-
         dut_ip = ''
         dut_mac = ''
         dut_hostname = ''
-        search_dhcp_lease = False
-        search_equals = False
-        for line in summary_output.splitlines():
-            if (line.startswith("DHCPD-Lease-File-Contents")):
-                search_equals = True
-                continue
 
-            if (search_equals and line.startswith("=========")):
-                search_dhcp_lease = True
-                continue
+        event_recs = self.get_recent_lease_events()
+        # get the IP from events
+        # look for event matching the dut_mac
+        logger.warning("Inspecting Events for matching DHCPACK records")
+        for record in event_recs:
+            #pprint(record)
+            if ('event description' in record) and (record['event description']):
+                if self.dut_mac in record['event description']:
+                    hunks : list[str] = record['event description'].split(" ")
+                    if hunks[6] != self.port_name:
+                        logger.warning("records is wrong vAP: "+record['event description'])
+                        continue
+                    if hunks[4] != self.dut_mac:
+                        logger.warning("records is wrong mac: "+record['event description'])
+                        continue
+                    dut_ip = hunks[2]
+                    self.dut_ip = dut_ip
+                    logger.warning("DUT IP is "+dut_ip)
+                    break
+        if not dut_ip:
+            # get the IP from port probe
+            logger.warning("DUT IP not found in event records, checking port probe...")
+            self.lf_command = ["../lf_portmod.pl", "--manager", self.lf_mgr, "--card", str(self.resource), "--port_name", self.port_name,
+                               "--cli_cmd", "probe_port 1 {resource} {port}".format(resource=self.resource, port=self.port_name)]
+            logger.info("command: {cmd}".format(cmd=self.lf_command))
+            summary_output = ''
+            process_begin_ms = now_millis()
+            snc = subprocess.Popen("sync")
+            snc.wait()
+            summary = subprocess.Popen(self.lf_command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-            if (search_dhcp_lease):
-                pat = "(\\S+)\\s+(\\S+)\\s+(\\S+)"
-                m = re.search(pat, line)
-                if (m is not None):
-                    dut_mac = m.group(1)
-                    dut_ip = m.group(2)
-                    dut_hostname = m.group(3)
-                else:
-                    pat = "(\\S+)\\s+(\\S+)"
+            for line in iter(summary.stdout.readline, ''):
+                logger.debug(line)
+                summary_output += line
+                # sys.stdout.flush() # please see comments regarding the necessity of this line
+            summary.wait()
+            process_end_ms = now_millis()
+            logger.info("lfportmod took %d ms" % (process_end_ms - process_begin_ms))
+            logger.debug(summary_output)  # .decode('utf-8', 'ignore'))
+
+            search_dhcp_lease = False
+            search_equals = False
+            for line in summary_output.splitlines():
+                if (line.startswith("DHCPD-Lease-File-Contents")):
+                    search_equals = True
+                    continue
+
+                if (search_equals and line.startswith("=========")):
+                    search_dhcp_lease = True
+                    continue
+
+                # print("X=X=X "+line)
+                if (search_dhcp_lease):
+                    pat = "(\\S+)\\s+(\\S+)\\s+(\\S+)"
                     m = re.search(pat, line)
                     if (m is not None):
                         dut_mac = m.group(1)
                         dut_ip = m.group(2)
-            # there should only be one connection
+                        dut_hostname = m.group(3)
+                    else:
+                        pat = "(\\S+)\\s+(\\S+)"
+                        m = re.search(pat, line)
+                        if (m is not None):
+                            dut_mac = m.group(1)
+                            dut_ip = m.group(2)
+                # there should only be one connection
 
-        logger.debug("probe mac : {mac} ip : {ip}".format(mac=dut_mac, ip=dut_ip))
-        if dut_mac != self.dut_mac:
-            logger.info("mac mismatch: probe mac:[{mac}] stations mac:[{station_mac}]".
-                        format(mac=dut_mac, station_mac=self.dut_mac))
-            logger.info("waiting for mac:[{station_mac}]".format(station_mac=self.dut_mac))
-            return False
-
-        self.dut_ip = dut_ip
-        self.dut_hostname = dut_hostname
+            logger.debug("probe mac : {mac} ip : {ip}".format(mac=dut_mac, ip=dut_ip))
+            if dut_mac != self.dut_mac:
+                logger.info("mac mismatch: probe mac:[{mac}] stations mac:[{station_mac}]".
+                            format(mac=dut_mac, station_mac=self.dut_mac))
+                logger.info("waiting for mac:[{station_mac}]".format(station_mac=self.dut_mac))
+                return False
+            self.dut_ip = dut_ip
+            #self.dut_hostname = dut_hostname
 
         return True
 
@@ -434,6 +479,19 @@ class lf_rf_char(Realm):
                                        cx_state=self.cx_state,
                                        test_mgr='all',
                                        debug=self.debug)
+
+    def bookmark_events(self):
+        self.bookmark_event_id = 0
+        events_rec = self.json_get("/events/last/1", debug_=self.debug)
+        if events_rec:
+            noun = "events"
+            if noun not in events_rec:
+                noun = "event"
+            if noun in events_rec:
+                # pprint(events_rec[noun])
+                self.bookmark_event_id = int(events_rec[noun]["id"])
+
+
 
     def modify_radio(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
@@ -1107,6 +1165,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     logger.info("clear dhcp leases")
     rf_char.clear_dhcp_lease()
+
+    # identify latest event
+    rf_char.bookmark_events()
 
     # modify and reset
     rf_char.modify_radio()
