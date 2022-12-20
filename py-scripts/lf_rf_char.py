@@ -848,6 +848,12 @@ class lf_rf_char(Realm):
                     self.rssi_3.append(int(chain_rssi[2].lstrip()))
                     self.rssi_4.append(int(chain_rssi[3].lstrip()))
                     self.rssi_4_count = self.rssi_4_count + 1
+                else:
+                    self.rssi_1.append(np.nan)
+                    self.rssi_2.append(np.nan)
+                    self.rssi_3.append(np.nan)
+                    self.rssi_4.append(np.nan)
+                    self.rssi_4_count = 0
 
         self.json_vap_api.csv_mode = 'write'
         self.json_vap_api.update_csv_mode()
