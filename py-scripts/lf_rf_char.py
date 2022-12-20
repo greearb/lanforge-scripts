@@ -681,7 +681,9 @@ class lf_rf_char(Realm):
                                         resource=self.resource,
                                         port=self.port_name,
                                         probe_flags=ncsp_flags)
-        time.sleep(1)
+        LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
+                                          resource_id=self.resource,
+                                          port_list=[self.port_name])
         self.command.post_show_vr(shelf=1, resource=self.resource, router='all')
         self.command.post_show_vrcx(shelf=1, resource=self.resource, cx_name='all')
 
@@ -1212,7 +1214,10 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             if v_name.find('.') > -1:
                 v_name = args.vap_port[ args.vap_port.rindex('.')+1 :]
             rf_char.command.post_reset_port(shelf=1, resource=rf_char.resource, port=v_name)
-            time.sleep(1)
+            LFUtils.wait_until_ports_admin_up(base_url=rf_char.lfclient_url,
+                                              resource_id=rf_char.resource,
+                                              port_list=[rf_char.port_name])
+            last_vap_reset = now_millis()
     # ~while
     if found_station:
         logger.warning("found station")
