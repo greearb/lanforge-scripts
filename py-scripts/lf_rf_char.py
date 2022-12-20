@@ -785,10 +785,17 @@ class lf_rf_char(Realm):
             self.tx_interval.append(round(interval, 2))
             current_time = current_time_stamp.split()
             self.tx_interval_time.append(current_time[1])
-            # print(json_vap_port_stats["interface"]["tx pkts"])
-            self.tx_pkts.append(json_vap_port_stats["interface"]["tx pkts"] - tx_pkts_previous)
+
+            if tx_pkts_previous <= json_vap_port_stats["interface"]["tx pkts"]:
+                self.tx_pkts.append(json_vap_port_stats["interface"]["tx pkts"] - tx_pkts_previous)
+            else:
+                self.tx_pkts.append(0)
             tx_pkts_previous = json_vap_port_stats["interface"]["tx pkts"]
-            self.tx_retries.append(json_vap_port_stats["interface"]["wifi retries"] - tx_retries_previous)
+
+            if tx_retries_previous <= json_vap_port_stats["interface"]["wifi retries"]:
+                self.tx_retries.append(json_vap_port_stats["interface"]["wifi retries"] - tx_retries_previous)
+            else:
+                self.tx_retries.append(0)
             tx_retries_previous = json_vap_port_stats["interface"]["wifi retries"]
             self.tx_failed.append(round(json_vap_port_stats["interface"]["tx-failed %"], 2))
             self.rx_rate.append(json_vap_port_stats["interface"]["rx-rate"])
