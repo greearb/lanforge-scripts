@@ -193,12 +193,14 @@ class lf_rf_char(Realm):
                 for item in generics[noun]:
                     k = next(iter(item))
                     if item[k]['name']:
+                        if item[k]['name'].startswith("UNKNOWN"):
+                            continue
                         cx_list.append("CX_" + item[k]['name'])
                         ep_list.append(item[k]['name'])
                     # else there is no way to stop an un-named endpoint
                     # such an item is a zombie item
             elif 'endpoint' in generics:
-                if generics['endpoint']['name']:
+                if generics['endpoint']['name'] and not generics['endpoint']['name'].startswith("UNKNOWN"):
                     cx_list.append("CX_" + generics['endpoint']['name'])
                     ep_list.append(generics['endpoint']['name'])
                 # else there is no way to stop an un-named endpoint
