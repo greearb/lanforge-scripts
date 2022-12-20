@@ -141,7 +141,7 @@ class lf_rf_char(Realm):
 
         # vap configuration
         self.shelf : int = 1
-        self.resource : int = ''
+        self.resource : int = -1
         self.port_name : str = ''
         self.vap_radio : str = ''
         self.vap_channel : str = ''
@@ -246,11 +246,11 @@ class lf_rf_char(Realm):
             # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
             logger.info("Looking for vap-eid: %s" % self.vap_eid)
             try:
-                pronoun = "stations"
+                pronoun = 'stations'
                 if pronoun not in json_stations:
-                    pronoun = "station"
+                    pronoun = 'station'
                 if pronoun not in json_stations:
-                    logger.warning("no station info in json_stations, try again...")
+                    logger.warning(" no station info in json_stations, try again...")
                     return False
 
                 for s in json_stations[pronoun]:
@@ -260,15 +260,17 @@ class lf_rf_char(Realm):
                     if vals['ap'] == self.vap_eid:
                         sta_ap = self.vap_eid
                         self.dut_mac = vals['station bssid']
-                        print("found sta, ap: %s  mac: %s" % (sta_ap, self.dut_mac))
+                        logger.warning(" Found sta, ap: %s  mac: %s" % (sta_ap, self.dut_mac))
                         break
             except BaseException:
                 logger.info("waiting on stations")
                 pass
 
             if sta_ap == "":
-                logger.info("Stations table not as expected:")
-                logger.info(pformat(json_stations))
+                logger.warning(" No stations using vAP [%s]" % self.vap_eid)
+                for record in next(iter(json_stations['stations'])):
+                    logger.warning(" station "+record)
+                #logger.warning(pformat(json_stations))
                 return False
 
         # Make sure the station is on correct IP vap
@@ -623,15 +625,15 @@ class lf_rf_char(Realm):
         if self.vap_radio.find('.') > -1:
             r_name = self.vap_radio[self.vap_radio.rindex('.')+1:]
         if self.debug:
-            logger.warning("modify_radio: setting vap mode to [{}]".format(self.vap_mode))
-            logger.warning("modify_radio: vap_radio           [{}]".format(self.vap_radio))
-            logger.warning("modify_radio: vap                 [{}]".format(self.vap))
-            logger.warning("modify_radio: vap_port            [{}]".format(self.vap_port))
-            logger.warning("modify_radio: port_name           [{}]".format(self.port_name))
-            logger.warning("modify_radio: vap_channel         [{}]".format(self.vap_channel))
-            logger.warning("modify_radio: vap_bw              [{}]".format(self.vap_bw))
-            logger.warning("modify_radio: vap_flags           [{}]".format(vap_flags))
-            logger.warning("modify_radio: vap_flagmask        [{}]".format(vap_flagmask))
+            logger.info("modify_radio: setting vap mode to [{}]".format(self.vap_mode))
+            logger.info("modify_radio: vap_radio           [{}]".format(self.vap_radio))
+            logger.info("modify_radio: vap                 [{}]".format(self.vap))
+            logger.info("modify_radio: vap_port            [{}]".format(self.vap_port))
+            logger.info("modify_radio: port_name           [{}]".format(self.port_name))
+            logger.info("modify_radio: vap_channel         [{}]".format(self.vap_channel))
+            logger.info("modify_radio: vap_bw              [{}]".format(self.vap_bw))
+            logger.info("modify_radio: vap_flags           [{}]".format(vap_flags))
+            logger.info("modify_radio: vap_flagmask        [{}]".format(vap_flagmask))
 
         self.command.post_add_vap(shelf=1,
                                   resource=self.resource,
@@ -662,7 +664,6 @@ class lf_rf_char(Realm):
                 logger.warning("get_port did not provide vap[mode]")
         logger.info("done polling for vap mode")
 
-        logger.info("resetting port")
         if self.reset_vap:
             logger.warning("resetting vap [{}]".format(self.port_name))
             self.command.post_reset_port(shelf=self.shelf,
@@ -1182,7 +1183,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         if rf_char.dut_info():
             found_station = True
             break
-        logger.warning("Looking for DUT info from DHCP data, attempt %s/%s" %
+        logger.warning("Looking for DUT info from vAP DUT data, attempt %s/%s" %
                        ((1 + max_dhcp_lookups - try_count), max_dhcp_lookups))
         # logger.warning("now_millis[%d] deadline_millis[%d]" % (now_millis(), deadline_millis))
         if now_millis() >= deadline_millis:
@@ -1221,7 +1222,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     # ~while
     if found_station:
         logger.warning("found station")
-        logger.warning("lease lookup time took %f s" % float((now_millis() - begin_lease_lookup_ms)/1000.0))
+        logger.warning("lease lookup time took %f s" %
+                       float((now_millis() - begin_lease_lookup_ms)/1000.0))
     else:
         logger.error("Unable to find station using %s inspections of dhcp table" % max_dhcp_lookups);
         sys.exit(1)
@@ -1316,7 +1318,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     tx_interval_time = rf_char.tx_interval_time
 
     # TX pkts, TX retries,  TX Failed %
-    logger.warning("testing time took %f s" % float((now_millis() - begin_traffic_ms)/1000))
+    logger.warning("traffic time took %f s" % float((now_millis() - begin_traffic_ms)/1000))
     logger.warning("building report")
     report.set_table_title("TX pkts , TX retries, TX Failed %")
     report.build_table_title()
