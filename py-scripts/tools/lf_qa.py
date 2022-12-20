@@ -112,7 +112,7 @@ class csv_sql:
             meta_data_fd = open(meta_data_path, 'r')
             for line in meta_data_fd:
                 if "lanforge_kernel_version:" in line:
-                    kernel_version = line.replace("lanforge_kernel_version:", "")
+                    kernel_version = line.replace("$ lanforge_kernel_version:", "")
                     kernel_version = test_run.strip()
                     logger.info("meta_data_path: {meta_data_path} Kernel Version: {kernel}".format(
                         meta_data_path=meta_data_path, kernel=kernel_version))
@@ -122,6 +122,26 @@ class csv_sql:
             logger.info("exception reading meta get_kernel_version_from_meta {_kpi_path}".format(
                 _kpi_path=_kpi_path))
         return kernel_version                 
+
+    def get_radio_firmware_from_meta(sefl, _kpi_path):
+        radio_firmware = "NA"
+        logger.info("read meta path for radio firmware version:  {_kpi_path}".format(_kpi_path=_kpi_path))
+        try:
+            meta_data_path = _kpi_path + '/' + '/meta.txt'
+            meta_data_fd = open(meta_data_path, 'r')
+            for line in meta_data_fd:
+                if "radio_firmware" in line:
+                    radio_firmware = line.replace("$ radio_firmware:", "")
+                    radio_firmware = test_run.strip()
+                    logger.info("meta_data_path: {meta_data_path} Radio Firmware : {radio_fw}".format(
+                        meta_data_path=meta_data_path, kernel=kernel_version))
+                    break
+            meta_data_fd.close()
+        except BaseException:
+            logger.info("exception reading meta get_kernel_version_from_meta {_kpi_path}".format(
+                _kpi_path=_kpi_path))
+        return radio_firmware                 
+
 
     def get_gui_info_from_meta(sefl, _kpi_path):
         gui_version = "NA"
@@ -626,6 +646,7 @@ class csv_sql:
             logger.info("test_dir: {test_dir}".format(test_dir=test_dir))
 
             df_kpi_tmp['kernel'] = self.get_kernel_version_from_meta(_kpi_path)
+            df_kpi_tmp['radio_fw'] = self.get_radio_firmware_from_meta(_kpi_path)
             df_kpi_tmp['gui_ver'], df_kpi_tmp['gui_build_date'] = self.get_gui_info_from_meta(_kpi_path)
             df_kpi_tmp['server_ver'], df_kpi_tmp['server_build_date'] = self.get_server_info_from_meta(_kpi_path)
 
@@ -965,6 +986,7 @@ class csv_sql:
                                         'test_dir',
                                         'numeric-score',
                                         'kernel',
+                                        'radio_fw',
                                         'gui_ver',
                                         'gui_build_date',
                                         'server_ver',
@@ -989,10 +1011,11 @@ class csv_sql:
                                     "test_dir: %{customdata[1]}",
                                     "numeric-score: %{customdata[2]}",
                                     "kernel-version: %{customdata[3]}",
-                                    "gui-version: %{customdata[4]}",
-                                    "gui-build-date: %{customdata[5]}",
-                                    "server-version: %{customdata[6]}",
-                                    "server-build-date: %{customdata[7]}",
+                                    "radio-fw: %{customdata[4]}",
+                                    "gui-version: %{customdata[5]}",
+                                    "gui-build-date: %{customdata[6]}",
+                                    "server-version: %{customdata[7]}",
+                                    "server-build-date: %{customdata[8]}",
                                 ])
                             )
 

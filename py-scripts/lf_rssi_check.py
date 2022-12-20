@@ -1210,26 +1210,30 @@ class lf_rssi_check(Realm):
 
                                                     ap_row_tx_dl.append(ap_row_chanim)
 
-                                                    self.write_port_csv(
-                                                        len(temp_stations_list),
-                                                        ul,
-                                                        dl,
-                                                        ul_pdu_str,
-                                                        dl_pdu_str,
-                                                        atten_val,
-                                                        port_eid,
-                                                        port_data,
-                                                        latency,
-                                                        jitter,
-                                                        total_ul_rate,
-                                                        total_ul_rate_ll,
-                                                        total_ul_pkts_ll,
-                                                        ul_rx_drop_percent,
-                                                        total_dl_rate,
-                                                        total_dl_rate_ll,
-                                                        total_dl_pkts_ll,
-                                                        dl_rx_drop_percent,
-                                                        ap_row_tx_dl) # this is where the AP data is added
+                                                    # port data contains RSSI and AP information 
+                                                    # note if AP is NA the information is not valid 
+                                                    # for RSSI testing then skip this information
+                                                    if port_data['ap'] != 'NA':
+                                                        self.write_port_csv(
+                                                            len(temp_stations_list),
+                                                            ul,
+                                                            dl,
+                                                            ul_pdu_str,
+                                                            dl_pdu_str,
+                                                            atten_val,
+                                                            port_eid,
+                                                            port_data,
+                                                            latency,
+                                                            jitter,
+                                                            total_ul_rate,
+                                                            total_ul_rate_ll,
+                                                            total_ul_pkts_ll,
+                                                            ul_rx_drop_percent,
+                                                            total_dl_rate,
+                                                            total_dl_rate_ll,
+                                                            total_dl_pkts_ll,
+                                                            dl_rx_drop_percent,
+                                                            ap_row_tx_dl) # this is where the AP data is added
 
                                                     # now report the ap_chanim_stats 
 
@@ -1284,25 +1288,31 @@ class lf_rssi_check(Realm):
                                                     port_data = response['interface']
                                                     latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
                                                         port_data["port"], endps)
-                                                    self.write_port_csv(
-                                                        len(temp_stations_list),
-                                                        ul,
-                                                        dl,
-                                                        ul_pdu_str,
-                                                        dl_pdu_str,
-                                                        atten_val,
-                                                        port_eid,
-                                                        port_data,
-                                                        latency,
-                                                        jitter,
-                                                        total_ul_rate,
-                                                        total_ul_rate_ll,
-                                                        total_ul_pkts_ll,
-                                                        ul_rx_drop_percent,
-                                                        total_dl_rate,
-                                                        total_dl_rate_ll,
-                                                        total_dl_pkts_ll,
-                                                        dl_rx_drop_percent)
+
+
+                                                    # port data contains RSSI and AP information 
+                                                    # note if AP is NA the information is not valid 
+                                                    # for RSSI testing then skip this information
+                                                    if port_data['ap'] != 'NA':
+                                                        self.write_port_csv(
+                                                            len(temp_stations_list),
+                                                            ul,
+                                                            dl,
+                                                            ul_pdu_str,
+                                                            dl_pdu_str,
+                                                            atten_val,
+                                                            port_eid,
+                                                            port_data,
+                                                            latency,
+                                                            jitter,
+                                                            total_ul_rate,
+                                                            total_ul_rate_ll,
+                                                            total_ul_pkts_ll,
+                                                            ul_rx_drop_percent,
+                                                            total_dl_rate,
+                                                            total_dl_rate_ll,
+                                                            total_dl_pkts_ll,
+                                                            dl_rx_drop_percent)
 
                                 # TODO add collect layer 3 data
 

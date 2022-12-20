@@ -214,6 +214,7 @@ class BaseLFJsonRequest:
         Perform HTTP get/post/put/delete with extensions specific to LANforge JSON
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     No_Data: dict = {'No Data': 0}
+    # OK_STATUSES indicate those HTTP response codes we will not consider fatal errors
     OK_STATUSES = (100, 200, 201, 204, 205, 206, 301, 302, 303, 304, 307, 308, 404)
     BASE64_SUFFIX = "-64"
     subclasses = []
@@ -615,6 +616,10 @@ class BaseLFJsonRequest:
                 return responses[0]
 
             except urllib.error.HTTPError as herror:
+                # these error codes illustrate an error on the client that requires debugging
+                # and retrying them is never going to succeed
+                if herror.code in (400, 410, 411, 412, 413, 414, 415, 416, 417, 428, 429, 431, 451):
+                    die_on_error = True
                 print_diagnostics(url_=url,
                                   request_=myrequest,
                                   responses_=responses,
@@ -625,6 +630,8 @@ class BaseLFJsonRequest:
                     sys.exit(1)
 
             except urllib.error.URLError as uerror:
+                # this is a misformatted URL
+                die_on_error = True
                 if (url.endswith("endsession")):
                     logging.info("lfclient closed connection before script exit")
                     die_on_error = True
@@ -640,7 +647,8 @@ class BaseLFJsonRequest:
                 if die_on_error:
                     sys.exit(1)
             # ~while
-            time.sleep(0.2)
+            LOGGER.error("json_post: request will try again in 2 sec")
+            time.sleep(2)
         if die_on_error:
             sys.exit(1)
         return None
@@ -890,7 +898,7 @@ class BaseLFJsonRequest:
                                                  request_timeout_sec=request_timeout_sec,
                                                  max_timeout_sec=max_timeout_sec,
                                                  errors_warnings=errors_warnings)
-                self.logger.warning("[%s] json_get: URL[%s]" % (attempt_counter, url))
+                self.logger.debug("[%s] json_get: URL[%s]" % (attempt_counter, url))
                 self.logger.debug(pformat(json_response))
                 if json_response is None:
                     if errors_warnings:
@@ -3638,21 +3646,22 @@ class LFJsonCommand(JsonCommand):
                 flag_val = LFPost.set_flags(AddL4EndpProxyAuthType0, flag_names=['bridge', 'dhcp'])
         ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
-        BASIC = 0x1                           # 1 Basic authentication
-        BIND_DNS = 0x200                      # 512 Make DNS requests go out endpoints Port.
-        DIGEST = 0x2                          # 2 Digest (MD5) authentication
-        DISABLE_EPSV = 0x1000                 # 4096 Disable FTP EPSV option
-        DISABLE_PASV = 0x800                  # 2048 Disable FTP PASV option (will use PORT command)
-        GSSNEGOTIATE = 0x4                    # 4 GSS authentication
-        INCLUDE_HEADERS = 0x100               # 256 especially for IMAP
-        LF_L4_REAL_BROWSER_TEST = 0x2000      # 8192 Enable Real Browser Test
-        MEDIA_PLAYBACKS_RANDOM = 0x4000       # Select random playback between 0 and media_playbacks
-        MEDIA_SEEKS_RANDOM = 0x8000           # Select random media seek count between 0 and media_random_seeks
-        NTLM = 0x8                            # 8 NTLM authentication
-        USE_DEFLATE_COMPRESSION = 0x80        # 128 Use deflate compression
-        USE_GZIP_COMPRESSION = 0x40           # 64 Use gzip compression
-        USE_IPV6 = 0x400                      # 1024 Resolve URL is IPv6. Will use IPv4 if not selected.
-        USE_PROXY_CACHE = 0x20                # 32 Use proxy cache
+        BASIC = 0x1                            # 1 Basic authentication
+        BIND_DNS = 0x200                       # 512 Make DNS requests go out endpoints Port.
+        DIGEST = 0x2                           # 2 Digest (MD5) authentication
+        DISABLE_EPSV = 0x1000                  # 4096 Disable FTP EPSV option
+        DISABLE_PASV = 0x800                   # 2048 Disable FTP PASV option (will use PORT command)
+        GSSNEGOTIATE = 0x4                     # 4 GSS authentication
+        INCLUDE_HEADERS = 0x100                # 256 especially for IMAP
+        LF_L4_REAL_BROWSER_TEST = 0x2000       # 8192 Enable Real Browser Test
+        LF_L4_VIDEO_STREAM_TEST = 0x10000      # 65536 Enable Video Stream Test
+        MEDIA_PLAYBACKS_RANDOM = 0x4000        # Select random playback between 0 and media_playbacks
+        MEDIA_SEEKS_RANDOM = 0x8000            # Select random media seek count between 0 and media_random_seeks
+        NTLM = 0x8                             # 8 NTLM authentication
+        USE_DEFLATE_COMPRESSION = 0x80         # 128 Use deflate compression
+        USE_GZIP_COMPRESSION = 0x40            # 64 Use gzip compression
+        USE_IPV6 = 0x400                       # 1024 Resolve URL is IPv6. Will use IPv4 if not selected.
+        USE_PROXY_CACHE = 0x20                 # 32 Use proxy cache
 
         # use to get in value of flag
         @classmethod
@@ -5674,7 +5683,7 @@ class LFJsonCommand(JsonCommand):
                            auth_user_name: str = None,               # Use this field for authentication user name. AUTO or
                            # blank mean use phone number.
                            display_name: str = None,                 # User-Name to be displayed. Use AUTO to display phone
-                           # number.
+                           # number. BT Identifier for Mobile.
                            gateway_port: str = None,                 # IP Port for SIP gateway (defaults to 5060).
                            ip_addr: str = None,                      # Use this IP for local IP address. Useful when there
                            # are multiple IPs on a port.
@@ -6594,12 +6603,12 @@ class LFJsonCommand(JsonCommand):
                    arg1: str = None,                         # Argument 1: xorp-port | scan-rslts-file | iface-name |
                    # iface-eid | rfgen-message | id | log_file_name
                    arg2: str = None,                         # Argument 2: scan key | message | angle | dest-radio |
-                   # adb-filename | lfver
+                   # adb-filename | lfver | event-id
                    arg3: str = None,                         # Argument 3: noprobe | migrate-sta-mac-pattern | adb-key |
-                   # kver
-                   arg5: str = None,                         # Argument 4: table-speed | extra-upgrade-args
+                   # kver | event-value-1
+                   arg5: str = None,                         # Argument 4: table-speed | extra-upgrade-args | event-value-2
                    cmd: str = None,                          # Admin command:
-                   # resync_clock|write_xorp_cfg|scan_complete|ifup_post_complete|flush_complete|req_migrate|rfgen|chamber|clean_logs|upgrade
+                   # resync_clock|write_xorp_cfg|scan_complete|ifup_post_complete|flush_complete|req_migrate|rfgen|chamber|clean_logs|upgrade|mobile|dhcpd
                    response_json_list: list = None,
                    debug: bool = False,
                    errors_warnings: list = None,
@@ -20268,7 +20277,7 @@ class LFJsonQuery(JsonQuery):
         rx+rate+%28last%29, rx+rate+ll, rx+wrong+dev, script, send+buf, source+addr, 
         tcp+mss, tcp+rtx, tx+bytes, tx+pdus, tx+pkts+ll, tx+rate, tx+rate+%281%C2%A0min%29, 
         tx+rate+%28last%29, tx+rate+ll        # hidden columns:
-        drop-count-5m, latency-5m, rt-latency-5m, rx-silence-5m
+        drop-count-5m, latency-5m, rt-latency-5m, rx-silence-3s
     Example URL: /endp?fields=1st+rx,a%2Fb
 
     Example py-json call (it knows the URL):
@@ -20304,13 +20313,17 @@ class LFJsonQuery(JsonQuery):
                                 # Ethernet frame. For UDP, it is the UDP payload size, and for TCP, it
                                 # just means the maximum amount of data that is written per socket
                                 # write.In all cases, the packets on the wire will not exceed theport's
-                                # MTU + Ethernet-Header-Size (typically 1514 for Ethernet)
+                                # MTU + Ethernet-Header-Size (typically 1514 for Ethernet)Note that large
+                                # maximum write sizes put memory pressure on theLANforge system and can
+                                # degrade performance.
         'max rate':             # Maximum desired transmit rate, in bits per second (bps).
         'min pdu':              # The minimum write size.For Ethernet protocols, this is the entire
                                 # Ethernet frame. For UDP, it is the UDP payload size, and for TCP, it
                                 # just means the maximum amount of data that is written per socket
                                 # write.In all cases, the packets on the wire will not exceed theport's
-                                # MTU + Ethernet-Header-Size (typically 1514 for Ethernet)
+                                # MTU + Ethernet-Header-Size (typically 1514 for Ethernet)Note that large
+                                # minimum write sizes put memory pressure on theLANforge system and can
+                                # degrade performance.
         'min rate':             # Minimum desired transmit rate, in bits per second (bps).
         'mng':                  # Is the Endpoint managed or not?
         'name':                 # Endpoint's Name.
@@ -21698,10 +21711,10 @@ class LFJsonQuery(JsonQuery):
         /resource/$shelf_id/$resource_id
 
     When requesting specific column names, they need to be URL encoded:
-        app-id, bps-rx-3s, bps-tx-3s, cli-port, cpu, ctrl-ip, ctrl-port, eid, entity+id, 
-        free+mem, free+swap, gps, hostname, hw+version, kernel, load, max+if-up, 
-        max+staged, mem, phantom, ports, rx+bytes, shelf, sta+up, sw+version, swap, 
-        tx+bytes, user        # hidden columns:
+        app-id, bps-rx-3s, bps-tx-3s, build+date, cli-port, cpu, ctrl-ip, ctrl-port, 
+        eid, entity+id, free+mem, free+swap, gps, hostname, hw+version, kernel, load, 
+        max+if-up, max+staged, mem, phantom, ports, rx+bytes, shelf, sta+up, sw+version, 
+        swap, tx+bytes, user        # hidden columns:
         timestamp
     Example URL: /resource?fields=app-id,bps-rx-3s
 
@@ -21719,6 +21732,7 @@ class LFJsonQuery(JsonQuery):
         'bps-tx-3s':  # Rate in bits-per-second that the manager isreceiving management data
                       # from the resource, averaged over the last 3 seconds.This is TCP payload
                       # data, and does not count the IP and Ethernet overhead.
+        'build date': # LANforge Software build date on the machine.
         'cli-port':   # Text (telnet) interface IP Port.
         'cpu':        # CPU information for the machine.
         'ctrl-ip':    # IP Address of the Control Interface.
@@ -21882,8 +21896,8 @@ class LFJsonQuery(JsonQuery):
 
     When requesting specific column names, they need to be URL encoded:
         ap, auth-for, capabilities, chain+rssi, entity+id, idle, ip, roam-duration, 
-        rx+bytes, rx+pkts, rx+rate, signal, signal+avg, station+bssid, tx+bytes, 
-        tx+pkts, tx+rate, tx+retries, tx-failed
+        rx+bytes, rx+pkts, rx+rate, signal, signal+avg, station+bssid, station+ssid, 
+        tx+bytes, tx+pkts, tx+rate, tx+retries, tx-failed
     Example URL: /stations?fields=ap,auth-for
 
     Example py-json call (it knows the URL):
@@ -21910,6 +21924,7 @@ class LFJsonQuery(JsonQuery):
         'signal':        # Station last signal quality.
         'signal avg':    # Station last signal quality.
         'station bssid': # Station's MAC address (BSSID).
+        'station ssid':  # Station's Connected Network Name (SSID).
         'tx bytes':      # TX Byte counter for this station.
         'tx pkts':       # TX Packets counter for this station.
         'tx rate':       # Station last transmit encoding rate.

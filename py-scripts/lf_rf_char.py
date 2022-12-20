@@ -85,6 +85,9 @@ class lf_rf_char(Realm):
                  lf_passwd=None,
                  debug=False
                  ):
+        super().__init__(lfclient_host=lf_mgr,
+                         lfclient_port=lf_port,
+                         debug_=True)
         self.lf_mgr = lf_mgr
         self.lf_port = lf_port
         self.lf_user = lf_user
@@ -103,6 +106,8 @@ class lf_rf_char(Realm):
         self.frame_interval = ''
         self.gen_endpoint = ''
         self.cx_state = ''
+        self.timeout_sec = 30 # max seconds to establish the traffic command
+        self.bookmark_event_id : int = 0
 
         # create api_json
         self.json_vap_api = lf_json_api.lf_json_api(lf_mgr=self.lf_mgr,
@@ -136,14 +141,15 @@ class lf_rf_char(Realm):
 
         # vap configuration
         self.shelf : int = 1
-        self.resource : int = ''
+        self.resource : int = -1
         self.port_name : str = ''
         self.vap_radio : str = ''
         self.vap_channel : str = ''
         self.vap_bw : int = 0 # 20, 40, 80, 160
-        self.vap_mode : str = 0
+        self.vap_mode : str = "0"
         self.vap_antenna = ''
         self.vap_txpower : int = -1
+        self.vap_eid = ''
         self.reset_vap = False
 
         # get dut information
@@ -172,102 +178,214 @@ class lf_rf_char(Realm):
         # logging
         self.debug = debug
 
+
+    def remove_generic_cx(self):
+        # self.command.die_on_error = False
+        # self.exit_on_error = False
+        logger.info("Stopping generic connections")
+
+        generics = self.json_get("/generic/list")
+        if generics:
+            cx_list = []
+            ep_list = []
+            noun = 'endpoints'
+            if 'endpoints' in generics:
+                for item in generics[noun]:
+                    k = next(iter(item))
+                    if item[k]['name']:
+                        if item[k]['name'].startswith("UNKNOWN"):
+                            continue
+                        cx_list.append("CX_" + item[k]['name'])
+                        ep_list.append(item[k]['name'])
+                    # else there is no way to stop an un-named endpoint
+                    # such an item is a zombie item
+            elif 'endpoint' in generics:
+                if generics['endpoint']['name'] and not generics['endpoint']['name'].startswith("UNKNOWN"):
+                    cx_list.append("CX_" + generics['endpoint']['name'])
+                    ep_list.append(generics['endpoint']['name'])
+                # else there is no way to stop an un-named endpoint
+                # such an item is a zombie item
+            if len(cx_list):
+                for cx in cx_list:
+                    self.command.post_rm_cx(cx_name=cx,
+                                            test_mgr='all',
+                                            suppress_related_commands=True,
+                                            debug=True)
+                for ep in ep_list:
+                    self.command.post_rm_endp(endp_name=ep,
+                                              suppress_related_commands=True,
+                                              debug=True)
+
+
+    def get_recent_lease_events(self):
+        # check lease info from dhcp events
+        events_rec = self.json_get("/events/since/%d" % self.bookmark_event_id, debug_=self.debug)
+        if not events_rec:
+            return None
+        noun = 'events'
+        if noun not in events_rec:
+            noun = 'event'
+        if noun not in events_rec:
+            return None
+        dhcp_events = []
+
+        for event_entry in events_rec[noun]:
+            event = event_entry[next(iter(event_entry))]
+            # pprint(event)
+            if event['event description'].startswith("DHCPACK on"):
+                dhcp_events.append(event)
+
+        # pprint(["events", dhcp_events])
+        return dhcp_events
+
+
     def dut_info(self):
         self.json_vap_api.request = 'stations'
         json_stations = []
-        sta_ap = ""
+        sta_ap = ''
+        dut_ip = ''
+        dut_mac = ''
+        dut_hostname = ''
 
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
-        vap_eid = "%s.%s.%s" % (self.shelf, self.resource, self.port_name)
+        self.vap_eid = "%s.%s.%s" % (self.shelf, self.resource, self.port_name)
+
+        event_recs = self.get_recent_lease_events()
+        other_findings : dict = {}
+        # look for event containing the vap_name then get the station IP from events
+
+        logger.warning("Inspecting %d Events for vAP %s" % (len(event_recs), self.port_name))
+        for record in event_recs:
+            if not (('event description' in record) or record['event description']):
+                continue
+
+            hunks : list[str] = record['event description'].split(" ")
+            if hunks[6] != self.port_name:
+                if hunks[6] not in other_findings:
+                    other_findings[hunks[6]] = []
+                other_findings[hunks[6]].append(hunks[4])
+                continue
+
+            if not self.dut_mac:
+                self.dut_mac = hunks[4]
+
+            dut_ip = hunks[2]
+            self.dut_ip = dut_ip
+            logger.warning("==  ==  ==  ==  Found DUT IP: %s ==  ==  ==  ==  " % dut_ip)
+            break
+
+        if not self.dut_ip:
+            for vap in other_findings.keys():
+                logger.info("  ...%s has: %s" % (vap, ", ".join(other_findings[vap])))
 
         try:
             # does not need specific port information
+            snc = subprocess.Popen("sync")
+            snc.wait()
+            if not self.vap_eid:
+                self.vap_eid = "1.%s.%s" % (self.resource, self.port_name)
+            self.command.post_probe_port(shelf=1,
+                                         resource=self.resource,
+                                         port=self.port_name,
+                                         key='probe_port.quiet.' + self.vap_eid)
+            time.sleep(0.5)
             json_stations, *nil = self.json_vap_api.get_request_stations_information()
-
             self.dut_mac = json_stations['station']['station bssid']
             sta_ap = json_stations['station']['ap']
             logger.info("DUT MAC: {mac}".format(mac=self.dut_mac))
         except BaseException:
             # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
-            print("Looking for vap-eid: %s" % (vap_eid))
+            logger.info("Looking for vap-eid: %s" % self.vap_eid)
             try:
-                for s in json_stations['stations']:
+                pronoun = 'stations'
+                if pronoun not in json_stations:
+                    pronoun = 'station'
+                if pronoun not in json_stations:
+                    logger.warning(" no station info in json_stations, try again...")
+                    return False
+
+                for s in json_stations[pronoun]:
                     keys = list(s.keys())
                     vals = s[keys[0]]
 
-                    if vals['ap'] == vap_eid:
-                        sta_ap = vap_eid
+                    if vals['ap'] == self.vap_eid:
+                        sta_ap = self.vap_eid
                         self.dut_mac = vals['station bssid']
-                        print("found sta, ap: %s  mac: %s" % (sta_ap, self.dut_mac))
+                        logger.warning(" Found sta, ap: %s  mac: %s" % (sta_ap, self.dut_mac))
                         break
             except BaseException:
-                print("waiting on stations")
+                logger.info("waiting on stations")
                 pass
 
             if sta_ap == "":
-                logger.info("Stations table not as expected:")
-                logger.info(pformat(json_stations))
+                logger.info("  No stations using vAP [%s]" % self.vap_eid)
+                station_macs : list[str] = []
+                for record in json_stations['stations']:
+                    bss = next(iter(record))
+                    station_macs.append(bss[bss.rindex('.')+1:])
+                logger.info("   stations seen: "+", ".join(station_macs))
+                #logger.warning(pformat(json_stations))
                 return False
 
         # Make sure the station is on correct IP vap
-        if (sta_ap != vap_eid):
-            logger.error("Detected STA on AP: %s, expected it to be on AP: %s" % (sta_ap, vap_eid))
+        if (sta_ap != self.vap_eid):
+            logger.info(" Detected STA on AP: %s, expected it to be on AP: %s" % (sta_ap, self.vap_eid))
             return False
 
-        # get the IP from port mode
-        self.lf_command = ["../lf_portmod.pl", "--manager", self.lf_mgr, "--card", str(self.resource), "--port_name", self.port_name,
-                           "--cli_cmd", "probe_port 1 {resource} {port}".format(resource=self.resource, port=self.port_name)]
-        logger.info("command: {cmd}".format(cmd=self.lf_command))
-        summary_output = ''
-        # summary = subprocess.Popen(["../lf_portmod.pl", "--manager", self.lf_mgr, "--card",str(self.resource),"--port_name",self.port_name,
-        #            "--cli_cmd","probe_port 1 {resource} {port}".format(resource=self.resource,port=self.port_name)], universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        summary = subprocess.Popen(self.lf_command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        if not dut_ip:
+            # get the IP from port probe
+            logger.warning("DUT IP not found in event records, checking port probe...")
+            self.lf_command = ["../lf_portmod.pl", "--manager", self.lf_mgr, "--card", str(self.resource), "--port_name", self.port_name,
+                               "--cli_cmd", "probe_port 1 {resource} {port}".format(resource=self.resource, port=self.port_name)]
+            logger.info("command: {cmd}".format(cmd=self.lf_command))
+            summary_output = ''
+            process_begin_ms = now_millis()
+            summary = subprocess.Popen(self.lf_command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
-        for line in iter(summary.stdout.readline, ''):
-            logger.debug(line)
-            summary_output += line
-            # sys.stdout.flush() # please see comments regarding the necessity of this line
-        summary.wait()
-        logger.debug(summary_output)  # .decode('utf-8', 'ignore'))
+            for line in iter(summary.stdout.readline, ''):
+                logger.debug(line)
+                summary_output += line
+                # sys.stdout.flush() # please see comments regarding the necessity of this line
+            summary.wait()
+            process_end_ms = now_millis()
+            logger.info("lfportmod took %d ms" % (process_end_ms - process_begin_ms))
+            logger.debug(summary_output)  # .decode('utf-8', 'ignore'))
 
-        dut_ip = ''
-        dut_mac = ''
-        dut_hostname = ''
-        search_dhcp_lease = False
-        search_equals = False
-        for line in summary_output.splitlines():
-            if (line.startswith("DHCPD-Lease-File-Contents")):
-                search_equals = True
-                continue
+            search_dhcp_lease = False
+            search_equals = False
+            for line in summary_output.splitlines():
+                if (line.startswith("DHCPD-Lease-File-Contents")):
+                    search_equals = True
+                    continue
 
-            if (search_equals and line.startswith("=========")):
-                search_dhcp_lease = True
-                continue
+                if (search_equals and line.startswith("=========")):
+                    search_dhcp_lease = True
+                    continue
 
-            if (search_dhcp_lease):
-                pat = "(\\S+)\\s+(\\S+)\\s+(\\S+)"
-                m = re.search(pat, line)
-                if (m is not None):
-                    dut_mac = m.group(1)
-                    dut_ip = m.group(2)
-                    dut_hostname = m.group(3)
-                else:
-                    pat = "(\\S+)\\s+(\\S+)"
+                # print("X=X=X "+line)
+                if (search_dhcp_lease):
+                    pat = "(\\S+)\\s+(\\S+)\\s+(\\S+)"
                     m = re.search(pat, line)
                     if (m is not None):
                         dut_mac = m.group(1)
                         dut_ip = m.group(2)
-            # there should only be one connection
+                        dut_hostname = m.group(3)
+                    else:
+                        pat = "(\\S+)\\s+(\\S+)"
+                        m = re.search(pat, line)
+                        if (m is not None):
+                            dut_mac = m.group(1)
+                            dut_ip = m.group(2)
+                # there should only be one connection
 
-        logger.debug("probe mac : {mac} ip : {ip}".format(mac=dut_mac, ip=dut_ip))
-        if dut_mac != self.dut_mac:
-            logger.info("mac mismatch: probe mac:[{mac}] stations mac:[{station_mac}]".
-                        format(mac=dut_mac, station_mac=self.dut_mac))
-            logger.warning("waiting for mac:[{station_mac}]".format(station_mac=self.dut_mac))
-            return False
-
-        self.dut_ip = dut_ip
-        self.dut_hostname = dut_hostname
+            logger.debug("probe mac : {mac} ip : {ip}".format(mac=dut_mac, ip=dut_ip))
+            if dut_mac != self.dut_mac:
+                logger.info("mac mismatch: probe mac:[{mac}] stations mac:[{station_mac}]".
+                            format(mac=dut_mac, station_mac=self.dut_mac))
+                logger.info("waiting for mac:[{station_mac}]".format(station_mac=self.dut_mac))
+                return False
+            self.dut_ip = dut_ip
+            #self.dut_hostname = dut_hostname
 
         return True
 
@@ -385,14 +503,30 @@ class lf_rf_char(Realm):
             command=lf_command,
             name=self.gen_endpoint,
             debug=self.debug)
+        self.wait_until_endps(base_url=self.lfclient_url,
+                              endp_list=("lf_ping_%s" % self.vap_port),
+                              debug=False,
+                              timeout=10)
 
-    # set_cx_state
 
     def set_cx_state(self):
         self.command.post_set_cx_state(cx_name=self.gen_endpoint,
                                        cx_state=self.cx_state,
                                        test_mgr='all',
                                        debug=self.debug)
+
+    def bookmark_events(self):
+        self.bookmark_event_id = 0
+        events_rec = self.json_get("/events/last/1", debug_=self.debug)
+        if events_rec:
+            noun = "events"
+            if noun not in events_rec:
+                noun = "event"
+            if noun in events_rec:
+                # pprint(events_rec[noun])
+                self.bookmark_event_id = int(events_rec[noun]["id"])
+
+
 
     def modify_radio(self):
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_radio)
@@ -403,6 +537,8 @@ class lf_rf_char(Realm):
             "default" : -1,
         }
         tx_pow = -1 #default
+        if not self.vap_txpower:
+            self.vap_txpower = "default"
         self.vap_txpower = str(self.vap_txpower).lower()
         if self.vap_txpower in tx_powers:
             tx_pow = tx_powers[self.vap_txpower]
@@ -448,6 +584,8 @@ class lf_rf_char(Realm):
                     t_band=2
                 elif (t_channel >= 32) and (t_channel <= 177):
                     t_band=5
+                elif (t_channel >= 191):
+                    t_band=6
             if t_channel == 0:
                 raise Exception("strange channel: {}".format(self.vap_channel))
             if t_band < 2:
@@ -461,14 +599,17 @@ class lf_rf_char(Realm):
                 | self.command.AddVapFlags.use_bss_load \
                 | self.command.AddVapFlags.use_bss_transition \
                 | self.command.AddVapFlags.use_rrm_report
-            default_flags_6g = self.command.AddVapFlags.hostapd_config \
-                | self.command.AddVapFlags.use_bss_load \
+            default_flags_6g = self.command.AddVapFlags.use_bss_load \
                 | self.command.AddVapFlags.use_bss_transition \
                 | self.command.AddVapFlags.use_rrm_report
             t_flags: int = -1
             t_flagmask: int = self.command.AddVapFlags.disable_ht40 \
                               | self.command.AddVapFlags.disable_ht80 \
                               | self.command.AddVapFlags.ht160_enable
+            if t_band == 6:
+                # have to specify hostapd_config in flags to make sure that custom config
+                # checkbox gets turned off
+                t_flagmask |= self.command.AddVapFlags.hostapd_config
             if self.vap_bw and (not t_band or self.vap_bw == "NA"):
                 # logger.error("unable to set bandwidth without knowing channel")
                 raise Exception("unable to set bandwidth without knowing channel")
@@ -486,8 +627,9 @@ class lf_rf_char(Realm):
                     raise ValueError("Unknown band %s" % t_band)
 
                 if self.vap_bw == "20":
-                    t_flags |= self.command.AddVapFlags.disable_ht40 \
-                        | self.command.AddVapFlags.disable_ht80
+                    t_flags |= self.command.AddVapFlags.disable_ht40
+                        # disabling ht80 appears to remove usefulness of disable_ht40
+                        # | self.command.AddVapFlags.disable_ht80
                 if self.vap_bw == "40":
                     t_flags |= self.command.AddVapFlags.disable_ht80
                 if self.vap_bw == "80":
@@ -508,59 +650,77 @@ class lf_rf_char(Realm):
             else:
                 logger.warning("t_flags does not look right: %s" % t_flags)
                 time.sleep(5)
-            
-        if self.vap_mode != 0:
-            v_name = self.vap_port
-            if self.vap_port.find('.') > -1:
-                v_name = self.vap_port[self.vap_port.rindex('.')+1:]
-            r_name = self.vap_radio
-            if self.vap_radio.find('.') > -1:
-                r_name = self.vap_radio[self.vap_radio.rindex('.')+1:]
-            if self.debug:
-                logger.warning("modify_ratio: setting vap mode to [{}]".format(self.vap_mode))
-                logger.warning("modify_ratio: vap_radio           [{}]".format(self.vap_radio))
-                logger.warning("modify_ratio: vap                 [{}]".format(self.vap))
-                logger.warning("modify_ratio: vap_port            [{}]".format(self.vap_port))
-                logger.warning("modify_ratio: port_name           [{}]".format(self.port_name))
-                logger.warning("modify_ratio: vap_channel         [{}]".format(self.vap_channel))
-                logger.warning("modify_ratio: vap_bw              [{}]".format(self.vap_bw))
-                logger.warning("modify_ratio: vap_flags           [{}]".format(self.vap_flags))
-                logger.warning("modify_ratio: vap_flagmask        [{}]".format(self.vap_flagmask))
-            self.command.post_add_vap(shelf=1,
-                                      resource=self.resource,
-                                      radio=r_name,
-                                      ap_name=v_name,
-                                      mode=self.vap_mode,
-                                      flags=vap_flags,
-                                      flags_mask=vap_flagmask,
-                                      debug=True)
-            queried_mode = "none"
-            e_w : list = []
-            poll_start_sec = lanforge_api._now_sec()
-            deadline_sec = poll_start_sec + 16
-            while (queried_mode == "none") and (deadline_sec > lanforge_api._now_sec()):
-                response = self.query.get_port(eid_list=["1.1.vap0000"],
-                                               requested_col_names=["alias", "mode"],
-                                               errors_warnings=e_w,
-                                               debug=True)
-                if not response:
-                    logger.error("No response to query get_port()")
-                else:
-                    logger.debug(" Response: %s"        % pformat(response))
-                if e_w:
-                    logger.warning("get_port warnings: %s" % pformat(e_w))
-                if "mode" in response:
-                    queried_mode = response["mode"]
-                else:
-                    logger.warning("get_port did not provide vap[mode]")
-            logger.info("done polling for vap mode")
 
-        logger.info("resetting port")
+        v_name = self.vap_port
+        if self.vap_port.find('.') > -1:
+            v_name = self.vap_port[self.vap_port.rindex('.')+1:]
+        r_name = self.vap_radio
+        if self.vap_radio.find('.') > -1:
+            r_name = self.vap_radio[self.vap_radio.rindex('.')+1:]
+        if self.debug:
+            logger.info("modify_radio: setting vap mode to [{}]".format(self.vap_mode))
+            logger.info("modify_radio: vap_radio           [{}]".format(self.vap_radio))
+            logger.info("modify_radio: vap                 [{}]".format(self.vap))
+            logger.info("modify_radio: vap_port            [{}]".format(self.vap_port))
+            logger.info("modify_radio: port_name           [{}]".format(self.port_name))
+            logger.info("modify_radio: vap_channel         [{}]".format(self.vap_channel))
+            logger.info("modify_radio: vap_bw              [{}]".format(self.vap_bw))
+            logger.info("modify_radio: vap_flags           [{}]".format(vap_flags))
+            logger.info("modify_radio: vap_flagmask        [{}]".format(vap_flagmask))
+
+        self.command.post_add_vap(shelf=1,
+                                  resource=self.resource,
+                                  radio=r_name,
+                                  ap_name=v_name,
+                                  mode=self.vap_mode,
+                                  flags=vap_flags,
+                                  flags_mask=vap_flagmask,
+                                  debug=True)
+        queried_mode = "none"
+        e_w : list = []
+        poll_start_sec = lanforge_api._now_sec()
+        deadline_sec = poll_start_sec + 16
+        while (queried_mode == "none") and (deadline_sec > lanforge_api._now_sec()):
+            response = self.query.get_port(eid_list=["1.1.vap0000"],
+                                           requested_col_names=["alias", "mode"],
+                                           errors_warnings=e_w,
+                                           debug=True)
+            if not response:
+                logger.error("No response to query get_port()")
+            else:
+                logger.debug(" Response: %s"        % pformat(response))
+            if e_w:
+                logger.warning("get_port warnings: %s" % pformat(e_w))
+            if "mode" in response:
+                queried_mode = response["mode"]
+            else:
+                logger.warning("get_port did not provide vap[mode]")
+        logger.info("done polling for vap mode")
+
         if self.reset_vap:
             logger.warning("resetting vap [{}]".format(self.port_name))
             self.command.post_reset_port(shelf=self.shelf,
                                          resource=self.resource,
                                          port=self.port_name)
+        # Port reset can make everything kinda hang in limbo
+        # because we wait for report_timer seconds for ports to report
+        # again. Lets prompt the port and the virtual router to
+        # refresh to help get our dhcp leases visible as soon as possible
+        time.sleep(1)
+        ncsp_flags : int = LFJsonCommand.NcShowPortsProbeFlags.WIFI \
+                            | LFJsonCommand.NcShowPortsProbeFlags.MII \
+                            | LFJsonCommand.NcShowPortsProbeFlags.BRIDGE \
+                            | LFJsonCommand.NcShowPortsProbeFlags.GW
+        self.command.post_nc_show_ports(shelf=1,
+                                        resource=self.resource,
+                                        port=self.port_name,
+                                        probe_flags=ncsp_flags)
+        LFUtils.wait_until_ports_admin_up(base_url=self.lfclient_url,
+                                          resource_id=self.resource,
+                                          port_list=[self.port_name])
+        self.command.post_show_vr(shelf=1, resource=self.resource, router='all')
+        self.command.post_show_vrcx(shelf=1, resource=self.resource, cx_name='all')
+
 
     def start(self):
         # first read with
@@ -616,6 +776,9 @@ class lf_rf_char(Realm):
         self.clear_port_counters()
 
         jason_vap_port_stats, *nil = self.json_vap_api.get_request_port_information(port=self.vap_port)
+        if not jason_vap_port_stats:
+            raise ValueError("json_vap_api.get_request_port_information returned nothing")
+
         tx_pkts_previous = 0
         tx_retries_previous = 0
 
@@ -655,11 +818,19 @@ class lf_rf_char(Realm):
             self.tx_interval.append(round(interval, 2))
             current_time = current_time_stamp.split()
             self.tx_interval_time.append(current_time[1])
-            # print(json_vap_port_stats["interface"]["tx pkts"])
-            self.tx_pkts.append(json_vap_port_stats["interface"]["tx pkts"] - tx_pkts_previous)
+
+            if tx_pkts_previous <= json_vap_port_stats["interface"]["tx pkts"]:
+                self.tx_pkts.append(json_vap_port_stats["interface"]["tx pkts"] - tx_pkts_previous)
+            else:
+                self.tx_pkts.append(0)
             tx_pkts_previous = json_vap_port_stats["interface"]["tx pkts"]
-            self.tx_retries.append(json_vap_port_stats["interface"]["wifi retries"] - tx_retries_previous)
+
+            if tx_retries_previous <= json_vap_port_stats["interface"]["wifi retries"]:
+                self.tx_retries.append(json_vap_port_stats["interface"]["wifi retries"] - tx_retries_previous)
+            else:
+                self.tx_retries.append(0)
             tx_retries_previous = json_vap_port_stats["interface"]["wifi retries"]
+
             self.tx_failed.append(round(json_vap_port_stats["interface"]["tx-failed %"], 2))
             self.rx_rate.append(json_vap_port_stats["interface"]["rx-rate"])
             self.tx_rate.append(json_vap_port_stats["interface"]["tx-rate"])
@@ -670,11 +841,12 @@ class lf_rf_char(Realm):
             # port not needed for all
             json_stations, *nil = self.json_vap_api.get_request_stations_information()
             logger.info("json_stations {json}".format(json=pformat(json_stations)))
+            chain_rssi : list = []
             if "station" in json_stations:
                 self.rssi_signal.append(json_stations['station']['signal'])
                 chain_rssi_str = json_stations['station']['chain rssi']
                 chain_rssi = chain_rssi_str.split(',')
-            else:
+            elif "stations" in json_stations:
                 # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
                 # pprint(json_stations)
                 # This should give us faster lookup if I knew how to use it.
@@ -688,32 +860,42 @@ class lf_rf_char(Realm):
                         chain_rssi_str = vals['chain rssi']
                         chain_rssi = chain_rssi_str.split(',')
                         break
+            else:
+                logger.info("json_stations lacks station info, next...")
+                continue
 
-            logger.info("RSSI chain length {chain}".format(chain=len(chain_rssi)))
-            if len(chain_rssi) == 1:
-                self.rssi_1.append(int(chain_rssi[0].lstrip()))
-                self.rssi_2.append(np.nan)
-                self.rssi_3.append(np.nan)
-                self.rssi_4.append(np.nan)
-                self.rssi_1_count = self.rssi_1_count + 1
-            elif len(chain_rssi) == 2:
-                self.rssi_1.append(int(chain_rssi[0].lstrip()))
-                self.rssi_2.append(int(chain_rssi[1].lstrip()))
-                self.rssi_3.append(np.nan)
-                self.rssi_4.append(np.nan)
-                self.rssi_2_count = self.rssi_2_count + 1
-            elif len(chain_rssi) == 3:
-                self.rssi_1.append(int(chain_rssi[0].lstrip()))
-                self.rssi_2.append(int(chain_rssi[1].lstrip()))
-                self.rssi_3.append(int(chain_rssi[2].lstrip()))
-                self.rssi_4.append(np.nan)
-                self.rssi_3_count = self.rssi_3_count + 1
-            elif len(chain_rssi) == 4:
-                self.rssi_1.append(int(chain_rssi[0].lstrip()))
-                self.rssi_2.append(int(chain_rssi[1].lstrip()))
-                self.rssi_3.append(int(chain_rssi[2].lstrip()))
-                self.rssi_4.append(int(chain_rssi[3].lstrip()))
-                self.rssi_4_count = self.rssi_4_count + 1
+            if chain_rssi:
+                logger.info("RSSI chain length {chain}".format(chain=len(chain_rssi)))
+                if len(chain_rssi) == 1:
+                    self.rssi_1.append(int(chain_rssi[0].lstrip()))
+                    self.rssi_2.append(np.nan)
+                    self.rssi_3.append(np.nan)
+                    self.rssi_4.append(np.nan)
+                    self.rssi_1_count = self.rssi_1_count + 1
+                elif len(chain_rssi) == 2:
+                    self.rssi_1.append(int(chain_rssi[0].lstrip()))
+                    self.rssi_2.append(int(chain_rssi[1].lstrip()))
+                    self.rssi_3.append(np.nan)
+                    self.rssi_4.append(np.nan)
+                    self.rssi_2_count = self.rssi_2_count + 1
+                elif len(chain_rssi) == 3:
+                    self.rssi_1.append(int(chain_rssi[0].lstrip()))
+                    self.rssi_2.append(int(chain_rssi[1].lstrip()))
+                    self.rssi_3.append(int(chain_rssi[2].lstrip()))
+                    self.rssi_4.append(np.nan)
+                    self.rssi_3_count = self.rssi_3_count + 1
+                elif len(chain_rssi) == 4:
+                    self.rssi_1.append(int(chain_rssi[0].lstrip()))
+                    self.rssi_2.append(int(chain_rssi[1].lstrip()))
+                    self.rssi_3.append(int(chain_rssi[2].lstrip()))
+                    self.rssi_4.append(int(chain_rssi[3].lstrip()))
+                    self.rssi_4_count = self.rssi_4_count + 1
+                else:
+                    self.rssi_1.append(np.nan)
+                    self.rssi_2.append(np.nan)
+                    self.rssi_3.append(np.nan)
+                    self.rssi_4.append(np.nan)
+                    self.rssi_4_count = 0
 
         self.json_vap_api.csv_mode = 'write'
         self.json_vap_api.update_csv_mode()
@@ -721,8 +903,20 @@ class lf_rf_char(Realm):
         # TODO make the get_request more generic just set the request
         self.json_rad_api.request = 'wifi-stats'
         # Read the vap device stats, it will also be able to report underlying radio stats as needed.
-        json_wifi_stats, *nil = self.json_rad_api.get_request_wifi_stats_information(port=self.vap_port)
-        #print("wifi-stats output, vap-radio: %s radio port name %s:"%(self.vap_radio, self.json_api.port_name))
+        request_attempts : int = 6
+        json_wifi_stats : dict = None
+        while request_attempts >= 0:
+            request_attempts -= 1
+            json_wifi_stats, *nil = self.json_rad_api.get_request_wifi_stats_information(port=self.vap_port)
+            if not json_wifi_stats:
+                raise ValueError("__name__ get_request_wifi_stats_information unable to create json_wifi_stats")
+            if self.port_name not in json_wifi_stats:
+                # raise ValueError("port %s not in json_wifi_stats" % self.port_name)
+                time.sleep(1)
+                continue
+            request_attempts = -1
+
+        logger.debug("wifi-stats output, vap-radio: %s radio port name %s:"%(self.vap_radio, self.port_name))
         # pprint(json_wifi_stats)
 
         # Stop Traffic
@@ -740,6 +934,24 @@ class lf_rf_char(Realm):
 
     def read_stations(self):
         pass
+
+
+# sort the values when in a list
+def num_sort(strn):
+    # getting number using isdigit() and split()
+    computed_num = [ele for ele in strn[0].split('_') if ele.isdigit()]
+    # assigning lowest weightage to strings
+    # with no numbers
+    if len(computed_num) > 0:
+        return int(computed_num[0])
+    return -1
+
+def length_sort(strn):
+    return len(strn[0])
+
+
+def now_millis() -> int:
+    return round(time.time() * 1000)
 
 
 def main():
@@ -821,9 +1033,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                         help="dut hw version for kpi.csv, hardware version of the device under test")
     parser.add_argument("--dut_sw_version", default="",
                         help="dut sw version for kpi.csv, software version of the device under test")
-    parser.add_argument("--dut_model_num", default="",
+    parser.add_argument("--dut_model_num", "--dut_model_no", default="",
                         help="dut model for kpi.csv,  model number / name of the device under test")
-    parser.add_argument("--dut_serial_num", default="",
+    parser.add_argument("--dut_serial_num", "--dut_serial_no", default="",
                         help="dut serial num for kpi.csv,  model serial number ")
 
     parser.add_argument("--test_priority", default="95",
@@ -845,6 +1057,14 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     parser.add_argument('--frame', help="--frame <bytes>  , e.g. --frame 1400", default='1400')
     parser.add_argument('--frame_interval', help="--frame_interval <fractions of second>  , e.g. --frame_interval .01 ", default='.01')
 
+    # TODO
+    parser.add_argument('--timeout_sec',
+                        help="number of seconds to allow for starting traffic; if traffic has not started by this time, script will abort")
+    parser.add_argument('--dhcp_poll_ms',
+                        help="wait between checking vap probe results for new DHCP leases (milliseconds)")
+    parser.add_argument('--dhcp_lookup_attempts',
+                        help="number of attempts to check for DHCP lease before aborting script")
+
     args = parser.parse_args()
 
     # set up logger
@@ -861,7 +1081,19 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         logger_config.load_lf_logger_config()
 
     if not args.vap_radio:
-        logger.info("No radio name provided")
+        logger.error("No radio name provided")
+        exit(1)
+    vap_radio : str = args.vap_radio
+    if not vap_radio.startswith("1."):
+        logger.error("--vap_radio requires EID format: 1.1.wiphy0")
+        exit(1)
+
+    if not args.vap_port:
+        logger.error("No --vap_port vAP name provided, please use EID format, e.g.: 1.1.vap0000")
+        exit(1)
+    vap_port : str = args.vap_port
+    if not vap_port.startswith("1."):
+        logger.error("--vap_port requires EID format: 1.1.vap0000")
         exit(1)
 
     # Gather data for test reporting
@@ -877,20 +1109,32 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     # test_priority = args.test_priority  # this may need to be set per test
     test_id = args.test_id
 
+    max_dhcp_lookups : int = 20
+    if args.dhcp_lookup_attempts:
+        max_dhcp_lookups = int(args.dhcp_lookup_attempts)
+
+    timeout_sec : int = 30
+    if args.timeout_sec:
+        timeout_sec = int(args.timeout_sec)
+
+    deadline_millis : int = now_millis() + (timeout_sec * 1000)
+
+    dhcp_lookup_ms : int = 250
+    if args.dhcp_poll_ms:
+        dhcp_lookup_ms = int(args.dhcp_poll_ms)
+
     # Create report, when running with the test framework (lf_check.py)
     # results need to be in the same directory
     logger.info("configure reporting")
 
     do_html = True
-    html_file = "rf_char.pdf"
+    html_file = "rf_char.html"
     if args.no_html:
         do_html = False
         html_file = None
 
-    do_pdf = True
     pdf_file = "rf_char.pdf"
     if args.no_pdf:
-        do_pdf = False
         pdf_file = None
 
     if local_lf_report_dir != "":
@@ -942,6 +1186,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                          lf_passwd=args.lf_passwd,
                          debug=args.debug)
 
+    rf_char.remove_generic_cx()
+
+
     # TODO need to get the DUT IP and put into test_input infor
     rf_char.vap_radio = args.vap_radio
     rf_char.vap_channel = args.vap_channel
@@ -970,24 +1217,66 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     logger.info("clear dhcp leases")
     rf_char.clear_dhcp_lease()
 
+    # identify latest event
+    rf_char.bookmark_events()
+
     # modify and reset
     rf_char.modify_radio()
-
-    try_count = 0
-    while try_count < 100:
+    time.sleep(1)
+    begin_lease_lookup_ms = now_millis()
+    last_vap_reset = now_millis()
+    try_count = int(max_dhcp_lookups)
+    found_station : bool = False
+    while try_count > 0:
         if rf_char.dut_info():
+            found_station = True
             break
-        print("Could not query DUT info from DHCP, waiting %s/100" % (try_count))
-        time.sleep(1)
-        try_count += 1
-        if (try_count % 6) == 0:
+        logger.warning("Looking for DUT info from vAP DUT data, attempt %s/%s" %
+                       ((1 + max_dhcp_lookups - try_count), max_dhcp_lookups))
+        # logger.warning("now_millis[%d] deadline_millis[%d]" % (now_millis(), deadline_millis))
+        if now_millis() >= deadline_millis:
+            raise ValueError("time expired for DHCP lease lookups")
+        rf_char.command.post_nc_show_ports(shelf=1,
+                                           resource=rf_char.resource,
+                                           port=rf_char.port_name,
+                                           probe_flags=(LFJsonCommand.NcShowPortsProbeFlags.WIFI \
+                                                        | LFJsonCommand.NcShowPortsProbeFlags.MII \
+                                                        | LFJsonCommand.NcShowPortsProbeFlags.ETHTOOL \
+                                                        | LFJsonCommand.NcShowPortsProbeFlags.EASY_IP_INFO),
+                                           debug=rf_char.debug)
+        # rf_char.command.post_show_vr(shelf=1, resource=rf_char.resource, router='all', debug=rf_char.debug)
+        if not rf_char.vap_eid:
+            rf_char.vap_eid = "1.%s.%s" % (rf_char.resource, rf_char.port_name)
+        rf_char.command.post_probe_port(shelf=1,
+                                        resource=rf_char.resource,
+                                        port=rf_char.port_name,
+                                        key='probe_port.quiet.'+rf_char.vap_eid)
+        time.sleep(dhcp_lookup_ms/1000)
+        try_count -= 1
+
+        # a vAP can take about 15 seconds to aquire a lease, hopefully 10
+        # do not reset a vAP sooner than that or it just takes longer
+        if now_millis() > (last_vap_reset + 16000):
             v_name = args.vap_port
+            logger.warning("resetting "+v_name)
             if v_name.find('.') > -1:
                 v_name = args.vap_port[ args.vap_port.rindex('.')+1 :]
-            logger.warning("resetting "+v_name)
             rf_char.command.post_reset_port(shelf=1, resource=rf_char.resource, port=v_name)
-            time.sleep(2)
+            LFUtils.wait_until_ports_admin_up(base_url=rf_char.lfclient_url,
+                                              resource_id=rf_char.resource,
+                                              port_list=[rf_char.port_name])
+            last_vap_reset = now_millis()
+    # ~while
+    if found_station:
+        logger.warning("==  ==  ==  ==  Lease Lookup Time  %f sec  ==  ==  ==  ==" %
+                       float((now_millis() - begin_lease_lookup_ms)/1000.0))
+    else:
+        logger.error("==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  \n"
+                     + "   Unable to find station using %s inspections of dhcp table\n" % max_dhcp_lookups)
+        sys.exit(1)
 
+    if now_millis() >= deadline_millis:
+        raise ValueError("time expired for DHCP lease lookups")
     dut_mac = rf_char.dut_mac
     dut_ip = rf_char.dut_ip
 
@@ -1016,6 +1305,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     flags_list = ['extra_rxstatus', 'extra_txstatus']
     rf_char.set_wifi_radio(radio=args.vap_radio, flags_list=flags_list)
 
+    if now_millis() > deadline_millis:
+        raise ValueError("Time expired to start traffic")
+
     test_input_info = {
         "LANforge ip": args.lf_mgr,
         "LANforge port": args.lf_port,
@@ -1024,6 +1316,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         "GUI Report Interval (ms) vap and vap radio": str(polling_interval_milliseconds),
         "vAP Channel": args.vap_channel,
         "vAP Mode:": args.vap_mode,
+        "vAP Bandwidth:": args.vap_bw,
         "vAP TX Power (dBm):": "Requested: {}<br/>\nApplied: {}".format(args.vap_txpower, rf_char.vap_txpower)
     }
 
@@ -1031,33 +1324,38 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.build_table_title()
     report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
 
+    if now_millis() > deadline_millis:
+        raise ValueError("Time expired to start traffic")
     # Start traffic : Currently manually done
     rf_char.clear_port_counters()
-
+    logger.info("cleared port counters")
     rf_char.duration = args.duration
     rf_char.polling_interval = args.polling_interval
     logger.debug("frame size {frame}".format(frame=args.frame))
     rf_char.frame = args.frame
     rf_char.frame_interval = args.frame_interval
 
+    if now_millis() > deadline_millis:
+        raise ValueError("Time expired to start traffic")
+    begin_traffic_ms = now_millis()
     # run the test
+    logger.warning("starting traffic")
     json_port_stats, json_wifi_stats, *nil = rf_char.start()
 
-    # sort the values when in a list
-    def num_sort(strn):
-        # getting number using isdigit() and split()
-        computed_num = [ele for ele in strn[0].split('_') if ele.isdigit()]
-        # assigning lowest weightage to strings
-        # with no numbers
-        if len(computed_num) > 0:
-            return int(computed_num[0])
-        return -1
-
-    def length_sort(strn):
-        return len(strn[0])
-
     # get dataset for the radio
+    if args.vap_port not in json_wifi_stats:
+        pprint(json_wifi_stats)
+        raise ValueError("lf_rf_char: radio dataset for [%s] not found:" % args.vap_port)
+
     wifi_stats_json = json_wifi_stats[args.vap_port]
+    if not wifi_stats_json:
+        pprint(json_wifi_stats)
+        raise ValueError("lf_rf_char: skipping empty wifi_stats_json:")
+
+    if not wifi_stats_json:
+        logger.error("unable to find json_wifi_stats[%s]: " % args.vap_port)
+        pprint(json_wifi_stats)
+        raise ValueError("wifi_stats_json empty")
 
     # transmitted packets per polling interval
     tx_pkts = rf_char.tx_pkts
@@ -1067,6 +1365,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     tx_interval_time = rf_char.tx_interval_time
 
     # TX pkts, TX retries,  TX Failed %
+    logger.warning("traffic time took %f s" % float((now_millis() - begin_traffic_ms)/1000))
+    logger.warning("building report")
     report.set_table_title("TX pkts , TX retries, TX Failed %")
     report.build_table_title()
 
@@ -1141,14 +1441,34 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.build_table_title()
 
     # TODO:  There is almost certainly a cleaner way to do this.
-    # if (rf_char.rssi_4_count > 0):
-    df_rssi_info = pd.DataFrame({" Time Interval (s)": [t for t in tx_interval],
-                                 " Time ": [it for it in tx_interval_time],
-                                 " RSSI Signal ": [k for k in rssi_signal],
-                                 " RSSI 1 ": [i for i in rssi_1],
-                                 " RSSI 2 ": [j for j in rssi_2],
-                                 " RSSI 3 ": [m for m in rssi_3],
-                                 " RSSI 4 ": [l for l in rssi_4]})
+    data_set_debug = """inspect data sets for even distribution:
+        tx_interval: {}
+        tx_interval_time: {}
+        rssi_signal: {} 
+        rssi_1: {} 
+        rssi_2: {} 
+        rssi_3: {} 
+        rssi_4: {}""".format(len(tx_interval),
+                             len(tx_interval_time),
+                             len(rssi_signal),
+                             len(rssi_1),
+                             len(rssi_2),
+                             len(rssi_3),
+                             len(rssi_4))
+    df_rssi_info = None
+    try:
+        df_rssi_info = pd.DataFrame({" Time Interval (s)": [t for t in tx_interval],
+                                     " Time ": [it for it in tx_interval_time],
+                                     " RSSI Signal ": [k for k in rssi_signal],
+                                     " RSSI 1 ": [i for i in rssi_1],
+                                     " RSSI 2 ": [j for j in rssi_2],
+                                     " RSSI 3 ": [m for m in rssi_3],
+                                     " RSSI 4 ": [l for l in rssi_4]})
+    except Exception as e:
+        logger.error("Unable to build pandas DataFrame. Check for uneven data.")
+        print(e)
+        print (data_set_debug)
+        sys.exit(1)
 
     report.set_table_dataframe(df_rssi_info.replace(np.nan, ''))
     report.build_table()
@@ -1246,6 +1566,8 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     rx_mode_total_count = 0
 
     # retrieve each mode value from json
+    if not wifi_stats_json:
+        raise ValueError("wifi_stats_json empty")
     for iterator in wifi_stats_json:
         if 'rx_mode' in iterator:
             rx_mode.append(iterator)
@@ -2185,13 +2507,16 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.build_footer()
     report.copy_js()
 
+    if report.output_html.lower().endswith(".pdf"):
+        raise ValueError("this report is misconfigured, HTML files should not have PDF suffixes")
+
     report.write_html_with_timestamp()
     report.write_index_html()
 
     if platform.system() == 'Linux':
         report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
-    if args.final_report_dir != "":
+    if args.final_report_dir:
         if args.final_report_dir[0] == "/":
             print("moving the report directory to "+args.final_report_dir)
             os.rename(report.get_report_path(), args.final_report_dir)
@@ -2199,6 +2524,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             print("final dir: /home/lanforge/html-reports/"+args.final_report_dir)
             os.rename(report.get_report_path(),
                       "/home/lanforge/html-reports/"+args.final_report_dir)
+
+    # remove previous generic endpoints
+    rf_char.remove_generic_cx()
 
 
 if __name__ == "__main__":
