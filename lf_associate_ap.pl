@@ -529,7 +529,7 @@ sub fmt_vsta_cmd {
       $ap = $bssid;
    }
    my $cfg_file         = "NA";
-   my $mode             = 8; # default to a/b/g/n/AC
+   my $mode             = 0; # default to AUTO , the MTK7916 does not support abgnAC
    my $rate             = "NA";
    my $amsdu            = "NA";
    my $ampdu_factor     = "NA";
