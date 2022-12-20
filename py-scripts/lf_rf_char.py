@@ -180,20 +180,29 @@ class lf_rf_char(Realm):
 
 
     def remove_generic_cx(self):
-        logger.warning("Stopping generic connections")
+        # self.command.die_on_error = False
+        # self.exit_on_error = False
+        logger.info("Stopping generic connections")
+
         generics = self.json_get("/generic/list")
         if generics:
             cx_list = []
             ep_list = []
-            noun = "endpoints"
-            if noun not in generics:
-                noun = "endpoint"
-            if noun in generics:
+            noun = 'endpoints'
+            if 'endpoints' in generics:
                 for item in generics[noun]:
                     k = next(iter(item))
                     if item[k]['name']:
                         cx_list.append("CX_" + item[k]['name'])
                         ep_list.append(item[k]['name'])
+                    # else there is no way to stop an un-named endpoint
+                    # such an item is a zombie item
+            elif 'endpoint' in generics:
+                if generics['endpoint']['name']:
+                    cx_list.append("CX_" + generics['endpoint']['name'])
+                    ep_list.append(generics['endpoint']['name'])
+                # else there is no way to stop an un-named endpoint
+                # such an item is a zombie item
             if len(cx_list):
                 for cx in cx_list:
                     self.command.post_rm_cx(cx_name=cx,
