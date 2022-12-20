@@ -206,13 +206,13 @@ class lf_rf_char(Realm):
             if len(cx_list):
                 for cx in cx_list:
                     self.command.post_rm_cx(cx_name=cx,
-                                               test_mgr='all',
-                                               suppress_related_commands=True,
-                                               debug=True)
+                                            test_mgr='all',
+                                            suppress_related_commands=True,
+                                            debug=True)
                 for ep in ep_list:
                     self.command.post_rm_endp(endp_name=ep,
-                                                 suppress_related_commands=True,
-                                                 debug=True)
+                                              suppress_related_commands=True,
+                                              debug=True)
 
 
     def get_recent_lease_events(self):
@@ -828,6 +828,7 @@ class lf_rf_char(Realm):
             else:
                 self.tx_retries.append(0)
             tx_retries_previous = json_vap_port_stats["interface"]["wifi retries"]
+
             self.tx_failed.append(round(json_vap_port_stats["interface"]["tx-failed %"], 2))
             self.rx_rate.append(json_vap_port_stats["interface"]["rx-rate"])
             self.tx_rate.append(json_vap_port_stats["interface"]["tx-rate"])
@@ -860,6 +861,7 @@ class lf_rf_char(Realm):
             else:
                 logger.info("json_stations lacks station info, next...")
                 continue
+
             if chain_rssi:
                 logger.info("RSSI chain length {chain}".format(chain=len(chain_rssi)))
                 if len(chain_rssi) == 1:
@@ -1246,8 +1248,7 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
         rf_char.command.post_probe_port(shelf=1,
                                         resource=rf_char.resource,
                                         port=rf_char.port_name,
-                                        key='probe_port.quiet.'+rf_char.vap_eid
-                                        )
+                                        key='probe_port.quiet.'+rf_char.vap_eid)
         time.sleep(dhcp_lookup_ms/1000)
         try_count -= 1
 
@@ -1265,11 +1266,11 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
             last_vap_reset = now_millis()
     # ~while
     if found_station:
-        logger.warning("found station")
-        logger.warning("lease lookup time took %f s" %
+        logger.warning("==  ==  ==  ==  Lease Lookup Time  %f sec  ==  ==  ==  ==" %
                        float((now_millis() - begin_lease_lookup_ms)/1000.0))
     else:
-        logger.error("Unable to find station using %s inspections of dhcp table" % max_dhcp_lookups);
+        logger.error("==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  ==  \n"
+                     + "   Unable to find station using %s inspections of dhcp table\n" % max_dhcp_lookups)
         sys.exit(1)
 
     if now_millis() >= deadline_millis:
