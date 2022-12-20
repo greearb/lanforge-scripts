@@ -1394,14 +1394,34 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
     report.build_table_title()
 
     # TODO:  There is almost certainly a cleaner way to do this.
-    # if (rf_char.rssi_4_count > 0):
-    df_rssi_info = pd.DataFrame({" Time Interval (s)": [t for t in tx_interval],
-                                 " Time ": [it for it in tx_interval_time],
-                                 " RSSI Signal ": [k for k in rssi_signal],
-                                 " RSSI 1 ": [i for i in rssi_1],
-                                 " RSSI 2 ": [j for j in rssi_2],
-                                 " RSSI 3 ": [m for m in rssi_3],
-                                 " RSSI 4 ": [l for l in rssi_4]})
+    data_set_debug = """inspect data sets for even distribution:
+        tx_interval: {}
+        tx_interval_time: {}
+        rssi_signal: {} 
+        rssi_1: {} 
+        rssi_2: {} 
+        rssi_3: {} 
+        rssi_4: {}""".format(len(tx_interval),
+                             len(tx_interval_time),
+                             len(rssi_signal),
+                             len(rssi_1),
+                             len(rssi_2),
+                             len(rssi_3),
+                             len(rssi_4))
+    df_rssi_info = None
+    try:
+        df_rssi_info = pd.DataFrame({" Time Interval (s)": [t for t in tx_interval],
+                                     " Time ": [it for it in tx_interval_time],
+                                     " RSSI Signal ": [k for k in rssi_signal],
+                                     " RSSI 1 ": [i for i in rssi_1],
+                                     " RSSI 2 ": [j for j in rssi_2],
+                                     " RSSI 3 ": [m for m in rssi_3],
+                                     " RSSI 4 ": [l for l in rssi_4]})
+    except Exception as e:
+        logger.error("Unable to build pandas DataFrame. Check for uneven data.")
+        print(e)
+        print (data_set_debug)
+        sys.exit(1)
 
     report.set_table_dataframe(df_rssi_info.replace(np.nan, ''))
     report.build_table()
