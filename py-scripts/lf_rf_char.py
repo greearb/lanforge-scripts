@@ -474,6 +474,10 @@ class lf_rf_char(Realm):
             command=lf_command,
             name=self.gen_endpoint,
             debug=self.debug)
+        self.wait_until_endps(base_url=self.lfclient_url,
+                              endp_list=("lf_ping_%s" % self.vap_port),
+                              debug=False,
+                              timeout=10)
 
 
     def set_cx_state(self):
