@@ -329,7 +329,7 @@ class lf_rf_char(Realm):
 
         # Make sure the station is on correct IP vap
         if (sta_ap != self.vap_eid):
-            logger.error("Detected STA on AP: %s, expected it to be on AP: %s" % (sta_ap, self.vap_eid))
+            logger.info(" Detected STA on AP: %s, expected it to be on AP: %s" % (sta_ap, self.vap_eid))
             return False
 
         if not dut_ip:
