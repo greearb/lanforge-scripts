@@ -149,6 +149,7 @@ class lf_rf_char(Realm):
         self.vap_mode : str = "0"
         self.vap_antenna = ''
         self.vap_txpower : int = -1
+        self.vap_eid = ''
         self.reset_vap = False
 
         # get dut information
@@ -233,18 +234,17 @@ class lf_rf_char(Realm):
         sta_ap = ""
 
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
-        vap_eid = "%s.%s.%s" % (self.shelf, self.resource, self.port_name)
+        self.vap_eid = "%s.%s.%s" % (self.shelf, self.resource, self.port_name)
 
         try:
             # does not need specific port information
             json_stations, *nil = self.json_vap_api.get_request_stations_information()
-
             self.dut_mac = json_stations['station']['station bssid']
             sta_ap = json_stations['station']['ap']
             logger.info("DUT MAC: {mac}".format(mac=self.dut_mac))
         except BaseException:
             # Maybe we have multiple stations showing up on multiple VAPs...find the first one that matches our vap.
-            logger.info("Looking for vap-eid: %s" % vap_eid)
+            logger.info("Looking for vap-eid: %s" % self.vap_eid)
             try:
                 pronoun = "stations"
                 if pronoun not in json_stations:
@@ -257,8 +257,8 @@ class lf_rf_char(Realm):
                     keys = list(s.keys())
                     vals = s[keys[0]]
 
-                    if vals['ap'] == vap_eid:
-                        sta_ap = vap_eid
+                    if vals['ap'] == self.vap_eid:
+                        sta_ap = self.vap_eid
                         self.dut_mac = vals['station bssid']
                         print("found sta, ap: %s  mac: %s" % (sta_ap, self.dut_mac))
                         break
@@ -272,8 +272,8 @@ class lf_rf_char(Realm):
                 return False
 
         # Make sure the station is on correct IP vap
-        if (sta_ap != vap_eid):
-            logger.error("Detected STA on AP: %s, expected it to be on AP: %s" % (sta_ap, vap_eid))
+        if (sta_ap != self.vap_eid):
+            logger.error("Detected STA on AP: %s, expected it to be on AP: %s" % (sta_ap, self.vap_eid))
             return False
 
         dut_ip = ''
