@@ -1171,7 +1171,9 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
 
     # modify and reset
     rf_char.modify_radio()
+    time.sleep(1)
     begin_lease_lookup_ms = now_millis()
+    last_vap_reset = now_millis()
     try_count = int(max_dhcp_lookups)
     found_station : bool = False
     while try_count > 0:
@@ -1191,13 +1193,20 @@ for individual command telnet <lf_mgr> 4001 ,  then can execute cli commands
                                                         | LFJsonCommand.NcShowPortsProbeFlags.ETHTOOL \
                                                         | LFJsonCommand.NcShowPortsProbeFlags.EASY_IP_INFO),
                                            debug=rf_char.debug)
-        rf_char.command.post_show_vr(shelf=1, resource=rf_char.resource, router='all', debug=rf_char.debug)
+        # rf_char.command.post_show_vr(shelf=1, resource=rf_char.resource, router='all', debug=rf_char.debug)
+        if not rf_char.vap_eid:
+            rf_char.vap_eid = "1.%s.%s" % (rf_char.resource, rf_char.port_name)
+        rf_char.command.post_probe_port(shelf=1,
+                                        resource=rf_char.resource,
+                                        port=rf_char.port_name,
+                                        key='probe_port.quiet.'+rf_char.vap_eid
+                                        )
         time.sleep(dhcp_lookup_ms/1000)
         try_count -= 1
 
         # a vAP can take about 15 seconds to aquire a lease, hopefully 10
         # do not reset a vAP sooner than that or it just takes longer
-        if now_millis() > (begin_lease_lookup_ms + 16000):
+        if now_millis() > (last_vap_reset + 16000):
             v_name = args.vap_port
             logger.warning("resetting "+v_name)
             if v_name.find('.') > -1:
