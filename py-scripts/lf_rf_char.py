@@ -240,13 +240,53 @@ class lf_rf_char(Realm):
     def dut_info(self):
         self.json_vap_api.request = 'stations'
         json_stations = []
-        sta_ap = ""
+        sta_ap = ''
+        dut_ip = ''
+        dut_mac = ''
+        dut_hostname = ''
 
         self.shelf, self.resource, self.port_name, *nil = LFUtils.name_to_eid(self.vap_port)
         self.vap_eid = "%s.%s.%s" % (self.shelf, self.resource, self.port_name)
 
+        event_recs = self.get_recent_lease_events()
+        other_findings : dict = {}
+        # look for event containing the vap_name then get the station IP from events
+
+        logger.warning("Inspecting %d Events for vAP %s" % (len(event_recs), self.port_name))
+        for record in event_recs:
+            if not (('event description' in record) or record['event description']):
+                continue
+
+            hunks : list[str] = record['event description'].split(" ")
+            if hunks[6] != self.port_name:
+                if hunks[6] not in other_findings:
+                    other_findings[hunks[6]] = []
+                other_findings[hunks[6]].append(hunks[4])
+                continue
+
+            if not self.dut_mac:
+                self.dut_mac = hunks[4]
+
+            dut_ip = hunks[2]
+            self.dut_ip = dut_ip
+            logger.warning("==  ==  ==  ==  Found DUT IP: %s ==  ==  ==  ==  " % dut_ip)
+            break
+
+        if not self.dut_ip:
+            for vap in other_findings.keys():
+                logger.info("  ...%s has: %s" % (vap, ", ".join(other_findings[vap])))
+
         try:
             # does not need specific port information
+            snc = subprocess.Popen("sync")
+            snc.wait()
+            if not self.vap_eid:
+                self.vap_eid = "1.%s.%s" % (self.resource, self.port_name)
+            self.command.post_probe_port(shelf=1,
+                                         resource=self.resource,
+                                         port=self.port_name,
+                                         key='probe_port.quiet.' + self.vap_eid)
+            time.sleep(0.5)
             json_stations, *nil = self.json_vap_api.get_request_stations_information()
             self.dut_mac = json_stations['station']['station bssid']
             sta_ap = json_stations['station']['ap']
@@ -276,9 +316,12 @@ class lf_rf_char(Realm):
                 pass
 
             if sta_ap == "":
-                logger.warning(" No stations using vAP [%s]" % self.vap_eid)
-                for record in next(iter(json_stations['stations'])):
-                    logger.warning(" station "+record)
+                logger.info("  No stations using vAP [%s]" % self.vap_eid)
+                station_macs : list[str] = []
+                for record in json_stations['stations']:
+                    bss = next(iter(record))
+                    station_macs.append(bss[bss.rindex('.')+1:])
+                logger.info("   stations seen: "+", ".join(station_macs))
                 #logger.warning(pformat(json_stations))
                 return False
 
@@ -287,29 +330,6 @@ class lf_rf_char(Realm):
             logger.error("Detected STA on AP: %s, expected it to be on AP: %s" % (sta_ap, self.vap_eid))
             return False
 
-        dut_ip = ''
-        dut_mac = ''
-        dut_hostname = ''
-
-        event_recs = self.get_recent_lease_events()
-        # get the IP from events
-        # look for event matching the dut_mac
-        logger.warning("Inspecting Events for matching DHCPACK records")
-        for record in event_recs:
-            #pprint(record)
-            if ('event description' in record) and (record['event description']):
-                if self.dut_mac in record['event description']:
-                    hunks : list[str] = record['event description'].split(" ")
-                    if hunks[6] != self.port_name:
-                        logger.warning("records is wrong vAP: "+record['event description'])
-                        continue
-                    if hunks[4] != self.dut_mac:
-                        logger.warning("records is wrong mac: "+record['event description'])
-                        continue
-                    dut_ip = hunks[2]
-                    self.dut_ip = dut_ip
-                    logger.warning("DUT IP is "+dut_ip)
-                    break
         if not dut_ip:
             # get the IP from port probe
             logger.warning("DUT IP not found in event records, checking port probe...")
@@ -318,8 +338,6 @@ class lf_rf_char(Realm):
             logger.info("command: {cmd}".format(cmd=self.lf_command))
             summary_output = ''
             process_begin_ms = now_millis()
-            snc = subprocess.Popen("sync")
-            snc.wait()
             summary = subprocess.Popen(self.lf_command, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
 
             for line in iter(summary.stdout.readline, ''):
