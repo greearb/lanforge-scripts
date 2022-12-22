@@ -152,6 +152,8 @@ import logging
 import platform
 import itertools
 import pandas as pd
+# import requests
+import traceback
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -172,6 +174,10 @@ lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
+
+# radio info library
+lf_json_api = importlib.import_module("py-scripts.lf_json_api")
+
 
 # used for RSSI testing
 lf_attenuator = importlib.import_module("py-scripts.lf_atten_mod_test")
@@ -267,6 +273,22 @@ class lf_rssi_check(Realm):
         self.lfclient_port=lfclient_port
         self.lf_user = lf_user
         self.lf_passwd = lf_passwd
+
+        # create api_json
+        self.lanforge_radio_json = None
+        self.radio_json_api = lf_json_api.lf_json_api(lf_mgr=self.lfclient_host,
+                                                    lf_port=self.lfclient_port,
+                                                    lf_user=self.lf_user,
+                                                    lf_passwd=self.lf_passwd)
+
+        try:
+            self.lanforge_radio_json, *nil = self.radio_json_api.get_request_radio_information()
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+            logger.info("could not read radio information exit with status 5")
+            exit(5)
+
+
 
         # Create a LFSession
         # self.session = LFSession(lfclient_url="http://{lf_mgr}:{lf_port}".format(lf_mgr=self.lf_mgr, lf_port=self.lf_port),
@@ -532,6 +554,30 @@ class lf_rssi_check(Realm):
         self.lf_endps = None
         self.udp_endps = None
         self.tcp_endps = None
+
+    #def get_lanforge_radio_information(self):
+    #    # https://docs.python-requests.org/en/latest/
+    #    # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
+    #    # curl --user "lanforge:lanforge" -H 'Accept: application/json'
+    #    # http://192.168.100.116:8080/radiostatus/all | json_pp  , where --user
+    #    # "USERNAME:PASSWORD"
+    #    request_command = 'http://{lfmgr}:{port}/radiostatus/all'.format(
+    #        lfmgr=self.lf_mgr_ip, port=self.lf_mgr_port)
+    #    request = requests.get(
+    #        request_command, auth=(
+    #            self.lf_mgr_user, self.lf_mgr_pass))
+    #    self.logger.info(
+    #        "radio request command: {request_command}".format(
+    #            request_command=request_command))
+    #    self.logger.info(
+    #        "radio request status_code {status}".format(
+    #            status=request.status_code))
+    #    lanforge_radio_json = request.json()
+    #    self.logger.info("radio request.json: {json}".format(json=lanforge_radio_json))
+    #    lanforge_radio_text = request.text
+    #    self.logger.info("radio request.test: {text}".format(text=lanforge_radio_text))
+    #    return lanforge_radio_json, lanforge_radio_text
+
 
     def set_port_report_timer(self, port=None, milliseconds=1000):
         if port is not None:
@@ -1139,6 +1185,7 @@ class lf_rssi_check(Realm):
                                     total_ul_ll_bps = 0
                                     reset_timer = 0
 
+                                    # only need to read until get valid data
                                     while cur_time < end_time:
                                         # interval_time = cur_time + datetime.timedelta(seconds=5)
                                         interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
@@ -1183,6 +1230,7 @@ class lf_rssi_check(Realm):
 
 
                                                 # read LANforge to get the mac
+                                                # reads the specific information for the
                                                 response = self.json_get(url)
                                                 if (response is None) or ("interface" not in response):
                                                     logger.info("query-port: %s: incomplete response:" % url)
@@ -1244,6 +1292,7 @@ class lf_rssi_check(Realm):
                                                 if rx_ul_mac_found:
                                                     # Find latency, jitter for connections
                                                     # using this port.
+                                                    # TODO just read and return the "port"
                                                     latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_tx_drop_percent = self.get_endp_stats_for_port(
                                                         port_data["port"], endps)
                                                     self.write_ul_port_csv(
