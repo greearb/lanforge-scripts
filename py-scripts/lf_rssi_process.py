@@ -44,12 +44,16 @@ class lf_rssi_process:
                 ):
         self.CSV_FILE = csv_file  # TODO this needs to be a list for compatibility
         self.PNG_OUTPUT_DIR = png_dir
+        # TODO the args are passed in as metavar so it may be looped 
+        # for the module the looping takes place outside the loop so this 
+        # hack will be used for now
         self.BANDWIDTH = bandwidth
-        self.CHANNEL = channel,
-        self.ANTENNA = antenna,
+        self.CHANNEL = channel
+        self.ANTENNA = antenna
         self.path_loss_2g = path_loss_2g
         self.path_loss_5g = path_loss_5g
         self.BASE_PATH_LOSS = 36
+        # TODO the tx_power needs to be configurable
         self.TX_POWER = 20
         # TODO make that the radios are passed in so that
         # the RSSI test may be run on any test setup
@@ -79,9 +83,9 @@ class lf_rssi_process:
         self.CHANNEL = channel
         self.BASE_PATH_LOSS = 36
         if self.CHANNEL <= 11:
-            self.BASE_PATH_LOSS = self.path_loss_2
+            self.BASE_PATH_LOSS = self.path_loss_2g
         elif self.CHANNEL >= 34 and self.CHANNEL <= 177:
-            self.BASE_PATH_LOSS = self.path_loss_5
+            self.BASE_PATH_LOSS = self.path_loss_5g
 
 
     # helper functions
@@ -191,7 +195,7 @@ class lf_rssi_process:
         ax.plot(atten[:, 0], signal_exp, color=COLORS['gray'], alpha=1.0, label='Expected')
         if self.CHANNEL <= 6:
             ax.plot(atten[:, 0], signal[:, 0], color=COLORS['red'], alpha=1.0, label=legend['sta0000'])  # TODO: Make generic
-        if self.CHANNEL >= 34 and self.CHANNEl <= 177:
+        if self.CHANNEL >= 34 and self.CHANNEL <= 177:
             ax.plot(atten[:, 1], signal[:, 1], color=COLORS['orange'], alpha=1.0, label=legend['sta0001'])  # TODO: Make generic
         ax.plot(atten[:, 2], signal[:, 2], color=COLORS['yellow'], alpha=1.0, label=legend['sta0002'])
         ax.plot(atten[:, 3], signal[:, 3], color=COLORS['green'], alpha=1.0, label=legend['sta0003'])
@@ -271,11 +275,11 @@ def main():
     parser.add_argument('--path_loss_2', metavar='p', type=float, help='26.74')
     parser.add_argument('--path_loss_5', metavar='q', type=float, help='31.87')
     args = parser.parse_args()
-    CSV_FILE = args.csv
-    PNG_OUTPUT_DIR = args.png_dir
-    BANDWIDTH = args.bandwidth
-    CHANNEL = args.channel
-    ANTENNA = args.antenna
+    # CSV_FILE = args.csv
+    # PNG_OUTPUT_DIR = args.png_dir
+    # BANDWIDTH = args.bandwidth
+    # CHANNEL = args.channel
+    # ANTENNA = args.antenna
 
     rssi_process = lf_rssi_process(
                                     csv_file=args.csv,
