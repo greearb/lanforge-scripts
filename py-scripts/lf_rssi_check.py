@@ -1100,7 +1100,8 @@ class lf_rssi_check(Realm):
                                     while atten_int <= stop_atten_int:
                                         self.atten_vals.append(str(atten_int))
                                         atten_int = atten_int + step_atten_int
-
+                                # TODO need to have a step function for attenuation
+                                # Get graphing to work first.
                                 for atten_val in self.atten_vals:
                                     if atten_val != -1:
                                         # TODO Need to be able to work with multiple attenuators
@@ -1213,6 +1214,9 @@ class lf_rssi_check(Realm):
                                                     # port data contains RSSI and AP information 
                                                     # note if AP is NA the information is not valid 
                                                     # for RSSI testing then skip this information
+                                                    # TODO only a single sample for each period or should we take more
+                                                    # and do an average.
+                                                    # TODO add the power average. Possibly have it configurable.
                                                     if port_data['ap'] != 'NA':
                                                         self.write_port_csv(
                                                             len(temp_stations_list),
@@ -2797,6 +2801,8 @@ Setting wifi_settings per radio
     pathloss_list = args.pathloss.split()
 
     # Todo list of VAP
+    # TODO will all the radios be tested concurrently ,  then cannot break untill
+    # all radios receive a RSSI reading. 
     if args.vap == "":
         vap_list = []
     else:
