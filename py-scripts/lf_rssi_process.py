@@ -109,7 +109,7 @@ class lf_rssi_process:
     # early exit for disconnected radio before threshold expected RSSI
     # TODO this should not be necessary as the data collection should skip
     # TODO
-
+    
     def check_data(self, signal, signal_exp):
         if self.CHANNEL <= 11:
             self.CHECK_RADIOS.remove(1)  # TODO: Make generic
@@ -257,15 +257,14 @@ class lf_rssi_process:
         plt.style.use('dark_background')
         fig = plt.figure(figsize=(8, 8), dpi=100)
         ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
-        if self.CHANNEL <= 11:
-            ax.plot(atten[:, 0], signal_dev[:, 0], color=COLORS['red'], label=legend['sta0000'])
-        if self.CHANNEL >= 36 and self.CHANNEL <= 177:
-            ax.plot(atten[:, 1], signal_dev[:, 1], color=COLORS['orange'], label=legend['sta0001'])
-        ax.plot(atten[:, 2], signal_dev[:, 2], color=COLORS['yellow'], label=legend['sta0002'])
-        ax.plot(atten[:, 2], signal_dev[:, 3], color=COLORS['green'], label=legend['sta0003'])
-        ax.plot(atten[:, 2], signal_dev[:, 4], color=COLORS['cyan'], label=legend['sta0004'])
-        ax.plot(atten[:, 2], signal_dev[:, 5], color=COLORS['blue'], label=legend['sta0005'])
-        ax.plot(atten[:, 2], signal_dev[:, 6], color=COLORS['violet'], label=legend['sta0006'])
+        # if self.CHANNEL <= 11:
+        #     ax.plot(atten[:, 0], signal_dev[:, 0], color=COLORS['red'], label=legend['sta0000'])
+        # if self.CHANNEL >= 36 and self.CHANNEL <= 177:
+        i = 0
+        while i < len(self.atten_data):    
+            ax.plot(atten[:, i], signal_dev[:, i], color=COLORS[color_index[i+1]], label=legend[self.data[i+1][24]])            
+            i += 1
+
         ax.set_title('Atteunuation vs. Signal Deviation:\n'
                      + F'SSID={self.data[7][14]}, '
                      + F'Channel={self.CHANNEL}, '
@@ -279,7 +278,8 @@ class lf_rssi_process:
         plt.legend()
         plt.savefig(F'{self.PNG_OUTPUT_DIR}/{self.CHANNEL}_{self.ANTENNA}_{self.BANDWIDTH}_signal_deviation_atten.png')
 
-        self.check_data(signal, signal_exp)
+        # TODO the chack_data will need to be modified
+        # self.check_data(signal, signal_exp)
         sys.exit(0)
 
 
