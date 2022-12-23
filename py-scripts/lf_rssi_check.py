@@ -287,8 +287,8 @@ class lf_rssi_check(Realm):
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("could not read radio information exit with status 5")
             exit(5)
-
-
+        if self.lanforge_radio_json is not None:
+            logger.debug("radio_json {radio_json}".format(radio_json=self.lanforge_radio_json))
 
         # Create a LFSession
         # self.session = LFSession(lfclient_url="http://{lf_mgr}:{lf_port}".format(lf_mgr=self.lf_mgr, lf_port=self.lf_port),
@@ -1320,6 +1320,10 @@ class lf_rssi_check(Realm):
                                                 logger.info("ap_row_rx_ul {ap_row_rx_ul}".format(ap_row_rx_ul=ap_row_rx_ul))
 
                                         ####################################
+                                        #
+                                        # End of read AP
+                                        #
+                                        ####################################
                                         else:
                                             # NOT Reading the AP
                                             port_eids = self.gather_port_eids()
@@ -1341,6 +1345,9 @@ class lf_rssi_check(Realm):
                                                     port_data = response['interface']
                                                     latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
                                                         port_data["port"], endps)
+
+                                                    # from port eid get the parent radio
+
 
 
                                                     # port data contains RSSI and AP information 
@@ -1527,7 +1534,7 @@ class lf_rssi_check(Realm):
             ul_pdu,
             dl_pdu,
             atten,
-            port_eid,
+            port_eid, # TODO this looks to be the  alias
             port_data,
             latency,
             jitter,
@@ -1548,6 +1555,25 @@ class lf_rssi_check(Realm):
         # TODO 
         # curl -XGET http://"$HOST":8080/port/1/2/"$STA_NAMES"?fields=rx-rate,signal,channel,ssid,ap,chain+rssi,avg+chain+rssi,mode | json_pp > "$OUTPUT_DIR/sta_data$TEST_INDEX.json"
 
+        # find the parent radio and model of radio
+        # TODO there needs to be an easier way
+        port = port_data['port']
+        eid = self.name_to_eid(port)
+        # TODO the eth 
+        port_eid_full = "{shelf}.{resource}.{port_name}".format(shelf=eid[0],resource=eid[1],port_name=port_data['alias'])
+        if 'eth' not in port_data['alias']:
+            parent_radio = "{shelf}.{resource}.{radio}".format(shelf=eid[0],resource=eid[1],radio=port_data['parent dev'])
+            if self.lanforge_radio_json is not None:
+                radio_model = self.lanforge_radio_json[parent_radio]['driver'].split('Driver:', maxsplit=1)[-1].split(maxsplit=1)[0]
+            else:
+                radio_model = 'NA'
+        else:
+            parent_radio = 'NA'
+            radio_model = 'NA'
+
+
+        logger.debug("sta_port: {sta} radio: {radio} radio model: {model}".format(sta=port_eid_full,radio=parent_radio,model=radio_model))
+
         row = row + [port_data['bps rx'],
                      port_data['bps tx'],
                      port_data['rx-rate'],
@@ -1559,6 +1585,8 @@ class lf_rssi_check(Realm):
                      port_data['chain rssi'],
                      port_data['avg chain rssi'],
                      port_data['mode'],
+                     parent_radio,
+                     radio_model,
                      latency,
                      jitter,
                      total_ul_rate,
@@ -1806,6 +1834,8 @@ class lf_rssi_check(Realm):
             'CHAIN_RSSI',
             'AVE-CHAIN-RSSI',
             'Mode',
+            'Radio',
+            'Radio Model',
             'Rx-Latency',
             'Rx-Jitter',
             'Ul-Rx-Goodput-bps',
