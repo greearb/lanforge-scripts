@@ -1115,9 +1115,9 @@ class lf_rssi_check(Realm):
                                 # Set the Attenuation Create the loops 
                                 # need to have atten start and atten step
                                 if len(self.atten_vals) == 0:
-                                    atten = self.start_atten
+                                    atten = self.atten_start
                                     atten_int = int(atten)
-                                    stop_atten_int = int(self.stop_atten)
+                                    stop_atten_int = int(self.atten_stop)
                                     step_atten_int = int(self.atten_step)
                                     while atten_int <= stop_atten_int:
                                         self.atten_vals.append(str(atten_int))
@@ -2506,7 +2506,7 @@ Setting wifi_settings per radio
 
     parser.add_argument(
         '--attenuators',
-        help='--attenuators,  comma separated list of attenuator module eids:  shelf.resource.atten-serno.atten-idx',
+        help='--attenuators,  comma separated list of attenuator module eids:  shelf.resource.atten-serno.atten-idx, ',
         default="")
 
     parser.add_argument(
@@ -2868,7 +2868,7 @@ Setting wifi_settings per radio
     else:
         attenuators = args.attenuators.split(",")
     if args.atten_vals == "":
-        atten_vals = [-1]
+        atten_vals = []
     else:
         atten_vals = args.atten_vals.split(",")
 
