@@ -16,12 +16,16 @@ import csv
 import argparse
 import os
 import sys
+import importlib
 import logging
 
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 logger = logging.getLogger(__name__)
+
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
 
 
 # Exit Codes
@@ -161,8 +165,9 @@ class lf_rssi_process:
                 self.signal_data[index].append(rssi)
             else:
                 self.signal_data[index].append(np.nan)
-        
-        
+                
+        logger.debug("atten_data {atten_data}".format(atten_data=self.atten_data))
+        logger.debug("signal_data {signal_data}".format(signal_data=self.signal_data))
 
     def create_png_files(self):
         # remove empty list from lists
@@ -190,11 +195,30 @@ class lf_rssi_process:
             'dark_gray': '#073642'
         }
 
+        color_index = {
+            1 : 'red',
+            2 : 'orange',
+            3 : 'yellow',
+            4 : 'green',
+            5 : 'blue',
+            6 : 'violet',
+            7 : 'magenta',
+            8 : 'cyan',
+            9 : 'black',
+            10 : 'gray',
+            11 : 'dark_gray'
+        }
+
         # TODO The legend needs to be dynamic.
         logger.debug("length of list of lists {length}".format(length=len(self.data)))
         legend = {}
-        for i in self.data:
+        # Use the number of lists to determing the legend
+        # TODO think of a more accurate way
+        i = 1
+        # while  i < len(self.data):
+        while  i <= len(self.atten_data):
             legend[self.data[i][24]] = self.data[i][25]
+            i += 1
             
 
         plt.rc('font', family='Liberation Serif')
@@ -208,8 +232,15 @@ class lf_rssi_process:
         #  TODO Need to read the radio and creat the legend 
         # TODO needs to be dynamic Focus on 5g for now
         # TODO only capture data for radios that support the mode
-        for i in self.data:    
-            ax.plot(atten[:, i], signal[:, i], color=COLORS['orange'], alpha=1.0, label=legend[self.data[i][24]])  # TODO: Make generic
+        # TODO using the number of lists in self.atten_data to see how much to plot
+        # TODO look for a better way
+        # The index for self.data is incremented due to column headers
+        logger.debug("length of lists of lists {length}".format(length=len(self.atten_data)))
+        i = 0
+        while i < len(self.atten_data):    
+            ax.plot(atten[:, i], signal[:, i], color=COLORS[color_index[i+1]], alpha=1.0, label=legend[self.data[i+1][24]])  # TODO: Make generic
+            i += 1
+
         ax.set_title('Attenuation vs. Signal:\n'
                      + F'SSID={self.data[7][14]}, '
                      + F'Channel={self.CHANNEL}, '
@@ -409,8 +440,27 @@ def main():
     parser.add_argument('--path_loss_2', metavar='p', type=float, help='26.74')
     parser.add_argument('--path_loss_5', metavar='q', type=float, help='31.87')
     parser.add_argument('--legacy', help='--lagacy will enable legacy csv parsing', action="store_true")
+    parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
+    # logging configuration
+    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
+
+
 
     args = parser.parse_args()
+
+    # set up logger
+    logger_config = lf_logger_config.lf_logger_config()
+
+    # set the logger level to debug
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
+
+    # lf_logger_config_json will take presidence to changing debug levels
+    if args.lf_logger_config_json:
+        # logger_config.lf_logger_config_json = "lf_logger_config.json"
+        logger_config.lf_logger_config_json = args.lf_logger_config_json
+        logger_config.load_lf_logger_config()
+
     # CSV_FILE = args.csv
     # PNG_OUTPUT_DIR = args.png_dir
     # BANDWIDTH = args.bandwidth
