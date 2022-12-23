@@ -555,30 +555,6 @@ class lf_rssi_check(Realm):
         self.udp_endps = None
         self.tcp_endps = None
 
-    #def get_lanforge_radio_information(self):
-    #    # https://docs.python-requests.org/en/latest/
-    #    # https://stackoverflow.com/questions/26000336/execute-curl-command-within-a-python-script - use requests
-    #    # curl --user "lanforge:lanforge" -H 'Accept: application/json'
-    #    # http://192.168.100.116:8080/radiostatus/all | json_pp  , where --user
-    #    # "USERNAME:PASSWORD"
-    #    request_command = 'http://{lfmgr}:{port}/radiostatus/all'.format(
-    #        lfmgr=self.lf_mgr_ip, port=self.lf_mgr_port)
-    #    request = requests.get(
-    #        request_command, auth=(
-    #            self.lf_mgr_user, self.lf_mgr_pass))
-    #    self.logger.info(
-    #        "radio request command: {request_command}".format(
-    #            request_command=request_command))
-    #    self.logger.info(
-    #        "radio request status_code {status}".format(
-    #            status=request.status_code))
-    #    lanforge_radio_json = request.json()
-    #    self.logger.info("radio request.json: {json}".format(json=lanforge_radio_json))
-    #    lanforge_radio_text = request.text
-    #    self.logger.info("radio request.test: {text}".format(text=lanforge_radio_text))
-    #    return lanforge_radio_json, lanforge_radio_text
-
-
     def set_port_report_timer(self, port=None, milliseconds=1000):
         if port is not None:
             self.port = port
