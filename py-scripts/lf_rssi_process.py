@@ -138,24 +138,37 @@ class lf_rssi_process:
                 self.data.append(row)
 
     # TODO for python version there will be a list of csv files
-    def populate_signal_and_attenuation_data(self):
+    def populate_signal_and_attenuation_data(self,index):
         # populate signal and attenuation data
         # creating a list of lists
         # atten_data = [[], [], [], [], [], [], []]
         # signal_data = [[], [], [], [], [], [], []]
+        # For our csv files only contain the data for a single station 
+        
         for i in range(1, len(self.data)):
-            for j in range(0, len(self.atten_data)):
-                if int(self.data[i][5]) == j:
-                    # attenuation data
-                    self.atten_data[j].append(float(self.data[i][0]))
-                    # signal data
-                    rssi = float(self.data[i][13])
-                    if rssi:
-                        self.signal_data[j].append(float(self.data[i][13]))
-                    else:
-                        self.signal_data[j].append(np.nan)
+            # for j in range(0, len(self.atten_data)):
+            #    if int(self.data[i][5]) == j:
+            # the numbers in the index is where the data is located in the csv file
+            # attenuation data
+            # attenuation is in 1/10 dBm
+            self.atten_data[index].append(float(self.data[i][11])/10)
+            # signal data
+            rssi = self.data[i][17]
+
+            rssi = rssi.replace(' dBm','')
+            rssi = float(rssi)
+            if rssi:            
+                self.signal_data[index].append(rssi)
+            else:
+                self.signal_data[index].append(np.nan)
+        
+        
 
     def create_png_files(self):
+        # remove empty list from lists
+        self.atten_data = [ele for ele in self.atten_data if ele != []]
+        self.signal_data = [ele for ele in self.signal_data if ele != []]
+
         atten = np.array(self.atten_data).T
         signal = np.array(self.signal_data).T
         signal_avg = np.array([self.avg(row) for row in signal])
@@ -178,30 +191,25 @@ class lf_rssi_process:
         }
 
         # TODO The legend needs to be dynamic.
-        legend = {
-            'sta0000': self.data[1][6],
-            'sta0001': self.data[2][6],
-            'sta0002': self.data[3][6],
-            'sta0003': self.data[4][6],
-            'sta0004': self.data[5][6],
-            'sta0005': self.data[6][6],
-            'sta0006': self.data[7][6]
-        }
+        logger.debug("length of list of lists {length}".format(length=len(self.data)))
+        legend = {}
+        for i in self.data:
+            legend[self.data[i][24]] = self.data[i][25]
+            
 
         plt.rc('font', family='Liberation Serif')
         plt.style.use('dark_background')
         fig = plt.figure(figsize=(8, 8), dpi=100)
         ax = fig.add_axes([0.1, 0.1, 0.8, 0.8])
         ax.plot(atten[:, 0], signal_exp, color=COLORS['gray'], alpha=1.0, label='Expected')
-        if self.CHANNEL <= 6:
-            ax.plot(atten[:, 0], signal[:, 0], color=COLORS['red'], alpha=1.0, label=legend['sta0000'])  # TODO: Make generic
-        if self.CHANNEL >= 34 and self.CHANNEL <= 177:
-            ax.plot(atten[:, 1], signal[:, 1], color=COLORS['orange'], alpha=1.0, label=legend['sta0001'])  # TODO: Make generic
-        ax.plot(atten[:, 2], signal[:, 2], color=COLORS['yellow'], alpha=1.0, label=legend['sta0002'])
-        ax.plot(atten[:, 3], signal[:, 3], color=COLORS['green'], alpha=1.0, label=legend['sta0003'])
-        ax.plot(atten[:, 4], signal[:, 4], color=COLORS['cyan'], alpha=1.0, label=legend['sta0004'])
-        ax.plot(atten[:, 5], signal[:, 5], color=COLORS['blue'], alpha=1.0, label=legend['sta0005'])
-        ax.plot(atten[:, 6], signal[:, 6], color=COLORS['violet'], alpha=1.0, label=legend['sta0006'])
+        #if self.CHANNEL <= 6:
+        #    ax.plot(atten[:, 0], signal[:, 0], color=COLORS['red'], alpha=1.0, label=legend['sta0000'])  # TODO: Make generic
+        #if self.CHANNEL >= 34 and self.CHANNEL <= 177:
+        #  TODO Need to read the radio and creat the legend 
+        # TODO needs to be dynamic Focus on 5g for now
+        # TODO only capture data for radios that support the mode
+        for i in self.data:    
+            ax.plot(atten[:, i], signal[:, i], color=COLORS['orange'], alpha=1.0, label=legend[self.data[i][24]])  # TODO: Make generic
         ax.set_title('Attenuation vs. Signal:\n'
                      + F'SSID={self.data[7][14]}, '
                      + F'Channel={self.CHANNEL}, '
@@ -425,7 +433,9 @@ def main():
         rssi_process.create_png_files_legacy()                                   
     else:   
         rssi_process.read_csv_file(args.csv)
-        rssi_process.populate_signal_and_attenuation_data()
+        # TODO hard code the index while debugging
+        # may have to use another method from the calling routine
+        rssi_process.populate_signal_and_attenuation_data(index=1)
         rssi_process.create_png_files()                                   
             
 
