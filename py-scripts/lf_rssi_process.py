@@ -221,9 +221,10 @@ class lf_rssi_process:
         i = 1
         j = 0
         while j < index:
-            while  i <= len(self.atten_data):
-                legend[self.csv_data[j][i][24]] = self.csv_data[j][i][25]
-                i += 1
+            #while  i <= len(self.atten_data):
+            legend[self.csv_data[j][1][24]] = '{station} {radio}'.format(station=self.csv_data[j][1][24],radio=self.csv_data[j][1][25] )
+            #    i += 1
+            logger.debug("legend {legend}".format(legend=legend))
             j += 1
             
 
@@ -244,10 +245,10 @@ class lf_rssi_process:
         logger.debug("length of lists of lists {length}".format(length=len(self.atten_data)))
         i = 0
         j = 0
-        while j <= index:
-            while i < len(self.atten_data):    
-                ax.plot(atten[:, i], signal[:, i], color=COLORS[color_index[i+1]], alpha=1.0, label=legend[self.csv_data[j][i+1][24]])  # TODO: Make generic
-                i += 1
+        while j < index:
+            #while i < len(self.atten_data):    
+            ax.plot(atten[:, j], signal[:, j], color=COLORS[color_index[j+1]], alpha=1.0, label=legend[self.csv_data[j][j+1][24]])  # TODO: Make generic
+            #i += 1
             j += 1
 
         ax.set_title('Attenuation vs. Signal:\n'
@@ -273,9 +274,9 @@ class lf_rssi_process:
         i = 0
         j = 0
         while j < index:
-            while i < len(self.atten_data):    
-                ax.plot(atten[:, i], signal_dev[:, i], color=COLORS[color_index[i+1]], label=legend[self.csv_data[j][i+1][24]])            
-                i += 1
+            # while i < len(self.atten_data):    
+            ax.plot(atten[:, j], signal_dev[:, j], color=COLORS[color_index[j+1]], label=legend[self.csv_data[j][j+1][24]])            
+            #i += 1
             j += 1
 
         ax.set_title('Atteunuation vs. Signal Deviation:\n'
@@ -445,8 +446,9 @@ def main():
         '''
     )
     #parser = argparse.ArgumentParser(description='Input and output files.')
-    parser.add_argument('--csv',  help='../output.csv')
+    parser.add_argument('--csv', action="append",  help='../output.csv')
     parser.add_argument('--png_dir', metavar='o', type=str, help='../PNGs')
+    # TODO read the bandwidth from the csv data
     parser.add_argument('--bandwidth', metavar='b', type=int, help='20, 40, 80')
     parser.add_argument('--channel', metavar='c', type=int, help='6, 36')
     parser.add_argument('--antenna', metavar='a', type=int, help='0, 1, 4, 7, 8')
@@ -495,13 +497,20 @@ def main():
         rssi_process.populate_signal_and_attenuation_data_legacy()
         rssi_process.create_png_files_legacy()                                   
     else:   
-        # hard code the index will need to base it on a csv list
-        rssi_process.read_csv_file(args.csv, index=1)
-        # TODO hard code the index while debugging
-        # may have to use another method from the calling routine
-        rssi_process.populate_signal_and_attenuation_data(index=1)
+        csv_num = 0
+        for csv in args.csv:
+            
+            # hard code the index will need to base it on a csv list
+            rssi_process.read_csv_file(csv, index=csv_num)
+            # TODO hard code the index while debugging
+            # may have to use another method from the calling routine
+            rssi_process.populate_signal_and_attenuation_data(index=csv_num)
+            csv_num += 1                                 
+
+        
         # TODO index should be the number of stations connected to the VAP
-        rssi_process.create_png_files(index=1)                                   
+        rssi_process.create_png_files(index=csv_num)  
+
             
 
 
