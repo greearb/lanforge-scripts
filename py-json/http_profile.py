@@ -113,7 +113,7 @@ class HTTPProfile(LFCliBase):
 
     def create(self, ports=None, sleep_time=.5, debug_=False, suppress_related_commands_=None, http=False, ftp=False,
                https=False, user=None, passwd=None, source=None, ftp_ip=None, upload_name=None, http_ip=None,
-               https_ip=None):
+               https_ip=None, interop=None):
         if ports is None:
             ports = []
         cx_post_data = []
@@ -180,52 +180,98 @@ class HTTPProfile(LFCliBase):
 
             if (url is None) or (url == ""):
                 raise ValueError("HTTPProfile::create: url unset")
+            if interop is None:
+                if upload_name is None:
+                    endp_data = {
+                        "alias": name + "_l4",
+                        "shelf": shelf,
+                        "resource": resource,
+                        "port": name,
+                        "type": "l4_generic",
+                        "timeout": 10,
+                        "url_rate": self.requests_per_ten,
+                        "url": url,
+                        "proxy_auth_type": 0x200,
+                        "quiesce_after": self.quiesce_after,
+                        "max_speed": self.max_speed
+                    }
+                else:
+                    endp_data = {
+                        "alias": name + "_l4",
+                        "shelf": shelf,
+                        "resource": resource,
+                        # "port": ports[0],
+                        "port": rv[2],
+                        "type": "l4_generic",
+                        "timeout": 10,
+                        "url_rate": self.requests_per_ten,
+                        "url": url,
+                        "ssl_cert_fname": "ca-bundle.crt",
+                        "proxy_port": 0,
+                        "max_speed": self.max_speed,
+                        "proxy_auth_type": 0x200,
+                        "quiesce_after": self.quiesce_after
+                    }
+                url = "cli-json/add_l4_endp"
+                self.local_realm.json_post(url, endp_data, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands_)
+                time.sleep(sleep_time)
 
-            if upload_name is None:
                 endp_data = {
-                    "alias": name + "_l4",
-                    "shelf": shelf,
-                    "resource": resource,
-                    "port": name,
-                    "type": "l4_generic",
-                    "timeout": 10,
-                    "url_rate": self.requests_per_ten,
-                    "url": url,
-                    "proxy_auth_type": 0x200,
-                    "quiesce_after": self.quiesce_after,
-                    "max_speed": self.max_speed
+                    "alias": "CX_" + name + "_l4",
+                    "test_mgr": "default_tm",
+                    "tx_endp": name + "_l4",
+                    "rx_endp": "NA"
                 }
-            else:
-                endp_data = {
-                    "alias": name + "_l4",
-                    "shelf": shelf,
-                    "resource": resource,
-                    # "port": ports[0],
-                    "port": rv[2],
-                    "type": "l4_generic",
-                    "timeout": 10,
-                    "url_rate": self.requests_per_ten,
-                    "url": url,
-                    "ssl_cert_fname": "ca-bundle.crt",
-                    "proxy_port": 0,
-                    "max_speed": self.max_speed,
-                    "proxy_auth_type": 0x200,
-                    "quiesce_after": self.quiesce_after
-                }
-            url = "cli-json/add_l4_endp"
-            self.local_realm.json_post(url, endp_data, debug_=debug_,
-                                       suppress_related_commands_=suppress_related_commands_)
-            time.sleep(sleep_time)
+                # print("http_profile - endp_data:{endp_data}".format(endp_data=endp_data))
+                cx_post_data.append(endp_data)
+                self.created_cx[name + "_l4"] = "CX_" + name + "_l4"
+            else: # If Interop is enabled then this code will work
+                if upload_name is None:
+                    endp_data = {
+                        "alias": name + str(resource) + "_l4",
+                        "shelf": shelf,
+                        "resource": resource,
+                        "port": name,
+                        "type": "l4_generic",
+                        "timeout": 10,
+                        "url_rate": self.requests_per_ten,
+                        "url": url,
+                        "proxy_auth_type": 0x2200,
+                        "quiesce_after": self.quiesce_after,
+                        "max_speed": self.max_speed
+                    }
+                else:
+                    endp_data = {
+                        "alias": name + str(resource) + "_l4",
+                        "shelf": shelf,
+                        "resource": resource,
+                        # "port": ports[0],
+                        "port": rv[2],
+                        "type": "l4_generic",
+                        "timeout": 10,
+                        "url_rate": self.requests_per_ten,
+                        "url": url,
+                        "ssl_cert_fname": "ca-bundle.crt",
+                        "proxy_port": 0,
+                        "max_speed": self.max_speed,
+                        "proxy_auth_type": 0x2200,
+                        "quiesce_after": self.quiesce_after
+                    }
+                url = "cli-json/add_l4_endp"
+                self.local_realm.json_post(url, endp_data, debug_=debug_,
+                                           suppress_related_commands_=suppress_related_commands_)
+                time.sleep(sleep_time)
 
-            endp_data = {
-                "alias": "CX_" + name + "_l4",
-                "test_mgr": "default_tm",
-                "tx_endp": name + "_l4",
-                "rx_endp": "NA"
-            }
-            # print("http_profile - endp_data:{endp_data}".format(endp_data=endp_data))
-            cx_post_data.append(endp_data)
-            self.created_cx[name + "_l4"] = "CX_" + name + "_l4"
+                endp_data = {  # Added resource id to alias and End point name as all real clients have same name(wlan0)
+                    "alias": "CX_" + name + str(resource) + "_l4",
+                    "test_mgr": "default_tm",
+                    "tx_endp": name + str(resource) + "_l4",
+                    "rx_endp": "NA"
+                }
+                # print("http_profile - endp_data:{endp_data}".format(endp_data=endp_data))
+                cx_post_data.append(endp_data)
+                self.created_cx[name + str(resource) + "_l4"] = "CX_" + name + str(resource) + "_l4"
 
         for cx_data in cx_post_data:
             url = "/cli-json/add_cx"
