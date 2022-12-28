@@ -1791,6 +1791,11 @@ class lf_rssi_check(Realm):
         for station_profile in self.station_profiles:
             station_profile.cleanup()
 
+    def set_attenuator(self, atten_val):
+        atten_mod_test = lf_attenuator.CreateAttenuator(host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
+        atten_mod_test.build()
+
+
     @staticmethod
     def csv_generate_column_headers():
         csv_rx_headers = ['Time epoch', 'Time', 'Monitor', 'UL-Min-Requested', 'UL-Max-Requested', 'DL-Min-Requested',
@@ -3007,6 +3012,10 @@ Setting wifi_settings per radio
         logger.info("--no_cleanup or --no_stop_traffic set stations will be left intack")
     else:
         ip_var_test.cleanup()
+    
+    # put the Attenuator back to 20 dBm
+    ip_var_test.set_attenuator(atten_val='200')
+        
 
     if ip_var_test.passes():
         test_passed = True
