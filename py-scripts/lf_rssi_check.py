@@ -886,6 +886,18 @@ class lf_rssi_check(Realm):
     #   "port/1/{resource}/list?field=alias".format(resource=self.resource))['interfaces']
 
     def start(self, print_pass=False):
+
+
+        # at the beginning of the test set the attenuation or the stations will not
+        # get an IP
+        # TODO need to index though the attenuators
+        # for atten_idx in self.attenuators:
+        # start with connections at 20 dBm , the value is in 1/10 dBm
+        atten_val = '200'
+        atten_mod_test = lf_attenuator.CreateAttenuator(host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
+        atten_mod_test.build()
+
+
         logger.info("Bringing up stations")
         self.admin_up(self.side_b)
         for station_profile in self.station_profiles:
@@ -1002,6 +1014,8 @@ class lf_rssi_check(Realm):
                 #    for each stations
                 #        If STA is disconnected, then do not record RSSI.  Else record RSSI.
                 #        Record theoretical RSSI (txpower minus calibrated path-loss minus attenuation)
+
+
 
                 # selecting the vap should be here. 
                 for vap in self.vap_list:
