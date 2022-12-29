@@ -170,18 +170,23 @@ class lf_rssi_process:
         for bandwidth in self.bandwidths_list:
             # used for title
             self.BANDWIDTH = bandwidth
-            # csv_index is the csv data for an individual station
-            for csv_index in range (0, (len(self.csv_file_list) -1)  ):
-                for i in range(1, len(self.csv_data[csv_index])):
+
+            self.atten_data = [[], [], [], [], [], [], []]
+            self.signal_data = [[], [], [], [], [], [], []]
+            
+            # csv_index is the all the csv data for an individual station
+            for csv_index in range (0, len(self.csv_file_list)  ):
+                # run index is the data collected for a specific run
+                for run_index in range(1, len(self.csv_data[csv_index])):
 
                     # attenuation data
                     # attenuation is in 1/10 dBm
                     # position 11 in csv is the attenuation location counting from zero
-                    logger.debug("csv bandwidth {bandwidth}".format(bandwidth=self.csv_data[csv_index][i][29]))
-                    if self.csv_data[csv_index][i][29] == bandwidth:
-                        self.atten_data[csv_index].append(float(self.csv_data[csv_index][i][11])/10)
+                    logger.debug("bandwidth {bw} csv bandwidth {csv_bw}".format(bw=bandwidth,csv_bw=self.csv_data[csv_index][run_index][29]))
+                    if self.csv_data[csv_index][run_index][29] == bandwidth:
+                        self.atten_data[csv_index].append(float(self.csv_data[csv_index][run_index][11])/10)
                         # signal data is position 17
-                        rssi = self.csv_data[csv_index][i][17]
+                        rssi = self.csv_data[csv_index][run_index][17]
 
                         rssi = rssi.replace(' dBm','')
                         rssi = float(rssi)
@@ -189,6 +194,8 @@ class lf_rssi_process:
                             self.signal_data[csv_index].append(rssi)
                         else:
                             self.signal_data[csv_index].append(np.nan)
+
+                        logger.debug("csv_index: {csv} run_index: {run}".format(csv=csv_index,run=run_index))
                         
                 logger.debug("For bandwidth {bandwidth} atten_data {atten_data}".format(bandwidth=self.BANDWIDTH,atten_data=self.atten_data))
                 logger.debug("For bandwidth {bandwidth} signal_data {signal_data}".format(bandwidth=self.BANDWIDTH,signal_data=self.signal_data))
@@ -246,10 +253,10 @@ class lf_rssi_process:
         # should only need to read a single sample to get the radios and not 
         # loop though all
         # TODO think of a more accurate way
-        i = 1
-        j = 0
-        while j < index:
-            #while  i <= len(self.atten_data):
+        j = 0 # csv data index starting a zero
+        while j <= index:
+            # we are reading the station and radio from the csv ,
+            # this should be fixed in the csv so o.k. to read from the same spot
             legend[self.csv_data[j][1][24]] = '{station} {radio}'.format(station=self.csv_data[j][1][24],radio=self.csv_data[j][1][25] )
             #    i += 1
             logger.debug("legend {legend}".format(legend=legend))
@@ -271,12 +278,11 @@ class lf_rssi_process:
         # TODO look for a better way 
         # The index for self.data is incremented due to column headers
         logger.debug("length of lists of lists {length}".format(length=len(self.atten_data)))
-        i = 0
-        j = 0
-        while j < index:
-            #while i < len(self.atten_data):    
+
+        logger.info("plotting Attenuation vs. Signal ")
+        j = 0 # csv data index starting a zero, this is the number of csv files each csv file corresponds to one station
+        while j <= index:
             ax.plot(atten[:, j], signal[:, j], color=COLORS[color_index[j+1]], alpha=1.0, label=legend[self.csv_data[j][j+1][24]])  # TODO: Make generic
-            #i += 1
             j += 1
 
         ax.set_title('Attenuation vs. Signal:\n'
@@ -301,10 +307,8 @@ class lf_rssi_process:
         # if self.CHANNEL >= 36 and self.CHANNEL <= 177:
         i = 0
         j = 0
-        while j < index:
-            # while i < len(self.atten_data):    
+        while j <= index:
             ax.plot(atten[:, j], signal_dev[:, j], color=COLORS[color_index[j+1]], label=legend[self.csv_data[j][j+1][24]])            
-            #i += 1
             j += 1
 
         ax.set_title('Atteunuation vs. Signal Deviation:\n'
