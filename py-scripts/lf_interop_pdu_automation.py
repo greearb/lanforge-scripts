@@ -47,8 +47,8 @@ class PDUAutomate:
             exit(0)
 
     def start(self, port, current, on_time, off_time):
-        self.on_time = int(on_time) * 60
-        self.off_time = int(off_time) * 60
+        self.on_time = int(on_time) * 60 * 60
+        self.off_time = int(off_time) * 60 * 60
         while True:
             try:
                 if current == "on":
