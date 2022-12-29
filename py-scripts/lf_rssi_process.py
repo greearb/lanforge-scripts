@@ -40,8 +40,8 @@ class lf_rssi_process:
                 csv_file_list='NA',
                 png_dir='NA',
                 bandwidths_list='NA',
-                channel='NA',
-                antenna=0,
+                channel_list='NA',
+                antenna_list=0,
                 path_loss_2g=26.74,  # These values are specific to RSSI testbed
                 path_loss_5g=31.87,  # These values are specific to RSSI testbed
 
@@ -55,8 +55,10 @@ class lf_rssi_process:
         # hack will be used for now
         self.bandwidths_list = bandwidths_list
         self.BANDWIDTH = 'NA'
-        self.CHANNEL = channel
-        self.ANTENNA = antenna
+        self.channel_list= channel_list
+        self.CHANNEL = 'NA'
+        self.antenna_list = antenna_list
+        self.ANTENNA = 'NA'
         self.path_loss_2g = path_loss_2g
         self.path_loss_5g = path_loss_5g
         self.BASE_PATH_LOSS = 36
@@ -67,7 +69,6 @@ class lf_rssi_process:
         self.CHECK_RADIOS = [0, 1, 2, 3, 4, 5, 6]  # radios to check during early exit
         self.EXIT_THRESHOLD = -85.  # expected-signal cutoff for radio-disconnect exit code
 
-        self.set_channel_path_loss(self.CHANNEL)
         # self.csv_data not used in legacy mode
         self.csv_data = [[], [], [], [], [], [], []]
 
@@ -75,11 +76,11 @@ class lf_rssi_process:
         self.signal_data = [[], [], [], [], [], [], []]
 
         self.ANTENNA_LEGEND = {
-            0: 'Diversity (All)',
-            1: 'Fixed-A (1x1)',
-            4: 'AB (2x2)',
-            7: 'ABC (3x3)',
-            8: 'ABCD (4x4)'
+            '0': 'Diversity (All)',
+            '1': 'Fixed-A (1x1)',
+            '4': 'AB (2x2)',
+            '7': 'ABC (3x3)',
+            '8': 'ABCD (4x4)'
         }
 
     # TODO this may need to be part of
@@ -167,41 +168,49 @@ class lf_rssi_process:
         # Each station has its own csv file 
         data_index  = (len(self.csv_file_list) - 1)
 
-        for bandwidth in self.bandwidths_list:
-            # used for title
-            self.BANDWIDTH = bandwidth
+        for channel in self.channel_list:
+            self.CHANNEL = channel
+            self.set_channel_path_loss(int(self.CHANNEL))
 
-            self.atten_data = [[], [], [], [], [], [], []]
-            self.signal_data = [[], [], [], [], [], [], []]
-            
-            # csv_index is the all the csv data for an individual station
-            for csv_index in range (0, len(self.csv_file_list)  ):
-                # run index is the data collected for a specific run
-                for run_index in range(1, len(self.csv_data[csv_index])):
 
-                    # attenuation data
-                    # attenuation is in 1/10 dBm
-                    # position 11 in csv is the attenuation location counting from zero
-                    logger.debug("bandwidth {bw} csv bandwidth {csv_bw}".format(bw=bandwidth,csv_bw=self.csv_data[csv_index][run_index][29]))
-                    if self.csv_data[csv_index][run_index][29] == bandwidth:
-                        self.atten_data[csv_index].append(float(self.csv_data[csv_index][run_index][11])/10)
-                        # signal data is position 17
-                        rssi = self.csv_data[csv_index][run_index][17]
+            for bandwidth in self.bandwidths_list:
+                # used for title
+                self.BANDWIDTH = bandwidth
 
-                        rssi = rssi.replace(' dBm','')
-                        rssi = float(rssi)
-                        if rssi:            
-                            self.signal_data[csv_index].append(rssi)
-                        else:
-                            self.signal_data[csv_index].append(np.nan)
+                for antenna in self.antenna_list:
+                    self.ANTENNA = antenna
 
-                        logger.debug("csv_index: {csv} run_index: {run}".format(csv=csv_index,run=run_index))
-                        
-                logger.debug("For bandwidth {bandwidth} atten_data {atten_data}".format(bandwidth=self.BANDWIDTH,atten_data=self.atten_data))
-                logger.debug("For bandwidth {bandwidth} signal_data {signal_data}".format(bandwidth=self.BANDWIDTH,signal_data=self.signal_data))
+                    self.atten_data = [[], [], [], [], [], [], []]
+                    self.signal_data = [[], [], [], [], [], [], []]
+                    
+                    # csv_index is the all the csv data for an individual station
+                    for csv_index in range (0, len(self.csv_file_list)  ):
+                        # run index is the data collected for a specific run
+                        for run_index in range(1, len(self.csv_data[csv_index])):
 
-            # all the data is now ready to create png for specific bandwidth
-            self.create_png_files(index=data_index)
+                            # attenuation data
+                            # attenuation is in 1/10 dBm
+                            # position 11 in csv is the attenuation location counting from zero
+                            logger.debug("bandwidth {bw} csv bandwidth {csv_bw}".format(bw=bandwidth,csv_bw=self.csv_data[csv_index][run_index][29]))
+                            if self.csv_data[csv_index][run_index][29] == bandwidth:
+                                self.atten_data[csv_index].append(float(self.csv_data[csv_index][run_index][11])/10)
+                                # signal data is position 17
+                                rssi = self.csv_data[csv_index][run_index][17]
+
+                                rssi = rssi.replace(' dBm','')
+                                rssi = float(rssi)
+                                if rssi:            
+                                    self.signal_data[csv_index].append(rssi)
+                                else:
+                                    self.signal_data[csv_index].append(np.nan)
+
+                                logger.debug("csv_index: {csv} run_index: {run}".format(csv=csv_index,run=run_index))
+                                
+                        logger.debug("channel: {channel} bandwidth: {bandwidth} antenna: {antenna} atten_data: {atten_data}".format(channel=self.CHANNEL,bandwidth=self.BANDWIDTH,antenna=self.ANTENNA,atten_data=self.atten_data))
+                        logger.debug("channel: {channel} bandwidth: {bandwidth} antenna: {antenna} signal_data: {signal_data}".format(channel=self.CHANNEL,bandwidth=self.BANDWIDTH,antenna=self.ANTENNA,signal_data=self.signal_data))
+
+                    # all the data is now ready to create png for specific bandwidth
+                    self.create_png_files(index=data_index)
             
     # TODO the index is actually the total number of stations that 
     # the csv data was gathered from
@@ -358,9 +367,19 @@ def main():
     parser.add_argument('--csv', action="append",  help='../output.csv')
     parser.add_argument('--png_dir', metavar='o', type=str, help='../PNGs')
     # TODO read the bandwidth from the csv data
-    parser.add_argument('--bandwidths', help='--bandwidths,  list of bandwidths "20 40 80 160" default : "NA"   no change', default='NA')
-    parser.add_argument('--channel', metavar='c', type=int, help='6, 36')
-    parser.add_argument('--antenna', metavar='a', type=int, help='0, 1, 4, 7, 8')
+    parser.add_argument('--bandwidths', help='--bandwidths  list of bandwidths "20 40 80 160" space separated, default : "20" ', default='20')
+    parser.add_argument('--channels', help='--channels  list of channels "6 36" space separated, default: "36" ', default='36')
+    parser.add_argument('--antennas', help='''
+                        --antennas list of antennas "0, 1, 4, 7, 8"  default: 
+                                self.ANTENNA_LEGEND = {
+                                    0: 'Diversity (All)',
+                                    1: 'Fixed-A (1x1)',
+                                    4: 'AB (2x2)',
+                                    7: 'ABC (3x3)',
+                                    8: 'ABCD (4x4)'
+                                }
+                                default is 0
+                        ''', default= 0)
     parser.add_argument('--path_loss_2', metavar='p', type=float, help='26.74')
     parser.add_argument('--path_loss_5', metavar='q', type=float, help='31.87')
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
@@ -385,6 +404,8 @@ def main():
         logger_config.load_lf_logger_config()
 
     bandwidths_list = args.bandwidths.split()        
+    channel_list = args.channels.split()        
+    antenna_list = args.antennas.split()        
 
     # CSV_FILE = args.csv
     # PNG_OUTPUT_DIR = args.png_dir
@@ -396,8 +417,8 @@ def main():
                                     csv_file_list=args.csv,
                                     png_dir=args.png_dir,
                                     bandwidths_list = bandwidths_list,
-                                    channel = args.channel,
-                                    antenna = args.antenna,
+                                    channel_list = channel_list,
+                                    antenna_list = antenna_list,
                                     path_loss_2g=args.path_loss_2,
                                     path_loss_5g=args.path_loss_5,
                                     )
