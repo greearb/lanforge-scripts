@@ -37,21 +37,24 @@ lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 class lf_rssi_process:
     def __init__(self,
-                csv_file='NA',
+                csv_file_list='NA',
                 png_dir='NA',
-                bandwidth='NA',
+                bandwidths_list='NA',
                 channel='NA',
                 antenna=0,
                 path_loss_2g=26.74,  # These values are specific to RSSI testbed
                 path_loss_5g=31.87,  # These values are specific to RSSI testbed
 
                 ):
-        self.CSV_FILE = csv_file  # TODO this needs to be a list for compatibility
+        self.csv_file_list = csv_file_list
+        self.num_station_csv = len(self.csv_file_list)
+        self.CSV_FILE = csv_file_list  # TODO this needs to be a list for compatibility
         self.PNG_OUTPUT_DIR = png_dir
         # TODO the args are passed in as metavar so it may be looped 
         # for the module the looping takes place outside the loop so this 
         # hack will be used for now
-        self.BANDWIDTH = bandwidth
+        self.bandwidths_list = bandwidths_list
+        self.BANDWIDTH = 'NA'
         self.CHANNEL = channel
         self.ANTENNA = antenna
         self.path_loss_2g = path_loss_2g
@@ -128,7 +131,26 @@ class lf_rssi_process:
         if self.CHANNEL <= 11 and (self.BANDWIDTH == 80 or self.BANDWIDTH == 160):
             sys.exit(4)
 
+    # Read in all csv file data
+    def read_all_csv_files(self):
+        csv_file_index = 0
+        for csv_file in self.csv_file_list:
+        #self.csv_data = 
+            if not os.path.exists(csv_file):
+                logger.error("File not found {csv_file}".format(csv_file=csv_file))
+                sys.exit(2)
+            # TODO There will be multiple lists.
+            with open(csv_file, 'r') as filename:
+                reader = csv.reader(filename)
+                for row in reader:
+                    self.csv_data[csv_file_index].append(row)
+
+            csv_file_index += 1                    
+
+
+
     # Read in the data this probably should be generic
+    # TODO remove not used
     def read_csv_file(self, csv_file,index):
         self.CSV_FILE = csv_file
         # read data from file
@@ -142,6 +164,76 @@ class lf_rssi_process:
             for row in reader:
                 self.csv_data[index].append(row)
 
+    def populate_signal_and_attenuation_data_create_png(self):
+        # Each station has its own csv file 
+        data_index  = (len(self.csv_file_list) - 1)
+
+        for bandwidth in self.bandwidths_list:
+            # used for title
+            self.BANDWIDTH = bandwidth
+            # csv_index is the csv data for an individual station
+            for csv_index in range (0, (len(self.csv_file_list) -1)  ):
+                for i in range(1, len(self.csv_data[csv_index])):
+
+                    # attenuation data
+                    # attenuation is in 1/10 dBm
+                    # position 11 in csv is the attenuation location counting from zero
+                    logger.debug("csv bandwidth {bandwidth}".format(bandwidth=self.csv_data[csv_index][i][29]))
+                    if self.csv_data[csv_index][i][29] == bandwidth:
+                        self.atten_data[csv_index].append(float(self.csv_data[csv_index][i][11])/10)
+                        # signal data is position 17
+                        rssi = self.csv_data[csv_index][i][17]
+
+                        rssi = rssi.replace(' dBm','')
+                        rssi = float(rssi)
+                        if rssi:            
+                            self.signal_data[csv_index].append(rssi)
+                        else:
+                            self.signal_data[csv_index].append(np.nan)
+                        
+                logger.debug("For bandwidth {bandwidth} atten_data {atten_data}".format(bandwidth=self.BANDWIDTH,atten_data=self.atten_data))
+                logger.debug("For bandwidth {bandwidth} signal_data {signal_data}".format(bandwidth=self.BANDWIDTH,signal_data=self.signal_data))
+
+            # all the data is now ready to create png for specific bandwidth
+            self.create_png_files(index=data_index)
+            
+
+
+    # TODO for python version there will be a list of csv file
+    def populate_signal_and_attenuation_data(self,index):
+        # populate signal and attenuation data
+        # creating a list of lists
+        # atten_data = [[], [], [], [], [], [], []]
+        # signal_data = [[], [], [], [], [], [], []]
+        # For our csv files only contain the data for a single station 
+        
+        # Check all the data to see if there is a specific BANDWIDTH to be checked
+        # TODO instead of index may need to use Radio
+        # Each station has its own csv file 
+        for i in range(1, len(self.csv_data[index])):
+            # for j in range(0, len(self.atten_data)):
+            #    if int(self.data[i][5]) == j:
+            # the numbers in the index is where the data is located in the csv file
+
+            # attenuation data
+            # attenuation is in 1/10 dBm
+            # position 11 in csv is the attenuation location counting from zero
+            if self.csv_data[index][i][29] == self.BANDWIDTH:
+                self.atten_data[index].append(float(self.csv_data[index][i][11])/10)
+                # signal data is position 17
+                rssi = self.csv_data[index][i][17]
+
+                rssi = rssi.replace(' dBm','')
+                rssi = float(rssi)
+                if rssi:            
+                    self.signal_data[index].append(rssi)
+                else:
+                    self.signal_data[index].append(np.nan)
+                
+            logger.debug("For bandwidth {bandwidth} atten_data {atten_data}".format(bandwidth=self.BANDWIDTH,atten_data=self.atten_data))
+            logger.debug("For bandwidth {bandwidth} signal_data {signal_data}".format(bandwidth=self.BANDWIDTH,signal_data=self.signal_data))
+
+    '''
     # TODO for python version there will be a list of csv file
     def populate_signal_and_attenuation_data(self,index):
         # populate signal and attenuation data
@@ -169,7 +261,9 @@ class lf_rssi_process:
                 
         logger.debug("atten_data {atten_data}".format(atten_data=self.atten_data))
         logger.debug("signal_data {signal_data}".format(signal_data=self.signal_data))
-
+    '''
+    # TODO the index is actually the total number of stations that 
+    # the csv data was gathered from
     def create_png_files(self,index):
         # remove empty list from lists
         self.atten_data = [ele for ele in self.atten_data if ele != []]
@@ -292,9 +386,10 @@ class lf_rssi_process:
         plt.legend()
         plt.savefig(F'{self.PNG_OUTPUT_DIR}/{self.CHANNEL}_{self.ANTENNA}_{self.BANDWIDTH}_signal_deviation_atten.png')
 
+        logger.debug(F'{self.PNG_OUTPUT_DIR}/{self.CHANNEL}_{self.ANTENNA}_{self.BANDWIDTH}_signal_deviation_atten.png')
         # TODO the chack_data will need to be modified
         # self.check_data(signal, signal_exp)
-        sys.exit(0)
+        # sys.exit(0)
 
 
     # Leaving in the legacy parsing of the files 
@@ -449,7 +544,7 @@ def main():
     parser.add_argument('--csv', action="append",  help='../output.csv')
     parser.add_argument('--png_dir', metavar='o', type=str, help='../PNGs')
     # TODO read the bandwidth from the csv data
-    parser.add_argument('--bandwidth', metavar='b', type=int, help='20, 40, 80')
+    parser.add_argument('--bandwidths', help='--bandwidths,  list of bandwidths "20 40 80 160" default : "NA"   no change', default='NA')
     parser.add_argument('--channel', metavar='c', type=int, help='6, 36')
     parser.add_argument('--antenna', metavar='a', type=int, help='0, 1, 4, 7, 8')
     parser.add_argument('--path_loss_2', metavar='p', type=float, help='26.74')
@@ -476,6 +571,8 @@ def main():
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
+    bandwidths_list = args.bandwidths.split()        
+
     # CSV_FILE = args.csv
     # PNG_OUTPUT_DIR = args.png_dir
     # BANDWIDTH = args.bandwidth
@@ -483,9 +580,9 @@ def main():
     # ANTENNA = args.antenna
 
     rssi_process = lf_rssi_process(
-                                    csv_file=args.csv,
+                                    csv_file_list=args.csv,
                                     png_dir=args.png_dir,
-                                    bandwidth = args.bandwidth,
+                                    bandwidths_list = bandwidths_list,
                                     channel = args.channel,
                                     antenna = args.antenna,
                                     path_loss_2g=args.path_loss_2,
@@ -497,19 +594,41 @@ def main():
         rssi_process.populate_signal_and_attenuation_data_legacy()
         rssi_process.create_png_files_legacy()                                   
     else:   
+
+        '''
+        # TODO Add channel, bandwidth, nss
+        # may have to add vap and path loss. 
+        # csv_num is a bit clunky, may need the station 
+        # csv_num is the number of csv files which should correspond to the 
+        # number of stattions
         csv_num = 0
+        # The csv data only needs to be read in once
         for csv in args.csv:
-            
             # hard code the index will need to base it on a csv list
             rssi_process.read_csv_file(csv, index=csv_num)
             # TODO hard code the index while debugging
             # may have to use another method from the calling routine
+            # The CSV data needs to be sorted by station, channel, bandwidth, nss,
+            csv_num += 1
+        '''            
+
+        # older method moving towards processing in the class
+        '''
+        csv_num = 0
+        for csv in args.csv:
             rssi_process.populate_signal_and_attenuation_data(index=csv_num)
+            # TODO may want to read from the csv file.
             csv_num += 1                                 
 
-        
+        # process the data and create the png files
         # TODO index should be the number of stations connected to the VAP
         rssi_process.create_png_files(index=csv_num)  
+        '''        
+
+        rssi_process.read_all_csv_files()
+        # using the csv as a count 
+        # process the collected csv data
+        rssi_process.populate_signal_and_attenuation_data_create_png()
 
             
 
