@@ -38,6 +38,8 @@ class PDUAutomate:
         self.user = user
         self.password = password
         self.power_switch = None
+
+    def login(self):
         try:
             self.power_switch = dlipower.PowerSwitch(hostname=self.hostname, userid=self.user, password=self.password)
         except:
@@ -45,18 +47,22 @@ class PDUAutomate:
             exit(0)
 
     def start(self, port, current, on_time, off_time):
-        self.on_time = int(on_time) * 60 * 60
-        self.off_time = int(off_time) * 60 * 60
+        self.on_time = int(on_time) * 60
+        self.off_time = int(off_time) * 60
         while True:
             try:
                 if current == "on":
+                    self.login()
                     self.switch_on(port)
                     time.sleep(self.on_time)
+                    self.login()
                     self.switch_off(port)
                     time.sleep(self.off_time)
                 elif current == "off":
+                    self.login()
                     self.switch_off(port)
                     time.sleep(self.off_time)
+                    self.login()
                     self.switch_on(port)
                     time.sleep(self.on_time)
                 else:
