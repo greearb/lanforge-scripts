@@ -6,7 +6,7 @@ PURPOSE: Validate RSSI for specific radios
 
 
 EXAMPLE:
-    Usage something like:  rssi_check.py --channels “6 36” --nss “1 2 3 4” --bw “20 40 80” --vap 1.1.vap0 --stas “1.2.wlan0 1.2.wlan1” --attenuator 1.1.xxxx --attenuation_step 1  --step_duration 
+    Usage something like:  rssi_check.py --channels “6 36” --antenna “1 2 3 4” --bw “20 40 80” --vap 1.1.vap0 --stas “1.2.wlan0 1.2.wlan1” --attenuator 1.1.xxxx --attenuation_step 1  --step_duration 
     Skip bw that does not match selected channels.
     
 increase attenuation until STA disconnects, then stop recording data there.  It should be around RSSI -88, but part of this is to verify that.
@@ -18,7 +18,7 @@ Start 1Mbps bi-directional UDP traffic between STA(s) and the AP.
 Ensure report-timer on stations is 1 second for prompt RSSI updates.
 for selected channels
   for selected bandwidths
-   for selected nss
+   for selected antenna
      Set VAP to selected mode.  Gracefully skip invalid modes (80Mhz on 2.4, for instance).
      Wait until all STAs connect.
      for attenuation 0 until all STAs are disconnected
@@ -225,7 +225,7 @@ class lf_rssi_check(Realm):
                  pathloss_list = ['0','0','0'],
                  channels_list='-1',
                  bandwidths_list='NA',
-                 nss_list='0',
+                 antenna_list='0',
                  attenuators=None,
                  atten_vals=None,
                  atten_start=None,
@@ -413,7 +413,7 @@ class lf_rssi_check(Realm):
         self.pathloss_list = pathloss_list
         self.channels_list = channels_list
         self.bandwidths_list = bandwidths_list
-        self.nss_list = nss_list
+        self.antenna_list = antenna_list
         self.attenuators = attenuators
         self.atten_vals = atten_vals
         self.atten_start = atten_start
@@ -1006,7 +1006,7 @@ class lf_rssi_check(Realm):
 
                 # for selected channels
                 # for selected bandwidths
-                # for selected nss
+                # for selected antenna
                 #    Set VAP to selected mode.  Gracefully skip invalid modes (80Mhz on 2.4, for instance).
                 #    Wait until all STAs connect.
                 #    for attenuation 0 until all STAs are disconnected
@@ -1115,7 +1115,7 @@ class lf_rssi_check(Realm):
                                 logger.info("No change to bw")
 
 
-                            for nss in self.nss_list:
+                            for antenna in self.antenna_list:
                                     
                                 # get the parent device for the vap
 
@@ -1124,7 +1124,7 @@ class lf_rssi_check(Realm):
                                 modify_radio.set_wifi_radio(_resource=resource,
                                                         _radio=radio_name,
                                                         _shelf=shelf,
-                                                        _antenna=nss)
+                                                        _antenna=antenna)
 
                                 # Set the Attenuation Create the loops 
                                 # need to have atten start and atten step
@@ -1269,7 +1269,7 @@ class lf_rssi_check(Realm):
                                                             channel,
                                                             pathloss,
                                                             bandwidth,
-                                                            nss,
+                                                            antenna,
                                                             latency,
                                                             jitter,
                                                             total_ul_rate,
@@ -1362,7 +1362,7 @@ class lf_rssi_check(Realm):
                                                             channel,
                                                             pathloss,
                                                             bandwidth,
-                                                            nss,
+                                                            antenna,
                                                             latency,
                                                             jitter,
                                                             total_ul_rate,
@@ -1540,7 +1540,7 @@ class lf_rssi_check(Realm):
             channel,
             pathloss,
             bandwidth,
-            nss,
+            antenna,
             latency,
             jitter,
             total_ul_rate,
@@ -1596,7 +1596,7 @@ class lf_rssi_check(Realm):
                      channel,
                      pathloss,
                      bandwidth,
-                     nss,
+                     antenna,
                      latency,
                      jitter,
                      total_ul_rate,
@@ -2543,10 +2543,17 @@ Setting wifi_settings per radio
         default='NA')
 
     # TODO need to know radio type
-    parser.add_argument(
-        '--nss',
-        help='number of spatial streams: 0 Diversity (All), 1 Fixed-A (1x1), 4 AB (2x2), 7 ABC (3x3), 8 ABCD (4x4), 9 (8x8) default: 0 (all)',
-        default="0")
+    parser.add_argument('--antennas', help='''
+                        --antennas list of antennas "0, 1, 4, 7, 8"  default: 
+                                self.ANTENNA_LEGEND = {
+                                    0: 'Diversity (All)',
+                                    1: 'Fixed-A (1x1)',
+                                    4: 'AB (2x2)',
+                                    7: 'ABC (3x3)',
+                                    8: 'ABCD (4x4)'
+                                }
+                                default is 0
+                        ''', default= 0)
 
     parser.add_argument(
         '--attenuators',
@@ -2895,7 +2902,7 @@ Setting wifi_settings per radio
 
     bandwidths_list = args.bandwidths.split()
     channels_list = args.channels.split()
-    nss_list = args.nss.split()
+    antenna_list = args.antennas.split()
     # need to have path loss for 2g 5g and 6g so will need a list
     pathloss_list = args.pathloss.split()
 
@@ -2960,7 +2967,7 @@ Setting wifi_settings per radio
         vap_list=vap_list,
         channels_list=channels_list,
         bandwidths_list=bandwidths_list,
-        nss_list=nss_list,
+        antenna_list=antenna_list,
         attenuators=attenuators,
         atten_vals=atten_vals,
         atten_start=atten_start,
