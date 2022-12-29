@@ -42,9 +42,7 @@ class lf_rssi_process:
                 bandwidths_list='NA',
                 channel_list='NA',
                 antenna_list=0,
-                path_loss_2g=26.74,  # These values are specific to RSSI testbed
-                path_loss_5g=31.87,  # These values are specific to RSSI testbed
-
+                pathloss_list='NA'
                 ):
         self.csv_file_list = csv_file_list
         self.num_station_csv = len(self.csv_file_list)
@@ -59,8 +57,7 @@ class lf_rssi_process:
         self.CHANNEL = 'NA'
         self.antenna_list = antenna_list
         self.ANTENNA = 'NA'
-        self.path_loss_2g = path_loss_2g
-        self.path_loss_5g = path_loss_5g
+        self.pathloss_list = pathloss_list
         self.BASE_PATH_LOSS = 36
         # TODO the tx_power needs to be configurable
         self.TX_POWER = 20
@@ -84,16 +81,16 @@ class lf_rssi_process:
         }
 
     # TODO this may need to be part of
-    def set_channel_path_loss(self, channel):
+    def set_channel_path_loss(self):
         # TODO remove hard coded values
         # also capitalized variables
         # need to check for 2G channels
-        self.CHANNEL = channel
+    
         self.BASE_PATH_LOSS = 36
-        if self.CHANNEL <= 11:
-            self.BASE_PATH_LOSS = self.path_loss_2g
-        elif self.CHANNEL >= 34 and self.CHANNEL <= 177:
-            self.BASE_PATH_LOSS = self.path_loss_5g
+        if int(self.CHANNEL) <= 11:
+            self.BASE_PATH_LOSS = float(self.pathloss_list[0])
+        elif int(self.CHANNEL) >= 34 and int(self.CHANNEL) <= 177:
+            self.BASE_PATH_LOSS = float(self.pathloss_list[1])
 
 
     # helper functions
@@ -170,7 +167,7 @@ class lf_rssi_process:
 
         for channel in self.channel_list:
             self.CHANNEL = channel
-            self.set_channel_path_loss(int(self.CHANNEL))
+            self.set_channel_path_loss()
 
 
             for bandwidth in self.bandwidths_list:
@@ -380,8 +377,7 @@ def main():
                                 }
                                 default is 0
                         ''', default= 0)
-    parser.add_argument('--path_loss_2', metavar='p', type=float, help='26.74')
-    parser.add_argument('--path_loss_5', metavar='q', type=float, help='31.87')
+    parser.add_argument('--pathloss_list', help='list of path loss for 2g, 5g, 6g default: 26.74 31.87 0',default='26.74 31.87 0')
     parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
     # logging configuration
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
@@ -405,7 +401,9 @@ def main():
 
     bandwidths_list = args.bandwidths.split()        
     channel_list = args.channels.split()        
-    antenna_list = args.antennas.split()        
+    antenna_list = args.antennas.split()  
+    pathloss_list = args.pathloss_list.split() 
+
 
     # CSV_FILE = args.csv
     # PNG_OUTPUT_DIR = args.png_dir
@@ -419,8 +417,7 @@ def main():
                                     bandwidths_list = bandwidths_list,
                                     channel_list = channel_list,
                                     antenna_list = antenna_list,
-                                    path_loss_2g=args.path_loss_2,
-                                    path_loss_5g=args.path_loss_5,
+                                    pathloss_list = pathloss_list,
                                     )
 
 
