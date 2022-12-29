@@ -471,6 +471,48 @@ class LfPcap(Realm):
         else:
             raise ValueError("pcap_name is Required!")
 
+    def check_frame_present(self, pcap_file, filter='(wlan.fixed.category_code == 6)'):
+        """ To get status code of each packet in WLAN MGT Layer """
+        print("pcap file path:  %s" % pcap_file)
+        try:
+            if pcap_file is not None:
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter=filter)
+                packet_count = 0
+                value, data = '', None
+                for pkt in cap:
+                    # print(pkt)
+                    if 'wlan.mgt' in pkt:
+                        packet_count += 1
+                print("Total Packets: ", packet_count)
+                if packet_count == 0:
+                    return "empty"
+                else:
+                    return "present"
+        except ValueError:
+            raise "pcap file is required"
+
+    def read_arrival_time(self, pcap_file,
+                          filter='(wlan.fc.type_subtype==3 && wlan.tag.number==55) && (wlan.da == 04:f0:21:9f:c1:69)'):
+        try:
+            if pcap_file is not None:
+                cap = self.read_pcap(pcap_file=pcap_file, apply_filter=filter)
+                packet_count = 0
+                data = None
+                for pkt, s in zip(cap, range(2)):
+                    if s == 0:
+                        x = pkt.frame_info.time  # time_relative
+                        data = x
+                        print(data)
+                        packet_count += 1
+                    print("Total Packets: ", packet_count)
+                    # print(data)
+                    if packet_count != 0:
+                        return data
+                    else:
+                        return data
+        except ValueError:
+            raise "pcap file is required"
+
 
 def main():
     parser = argparse.ArgumentParser(
