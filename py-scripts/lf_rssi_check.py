@@ -420,6 +420,7 @@ class lf_rssi_check(Realm):
         self.atten_start = atten_start
         self.atten_stop = atten_stop
         self.atten_step = atten_step
+        self.png_directory = '.'
         if ((len(self.atten_vals) > 0) and (
                 self.atten_vals[0] != -1) and (len(self.attenuators) == 0)):
             logger.error(
@@ -1389,16 +1390,18 @@ class lf_rssi_check(Realm):
                         if 'eth' not in name:
                             self.port_csv_data.append(name)
                     
+                    # read an element out of the list to get the parent directory
+                    self.png_directory = os.path.dirname(self.port_csv_data[0])
+                    
                     # all the station csv files have been gahtered
                     logger.debug("csv_file_list{port_list}".format(port_list=self.port_csv_data))
                     rssi_process = lf_rssi_process.lf_rssi_process(
                                                     csv_file_list=self.port_csv_data,
-                                                    png_dir='../rssi_validation', # TODO read parent directory 
+                                                    png_dir=self.png_directory, # TODO read parent directory 
                                                     bandwidths_list = self.bandwidths_list,
                                                     channel_list = self.channels_list,
                                                     antenna_list = self.antenna_list,
                                                     pathloss_list=self.pathloss_list
-
                                                     )
 
                     rssi_process.read_all_csv_files()
