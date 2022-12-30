@@ -73,11 +73,11 @@ class lf_rssi_process:
         self.signal_data = [[], [], [], [], [], [], []]
 
         self.ANTENNA_LEGEND = {
-            '0': 'Diversity (All)',
-            '1': 'Fixed-A (1x1)',
-            '4': 'AB (2x2)',
-            '7': 'ABC (3x3)',
-            '8': 'ABCD (4x4)'
+            '0': 'Diversity_All',
+            '1': 'Fixed-A_1x1',
+            '4': 'AB_2x2',
+            '7': 'ABC_3x3',
+            '8': 'ABCD_4x4'
         }
 
     # TODO this may need to be part of
@@ -303,7 +303,8 @@ class lf_rssi_process:
         ax.set_xticks(range(20, 100, 5))
         plt.grid(color=COLORS['dark_gray'], linestyle='-', linewidth=1)
         plt.legend()
-        plt.savefig(F'{self.PNG_OUTPUT_DIR}/{self.CHANNEL}_{self.BANDWIDTH}_{self.ANTENNA}_signal_atten.png')
+        antenna = self.ANTENNA_LEGEND[self.ANTENNA]
+        plt.savefig(F'{self.PNG_OUTPUT_DIR}/{self.CHANNEL}_{self.BANDWIDTH}_{antenna}_signal_atten.png')
 
         plt.style.use('dark_background')
         fig = plt.figure(figsize=(8, 8), dpi=100)
@@ -328,9 +329,10 @@ class lf_rssi_process:
         ax.set_xticks(range(20, 100, 5))
         plt.grid(color=COLORS['dark_gray'], linestyle='-', linewidth=1)
         plt.legend()
-        plt.savefig(F'{self.PNG_OUTPUT_DIR}/{self.CHANNEL}_{self.ANTENNA}_{self.BANDWIDTH}_signal_deviation_atten.png')
+        antenna = self.ANTENNA_LEGEND[self.ANTENNA]
+        plt.savefig(F'{self.PNG_OUTPUT_DIR}/{self.CHANNEL}_{self.BANDWIDTH}_{antenna}_signal_deviation_atten.png')
 
-        logger.debug(F'{self.PNG_OUTPUT_DIR}/{self.CHANNEL}_{self.ANTENNA}_{self.BANDWIDTH}_signal_deviation_atten.png')
+        logger.debug(F'{self.PNG_OUTPUT_DIR}/{self.CHANNEL}_{self.BANDWIDTH}_{antenna}signal_deviation_atten.png')
         # TODO the chack_data will need to be modified
         # self.check_data(signal, signal_exp)
         # sys.exit(0)
