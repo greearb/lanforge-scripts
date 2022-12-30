@@ -174,6 +174,7 @@ lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
+lf_rssi_process = importlib.import_module("py-scripts.lf_rssi_process")
 
 # radio info library
 lf_json_api = importlib.import_module("py-scripts.lf_json_api")
@@ -434,6 +435,7 @@ class lf_rssi_check(Realm):
         # Lookup key is port-eid name
         self.port_csv_files = {}
         self.port_csv_writers = {}
+        self.port_csv_data = []
 
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
@@ -1376,6 +1378,37 @@ class lf_rssi_check(Realm):
 
                                 # TODO add collect layer 3 data
 
+                    # Process all the data into png files 
+                    port_eids = self.gather_port_eids()
+                    if self.use_existing_station_lists:
+                        port_eids.extend(self.existing_station_lists.copy())
+                        
+                    for port_eid in port_eids:
+                        logger.debug("csv port files: {port_file}".format(port_file=self.port_csv_files[port_eid]))
+                        name = self.port_csv_files[port_eid].name
+                        if 'eth' not in name:
+                            self.port_csv_data.append(name)
+                    
+                    # all the station csv files have been gahtered
+                    logger.debug("csv_file_list{port_list}".format(port_list=self.port_csv_data))
+                    rssi_process = lf_rssi_process.lf_rssi_process(
+                                                    csv_file_list=self.port_csv_data,
+                                                    png_dir='../rssi_validation', # TODO read parent directory 
+                                                    bandwidths_list = self.bandwidths_list,
+                                                    channel_list = self.channels_list,
+                                                    antenna_list = self.antenna_list,
+                                                    pathloss_list=self.pathloss_list
+
+                                                    )
+
+                    rssi_process.read_all_csv_files()
+                    # using the csv as a count 
+                    # process the collected csv data
+                    rssi_process.populate_signal_and_attenuation_data_create_png()
+
+                        
+
+
                     # TODO make all port csv files into one concatinated csv files
                     # Create empty dataframe
                     all_dl_ports_df = pd.DataFrame()
@@ -1616,6 +1649,7 @@ class lf_rssi_check(Realm):
                     # print("col {}".format(col))
                     row.append(col)
 
+        # Writes ou the csv files
         writer = self.port_csv_writers[port_eid]
         writer.writerow(row)
         self.port_csv_files[port_eid].flush()
@@ -1954,6 +1988,7 @@ class lf_rssi_check(Realm):
         # if self.csv_file is not None:
         fname = self.outfile[:-4]  # Strip '.csv' from file name
         fname = fname + "-dl-" + port_eid + ".csv"
+
         pfile = open(fname, "w")
         port_csv_writer = csv.writer(pfile, delimiter=",")
         self.port_csv_files[port_eid] = pfile
