@@ -1049,9 +1049,9 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
     parser.add_argument(
         '--path',
         help='''
-            --path top directory path to kpi if regererating database or png files,
-            for example /html-reports/TEST_RUNS , this will collect all the results for all the 
-            the runs under TEST_RUNS.  
+            --path top directory of the test suite directory, 
+            for example /html-reports/TEST_RUNS/TEST_SUITE  
+            /home/lanforge/html-reports/ct_us/lf_check_suite
             ''',
         default='')
     parser.add_argument(
@@ -1059,8 +1059,8 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         help='''
             --path_comp , this is the directory to compare results from a previous run.
             top directory path to kpi if regererating database or png files,
-            for example /html-reports/TEST_RUNS , this will collect all the results for all the 
-            the runs under TEST_RUNS.  
+            for example /html-reports/TEST_RUNS/TEST_SUITE_COMPARE 
+            /home/lanforge/html-reports/ct_us/lf_check_compare_suite
             default: ''
             ''',
         default='')
