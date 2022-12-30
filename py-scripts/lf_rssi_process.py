@@ -303,7 +303,7 @@ class lf_rssi_process:
         ax.set_xticks(range(20, 100, 5))
         plt.grid(color=COLORS['dark_gray'], linestyle='-', linewidth=1)
         plt.legend()
-        plt.savefig(F'{self.PNG_OUTPUT_DIR}/{self.CHANNEL}_{self.ANTENNA}_{self.BANDWIDTH}_signal_atten.png')
+        plt.savefig(F'{self.PNG_OUTPUT_DIR}/{self.CHANNEL}_{self.BANDWIDTH}_{self.ANTENNA}_signal_atten.png')
 
         plt.style.use('dark_background')
         fig = plt.figure(figsize=(8, 8), dpi=100)
