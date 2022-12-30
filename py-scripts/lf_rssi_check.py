@@ -5,8 +5,17 @@ NAME: lf_rssi_check.py
 PURPOSE: Validate RSSI for specific radios
 
 
+        self.ANTENNA_LEGEND = {
+            '0': 'Diversity_All',
+            '1': 'Fixed-A_1x1',
+            '4': 'AB_2x2',
+            '7': 'ABC_3x3',
+            '8': 'ABCD_4x4'
+        }
+
+
 EXAMPLE:
-    Usage something like:  rssi_check.py --channels “6 36” --antenna “1 2 3 4” --bw “20 40 80” --vap 1.1.vap0 --stas “1.2.wlan0 1.2.wlan1” --attenuator 1.1.xxxx --attenuation_step 1  --step_duration 
+    Usage something like:  rssi_check.py --channels “6 36” --antenna “0 1 4 7 8” --bw “20 40 80” --vap 1.1.vap0 --stas “1.2.wlan0 1.2.wlan1” --attenuator 1.1.xxxx --attenuation_step 1  --step_duration 
     Skip bw that does not match selected channels.
     
 increase attenuation until STA disconnects, then stop recording data there.  It should be around RSSI -88, but part of this is to verify that.
