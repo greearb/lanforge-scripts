@@ -188,8 +188,13 @@ class lf_rssi_process:
                             # attenuation data
                             # attenuation is in 1/10 dBm
                             # position 11 in csv is the attenuation location counting from zero
-                            logger.debug("bandwidth {bw} csv bandwidth {csv_bw}".format(bw=bandwidth,csv_bw=self.csv_data[csv_index][run_index][29]))
-                            if self.csv_data[csv_index][run_index][29] == bandwidth:
+                            logger.debug("bandwidth {bw} csv bandwidth {csv_bw}".format(bw=self.BANDWIDTH,csv_bw=self.csv_data[csv_index][run_index][29]))
+                            logger.debug("channel {ch} csv channel {csv_ch}".format(ch=self.CHANNEL,csv_ch=self.csv_data[csv_index][run_index][27]))
+                            logger.debug("antenna {at} csv antenna {csv_at}".format(at=self.ANTENNA,csv_at=self.csv_data[csv_index][run_index][30]))
+                            # neeed to compare channel, bandwidth, antenna
+                            if ((self.csv_data[csv_index][run_index][29] == self.BANDWIDTH)
+                                and (self.csv_data[csv_index][run_index][27] == self.CHANNEL)
+                                and (self.csv_data[csv_index][run_index][30] == self.ANTENNA)):
                                 self.atten_data[csv_index].append(float(self.csv_data[csv_index][run_index][11])/10)
                                 # signal data is position 17
                                 rssi = self.csv_data[csv_index][run_index][17]
@@ -299,7 +304,7 @@ class lf_rssi_process:
                      + F'Antenna={self.ANTENNA_LEGEND[self.ANTENNA]}')
         ax.set_xlabel('Attenuation (dB)')
         ax.set_ylabel('RSSI (dBm)')
-        ax.set_yticks(range(-30, -110, -5))
+        ax.set_yticks(range(-5, -110, -5))
         ax.set_xticks(range(20, 100, 5))
         plt.grid(color=COLORS['dark_gray'], linestyle='-', linewidth=1)
         plt.legend()
@@ -325,7 +330,7 @@ class lf_rssi_process:
                      + F'Antenna={self.ANTENNA_LEGEND[self.ANTENNA]}')
         ax.set_xlabel('Attenuation (dB)')
         ax.set_ylabel('RSSI (dBm)')
-        ax.set_yticks(range(-5, 30, 5))
+        ax.set_yticks(range(-50, 0, 5))
         ax.set_xticks(range(20, 100, 5))
         plt.grid(color=COLORS['dark_gray'], linestyle='-', linewidth=1)
         plt.legend()
