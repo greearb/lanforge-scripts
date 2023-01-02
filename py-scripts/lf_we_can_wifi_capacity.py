@@ -30,6 +30,10 @@ import sys
 import glob
 import shutil
 import math
+import time
+import argparse
+import time
+import logging
 
 import pandas as pd
 
@@ -54,6 +58,168 @@ lf_graph = importlib.import_module("py-scripts.lf_graph")
 lf_bar_graph = lf_graph.lf_bar_graph
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 from lf_wifi_capacity_test import WiFiCapacityTest
+
+#Class to trigger Wi-Fi capacity test for real clients
+class WeCanWiFiCapacityTest(cv_test):
+    def __init__(self,
+                 lfclient_host="localhost",
+                 lf_port=8080,
+                 ssh_port=22,
+                 lf_user="lanforge",
+                 lf_password="lanforge",
+                 instance_name="wct_instance",
+                 config_name="wifi_config",
+                 upstream="eth1",
+                 batch_size="1",
+                 loop_iter="1",
+                 protocol="UDP-IPv4",
+                 duration="5000",
+                 pull_report=False,
+                 load_old_cfg=False,
+                 upload_rate="10Mbps",
+                 download_rate="1Gbps",
+                 sort="interleave",
+                 stations="",
+                 create_stations=False,
+                 enables=None,
+                 disables=None,
+                 raw_lines=None,
+                 raw_lines_file="",
+                 sets=None,
+                 influx_host="localhost",
+                 influx_port=8086,
+                 report_dir="",
+                 graph_groups=None,
+                 test_rig="",
+                 test_tag="",
+                 local_lf_report_dir=""
+                 ):
+        super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
+
+        if enables is None:
+            enables = []
+        if disables is None:
+            disables = []
+        if raw_lines is None:
+            raw_lines = []
+        if sets is None:
+            sets = []
+        self.lfclient_host = lfclient_host
+        self.lf_port = lf_port
+        self.lf_user = lf_user
+        self.lf_password = lf_password
+        self.station_profile = self.new_station_profile()
+        self.pull_report = pull_report
+        self.load_old_cfg = load_old_cfg
+        self.instance_name = instance_name
+        self.config_name = config_name
+        self.test_name = "WiFi Capacity"
+        self.batch_size = batch_size
+        self.loop_iter = loop_iter
+        self.protocol = protocol
+        self.duration = duration
+        self.upload_rate = upload_rate
+        self.download_rate = download_rate
+        self.upstream = upstream
+        self.sort = sort
+        self.stations = stations
+        self.create_stations = create_stations
+        self.ssh_port = ssh_port
+        self.enables = enables
+        self.disables = disables
+        self.raw_lines = raw_lines
+        self.raw_lines_file = raw_lines_file
+        self.sets = sets
+        self.influx_host = influx_host,
+        self.influx_port = influx_port
+        self.report_dir = report_dir
+        self.graph_groups = graph_groups
+        self.test_rig = test_rig
+        self.test_tag = test_tag
+        self.local_lf_report_dir = local_lf_report_dir
+        self.lf_query_ports = super().json_get("/port/all")
+
+    def setup(self):
+        if self.create_stations and self.stations != "":
+            sta = self.stations.split(",")
+            self.station_profile.cleanup(sta)
+            logger.info("stations created")
+
+    def run(self):
+        self.sync_cv()
+        time.sleep(2)
+        self.sync_cv()
+
+        self.rm_text_blob(self.config_name, "Wifi-Capacity-")  # To delete old config with same name
+        self.show_text_blob(None, None, False)
+
+        # Test related settings
+        cfg_options = []
+        eid = LFUtils.name_to_eid(self.upstream)
+        port = "%i.%i.%s" % (eid[0], eid[1], eid[2])
+        port_list = [port]
+        
+        #validating port manager tab to select interop devices only
+        print("\n Now validating Port manager ports \n")
+        temp=-1
+        for i in [self.lf_query_ports['interfaces']]:
+            for [j] in i:
+                temp+=1
+                #print(j)
+                #print(i[temp][j])
+                if(i[temp][j]["alias"]=='wlan0' or i[temp][j]["alias"]=='wlan1' and i[temp][j]["port type"]=='WIFI-STA' and i[temp][j]["phantom"] is False and i[temp][j]["down"] is False):
+                    port_list.append(j)
+        idx = 0
+        for eid in port_list:
+            add_port = "sel_port-" + str(idx) + ": " + eid
+            print("add-port",add_port)
+            self.create_test_config(self.config_name, "Wifi-Capacity-", add_port)
+            idx += 1
+
+        self.apply_cfg_options(cfg_options, self.enables, self.disables, self.raw_lines, self.raw_lines_file)
+
+        if self.batch_size != "":
+            cfg_options.append("batch_size: " + self.batch_size)
+        if self.loop_iter != "":
+            cfg_options.append("loop_iter: " + self.loop_iter)
+        if self.protocol != "":
+            cfg_options.append("protocol: " + str(self.protocol))
+        if self.duration != "":
+            cfg_options.append("duration: " + self.duration)
+        if self.upload_rate != "":
+            cfg_options.append("ul_rate: " + self.upload_rate)
+        if self.download_rate != "":
+            cfg_options.append("dl_rate: " + self.download_rate)
+        if self.test_rig != "":
+            cfg_options.append("test_rig: " + self.test_rig)
+        if self.test_tag != "":
+            cfg_options.append("test_tag: " + self.test_tag)
+
+        cfg_options.append("save_csv: 1")
+
+        blob_test = "Wifi-Capacity-"
+
+        # We deleted the scenario earlier, now re-build new one line at a time.
+        self.build_cfg(self.config_name, blob_test, cfg_options)
+
+        cv_cmds = []
+
+        if self.sort == 'linear':
+            cmd = "cv click '%s' 'Linear Sort'" % self.instance_name
+            cv_cmds.append(cmd)
+        if self.sort == 'interleave':
+            cmd = "cv click '%s' 'Interleave Sort'" % self.instance_name
+            cv_cmds.append(cmd)
+
+        self.create_and_run_test(self.load_old_cfg, self.test_name, self.instance_name,
+                                 self.config_name, self.sets,
+                                 self.pull_report, self.lfclient_host, self.lf_user, self.lf_password,
+                                 cv_cmds, ssh_port=self.ssh_port, graph_groups_file=self.graph_groups, local_lf_report_dir=self.local_lf_report_dir)
+
+        self.rm_text_blob(self.config_name, blob_test)  # To delete old config with same name
+
+        self.rm_text_blob(self.config_name, "Wifi-Capacity-")  # To delete old config with same name
+
 
 
 class LfInteropWifiCapacity(Realm):
@@ -215,7 +381,7 @@ class LfInteropWifiCapacity(Realm):
             print("[INPUT] Wrong Batch Size should less than or equal to ", number_of_devices)
             exit(0)
         resource_id = [get_data[0][i] for i in range(self.batch_size)]
-        phone_name = [get_data[1][i] for i in range(self.batch_size)]
+        phone_name = [get_data[3][i] for i in range(self.batch_size)]
         mac_address = [get_data[2][i] for i in range(self.batch_size)]
         user_name = [get_data[3][i] for i in range(self.batch_size)]
         phone_radio = [get_data[4][i] for i in range(self.batch_size)]
@@ -532,7 +698,7 @@ def main():
 
     args = parser.parse_args()
 
-    WFC_Test = WiFiCapacityTest(lfclient_host=args.mgr,
+    WFC_Test = WeCanWiFiCapacityTest(lfclient_host=args.mgr,
                                 lf_port=args.port,
                                 ssh_port=22,
                                 lf_user=args.lf_user,
