@@ -44,6 +44,8 @@ class csv_sql:
                  _png=False):
         self.path = _path
         self.path_comp = _path_comp
+        logger.debug("lf_qa path: {path}".format(path=self.path))
+        logger.debug("lf_qa path_comp: {path}".format(path=self.path_comp))
         self.file = _file
         self.database = _database
         self.table = _table
@@ -589,19 +591,22 @@ class csv_sql:
                 kpi_chart_parent_path = os.path.dirname(kpi_chart)
                 kpi_chart_parent_basename = os.path.basename(kpi_chart_parent_path)
                 kpi_chart_relative = "../" + kpi_chart_parent_basename + "/" + kpi_chart_basename
+                kpi_chart_results_dir = "../" + kpi_chart_parent_basename
+
 
                 if (table_index % 2) == 0:
                     kpi_chart_html += """<tr>"""
                 kpi_chart_html += """
                     <td>
                         {test_tag}  {test_id}
+                        <a href="{dir_path}" target="_blank">results_dir</a>
                     </td>
                     <td>
                         <a href="{kpi_chart_0}"  target="_blank">
                             <img src="{kpi_chart_1}" style="width:400px;max-width:400px" title="{kpi_chart_2}">
                         </a>
                     </td>
-                """.format(test_tag=test_tag, test_id=test_id, kpi_chart_0=kpi_chart_relative, kpi_chart_1=kpi_chart_relative, kpi_chart_2=kpi_chart_relative)
+                """.format(test_tag=test_tag, test_id=test_id, dir_path=kpi_chart_results_dir, kpi_chart_0=kpi_chart_relative, kpi_chart_1=kpi_chart_relative, kpi_chart_2=kpi_chart_relative)
                 table_index += 1
                 if (table_index % 2) == 0:
                     kpi_chart_html += """</tr>"""
@@ -1096,13 +1101,23 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         help="--dir <results directory> default lf_qa",
         default="lf_qa")
     # logging configuration:
+    parser.add_argument('--log_level',
+                        default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
+
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
 
     args = parser.parse_args()
 
     # set up logger
+
+    # set the logger level to debug
     logger_config = lf_logger_config.lf_logger_config()
+
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
+
     if args.lf_logger_config_json:
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
