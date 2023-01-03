@@ -1632,6 +1632,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         help="--update_latest  copy latest results to top dir",
         action='store_true')
     # logging configuration:
+    parser.add_argument('--log_level',
+                        default=None,
+                        help='Set logging level: debug | info | warning | error | critical')
+
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
 
@@ -1639,6 +1643,10 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
+
+    if args.log_level:
+        logger_config.set_level(level=args.log_level)
+
     if args.lf_logger_config_json:
         # logger_config.lf_logger_config_json = "lf_logger_config.json"
         logger_config.lf_logger_config_json = args.lf_logger_config_json
