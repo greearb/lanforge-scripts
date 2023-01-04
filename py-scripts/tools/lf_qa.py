@@ -366,47 +366,23 @@ class csv_sql:
                 if "check" in str(pdf_base_name):
                     pass
                 else:
-                    abs_path = False
-                    if abs_path:
-                        parent_path = os.path.dirname(pdf_info)
-                        dir_path = self.server + parent_path.replace(self.cut, '')
+                    # TODO remove the fixed path code
+                    # try relative path
+                    parent_path = os.path.dirname(pdf_info)
+                    parent_name = os.path.basename(parent_path)
 
-                        pdf_path = os.path.join(parent_path, pdf_base_name)
-                        pdf_path = self.server + pdf_path.replace(self.cut, '')
+                    # for the chamberview tests the results is in index.html
+                    # so need to move index.html to readme.html
+                    # use os.rename(source,destination) , 
+                    # check for index
+                    index_html_file = parent_path + "/index.html"
+                    if os.path.exists(index_html_file):
+                        readme_html_file = parent_path + "/readme.html"
+                        os.rename(index_html_file,readme_html_file)
 
-                        # LAN-1535 scripting: test_l3.py output masks other output when browsing.
-                        # consider renaming index.html to readme.html
-                        # html_path = os.path.join(parent_path, "index.html")
-
-                        # for the chamberview tests the results is in index.html
-                        # so need to move index.html to readme.html
-                        # use os.rename(source,destination) , 
-                        # check for index
-                        index_html_file = parent_path + "/index.html"
-                        if os.path.exists(index_html_file):
-                            readme_html_file = parent_path + "/readme.html"
-                            os.rename(index_html_file,readme_html_file)
-
-                        html_path = os.path.join(parent_path, "readme.html")
-                        html_path = self.server + html_path.replace(self.cut, '')
-                    else:
-                        # TODO remove the fixed path code
-                        # try relative path
-                        parent_path = os.path.dirname(pdf_info)
-                        parent_name = os.path.basename(parent_path)
-
-                        # for the chamberview tests the results is in index.html
-                        # so need to move index.html to readme.html
-                        # use os.rename(source,destination) , 
-                        # check for index
-                        index_html_file = parent_path + "/index.html"
-                        if os.path.exists(index_html_file):
-                            readme_html_file = parent_path + "/readme.html"
-                            os.rename(index_html_file,readme_html_file)
-
-                        dir_path = '../' + parent_name 
-                        pdf_path = '../' + parent_name + "/" +  pdf_base_name
-                        html_path = "../" + parent_name + "/readme.html"
+                    dir_path = '../' + parent_name 
+                    pdf_path = '../' + parent_name + "/" +  pdf_base_name
+                    html_path = "../" + parent_name + "/readme.html"
 
                     kpi_path = os.path.join(parent_path, "kpi.csv")
                     test_id, test_tag = self.get_test_id_test_tag(kpi_path)
@@ -1208,39 +1184,24 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
             report.set_table_title("Test Rig field in kpi is empty")
             report.build_table_title
 
-        abs_path = False
-        if abs_path:
-            pdf_link_path = report.get_pdf_path()
-            pdf_link_path = __server + pdf_link_path.replace(__cut, '')
-            report.build_pdf_link("PDF_Report", pdf_link_path)
+        # use relative paths
+        pdf_file = report.get_pdf_file()
+        # pdf_parent_path = os.path.dirname(pdf_link_path)
+        # pdf_parent_name = os.path.basename(pdf_parent_path)
+        
+        
+        pdf_url = './' + pdf_file
+        report.build_pdf_link("PDF_Report", pdf_url)
 
-            report_path = report.get_path()
-            report_path = __server + report_path.replace(__cut, '')
-            report.build_link("Current Test Suite Results Directory", report_path)
+        report_path = report.get_path()
+        report_basename = os.path.basename(report_path)
+        report_url = './../../' + report_basename
+        report.build_link("Current Test Suite Results Directory", report_url)
 
-            report_parent_path = report.get_parent_path()
-            report_parent_path = __server + report_parent_path.replace(__cut, '')
-            report.build_link(
-                "All Test-Rig Test Suites Results Directory", report_parent_path)
-        else:
-            # use relative paths
-            pdf_file = report.get_pdf_file()
-            # pdf_parent_path = os.path.dirname(pdf_link_path)
-            # pdf_parent_name = os.path.basename(pdf_parent_path)
-            
-            
-            pdf_url = './' + pdf_file
-            report.build_pdf_link("PDF_Report", pdf_url)
-
-            report_path = report.get_path()
-            report_basename = os.path.basename(report_path)
-            report_url = './../../' + report_basename
-            report.build_link("Current Test Suite Results Directory", report_url)
-
-            report_parent_path = report.get_parent_path()
-            report_parent_basename = os.path.basename(report_parent_path)
-            report_parent_url = './../../../' + report_parent_basename
-            report.build_link("All Test-Rig Test Suites Results Directory", report_parent_url)
+        report_parent_path = report.get_parent_path()
+        report_parent_basename = os.path.basename(report_parent_path)
+        report_parent_url = './../../../' + report_parent_basename
+        report.build_link("All Test-Rig Test Suites Results Directory", report_parent_url)
 
 
         # links table for tests 
@@ -1265,11 +1226,8 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         # png summary of test
         report.set_table_title("Suite Summary")
         report.build_table_title()
-        #TODO leave the aps_path False in 
-        abs_path = False
-        if abs_path:
-            kpi_chart_html = csv_dash.get_kpi_chart_html()
-        elif args.path_comp != '':
+
+        if args.path_comp != '':
             kpi_chart_html = csv_dash.get_kpi_chart_html_relative_compare()
         else:
             kpi_chart_html = csv_dash.get_kpi_chart_html_relative()
