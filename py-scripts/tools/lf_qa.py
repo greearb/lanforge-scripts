@@ -594,16 +594,26 @@ class csv_sql:
             test_tag, test_id = self.get_test_id_test_tag(kpi_path)
             # Path returns a list of objects
             kpi_chart = os.path.abspath(kpi_chart)
-            kpi_chart = self.server + kpi_chart.replace(self.cut, '')
+
+            if False:
+                kpi_chart = self.server + kpi_chart.replace(self.cut, '')
             if "print" in kpi_chart:
                 pass
             else:
-                # do relative paths
-                kpi_chart_basename = os.path.basename(kpi_chart) # granted this is kpi.csv 
-                kpi_chart_parent_path = os.path.dirname(kpi_chart)
-                kpi_chart_parent_basename = os.path.basename(kpi_chart_parent_path)
-                kpi_chart_relative = "../" + kpi_chart_parent_basename + "/" + kpi_chart_basename
-                kpi_chart_results_dir = "../" + kpi_chart_parent_basename
+                if False:
+                    # do relative paths
+                    kpi_chart_basename = os.path.basename(kpi_chart) # granted this is kpi.csv 
+                    kpi_chart_parent_path = os.path.dirname(kpi_chart)
+                    kpi_chart_parent_basename = os.path.basename(kpi_chart_parent_path)
+                    kpi_chart_relative = "../" + kpi_chart_parent_basename + "/" + kpi_chart_basename
+                    kpi_chart_results_dir = "../" + kpi_chart_parent_basename
+
+                else:
+                    kpi_chart_relative = os.path.relpath(kpi_chart, os.curdir)
+                    logger.debug("kpi_chart_relative: {r_chart}".format(r_chart=kpi_chart_relative))
+
+                    kpi_chart_results_dir = os.path.dirname(kpi_chart_relative)
+                    logger.debug("results_dir: {dir_path}".format(dir_path=kpi_chart_results_dir))
 
 
                 if (table_index % 2) == 0:
