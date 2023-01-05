@@ -667,7 +667,7 @@ def main():
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
 
-    parser = argparse.ArgumentParser(description="Netgear AP DFS Test Script")
+    parser = argparse.ArgumentParser(description="Script to perform Wifi capacity test with Real client devices.")
     parser.add_argument('--mgr', type=str, help='host name', default="localhost")
     parser.add_argument('--port', type=str, help='port number', default="8080")
     parser.add_argument("--upstream", type=str, default="",
