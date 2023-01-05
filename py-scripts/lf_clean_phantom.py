@@ -169,19 +169,19 @@ class clean_phantom(Realm):
         
 def main():
     parser = argparse.ArgumentParser(
-        prog='clean_phantom.py',
+        prog='lf_clean_phantom.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
             Clean Phantom hosts and connects
             ''',
         description='''\
-clean_phantom.py:
+lf_clean_phantom.py:
 --------------------
 Generic command layout:
 
 Example:
 This example will clean the Phantom ports and resources from LF GUI tabs:
-./clean_phantom.py --mgr MGR --phantom_____
+./lf_clean_phantom.py --mgr MGR --phantom_____
 
     default port is 8080
 
