@@ -36,6 +36,7 @@ class csv_sql:
     def __init__(self,
                  _path='.',
                  _path_comp='',
+                 _lf_qa_report_path='',
                  _file='kpi.csv',
                  _database='qa_db',
                  _table='qa_table',
@@ -44,8 +45,10 @@ class csv_sql:
                  _png=False):
         self.path = _path
         self.path_comp = _path_comp
+        self.lf_qa_report_path = _lf_qa_report_path
         logger.debug("lf_qa path: {path}".format(path=self.path))
         logger.debug("lf_qa path_comp: {path}".format(path=self.path_comp))
+        logger.debug("lf_qa lf_qa_report_path: {path}".format(path=self.lf_qa_report_path))
         self.file = _file
         self.database = _database
         self.table = _table
@@ -467,18 +470,16 @@ class csv_sql:
             test_tag, test_id = self.get_test_id_test_tag(kpi_path)
             # Path returns a list of objects
             kpi_chart = os.path.abspath(kpi_chart)
-            kpi_chart = self.server + kpi_chart.replace(self.cut, '')
+
             if "print" in kpi_chart:
                 pass
             else:
-                # do relative paths TODO use os.path.relpath
-                kpi_chart_basename = os.path.basename(kpi_chart) # granted this is kpi.csv 
-                kpi_chart_parent_path = os.path.dirname(kpi_chart)
-                kpi_chart_parent_basename = os.path.basename(kpi_chart_parent_path)
-                kpi_chart_relative = "../" + kpi_chart_parent_basename + "/" + kpi_chart_basename
-                kpi_chart_results_dir = "../" + kpi_chart_parent_basename
+                # do relative paths to the lf_qa_report_path
+                kpi_chart_relative = os.path.relpath(kpi_chart, self.lf_qa_report_path)
+                logger.debug("kpi_chart_relative: {r_chart}".format(r_chart=kpi_chart_relative))
 
-                logger.info("kpi_chart_relative {kpi}".format(kpi=kpi_chart_relative))
+                kpi_chart_results_dir = os.path.dirname(kpi_chart_relative)
+                logger.debug("results_dir: {dir_path}".format(dir_path=kpi_chart_results_dir))
 
                 if (table_index % 2) == 0:
                     kpi_chart_html += """<tr>"""
@@ -507,7 +508,7 @@ class csv_sql:
                             tag=test_tag,ctag=test_tag_comp,test_id=test_id,test_id_comp=test_id_comp
                         ) )
                         # get relative path 
-                        kpi_chart_comp_relative = os.path.relpath(kpi_chart_comp, os.curdir)
+                        kpi_chart_comp_relative = os.path.relpath(kpi_chart_comp, self.lf_qa_report_path)
                         logger.debug("kpi_chart_comp_relative: {r_chart}".format(r_chart=kpi_chart_comp_relative))
 
                         compare_results_dir = os.path.dirname(kpi_chart_comp_relative)
@@ -558,17 +559,15 @@ class csv_sql:
             test_tag, test_id = self.get_test_id_test_tag(kpi_path)
             # Path returns a list of objects
             kpi_chart = os.path.abspath(kpi_chart)
-            kpi_chart = self.server + kpi_chart.replace(self.cut, '')
             if "print" in kpi_chart:
                 pass
             else:
-                # do relative paths
-                kpi_chart_basename = os.path.basename(kpi_chart) # granted this is kpi.csv 
-                kpi_chart_parent_path = os.path.dirname(kpi_chart)
-                kpi_chart_parent_basename = os.path.basename(kpi_chart_parent_path)
-                kpi_chart_relative = "../" + kpi_chart_parent_basename + "/" + kpi_chart_basename
-                kpi_chart_results_dir = "../" + kpi_chart_parent_basename
+                # do relative paths to the lf_qa_report_path
+                kpi_chart_relative = os.path.relpath(kpi_chart, self.lf_qa_report_path)
+                logger.debug("kpi_chart_relative: {r_chart}".format(r_chart=kpi_chart_relative))
 
+                kpi_chart_results_dir = os.path.dirname(kpi_chart_relative)
+                logger.debug("results_dir: {dir_path}".format(dir_path=kpi_chart_results_dir))
 
                 if (table_index % 2) == 0:
                     kpi_chart_html += """<tr>"""
@@ -1139,9 +1138,13 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
                        _output_html="lf_qa.html",
                        _output_pdf="lf_qa.pdf")
 
+    # for relative path reporting 
+    __lf_qa_report_path = report.get_path_date_time()
+
     csv_dash = csv_sql(
         _path=__path,
         _path_comp = __path_comp,
+        _lf_qa_report_path = __lf_qa_report_path,
         _file=__file,
         _database=__database,
         _table=__table,
