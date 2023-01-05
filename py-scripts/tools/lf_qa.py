@@ -646,6 +646,63 @@ class csv_sql:
             exit(1)
         self.conn.close()
 
+    # information on sqlite database
+    # https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_sql.html
+    # sqlite browser:
+    # Fedora  sudo dnf install sqlitebrowser
+    # Ubuntu sudo apt-get install sqlite3
+    #
+    def store_comp(self):
+        logger.info("reading kpi and storing in db {}".format(self.database))
+        path = Path(self.path_comp)
+        logger.info("store path {path}".format(path=path))
+        logger.info("self.path_comp  {path}".format(path=self.path_comp))
+        self.kpi_list = list(path.glob('**/kpi.csv'))  # Hard code for now
+
+        if not self.kpi_list:
+            logger.info("WARNING: used --store , no new kpi.csv found, check input path or remove --store from command line")
+
+        for kpi in self.kpi_list:  # TODO note empty kpi.csv failed test
+            df_kpi_tmp = pd.read_csv(kpi, sep='\t')
+            # only store the path to the kpi.csv file
+            _kpi_path = str(kpi).replace('kpi.csv', '')
+            df_kpi_tmp['kpi_path'] = _kpi_path
+            test_run = self.get_test_run_from_meta(_kpi_path)
+            df_kpi_tmp['test_run'] = test_run
+
+            use_meta_test_tag, test_tag = self.get_test_tag_from_meta(_kpi_path)
+            if use_meta_test_tag:
+                df_kpi_tmp['test-tag'] = test_tag
+
+            test_dir = self.get_test_dir_info_from_meta(_kpi_path)
+            # test_dir = test_dir.replace('-',' ')
+            df_kpi_tmp['test_dir'] = test_dir
+
+            logger.info("test_dir: {test_dir}".format(test_dir=test_dir))
+
+            df_kpi_tmp['kernel'] = self.get_kernel_version_from_meta(_kpi_path)
+            df_kpi_tmp['radio_fw'] = self.get_radio_firmware_from_meta(_kpi_path)
+            df_kpi_tmp['gui_ver'], df_kpi_tmp['gui_build_date'] = self.get_gui_info_from_meta(_kpi_path)
+            df_kpi_tmp['server_ver'], df_kpi_tmp['server_build_date'] = self.get_server_info_from_meta(_kpi_path)
+
+            df_kpi_tmp = df_kpi_tmp.append(df_kpi_tmp, ignore_index=True)
+            self.df = self.df.append(df_kpi_tmp, ignore_index=True)
+
+        self.conn = sqlite3.connect(self.database)
+        try:
+            self.df.to_sql(self.table, self.conn, if_exists='append')
+        except BaseException:
+            logger.info("attempt to append to database with different column layout,\
+                 caused an exception, input new name --database <new name>")
+            print(
+                "Error attempt to append to database with different column layout,\
+                     caused an exception, input new name --database <new name>",
+                file=sys.stderr)
+            exit(1)
+        self.conn.close()
+
+
+
     def generate_png(self, group, test_id_list, test_tag,
                      test_rig, kpi_path_list, kpi_fig, df_tmp):
         # save the figure - figures will be over written png
@@ -1068,6 +1125,10 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
         help='--store , store kpi to db, action store_true',
         action='store_true')
     parser.add_argument(
+        '--store_comp',
+        help='--store_comp , store compared data kpi to db, action store_true',
+        action='store_true')
+    parser.add_argument(
         '--png',
         help='--png,  generate png for kpi in path, generate display, action store_true',
         action='store_true')
@@ -1155,6 +1216,10 @@ Usage: lf_qa.py --store --png --path <path to directories to traverse> --databas
 
     if args.store:
         csv_dash.store()
+        
+    if args.store_comp:
+        csv_dash.store_comp()
+
     if args.png:
         csv_dash.sub_test_information()
         csv_dash.generate_graph_png()
