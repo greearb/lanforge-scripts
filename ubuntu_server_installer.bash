@@ -4,9 +4,9 @@
 # for ip in "${list[@]}"; do echo $ip ; sshpass -p sitindia123 ssh -o StrictHostKeyChecking=no sitindia@$ip "lsb_release -a"; done | awk '/Release:/{print $2}'
 helpFunction() {
     echo "Automated Script for LANforge Server Installation on Ubuntu Systems"
-    echo "Usage: $0 -c [manager_ip] -d [interface] -i [realm] -m [mode] -r [resource] -u [y|yes]"
+    echo "Usage: $0 -c [manager_ip] -d [interface] -i [realm] -m [mode] -r [resource] -u [y|yes] -l [y|yes]"
 }
-while getopts "c:d:i:m:r:u:" opt; do
+while getopts "c:d:i:m:r:u:l:" opt; do
     case "$opt" in
     c) connect_mgr="$OPTARG" ;;
     d) interface="$OPTARG" ;;
@@ -14,6 +14,7 @@ while getopts "c:d:i:m:r:u:" opt; do
     m) mode="$OPTARG" ;;
     r) resource="$OPTARG" ;;
     u) upgrade="$OPTARG" ;;
+    l) local="$OPTARG" ;;
     ?) helpFunction ;; # Print helpFunction in case parameter is non-existent
     esac
 done
@@ -42,27 +43,36 @@ do_upgrade=0
 if [[ x${upgrade:-} =~ [Yy]* ]]; then
     do_upgrade=1
 fi
-apt update
-# libnet-dev should be bundled
-# curl should also be bundled, we don't really want it
-apt install -y bridge-utils libnet-dev
-apt dist-upgrade -y
-apt -f install
-apt autoremove -y
+local_install=0
+if [[ $local == [Yy]* ]]; then
+    local_install=1
+fi
+
+echo $local_install
+
+if [[ $local_install == 0 ]]; then
+  apt update
+  ## libnet-dev should be bundled
+  ## curl should also be bundled, we don't really want it
+  apt install -y bridge-utils libnet-dev
+  apt dist-upgrade -y
+  apt -f install
+  apt autoremove -y
+fi
 
 #Add lanforge user
 lf_id=`id -u lanforge` || lf_id=1
 if (($lf_id < 2)) ; then
     echo "Adding user lanforge"
     useradd -k /etc/skel -m -d /home/lanforge -G adm,dialout,lpadmin,tty,plugdev,root,sudo,video lanforge
+    mkdir /home/lanforge
     echo 'lanforge:lanforge' | chpasswd
 fi
-
+mkdir /home/lanforge
+#
 x=`lsb_release -r | awk '{print $2}'`
 echo "VERSION: [$x]"
 server_pkg="LANforgeServer-5.4.6_Linux-F27-x64.tar.gz"
-cp lib* /home/lanforge/
-cd /home/lanforge
 download_these=(
     libcrypto.so.1.1
     libcrypt.so.2
@@ -88,33 +98,40 @@ case "$x" in
         exit 1
         ;;
 esac
-
 if ((do_upgrade == 1)); then
-    [[ ! -f $server_pkg ]] && rm -f $server_pkg ||:
+    [[ ! -f $server_pkg ]] && rm -f /home/lanforge/$server_pkg ||:
 fi
-
-if [[ ! -f $server_pkg ]]; then
-    echo "Downloading new $server_pkg"
-    wget https://www.candelatech.com/private/downloads/r5.4.6/$server_pkg
+if [[ $local_install == 1 ]]; then
+  cp libs/* /home/lanforge/
+  cp $server_pkg /home/lanforge/
 fi
+cd /home/lanforge/
+if [[ $local_install == 0 ]]; then
+  if [[ ! -f $server_pkg ]]; then
+      echo "Downloading new $server_pkg"
+      wget https://www.candelatech.com/private/downloads/r5.4.6/$server_pkg
+  fi
 
-for f in "${download_these[@]}"; do
-    if [[ ! -f "/home/lanforge/$f" ]]; then
-        wget -O "/home/lanforge/$f" https://www.candelatech.com/downloads/f21/$f
-    fi
-done
-#    "\n"
+  for f in "${download_these[@]}"; do
+      if [[ ! -f "/home/lanforge/$f" ]]; then
+          wget -O "/home/lanforge/$f" https://www.candelatech.com/downloads/f21/$f
+      fi
+  done
+fi
 
 systemctl stop NetworkManager ||:
 systemctl disable NetworkManager ||:
 systemctl mask NetworkManager ||:
-
 [[ -f /home/lanforge/lfconfig_answers.txt ]] && rm -f /home/lanforge/lfconfig_answers.txt ||:
-
+if [[ $interface == "default" ]]; then
+  export port=`ip route show to default | grep -Eo "dev\s*[[:alnum:]]+" | sed 's/dev\s//g'`
+else
+  port=$interface
+fi
 cat > /home/lanforge/lfconfig_answers.txt <<EOF
 realm $realm
 resource $resource
-mgt_dev $interface
+mgt_dev $port
 mode $mode
 connect_mgr $connect_mgr
 config
