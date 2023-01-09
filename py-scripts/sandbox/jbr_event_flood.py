@@ -2,7 +2,13 @@
 import os
 import sys
 import time
-
+"""
+    This script is a simple event creation loop intended to stress the event insertion logic of the GUI.
+    To parallelize this script, use GNU Parallel: 
+    
+    for i in `seq 100 150`; do touch /tmp/a_$i ; done
+    parallel ./jbr_event_flood.py --mgr localhost --msg {} ::: /tmp/a_*
+"""
 if sys.version_info[0] != 3:
     print("This script requires Python3")
     exit()
@@ -23,6 +29,11 @@ else:
     from lanforge_api import LFJsonQuery
 
 def main():
+    """
+    This is really just a simple loop
+
+    :return: void
+    """
     parser = argparse.ArgumentParser(
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
