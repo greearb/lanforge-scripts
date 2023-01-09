@@ -160,8 +160,8 @@ class RealBrowserTest(Realm):
         data = data['endpoint']
         for cx in self.http_profile.created_cx.keys():
             for info in data:
-                if cx in info:
-                    data1.append(info[cx][data_mon])
+                if cx in data['name']:
+                    data1.append(data[data_mon])
         # print(data_mon, data1)
         return data1
 
