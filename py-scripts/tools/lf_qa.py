@@ -404,47 +404,6 @@ class csv_sql:
 
         return suite_html_results
 
-    # this is used for absolute paths which was originally used
-    # this made it difficult when viewing on local machine
-    def get_kpi_chart_html(self):
-        kpi_chart_html = """
-            <table border="0">
-                <tbody>
-        """
-        path = Path(self.path)
-        # Hard code for now
-        kpi_chart_list = list(path.glob('**/kpi-chart*.png'))
-        table_index = 0
-        for kpi_chart in kpi_chart_list:
-            parent_path = os.path.dirname(kpi_chart)
-            kpi_path = os.path.join(parent_path, "kpi.csv")
-            test_tag, test_id = self.get_test_id_test_tag(kpi_path)
-            # Path returns a list of objects
-            kpi_chart = os.path.abspath(kpi_chart)
-            kpi_chart = self.server + kpi_chart.replace(self.cut, '')
-            if "print" in kpi_chart:
-                pass
-            else:
-                if (table_index % 2) == 0:
-                    kpi_chart_html += """<tr>"""
-                kpi_chart_html += """
-                    <td>
-                        {test_tag}  {test_id}
-                    </td>
-                    <td>
-                        <a href="{kpi_chart_0}"  target="_blank">
-                            <img src="{kpi_chart_1}" style="width:400px;max-width:400px" title="{kpi_chart_2}">
-                        </a>
-                    </td>
-                """.format(test_tag=test_tag, test_id=test_id, kpi_chart_0=kpi_chart, kpi_chart_1=kpi_chart, kpi_chart_2=kpi_chart)
-                table_index += 1
-                if (table_index % 2) == 0:
-                    kpi_chart_html += """</tr>"""
-        if (table_index % 2) != 0:
-            kpi_chart_html += """</tr>"""
-        kpi_chart_html += """</tbody></table>"""
-        return kpi_chart_html
-
     # TODO can use alternate path passed in as a comparison directory
     # Would need to figure out how to do the relative paths
     # Or figure out a way to 
