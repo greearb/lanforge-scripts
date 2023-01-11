@@ -679,9 +679,7 @@ class csv_sql:
         html_path = os.path.join(
             kpi_path_list[-1], "{}_{}_{}_kpi.html".format(group, test_tag, test_rig))
         html_path = html_path.replace(' ', '')
-        # NOTE: html links to png do not like spaces
-        png_server_img = self.server + png_path.replace(self.cut, '')
-
+        
         # generate png image
         png_present = True
         try:
@@ -699,44 +697,42 @@ class csv_sql:
         if png_present:
             kpi_fig.write_html(html_path)
             # Relative path
-            img_kpi_html_path = self.server + html_path
-            img_kpi_html_path = img_kpi_html_path.replace(self.cut, '')
+            img_kpi_html_path_relative = os.path.relpath(html_path, self.lf_qa_report_path)
 
             # get the file and parent directory for html
-            img_kpi_html_basename = os.path.basename(img_kpi_html_path)
-            img_kpi_html_parent_path = os.path.dirname(img_kpi_html_path)
-            img_kpi_html_parent_basename = os.path.basename(img_kpi_html_parent_path)
-            img_kpi_html_path_relative = "../" + img_kpi_html_parent_basename + "/" + img_kpi_html_basename
+            # img_kpi_html_basename = os.path.basename(img_kpi_html_path)
+            # img_kpi_html_parent_path = os.path.dirname(img_kpi_html_path)
+            # img_kpi_html_parent_basename = os.path.basename(img_kpi_html_parent_path)
+            # img_kpi_html_path_relative = "../" + img_kpi_html_parent_basename + "/" + img_kpi_html_basename
+
+            png_img_path_relative = os.path.relpath(png_path, self.lf_qa_report_path)
 
             # get the file and parent directory for png
-            png_server_img_basename = os.path.basename(png_server_img)
-            png_server_img_parent_path = os.path.dirname(png_server_img)
-            png_server_img_parent_basename = os.path.basename(png_server_img_parent_path)
-            png_server_img_path_relative = "../" + png_server_img_parent_basename + "/" + png_server_img_basename
+            # png_server_img_basename = os.path.basename(png_server_img)
+            # png_server_img_parent_path = os.path.dirname(png_server_img)
+            # png_server_img_parent_basename = os.path.basename(png_server_img_parent_path)
+            # png_server_img_path_relative = "../" + png_server_img_parent_basename + "/" + png_server_img_basename
             self.html_results += """
             <a href={img_kpi_html_path} target="_blank">
                 <img src={png_server_img}>
             </a>
-            """.format(img_kpi_html_path=img_kpi_html_path_relative, png_server_img=png_server_img_path_relative)
+            """.format(img_kpi_html_path=img_kpi_html_path_relative, png_server_img=png_img_path_relative)
+
             # link to interactive results
-            kpi_html_path = self.server + html_path
-            kpi_html_path = kpi_html_path.replace(self.cut, '')
-            # self.html_results +="""<br>"""
-            # link to full test results
-            # if self.server == '':
-            #    report_index_html_path = self.server + kpi_path_list[-1] 
-            # else:
+            # kpi_html_path = self.server + html_path
+            # kpi_html_path = kpi_html_path.replace(self.cut, '')
 
             # LAN-1535 scripting: test_l3.py output masks other output when browsing (index.html) create relative paths in reports
             # report_index_html_path = self.server + kpi_path_list[-1] + "index.html"
-            report_index_html_path = self.server + kpi_path_list[-1] + "readme.html"
-            report_index_html_path = report_index_html_path.replace(self.cut, '')
+            report_index_html_path = kpi_path_list[-1] + "readme.html"
+
+            relative_report_index_html = os.path.relpath(report_index_html_path, self.lf_qa_report_path)
 
             # relative path 
-            report_index_html_basename = os.path.basename(report_index_html_path)
-            report_index_html_parent_path = os.path.dirname(report_index_html_path)
-            report_index_html_parent_basename = os.path.basename(report_index_html_parent_path)
-            relative_report_index_html = "../" + report_index_html_parent_basename + "/" + report_index_html_basename
+            # report_index_html_basename = os.path.basename(report_index_html_path)
+            # report_index_html_parent_path = os.path.dirname(report_index_html_path)
+            # report_index_html_parent_basename = os.path.basename(report_index_html_parent_path)
+            # relative_report_index_html = "../" + report_index_html_parent_basename + "/" + report_index_html_basename
 
             self.html_results += """<a href={report_index_html_path} target="_blank">{test_id}_{group}_{test_tag}_{test_rig}_Report </a>
             """.format(report_index_html_path=relative_report_index_html, test_id=test_id_list[-1], group=group, test_tag=test_tag, test_rig=test_rig)
