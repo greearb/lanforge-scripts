@@ -24,14 +24,14 @@ LANforge does have large files for ftp test located in
 
     http service is nginx and that serves /usr/local/lanforge/nginx/html
     ftp serves /var/ftp
-    
+
     To create the large file in /home/lanforge:
     [lanforge@ct523c-3ba3 ~]$ dd if=/dev/urandom of=/home/lanforge/large-file.bin bs=1k count=10240
     10240+0 records in
     10240+0 records out
     10485760 bytes (10 MB, 10 MiB) copied, 0.0469094 s, 224 MB/s
 
-    The test can see the /home/lanforge directory .  The destination file may be in 
+    The test can see the /home/lanforge directory .  The destination file may be in
     /home/lanforge/tmp/larg-file-dest.bin
 
 
@@ -102,7 +102,6 @@ import json
 import traceback
 from pprint import pformat
 
-
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
@@ -150,7 +149,8 @@ class IPV4L4(Realm):
                  dest=None,
                  test_type=None,
                  _exit_on_error=False,
-                 _exit_on_fail=False):
+                 _exit_on_fail=False,
+                 l4_7_port=None):
         super().__init__(lfclient_host=host, lfclient_port=port, debug_=_debug_on)
 
         self.host = host
@@ -173,6 +173,7 @@ class IPV4L4(Realm):
         self.sta_list = station_list
         self.num_tests = int(num_tests)
         self.target_requests_per_ten = int(target_requests_per_ten)
+        self.l4_7_port = l4_7_port
 
         self.station_profile = self.new_station_profile()
         self.cx_profile = self.new_l4_cx_profile()
@@ -200,13 +201,12 @@ class IPV4L4(Realm):
 
         # if self.outfile is not None:
         # results = self.outfile[:-4]
-        # todo check for the various extentions 
+        # todo check for the various extentions
         results = self.outfile
         if results.split('.')[-1] == '':
             logger.debug("report_file has no file extension will add .csv")
 
         # check the file extension and compare to the mode set
-        
 
         self.csv_results_file = open(results, "w")
         self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
@@ -246,14 +246,14 @@ class IPV4L4(Realm):
         urls_seconds = 0
         total_urls = 0
 
-        # gather statistics for only endpoints created does not work 
+        # gather statistics for only endpoints created does not work
         # the created_cx is an empty list in the profile
         # logger.debug("self.cx_profile.created_endp : {endp}".format(endp=self.cx_profile.created_endp))
         # for e in self.cx_profile.created_endp.keys():
         # for e in self.cx_profile.created_cx.keys():
         #    our_endps[e] = e
         # logger.info("our_endps {our_endps}".format(our_endps=our_endps))
-        
+
         logger.info("type endp_list['endpoint'] {endp}".format(endp=type(endp_list['endpoint'])))
         for endp_name in endp_list['endpoint']:
             logger.info("type endp_name {endp}".format(endp=type(endp_name)))
@@ -263,7 +263,7 @@ class IPV4L4(Realm):
                 # 1 station types
                 # 1661440520.975214 INFO     type endp_list['endpoint'] <class 'dict'> test_l4.py 248
                 # 1661440627.267687 INFO     type endp_name <class 'str'> test_l4.py 250
-                endp_name_dict = {endp_list['endpoint']['name'] : endp_list['endpoint']}
+                endp_name_dict = {endp_list['endpoint']['name']: endp_list['endpoint']}
                 for item, endp_value in endp_name_dict.items():
                     # TODO only do for the created endpoints
                     # if item in our_endps:
@@ -275,7 +275,7 @@ class IPV4L4(Realm):
 
                         for value_name, value in endp_value.items():
                             # value can be a '' empty string
-                            if value != '': 
+                            if value != '':
                                 if value_name == 'bytes-rd':
                                     endp_rx_map[item] = value
                                     total_bytes_rd += int(value)
@@ -296,15 +296,15 @@ class IPV4L4(Realm):
                                     total_urls += int(value)
                 break
 
-            else:   
+            else:
                 # multiple endpoints
-                # two stations types 
+                # two stations types
                 # for 2 stations:
                 # 1661440144.630128 INFO     type endp_list['endpoint'] <class 'list'> test_l4.py 248
                 # 1661440315.269799 INFO     type endp_name <class 'dict'> test_l4.py 250
 
                 if endp_name != 'uri' and endp_name != 'handler':
-                    # TODO make dictionary 
+                    # TODO make dictionary
                     for item, endp_value in endp_name.items():
                         # if item in our_endps:
                         if True:
@@ -315,7 +315,7 @@ class IPV4L4(Realm):
 
                             for value_name, value in endp_value.items():
                                 # value can be a '' empty string
-                                if value != '': 
+                                if value != '':
                                     if value_name == 'bytes-rd':
                                         endp_rx_map[item] = value
                                         total_bytes_rd += int(value)
@@ -339,14 +339,22 @@ class IPV4L4(Realm):
         return endp_rx_map, endps, total_bytes_rd, total_bytes_wr, total_rx_rate, total_tx_rate, urls_seconds, total_urls
 
     def build(self):
-        # Build stations
-        self.station_profile.use_security(self.security, self.ssid, self.password)
-        logger.info("Creating stations")
-        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
-        self.station_profile.set_command_param("set_port", "report_timer", 1500)
-        self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
-        self._pass("PASS: Station build finished")
+        l4_7_port_lst = []
+        if len(self.sta_list) > 0:
+            # Build stations
+            self.station_profile.use_security(self.security, self.ssid, self.password)
+            logger.info("Creating stations")
+            self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
+            self.station_profile.set_command_param("set_port", "report_timer", 1500)
+            self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
+            self.station_profile.create(radio=self.radio, sta_names_=self.sta_list, debug=self.debug)
+            self._pass("PASS: Station build finished")
+        if (self.l4_7_port is not None):
+            # eg: l4_7_port = 'eth2'
+            # checking l4_7_port is equal to any of the port name in lanforge port_mgr to get the right port_name for creating l4_5 traffic
+            list(map(lambda prt: l4_7_port_lst.append(list(prt.keys())[0]) if (
+                    self.l4_7_port == list(prt.keys())[0].split(".")[-1]) else None,
+                     self.json_get("/port")['interfaces']))
 
         temp_url = self.url.split(" ")
         if temp_url[0] == 'ul' or temp_url[0] == 'dl':
@@ -363,11 +371,14 @@ class IPV4L4(Realm):
                     temp_url = self.url.split("//")
                     temp_url = ("//%s:%s@" % (self.ftp_user, self.ftp_passwd)).join(temp_url)
                     self.cx_profile.url = temp_url
-            self.cx_profile.create(ports=self.station_profile.station_names, sleep_time=.5, debug_=self.debug,
-                                   suppress_related_commands_=True)
+            self.cx_profile.create(
+                ports=l4_7_port_lst if len(l4_7_port_lst) > 0 else self.station_profile.station_names,
+                sleep_time=.5, debug_=self.debug, suppress_related_commands_=True)
         else:
-            self.cx_profile.create(ports=self.station_profile.station_names, sleep_time=.5, debug_=self.debug,
-                                   suppress_related_commands_=None)
+            # If port name is None, station names will be taken as port name
+            self.cx_profile.create(
+                ports=l4_7_port_lst if len(l4_7_port_lst) > 0 else self.station_profile.station_names,
+                sleep_time=.5, debug_=self.debug, suppress_related_commands_=None)
 
     def start(self, print_pass=False, print_fail=False):
         if self.ftp:
@@ -375,12 +386,14 @@ class IPV4L4(Realm):
         temp_stas = self.sta_list.copy()
 
         self.station_profile.admin_up()
-
-        if self.wait_for_ip(temp_stas):
-            self._pass("All stations got IPs", print_pass)
+        if len(temp_stas) > 0:
+            if self.wait_for_ip(temp_stas):
+                self._pass("All stations got IPs", print_pass)
+            else:
+                self._fail("Stations failed to get IPs", print_fail)
+                exit(1)
         else:
-            self._fail("Stations failed to get IPs", print_fail)
-            exit(1)
+            logger.info(f"Stations are {temp_stas} empty")
 
         self.csv_add_column_headers()
         self.cx_profile.start_cx()
@@ -392,9 +405,28 @@ class IPV4L4(Realm):
             self.port_util.set_ftp(port_name=self.name_to_eid(self.upstream_port)[2], resource=1, on=False)
         self.station_profile.admin_down()
 
-    def cleanup(self, sta_list):
-        self.cx_profile.cleanup()
-        self.station_profile.cleanup(sta_list)
+    def cleanup(self, sta_list, clean_all_sta=False, clean_all_l4_7=False):
+        if clean_all_l4_7:
+            exist_l4 = self.json_get("/layer4/?fields=name")
+            if 'endpoint' in list(exist_l4.keys()):
+                self.cx_profile.created_cx = {}
+                if len(exist_l4['endpoint']) > 1:
+                    for i in exist_l4['endpoint']:
+                        self.cx_profile.created_cx[list(i.keys())[0]] = 'CX_' + i[list(i.keys())[0]]['name']
+                else:
+                    self.cx_profile.created_cx[exist_l4['endpoint']['name']] = 'CX_' + exist_l4['endpoint']['name']
+            self.cx_profile.cleanup()
+        else:
+            self.cx_profile.cleanup()
+        # clear all existing stations
+        if clean_all_sta:
+            exist_sta = []
+            for u in self.json_get("/port/?fields=port+type,alias")['interfaces']:
+                if list(u.values())[0]['port type'] not in ['Ethernet', 'WIFI-Radio', 'NA']:
+                    exist_sta.append(list(u.values())[0]['alias'])
+            self.station_profile.cleanup(desired_stations=exist_sta)
+        else:
+            self.station_profile.cleanup(sta_list)
         LFUtils.wait_until_ports_disappear(base_url=self.lfclient_url, port_list=sta_list,
                                            debug=self.debug)
 
@@ -442,7 +474,6 @@ class IPV4L4(Realm):
         if urls_second > 0:
             subpass_urls = 1
             subfail_urls = 0
-
 
         # logic for pass/fail column
         # total_test & total_pass values from lfcli_base.py
@@ -554,7 +585,7 @@ class IPV4L4(Realm):
             'TX Rate',
             'URLs/s',
             'Total URLs',
-            ]
+        ]
 
         return csv_rx_headers
 
@@ -592,41 +623,39 @@ Generic command example:
     test_l4_parser = parser.add_argument_group('arguments defined in test_l4.py file')
 
     test_l4_parser.add_argument('--requests_per_ten', help='--requests_per_ten number of request per ten minutes',
-                        default=600)
+                                default=600)
     test_l4_parser.add_argument('--num_tests', help='--num_tests number of tests to run. Each test runs 10 minutes',
-                        default=1)
+                                default=1)
     test_l4_parser.add_argument('--url', help='''
                         --url specifies upload/download, IP of upstream eth port connected to Access Point
                         /dev/null to discard the data example: 
                         Example 'dl http://upstream_port_ip /dev/null'  if the upsteam_port_ip is the string
                         'upstream_port_ip' then the upstream port ip will be read at run time ''',
-                        default=None)
+                                default=None)
     test_l4_parser.add_argument('--test_duration', help='duration of test', default="2m")
     test_l4_parser.add_argument('--target_per_ten',
-                        help='--target_per_ten target number of request per ten minutes. test will check for 90 percent this value',
-                        default=600)
+                                help='--target_per_ten target number of request per ten minutes. test will check for 90 percent this value',
+                                default=600)
     test_l4_parser.add_argument('--mode', help='Used to force mode of stations')
     test_l4_parser.add_argument('--ap', help='Used to force a connection to a particular AP')
     test_l4_parser.add_argument('--report_file', help='where you want to store monitor results in output_format')
-    test_l4_parser.add_argument('--output_format', help="'csv', 'json', 'html', 'stata', 'pickle', 'xlsx'")  
+    test_l4_parser.add_argument('--output_format', help="'csv', 'json', 'html', 'stata', 'pickle', 'xlsx'")
     test_l4_parser.add_argument('--ftp', help='Use ftp for the test', action='store_true')
     test_l4_parser.add_argument('--test_type', help='Choose type of test to run {urls, bytes-rd, bytes-wr}',
-                        default='bytes-rd')
+                                default='bytes-rd')
     test_l4_parser.add_argument('--ftp_user', help='--ftp_user sets the username to be used for ftp', default=None)
     test_l4_parser.add_argument('--ftp_passwd', help='--ftp_user sets the password to be used for ftp', default=None)
     test_l4_parser.add_argument('--dest',
-                        help='--dest specifies the destination for the file, should be used when downloading',
-                        default="/dev/null")
+                                help='--dest specifies the destination for the file, should be used when downloading',
+                                default="/dev/null")
     test_l4_parser.add_argument('--source',
-                        help='--source specifies the source of the file, should be used when uploading',
-                        default="/var/www/html/data_slug_4K.bin")
+                                help='--source specifies the source of the file, should be used when uploading',
+                                default="/var/www/html/data_slug_4K.bin")
     test_l4_parser.add_argument('--local_lf_report_dir',
-                        help='--local_lf_report_dir override the report path, primary use when running test in test suite',
-                        default="")
-    test_l4_parser.add_argument("--lf_user", type=str, help="--lf_user lanforge user name ",)
+                                help='--local_lf_report_dir override the report path, primary use when running test in test suite',
+                                default="")
+    test_l4_parser.add_argument("--lf_user", type=str, help="--lf_user lanforge user name ", )
     test_l4_parser.add_argument("--lf_passwd", type=str, help="--lf_passwd lanforge password ")
-
-
 
     # kpi_csv arguments
     test_l4_parser.add_argument(
@@ -657,13 +686,15 @@ Generic command example:
         "--test_priority",
         default="",
         help="dut model for kpi.csv,  test-priority is arbitrary number")
-    # Used to report 
+    # Used to report
     test_l4_parser.add_argument(
         '--csv_outfile',
         help="--csv_outfile <prepend input to generated file for csv data>",
         default="csv_outfile")
-
-
+    test_l4_parser.add_argument(
+        '--l4_7_port_name', '--downstream_port',
+        help="--l4_7_port_name to select port to run L4_7 traffic",
+        default=None)
 
     args = parser.parse_args()
 
@@ -715,66 +746,69 @@ Generic command example:
         _kpi_dut_serial_num=dut_serial_num,
         _kpi_test_id=test_id)
 
-
     # TODO put in the output csv file
     current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     csv_outfile = "{}_{}-test_l4.csv".format(args.csv_outfile, current_time)
     csv_outfile = report.file_add_path(csv_outfile)
     logger.info("csv output file : {}".format(csv_outfile))
 
-
-    supported_formats =  ['csv', 'json', 'html', 'stata', 'pickle', 'xlsx']
+    supported_formats = ['csv', 'json', 'html', 'stata', 'pickle', 'xlsx']
     # the output format
-    # The following will align the file extension with the output_format , 
+    # The following will align the file extension with the output_format ,
     #   if the report file does not have an extension the output format will become the extension
     #   if the report file has an extension the output format will be set to that extension
-    #   if the report file is not set, default report file will be use and the output format will be used 
+    #   if the report file is not set, default report file will be use and the output format will be used
 
-    # the report_file is used by the monitor functionality 
+    # the report_file is used by the monitor functionality
     if args.report_file is not None:
         # check if there was an extension on the report_file
         current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-        logger.debug("Does report_file have an extension {ext}, if -1 then no extension".format(ext=args.report_file.find('.')))
+        logger.debug(
+            "Does report_file have an extension {ext}, if -1 then no extension".format(ext=args.report_file.find('.')))
         if args.report_file.find('.') == -1:
             # no file extension on report_file
             if args.output_format is not None:
                 if args.output_format.lower() in supported_formats:
-                    report_file = "{}_{}.{}".format(current_time,args.report_file,args.output_format.lower())
+                    report_file = "{}_{}.{}".format(current_time, args.report_file, args.output_format.lower())
                     output_format = args.output_format.lower()
-                else:   
-                    report_file = "{}_{}.csv".format(current_time,args.report_file)
+                else:
+                    report_file = "{}_{}.csv".format(current_time, args.report_file)
                     output_format = "csv"
             else:
-                report_file = "{}_{}.csv".format(current_time,args.report_file)
+                report_file = "{}_{}.csv".format(current_time, args.report_file)
                 output_format = "csv"
         else:
-            if args.report_file.split('.')[-1] in  supported_formats and args.output_format is not None:
+            if args.report_file.split('.')[-1] in supported_formats and args.output_format is not None:
                 if args.output_format.lower() in supported_formats:
                     if args.output_format.lower() != args.report_file.split('.')[-1]:
-                        logger.warning("--output_format {output} not equal to extension on --report_file {report} setting output format to report_file extnsion".
-                        format(output=args.output_format, report=args.report_file))
+                        logger.warning(
+                            "--output_format {output} not equal to extension on --report_file {report} setting output format to report_file extnsion".
+                            format(output=args.output_format, report=args.report_file))
                         # the extension was passed in with report_file
-                        report_file = "{}_{}".format(current_time,args.report_file)
+                        report_file = "{}_{}".format(current_time, args.report_file)
                         output_format = report_file.split('.')[-1]
                     else:
-                        report_file = "{}_{}".format(current_time,args.report_file)
+                        report_file = "{}_{}".format(current_time, args.report_file)
                         output_format = args.output_format
-                        logger.info("output_format {ext} and report_file extension the same {file}".format(ext=output_format,file=report_file))      
+                        logger.info(
+                            "output_format {ext} and report_file extension the same {file}".format(ext=output_format,
+                                                                                                   file=report_file))
                 else:
-                    logger.info("setting output_format to report_file extension")      
-                    output_format = report_file.split('.')[-1]     
-                    report_file = "{}_{}".format(current_time,args.report_file)
-            else: 
+                    logger.info("setting output_format to report_file extension")
+                    output_format = report_file.split('.')[-1]
+                    report_file = "{}_{}".format(current_time, args.report_file)
+            else:
                 report_file = args.report_file
-                logger.error("report_file extension {file} not in supported_formats {formats}".format(file=report_file,formats=supported_formats))                    
+                logger.error("report_file extension {file} not in supported_formats {formats}".format(file=report_file,
+                                                                                                      formats=supported_formats))
 
     else:
         current_time = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
         if args.output_format in supported_formats:
-            report_file = "{}_monitor_test_l4.{}".format(current_time,args.output_format.lower())
+            report_file = "{}_monitor_test_l4.{}".format(current_time, args.output_format.lower())
             output_format = args.output_format.lower()
-        else:   
-            report_file = "{}_{}_monitor_test_l4.csv".format(current_time,args.report_file)
+        else:
+            report_file = "{}_{}_monitor_test_l4.csv".format(current_time, args.report_file)
             output_format = "csv"
 
     report_file = report.file_add_path(report_file)
@@ -782,7 +816,7 @@ Generic command example:
 
     # check for extension on report_file  hopefully there are not intermediat '.'
 
-    #if report_file is None:
+    # if report_file is None:
     #    if args.output_format in ['csv', 'json', 'html', 'hdf', 'stata', 'pickle', 'pdf', 'png', 'df', 'xlsx']:
     #        output_form = args.output_format.lower()
     #    else:
@@ -790,7 +824,7 @@ Generic command example:
     #        # output_form = 'xlsx'
     #        output_form = 'csv'
     #
-    #else:
+    # else:
     #    if args.output_format is None:
     #        logger.debug("fine '.' in report_file {report}".format(report=report_file.find('.')))
     #        if report_file.find('.') == -1:
@@ -803,7 +837,6 @@ Generic command example:
     #            # there is no file extension so add output_form
     #            report_file = report_file + output_form
 
-
     # TODO either use Realm or create a port to IP method in realm
     if 'upstream_port_ip' in args.url:
         # get ip upstream port
@@ -812,31 +845,32 @@ Generic command example:
         resource = rv[1]
         port_name = rv[2]
         request_command = 'http://{lfmgr}:{lfport}/port/1/{resource}/{port_name}'.format(
-        lfmgr=args.mgr, lfport=args.mgr_port, resource=resource, port_name=port_name)
+            lfmgr=args.mgr, lfport=args.mgr_port, resource=resource, port_name=port_name)
         logger.info("port request command: {request_command}".format(request_command=request_command))
 
         request = requests.get(request_command, auth=(args.lf_user, args.lf_passwd))
         logger.info("port request status_code {status}".format(status=request.status_code))
 
         lanforge_json = request.json()
-        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)        
-        try: 
+        lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
+        try:
             key = 'interface'
             df = json_normalize(lanforge_json[key])
             upstream_port_ip = df['ip'].iloc[0]
         except Exception as x:
             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-            logger.error("json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+            logger.error(
+                "json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
 
-        args.url = args.url.replace('upstream_port_ip',upstream_port_ip)
+        args.url = args.url.replace('upstream_port_ip', upstream_port_ip)
         logger.info("url: {url}".format(url=args.url))
-
 
     num_sta = 1
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_stations_converted = int(args.num_stations)
         num_sta = num_stations_converted
-
+    if (args.l4_7_port_name is not None) and (int(args.num_stations) == 0):
+        num_sta = 0
 
     station_list = LFUtils.portNameSeries(prefix_="sta", start_id_=0, end_id_=num_sta - 1, padding_number_=10000,
                                           radio=args.radio)
@@ -863,30 +897,31 @@ Generic command example:
                      test_duration=args.test_duration,
                      num_tests=args.num_tests,
                      target_requests_per_ten=args.target_per_ten,
-                     requests_per_ten=args.requests_per_ten)
-    ip_test.cleanup(station_list)
+                     requests_per_ten=args.requests_per_ten,
+                     l4_7_port=args.l4_7_port_name)
+    ip_test.cleanup(station_list, clean_all_sta=False if num_sta else True, clean_all_l4_7=False if num_sta else True)
     ip_test.build()
     ip_test.start()
     l4_cx_results = {}
 
-    ip_test_json_data = ip_test.json_get('layer4')['endpoint']    
+    ip_test_json_data = ip_test.json_get('layer4')['endpoint']
     logger.info(pformat(ip_test_json_data))
 
-    if num_sta == 1:
-        # single cx
+    if type(ip_test_json_data) is not list:
+        # if single cx data_type == dict, OR multi cx data_type == list
         layer4traffic = ip_test_json_data['name']
     else:
         layer4traffic = ','.join([[*x.keys()][0] for x in ip_test.json_get('layer4')['endpoint']])
     # TODO pass in what is to be monitored on the command line
     ip_test.cx_profile.monitor(col_names=['name', 'bytes-rd', 'urls/s', 'bytes-wr'],
-                                # report_file is for the monitor
-                                report_file=report_file,
-                                duration_sec=args.test_duration,
-                                created_cx=layer4traffic,
-                                output_format=output_format,
-                                script_name='test_l4',
-                                arguments=args,
-                                debug=args.debug)
+                               # report_file is for the monitor
+                               report_file=report_file,
+                               duration_sec=args.test_duration,
+                               created_cx=layer4traffic,
+                               output_format=output_format,
+                               script_name='test_l4',
+                               arguments=args,
+                               debug=args.debug)
 
     temp_stations_list = []
     temp_stations_list.extend(ip_test.station_profile.station_names.copy())
@@ -895,10 +930,12 @@ Generic command example:
     total_pass = len(ip_test.get_passed_result_list())
 
     endp_rx_map, endps, total_bytes_rd, total_bytes_wr, total_rx_rate, total_tx_rate, urls_second, total_urls = ip_test.get_rx_values()
-    #endp_rx_map, endp_rx_drop_map, endps, bytes_rd, bytes_wr, rx_rate, tcp_ul, tx_rate, urls_sec, total_urls, total_ul_ll = ip_test.get_rx_values()
+    # endp_rx_map, endp_rx_drop_map, endps, bytes_rd, bytes_wr, rx_rate, tcp_ul, tx_rate, urls_sec, total_urls, total_ul_ll = ip_test.get_rx_values()
 
-    ip_test.record_kpi_csv(temp_stations_list, total_test, total_pass, total_bytes_rd, total_bytes_wr, total_rx_rate, total_tx_rate, urls_second, total_urls)
-    ip_test.record_results(len(temp_stations_list), total_bytes_rd, total_bytes_wr, total_rx_rate, total_tx_rate, urls_second, total_urls)
+    ip_test.record_kpi_csv(temp_stations_list, total_test, total_pass, total_bytes_rd, total_bytes_wr, total_rx_rate,
+                           total_tx_rate, urls_second, total_urls)
+    ip_test.record_results(len(temp_stations_list), total_bytes_rd, total_bytes_wr, total_rx_rate, total_tx_rate,
+                           urls_second, total_urls)
     # ip_test.record_results(len(temp_stations_list), bytes_rd, bytes_wr, rx_rate, tx_rate, urls_sec, total_urls)
 
     # Reporting Results (.pdf & .html)
@@ -910,9 +947,9 @@ Generic command example:
     report.build_banner_left()
     report.start_content_div2()
     report.set_obj_html("Objective", "The Layer 4-7 Traffic Generation Test is designed to test the performance of the "
-                                    "Access Point by running layer 4-7 Traffic.  The test can monitor the urls/s, "
-                                    "bytes-rd, and bytes-rd attribute of the endpoints. The attributes may also be tested over FTP. "
-                                    "Pass / Fail criteria is based on the monitored value increasing")
+                                     "Access Point by running layer 4-7 Traffic.  The test can monitor the urls/s, "
+                                     "bytes-rd, and bytes-rd attribute of the endpoints. The attributes may also be tested over FTP. "
+                                     "Pass / Fail criteria is based on the monitored value increasing")
 
     report.build_objective()
 
@@ -946,9 +983,6 @@ Generic command example:
     report.build_table_title()
     report.test_setup_table(value="Test Configuration", test_setup_data=test_input_info)
 
-
-
-
     report.set_table_title("L4 Test Results")
     report.build_table_title()
     report.set_table_dataframe_from_csv(csv_results_file)
@@ -957,7 +991,7 @@ Generic command example:
     report.write_index_html()
     # report.write_pdf(_page_size = 'A3', _orientation='Landscape')
     report.write_pdf_with_timestamp(_page_size='letter', _orientation='Portrait')
-    #report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
+    # report.write_pdf_with_timestamp(_page_size='A4', _orientation='Landscape')
 
     is_passing = ip_test.passes()
 
