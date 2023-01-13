@@ -109,6 +109,8 @@ class lf_logger_config:
             self.set_level_info()
         elif level == "warning":
             self.set_level_warning()
+        elif level == "error":
+            self.set_level_error()
         elif level == "critical":
             self.set_level_warning()
         else:
