@@ -45,8 +45,12 @@ def convert_input():
 
 def convert_dbm_to_mw(value):
     # P(mW) = 1W * 10(P(dBm) / 10)
-    dbm = int(value)
-    mw = 1 * 10 ** (dbm/10)
+    if value == 0:
+        mw = 1
+        dbm = 0
+    else:
+        dbm = int(value)
+        mw = 1 * 10 ** (dbm/10)
     print(f"{dbm} dBm = {round(mw, 8)} mW")
     return mw
 
@@ -106,9 +110,9 @@ def main():
 
     args = parser.parse_args()
     if args.dbm2mw is not None or args.mw2dbm is not None or args.ss_list_dbm:
-        if args.dbm2mw:
+        if args.dbm2mw is not None:
             convert_dbm_to_mw(args.dbm2mw)
-        elif args.mw2dbm:
+        elif args.mw2dbm is not None:
             convert_mw_to_dbm(args.mw2dbm)
         else:
             convert_per_ss_dbm_to_combined(args.ss_list_dbm.split())
