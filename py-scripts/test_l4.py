@@ -340,6 +340,11 @@ class IPV4L4(Realm):
 
     def build(self):
         l4_7_port_lst = []
+        if 'http' in self.url:
+            self.port_util.set_http(port_name=self.name_to_eid(self.upstream_port)[2], resource=1, on=True)
+            self.http = True
+        if 'ftp' in self.url:
+            self.port_util.set_ftp(port_name=self.name_to_eid(self.upstream_port)[2], resource=1, on=True)
         if len(self.sta_list) > 0:
             # Build stations
             self.station_profile.use_security(self.security, self.ssid, self.password)
@@ -403,6 +408,8 @@ class IPV4L4(Realm):
         self.cx_profile.stop_cx()
         if self.ftp:
             self.port_util.set_ftp(port_name=self.name_to_eid(self.upstream_port)[2], resource=1, on=False)
+        if self.http:
+            self.port_util.set_http(port_name=self.name_to_eid(self.upstream_port)[2], resource=1, on=False)
         self.station_profile.admin_down()
 
     def cleanup(self, sta_list, clean_all_sta=False, clean_all_l4_7=False):
