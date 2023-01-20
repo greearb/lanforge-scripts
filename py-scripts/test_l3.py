@@ -189,8 +189,8 @@ class L3VariableTime(Realm):
                  wait_for_ip_sec="120s",
 
                  # ap module
-                 ap_read = False,
-                 ap_module = None,
+                 ap_read=False,
+                 ap_module=None,
                  ap_test_mode=False,
                  ap_ip=None,
                  ap_user=None,
@@ -205,8 +205,7 @@ class L3VariableTime(Realm):
                  ap_if_6g="eth8",
                  ap_report_dir="",
                  ap_file="",
-                 ap_band_list=['2g','5g','6g']):
-
+                 ap_band_list=['2g', '5g', '6g']):
 
         self.eth_endps = []
         self.total_stas = 0
@@ -299,7 +298,6 @@ class L3VariableTime(Realm):
 
         self.wait_for_ip_sec = self.duration_time_to_seconds(wait_for_ip_sec)
 
-
         self.attenuators = attenuators
         self.atten_vals = atten_vals
         if ((len(self.atten_vals) > 0) and (
@@ -321,32 +319,31 @@ class L3VariableTime(Realm):
         self.ul_port_csv_files = {}
         self.ul_port_csv_writers = {}
 
-        # AP information 
+        # AP information
         self.ap = None
         self.ap_obj = None
         self.ap_read = ap_read
         self.ap_module = ap_module
-        self.ap_test_mode=ap_test_mode
-        self.ap_ip=ap_ip
-        self.ap_user=ap_user
-        self.ap_passwd=ap_passwd
-        self.ap_scheme=ap_scheme
-        self.ap_serial_port=ap_serial_port
-        self.ap_ssh_port=ap_ssh_port
-        self.ap_telnet_port=ap_telnet_port
-        self.ap_serial_baud=ap_serial_baud
-        self.ap_if_2g=ap_if_2g
-        self.ap_if_5g=ap_if_5g
-        self.ap_if_6g=ap_if_6g
-        self.ap_report_dir=ap_report_dir
-        self.ap_file=ap_file
-        self.ap_band_list=ap_band_list
-
+        self.ap_test_mode = ap_test_mode
+        self.ap_ip = ap_ip
+        self.ap_user = ap_user
+        self.ap_passwd = ap_passwd
+        self.ap_scheme = ap_scheme
+        self.ap_serial_port = ap_serial_port
+        self.ap_ssh_port = ap_ssh_port
+        self.ap_telnet_port = ap_telnet_port
+        self.ap_serial_baud = ap_serial_baud
+        self.ap_if_2g = ap_if_2g
+        self.ap_if_5g = ap_if_5g
+        self.ap_if_6g = ap_if_6g
+        self.ap_report_dir = ap_report_dir
+        self.ap_file = ap_file
+        self.ap_band_list = ap_band_list
 
         # AP information import the module
         if self.ap_read and self.ap_module is not None:
             ap_module = importlib.import_module(self.ap_module)
-            self.ap = ap_module.create_ap_obj(                 
+            self.ap = ap_module.create_ap_obj(
                 ap_test_mode=self.ap_test_mode,
                 ap_ip=self.ap_ip,
                 ap_user=self.ap_user,
@@ -365,8 +362,6 @@ class L3VariableTime(Realm):
 
             # this is needed to access the methods of the imported object
             self.ap.say_hi()
-
-
 
         else:
             logger.info("self.ap_read set to True and self.module is None,  will set self.ap_read to False")
@@ -857,14 +852,13 @@ class L3VariableTime(Realm):
 
                 if self.ap_read:
                     for band in self.ap_band_list:
-                        self.ap.clear_stats(band)                
+                        self.ap.clear_stats(band)
 
                 for atten_val in self.atten_vals:
                     if atten_val != -1:
                         for atten_idx in self.attenuators:
                             atten_mod_test = lf_attenuator.CreateAttenuator(host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
                             atten_mod_test.build()
-
 
                     logger.info("Starting multicast traffic (if any configured)")
                     self.multicast_profile.start_mc(debug_=self.debug)
@@ -925,7 +919,6 @@ class L3VariableTime(Realm):
                                 self.ap.read_rx_ul_stats(band)
                                 self.ap.read_chanim_stats(band)
 
-
                             # Query all of ports
                             # Note: the endp eid is : shelf.resource.port.endp-id
                             port_eids = self.gather_port_eids()
@@ -933,7 +926,6 @@ class L3VariableTime(Realm):
                             for port_eid in port_eids:
                                 eid = self.name_to_eid(port_eid)
                                 url = "/port/%s/%s/%s" % (eid[0], eid[1], eid[2])
-
 
                                 # read LANforge to get the mac
                                 response = self.json_get(url)
@@ -948,15 +940,15 @@ class L3VariableTime(Realm):
                                     mac = port_data['mac']
                                     logger.debug("mac : {mac}".format(mac=mac))
 
-                                    # search for data fro the port mac 
+                                    # search for data fro the port mac
                                     tx_dl_mac_found, ap_row_tx_dl = self.ap.tx_dl_stats(mac)
                                     rx_ul_mac_found, ap_row_rx_ul = self.ap.rx_ul_stats(mac)
                                     xtop_reported, ap_row_chanim = self.ap.chanim_stats(mac)
 
                                     self.get_endp_stats_for_port(port_data["port"], endps)
-                                    
+
                                 if tx_dl_mac_found:
-                                    logger.info("mac {mac} ap_row_tx_dl {ap_row_tx_dl}".format(mac=mac,ap_row_tx_dl = ap_row_tx_dl))
+                                    logger.info("mac {mac} ap_row_tx_dl {ap_row_tx_dl}".format(mac=mac, ap_row_tx_dl=ap_row_tx_dl))
                                     # Find latency, jitter for connections
                                     # using this port.
                                     latency, jitter, total_ul_rate, total_ul_rate_ll, total_ul_pkts_ll, ul_rx_drop_percent, total_dl_rate, total_dl_rate_ll, total_dl_pkts_ll, dl_rx_drop_percent = self.get_endp_stats_for_port(
@@ -983,9 +975,9 @@ class L3VariableTime(Realm):
                                         total_dl_rate_ll,
                                         total_dl_pkts_ll,
                                         dl_rx_drop_percent,
-                                        ap_row_tx_dl) # this is where the AP data is added
+                                        ap_row_tx_dl)  # this is where the AP data is added
 
-                                    # now report the ap_chanim_stats 
+                                    # now report the ap_chanim_stats
 
                                 if rx_ul_mac_found:
                                     # Find latency, jitter for connections
@@ -1006,13 +998,12 @@ class L3VariableTime(Realm):
                                         total_ul_rate,
                                         total_ul_rate_ll,
                                         total_ul_pkts_ll,
-                                        ul_rx_drop_percent,                                        
+                                        ul_rx_drop_percent,
                                         total_dl_rate,
                                         total_dl_rate_ll,
                                         total_dl_pkts_ll,
                                         dl_tx_drop_percent,
                                         ap_row_rx_ul)  # ap_ul_row added
-
 
                                 logger.info("ap_row_rx_ul {ap_row_rx_ul}".format(ap_row_rx_ul=ap_row_rx_ul))
 
@@ -1027,7 +1018,7 @@ class L3VariableTime(Realm):
                             for port_eid in port_eids:
                                 eid = self.name_to_eid(port_eid)
                                 url = "/port/%s/%s/%s" % (eid[0],
-                                                        eid[1], eid[2])
+                                                          eid[1], eid[2])
                                 response = self.json_get(url)
                                 if (response is None) or (
                                         "interface" not in response):
@@ -1093,14 +1084,13 @@ class L3VariableTime(Realm):
                     all_dl_ports_stations_df.to_csv(all_dl_port_stations_file_name)
 
                     # we should be able to add the values for each eid
-                    all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])['Rx-Bps','Tx-Bps','Rx-Latency','Rx-Jitter',
-                        'Ul-Rx-Goodput-bps','Ul-Rx-Rate-ll','Ul-Rx-Pkts-ll','Dl-Rx-Goodput-bps','Dl-Rx-Rate-ll','Dl-Rx-Pkts-ll'].sum()
+                    all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
+                                                                                                    'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll'].sum()
                     all_dl_ports_stations_sum_file_name = self.outfile[:-4]
                     all_dl_port_stations_sum_file_name = all_dl_ports_stations_sum_file_name + "-dl-all-eids-sum-per-interval.csv"
 
                     # add some calculations, will need some selectable graphs
                     logger.info("all_dl_ports_stations_sum_df : {df}".format(df=all_dl_ports_stations_sum_df))
-                    
 
                     if all_dl_ports_stations_sum_df.empty:
                         logger.warning("The dl (download) has no data check the AP connection or configuration")
@@ -1117,11 +1107,9 @@ class L3VariableTime(Realm):
                         all_dl_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff()
                         all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff()
                         all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff()
-                    
+
                     # write out the data
                     all_dl_ports_stations_sum_df.to_csv(all_dl_port_stations_sum_file_name)
-
-
 
                     # if there are multiple loops then delete the df
                     del all_dl_ports_df
@@ -1145,7 +1133,7 @@ class L3VariableTime(Realm):
 
                         # copy over all_ul_ports_df so as create a dataframe summ of the data for each iteration
                         all_ul_ports_stations_df = all_ul_ports_df.copy(deep=True)
-                        # drop rows that have eth 
+                        # drop rows that have eth
                         all_ul_ports_stations_df = all_ul_ports_stations_df[~all_ul_ports_stations_df['Name'].str.contains('eth')]
                         logger.info(pformat(all_ul_ports_stations_df))
 
@@ -1155,11 +1143,10 @@ class L3VariableTime(Realm):
                         all_ul_ports_stations_df.to_csv(all_ul_ports_stations_file_name)
 
                         # we add all the values based on the epoch time
-                        all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])['Rx-Bps','Tx-Bps','Rx-Latency','Rx-Jitter',
-                        'Ul-Rx-Goodput-bps','Ul-Rx-Rate-ll','Ul-Rx-Pkts-ll','Dl-Rx-Goodput-bps','Dl-Rx-Rate-ll','Dl-Rx-Pkts-ll'].sum()
+                        all_ul_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
+                                                                                                        'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll'].sum()
                         all_ul_ports_stations_sum_file_name = self.outfile[:-4]
                         all_ul_port_stations_sum_file_name = all_ul_ports_stations_sum_file_name + "-ul-all-eids-sum-per-interval.csv"
-
 
                         # add some calculations, will need some selectable graphs
                         if all_ul_ports_stations_sum_df.empty:
@@ -1219,7 +1206,7 @@ class L3VariableTime(Realm):
                     # TODO the passes and expected_passes are not checking anything
                     if warnings > 0:
                         self._fail(" Total warnings:  {warnings}.   Check logs for warnings,  check AP connection ".format(warnings=str(warnings)))
-                    
+
                     if passes == expected_passes:
                         # Sets the pass indication
                         self._pass(
@@ -1246,7 +1233,7 @@ class L3VariableTime(Realm):
             total_dl_rate_ll,
             total_dl_pkts_ll,
             dl_rx_drop_percent,
-            ap_row_tx_dl = ''):
+            ap_row_tx_dl=''):
         row = [self.epoch_time, self.time_stamp(), sta_count,
                ul, ul, dl, dl, dl_pdu, dl_pdu, ul_pdu, ul_pdu,
                atten, port_eid
@@ -1331,7 +1318,7 @@ class L3VariableTime(Realm):
         # Add in info queried from AP.
         if self.ap_read:
             logger.debug("ap_row_rx_ul len {ap_row_rx_ul_len} ap_stats_ul_col_titles len {rx_col_len} ap_ul_row {ap_ul_row}".format(
-                ap_row_rx_ul_len=len(ap_row_rx_ul), rx_col_len=len(self.ap_stats_ul_col_titles), ap_ul_row = ap_row_rx_ul))
+                ap_row_rx_ul_len=len(ap_row_rx_ul), rx_col_len=len(self.ap_stats_ul_col_titles), ap_ul_row=ap_row_rx_ul))
             if len(ap_row_rx_ul) == len(self.ap_stats_ul_col_titles):
                 logger.debug("ap_row_rx_ul {}".format(ap_row_rx_ul))
                 for col in ap_row_rx_ul:
@@ -1341,7 +1328,6 @@ class L3VariableTime(Realm):
         writer = self.ul_port_csv_writers[port_eid]
         writer.writerow(row)
         self.ul_port_csv_files[port_eid].flush()
-
 
     def record_kpi_csv(
             self,
@@ -2003,9 +1989,9 @@ Setting wifi_settings per radio
     test_l3_parser = parser.add_argument_group('arguments defined in test_l3.py file')
     # add argument group
     # the local_lf_report_dir is the parent directory of where the results are used with lf_check.py
-    test_l3_parser.add_argument('--local_lf_report_dir', 
-        help='--local_lf_report_dir override the report path (lanforge/html-reports), primary used when making another directory lanforge/html-report/<test_rig>', 
-        default="")
+    test_l3_parser.add_argument('--local_lf_report_dir',
+                                help='--local_lf_report_dir override the report path (lanforge/html-reports), primary used when making another directory lanforge/html-report/<test_rig>',
+                                default="")
     test_l3_parser.add_argument(
         "--results_dir_name",
         default="test_l3",
@@ -2093,8 +2079,8 @@ Setting wifi_settings per radio
         help='--debug this will enable debugging in py-json method',
         action='store_true')
     test_l3_parser.add_argument('--log_level',
-                        default=None,
-                        help='Set logging level: debug | info | warning | error | critical')
+                                default=None,
+                                help='Set logging level: debug | info | warning | error | critical')
     test_l3_parser.add_argument(
         '-t',
         '--endp_type',
@@ -2173,33 +2159,32 @@ Setting wifi_settings per radio
         default='0')
 
     test_l3_parser.add_argument('--sta_start_offset', help='Station start offset for building stations',
-                        default='0')
+                                default='0')
 
     test_l3_parser.add_argument('--no_pre_cleanup', help='Do not pre cleanup stations on start',
-                        action='store_true')
+                                action='store_true')
 
     test_l3_parser.add_argument('--no_cleanup', help='Do not cleanup before exit',
-                        action='store_true')
+                                action='store_true')
 
     test_l3_parser.add_argument('--no_stop_traffic', help='leave traffic running',
-                        action='store_true')
+                                action='store_true')
 
     test_l3_parser.add_argument('--quiesce_cx', help='--quiesce store true,  allow the cx to drain then stop so as to not have rx drop pkts',
-                        action='store_true')
+                                action='store_true')
 
     test_l3_parser.add_argument('--use_existing_station_list', help='--use_station_list ,full eid must be given,'
-                        'the script will use stations from the list, no configuration on the list, also prevents pre_cleanup',
-                        action='store_true')
+                                'the script will use stations from the list, no configuration on the list, also prevents pre_cleanup',
+                                action='store_true')
 
     # TODO pass in the station list
     test_l3_parser.add_argument('--existing_station_list',
-                        action='append',
-                        nargs=1,
-                        help='--station_list [list of stations] , use the stations in the list , multiple station lists may be entered')
+                                action='append',
+                                nargs=1,
+                                help='--station_list [list of stations] , use the stations in the list , multiple station lists may be entered')
 
     # Wait for IP made configurable
     test_l3_parser.add_argument('--wait_for_ip_sec', help='--wait_for_ip_sec <seconds>  default : 120s ', default="120s")
-
 
     # logging configuration
     test_l3_parser.add_argument(
@@ -2225,8 +2210,6 @@ Setting wifi_settings per radio
     test_l3_parser.add_argument('--ap_if_6g', help='--ap_if_6g eth8', default='wl2')
     test_l3_parser.add_argument('--ap_file', help="--ap_file 'ap_file.txt'", default=None)
     test_l3_parser.add_argument('--ap_band_list', help="--ap_band_list '2g,5g,6g' supported bands", default='2g,5g,6g')
-
-
 
     args = parser.parse_args()
 
@@ -2288,7 +2271,6 @@ Setting wifi_settings per radio
         radios = args.radio
     else:
         radios = None
-        
 
     # Create report, when running with the test framework (lf_check.py)
     # results need to be in the same directory
@@ -2541,8 +2523,8 @@ Setting wifi_settings per radio
         use_existing_station_lists=args.use_existing_station_list,
         existing_station_lists=existing_station_lists,
         wait_for_ip_sec=args.wait_for_ip_sec,
-        ap_read = args.ap_read,
-        ap_module = args.ap_module,
+        ap_read=args.ap_read,
+        ap_module=args.ap_module,
         ap_test_mode=args.ap_test_mode,
         ap_ip=args.ap_ip,
         ap_user=args.ap_user,
@@ -2557,9 +2539,9 @@ Setting wifi_settings per radio
         ap_if_6g=args.ap_if_6g,
         ap_report_dir="",
         ap_file=args.ap_file,
-        ap_band_list = args.ap_band_list.split(',')
-        
-        )
+        ap_band_list=args.ap_band_list.split(',')
+
+    )
 
     if args.no_pre_cleanup or args.use_existing_station_list:
         logger.info("No station pre clean up any existing cxs on LANforge")
