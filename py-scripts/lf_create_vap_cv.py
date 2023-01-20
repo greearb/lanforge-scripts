@@ -171,7 +171,7 @@ class create_vap_cv(cv_test):
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="lf_wifi_capacity_test.py",
+        prog="lf_create_vap_cv.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
         ./create_vap_cv.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge 
