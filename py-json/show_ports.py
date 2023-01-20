@@ -21,7 +21,7 @@ def main():
     url = "http://localhost:8080/port/1/1/list"
 
     lf_r = LFRequest.LFRequest(url)
-    json_response = lf_r.getAsJson(True)
+    json_response = lf_r.getAsJson()
     j_printer = pprint.PrettyPrinter(indent=2)
     j_printer.pprint(json_response)
 
