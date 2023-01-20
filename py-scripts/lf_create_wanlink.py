@@ -8,12 +8,12 @@ EXAMPLE:
 Both port_A and port_B have the same configuraiton
 $ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --port_B eth2\
     --speed 1024000 --wl_name wanlink --latency 24 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
-    --log_level debug --debug 
+    --log_level debug --debug
 
 Mixed configuration for port_A and port_B
 $ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --port_B eth2\
     --speed_A 1024000 --speed_B 2048000 --wl_name wanlink --latency_A 24 --latency_B 32 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
-    --log_level debug --debug 
+    --log_level debug --debug
 
 
 
@@ -38,10 +38,9 @@ import logging
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
-from lanforge_client.lanforge_api import LFJsonQuery
-from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFSession
-
+from lanforge_client.lanforge_api import LFJsonCommand
+from lanforge_client.lanforge_api import LFJsonQuery
 
 
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -95,7 +94,6 @@ class lf_create_wanlink():
 
     # query.get_wl
     # query.get_wl_endp
-
 
     def add_wl_endp(self,
                     _alias: str = None,                        # Name of endpoint. [R]
@@ -198,12 +196,12 @@ class lf_create_wanlink():
             debug=self.debug,
             suppress_related_commands=_suppress_related_commands)
 
-    # set_endp_flag 
+    # set_endp_flag
     def set_endp_flag(self,
-                    _flag: str = None,                         # The name of the flag. [R]
-                    _name: str = None,                         # The name of the endpoint we are configuring. [R]
-                    _val: str = None,                          # Either 1 (for on), or 0 (for off). [R,0-1]
-                    _suppress_related_commands: bool = False):
+                      _flag: str = None,                         # The name of the flag. [R]
+                      _name: str = None,                         # The name of the endpoint we are configuring. [R]
+                      _val: str = None,                          # Either 1 (for on), or 0 (for off). [R,0-1]
+                      _suppress_related_commands: bool = False):
 
         self.command.post_set_endp_flag(flag=_flag,             # The name of the flag. [R]
                                         name=_name,             # The name of the endpoint we are configuring. [R]
@@ -222,7 +220,6 @@ class lf_create_wanlink():
                                  tx_endp=_tx_endp,
                                  test_mgr=_test_mgr)
 
-
     def get_wl(self,
                _eid_list: list = None,
                _requested_col_names: list = None,
@@ -232,14 +229,13 @@ class lf_create_wanlink():
 
         ewarn_list = []
         result = self.query.get_wl(eid_list=_eid_list,
-                                   requested_col_names=_requested_col_names, 
+                                   requested_col_names=_requested_col_names,
                                    wait_sec=_wait_sec,
                                    timeout_sec=_timeout_sec,
                                    errors_warnings=ewarn_list,
                                    debug=self.debug)
         logger.debug(pformat(result))
         return result
-
 
     def get_wl_endp(self,
                     _eid_list: list = None,
@@ -249,16 +245,14 @@ class lf_create_wanlink():
                     _errors_warnings: list = None):
 
         result = self.query.get_wl_endp(eid_list=_eid_list,
-                    requested_col_names=_requested_col_names,
-                    wait_sec=_wait_sec,
-                    timeout_sec=_timeout_sec,
-                    errors_warnings=_errors_warnings,
-                    debug=self.debug)
+                                        requested_col_names=_requested_col_names,
+                                        wait_sec=_wait_sec,
+                                        timeout_sec=_timeout_sec,
+                                        errors_warnings=_errors_warnings,
+                                        debug=self.debug)
 
         logger.debug(pformat(result))
         return result
-
-        
 
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
@@ -276,12 +270,12 @@ def main():
 Both port_A and port_B have the same configuraiton
 $ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --port_B eth2\
     --speed 1024000 --wl_name wanlink --latency 24 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
-    --log_level debug --debug 
+    --log_level debug --debug
 
 Mixed configuration for port_A and port_B
 $ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --port_B eth2\
     --speed_A 1024000 --speed_B 2048000 --wl_name wanlink --latency_A 24 --latency_B 32 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
-    --log_level debug --debug 
+    --log_level debug --debug
 
 
             ''')
@@ -348,10 +342,10 @@ $ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --por
     parser.add_argument('--speed_B', help='(set wanlink info) The maximum speed of traffic this endpoint will accept (bps). port B', default=None)
     parser.add_argument('--suppress_related_commands', help='(set wanlink info) Used by lanforge_api Default False if set store true', action='store_true')
 
-    # Set Endp Flags enable KernelMode 
+    # Set Endp Flags enable KernelMode
     parser.add_argument('--kernel_mode', help='(set endp flag) Select  kernel-mode Wanlinks , must be the same for both endpoint sets both ports, Default = False', action='store_true')
     parser.add_argument('--pass_through_mode', help='''
-        (set endp flag) pass-through means disable all impairments and slow-downs, without having to manually zero out all of the impairments.  Good way to turn it on/off without stopping traffic., 
+        (set endp flag) pass-through means disable all impairments and slow-downs, without having to manually zero out all of the impairments.  Good way to turn it on/off without stopping traffic.,
         Default = False', action='store_true'
         ''', action='store_true')
 
@@ -512,28 +506,27 @@ $ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --por
 
     if args.kernel_mode:
         wanlink.set_endp_flag(_name=endp_A,
-                            _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
-                            _val=1,
-                            _suppress_related_commands=args.suppress_related_commands)
+                              _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
+                              _val=1,
+                              _suppress_related_commands=args.suppress_related_commands)
 
-    else:                                
+    else:
         wanlink.set_endp_flag(_name=endp_A,
-                            _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
-                            _val=0,
-                            _suppress_related_commands=args.suppress_related_commands)
+                              _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
+                              _val=0,
+                              _suppress_related_commands=args.suppress_related_commands)
 
     if args.pass_through_mode:
         wanlink.set_endp_flag(_name=endp_A,
-                            _flag='PassthroughMode',
-                            _val=1,
-                            _suppress_related_commands=args.suppress_related_commands)
+                              _flag='PassthroughMode',
+                              _val=1,
+                              _suppress_related_commands=args.suppress_related_commands)
 
-    else:                                
+    else:
         wanlink.set_endp_flag(_name=endp_A,
-                            _flag='PassthroughMode',
-                            _val=0,
-                            _suppress_related_commands=args.suppress_related_commands)
-
+                              _flag='PassthroughMode',
+                              _val=0,
+                              _suppress_related_commands=args.suppress_related_commands)
 
     # set_wanlink_info B
     wanlink.set_wanlink_info(_drop_freq=drop_freq_B,                    # How often, out of 1,000,000 packets, should we
@@ -569,27 +562,26 @@ $ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --por
 
     if args.kernel_mode:
         wanlink.set_endp_flag(_name=endp_B,
-                            _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
-                            _val=1,
-                            _suppress_related_commands=args.suppress_related_commands)
+                              _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
+                              _val=1,
+                              _suppress_related_commands=args.suppress_related_commands)
 
-    else:                                
+    else:
         wanlink.set_endp_flag(_name=endp_B,
-                            _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
-                            _val=0,
-                            _suppress_related_commands=args.suppress_related_commands)
+                              _flag=wanlink.command.SetEndpFlagFlag.KernelMode.value,
+                              _val=0,
+                              _suppress_related_commands=args.suppress_related_commands)
     if args.pass_through_mode:
         wanlink.set_endp_flag(_name=endp_B,
-                            _flag='PassthroughMode',
-                            _val=1,
-                            _suppress_related_commands=args.suppress_related_commands)
+                              _flag='PassthroughMode',
+                              _val=1,
+                              _suppress_related_commands=args.suppress_related_commands)
 
-    else:                                
+    else:
         wanlink.set_endp_flag(_name=endp_B,
-                            _flag='PassthroughMode',
-                            _val=0,
-                            _suppress_related_commands=args.suppress_related_commands)
-
+                              _flag='PassthroughMode',
+                              _val=0,
+                              _suppress_related_commands=args.suppress_related_commands)
 
     eid_list = [args.wl_name]
     ewarn_list = []
@@ -601,11 +593,10 @@ $ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --por
 
     eid_list = [endp_A, endp_B]
     result = wanlink.get_wl_endp(_eid_list=eid_list,
-                            _wait_sec=0.2,
-                            _timeout_sec=2.0,
-                            _errors_warnings=ewarn_list)
+                                 _wait_sec=0.2,
+                                 _timeout_sec=2.0,
+                                 _errors_warnings=ewarn_list)
     logger.debug(pformat(result))
-
 
 
 if __name__ == "__main__":
