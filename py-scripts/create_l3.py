@@ -154,7 +154,6 @@ def main():
         ip_var_test.exit_fail()
 
 
-
 if __name__ == "__main__":
 
     main()
