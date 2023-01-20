@@ -509,16 +509,16 @@ class L3VariableTime(Realm):
     def ap_ssh(self, command):
         # in python3 bytes and str are two different types.  str is used to reporesnt any
         # type of string (also unicoe), when you encode()
-        # something, you confvert it from it's str represnetation to it's bytes reprrestnetation for a specific 
+        # something, you confvert it from it's str represnetation to it's bytes reprrestnetation for a specific
         # endoding
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         ssh.connect(self.ap_ip, port=self.ap_ssh_port, username=self.ap_user, password=self.ap_passwd, timeout=5)
         stdin, stdout, steerr = ssh.exec_command(command)
         output = stdout.read()
-        logger.debug("command:  {command} output: {output}".format(command=command,output=output))
+        logger.debug("command:  {command} output: {output}".format(command=command, output=output))
         output = output.decode('utf-8', 'ignore')
-        logger.debug("after utf-8 ignoer output: {output}".format(command=command,output=output))
+        logger.debug("after utf-8 ignoer output: {output}".format(command=command, output=output))
 
         ssh.close()
         return output
@@ -1473,8 +1473,7 @@ class L3VariableTime(Realm):
                                             total_dl_rate,
                                             total_dl_rate_ll,
                                             total_dl_pkts_ll,
-                                            ap_row) # this is where the AP data is added
-
+                                            ap_row)  # this is where the AP data is added
 
                             # work though the ul rx_data 6G
                             for port_eid in port_eids:
@@ -1615,10 +1614,10 @@ class L3VariableTime(Realm):
                                                 if split_row[0].lower() == mac.lower():
                                                     ap_row = split_row  # bs_data
                                                     mac_found_5g = True
-                                                    logger.info("AP read mac_found mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0],port_mac=mac))
+                                                    logger.info("AP read mac_found mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0], port_mac=mac))
 
                                                 else:
-                                                    logger.info("AP read mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0],port_mac=mac))
+                                                    logger.info("AP read mac {ap_mac} Port mac {port_mac}".format(ap_mac=split_row[0], port_mac=mac))
                                             except Exception as x:
                                                 traceback.print_exception(Exception, x, x.__traceback__, chain=True)
                                                 logger.info("5g 'No stations are currently associated.'? from AP")
@@ -1687,7 +1686,7 @@ class L3VariableTime(Realm):
                                             total_dl_rate,
                                             total_dl_rate_ll,
                                             total_dl_pkts_ll,
-                                            ap_row) # this is where the AP data is added
+                                            ap_row)  # this is where the AP data is added
 
                             # work though the ul rx_data 5G
                             # from wl -i <interface> rx_report
@@ -2047,7 +2046,7 @@ class L3VariableTime(Realm):
                     # process "-dl-all-eids.csv to have per iteration loops deltas"
                     all_dl_ports_df.to_csv(all_dl_port_file_name)
 
-                    # copy the above pandas dataframe 
+                    # copy the above pandas dataframe
                     all_dl_ports_stations_df = all_dl_ports_df.copy(deep=True)
                     # drop rows that have
                     all_dl_ports_stations_df = all_dl_ports_stations_df[~all_dl_ports_stations_df['Name'].str.contains('eth')]
@@ -2059,8 +2058,8 @@ class L3VariableTime(Realm):
                     all_dl_ports_stations_df.to_csv(all_dl_port_stations_file_name)
 
                     # we should be able to add the values for each eid
-                    all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])['Rx-Bps','Tx-Bps','Rx-Latency','Rx-Jitter',
-                        'Ul-Rx-Goodput-bps','Ul-Rx-Rate-ll','Ul-Rx-Pkts-ll','Dl-Rx-Goodput-bps','Dl-Rx-Rate-ll','Dl-Rx-Pkts-ll'].sum()
+                    all_dl_ports_stations_sum_df = all_dl_ports_stations_df.groupby(['Time epoch'])['Rx-Bps', 'Tx-Bps', 'Rx-Latency', 'Rx-Jitter',
+                                                                                                    'Ul-Rx-Goodput-bps', 'Ul-Rx-Rate-ll', 'Ul-Rx-Pkts-ll', 'Dl-Rx-Goodput-bps', 'Dl-Rx-Rate-ll', 'Dl-Rx-Pkts-ll'].sum()
                     all_dl_ports_stations_sum_file_name = self.outfile[:-4]
                     all_dl_port_stations_sum_file_name = all_dl_ports_stations_sum_file_name + "-dl-all-eids-sum-per-interval.csv"
 
@@ -2075,10 +2074,9 @@ class L3VariableTime(Realm):
                     all_dl_ports_stations_sum_df['Dl-Rx-Goodput-bps-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Goodput-bps'].diff()
                     all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Rate-ll'].diff()
                     all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll-Diff'] = all_dl_ports_stations_sum_df['Dl-Rx-Pkts-ll'].diff()
-                    
+
                     # write out the data
                     all_dl_ports_stations_sum_df.to_csv(all_dl_port_stations_sum_file_name)
-
 
                     # if there are multiple loops then delete the df
                     del all_dl_ports_df
