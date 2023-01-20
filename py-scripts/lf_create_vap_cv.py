@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-example: ./lf_create_vap_cv.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge 
-        
+example: ./lf_create_vap_cv.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge
+
         --delete_old_scenario --scenario_name "Automation" --vap_radio "wiphy0"
-        --vap_freq "2437" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2" 
+        --vap_freq "2437" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2"
 
 Note: This script will create a vap using chamberview
 
@@ -63,11 +63,11 @@ class create_vap_cv(cv_test):
 
         self.lfclient_host = lfclient_host
         self.lf_port = lf_port
-        self.lf_user= lf_user
+        self.lf_user = lf_user
         self.lf_passwd = lf_password
         self.COMMANDS = ["set_port"]
         self.desired_set_port_cmd_flags = []
-        self.desired_set_port_current_flags = ["use_dhcp","dhcp"]  # do not default down, "if_down"
+        self.desired_set_port_current_flags = ["use_dhcp", "dhcp"]  # do not default down, "if_down"
         self.desired_set_port_interest_flags = ["current_flags"]  # do not default down, "ifdown"
         # set_port 1 1 NA NA NA NA NA 2147483648 NA NA NA vap0000
         self.profile_name = None
@@ -75,9 +75,7 @@ class create_vap_cv(cv_test):
         self.freq = None
         self.set_upstream = True
 
-
-
-    def setup_vap(self, scenario_name="Automation", radio="wiphy0",frequency="-1",name=None, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
+    def setup_vap(self, scenario_name="Automation", radio="wiphy0", frequency="-1", name=None, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
 
         profile = lf_add_profile(lf_mgr=self.lfclient_host,
                                  lf_port=self.lf_port,
@@ -115,16 +113,16 @@ class create_vap_cv(cv_test):
         self.freq = freq
 
         chamber = create_chamber(lfmgr=self.lfclient_host,
-                 port=self.lf_port)
+                                 port=self.lf_port)
 
         if delete_scenario:
             chamber.clean_cv_scenario(
                 cv_type="Network-Connectivity",
                 scenario_name=scenario_name)
-        # TODO 
-        
-        vap_shelf, vap_resource, vap_radio_name, *nil =LFUtils.name_to_eid(vap_radio)
-        upstream_shelf, upstream_resource, upstream_name, *nil =LFUtils.name_to_eid(vap_upstream_port)
+        # TODO
+
+        vap_shelf, vap_resource, vap_radio_name, *nil = LFUtils.name_to_eid(vap_radio)
+        upstream_shelf, upstream_resource, upstream_name, *nil = LFUtils.name_to_eid(vap_upstream_port)
         if self.set_upstream:
             self.raw_line_l1 = [[f'profile_link {vap_shelf}.{vap_resource} {self.profile_name} 1 NA NA {vap_radio_name},AUTO {self.freq} NA'],
                                 [f'resource {vap_shelf}.{vap_resource}.0 0'],
@@ -136,15 +134,13 @@ class create_vap_cv(cv_test):
         logger.info(self.raw_line_l1)
 
         chamber.setup(create_scenario=scenario_name,
-                                 line=line,
-                                 raw_line=self.raw_line_l1)
-
+                      line=line,
+                      raw_line=self.raw_line_l1)
 
         return chamber
 
     def build_chamberview(self, chamber, scenario_name):
         chamber.build(scenario_name)        # self.apply_and_build_scenario("Sushant1")
-
 
     def build_and_setup_vap(self, delete_old_scenario=True, scenario_name="Automation", radio="wiphy0", vap_upstream_port="1.1.eth2",
                             frequency=-1, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
@@ -156,17 +152,15 @@ class create_vap_cv(cv_test):
                        vap_pawd=vap_pawd,
                        vap_security=vap_security)
 
-
         chamber = self.setup_chamberview(delete_scenario=delete_old_scenario,
-                               scenario_name=scenario_name,
-                               vap_radio=radio,
-                               vap_upstream_port=vap_upstream_port,
-                               profile_name=scenario_name,
-                               freq=frequency,
-                               line=None)
+                                         scenario_name=scenario_name,
+                                         vap_radio=radio,
+                                         vap_upstream_port=vap_upstream_port,
+                                         profile_name=scenario_name,
+                                         freq=frequency,
+                                         line=None)
 
-
-        self.build_chamberview(chamber=chamber,scenario_name=scenario_name)
+        self.build_chamberview(chamber=chamber, scenario_name=scenario_name)
 
 
 def main():
@@ -174,9 +168,9 @@ def main():
         prog="lf_create_vap_cv.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
-        ./create_vap_cv.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge 
-         --delete_old_scenario --scenario_name "Automation" 
-         --vap_radio "wiphy0" --vap_freq "5260" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2" 
+        ./create_vap_cv.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge
+         --delete_old_scenario --scenario_name "Automation"
+         --vap_radio "wiphy0" --vap_freq "5260" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2"
         """)
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
@@ -186,7 +180,6 @@ def main():
                         default="")
     parser.add_argument("--lf_logger_config_json",
                         help="--lf_logger_config_json <json file> , json configuration of logger")
-
 
     parser.add_argument("-dos", "--delete_old_scenario", default=True,
                         action='store_true',
@@ -206,7 +199,6 @@ def main():
     parser.add_argument("--vap_upstream_port", default="1.1.eth2",
                         help="vap upstream_port (by default: 1.1.eth2")
 
-
     args = parser.parse_args()
     cv_base_adjust_parser(args)
 
@@ -218,20 +210,19 @@ def main():
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-    lf_create_vap_cv = create_vap_cv(lfclient_host=args.mgr, lf_port=args.port, lf_user=args.lf_user,lf_password=args.lf_password,vap_upstream_port=args.vap_upstream_port)
+    lf_create_vap_cv = create_vap_cv(lfclient_host=args.mgr, lf_port=args.port, lf_user=args.lf_user, lf_password=args.lf_password, vap_upstream_port=args.vap_upstream_port)
 
     delete_old_scenario = args.delete_old_scenario
     vap_scenario_name = args.scenario_name
     vap_radio = args.vap_radio
-    vap_upstream_port=args.vap_upstream_port
+    vap_upstream_port = args.vap_upstream_port
     vap_freq = args.vap_freq
     vap_ssid = args.vap_ssid
     vap_passwd = args.vap_passwd
     vap_security = args.vap_security
 
-
     lf_create_vap_cv.build_and_setup_vap(delete_old_scenario=delete_old_scenario, scenario_name=vap_scenario_name, radio=vap_radio,
-                                        vap_upstream_port=vap_upstream_port,frequency=vap_freq, vap_ssid=vap_ssid, vap_pawd=vap_passwd, vap_security=vap_security)
+                                         vap_upstream_port=vap_upstream_port, frequency=vap_freq, vap_ssid=vap_ssid, vap_pawd=vap_passwd, vap_security=vap_security)
 
 
 if __name__ == "__main__":
