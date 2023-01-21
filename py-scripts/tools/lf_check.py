@@ -999,11 +999,19 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 "failed to change to {}".format(
                     self.scripts_wd))
         cmd_args = "{}".format(self.test_dict[self.test]['args'])
-        # TODO the the tx_power went back in the command
-        command = "./{} {}".format(
-            self.test_dict[self.test]['command'], cmd_args)
-        self.logger.info("command: {}".format(command))
-        self.logger.info("cmd_args {}".format(cmd_args))
+
+        # check to see if the command is a python or perl scrip
+        if '.' in self.test_dict[self.test]['command']:
+            command = "./{} {}".format(
+                self.test_dict[self.test]['command'], cmd_args)
+            self.logger.info("command: {}".format(command))
+            self.logger.info("cmd_args {}".format(cmd_args))
+        # possibly a scrip
+        else:
+            command = "{} {}".format(
+                self.test_dict[self.test]['command'], cmd_args)
+            self.logger.info("command: {}".format(command))
+            self.logger.info("cmd_args {}".format(cmd_args))
 
         # TODO this code is always run since there is a default
         # TODO change name to file obj to make more understandable
