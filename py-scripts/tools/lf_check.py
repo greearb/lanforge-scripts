@@ -1261,9 +1261,13 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                     self.test_result = "Finished"
                     background = self.background_green
             else:
+                if "sleep" in command_to_run:
+                    self.test_result = "Finished"
+                    background = self.background_purple
                 # if stdout empty that is a failure also
-                self.test_result = "Failure"
-                background = self.background_red
+                else:                
+                    self.test_result = "Failure"
+                    background = self.background_red
         # Total up test, tests success, tests failure, tests
         # timeouts
         self.tests_run += 1
