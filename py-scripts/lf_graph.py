@@ -521,6 +521,25 @@ class lf_bar_line_graph:
 
 
 class lf_stacked_graph:
+    """
+    usage: This will generate a vertically stacked graph with list _data_set as well as with dictionary _data_set.
+
+    example :
+
+    For a graph with dictionary data_set
+
+        obj = lf_stacked_graph(_data_set={'FCC0':0, 'FCC1':88.4,'FCC2':77.8,'FCC3':57.8,'FCC4':90.0,'FCC95':60.4,'FCC6':33.0},
+                               _xaxis_name="", _yaxis_name="", _enable_csv=False, _remove_border=True)
+        obj.build_stacked_graph()
+
+    For a graph with list data_set
+
+        obj = lf_stacked_graph(_data_set=[['FCC0', 'FCC1', 'FCC2', 'FCC3', 'FCC4', 'FCC95', 'FCC6'],
+                                          [0, 88.4, 77.8, 57.8, 90.0, 60.4, 33.0],
+                                          [100.0, 11.6, 22.2, 42.2, 10.0, 39.6, 67.0]])
+        obj.build_stacked_graph()
+
+    """
     def __init__(self,
                  _data_set=None,
                  _xaxis_name="Stations",
@@ -529,7 +548,15 @@ class lf_stacked_graph:
                  _graph_image_name="image_name2",
                  _color=None,
                  _figsize=(9, 4),
-                 _enable_csv=True):
+                 _enable_csv=True,
+                 _width=0.79,
+                 _bar_text_color='white',
+                 _bar_font_weight='bold',
+                 _bar_font_size=10,
+                 _legend_title="Issues",
+                 _legend_bbox=(1.13, 1.01),
+                 _legend_loc="upper right",
+                 _remove_border=False):
         if _data_set is None:
             _data_set = [[1, 2, 3, 4], [1, 1, 1, 1], [1, 1, 1, 1]]
         if _label is None:
@@ -543,9 +570,17 @@ class lf_stacked_graph:
         self.color = _color
         self.enable_csv = _enable_csv
         self.lf_csv = lf_csv()
+        self.width = _width
+        self.bar_text_color = _bar_text_color
+        self.bar_font_weight = _bar_font_weight
+        self.bar_font_size = _bar_font_size
+        self.legend_title = _legend_title
+        self.legend_bbox = _legend_bbox
+        self.legend_loc = _legend_loc
+        self.remove_border = _remove_border
 
     def build_stacked_graph(self):
-        plt.subplots(figsize=self.figsize)
+        fig, axes_subplot = plt.subplots(figsize=self.figsize)
         if self.color is None:
             self.color = [
                 "darkred",
@@ -554,19 +589,56 @@ class lf_stacked_graph:
                 "skyblue",
                 "indigo",
                 "plum"]
-        plt.bar(self.data_set[0], self.data_set[1], color=self.color[0])
-        plt.bar(
-            self.data_set[0],
-            self.data_set[2],
-            bottom=self.data_set[1],
-            color=self.color[1])
-        if len(self.data_set) > 3:
-            for i in range(3, len(self.data_set)):
-                plt.bar(self.data_set[0], self.data_set[i],
-                        bottom=np.array(self.data_set[i - 2]) + np.array(self.data_set[i - 1]), color=self.color[i - 1])
+        if type(self.data_set) is list:
+            plt.bar(self.data_set[0], self.data_set[1], color=self.color[0])
+            plt.bar(
+                self.data_set[0],
+                self.data_set[2],
+                bottom=self.data_set[1],
+                color=self.color[1])
+            if len(self.data_set) > 3:
+                for i in range(3, len(self.data_set)):
+                    plt.bar(self.data_set[0], self.data_set[i],
+                            bottom=np.array(self.data_set[i - 2]) + np.array(self.data_set[i - 1]),color=self.color[i - 1])
+            plt.legend(self.label)
+        elif type(self.data_set) is dict:
+            lable_values = []
+            pass_values = []
+            fail_values = []
+            for i in self.data_set:
+                lable_values.append(i)
+            for j in self.data_set:
+                pass_values.append(self.data_set[j])
+                fail_values.append(round(float(100.0 - self.data_set[j]), 1))
+
+            width = self.width
+            figure_size, axes_subplot = plt.subplots(figsize=self.figsize)
+
+            # building vertical bar plot
+            bar_1 = plt.bar(lable_values, pass_values, width, color='green')
+            bar_2 = plt.bar(lable_values, fail_values, width, bottom=pass_values, color='red')
+
+            # inserting bar text
+            for i, v in enumerate(pass_values):
+                if v != 0:
+                    plt.text(i + .005, v * 0.45, "%s%s" % (v, "%"), color=self.bar_text_color,
+                             fontweight=self.bar_font_weight,
+                             fontsize=self.bar_font_size, ha="center", va="center")
+            for i, v in enumerate(fail_values):
+                if v != 0:
+                    plt.text(i + .005, v * 0.45 + pass_values[i], "%s%s" % (v, "%"), color=self.bar_text_color,
+                             fontweight=self.bar_font_weight, fontsize=self.bar_font_size, ha="center", va="center")
+            plt.legend([bar_1, bar_2], self.label, title=self.legend_title, bbox_to_anchor=self.legend_bbox,
+                       loc=self.legend_loc)
+
+        # to remove the borders
+        if self.remove_border:
+            for border in ['top', 'right', 'left', 'right', 'bottom']:
+                axes_subplot.spines[border].set_visible(False)
+                axes_subplot.yaxis.set_visible(False)
+
         plt.xlabel(self.xaxis_name)
         plt.ylabel(self.yaxis_name)
-        plt.legend(self.label)
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()
         logger.debug("{}.png".format(self.graph_image_name))
