@@ -1083,7 +1083,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         # Since using "wait" above the return code will be set.
         try:
             return_code = summary.returncode
-            if return_code == '0':
+            if return_code == 0:
                 self.logger.info("Script returned pass return code: {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
             else:
                 self.logger.info("Script returned non-zero return code: {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
