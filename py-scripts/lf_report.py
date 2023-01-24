@@ -735,6 +735,12 @@ function copyTextToClipboard(ele) {
             """.format(image=self.graph_image)
         self.html += self.graph_html_obj
 
+    def build_graph_without_border(self):
+        self.graph_html_obj = """
+              <img align='left' style='padding:15px;margin:5px 5px 2em 5px;width:1000px;' src='{image}' border='0' />
+            """.format(image=self.graph_image)
+        self.html += self.graph_html_obj
+
     def end_content_div(self):
         self.html += "\n</div><!-- end contentDiv -->\n"
 
@@ -757,6 +763,31 @@ function copyTextToClipboard(ele) {
               <img align='{align}' style='padding:{padding};margin:{margin};width:{width};height:{height};'
               src='{image}'/> """.format(image=name,align=align,padding=padding,margin=margin,width=width, height=height)
         self.html += self.chart_html_obj
+
+    def build_banner_cover(self):
+        # NOTE: {{ }} are the ESCAPED curly braces
+        # JBR suggests rename method to start_html_doc()
+        # This method violates DRY, if the ID of the body/div#BannerBack/div element is actually necessary
+        # to specify, this needs to be made a parameter for build_banner() or start_html_doc()
+        self.banner_html = """<!DOCTYPE html>
+       <html lang='en'>
+           {head_tag}
+           <body>
+               <div id='BannerBack' style='height: 100%; max-height: 100%;'>
+                   <div id='BannerLeft' style="margin: 0%; background-size: 100%; max-height: 100%; max-width: 100%; width: 100%; height: 100%;">
+                       <img id='BannerLogo' align='right' src="CandelaLogo2-90dpi-200x90-trans.png" border='0'/>
+                       <div class='HeaderStyle'>
+                           <h1 class='TitleFontPrint' style='color:darkgreen;'>{title}</h1>
+                           <h4 class='TitleFontPrintSub' style='color:darkgreen;'>{date}</h4>
+                       </div>
+                   </div>
+               </div>
+                        """.format(
+            head_tag=self.get_html_head(title=self.title),
+            title=self.title,
+            date=self.date,
+        )
+        self.html += self.banner_html
 
 # Unit Test
 if __name__ == "__main__":
