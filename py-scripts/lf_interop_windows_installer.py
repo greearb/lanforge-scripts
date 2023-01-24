@@ -53,10 +53,10 @@ class WinAppInstaller:
 
     def start(self):
         if len(self.machine_user) == 1 and len(self.host) > 1:
-            self.machine_password = self.machine_password*(len(self.host))
+            self.machine_password = self.machine_password * (len(self.host))
             print(self.machine_user)
             print(self.machine_password)
-            self.machine_user = self.machine_user*(len(self.host))
+            self.machine_user = self.machine_user * (len(self.host))
         for i in range(len(self.host)):
             print("Currently Working for machine having ip address as ", self.host[i])
             self.connect(self.host[i], self.machine_user[i], self.machine_password[i])
@@ -74,9 +74,12 @@ class WinAppInstaller:
             self.close_session()
 
     def connect(self, host, machine_user, machine_password):
-        self.client = paramiko.SSHClient()
-        self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        self.client.connect(host, username=machine_user, password=machine_password)
+        try:
+            self.client = paramiko.SSHClient()
+            self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self.client.connect(host, username=machine_user, password=machine_password)
+        except:
+            print("[WRONG INPUT] Credentials might not acceptable.")
 
     def install_apk(self):
         stdin, stdout, stderr = self.client.exec_command(
@@ -124,7 +127,12 @@ class WinAppInstaller:
     def configure(self):
         stdin, stdout, stderr = self.client.exec_command("echo %USERPROFILE%")
         userprofile = (stdout.readline()).strip()
+
+        stdin, stdout, stderr = self.client.exec_command("echo %USERNAME%")
+        username = (stdout.readline()).strip()
+
         configure_file = userprofile + "\\AppData\\Roaming\\config.values"
+        lfserver = userprofile + "\\AppData\\Roaming\\lfserver.bat"
         # C:\Users\test2\AppData\Roaming\config.values
         # Getting management devices
         self.mgt_dev = ""
@@ -159,6 +167,30 @@ class WinAppInstaller:
         print("[CONFIG] Configuring shelf id as 1")
         stdin, stdout, stderr = self.client.exec_command("echo " + "shelf 1" + " >> " + configure_file)
         stdin, stdout, stderr = self.client.exec_command("echo " + "wl_probe_timer 50" + " >> " + configure_file)
+
+        lfserver_conf_string = "start /B /HIGH /WAIT btserver.exe --card " + str(self.resource) + " --realm " + \
+                               str(self.realm) + " --gui_port 4002 --cli_port 4001 -l 7 --device " + self.mgt_dev +\
+                               " --keepalive 30000 --max_pkts_tx_per_round 5 --connect_mgr " + self.manager_ip + \
+                               " --bind_mgt --log_dir " + "c:\\\\users\\\\" + username + "\\\\appdata\\\\local\\\\temp"
+
+        print("Writing into lfserver")
+        stdin, stdout, stderr = self.client.exec_command("more " + lfserver)
+        lfserver_pre = (stdout.readlines())
+        lfserver_pre_text_list = []
+        for i in lfserver_pre:
+            lfserver_pre_text_list.append(i)
+
+        ftp = self.client.open_sftp()
+        file = ftp.file(lfserver, "wt")
+        for i in lfserver_pre_text_list:
+            print("[CONFIG] Configuring code as  " + str(i))
+            if i.startswith("start /B /HIGH /WAIT btserver.exe --card"):
+                file.write(lfserver_conf_string + "\n")
+            else:
+                file.write(i)
+        file.flush()
+        ftp.close()
+
         print("[SUCCESS] Successfully configured")
 
     def copy(self):
@@ -209,7 +241,8 @@ def main():
                         default='password')
     parser.add_argument('--location', help='Location of the executable file without file name Eg. '
                                            '/home/lanforge/ ', default=None)
-    parser.add_argument('--machine_user', help='Windows machine username Eg. user1', required=True, nargs='+', default='user')
+    parser.add_argument('--machine_user', help='Windows machine username (Note: to get username run this cmd \"echo %USERNAME%\" or \"echo %USERPROFILE%\" in cmd) Eg. user1', required=True, nargs='+',
+                        default='user')
     parser.add_argument('--realm', help='Realm address for clustering Eg. 75', default='25')
     parser.add_argument('--resource', help='Resource address for clustering Eg. 4', default='2')
 
