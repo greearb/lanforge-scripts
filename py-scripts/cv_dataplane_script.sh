@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Define some common variables.  This will need to be changed to match your own testbed.
+# Define some common variables.  Change these to match the current testbed.
 MGR=192.168.102.211
 PORT=8080
 DUT_NAME="TEST_DUT"
@@ -18,7 +18,7 @@ echo "========Make DUT============"
 echo "========Build Chamber View Scenario=========="
 #change the lfmgr to your system, set the radio to a working radio on your LANforge system, same with the ethernet port.
 ./create_chamberview.py --mgr ${MGR} --mgr_port ${PORT} -cs "TEST_SCENARIO"\
---line "Resource=1.1 Profile="${STA_PROFILE}" Amount=1 Uses-1=wiphy0 DUT="${DUT_NAME}" DUT_Radio=Radio-1 Freq=-1 " \
+--line "Resource=1.1 Profile=STA-AX Amount=1 Uses-1=wiphy0 DUT="${DUT_NAME}" DUT_Radio=Radio-1 Freq=-1 " \
 --line "Resource=1.1 Profile=upstream-dhcp Amount=1 Uses-1=eth2 Freq=-1 " \
 --line "Resource=1.1 Profile=uplink-nat Amount=1 Uses-1=eth3 Uses-2=eth2 DUT=upstream DUT_Radio=LAN Freq=-1"
 
