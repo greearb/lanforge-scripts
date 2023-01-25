@@ -18,6 +18,8 @@ LICENSE:
     Copyright 2023 Candela Technologies Inc
 """
 import sys
+import time
+
 import paramiko
 import argparse
 import socket
@@ -115,10 +117,14 @@ class WinAppInstaller:
         print("[UPGRADE] Upgraded Successfully to version " + version + "\n")
 
     def start_app(self):
-        # Start - Process C:\Users\Test2\AppData\Roaming\start_both.bat - Verb runAs
         # TODO: Runas Administrator is being stuck for now find some other method.
-        stdin, stdout, stderr = self.client.exec_command(
-            "Start-Process C:\\Users\\Test2\\AppData\\Roaming\\start_both.bat - Verb runAs")
+        stdin, stdout, stderr = self.client.exec_command("C:\\Users\\Test2\\AppData\\Roaming\\start.bat -d start")
+        print("[STARTING SERVER] The server is being started...")
+        time.sleep(5)
+        # Some Commands to explore
+        # "start cmd.exe @cmd /k 'Start-Process C:\\Users\\Test2\\AppData\\Roaming\\start_both.bat -d start'")
+        # C:\Users\Test2\AppData\Roaming\start.bat -d start
+        # Start - Process C:\Users\Test2\AppData\Roaming\start_both.bat - Verb runAs
         output = (stdout.readline()).strip()
         print(output)
 
@@ -167,7 +173,7 @@ class WinAppInstaller:
         stdin, stdout, stderr = self.client.exec_command("echo " + "wl_probe_timer 50" + " >> " + configure_file)
 
         lfserver_conf_string = "start /B /HIGH /WAIT btserver.exe --card " + str(self.resource) + " --realm " + \
-                               str(self.realm) + " --gui_port 4002 --cli_port 4001 -l 7 --device " + self.mgt_dev +\
+                               str(self.realm) + " --gui_port 4002 --cli_port 4001 -l 7 --device " + self.mgt_dev + \
                                " --keepalive 30000 --max_pkts_tx_per_round 5 --connect_mgr " + self.manager_ip + \
                                " --bind_mgt --log_dir " + "c:\\\\users\\\\" + username + "\\\\appdata\\\\local\\\\temp"
 
@@ -186,6 +192,13 @@ class WinAppInstaller:
                 file.write(lfserver_conf_string + "\n")
             else:
                 file.write(i)
+        file.flush()
+        ftp.close()
+
+        print("[WRITING BATCH] Creating batch file for execution of server")
+        ftp = self.client.open_sftp()
+        file = ftp.file(userprofile + "\\AppData\\Roaming\\start.bat", "w+")
+        file.write(userprofile + "\\AppData\\Roaming\\lfserver.bat -d start")
         file.flush()
         ftp.close()
         self.resource = str(int(self.resource) + 1)
@@ -240,7 +253,9 @@ def main():
                         default='password')
     parser.add_argument('--location', help='Location of the executable file without file name Eg. '
                                            '/home/lanforge/ ', default=None)
-    parser.add_argument('--machine_user', help='Windows machine username (Note: to get username run this cmd \"echo %USERNAME%\" or \"echo %USERPROFILE%\" in cmd) Eg. user1', required=True, nargs='+',
+    parser.add_argument('--machine_user',
+                        help='Windows machine username (Note: to get username run this cmd \"echo %USERNAME%\" or \"echo %USERPROFILE%\" in cmd) Eg. user1',
+                        required=True, nargs='+',
                         default='user')
     parser.add_argument('--realm', help='Realm address for clustering Eg. 75', default='25')
     parser.add_argument('--resource', help='Resource address for clustering Eg. 4', default='2')
