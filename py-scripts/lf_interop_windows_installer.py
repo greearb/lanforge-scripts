@@ -70,7 +70,6 @@ class WinAppInstaller:
             if self.action == "start_app":
                 self.start_app()
             self.close_session()
-            self.resource += 1
 
     def connect(self, host, machine_user, machine_password):
         try:
@@ -189,6 +188,7 @@ class WinAppInstaller:
                 file.write(i)
         file.flush()
         ftp.close()
+        self.resource += 1
 
         print("[SUCCESS] Successfully configured")
 
