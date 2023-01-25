@@ -4,7 +4,6 @@
 MGR=192.168.102.211
 PORT=8080
 DUT_NAME="TEST_DUT"
-STA_PROFILE="STA-AX"
 
 # Create/update new DUT.
 #Replace my arguments with your setup.  Separate your ssid arguments with spaces and ensure the names are lowercase
