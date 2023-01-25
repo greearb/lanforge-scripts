@@ -54,8 +54,6 @@ class WinAppInstaller:
     def start(self):
         if len(self.machine_user) == 1 and len(self.host) > 1:
             self.machine_password = self.machine_password * (len(self.host))
-            print(self.machine_user)
-            print(self.machine_password)
             self.machine_user = self.machine_user * (len(self.host))
         for i in range(len(self.host)):
             print("Currently Working for machine having ip address as ", self.host[i])
@@ -72,6 +70,7 @@ class WinAppInstaller:
             if self.action == "start_app":
                 self.start_app()
             self.close_session()
+            self.resource += 1
 
     def connect(self, host, machine_user, machine_password):
         try:
