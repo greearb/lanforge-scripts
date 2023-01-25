@@ -188,7 +188,7 @@ class WinAppInstaller:
                 file.write(i)
         file.flush()
         ftp.close()
-        self.resource += 1
+        self.resource = str(int(self.resource) + 1)
 
         print("[SUCCESS] Successfully configured")
 
