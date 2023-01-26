@@ -184,15 +184,20 @@ def main():
         prog='create_chamberview.py',
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
+
+        Notes:
+
         For Two line scenario use --line twice as shown in example, for multi line scenario
         use --line argument to create multiple lines
         \n
            create_chamberview.py --mgr "localhost" --mgr_port "8080" -cs "scenario_name"
              --line "Resource=1.1 Profile=STA-AC Amount=1 Uses-1=wiphy0 Uses-2=AUTO Freq=-1
-                    DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN="
+                    DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN=2"
              --line "Resource=1.1 Profile=upstream Amount=1 Uses-1=eth1 Uses-2=AUTO Freq=-1
-                    DUT=Test DUT_Radio=Radio-1 Traffic=http VLAN="
+                    DUT=Test DUT_Radio=Radio-1 Traffic=NA"
+
            ********************************      OR        ********************************
+
            create_chamberview.py -m "localhost" -o "8080" -cs "scenario_name"
              --raw_line "profile_link 1.1 STA-AC 10 'DUT: temp Radio-1' tcp-dl-6m-vi wiphy0,AUTO -1"
              --raw_line "profile_link 1.1 upstream 1 'DUT: temp Radio-1' tcp-dl-6m-vi eth1,AUTO -1"
@@ -200,13 +205,17 @@ def main():
            DUT_Radio is really the last part of the 'maps to' component of the scenario,
            so it can also be LAN when using and Upstream profile, for instance.
 
+           If scenario with same name already exists as given in 'create_scenario' argument, --delete_scenario flag 
+           must be used to overwrite scenario with same name. If --delete_scenario isn't given, script will append lines 
+           to scenario that exists with same name.   
+
            """)
     parser.add_argument(
         "-cs",
         "--create_scenario",
         "--create_lf_scenario",
         type=str,
-        help="name of scenario to be created")
+        help="name of scenario to be created and saved in lanforge database. See further notes section for more details.")
     parser.add_argument("-l", "--line", action='append', nargs='+',
                         help="line number", default=[])
     parser.add_argument("-rl", "--raw_line", action='append', nargs=1,
@@ -216,7 +225,7 @@ def main():
         "--delete_scenario",
         default=False,
         action='store_true',
-        help="delete scenario (by default: False)")
+        help="delete existing scenario with same name as given in 'create-scenario' argument. See 'further notes' section for more details. (by default: False)")
 
     args = parser.parse_args()
 
