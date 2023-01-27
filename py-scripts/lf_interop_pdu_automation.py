@@ -6,7 +6,7 @@ PURPOSE: lf_interop_pdu_automation.py  is a stand-alone automation script which 
 certain interval in loop to prevent the mobile phones over charging.
 
 USE './python3 lf_interop_pdu_automation.py --host 192.168.200.50 --user username --password pass --current
-starting_status_of_port --port all/1,2,3 --on_time integer(hours) --off_time integer(hours)
+starting_status_of_port --port all/1,2,3 --on_time integer(minutes) --off_time integer(minutes)
     Eg : ./python3 lf_interop_pdu_automation.py --host 192.168.200.50 --user admin --password Candela@123 --current on
     --port all --on_time 1 --off_time 1'
 
@@ -47,8 +47,8 @@ class PDUAutomate:
             exit(0)
 
     def start(self, port, current, on_time, off_time):
-        self.on_time = int(on_time) * 60 * 60
-        self.off_time = int(off_time) * 60 * 60
+        self.on_time = int(on_time) * 60
+        self.off_time = int(off_time) * 60
         while True:
             try:
                 if current == "on":
@@ -108,8 +108,8 @@ def main(argv: Optional[Sequence[str]] = None):
     parser.add_argument('--password', help='Please provide password eg: 1234')
     parser.add_argument('--port', help='Port number which has to be switched eg: --port 1,2,3,4')
     parser.add_argument('--current', help='Current status after running the code eg: --current off/on')
-    parser.add_argument('--on_time', help='Time in (integer)hrs for keeping power on eg: --on_time 2')
-    parser.add_argument('--off_time', help='Time in (integer)hrs for keeping power off eg: --off_time 5')
+    parser.add_argument('--on_time', help='Time in (integer)minutes for keeping power on eg: --on_time 2')
+    parser.add_argument('--off_time', help='Time in (integer)minutes for keeping power off eg: --off_time 5')
     args = parser.parse_args(argv)
     dic = vars(args)
 
