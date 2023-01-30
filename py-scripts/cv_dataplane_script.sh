@@ -12,8 +12,8 @@ DUT_NAME="TEST_DUT"
 #Replace my arguments with your setup.  Separate your ssid arguments with spaces and ensure the names are lowercase
 echo "Make DUT"
 ./create_chamberview_dut.py --lfmgr ${MGR} -o ${PORT} --dut_name ${DUT_NAME} --dut_flag="DHCPD-LAN" --dut_flag="DHCPD-WAN" \
---ssid "ssid_idx=0 ssid=mesh-lanforge security=WPA2 password=mesh bssid=64:97:14:64:D9:06" \
---ssid "ssid_idx=1 ssid=mesh-lanforge security=WPA2 password=mesh bssid=64:97:14:64:D9:07"
+--ssid "ssid_idx=0 ssid=eero-mesh-lanforge security=WPA2 password=lanforge bssid=64:97:14:64:D9:06" \
+--ssid "ssid_idx=1 ssid=eero-mesh-lanforge security=WPA2 password=lanforge bssid=64:97:14:64:D9:07"
 
 
 # Create/update chamber view scenario and apply and build it.
@@ -28,4 +28,4 @@ echo "Build Chamber View Scenario"
 #Run dataplane test
 echo "Run Dataplane Test"
 ./lf_dataplane_test.py --mgr ${MGR} -o ${PORT} --instance_name dataplane-inst --upstream 1.01.eth2 --download_speed "85%" --upload_speed "10%" --station 1.01.wlan0 --dut {$DUT_NAME} \
---raw_line "pkts: Custom;60;MTU" --raw_line "cust_pkt_sz: 88 1200" --raw_line "directions: DUT Transmit" --raw_line "traffic_types:UDP"--raw_line --duration "30s"
+--raw_line "pkts: Custom;60;MTU" --raw_line "cust_pkt_sz: 88 1200" --raw_line "directions: DUT Transmit" --raw_line "traffic_types: UDP"
