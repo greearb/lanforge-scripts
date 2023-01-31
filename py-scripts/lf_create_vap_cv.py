@@ -171,6 +171,18 @@ def main():
         ./create_vap_cv.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge
          --delete_old_scenario --scenario_name "Automation"
          --vap_radio "wiphy0" --vap_freq "5260" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2"
+
+         tested on 01/31/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
+         the vap was created on each radio listed below, and tested with a station on another radio running test_l3 or manually
+         successfully tested radios:
+         - ath10k(9984) , wave-2 , 802.11bgn-AC , 2.4GHz , tested with test_l3.py
+         - ath10k(9884) , wave-2 , 802.11an-AC , 5GHz , tested with test_l3.py
+         - mt7915e(7915) , Mediatek , 802.11abgn-AC , 2.4GHz and 5GHz , tested with test_l3.py
+         - ath10k(988x) , wave-1 , 802.11abgn-AC , 2.4GHz and 5GHz , tested with test_l3.py
+         - ath9k() , n-radio , 802.11abgn , 2.4GHz and 5GHz , tested with test_l3.py
+
         """)
 
     cv_add_base_parser(parser)  # see cv_test_manager.py
