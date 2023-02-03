@@ -15,7 +15,7 @@ Supports regression testing for QA
 
 For remote layer-3 cx creation:
    ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
- 
+
  For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
   ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
 """
@@ -109,8 +109,8 @@ For cross-connection creation:
    ./create_l3.py --ssid lanforge --password password --security wpa2 --radio 1.1.wiphy0 --endp_a wiphy0 --endp_b wiphy1 --no_cleanup
 
 For remote layer-3 cx creation:
-   ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup   
- 
+   ./create_l3.py --mgr localhost --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000' --no_cleanup
+
 For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
   ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
 
