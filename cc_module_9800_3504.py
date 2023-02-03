@@ -1299,7 +1299,7 @@ class create_controller_series_object:
                         break
 
         if self.regulatory_domain == "NA":
-            logger.error("Regulatory domain is blank: --testbed_location <show ap summary Location> : location entered {location}".format(location=args.testbed_location))
+            logger.error("Regulatory domain is blank: --testbed_location <show ap summary Location> : location entered {location}".format(location=self.testbed_location))
 
 
 
