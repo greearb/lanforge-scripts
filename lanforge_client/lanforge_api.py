@@ -72,6 +72,7 @@
 ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 import os.path
 import sys
+from urllib.parse import urlparse, ParseResult
 
 if sys.version_info[0] != 3:
     print("This script requires Python 3")
@@ -1305,6 +1306,18 @@ class BaseSession:
 
     def get_lfclient_url(self) -> str:
         return self.lfclient_url
+
+    def get_lfclient_host(self) -> str:
+        if not self.lfclient_url:
+            return None
+        result:ParseResult = urlparse(self.lfclient_url)
+        return result.hostname
+
+    def get_lfclient_port(self) -> str:
+        if not self.lfclient_url:
+            return None
+        result:ParseResult = urlparse(self.lfclient_url)
+        return result.port
 
     def get_lf_client_error(self) -> str:
         return self.lfclient_url
@@ -15787,6 +15800,8 @@ class LFJsonCommand(JsonCommand):
                              ignore_auth: str = None,                  # Per-million: AP ignore auth request percentage.
                              ignore_probe: str = None,                 # Per-million: AP ignore probe percentage.
                              ignore_reassoc: str = None,               # Per-million: AP ignore re-assoc request percentage.
+                             initial_band_pref: str = None,            # Initially connect on this band, if available in
+                             # scan. 0=ignore, 2=2ghz, 5=5ghz, 6=6ghz.
                              ocsp: str = None,                         # OCSP settings: 0=disabled, 1=try, but to not
                              # require response, 2=require valid OCSP stapling
                              # response.
@@ -15829,6 +15844,8 @@ class LFJsonCommand(JsonCommand):
             data["ignore_probe"] = ignore_probe
         if ignore_reassoc is not None:
             data["ignore_reassoc"] = ignore_reassoc
+        if initial_band_pref is not None:
+            data["initial_band_pref"] = initial_band_pref
         if ocsp is not None:
             data["ocsp"] = ocsp
         if port is not None:
@@ -15877,6 +15894,7 @@ class LFJsonCommand(JsonCommand):
                                   ignore_auth=param_map.get("ignore_auth"),
                                   ignore_probe=param_map.get("ignore_probe"),
                                   ignore_reassoc=param_map.get("ignore_reassoc"),
+                                  initial_band_pref=param_map.get("initial_band_pref"),
                                   ocsp=param_map.get("ocsp"),
                                   port=param_map.get("port"),
                                   post_ifup_script=param_map.get("post_ifup_script"),
@@ -19857,6 +19875,8 @@ class LFJsonQuery(JsonQuery):
     request one of these URLs:
         /chamber/
         /chamber/$chamber_name
+        /chambers/
+        /chambers/$chamber_name
 
     When requesting specific column names, they need to be URL encoded:
         chamber, chamber+connections, chamber+resources, chamber+type, duts, entity+id, 
@@ -20015,8 +20035,18 @@ class LFJsonQuery(JsonQuery):
 
     If you need to call the URL directly,
     request one of these URLs:
+        /cx-group/
+        /cx-group/$id
+        /cx-groups/
+        /cx-groups/$id
         /cx/
         /cx/$cx_id
+        /cxg/
+        /cxg/$id
+        /cxgroup/
+        /cxgroup/$id
+        /cxgroups/
+        /cxgroups/$id
 
     When requesting specific column names, they need to be URL encoded:
         avg+rtt, bps+rx+a, bps+rx+b, drop+pkts+a, drop+pkts+b, eid, endpoints+%28a%C2%A0%E2%86%94%C2%A0b%29, 
@@ -20893,10 +20923,11 @@ class LFJsonQuery(JsonQuery):
     When requesting specific column names, they need to be URL encoded:
         %21conn, acc.+denied, bad-proto, bad-url, bytes-rd, bytes-wr, dns-avg, dns-max, 
         dns-min, eid, elapsed, entity+id, fb-avg, fb-max, fb-min, ftp-host, ftp-port, 
-        ftp-stor, http-p, http-r, http-t, login-denied, name, nf+%284xx%29, other-err, 
-        read, redir, rpt+timer, rslv-h, rslv-p, rx+rate, rx+rate+%281%C2%A0min%29, status, 
-        time-stamp, timeout, total-err, total-urls, tx+rate, tx+rate+%281%C2%A0min%29, 
-        type, uc-avg, uc-max, uc-min, urls%2Fs, write        # hidden columns:
+        ftp-stor, http-p, http-r, http-t, login-denied, mean-audio-format-bitrate, 
+        mean-video-format-bitrate, name, nf+%284xx%29, other-err, read, redir, rpt+timer, 
+        rslv-h, rslv-p, rx+rate, rx+rate+%281%C2%A0min%29, status, time-stamp, timeout, 
+        total-buffers, total-err, total-rebuffers, total-urls, total-wait-time, tx+rate, 
+        tx+rate+%281%C2%A0min%29, type, uc-avg, uc-max, uc-min, urls%2Fs, write        # hidden columns:
         rpt-time
     Example URL: /layer4?fields=%21conn,acc.+denied
 
@@ -20907,75 +20938,85 @@ class LFJsonQuery(JsonQuery):
 
     The record returned will have these members: 
     {
-        '!conn':                # Could not establish connection.
-        'acc. denied':          # Access Access Denied Error.This could be password, user-name,
-                                # file-permissions or other error.
-        'bad-proto':            # Bad protocol.
-        'bad-url':              # Bad URL format.
-        'bytes-rd':             # Bytes read.
-        'bytes-wr':             # Bytes written.
-        'dns-avg':              # Average time in milliseconds to complete resolving the DNS lookupfor the
-                                # last 100 requests.
-        'dns-max':              # Maximum time in milliseconds to complete resolving the DNS lookupfor
-                                # requests made in the last 30 seconds.
-        'dns-min':              # Minimum time in milliseconds to complete resolving the DNS lookupfor
-                                # requests made in the last 30 seconds.
-        'eid':                  # EID
-        'elapsed':              # Amount of time (seconds) this endpoint has been running (or ran.)
-        'entity id':            # Entity ID
-        'fb-avg':               # Average time in milliseconds for receiving the first byte of the URLfor
-                                # the last 100 requests.
-        'fb-max':               # Maximum time in milliseconds for receiving the first byte of the URLfor
-                                # requests made in the last 30 seconds.
-        'fb-min':               # Minimum time in milliseconds for receiving the first byte of the URLfor
-                                # requests made in the last 30 seconds.
-        'ftp-host':             # FTP Host Error
-        'ftp-port':             # FTP Port Error.
-        'ftp-stor':             # FTP STOR Error.
-        'http-p':               # HTTP Post error.
-        'http-r':               # HTTP Range error.
-        'http-t':               # HTTP Port Error.
-        'login-denied':         # Login attempt was denied.Probable cause is user-name or password errors.
-        'name':                 # Endpoint's Name.
-        'nf (4xx)':             # File not found.For HTTP, an HTTP 4XX error was returned.  This is only
-                                # counted when the endpoint has 'Enable 4XX' selected.Includes 403
-                                # permission denied and 404 not found errors.For other protocols, it
-                                # should be returned any time a file is not found.
-        'other-err':            # Error not otherwise specified.  The actual error code may be found
-                                # inl4helper logs.  Contact support if you see these errors:we would like
-                                # to account for all possible errors.
-        'read':                 # Error attempting to read file or URL.
-        'redir':                # Noticed redirect loop!
-        'rpt timer':            # Cross Connect's Report Timer (milliseconds).This is how often the GUI
-                                # will ask for updates from the LANforge processes.If the GUI is sluggish,
-                                # increasing the report timers may help.
-        'rslv-h':               # Couldn't resolve host.
-        'rslv-p':               # Couldn't resolve Proxy.
-        'rx rate':              # Payload receive rate (bps).
-        'rx rate (1&nbsp;min)': # Payload receive rate over the last minute (bps).
-        'status':               # Current State of the connection.UninitializedHas not yet been
-                                # started/stopped.InitializingBeing set up.StartingStarting the
-                                # test.RunningTest is actively running.StoppedTest has been
-                                # stopped.QuiesceTest will gracefully stop soon.HW-BYPASSTest is in
-                                # hardware-bypass mode (WanLinks only)FTM_WAITTest wants to run, but is
-                                # phantom, probably due to non-existent interface or resource.WAITINGWill
-                                # restart as soon as resources are available.PHANTOMTest is stopped, and
-                                # is phantom, probably due to non-existent interface or resource.
-        'time-stamp':           # Time-Stamp
-        'timeout':              # Operation timed out.
-        'total-err':            # Total Errors. This is also total failed URLs.
-        'total-urls':           # URLs processed and in process. This includes passed and failed URLs.
-        'tx rate':              # Payload transmit rate (bps).
-        'tx rate (1&nbsp;min)': # Payload transmit rate over the last minute (bps).
-        'type':                 # The specific type of this Layer 4-7 Endpoint.
-        'uc-avg':               # Average time in milliseconds to complete processing of the URLfor the
-                                # last 100 requests.
-        'uc-max':               # Maximum time in milliseconds to complete processing of the URLfor
-                                # requests made in the last 30 seconds.
-        'uc-min':               # Minimum time in milliseconds to complete processing of the URLfor
-                                # requests made in the last 30 seconds.
-        'urls/s':               # URLs processed per second over the last minute.
-        'write':                # Error attempting to write file or URL.
+        '!conn':                     # Could not establish connection.
+        'acc. denied':               # Access Access Denied Error.This could be password, user-name,
+                                     # file-permissions or other error.
+        'bad-proto':                 # Bad protocol.
+        'bad-url':                   # Bad URL format.
+        'bytes-rd':                  # Bytes read.
+        'bytes-wr':                  # Bytes written.
+        'dns-avg':                   # Average time in milliseconds to complete resolving the DNS lookupfor the
+                                     # last 100 requests.
+        'dns-max':                   # Maximum time in milliseconds to complete resolving the DNS lookupfor
+                                     # requests made in the last 30 seconds.
+        'dns-min':                   # Minimum time in milliseconds to complete resolving the DNS lookupfor
+                                     # requests made in the last 30 seconds.
+        'eid':                       # EID
+        'elapsed':                   # Amount of time (seconds) this endpoint has been running (or ran.)
+        'entity id':                 # Entity ID
+        'fb-avg':                    # Average time in milliseconds for receiving the first byte of the URLfor
+                                     # the last 100 requests.
+        'fb-max':                    # Maximum time in milliseconds for receiving the first byte of the URLfor
+                                     # requests made in the last 30 seconds.
+        'fb-min':                    # Minimum time in milliseconds for receiving the first byte of the URLfor
+                                     # requests made in the last 30 seconds.
+        'ftp-host':                  # FTP Host Error
+        'ftp-port':                  # FTP Port Error.
+        'ftp-stor':                  # FTP STOR Error.
+        'http-p':                    # HTTP Post error.
+        'http-r':                    # HTTP Range error.
+        'http-t':                    # HTTP Port Error.
+        'login-denied':              # Login attempt was denied.Probable cause is user-name or password errors.
+        'mean-audio-format-bitrate': # Mean Audio Format BitRate which is reported from Video Server Side. It
+                                     # can be converted to Audio Quality depending upon Video Server Manifest
+                                     # file configuration.
+        'mean-video-format-bitrate': # Mean Video Format BitRate which is reported from Video Server Side. It
+                                     # can be converted to Video Quality depending upon Video Server Manifest
+                                     # file configuration.
+        'name':                      # Endpoint's Name.
+        'nf (4xx)':                  # File not found.For HTTP, an HTTP 4XX error was returned.  This is only
+                                     # counted when the endpoint has 'Enable 4XX' selected.Includes 403
+                                     # permission denied and 404 not found errors.For other protocols, it
+                                     # should be returned any time a file is not found.
+        'other-err':                 # Error not otherwise specified.  The actual error code may be found
+                                     # inl4helper logs.  Contact support if you see these errors:we would like
+                                     # to account for all possible errors.
+        'read':                      # Error attempting to read file or URL.
+        'redir':                     # Noticed redirect loop!
+        'rpt timer':                 # Cross Connect's Report Timer (milliseconds).This is how often the GUI
+                                     # will ask for updates from the LANforge processes.If the GUI is sluggish,
+                                     # increasing the report timers may help.
+        'rslv-h':                    # Couldn't resolve host.
+        'rslv-p':                    # Couldn't resolve Proxy.
+        'rx rate':                   # Payload receive rate (bps).
+        'rx rate (1&nbsp;min)':      # Payload receive rate over the last minute (bps).
+        'status':                    # Current State of the connection.UninitializedHas not yet been
+                                     # started/stopped.InitializingBeing set up.StartingStarting the
+                                     # test.RunningTest is actively running.StoppedTest has been
+                                     # stopped.QuiesceTest will gracefully stop soon.HW-BYPASSTest is in
+                                     # hardware-bypass mode (WanLinks only)FTM_WAITTest wants to run, but is
+                                     # phantom, probably due to non-existent interface or resource.WAITINGWill
+                                     # restart as soon as resources are available.PHANTOMTest is stopped, and
+                                     # is phantom, probably due to non-existent interface or resource.
+        'time-stamp':                # Time-Stamp
+        'timeout':                   # Operation timed out.
+        'total-buffers':             # Total Buffer Count in Video Stream Test with InterOp.
+        'total-err':                 # Total Errors. This is also total failed URLs.
+        'total-rebuffers':           # Total Rebuffers in Video Stream Test with InterOp
+        'total-urls':                # URLs processed and in process. This includes passed and failed URLs.
+        'total-wait-time':           # Total Time taken by video playback due to Initial Playback during Join
+                                     # Time and playback Buffering in Video Resume State.
+        'tx rate':                   # Payload transmit rate (bps).
+        'tx rate (1&nbsp;min)':      # Payload transmit rate over the last minute (bps).
+        'type':                      # The specific type of this Layer 4-7 Endpoint.
+        'uc-avg':                    # Average time in milliseconds to complete processing of the URLfor the
+                                     # last 100 requests.
+        'uc-max':                    # Maximum time in milliseconds to complete processing of the URLfor
+                                     # requests made in the last 30 seconds.
+        'uc-min':                    # Minimum time in milliseconds to complete processing of the URLfor
+                                     # requests made in the last 30 seconds.
+        'urls/s':                    # URLs processed per second over the last minute.
+        'write':                     # Error attempting to write file or URL.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
 
@@ -21711,10 +21752,10 @@ class LFJsonQuery(JsonQuery):
         /resource/$shelf_id/$resource_id
 
     When requesting specific column names, they need to be URL encoded:
-        app-id, bps-rx-3s, bps-tx-3s, build+date, cli-port, cpu, ctrl-ip, ctrl-port, 
-        eid, entity+id, free+mem, free+swap, gps, hostname, hw+version, kernel, load, 
-        max+if-up, max+staged, mem, phantom, ports, rx+bytes, shelf, sta+up, sw+version, 
-        swap, tx+bytes, user        # hidden columns:
+        app-id, bps-rx-3s, bps-tx-3s, build+date, cli-port, cpu, ct-kernel, ctrl-ip, 
+        ctrl-port, eid, entity+id, free+mem, free+swap, gps, hostname, hw+version, 
+        kernel, load, max+if-up, max+staged, mem, phantom, ports, rx+bytes, shelf, 
+        sta+up, sw+version, swap, tx+bytes, user        # hidden columns:
         timestamp
     Example URL: /resource?fields=app-id,bps-rx-3s
 
@@ -21735,6 +21776,8 @@ class LFJsonQuery(JsonQuery):
         'build date': # LANforge Software build date on the machine.
         'cli-port':   # Text (telnet) interface IP Port.
         'cpu':        # CPU information for the machine.
+        'ct-kernel':  # Is this running a kernel provided by Candela Technologies?This can be
+                      # used by automation logic to make better decisions.
         'ctrl-ip':    # IP Address of the Control Interface.
         'ctrl-port':  # Binary interface IP Port.
         'eid':        # Resource EID (Shelf.Resource).
@@ -22150,8 +22193,8 @@ class LFJsonQuery(JsonQuery):
     {
         'cross connects': # List of Test Manager's Cross-Connects.
         'entity id':      # Entity ID
-        'name':           # Test Group's Name.
-        'run':            # Is Test Group running or not.
+        'name':           # Connection Group's Name.
+        'run':            # Is Connection Group running or not.
         'script':         # Endpoint script state.
     }
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
@@ -22524,6 +22567,7 @@ class LFJsonQuery(JsonQuery):
         /vr-cx/$shelf_id/$resource_id/$port_id
         /vr/
         /vr/$shelf_id/$resource_id
+        /vr/$shelf_id/$resource_id/$port_id
         /vrcx/
         /vrcx/$shelf_id/$resource_id/$port_id
 
