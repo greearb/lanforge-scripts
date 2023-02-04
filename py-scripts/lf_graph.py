@@ -639,7 +639,7 @@ class lf_stacked_graph:
 
         plt.xlabel(self.xaxis_name)
         plt.ylabel(self.yaxis_name)
-        plt.savefig("%s.png" % self.graph_image_name, dpi=96)
+        plt.savefig("%s.png" % self.graph_image_name, bbox_inches="tight", dpi=96)
         plt.close()
         logger.debug("{}.png".format(self.graph_image_name))
         if self.enable_csv:
