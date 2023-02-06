@@ -54,6 +54,9 @@ logger = logging.getLogger(__name__)
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 lf_report = importlib.import_module("py-scripts.lf_report")
 lf_kpi_csv = importlib.import_module("py-scripts.lf_kpi_csv")
+lf_modify_radio = importlib.import_module("py-scripts.lf_modify_radio")
+LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
+
 
 
 EPILOG = '''\
@@ -453,6 +456,9 @@ def main():
 
     # traffic generation configuration (LANforge)
     parser.add_argument("--lfmgr", type=str, help="[traffic generation configuration (LANforge)] LANforge Manager IP address --lfmgr 192.168.100.178", required=True)
+    parser.add_argument("--lfport", type=str, help="[traffic generation configuration (LANforge)] LANforge Manager port --lfport 8080 default 8080", default=8080)
+    parser.add_argument("--lfuser", type=str, help="[traffic generation configuration (LANforge)] LANforge Manager user  --lfuser lanforge default lanforge", default='lanforge')
+    parser.add_argument("--lfpasswd", type=str, help="[traffic generation configuration (LANforge)] LANforge Manager passwd --lfpasswd lanforge default lanforge", default='lanforge')
     parser.add_argument("--upstream_port", type=str, help="[traffic generation configuration (LANforge)] LANforge upsteram-port to use (eth1, etc)  --upstream_port eth2", required=True)
     parser.add_argument("--lfresource", type=str, help="[traffic generation configuration (LANforge)] LANforge resource ID for the station --lfresource 1")
     parser.add_argument("--lfresource2", type=str, help="[traffic generation configuration (LANforge)] LANforge resource ID for the upstream port system ")
@@ -470,6 +476,10 @@ def main():
     parser.add_argument("--ieee80211w", type=str, help="[station configuration] --ieee80211w 0 (Disabled) 1 (Optional) 2 (Required) (Required needs to be set to Required for 6g and wpa3 default Optional ", default='1')
     parser.add_argument("--wave2", help="[station configuration] --wave2 , wave2 (9984) has restrictions : 160Mhz is 2x2", action='store_true')
     parser.add_argument("--no_cleanup_station", action='store_true', help="[station configuration] --no_cleanup_station , do not clean up station after test completes ")
+
+    # mtk7921k configuration
+    parser.add_argument("--mtk7921k", help="[mtk7921 configuration] --mtk7921 , set to have the radio channel set store true", action="store_true")
+
 
     # test configuration
     parser.add_argument("-c", "--channel", type=str, help="[test configuration] --channel '1 33' List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
@@ -523,6 +533,7 @@ def main():
     # logg information
     parser.add_argument("--lf_logger_config_json", help="[log configuration] --lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument("--log_level", help="[log configuration] --log_level  debug info warning error critical")
+    parser.add_argument("--debug", help="[log configuration] --debug store_true , used by lanforge client ",action='store_true')
 
     # current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]
     # print(current_time)
@@ -1191,6 +1202,33 @@ def main():
             cha = ch.split(":")
             pathloss = cha[1]
             ch = cha[0]
+        # the mtk7921 needs to have the radio channel set and not be auto  
+        if args.mtk7921k:
+            if args.band == '6g' or args.band =='dual_band_6g':
+                lf_chan = str(int(ch) + 190 )
+            else:
+                lf_chan = ch
+
+            logger.debug("mtk7921 setting the radio {radio} band {band} channel {chan} lanforge {lf_chan}".
+                    format(radio=args.radio,band=args.band,chan=ch, lf_chan=lf_chan))
+            try:
+                modify_radio = lf_modify_radio.lf_modify_radio(lf_mgr=args.lfmgr,
+                                                lf_port=args.lfport,
+                                                lf_user=args.lfuser,
+                                                lf_passwd=args.lfpasswd,
+                                                debug=args.debug
+                                                )
+                shelf, resource, radio, *nil = LFUtils.name_to_eid(args.radio)
+                modify_radio.set_wifi_radio(_resource=resource,
+                                            _radio=radio,
+                                            _shelf=shelf,
+                                            _channel=lf_chan)
+            except Exception as x:
+                traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                logger.warning("mtk7921 failed to set channel {chan}".format(chan=ch))
+
+
+
         for n in nss:
             if (n != "NA" and args.set_nss):
                 # Disable the wlan to set the spatial streams
