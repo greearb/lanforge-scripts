@@ -1,0 +1,24 @@
+{
+  "traffic-generator-config": {
+    "manager-ip": "192.168.208.123",
+    "port": 8080,
+    "upstream": "1.1.eth1",
+    "DUT-name": "test STA device",
+    "DUT_type":"Android",
+    "DUT_spec":"11 AC 2x2"
+  },
+  "test-scenario1": {
+    "Test-duration": "15000",
+    "TCP": true,
+    "UDP": true,
+    "Upload-rate": "100Mbps",
+    "Download-rate": "50Mbps"
+  },
+  "test-scenario2": {
+    "Test-duration": "15000",
+    "TCP": true,
+    "UDP": true,
+    "Upload-rate": "100Mbps",
+    "Download-rate": "0Mbps"
+  }
+}
