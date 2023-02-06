@@ -1209,7 +1209,7 @@ def main():
             else:
                 lf_chan = ch
 
-            logger.debug("mtk7921 setting the radio {radio} band {band} channel {chan} lanforge {lf_chan}".
+            logger.debug("mtk7921 channel change setting the radio {radio} band {band} channel {chan} lanforge {lf_chan}".
                     format(radio=args.radio,band=args.band,chan=ch, lf_chan=lf_chan))
             try:
                 modify_radio = lf_modify_radio.lf_modify_radio(lf_mgr=args.lfmgr,
@@ -1225,7 +1225,7 @@ def main():
                                             _channel=lf_chan)
             except Exception as x:
                 traceback.print_exception(Exception, x, x.__traceback__, chain=True)
-                logger.warning("mtk7921 failed to set channel {chan}".format(chan=ch))
+                logger.warning("mtk7921 failed to set channel {chan} after channel change".format(chan=ch))
 
 
 
@@ -1923,6 +1923,32 @@ def main():
                     cs.get_ap_tx_power_config()
                     ap_dbm = cs.ap_tx_power_dbm
                     ap_power = "{pw} of {pw_levels}".format(pw=cs.ap_current_tx_power_level, pw_levels=cs.ap_num_power_levels)
+
+                    # the mtk7921 needs to have the radio channel set and not be auto  
+                    if args.mtk7921k:
+                        if args.band == '6g' or args.band =='dual_band_6g':
+                            lf_chan = str(int(ch) + 190 )
+                        else:
+                            lf_chan = ch
+
+                        logger.debug("mtk7921 after tx_power change setting the radio {radio} band {band} channel {chan} lanforge {lf_chan}".
+                                format(radio=args.radio,band=args.band,chan=ch, lf_chan=lf_chan))
+                        try:
+                            modify_radio = lf_modify_radio.lf_modify_radio(lf_mgr=args.lfmgr,
+                                                            lf_port=args.lfport,
+                                                            lf_user=args.lfuser,
+                                                            lf_passwd=args.lfpasswd,
+                                                            debug=args.debug
+                                                            )
+                            shelf, resource, radio, *nil = LFUtils.name_to_eid(args.radio)
+                            modify_radio.set_wifi_radio(_resource=resource,
+                                                        _radio=radio,
+                                                        _shelf=shelf,
+                                                        _channel=lf_chan)
+                        except Exception as x:
+                            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                            logger.warning("mtk7921 after tx_power change failed to set channel {chan}".format(chan=ch))
+                    
 
                     # Up station
                     subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
