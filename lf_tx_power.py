@@ -1919,11 +1919,6 @@ def main():
                         logg.info("3504 test_parameters cc_dbm: read : {}".format(cc_dbm))
                         logg.info("3504 test_parameters cc_ch: read : {}".format(cc_ch))
 
-                    # read the AP Tx Power
-                    cs.get_ap_tx_power_config()
-                    ap_dbm = cs.ap_tx_power_dbm
-                    ap_power = "{pw} of {pw_levels}".format(pw=cs.ap_current_tx_power_level, pw_levels=cs.ap_num_power_levels)
-
                     # the mtk7921 needs to have the radio channel set and not be auto  
                     if args.mtk7921k:
                         if args.band == '6g' or args.band =='dual_band_6g':
@@ -1948,7 +1943,13 @@ def main():
                         except Exception as x:
                             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
                             logger.warning("mtk7921 after tx_power change failed to set channel {chan}".format(chan=ch))
-                    
+
+
+                    # read the AP Tx Power
+                    cs.get_ap_tx_power_config()
+                    ap_dbm = cs.ap_tx_power_dbm
+                    ap_power = "{pw} of {pw_levels}".format(pw=cs.ap_current_tx_power_level, pw_levels=cs.ap_num_power_levels)
+
 
                     # Up station
                     subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
