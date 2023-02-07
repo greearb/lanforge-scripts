@@ -12,6 +12,7 @@
         "DUT_SW": "12345678",
         "DUT_HW": "C9136I-B",
         "DUT_SN": "12345678",
+        "DUT_PROMPT": "WLC1",
         "wireless_network_dict":{
             "ssid_idx=0":{"ssid_idx":"0","SSID_USED":"24G-wpa2","SSID_PW_USED":"hello123","BSSID_TO_USE":"68:7d:b4:60:04:b3","SECURITY_USED":"wpa2","WLAN_ID_USED":"3"},
             "ssid_idx=1":{"ssid_idx":"1","SSID_USED":"5G-wpa2","SSID_PW_USED":"hello123","BSSID_TO_USE":"68:7d:b4:60:04:be","SECURITY_USED":"wpa2","WLAN_ID_USED":"2"},
