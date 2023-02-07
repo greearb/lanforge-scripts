@@ -19,7 +19,7 @@
                 ]
             },
             "clean_up_cxs_endp_sta_flags_AX200_5g":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -42,7 +42,7 @@
                 ]
             },
             "clean_up_cxs_endp_sta_flags_AX200_2g":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -65,7 +65,7 @@
                 ]
             },
             "clean_up_cxs_endp_sta_flags_5q_all":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -91,7 +91,7 @@
                 ]
             },
             "clean_up_cxs_endp_sta_flags_2q_all":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
