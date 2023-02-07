@@ -46,6 +46,7 @@ import datetime
 import importlib
 import os
 import traceback
+import paramiko
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../")))
 
 # TODO change the name from logg to logger
@@ -479,6 +480,7 @@ def main():
 
     # mtk7921k configuration
     parser.add_argument("--mtk7921k", help="[mtk7921 configuration] --mtk7921 , set to have the radio channel set store true", action="store_true")
+    parser.add_argument("--mtk7921k_beacon", help="[mtk7921 configuration] --mtk7921_beacon , mtk7921 beacon set, store true", action="store_true")
 
 
     # test configuration
@@ -1954,9 +1956,8 @@ def main():
                     # Up station
                     subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
                                     "--set_ifstate", "up"])
-                    # subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
-                    #             "--cmd", "reset","--amt_resets","2","--min_sleep","10","--max_sleep","10"])
-                    # sleep(12)
+
+                    # for mt7921k the beacon needs to be configured
 
                     i = 0
                     wait_ip_print = False
@@ -1993,6 +1994,31 @@ def main():
                         if (_status == "Authorized"):
                             if ((_ip is not None) and (_ip != "0.0.0.0")):
                                 logg.info("Station is associated with IP address.")
+                                # mtk7921k work around for beacom
+                                if args.mtk7921k_beacon:
+                                    try:                                    
+                                        # creating shh client object we use this object to connect to router
+                                        ssh = paramiko.SSHClient()
+                                        # automatically adds the missing host key
+                                        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                                        lf_mgr_ssh_port = "22"
+                                        ssh.connect(hostname=args.lfmgr, port=lf_mgr_ssh_port, username=args.lfuser, password=args.lfpasswd,
+                                                    allow_agent=False, look_for_keys=False, banner_timeout=600)
+                                        command = 'echo lanforge | this instead plz:  sudo echo 0 > /debug/ieee80211/{radio}/mt76/runtime-pm'.format(radio=args.radio)
+                                        stdin, stdout, stderr = ssh.exec_command(command)
+                                        beacon_info = stdout.readlines()
+                                        logger.debug("beacon cmd info {info}".format(info=beacon_info))
+                                        logger.debug("beacon cmd stdin {stdin}".format(stdin=stdin))
+                                        logger.debug("beacon cmd stdout {stdout}".format(stdout=stdout))
+                                        logger.debug("beacon cmd stderr {stderr}".format(stderr=stderr))
+                                        ssh.close()
+
+                                    except Exception as x:
+                                        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+                                        logger.warning("mtk7921 beacon correction failed")
+
+                                    time.sleep(1)
+
                                 break
                             else:
                                 if (not wait_ip_print):
