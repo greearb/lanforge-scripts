@@ -19,7 +19,7 @@
                 ]
             },            
             "lf_cleanup":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "load_db":"skip",
                 "command":"lf_cleanup.py",
                 "args":"",
@@ -133,7 +133,7 @@
                 ]
             },
             "clean_up_cxs_endp_sta_for_l3":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -153,7 +153,7 @@
                 ]
             },
             "clean_up_cxs_endp_sta_flags_AX200_5g":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -176,7 +176,7 @@
                 ]
             },
             "clean_up_cxs_endp_sta_flags_AX200_2g":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -199,7 +199,7 @@
                 ]
             },
             "clean_up_cxs_endp_sta_flags_5q_all":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -225,7 +225,7 @@
                 ]
             },
             "clean_up_cxs_endp_sta_flags_2q_all":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -251,7 +251,7 @@
                 ]
             },
             "clean_up_sanitize_ip_connection_ipv4":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -268,7 +268,7 @@
                     " --debug"]
             },
             "clean_up_sanitize --sleep 5_ipv4_24g":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -291,7 +291,7 @@
                 ]
             },
             "clean_up_sanitize --sleep 5":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -312,7 +312,7 @@
                 ]
             },
             "clean_up_sanitize --sleep 5_1":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -329,7 +329,7 @@
                     " --traffic_type lf_udp",
                     " --debug"]},
             "clean_up_sanitize_2":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -346,7 +346,7 @@
                     " --traffic_type lf_tcp",
                     " --debug"]},
             "clean_up_sanitize_3":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -364,7 +364,7 @@
                     " --ipv6",
                     " --debug"]},
             "clean_up_sanitize_4":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -460,7 +460,7 @@
                 ]
             },
             "clean_up_cxs_endp_sta_from_test_group":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -477,7 +477,7 @@
                 ]
             },
             "clean_up_sanitize_ipv4_ps":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -493,7 +493,7 @@
                 ]
             },
             "clean_up_sanitize_ipv4_ttls":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -509,7 +509,7 @@
                 ]
             },
             "clean_up_sanitize_l3_powersave":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -525,7 +525,7 @@
                 ]
             },
             "clean_up_sanitize_l4":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -544,7 +544,7 @@
                 ]
             },
             "clean_up_sanitize_l4_bytes_rd":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -563,7 +563,7 @@
                 ]
             },
             "clean_up_sanitize_l4_bytes_urls":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
@@ -582,7 +582,7 @@
                 ]
             },
             "clean_up_sanitize_l4_bytes_rd_ftp":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"lf_cleanup.py",
                 "args":"",
                 "args_list":[
