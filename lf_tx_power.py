@@ -59,7 +59,6 @@ lf_modify_radio = importlib.import_module("py-scripts.lf_modify_radio")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 
 
-
 EPILOG = '''\
 
 #############################################################################################
@@ -482,7 +481,6 @@ def main():
     parser.add_argument("--mtk7921k", help="[mtk7921 configuration] --mtk7921 , set to have the radio channel set store true", action="store_true")
     parser.add_argument("--mtk7921k_beacon", help="[mtk7921 configuration] --mtk7921_beacon , mtk7921 beacon set, store true", action="store_true")
 
-
     # test configuration
     parser.add_argument("-c", "--channel", type=str, help="[test configuration] --channel '1 33' List of channels to test, with optional path-loss, 36:64 149:60. NA means no change")
     parser.add_argument("-b", "--bandwidth", type=str, help="[test configuration] --bandwidth '20 40 80 160' List of bandwidths to test. NA means no change")
@@ -535,7 +533,7 @@ def main():
     # logg information
     parser.add_argument("--lf_logger_config_json", help="[log configuration] --lf_logger_config_json <json file> , json configuration of logger")
     parser.add_argument("--log_level", help="[log configuration] --log_level  debug info warning error critical")
-    parser.add_argument("--debug", help="[log configuration] --debug store_true , used by lanforge client ",action='store_true')
+    parser.add_argument("--debug", help="[log configuration] --debug store_true , used by lanforge client ", action='store_true')
 
     # current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + "{:.3f}".format(time.time() - (math.floor(time.time())))[1:]
     # print(current_time)
@@ -1204,22 +1202,22 @@ def main():
             cha = ch.split(":")
             pathloss = cha[1]
             ch = cha[0]
-        # the mtk7921 needs to have the radio channel set and not be auto  
+        # the mtk7921 needs to have the radio channel set and not be auto
         if args.mtk7921k:
-            if args.band == '6g' or args.band =='dual_band_6g':
-                lf_chan = str(int(ch) + 190 )
+            if args.band == '6g' or args.band == 'dual_band_6g':
+                lf_chan = str(int(ch) + 190)
             else:
                 lf_chan = ch
 
             logger.debug("mtk7921 channel change setting the radio {radio} band {band} channel {chan} lanforge {lf_chan}".
-                    format(radio=args.radio,band=args.band,chan=ch, lf_chan=lf_chan))
+                         format(radio=args.radio, band=args.band, chan=ch, lf_chan=lf_chan))
             try:
                 modify_radio = lf_modify_radio.lf_modify_radio(lf_mgr=args.lfmgr,
-                                                lf_port=args.lfport,
-                                                lf_user=args.lfuser,
-                                                lf_passwd=args.lfpasswd,
-                                                debug=args.debug
-                                                )
+                                                               lf_port=args.lfport,
+                                                               lf_user=args.lfuser,
+                                                               lf_passwd=args.lfpasswd,
+                                                               debug=args.debug
+                                                               )
                 shelf, resource, radio, *nil = LFUtils.name_to_eid(args.radio)
                 modify_radio.set_wifi_radio(_resource=resource,
                                             _radio=radio,
@@ -1228,8 +1226,6 @@ def main():
             except Exception as x:
                 traceback.print_exception(Exception, x, x.__traceback__, chain=True)
                 logger.warning("mtk7921 failed to set channel {chan} after channel change".format(chan=ch))
-
-
 
         for n in nss:
             if (n != "NA" and args.set_nss):
@@ -1437,7 +1433,6 @@ def main():
                     logger.info(summary_output)
                     cs.show_ap_summary()
 
-                    
                     # Begin setting client Serving mode , Dual band and creating dual-band
                     # when both 5g (slot 1) is enabled and dual-band 5g (slot 2) is enabled .
                     # 5g slot 1 will used the 5g channels to 64,  the 5g dual-band will use channels 100 -> 165.
@@ -1462,10 +1457,8 @@ def main():
                         logg.info("ap_dot11_shutdown_24ghz")
                         cs.show_ap_dot11_24gz_shutdown()
 
-
                     # if dual band : disable dual-band mode, config mode, enable dual-band mode
                     # disable dual-band mode
-
 
                     # set the radio role selection if not set
                     if ap_config_radio_role != 'Manual':
@@ -1523,7 +1516,6 @@ def main():
                             cs.ap_dot11_5ghz_shutdown()
                         elif args.band == '24g':
                             cs.ap_dot11_24ghz_shutdown()
-
 
                     else:
                         cs.ap_dot11_5ghz_shutdown()
@@ -1665,7 +1657,6 @@ def main():
 
                         # enable_wlan
                         cs.config_enable_wlan_send_no_shutdown()
-
 
                     # enable transmission for the entier 802.11z network
                     # the wlan may not care about dual_band
@@ -1921,22 +1912,22 @@ def main():
                         logg.info("3504 test_parameters cc_dbm: read : {}".format(cc_dbm))
                         logg.info("3504 test_parameters cc_ch: read : {}".format(cc_ch))
 
-                    # the mtk7921 needs to have the radio channel set and not be auto  
+                    # the mtk7921 needs to have the radio channel set and not be auto
                     if args.mtk7921k:
-                        if args.band == '6g' or args.band =='dual_band_6g':
-                            lf_chan = str(int(ch) + 190 )
+                        if args.band == '6g' or args.band == 'dual_band_6g':
+                            lf_chan = str(int(ch) + 190)
                         else:
                             lf_chan = ch
 
                         logger.debug("mtk7921 after tx_power change setting the radio {radio} band {band} channel {chan} lanforge {lf_chan}".
-                                format(radio=args.radio,band=args.band,chan=ch, lf_chan=lf_chan))
+                                     format(radio=args.radio, band=args.band, chan=ch, lf_chan=lf_chan))
                         try:
                             modify_radio = lf_modify_radio.lf_modify_radio(lf_mgr=args.lfmgr,
-                                                            lf_port=args.lfport,
-                                                            lf_user=args.lfuser,
-                                                            lf_passwd=args.lfpasswd,
-                                                            debug=args.debug
-                                                            )
+                                                                           lf_port=args.lfport,
+                                                                           lf_user=args.lfuser,
+                                                                           lf_passwd=args.lfpasswd,
+                                                                           debug=args.debug
+                                                                           )
                             shelf, resource, radio, *nil = LFUtils.name_to_eid(args.radio)
                             modify_radio.set_wifi_radio(_resource=resource,
                                                         _radio=radio,
@@ -1946,12 +1937,10 @@ def main():
                             traceback.print_exception(Exception, x, x.__traceback__, chain=True)
                             logger.warning("mtk7921 after tx_power change failed to set channel {chan}".format(chan=ch))
 
-
                     # read the AP Tx Power
                     cs.get_ap_tx_power_config()
                     ap_dbm = cs.ap_tx_power_dbm
                     ap_power = "{pw} of {pw_levels}".format(pw=cs.ap_current_tx_power_level, pw_levels=cs.ap_num_power_levels)
-
 
                     # Up station
                     subprocess.run(["./lf_portmod.pl", "--manager", lfmgr, "--card", lfresource, "--port_name", lfstation,
@@ -1996,7 +1985,7 @@ def main():
                                 logg.info("Station is associated with IP address.")
                                 # mtk7921k work around for beacom
                                 if args.mtk7921k_beacon:
-                                    try:                                    
+                                    try:
                                         # creating shh client object we use this object to connect to router
                                         ssh = paramiko.SSHClient()
                                         # automatically adds the missing host key
