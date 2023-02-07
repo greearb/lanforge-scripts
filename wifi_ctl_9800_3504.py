@@ -359,14 +359,14 @@ def main():
                                 sleep(0.1)
                                 l = egg.expect_exact([CCP_EN, pexpect.TIMEOUT], timeout=timeout)
                                 if l == 0:
-                                    logg.info("9800 SSH Successfully received # prompt i:{} j:{} k:{} l:{}".format(i, j, k, l))
+                                    logg.info("9800 SSH Successfully received # prompt {} i:{} j:{} k:{} l:{}".format(CCP, i, j, k, l))
                                     logged_in_9800 = True
                                     egg.sendline("terminal length 0")  # Disable --More-- stuff for easier scripting
                                     egg.expect_exact([CCP_EN, pexpect.TIMEOUT], timeout=1)
                                 if l == 1:
-                                    logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} l:{} before {} after {}".format(i, j, k, l, egg.before, egg.after))
+                                    logg.info("9800 Timed out waiting for # prompt {} i:{} j:{} k:{} l:{} before {} after {}".format(CCP, i, j, k, l, egg.before, egg.after))
                             if k == 1:
-                                logg.info("9800 SSH received timeout after looking for password: prompt i:{} j:{} k:{} before {} after {}".format(i, j, k, egg.before, egg.after))
+                                logg.info("9800 SSH received timeout after looking for password: prompt {} i:{} j:{} k:{} before {} after {}".format(CCP, i, j, k, egg.before, egg.after))
                         if j == 1:
                             logg.info("9800 found # so logged in can start sending commands i:{} j:{}".format(i, j))
                             logged_in_9800 = True
@@ -381,10 +381,10 @@ def main():
                                 sleep(0.1)
                                 l = egg.expect_exact([CCP_EN, pexpect.TIMEOUT], timeout=timeout)
                                 if l == 0:
-                                    logg.info("8900 SSH Successfully received # prompt i:{} j:{} k:{} l:{}".format(i, j, k, l))
+                                    logg.info("8900 SSH Successfully received # prompt {} i:{} j:{} k:{} l:{}".format(CCP_EN, i, j, k, l))
                                     logged_in_9800 = True
                                 if l == 1:
-                                    logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} l:{} before {} after {}".format(i, j, k, l, egg.before, egg.after))
+                                    logg.info("9800 Timed out waiting for # prompt {} i:{} j:{} k:{} l:{} before {} after {}".format(CCP_EN, i, j, k, l, egg.before, egg.after))
                             if k == 1:
                                 logg.info("9800 received timeout after looking for password after sending user i:{} j:{} k:{} before {} after {}".format(i, j, k, egg.before, egg.after))
                         if j == 3:
@@ -394,10 +394,10 @@ def main():
                             sleep(0.1)
                             k = egg.expect([CCP_EN, pexpect.TIMEOUT], timeout=timeout)
                             if k == 0:
-                                logg.info("8900 SSH Successfully received # prompt i:{} j:{} k:{} before {} after {}".format(i, j, k, egg.before, egg.after))
+                                logg.info("8900 SSH Successfully received # prompt {} i:{} j:{} k:{} before {} after {}".format(CCP_EN, i, j, k, egg.before, egg.after))
                                 logged_in_9800 = True
                             if k == 1:
-                                logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i, j, k, egg.before, egg.after))
+                                logg.info("9800 Timed out waiting for # prompt {} i:{} j:{} k:{} before {} after {}".format(CCP, i, j, k, egg.before, egg.after))
                         if j == 4:
                             logg.info("9800 received {} prompt doing some cleanup".format(CCP_CONFIG))
                             egg.sendline("exit")
@@ -405,7 +405,7 @@ def main():
                             k = egg.expect_exact([CCP, CCP_EN, "User:", "Password:", pexpect.TIMEOUT], timeout=timeout)
                             sleep(0.1)
                             if k == 0:
-                                logg.info("9800 found CCP  will elevate loging i:{} j:{} k:{} before {} after {}".format(i, j, k, egg.before, egg.after))
+                                logg.info("9800 found CCP  will elevate loging {} i:{} j:{} k:{} before {} after {}".format(CCP_EN, i, j, k, egg.before, egg.after))
                                 egg.sendline("en")
                                 sleep(0.1)
                                 l = egg.expect_exact(["Password:", pexpect.TIMEOUT], timeout=timeout)
@@ -415,10 +415,10 @@ def main():
                                     sleep(0.1)
                                     m = egg.expect_exact([CCP_EN, pexpect.TIMEOUT], timeout=timeout)
                                     if m == 0:
-                                        logg.info("9800 SSH Successfully received # prompt i:{} j:{} k:{} l:{} m:{}".format(i, j, k, l, m))
+                                        logg.info("9800 SSH Successfully received # prompt {} i:{} j:{} k:{} l:{} m:{}".format(CCP_EN,i, j, k, l, m))
                                         logged_in_9800 = True
                                     if m == 1:
-                                        logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} l:{} m:{} before {} after {}".format(i, j, k, l, m, egg.before, egg.after))
+                                        logg.info("9800 Timed out waiting for # prompt {} i:{} j:{} k:{} l:{} m:{} before {} after {}".format(CCP_EN, i, j, k, l, m, egg.before, egg.after))
                                 if l == 1:
                                     logg.info("8900 received timeout after looking for password: prompt i:{} j:{} k:{} l:{} before {} after {}".format(i, j, k, l, egg.before, egg.after))
                             if k == 1:
@@ -435,10 +435,10 @@ def main():
                                     sleep(0.1)
                                     m = egg.expect([CCP_EN, pexpect.TIMEOUT], timeout=timeout)
                                     if m == 0:
-                                        logg.info("9800 SSH Successfully received # prompt i:{} j:{} k:{} l:{} m:{}".format(i, j, k, l, m))
+                                        logg.info("9800 SSH Successfully received # prompt {} i:{} j:{} k:{} l:{} m:{}".format(CCP_EN, i, j, k, l, m))
                                         logged_in_9800 = True
                                     if m == 1:
-                                        logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} l:{} m:{} before {} after {}".format(i, j, k, l, m, egg.before, egg.after))
+                                        logg.info("9800 Timed out waiting for # prompt {} i:{} j:{} k:{} l:{} m:{} before {} after {}".format(CCP_EN, i, j, k, l, m, egg.before, egg.after))
                                 if l == 1:
                                     logg.info("9800 received timeout after looking for password after sending user i:{} j:{} k:{} l:{} before {} after {}".format(i, j, k, l, egg.before, egg.after))
                             if k == 3:
@@ -490,7 +490,7 @@ def main():
                             found_escape = False
 
                     if i == 1:
-                        logg.info("9800 found {}  will elevate loging i:{} before {} after {}".format(CCP, i, egg.before, egg.after))
+                        logg.info("9800 found {}  will elevate login i:{} before {} after {}".format(CCP, i, egg.before, egg.after))
                         egg.sendline("en")
                         sleep(0.1)
                         j = egg.expect_exact(["Password:", pexpect.TIMEOUT], timeout=timeout)
@@ -500,10 +500,10 @@ def main():
                             sleep(0.1)
                             k = egg.expect([CCP_EN, pexpect.TIMEOUT], timeout=timeout)
                             if k == 0:
-                                logg.info("9800 SSH Successfully received # prompt i:{} j:{} k:{} before {} after {}".format(i, j, k, egg.before, egg.after))
+                                logg.info("9800 SSH Successfully received # prompt {} i:{} j:{} k:{} before {} after {}".format(CCP_EN, i, j, k, egg.before, egg.after))
                                 logged_in_9800 = True
                             if k == 1:
-                                logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i, j, k, egg.before, egg.after))
+                                logg.info("9800 Timed out waiting for # prompt {} i:{} j:{} k:{} before {} after {}".format(CCP_EN, i, j, k, egg.before, egg.after))
                         if j == 1:
                             logg.info("8900 received timeout after looking for password: prompt  i:{} j:{} k:{}  before {} after {}".format(i, j, k, egg.before, egg.after))
 
@@ -522,10 +522,10 @@ def main():
                             sleep(0.1)
                             l = egg.expect([CCP_EN, pexpect.TIMEOUT], timeout=timeout)
                             if k == 0:
-                                logg.info("9800 SSH Successfully received # prompt i:{} j:{} k:{}".format(i, j, k))
+                                logg.info("9800 SSH Successfully received # prompt {} i:{} j:{} k:{}".format(CCP_EN, i, j, k))
                                 logged_in_9800 = True
                             if k == 1:
-                                logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i, j, k, egg.before, egg.after))
+                                logg.info("9800 Timed out waiting for # prompt {} i:{} j:{} k:{} before {} after {}".format(CCP_EN, i, j, k, egg.before, egg.after))
                         if j == 1:
                             logg.info("9800 received timeout after looking for password after sending user i:{} j:{} k:{} before {} after {}".format(i, j, k, egg.before, egg.after))
 
@@ -535,10 +535,10 @@ def main():
                         sleep(0.1)
                         j = egg.expect([CCP_EN, pexpect.TIMEOUT], timeout=timeout)
                         if j == 0:
-                            logg.info("9800 SSH Successfully received # prompt i:{} j:{} before {} after {}".format(i, j, egg.before, egg.after))
+                            logg.info("9800 SSH Successfully received # prompt {} i:{} j:{} before {} after {}".format(CCP_EN, i, j, egg.before, egg.after))
                             logged_in_9800 = True
                         if j == 1:
-                            logg.info("9800 Timed out waiting for # prompt i:{} j:{} before {} after {}".format(i, j, egg.before, egg.after))
+                            logg.info("9800 Timed out waiting for # prompt {} i:{} j:{} before {} after {}".format(CCP_EN, i, j, egg.before, egg.after))
 
                     if i == 5:
                         logg.info("9800 received {} prompt doing some cleanup".format(CCP_CONFIG))
@@ -557,10 +557,10 @@ def main():
                                 sleep(0.1)
                                 l = egg.expect_exact([CCP_EN, pexpect.TIMEOUT], timeout=timeout)
                                 if l == 0:
-                                    logg.info("9800 SSH Successfully received # prompt i:{} j:{} k:{} l:{}".format(i, j, k, l))
+                                    logg.info("9800 SSH Successfully received # prompt {} i:{} j:{} k:{} l:{}".format(CCP_EN, i, j, k, l))
                                     logged_in_9800 = True
                                 if l == 1:
-                                    logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} l:{} before {} after {}".format(i, j, k, l, egg.before, egg.after))
+                                    logg.info("9800 Timed out waiting for # prompt {} i:{} j:{} k:{} l:{} before {} after {}".format(CCP_EN, i, j, k, l, egg.before, egg.after))
                             if k == 1:
                                 logg.info("8900 received timeout after looking for password: prompt i:{} j:{} k:{} before {} after {}".format(i, j, k, egg.before, egg.after))
                         if j == 1:
@@ -577,10 +577,10 @@ def main():
                                 sleep(0.1)
                                 l = egg.expect([CCP_EN, pexpect.TIMEOUT], timeout=timeout)
                                 if l == 0:
-                                    logg.info("9800 SSH Successfully received # prompt i:{} j:{} k:{} l:{}".format(i, j, k, l))
+                                    logg.info("9800 SSH Successfully received # prompt {} i:{} j:{} k:{} l:{}".format(CCP_EN, i, j, k, l))
                                     logged_in_9800 = True
                                 if l == 1:
-                                    logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} l:{} before {} after {}".format(i, j, k, l, egg.before, egg.after))
+                                    logg.info("9800 Timed out waiting for # prompt {} i:{} j:{} k:{} l:{} before {} after {}".format(CCP_EN, i, j, k, l, egg.before, egg.after))
                             if k == 1:
                                 logg.info("9800 received timeout after looking for password after sending user i:{} j:{} k:{} before {} after {}".format(i, j, k, egg.before, egg.after))
                         if j == 3:
@@ -590,10 +590,10 @@ def main():
                             sleep(0.1)
                             k = egg.expect([CCP_EN, pexpect.TIMEOUT], timeout=timeout)
                             if k == 0:
-                                logg.info("8900 SSH Successfully received # prompt i:{} j:{} k:{} before {} after {}".format(i, j, k, egg.before, egg.after))
+                                logg.info("8900 SSH Successfully received # prompt {} i:{} j:{} k:{} before {} after {}".format(CCP_EN, i, j, k, egg.before, egg.after))
                                 logged_in_9800 = True
                             if k == 1:
-                                logg.info("9800 Timed out waiting for # prompt i:{} j:{} k:{} before {} after {}".format(i, j, k, egg.before, egg.after))
+                                logg.info("9800 Timed out waiting for # prompt {} i:{} j:{} k:{} before {} after {}".format(CCP_EN, i, j, k, egg.before, egg.after))
                         if j == 4:
                             logg.info("9800 timed out looking {}, {}, User:, Password:  i:{} j:{} before {} after {}".format(CCP, CCP_EN, i, j, egg.before, egg.after))
                             logg.info("9800 Timed out waiting for initial prompt send logout loop_count: {} i: {} j: {} before {} after {}".format(loop_count, i, j, egg.before, egg.after))
