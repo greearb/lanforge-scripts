@@ -279,6 +279,7 @@ class lf_check():
         # dut_name (see above)
         self.dut_set_name = 'DUT_NAME DUT_NAME_NA'
         self.use_dut_name = "DUT_NAME_NA"  # "ASUSRT-AX88U" note this is not dut_set_name
+        self.dut_prompt = "DUT_PROMPT_NA"
         self.dut_hw = "DUT_HW_NA"
         self.dut_sw = "DUT_SW_NA"
         self.dut_model = "DUT_MODEL_NA"
@@ -779,7 +780,10 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             self.use_dut_name = self.json_dut["test_dut"]["USE_DUT_NAME"]
         else:
             self.logger.info("USE_DUT_NAME not in test_dut json")
-
+        if "DUT_PROMPT" in self.json_dut["test_dut"]:
+            self.dut_prompt = self.json_dut["test_dut"]["DUT_PROMPT"]
+        else:
+            self.logger.info("DUT_PROMPT not in test_dut json")
         if "DUT_HW" in self.json_dut["test_dut"]:
             self.dut_hw = self.json_dut["test_dut"]["DUT_HW"]
         else:
@@ -915,6 +919,9 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         if 'USE_DUT_NAME' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'USE_DUT_NAME', self.use_dut_name)
+        if 'DUT_PROMPT' in self.test_dict[self.test]['args']:
+            self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
+                'DUT_PROMPT', self.dut_prompt)
         if 'DUT_HW' in self.test_dict[self.test]['args']:
             self.test_dict[self.test]['args'] = self.test_dict[self.test]['args'].replace(
                 'DUT_HW', self.dut_hw)
