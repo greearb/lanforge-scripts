@@ -127,12 +127,11 @@ class FileAdapter(object):
         # NOTE: data can be a partial line, multiple lines
         data = data.strip()  # ignore leading/trailing whitespace
         if data:  # non-blank
-            # 6/3/2022 set to debug 
+            # 6/3/2022 set to debug
             self.logger.info(data)
 
     def flush(self):
         pass  # leave it to logging to flush properly
-
 
 
 # TODO make OO
@@ -165,24 +164,23 @@ def main():
     parser.add_argument("--spatial_stream", help="--spatial_stream 1 , 2, 3, or 4 , configure controller for specific number of spatial streams")
     parser.add_argument("--mcs_tx_index", help="--mcs_tx_index 7, 9  or 11 to , configure controller for specific number of spatial streams")
 
-
     parser.add_argument("--action", type=str, help="perform action",
-                        choices=["config", "dtim", "debug_disable_all", "no_logging_console", "line_console_0", "country", "ap_country", 
+                        choices=["config", "dtim", "debug_disable_all", "no_logging_console", "line_console_0", "country", "ap_country",
                                  "enable_operation_status", "disable_operation_status", "summary", "advanced",
                                  "cmd", "txPower", "bandwidth", "manual", "auto", "no_wlan", "show_ap_wlan_summary", "show_wlan_summary", "show_radio",
                                  "ap_channel", "auto_rf", "channel", "show", "create_wlan", "create_wlan_wpa2", "create_wlan_wpa3", "enable_wlan", "disable_wlan", "wlan_qos",
-                                 "disable_network_dual_band_6ghz","disable_network_dual_band_5ghz","disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
-                                 "enable_network_dual_band_6ghz","enable_network_dual_band_5ghz","enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
+                                 "disable_network_dual_band_6ghz", "disable_network_dual_band_5ghz", "disable_network_6ghz", "disable_network_5ghz", "disable_network_24ghz",
+                                 "enable_network_dual_band_6ghz", "enable_network_dual_band_5ghz", "enable_network_6ghz", "enable_network_5ghz", "enable_network_24ghz",
                                  "wireless_tag_policy", "no_wlan_wireless_tag_policy", "delete_wlan",
                                  "show_ap_name_config_role",
-                                 "show_ap_bssid_dual_band_6g", "show_ap_bssid_dual_band_5g", "show_ap_bssid_6g", "show_ap_bssid_5g", "show_ap_bssid_24g",  
+                                 "show_ap_bssid_dual_band_6g", "show_ap_bssid_dual_band_5g", "show_ap_bssid_6g", "show_ap_bssid_5g", "show_ap_bssid_24g",
                                  "11r_logs", "enable_ft_akm_ftpsk", "enable_ftotd_akm_ftpsk",
-                                 "config_dual_band_mode","dual_band_no_mode_shutdown","dual_band_mode_shutdown",
-                                 "enable_ft_akm_ftsae","enable_ft_wpa3_dot1x","enable_ft_wpa3_dot1x_sha256",
+                                 "config_dual_band_mode", "dual_band_no_mode_shutdown", "dual_band_mode_shutdown",
+                                 "enable_ft_akm_ftsae", "enable_ft_wpa3_dot1x", "enable_ft_wpa3_dot1x_sha256",
                                  "ap_dot11_dot11ax_mcs_tx_index_spatial_stream", "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream",
-                                 "show_wireless_client_sumry", 'show_client_macadd_detail','debug_wieless_mac',
-                                 'no_debug_wieless_mac','get_ra_trace_files','get_data_ra_trace_files', 'del_ra_trace_file',
-                                 "show_ap_status","show_ap_tx_power_config"
+                                 "show_wireless_client_sumry", 'show_client_macadd_detail', 'debug_wieless_mac',
+                                 'no_debug_wieless_mac', 'get_ra_trace_files', 'get_data_ra_trace_files', 'del_ra_trace_file',
+                                 "show_ap_status", "show_ap_tx_power_config"
                                  ])
     parser.add_argument("--value", type=str, help="set value")
     # logging configuration
@@ -225,7 +223,6 @@ def main():
         logger.critical("band needs to be set 24g 5g 6g dual_band_5g, dual_band_6g")
         raise ValueError("band needs to be set 24g 5g 6g dual_band_5g or dual_band_6g")
 
-
     # set up logger
     logger_config = lf_logger_config.lf_logger_config()
     if args.lf_logger_config_json:
@@ -242,7 +239,7 @@ def main():
     console_handler = logging.StreamHandler()
     formatter = logging.Formatter(FORMAT)
     logg = logging.getLogger(__name__)
-    
+
     logg.info("wifi_ctl command timeout set to {timeout}".format(timeout=timeout))
 
     # TODO Refactor for script to work must have output go to console_handler
@@ -1091,7 +1088,6 @@ def main():
     if (args.action == "show_ap_tx_power_config"):
         command = "show ap name %s config dot11 %s | sec Tx" % (args.ap, config_band)
 
-
     if (args.action == "advanced"):
         if args.series == "9800":
             if band == 'dual_band_5g' or band == 'dual_band_6g':
@@ -1154,7 +1150,6 @@ def main():
         if args.series == "9800":
             command = "more bootflash:%s" % (args.value)
 
-
     if ((args.action == "auto_rf") and ((args.ap is None))):
         raise Exception("auto_rf requires AP name")
 
@@ -1193,11 +1188,11 @@ def main():
     if (args.action == "ap_dot11_dot11ax_mcs_tx_index_spatial_stream"):
         if args.series == "9800":
             if (args.band == '6g' or args.band == 'dual_band_6g'):
-                command = "ap dot11 6ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index,stream=args.spatial_stream)
+                command = "ap dot11 6ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index, stream=args.spatial_stream)
             elif (args.band == '5g' or args.band == 'dual_band_5g'):
-                command = "ap dot11 5ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index,stream=args.spatial_stream)
+                command = "ap dot11 5ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index, stream=args.spatial_stream)
             elif (args.band == '24g'):
-                command = "ap dot11 24ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index,stream=args.spatial_stream)
+                command = "ap dot11 24ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index, stream=args.spatial_stream)
 
             egg.sendline("config t")
             sleep(0.1)
@@ -1213,11 +1208,11 @@ def main():
     if (args.action == "no_ap_dot11_dot11ax_mcs_tx_index_spatial_stream"):
         if args.series == "9800":
             if (args.band == '6g' or args.band == 'dual_band_6g'):
-                command = "no ap dot11 6ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index,stream=args.spatial_stream)
+                command = "no ap dot11 6ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index, stream=args.spatial_stream)
             elif (args.band == '5g' or args.band == 'dual_band_5g'):
-                command = "no ap dot11 5ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index,stream=args.spatial_stream)
+                command = "no ap dot11 5ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index, stream=args.spatial_stream)
             elif (args.band == '24g'):
-                command = "no ap dot11 24ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index,stream=args.spatial_stream)
+                command = "no ap dot11 24ghz dot11ax mcs tx index {index} spatial-stream {stream}".format(index=args.mcs_tx_index, stream=args.spatial_stream)
 
             egg.sendline("config t")
             sleep(0.1)
@@ -1256,7 +1251,7 @@ def main():
 
     if (args.action == "disable_network_dual_band_5ghz" or args.action == 'disable_network_dual_band_6ghz'):
         if args.series == "9800":
-            command = "ap name %s dot11 dual-band slot %s shutdown" % (args.ap, args.ap_band_slot) 
+            command = "ap name %s dot11 dual-band slot %s shutdown" % (args.ap, args.ap_band_slot)
             egg.sendline(command)
             sleep(0.1)
             i = egg.expect_exact(["Are you sure you want to continue? (y/n)[y]:", pexpect.TIMEOUT], timeout=timeout)
@@ -1269,7 +1264,6 @@ def main():
                 egg.sendline("y")
                 sleep(0.5)
 
-    
     if (args.action == "disable_network_6ghz"):
         if args.series == "9800":
             egg.sendline("config t")
@@ -1341,7 +1335,7 @@ def main():
 
     if (args.action == "enable_network_dual_band_5ghz" or args.action == "enable_network_dual_band_6ghz"):
         if args.series == "9800":
-            command = "ap name %s no dot11 dual-band slot %s shutdown" % (args.ap, args.ap_band_slot) 
+            command = "ap name %s no dot11 dual-band slot %s shutdown" % (args.ap, args.ap_band_slot)
 
     if (args.action == "enable_network_6ghz"):
         if args.series == "9800":
@@ -1382,18 +1376,17 @@ def main():
             logg.info("3504 enable_network_24ghz")
             command = "config 802.11b enable network"
 
-
-    # This will shut down the dual band 
+    # This will shut down the dual band
 
     # for dual-band 6g
-    # ap name CM66 dot11 dual-band shutdown    
-    # ap name CM66 dot11 dual-band slot 2 band 6ghz 
-    # ap name CM66 no dot11 dual-band shutdown 
+    # ap name CM66 dot11 dual-band shutdown
+    # ap name CM66 dot11 dual-band slot 2 band 6ghz
+    # ap name CM66 no dot11 dual-band shutdown
 
     # for dual-band 5g
-    # ap name CM66 dot11 dual-band shutdown    
-    # ap name CM66 dot11 dual-band slot 2 band 5ghz 
-    # ap name CM66 no dot11 dual-band shutdown 
+    # ap name CM66 dot11 dual-band shutdown
+    # ap name CM66 dot11 dual-band slot 2 band 5ghz
+    # ap name CM66 no dot11 dual-band shutdown
 
     # shutdown dual-band mode
     if (args.action == "dual_band_mode_shutdown" and (args.ap is None or args.ap_band_slot is None)):
@@ -1419,8 +1412,7 @@ def main():
             elif band == "dual_band_5g":
                 command = "ap name %s no dot11 dual-band shutdown" % (args.ap)
 
-
-    # configure the dual band mode 
+    # configure the dual band mode
     if (args.action == "config_dual_band_mode" and (args.ap is None or args.ap_band_slot is None)):
         raise Exception("action requires AP name and ap band slot")
     if (args.action == "config_dual_band_mode"):
@@ -1431,9 +1423,8 @@ def main():
                 command = "ap name %s dot11 dual-band slot %s band 6ghz" % (args.ap, args.ap_band_slot)
             elif band == "dual_band_5g":
                 command = "ap name %s dot11 dual-band slot %s band 5ghz" % (args.ap, args.ap_band_slot)
-            
 
-    # This will take the operation status down 
+    # This will take the operation status down
     if (args.action == "enable_operation_status" and (args.ap is None)):
         raise Exception("action requires AP name")
     if (args.action == "enable_operation_status"):
@@ -1495,7 +1486,7 @@ def main():
                 command = "ap name %s dot11 dual-band slot %s channel width %s" % (args.ap, args.ap_band_slot, args.value)
             elif band == "6g":
                 command = "ap name %s dot11 6ghz slot %s channel width %s" % (args.ap, args.ap_band_slot, args.value)
-            elif band == "5g" :
+            elif band == "5g":
                 command = "ap name %s dot11 5ghz slot %s channel width %s" % (args.ap, args.ap_band_slot, args.value)
             elif band == "24g":
                 command = "ap name %s dot11 24ghz slot %s channel width %s" % (args.ap, args.ap_band_slot, args.value)
@@ -1642,7 +1633,7 @@ def main():
     if (args.action == "dtim" and ((args.value is None) or (args.wlan is None))):
         raise Exception("dtim a value 1 - 255 required")
     if (args.action == "dtim"):
-        logg.info("(config-wlan)# dtim dot11 {band}hz  {value} ".format(band=args.band,value=args.value))
+        logg.info("(config-wlan)# dtim dot11 {band}hz  {value} ".format(band=args.band, value=args.value))
         if args.series == "9800":
             egg.sendline("config t")
             sleep(0.4)
@@ -1715,8 +1706,7 @@ def main():
         else:
             command = "config wlan create {} {} {}".format(args.wlanID, args.wlan, args.wlanSSID)
 
-
-    if (args.action == "enable_ft_akm_ftpsk" and  (args.wlan is None) ):
+    if (args.action == "enable_ft_akm_ftpsk" and (args.wlan is None)):
         raise Exception("enable ft wlanID, wlan, wlanSSID are required")
     if (args.action == "enable_ft_akm_ftpsk"):
         logg.info("enable ft and select ft + psk akm  wlan {} wlanID {} wlanSSID {}".format(args.wlan, args.wlanID, args.wlanSSID))
@@ -1829,7 +1819,7 @@ def main():
             if i == 0:
                 logg.info("did not get the (config)# prompt")
 
-    if (args.action == "enable_ft_akm_ftsae" and  (args.wlan is None) ):
+    if (args.action == "enable_ft_akm_ftsae" and (args.wlan is None)):
         raise Exception("enable ft wlanID, wlan, wlanSSID are required")
     if (args.action == "enable_ft_akm_ftsae"):
         logg.info("enable ft and select ft + sae akm  wlan {} wlanID {} wlanSSID {}".format(args.wlan, args.wlanID, args.wlanSSID))
@@ -1864,7 +1854,6 @@ def main():
                     logg.info("did not get the (config-wlan)# prompt")
             if i == 0:
                 logg.info("did not get the (config)# prompt")
-
 
     if (args.action == "enable_ftotd_akm_ftpsk" and (args.wlan is None)):
         raise Exception("enable ft wlan is required")
@@ -2156,7 +2145,7 @@ def main():
             if i == 6:  # --More--
                 logg.info("9800 found --More--, sending space")
                 egg.send(SEND_MORE)
-            if i == 7: # BAD IP
+            if i == 7:  # BAD IP
                 logg.info("9800 expect timeout loop_count: {}".format(loop_count))
                 egg.sendline("exit")
                 logged_out_9800 = True
@@ -2166,7 +2155,6 @@ def main():
                 # a timeout , tray again.
                 # egg.sendline("exit")
                 # logged_out_9800 = True
-
 
         if(logged_out_9800 == False):
             logg.info("######################################################################################")
