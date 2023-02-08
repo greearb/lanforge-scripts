@@ -205,6 +205,9 @@ class lf_check():
         self.tests_failure = 0
         self.tests_some_failure = 0
         self.tests_timeout = 0
+        self.mail_subject = "Mail Subject Not Set"
+        self.msg = "No Email Message Set"
+        self.message_txt = ""
         self.results_col_titles = [
             "Test", "Command", "Result", "STDOUT", "STDERR"]
         self.junit_results = ""
@@ -495,9 +498,9 @@ class lf_check():
         if self.hostname.find('.') < 1:
             self.hostname = ip
 
-        message_txt = ""
+        self.message_txt = ""
         if (self.email_txt != ""):
-            message_txt = """{email_txt} lanforge target {lf_mgr_ip}
+            self.message_txt = """{email_txt} lanforge target {lf_mgr_ip}
 Results from {hostname}:
 Suite: {suite}
 Database: {db}
@@ -508,7 +511,7 @@ http://{hostname}/{report}
 """.format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, suite=self.test_suite, db=self.database_sqlite, hostname=self.hostname, report=report_url)
 
         else:
-            message_txt = """Results from {hostname}:
+            self.message_txt = """Results from {hostname}:
 Suite: {suite}
 Database: {db}
 
@@ -519,7 +522,7 @@ http://{hostname}/{report}
 
         # Put in report information current two methods supported,
         if "NA" not in self.qa_report_html:
-            message_txt += """
+            self.message_txt += """
 
 QA Report Dashboard:
 http://{ip_qa}/{qa_url}
@@ -528,37 +531,43 @@ http://{ip_qa}/{qa_url}
 NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url, qa_url_local=qa_url)
 
         else:
-            message_txt += """
+            self.message_txt += """
 QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
         if (self.email_title_txt != ""):
 
-            mail_subject = "QA: Suite: {suite} Num Tests:{tests} Finished: {finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial} Rig:{email} Server:{hostname}  db: {db} {date}".format(
+            self.mail_subject = "QA: Suite: {suite} Num Tests:{tests} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial} Rig: {email} Server: {hostname}  DB: {db} Date: {date}".format(
                 email=self.email_title_txt, suite=self.test_suite, 
                 tests=self.tests_run, finished=self.tests_success,fail=self.tests_failure,timeout=self.tests_timeout,partial=self.tests_some_failure,
                 hostname=self.hostname,
                 db=self.database_sqlite, date=datetime.datetime.now())
         else:
-            mail_subject = "QA: Suite: {suite} Num Tests:{tests} Fail:{fail} Timeout: {timeout} Partial Fail: {partial} Rig:{email} Server:{hostname}  db: {db} {date}".format(
+            self.mail_subject = "QA: Suite: {suite} Num Tests:{tests} Fail:{fail} Timeout:{timeout} Partial Fail:{partial} Rig:{email} Server:{hostname}  DB:{db} {date}".format(
                 suite=self.test_suite, 
                 tests=self.tests_run, finished=self.tests_success,fail=self.tests_failure,timeout=self.tests_timeout,partial=self.tests_some_failure,
                 hostname=self.hostname,
                 db=self.database_sqlite, 
                 date=datetime.datetime.now())
+
+        # Add email title summary 
+        self.message_txt += """
+
+Summary: 
+{summary}""".format(summary=self.mail_subject)        
         try:
             if self.production_run:
-                msg = message_txt.format(ip=ip)
+                self.msg = self.message_txt.format(ip=ip)
                 # for postfix from command line  echo "My message" | mail -s
                 # subject user@candelatech.com
                 command = "echo \"{message}\" | mail -s \"{subject}\" {address}".format(
-                    message=msg,
-                    subject=mail_subject,
+                    message=self.msg,
+                    subject=self.mail_subject,
                     address=self.email_list_production)
             else:
-                msg = message_txt.format(ip=ip)
+                self.msg = self.message_txt.format(ip=ip)
                 command = "echo \"{message}\" | mail -s \"{subject}\" {address}".format(
-                    message=msg,
-                    subject=mail_subject,
+                    message=self.msg,
+                    subject=self.mail_subject,
                     address=self.email_list_test)
 
             self.logger.info("running:[{}]".format(command))
@@ -1209,9 +1218,9 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
                 meta_data_fd.close()
             except ValueError as err:
-                self.logger.critical("unable to write meta {meta_data_path} : {msg})".format(meta_data_path=meta_data_path, msg=err))
+                self.logger.critical("unable to write meta {meta_data_path} : {err})".format(meta_data_path=meta_data_path, err=err))
             except BaseException as err:
-                self.logger.critical("BaseException unable to write meta {meta_data_path} : {msg}".format(meta_data_path=meta_data_path, msg=err))
+                self.logger.critical("BaseException unable to write meta {meta_data_path} : {err}".format(meta_data_path=meta_data_path, err=err))
 
         # Code for checking if the script passed or failed much of the
         # code is checking the output.
