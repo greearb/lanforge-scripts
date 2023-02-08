@@ -532,11 +532,19 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url, qa_url_
 QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
         if (self.email_title_txt != ""):
-            mail_subject = "{email} [{hostname}] {suite} {db} {date}".format(email=self.email_title_txt, hostname=self.hostname,
-                                                                             suite=self.test_suite, db=self.database_sqlite, date=datetime.datetime.now())
+
+            mail_subject = "QA: Suite: {suite} Num Tests:{tests} Finished: {finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial} Rig:{email} Server:{hostname}  db: {db} {date}".format(
+                email=self.email_title_txt, suite=self.test_suite, 
+                tests=self.tests_run, finished=self.tests_success,fail=self.tests_failure,timeout=self.tests_timeout,partial=self.tests_some_failure,
+                hostname=self.hostname,
+                db=self.database_sqlite, date=datetime.datetime.now())
         else:
-            mail_subject = "Regression Test [{hostname}] {suite} {db} {date}".format(hostname=self.hostname,
-                                                                                     suite=self.test_suite, db=self.database_sqlite, date=datetime.datetime.now())
+            mail_subject = "QA: Suite: {suite} Num Tests:{tests} Fail:{fail} Timeout: {timeout} Partial Fail: {partial} Rig:{email} Server:{hostname}  db: {db} {date}".format(
+                suite=self.test_suite, 
+                tests=self.tests_run, finished=self.tests_success,fail=self.tests_failure,timeout=self.tests_timeout,partial=self.tests_some_failure,
+                hostname=self.hostname,
+                db=self.database_sqlite, 
+                date=datetime.datetime.now())
         try:
             if self.production_run:
                 msg = message_txt.format(ip=ip)
@@ -1215,7 +1223,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             background = self.background_purple
         elif return_code == 1:
             self.logger.error("Test returne fail  return code {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
-            self.test_result = "Script retured Fail"
+            self.test_result = "Script returned Fail"
             background = self.background_red
         elif return_code == 2:
             self.logger.error("Incorrect args:  return code {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
@@ -1223,7 +1231,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
             background = self.background_orange
         elif return_code != 0:
             self.logger.error("None zero return code:  return code {return_code} for test: {command}".format(return_code=return_code, command=command_to_run))
-            self.test_result = "return code {return_code}".format(return_code=return_code)
+            self.test_result = "Error return code {return_code}".format(return_code=return_code)
             background = self.background_orange
         else:
             # TODO use summary returned from subprocess
@@ -1289,6 +1297,8 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         elif self.test_result == "Incorrect args":
             self.tests_failure += 1
         elif "return code" in self.test_result:
+            self.tests_failure += 1
+        elif "Script returned Fail" in self.test_result:
             self.tests_failure += 1
         elif self.test_result == "TIMEOUT":
             self.tests_timeout += 1
