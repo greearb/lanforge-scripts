@@ -65,7 +65,7 @@ Example : Have script use existing stations from previous run where traffic was 
         --test_duration 30s --polling_interval 5s
         --side_a_min_bps 256000 --side_b_min_bps 102400000
         --use_existing_station_list
-        --existing_station_list '1.1.sta0000,1.1.sta0001'
+        --existing_station_list 1.1.sta0000,1.1.sta0001
         --no_stop_traffic
 
 
@@ -208,6 +208,7 @@ class L3VariableTime(Realm):
                  ap_band_list=['2g', '5g', '6g']):
 
         self.eth_endps = []
+        self.cx_names = []
         self.total_stas = 0
         if side_a_min_rate is None:
             side_a_min_rate = [56000]
@@ -421,6 +422,12 @@ class L3VariableTime(Realm):
                     reset_port_min_time=self.duration_time_to_seconds(reset_port_time_min_),
                     reset_port_max_time=self.duration_time_to_seconds(reset_port_time_max_))
                 self.station_profiles.append(self.station_profile)
+            # Use existing station list is similiar to no rebuild
+            if self.use_existing_station_lists:
+                for existing_station_list in self.existing_station_lists:
+                    self.station_profile = self.new_station_profile()
+                    self.station_profile.station_names.append(existing_station_list)
+                    self.station_profiles.append(self.station_profile)
         else:
             pass
 
@@ -688,10 +695,12 @@ class L3VariableTime(Realm):
                         self.lf_endps = self.eth_endps + these_endp
                     else:
                         self.tcp_endps = self.tcp_endps + these_endp
+                    # after we create cxs, append to global variable
+                    self.cx_names.append(these_cx)
 
         else:
             for station_profile in self.station_profiles:
-                if not rebuild:
+                if not rebuild and not self.use_existing_station_lists:
                     station_profile.use_security(
                         station_profile.security,
                         station_profile.ssid,
@@ -724,15 +733,16 @@ class L3VariableTime(Realm):
                             etype, side_rx=station_profile.station_names)
                     else:
                         for _tos in self.tos:
-                            logger.info(
-                                "Creating connections for endpoint type: %s TOS: %s  cx-count: %s" %
-                                (etype, _tos, self.cx_profile.get_cx_count()))
+                            logger.info("Creating connections for endpoint type: {etype} TOS: {tos}  cx-count: {cx_count}".format(
+                                etype=etype, tos=_tos, cx_count=self.cx_profile.get_cx_count()))
                             these_cx, these_endp = self.cx_profile.create(
                                 endp_type=etype, side_a=station_profile.station_names, side_b=self.side_b, sleep_time=0, tos=_tos)
                             if etype == "lf_udp" or etype == "lf_udp6":
                                 self.udp_endps = self.udp_endps + these_endp
                             else:
                                 self.tcp_endps = self.tcp_endps + these_endp
+                            # after we create the cxs, append to global
+                            self.cx_names.append(these_cx)
 
         self.cx_count = self.cx_profile.get_cx_count()
 
@@ -768,9 +778,9 @@ class L3VariableTime(Realm):
         for station_profile in self.station_profiles:
             temp_stations_list.extend(station_profile.station_names.copy())
 
-        if self.use_existing_station_lists:
-            # for existing_station in self.existing_station_lists:
-            temp_stations_list.extend(self.existing_station_lists.copy())
+        # if self.use_existing_station_lists:
+        #    # for existing_station in self.existing_station_lists:
+        #    temp_stations_list.extend(self.existing_station_lists.copy())
 
         temp_stations_list_with_side_b = temp_stations_list.copy()
         # wait for b side to get IP
@@ -787,14 +797,14 @@ class L3VariableTime(Realm):
             logger.critical("ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
             exit(1)
 
-        self.csv_generate_column_headers()
+        # self.csv_generate_column_headers()
         # logger.debug(csv_header)
         self.csv_add_column_headers()
 
         # dl - ports
         port_eids = self.gather_port_eids()
-        if self.use_existing_station_lists:
-            port_eids.extend(self.existing_station_lists.copy())
+        # if self.use_existing_station_lists:
+        #    port_eids.extend(self.existing_station_lists.copy())
         for port_eid in port_eids:
             self.csv_add_port_column_headers(
                 port_eid, self.csv_generate_dl_port_column_headers())
@@ -807,14 +817,21 @@ class L3VariableTime(Realm):
             #    port_eids.extend(self.existing_station_lists.copy())
 
             for port_eid in port_eids:
-                self.csv_add_ul_port_column_headers(port_eid, self.csv_generate_ul_port_column_headers())
+                self.csv_add_ul_port_column_headers(
+                    port_eid, self.csv_generate_ul_port_column_headers())
 
         # looping though both A and B together,  upload direction will select A, download direction will select B
         # For each rate
-        for ul, dl in itertools.zip_longest(self.side_a_min_rate, self.side_b_min_rate, fillvalue=256000):
+        for ul, dl in itertools.zip_longest(
+                self.side_a_min_rate,
+                self.side_b_min_rate, fillvalue=256000):
 
             # For each pdu size
-            for ul_pdu, dl_pdu in itertools.zip_longest(self.side_a_min_pdu, self.side_b_min_pdu, fillvalue='AUTO'):
+            for ul_pdu, dl_pdu in itertools.zip_longest(
+                self.side_a_min_pdu,
+                self.side_b_min_pdu, fillvalue='AUTO'
+            ):
+
                 # Adjust rate to take into account the number of connections we
                 # have.
                 if self.cx_count > 1 and self.rates_are_totals:
@@ -1055,8 +1072,8 @@ class L3VariableTime(Realm):
                     # Create empty dataframe
                     all_dl_ports_df = pd.DataFrame()
                     port_eids = self.gather_port_eids()
-                    if self.use_existing_station_lists:
-                        port_eids.extend(self.existing_station_lists.copy())
+                    # if self.use_existing_station_lists:
+                    #    port_eids.extend(self.existing_station_lists.copy())
 
                     for port_eid in port_eids:
                         logger.debug("port files: {port_file}".format(port_file=self.port_csv_files[port_eid]))
