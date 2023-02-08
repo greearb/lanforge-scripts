@@ -1182,18 +1182,20 @@ class L3VariableTime(Realm):
         temp_stations_list_with_side_b = temp_stations_list.copy()
         # wait for b side to get IP
         temp_stations_list_with_side_b.append(self.side_b)
-        print("temp_stations_list {temp_stations_list}".format(
+        logger.debug("temp_stations_list {temp_stations_list}".format(
             temp_stations_list=temp_stations_list))
-        print("temp_stations_list_with_side_b {temp_stations_list_with_side_b}".format(
+        logger.debug("temp_stations_list_with_side_b {temp_stations_list_with_side_b}".format(
             temp_stations_list_with_side_b=temp_stations_list_with_side_b))
 
         if self.wait_for_ip(temp_stations_list_with_side_b, timeout_sec=self.wait_for_ip_sec):
-            print("ip's acquired")
+            logger.info("ip's acquired")
         else:
             # No reason to continue
-            raise ValueError("ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
+            logger.critical("ERROR: print failed to get IP's Check station configuration SSID, Security, Is DHCP enabled exiting")
+            exit(1)
+
         # self.csv_generate_column_headers()
-        # print(csv_header)
+        # logger.debug(csv_header)
         self.csv_add_results_column_headers()
 
         # dl - ports
@@ -1247,7 +1249,9 @@ class L3VariableTime(Realm):
                 if dl_pdu == "AUTO" or dl_pdu == "MTU":
                     dl_pdu = "-1"
 
-                logger.info("ul: %s  dl: %s  cx-count: %s  rates-are-totals: %s\n" % (ul, dl, self.cx_count, self.rates_are_totals))
+                logger.debug(
+                    "ul: %s  dl: %s  cx-count: %s  rates-are-totals: %s\n" %
+                    (ul, dl, self.cx_count, self.rates_are_totals))
 
                 # Set rate and pdu size config
                 self.cx_profile.side_a_min_bps = ul
@@ -1274,20 +1278,20 @@ class L3VariableTime(Realm):
                             atten_mod_test = lf_attenuator.CreateAttenuator(host=self.lfclient_host, port=self.lfclient_port, serno='all', idx='all', val=atten_val, _debug_on=self.debug)
                             atten_mod_test.build()
 
-                    print("Starting multicast traffic (if any configured)")
+                    logger.info("Starting multicast traffic (if any configured)")
                     self.multicast_profile.start_mc(debug_=self.debug)
                     self.multicast_profile.refresh_mc(debug_=self.debug)
-                    print("Starting layer-3 traffic (if any configured)")
+                    logger.info("Starting layer-3 traffic (if any configured)")
                     self.cx_profile.start_cx()
                     self.cx_profile.refresh_cx()
 
                     cur_time = datetime.datetime.now()
-                    print("Getting initial values.")
+                    logger.info("Getting initial values.")
                     self.__get_rx_values()
 
                     end_time = self.parse_time(self.test_duration) + cur_time
 
-                    print(
+                    logger.info(
                         "Monitoring throughput for duration: %s" %
                         self.test_duration)
 
@@ -1309,10 +1313,8 @@ class L3VariableTime(Realm):
 
                     while cur_time < end_time:
                         # interval_time = cur_time + datetime.timedelta(seconds=5)
-                        interval_time = cur_time + \
-                            datetime.timedelta(
-                                seconds=self.polling_interval_seconds)
-                        # print("polling_interval_seconds {}".format(self.polling_interval_seconds))
+                        interval_time = cur_time + datetime.timedelta(seconds=self.polling_interval_seconds)
+                        # logger.info("polling_interval_seconds {}".format(self.polling_interval_seconds))
 
                         while cur_time < interval_time:
                             cur_time = datetime.datetime.now()
