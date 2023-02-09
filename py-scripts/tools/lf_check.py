@@ -507,7 +507,6 @@ Database: {db}
 
 lf_check Test Suite Report:
 http://{hostname}/{report}
-
 """.format(email_txt=self.email_txt, lf_mgr_ip=self.lf_mgr_ip, suite=self.test_suite, db=self.database_sqlite, hostname=self.hostname, report=report_url)
 
         else:
@@ -517,7 +516,6 @@ Database: {db}
 
 lf_check Test Suite Report:
 http://{hostname}/{report}
-
 """.format(hostname=self.hostname, suite=self.test_suite, db=self.database_sqlite, report=report_url)
 
         # Put in report information current two methods supported,
@@ -548,7 +546,7 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
                 db=self.database_sqlite, 
                 date=datetime.datetime.now())
         else:
-            self.mail_subject = "QA Suite: {suite} Tests:{tests} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}  Server IP:{hostname}  DB:{db} Server Ver:{server_ver}  Date: {date} ".format(
+            self.mail_subject = "QA Suite: {suite} Tests:{tests} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}  Server IP:{hostname}  DB:{db} Server Ver:{server_ver}  Date: {date} ".format(
                 email=self.email_title_txt,
                 suite=self.test_suite, 
                 tests=self.tests_run, finished=self.tests_success,fail=self.tests_failure,timeout=self.tests_timeout,partial=self.tests_some_failure,
@@ -561,12 +559,20 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         self.message_txt += """
 
 Summary: 
+
 Rig:{email} 
 Suite: {suite} 
+
+
+Results:
+
 Tests:{tests} 
 Fail:{fail} 
 Timeout:{timeout} 
 Partial Fail:{partial}  
+
+Test Info:
+
 Server Ver:{server_ver} 
 Server IP:{hostname}  
 DB:{db} 
@@ -581,7 +587,32 @@ Date: {date}""".format(
                 hostname=self.hostname,
                 server_ver=server_version,
                 db=self.database_sqlite, 
-                date=datetime.datetime.now())        
+                date=datetime.datetime.now())
+
+            # Add information about about GUI and Kernel Versions
+        self.message_txt += """
+
+
+LANforge Versions:
+
+LANforge:{lanforge}
+Fedora:{fedora}
+Kernel:{kernel}
+Server:{server_ver}
+GUI:{gui} {gui_build}
+Platform:{platform}
+
+
+
+                        """.format(
+                            lanforge=self.lanforge_system_node_version,
+                            fedora=self.lanforge_fedora_version,
+                            gui=self.lanforge_gui_version,
+                            gui_build=self.lanforge_gui_build_date,
+                            kernel=self.lanforge_kernel_version,
+                            server_ver=self.lanforge_server_version_full,
+                            platform=server_version)
+        
         try:
             if self.production_run:
                 self.msg = self.message_txt.format(ip=ip)
