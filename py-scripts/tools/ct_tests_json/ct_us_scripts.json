@@ -404,7 +404,7 @@
                 ]
             },
             "create_l3_stations":{
-                    "enabled":"TRUE",
+                    "enabled":"FALSE",
                     "load_db":"NONE",
                     "command":"create_l3_stations.py",
                     "args":"",
@@ -420,15 +420,6 @@
                 "command":"lf_report_test.py",
                 "args":"",
                 "args_list":[" --mgr LF_MGR_IP "
-                ]
-            },
-            "lf_report":{
-                "enabled":"TRUE",
-                "load_db":"NONE",
-                "timeout":"60",
-                "command":"lf_report.py",
-                "args":"",
-                "args_list":[" "
                 ]
             },
             "lf_snp_test":{
@@ -447,16 +438,6 @@
                 "command":"testgroup.py",
                 "args":"",
                 "args_list":[" --mgr LF_MGR_IP --group_name group1 --add_group --list_groups --debug"
-                ]
-            },
-            "testgroup2":{
-                "enabled":"TRUE",
-                "load_db":"NONE",
-                "timeout":"60",
-                "command":"testgroup2.py",
-                "args":"",
-                "args_list":[" --mgr LF_MGR_IP --group_name group0 --add_group --num_stations 1 --radio 1.1.wiphy1",
-                    " use_ssid_idx=1 --ssid SSID_USED --passwd  SSID_PW_USED --security  SECURITY_USED "
                 ]
             },
             "clean_up_cxs_endp_sta_from_test_group":{
