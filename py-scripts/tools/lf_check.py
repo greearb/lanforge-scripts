@@ -534,20 +534,22 @@ NOTE: Diagrams are links in dashboard""".format(ip_qa=ip, qa_url=qa_url, qa_url_
             self.message_txt += """
 QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
-        server_version = platform.version()
+        server_version = platform.platform()
 
         # get the Fedora platform 
         if (self.email_title_txt != ""):
 
-            self.mail_subject = "QA: Suite: {suite} Tests:{tests} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial} Rig: {email} Server Ver:{server_ver} Server IP: {hostname}  DB: {db} Date: {date}".format(
-                email=self.email_title_txt, suite=self.test_suite, 
+            self.mail_subject = "QA Rig: {email} Suite: {suite} Tests:{tests} Finished:{finished} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}   Server IP: {hostname}  DB: {db} Server Ver:{server_ver} Date: {date}".format(
+                email=self.email_title_txt,
+                suite=self.test_suite,
                 tests=self.tests_run, finished=self.tests_success,fail=self.tests_failure,timeout=self.tests_timeout,partial=self.tests_some_failure,
                 hostname=self.hostname,
                 server_ver=server_version,
                 db=self.database_sqlite, 
                 date=datetime.datetime.now())
         else:
-            self.mail_subject = "QA: Suite: {suite} Tests:{tests} Fail:{fail} Timeout:{timeout} Partial Fail:{partial} Rig:{email} Server Ver:{server_ver} Server IP:{hostname}  DB:{db} Date: {date}".format(
+            self.mail_subject = "QA Suite: {suite} Tests:{tests} Fail:{fail} Timeout:{timeout} Partial Fail:{partial}  Server IP:{hostname}  DB:{db} Server Ver:{server_ver}  Date: {date} ".format(
+                email=self.email_title_txt,
                 suite=self.test_suite, 
                 tests=self.tests_run, finished=self.tests_success,fail=self.tests_failure,timeout=self.tests_timeout,partial=self.tests_some_failure,
                 hostname=self.hostname,
@@ -559,7 +561,27 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         self.message_txt += """
 
 Summary: 
-{summary}""".format(summary=self.mail_subject)        
+Rig:{email} 
+Suite: {suite} 
+Tests:{tests} 
+Fail:{fail} 
+Timeout:{timeout} 
+Partial Fail:{partial}  
+Server Ver:{server_ver} 
+Server IP:{hostname}  
+DB:{db} 
+Date: {date}""".format(
+                email=self.email_title_txt,    
+                suite=self.test_suite, 
+                tests=self.tests_run, 
+                finished=self.tests_success,
+                fail=self.tests_failure,
+                timeout=self.tests_timeout,
+                partial=self.tests_some_failure,
+                hostname=self.hostname,
+                server_ver=server_version,
+                db=self.database_sqlite, 
+                date=datetime.datetime.now())        
         try:
             if self.production_run:
                 self.msg = self.message_txt.format(ip=ip)
