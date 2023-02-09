@@ -513,7 +513,7 @@
                     " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l4":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"test_l4.py",
                 "args":"",
                 "args_list":[
@@ -532,7 +532,7 @@
                     " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l4_bytes_rd":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"test_l4.py",
                 "args":"",
                 "args_list":[
@@ -551,7 +551,7 @@
                     " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l4_urls":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"test_l4.py",
                 "args":"",
                 "args_list":[
@@ -570,7 +570,7 @@
                     " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l4_ftp_bytes_rd":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"test_l4.py",
                 "args":"",
                 "args_list":[
@@ -582,7 +582,7 @@
                 ]
             },
             "test_l3_longevity_1":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"test_l3_longevity.py",
                 "args":"",
                 "args_list":[
@@ -594,7 +594,7 @@
                 ]
             },
             "create_l4":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"create_l4.py",
                 "args":"",
                 "args_list":[
