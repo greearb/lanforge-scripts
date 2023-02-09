@@ -163,6 +163,9 @@ class lf_check():
                  _json_rig,
                  _json_dut,
                  _json_test,
+                 _json_rig_file,
+                 _json_dut_file,
+                 _json_test_file,
                  _test_suite,
                  _use_test_list,
                  _test_list,
@@ -179,6 +182,9 @@ class lf_check():
         self.json_rig = _json_rig
         self.json_dut = _json_dut
         self.json_test = _json_test
+        self.json_rig_file = _json_rig_file
+        self.json_dut_file = _json_dut_file
+        self.json_test_file = _json_test_file
         self.test_suite = _test_suite
         self.use_test_list = _use_test_list
         self.test_list = _test_list
@@ -559,12 +565,14 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
         self.message_txt += """
 
 Summary: 
+========
 
 Rig:{email} 
 Suite: {suite} 
 
 
 Results:
+--------
 
 Tests:{tests} 
 Fail:{fail} 
@@ -572,6 +580,10 @@ Timeout:{timeout}
 Partial Fail:{partial}  
 
 Test Info:
+----------
+json_dut:{dut_json}
+json_rig:{rig_json}
+json_test:{test_json}
 
 Server Ver:{server_ver} 
 Server IP:{hostname}  
@@ -584,6 +596,9 @@ Date: {date}""".format(
                 fail=self.tests_failure,
                 timeout=self.tests_timeout,
                 partial=self.tests_some_failure,
+                dut_json=self.json_dut_file,
+                rig_json=self.json_rig_file,
+                test_json=self.json_test_file,
                 hostname=self.hostname,
                 server_ver=server_version,
                 db=self.database_sqlite, 
@@ -594,6 +609,7 @@ Date: {date}""".format(
 
 
 LANforge Versions:
+------------------
 
 LANforge:{lanforge}
 Fedora:{fedora}
@@ -1848,6 +1864,9 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                      _json_dut=json_dut,
                      _json_test=json_test,
                      _test_suite=test_suite,
+                     _json_rig_file=args.json_rig,
+                     _json_dut_file=args.json_dut,
+                     _json_test_file=args.json_test,
                      _use_test_list=use_test_list,
                      _test_list=test_list,
                      _server_override=server_override,
