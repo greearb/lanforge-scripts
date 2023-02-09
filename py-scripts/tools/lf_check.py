@@ -566,25 +566,26 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
 Summary: 
 ========
-
 Rig:{email} 
 Suite: {suite} 
 
 
 Results:
---------
-
+========
 Tests:{tests} 
 Fail:{fail} 
 Timeout:{timeout} 
 Partial Fail:{partial}  
 
-Test Info:
-----------
+Test Script Input Files:
+========================
 json_dut:{dut_json}
 json_rig:{rig_json}
 json_test:{test_json}
 
+
+Server / DB Infomation
+======================
 Server Ver:{server_ver} 
 Server IP:{hostname}  
 DB:{db} 
@@ -609,15 +610,13 @@ Date: {date}""".format(
 
 
 LANforge Versions:
-------------------
-
+==================
 LANforge:{lanforge}
 Fedora:{fedora}
 Kernel:{kernel}
 Server:{server_ver}
 GUI:{gui} {gui_build}
 Platform:{platform}
-
 
 
                         """.format(
@@ -2040,6 +2039,11 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     lf_test_summary['Failure'] = [check.tests_failure]
     lf_test_summary['Timeout'] = [check.tests_timeout]
 
+    lf_test_json = pd.DataFrame()
+    lf_test_json['DUT JSON'] = [args.json_dut]
+    lf_test_json['RIG JSON'] = [args.json_rig]
+    lf_test_json['TEST JSON'] = [args.json_test]
+
     # generate output reports
     test_rig = check.get_test_rig()
     report.set_title(
@@ -2047,8 +2051,12 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
             test_rig=test_rig, suite=test_suite))
     report.build_banner_left()
     report.start_content_div2()
-    report.set_obj_html("Objective", "Run QA Tests")
+    report.set_obj_html("Objective", "Execution of test_suite {suite}".format(suite=test_suite))
     report.build_objective()
+    report.set_table_title("Test Input Files")
+    report.build_table_title()
+    report.set_table_dataframe(lf_test_json)
+    report.build_table()
     report.set_table_title("LANForge")
     report.build_table_title()
     report.set_table_dataframe(lf_test_setup)
