@@ -194,6 +194,9 @@ class lf_check():
         self.report_path = _report_path
         self.log_path = _log_path
         self.test_dict = {}
+
+        self.test_fail_list = []
+        self.test_timeout_list = []
         # This is needed for iterations and batch testing.
         self.test_dict_original_json = {}
         path_parent = os.path.dirname(os.getcwd())
@@ -627,6 +630,29 @@ Platform:{platform}
                             kernel=self.lanforge_kernel_version,
                             server_ver=self.lanforge_server_version_full,
                             platform=server_version)
+
+        self.message_txt += """
+Tests Failed:
+=============
+""" 
+        if self.test_fail_list:
+            for failed_cmd in self.test_fail_list:
+                self.message_text += """ 
+{test}
+
+                """.format(test=failed_cmd)
+
+        self.message_txt += """
+
+Tests Timed Out:
+===============
+"""
+        if self.test_timeout_list:
+            for timeout_cmd in self.test_timeout_list:
+                self.message_text += """ 
+{test}
+
+                """.format(test=timeout_cmd)
         
         try:
             if self.production_run:
@@ -1396,6 +1422,14 @@ Platform:{platform}
                     break
             self.qa_report_html = self.qa_report_html.replace(
                 'html report: ', '')
+
+        if self.test_result != 'Finished':
+            if self.text_result == "TIMEOUT":
+                self.test_timeout_list.append(command)
+            else:
+                self.test_fail_list.append(command)
+
+
         # stdout_log_link is used for the email reporting to have
         # the corrected path
         abs_path = False
