@@ -1424,7 +1424,7 @@ Tests Timed Out:
                 'html report: ', '')
 
         if self.test_result != 'Finished':
-            if self.text_result == "TIMEOUT":
+            if self.test_result == "TIMEOUT":
                 self.test_timeout_list.append(command)
             else:
                 self.test_fail_list.append(command)
