@@ -1993,7 +1993,10 @@ def main():
                                         lf_mgr_ssh_port = "22"
                                         ssh.connect(hostname=args.lfmgr, port=lf_mgr_ssh_port, username=args.lfuser, password=args.lfpasswd,
                                                     allow_agent=False, look_for_keys=False, banner_timeout=600)
-                                        command = 'echo lanforge | this instead plz:  sudo echo 0 > /debug/ieee80211/{radio}/mt76/runtime-pm'.format(radio=args.radio)
+                                        # command = 'echo lanforge | sudo echo 0 > /debug/ieee80211/{radio}/mt76/runtime-pm'.format(radio=args.radio)
+                                        # may have to do sudo -s , the cd ~root to execute the command
+                                        # per Iain
+                                        command = "echo lanforge | sudo bash -c 'echo 0 > /debug/ieee80211/{radio}/mt76/runtime-pm'".format(radio=args.radio)
                                         stdin, stdout, stderr = ssh.exec_command(command)
                                         beacon_info = stdout.readlines()
                                         logger.debug("beacon cmd info {info}".format(info=beacon_info))
