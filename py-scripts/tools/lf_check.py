@@ -637,7 +637,7 @@ Tests Failed:
 """ 
         if self.test_fail_list:
             for failed_cmd in self.test_fail_list:
-                self.message_text += """ 
+                self.message_txt += """ 
 {test}
 
                 """.format(test=failed_cmd)
@@ -649,7 +649,7 @@ Tests Timed Out:
 """
         if self.test_timeout_list:
             for timeout_cmd in self.test_timeout_list:
-                self.message_text += """ 
+                self.message_txt += """ 
 {test}
 
                 """.format(test=timeout_cmd)
