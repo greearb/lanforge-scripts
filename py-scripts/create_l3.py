@@ -18,6 +18,12 @@ For remote layer-3 cx creation:
 
  For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
   ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
+
+Tested on 02/03/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
+         the layer-3 scenario successfully created and tested was an eth-to-eth cross connection (eth1-to-eth2 on an APU2/ct521a).
+
 """
 import sys
 import os
@@ -113,6 +119,11 @@ For remote layer-3 cx creation:
 
 For regression (script will create the layer-3 cx, check if it was successful, and then remove the layer-3 cx):
   ./create_l3.py --endp_a 'eth1' --endp_b 'eth2' --min_rate_a '56000' --min_rate_b '40000'
+
+Tested on 02/03/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
+         the layer-3 scenario successfully created and tested was an eth-to-eth cross connection (eth1-to-eth2 on an APU2/ct521a).
 
         ''')
     parser.add_argument(
