@@ -1993,6 +1993,11 @@ def main():
                                         lf_mgr_ssh_port = "22"
                                         ssh.connect(hostname=args.lfmgr, port=lf_mgr_ssh_port, username=args.lfuser, password=args.lfpasswd,
                                                     allow_agent=False, look_for_keys=False, banner_timeout=600)
+
+                                        # Enable beachon rssi debug logs once per boot
+                                        # echo1 > /sys/module/mac80211/parameters/debug_beacon_rssi 
+                                        # then 'journalctl -f' or dmesg should show deabon info 
+
                                         # command = 'echo lanforge | sudo echo 0 > /debug/ieee80211/{radio}/mt76/runtime-pm'.format(radio=args.radio)
                                         # may have to do sudo -s , the cd ~root to execute the command
                                         # per Iain
