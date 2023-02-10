@@ -254,7 +254,7 @@ def main():
     parser.add_argument('--location', help='Location of the executable file without file name Eg. '
                                            '/home/lanforge/ ', default=None)
     parser.add_argument('--machine_user',
-                        help='Windows machine username (Note: to get username run this cmd \"echo %USERNAME%\" or \"echo %USERPROFILE%\" in cmd) Eg. user1',
+                        help="Windows machine username (Note: to get username run this cmd 'echo %%USERNAME%%' or 'echo %%USERPROFILE%%' in cmd) Eg. user1",
                         required=True, nargs='+',
                         default='user')
     parser.add_argument('--realm', help='Realm address for clustering Eg. 75', default='25')
