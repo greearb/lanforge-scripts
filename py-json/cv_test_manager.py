@@ -367,7 +367,7 @@ class cv_test(Realm):
                         raise e  # Exception("Could not find Reports")
                     break
             else:
-                logger.info('Not reporting to kpi file')
+                logger.info('Waiting on test completion for kpi')
                 
 
             # Of if test stopped for some reason and could not generate report.
