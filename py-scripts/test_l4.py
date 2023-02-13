@@ -191,6 +191,11 @@ class IPV4L4(Realm):
         self.ftp_passwd = ftp_passwd
         self.source = source
         self.dest = dest
+
+        self.ftp = ftp
+        self.http = False
+
+
         if self.ap is not None:
             self.station_profile.set_command_param("add_sta", "ap", self.ap)
 
@@ -211,7 +216,6 @@ class IPV4L4(Realm):
         self.csv_results_file = open(results, "w")
         self.csv_results_writer = csv.writer(self.csv_results_file, delimiter=",")
 
-        self.ftp = ftp
         if self.ftp and 'ftp://' not in self.url:
             logger.info("WARNING! FTP test chosen, but ftp:// not present in url!")
 
