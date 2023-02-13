@@ -237,28 +237,16 @@ def main():
             --debug        '''
                                             )
 
-    required_args = None
-    for group in parser._action_groups:
-        if group.title == "required arguments":
-            required_args = group
-            break
 
-    if required_args is not None:
-        required_args.add_argument("--sta_per_radio", type=int, help="number of stations per radio")
+    parser.add_argument("--sta_per_radio", type=int, help="number of stations per radio")
 
-    optional_args = None
-    for group in parser._action_groups:
-        if group.title == "optional arguments":
-            optional_args = group
-            break
-    if optional_args is not None:
-        optional_args.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=0)
-        optional_args.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=0)
-        optional_args.add_argument('--a_max', help='--a_min bps rate minimum for side_a', default=256000)
-        optional_args.add_argument('--b_max', help='--b_min bps rate minimum for side_b', default=256000)
-        optional_args.add_argument('--test_duration', help='--test_duration sets the duration of the test',
+    parser.add_argument('--a_min', help='--a_min bps rate minimum for side_a', default=0)
+    parser.add_argument('--b_min', help='--b_min bps rate minimum for side_b', default=0)
+    parser.add_argument('--a_max', help='--a_min bps rate minimum for side_a', default=256000)
+    parser.add_argument('--b_max', help='--b_min bps rate minimum for side_b', default=256000)
+    parser.add_argument('--test_duration', help='--test_duration sets the duration of the test',
                                    default="2m")
-        optional_args.add_argument('-u', '--upstream_port',
+    parser.add_argument('-u', '--upstream_port',
                                    help='non-station port that generates traffic: <resource>.<port>, e.g: 1.eth1',
                                    default='1.eth1')
 
