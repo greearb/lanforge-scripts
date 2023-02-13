@@ -208,40 +208,28 @@ def main():
             --debug
             ''')
 
-    required_args = None
-    for group in parser._action_groups:
-        if group.title == "required arguments":
-            required_args = group
-            break
-    if required_args is not None:
-        required_args.add_argument(
-            '--a_min',
-            help='--a_min bps rate minimum for side_a',
-            default=256000)
-        required_args.add_argument(
-            '--b_min',
-            help='--b_min bps rate minimum for side_b',
-            default=256000)
+    parser.add_argument(
+        '--a_min',
+        help='--a_min bps rate minimum for side_a',
+        default=256000)
+    parser.add_argument(
+        '--b_min',
+        help='--b_min bps rate minimum for side_b',
+        default=256000)
 
-    optional_args = None
-    for group in parser._action_groups:
-        if group.title == "optional arguments":
-            optional_args = group
-            break
-    if optional_args:
-        optional_args.add_argument(
-            '--mode', help='Used to force mode of stations')
-        optional_args.add_argument(
-            '--ap', help='Used to force a connection to a particular AP')
-        optional_args.add_argument(
-            '--number_template',
-            help='Start the station numbering with a particular number. Default is 0000',
-            default=0000)
-        optional_args.add_argument(
-            '--station_list',
-            help='Optional: User defined station names, can be a comma or space separated list',
-            nargs='+',
-            default=None)
+    parser.add_argument(
+        '--mode', help='Used to force mode of stations')
+    parser.add_argument(
+        '--ap', help='Used to force a connection to a particular AP')
+    parser.add_argument(
+        '--number_template',
+        help='Start the station numbering with a particular number. Default is 0000',
+        default=0000)
+    parser.add_argument(
+        '--station_list',
+        help='Optional: User defined station names, can be a comma or space separated list',
+        nargs='+',
+        default=None)
     args = parser.parse_args()
 
     logger_config = lf_logger_config.lf_logger_config()
