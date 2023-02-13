@@ -9,6 +9,10 @@ import os
 import importlib
 import argparse
 import logging
+import traceback
+import requests
+from pandas import json_normalize
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +37,7 @@ class CreateL4(Realm):
             ssid,
             security,
             password,
+            url,
             sta_list,
             name_prefix,
             upstream,
@@ -58,6 +63,7 @@ class CreateL4(Realm):
         self.sta_list = sta_list
         self.security = security
         self.password = password
+        self.url = url
         self.radio = radio
         self.mode = mode
         self.ap = ap
@@ -85,6 +91,7 @@ class CreateL4(Realm):
         self.cx_profile.host = self.host
         self.cx_profile.port = self.port
         self.cx_profile.name_prefix = self.name_prefix
+        self.cx_profile.url = self.url
         self.cx_profile.side_a_min_bps = side_a_min_rate
         self.cx_profile.side_a_max_bps = side_a_max_rate
         self.cx_profile.side_b_min_bps = side_b_min_rate
@@ -189,6 +196,10 @@ python3 ./layer4.py
             default=0)
     parser.add_argument(
             '--ap', help='Used to force a connection to a particular AP')
+    parser.add_argument("--lf_user", type=str, help="--lf_user lanforge user name ",
+                                   default="lanforge")
+    parser.add_argument("--lf_passwd", type=str, help="--lf_passwd lanforge password ",
+                                   default="lanforge")
     args = parser.parse_args()
 
     # set up logger
@@ -200,6 +211,29 @@ python3 ./layer4.py
     num_sta = 2
     if (args.num_stations is not None) and (int(args.num_stations) > 0):
         num_sta = int(args.num_stations)
+
+    # get ip upstream port
+    rv = LFUtils.name_to_eid(args.upstream_port)
+    shelf = rv[0]
+    resource = rv[1]
+    port_name = rv[2]
+    request_command = 'http://{lfmgr}:{lfport}/port/1/{resource}/{port_name}'.format(
+        lfmgr=args.mgr, lfport=args.mgr_port, resource=resource, port_name=port_name)
+    logger.info("port request command: {request_command}".format(request_command=request_command))
+    request = requests.get(request_command, auth=(args.lf_user, args.lf_passwd))
+    logger.info("port request status_code {status}".format(status=request.status_code))
+    lanforge_json = request.json()
+    lanforge_json_formatted = json.dumps(lanforge_json, indent=4)
+    try:
+        key = 'interface'
+        df = json_normalize(lanforge_json[key])
+        upstream_port_ip = df['ip'].iloc[0]
+    except Exception as x:
+        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
+        logger.error(
+                "json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+
+    url = 'dl http://{upstream_port_ip} /dev/null'.format(upstream_port_ip=upstream_port_ip)
 
     station_list = LFUtils.portNameSeries(
         prefix_="sta",
@@ -215,6 +249,7 @@ python3 ./layer4.py
                            upstream=args.upstream_port,
                            ssid=args.ssid,
                            password=args.passwd,
+                           url=url,
                            radio=args.radio,
                            security=args.security,
                            use_ht160=False,
