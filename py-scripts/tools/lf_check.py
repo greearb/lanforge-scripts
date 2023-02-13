@@ -383,6 +383,9 @@ class lf_check():
         self.logger.info("radio request.test: {text}".format(text=lanforge_radio_text))
         return lanforge_radio_json, lanforge_radio_text
 
+    def get_lanforge_system_ip(self):
+        return self.lf_mgr_ip
+
     def get_lanforge_system_node_version(self):
         # creating shh client object we use this object to connect to router
         ssh = paramiko.SSHClient()
@@ -631,6 +634,7 @@ Date: {date}""".format(
 LANforge Versions:
 ==================
 LANforge:{lanforge}
+LANforge:[{lanforge_ip}]
 Fedora:{fedora}
 Kernel:{kernel}
 Server:{server_ver}
@@ -640,6 +644,7 @@ Platform:{platform}
 
                         """.format(
                             lanforge=self.lanforge_system_node_version,
+                            lanforge_ip=self.lf_mgr_ip,
                             fedora=self.lanforge_fedora_version,
                             gui=self.lanforge_gui_version,
                             gui_build=self.lanforge_gui_build_date,
@@ -1846,6 +1851,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
     # Test-rig information information
     lanforge_system_node_version = 'NO_LF_NODE_VER'
+    lanforge_system_ip ='NO_LF_IP'
     scripts_git_sha = 'NO_GIT_SHA'
     lanforge_fedora_version = 'NO_FEDORA_VER'
     lanforge_kernel_version = 'NO_KERNEL_VER'
@@ -1954,6 +1960,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     except BaseException:
         logger.warning("WARNING: lanforge_system_node_version exception")
 
+    lanforge_system_ip = check.get_lanforge_system_ip()
+
     try:
         lanforge_fedora_version = check.get_lanforge_fedora_version()
         logger.info("lanforge_fedora_version {fedora_ver}".format(
@@ -2051,6 +2059,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # LANforge and scripts config for results
     lf_test_setup = pd.DataFrame()
     lf_test_setup['LANforge'] = lanforge_system_node_version
+    lf_test_setup['LANforg IP'] = lanforge_system_ip
     lf_test_setup['fedora version'] = lanforge_fedora_version
     lf_test_setup['kernel version'] = lanforge_kernel_version
     lf_test_setup['server version'] = lanforge_server_version_full
@@ -2097,8 +2106,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     # generate output reports
     test_rig = check.get_test_rig()
     report.set_title(
-        "LF Check: {test_rig}: {suite}".format(
-            test_rig=test_rig, suite=test_suite))
+        "LF Check: {test_rig}: {suite} : {ip} ".format(
+            test_rig=test_rig, suite=test_suite, ip=lanforge_system_ip ))
     report.build_banner_left()
     report.start_content_div2()
     report.set_obj_html("Objective", "Execution of test_suite {suite}".format(suite=test_suite))
