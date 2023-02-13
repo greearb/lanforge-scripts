@@ -402,7 +402,7 @@
                 ]
             },
             "create_l3_stations":{
-                    "enabled":"FALSE",
+                    "enabled":"TRUE",
                     "load_db":"NONE",
                     "command":"create_l3_stations.py",
                     "args":"",
