@@ -1,8 +1,18 @@
 #!/usr/bin/env python3
 """
-    This script will create a variable number of layer4 stations each with their own set of cross-connects and endpoints.
+NAME: create_l4.py
 
-    Use './create_l4.py --help' to see command line usage and options
+PURPOSE:
+create_l4.py will create a user specified number of stations and layer-4 endpoints in a bytes-rd test scenario.
+
+Use './create_l4.py --help' to see command line usage and options
+
+EXAMPLE:
+    ./create_l4.py --mgr <ip-address> --radio wiphy2 --num_stations 4 --upstream_port 1.1.eth1 --ssid <ssid> --passwd <passwd> --security wpa2 --debug
+
+COPYRIGHT:
+    Copyright 2023 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
 """
 import sys
 import os
@@ -145,19 +155,25 @@ def main():
         prog='create_l4.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''\
-            Create stations to test connection and traffic on VAPs of varying security types (WEP, WPA, WPA2, WPA3, Open)
+            This script will create a specified number of stations and layer-4 endpoints as a bytes-rd scenario.
+
             ''',
 
         description='''\
-layer4.py:
---------------------
+---------------------------
+Layer-4 Test Script - create_l4.py
+---------------------------
+Summary:
+This script will create a user specified number of stations and layer-4 endpoints in a bytes-rd test scenario.
+---------------------------
 Generic command layout:
 
-python3 ./layer4.py
+./create_l4.py
+    --mgr <ip_address>
     --upstream_port eth1
     --radio wiphy0
-    --num_stations 32
-    --security {open|wep|wpa|wpa2|wpa3} \\
+    --num_stations 10
+    --security {open|wep|wpa|wpa2|wpa3}
     --mode   1
         {"auto"   : "0",
         "a"      : "1",
@@ -173,12 +189,21 @@ python3 ./layer4.py
         "bgnAC"  : "11",
         "abgnAX" : "12",
         "bgnAX"  : "13",
-    --ssid netgear
-    --password admin123
+    --ssid <ssid>
+    --password <password>
     --a_min 1000
     --b_min 1000
     --ap "00:0e:8e:78:e1:76"
     --debug
+
+EXAMPLE:
+    ./create_l4.py --mgr <ip-address> --radio wiphy2 --num_stations 4 --upstream_port 1.1.eth1 --ssid <ssid> --passwd <passwd> --security wpa2 --debug
+
+Tested on 02/13/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
+         the layer-4 bytes-rd scenario was successfully created and tested on a ct523c sta-to-eth cross connection.
+
             ''')
 
     parser.add_argument(
