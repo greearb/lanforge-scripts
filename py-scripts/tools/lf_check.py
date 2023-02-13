@@ -238,6 +238,10 @@ class lf_check():
         self.lanforge_gui_build_date = ""
         self.lanforge_gui_git_sha = ""
 
+        # Server information
+        self.server_hostname = socket.getfqdn()
+        self.server_ip = socket.gethostbyname(self.server_hostname)
+
         # meta.txt
         self.meta_data_path = ""
 
@@ -571,6 +575,8 @@ Summary:
 ========
 Rig:{email} 
 Suite: {suite} 
+Server: {server}
+Server IP: {server_ip}
 
 Duration:
 =========
@@ -614,7 +620,9 @@ Date: {date}""".format(
                 hostname=self.hostname,
                 server_ver=server_version,
                 db=self.database_sqlite, 
-                date=datetime.datetime.now())
+                date=datetime.datetime.now(),
+                server=self.server_hostname,
+                server_ip=self.server_ip)
 
             # Add information about about GUI and Kernel Versions
         self.message_txt += """
