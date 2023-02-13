@@ -71,6 +71,7 @@ class lf_bar_graph:
                  _figsize=(10, 5),
                  _show_bar_value=False,
                  _xaxis_step=1,
+                 _xticks=None,
                  _xticks_font=None,
                  _xaxis_value_location=0,
                  _text_font=None,
@@ -133,6 +134,7 @@ class lf_bar_graph:
                 i = i + 1
 
         plt.subplots(figsize=self.figsize)
+        plt.xticks(rotation=45)
         i = 0
 
         def show_value(rectangles):
@@ -566,6 +568,8 @@ class lf_stacked_graph:
                         bottom=np.array(self.data_set[i - 2]) + np.array(self.data_set[i - 1]), color=self.color[i - 1])
         plt.xlabel(self.xaxis_name)
         plt.ylabel(self.yaxis_name)
+        plt.xticks(rotation=45)
+
         plt.legend(self.label)
         plt.savefig("%s.png" % self.graph_image_name, dpi=96)
         plt.close()

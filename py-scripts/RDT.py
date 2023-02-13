@@ -232,11 +232,14 @@ class RDT(Realm):
         return last
     
     def restart_wifi(self,device):
-        self.interop.enable_or_disable_wifi(device=device, wifi="disable")
-        time.sleep(1)
-        self.interop.enable_or_disable_wifi(device=device, wifi="enable")
-        time.sleep(2)
-        return True
+        if(device==None):
+            return False
+        else:
+            self.interop.enable_or_disable_wifi(device=device, wifi="disable")
+            time.sleep(1)
+            self.interop.enable_or_disable_wifi(device=device, wifi="enable")
+            time.sleep(2)
+            return True
 
     def get_time_from_wifi_msgs(self, local_dict=None, phn_name=None):
         time.sleep(6)
@@ -303,8 +306,11 @@ class RDT(Realm):
         stdout, stderr = process.communicate()
         output = (stdout.decode("utf-8"))
         out = json.loads(output)
-        final = out["devices"]['name']
-        return final
+        if out['devices']==[]:
+            return None
+        elif out["devices"]['phantom']==False:
+            final = out["devices"]['name']
+            return final
     
     def force_ssid(self,ssid,devices):
         user_list = []
@@ -424,20 +430,22 @@ class RDT(Realm):
 
 
 
-    def generate_report(self,data,Ap_names,rssi,expected_data,udp_actual_data,tcp_actual_data):
+    def generate_report(self,data,Ap_names,rssi,udp_actual_data,tcp_actual_data,tcp_expected_data,udp_expected_data):
         report = lf_report()
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
-        report.set_title("Report for:Wi-Fi Capacity Test")
+        report.set_title("Report for:Real Device Test on Station")
         report.build_banner()
+        report.set_text("<h3 style='padding-left: 150px;'>Scenario name:"+  test_scenario_name)
+        report.build_text()
         report.set_text(
             "<h3 style='padding-left: 150px;'>Test Objective:" + "<h5 style='text-align: justify;padding-left: 150px;'>The purpose of this test plan is to evaluate the basic client connectivity and throughput of a WLAN station across 30 access points (APs). ")
         report.build_text()
         report.set_text(
-            "<h3 style='padding-left: 150px;'>Pre Requisites:" + "<h5 style='text-align: justify;padding-left: 150px;'>1. 20+ APs configured with the same configuration (SSID, Password, channel, and bandwidth for both bands).")
+            "<h3 style='padding-left: 150px;'>Pre-Requisites:" + "<h5 style='text-align: justify;padding-left: 150px;'>1. 20+ APs configured with the same configuration (SSID, Password, channel, and bandwidth for both bands).")
         report.build_text()
         report.set_text(
-            "<h3 style='padding-left: 150px;'>Objective:" + "<h5 style='text-align: justify; padding-left: 150px; line-height: 1.8;'>1.Using automation power on only one AP at a time.<br>"
+            "<h3 style='padding-left: 150px;'>Test Procedure:" + "<h5 style='text-align: justify; padding-left: 150px; line-height: 1.8;'>1.Using automation power on only one AP at a time.<br>"
                             " 2. Connect the Station using automation to AP SSID, while connecting to AP SSID record the below values from the script.<br>"
                             " &nbsp;&nbsp; i. Time is taken from Authentication to Association (Later we have to plot a graph using these values)<br>"
                             "3. Once STA gets an IP address from the script, trigger Wi-Fi Capacity or Data Plane test and execute the test cases below.<br>"
@@ -520,13 +528,17 @@ class RDT(Realm):
 
         # # # TCP_Throughput = [["1","2","3","4", "5","6","7","8","9", "10","11","12","13","14", "15","16","17","18","19", "20","21","22","23","24", "25","26","27","28","29", "30"], [23, 38, 22, 19, 45,23, 38, 22, 19, 45,56,34,89,24,67, 19, 45,23, 38, 22,45,56,34,89,24,45,23, 38, 22,45 ],
                 # # # [32, 48, 27, 29, 11,53, 28, 21, 23, 41,50,40,12,34,47, 29, 55,33, 18, 62,25,46,24,59,24,41,33, 18, 32,55 ]]
-            TCP_Throughput=[Ap_names,tcp_actual_data,expected_data]
+            tem=[]
+            for m,n in zip(tcp_expected_data,tcp_actual_data):
+                tem.append(m-n)
+            tcp_expected_data=tem
+            TCP_Throughput=[Ap_names,tcp_actual_data,tcp_expected_data]
             graph1 = lf_stacked_graph(_data_set=TCP_Throughput,
                                     _xaxis_name="Access Points",
                                     _yaxis_name="Throughput(Mbps)",
-                                    _label=['Expected throughput', 'Actual throughput', 'both'],
+                                    _label=[ 'Actual throughput','Expected throughput','both'],
                                     _graph_image_name="login_pass_fail",
-                                    _color=['#11d4b6','#149ef5'],
+                                    _color=['#149ef5','#11d4b6'],
                                     _enable_csv=False)
 
             graph_png1 = graph1.build_stacked_graph()
@@ -557,10 +569,10 @@ class RDT(Realm):
             # # # Throughput5G= [["1","2","3","4", "5","6","7","8","9", "10","11","12","13","14", "15","16","17","18","19", "20","21","22","23","24", "25","26","27","28","29", "30"], [32, 48, 27, 29, 11,53, 28, 21, 23, 41,50,40,12,34,47, 29, 55,33, 18, 62,25,46,24,59,24,41,33, 18, 32,55 ],
             # # #         [32, 48, 27, 29, 11,53, 28, 21, 23, 41,50,40,12,34,47, 29, 55,33, 18, 62,25,46,24,59,24,41,33, 18, 32,55 ]]
             tem=[]
-            for m,n in zip(expected_data,udp_actual_data):
+            for m,n in zip(udp_expected_data,udp_actual_data):
                 tem.append(m-n)
-            expected_data=tem
-            UDP_Throughput=[Ap_names,udp_actual_data,expected_data]
+            udp_expected_data=tem
+            UDP_Throughput=[Ap_names,udp_actual_data,udp_expected_data]
             graph1 = lf_stacked_graph(_data_set=UDP_Throughput,
                                     _xaxis_name="Access Points",
                                     _yaxis_name="Throughput(Mbps)",
@@ -680,7 +692,7 @@ class RDT(Realm):
         # pdf_file = report.write_pdf()
         # path1 = "return file {}".format(pdf_file)
         #
-        pdfkit.from_file(path, report_name)
+        # pdfkit.from_file(path, report_name)
 
         return None
 
@@ -730,7 +742,8 @@ def main():
             udp_up_throughput=[]
             tcp_dn_throughput=[]
             udp_dn_throughput=[]
-            expected_throughput=[100,100]
+            expected_tcp=[]
+            expected_udp=[]
             AP_names_list=[]
             Rssi_TCP=[]
             Rssi_UDP=[]
@@ -742,19 +755,23 @@ def main():
             print("Probing process is ",probe_status,'!')
             for i,j in aps.items():
                 Instance.cleanup_cx()
-                print("Test initiated with ",i,'...')
+                print("\n\nTest initiated with ",i,'...\n---------------------------------------------------')
                 Instance.ap_up(api=str(j)+'on')
                 AP_names_list.append(i)
                 Instance.AP_status(apname=i,aphost=ap_hosts[i])
                 print(i,' is turned on, attempting test from ',args.config,'\n--------------------------------------------------------------------------------------')
+
                 if(df[x]['TCP'] is True):
+                    expected_tcp.append(int(df[x]['Upload-rate'].replace("Mbps", ""))+int(df[x]['Download-rate'].replace("Mbps", "")))
                     Test_instance=RDT(lfclient_host=mgr_ip,lf_port=port,upstream=upstream,upload_rate=df[x]['Upload-rate'],download_rate=df[x]['Download-rate'],duration=df[x]['Test-duration'],protocol='TCP-IPv4')
                     print("triggering TCP test")
                     test=Test_instance.wct_trigger()
                     tcp_up_throughput.append(test[0])
+                    expected_tcp
                     tcp_dn_throughput.append(test[1])
                     Rssi_TCP.append(int(test[2])*-1)
                 if(df[x]['UDP'] is True):
+                    expected_udp.append(int(df[x]['Upload-rate'].replace("Mbps", ""))+int(df[x]['Download-rate'].replace("Mbps", "")))
                     Test_instance=RDT(lfclient_host=mgr_ip,lf_port=port,upstream=upstream,upload_rate=df[x]['Upload-rate'],download_rate=df[x]['Download-rate'],duration=df[x]['Test-duration'],protocol='UDP-IPv4')
                     print("triggering UDP test")
                     test=Test_instance.wct_trigger()
@@ -774,7 +791,7 @@ def main():
             print("RSSI ",Rssi_UDP)
 
             data['report_name']=x
-            Instance.generate_report(data=data,tcp_actual_data=tcp_dn_throughput,udp_actual_data=udp_dn_throughput,rssi=Rssi_UDP,Ap_names=AP_names_list,expected_data=expected_throughput)
+            Instance.generate_report(data=data,tcp                              _actual_data=tcp_dn_throughput,udp_actual_data=udp_dn_throughput,rssi=Rssi_UDP,Ap_names=AP_names_list,udp_expected_data=expected_udp,tcp_expected_data=expected_tcp)
             print('\n \n \n Completed the ',x,'\n=========================================')
 
 

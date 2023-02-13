@@ -17,7 +17,7 @@
     "UDP": true,
     "Upload-rate": "0Mbps",
     "Download-rate": "100Mbps",
-    "AP_batch_location":"C:/Users/CTINDLAP43/Desktop/TEST_APs.xlsx"
+    "AP_batch_location":"C:/Users/CTINDLAP43/Desktop/Temp.xlsx"
   },
   "test-scenario2": {
     "Test-duration": "15000",

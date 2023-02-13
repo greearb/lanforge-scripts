@@ -204,8 +204,7 @@ class BandSteering(Realm):
         # x-axis iterations, y-axis station mode
         mode = []
         iterations = self.iter
-        sta_names = self.get_station_names()
-        sta_names.pop(0)
+        sta_names = self.get_station_names()  
         for sta in sta_names:
             channel = self.json_get("/port/1/1/%s/channel?fields=channel" % sta)['interface']
             if int(channel['channel']) in range(1, 15):

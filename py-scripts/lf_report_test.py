@@ -165,15 +165,7 @@ INCLUDE_IN_README
         report.set_csv_filename(graph_png)
         report.move_csv_file()
     report.build_graph()
-    set1 = [1, 2, 3, 4]
-    set2 = [[45, 67, 45, 34], [34, 56, 45, 34], [45, 78, 23, 45]]
-    graph2 = lf_scatter_graph(_x_data_set=set1, _y_data_set=set2, _xaxis_name="x-axis", _values=None,
-                              _yaxis_name="y-axis",
-                              _graph_image_name="image_name1",
-                              _color=None,
-                              _label=["s1", "s2", "s3"],
-                              _enable_csv=False)
-    graph_png = graph2.build_scatter_graph()
+    
 
     print("graph name {}".format(graph_png))
 
