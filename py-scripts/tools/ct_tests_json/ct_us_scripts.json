@@ -511,7 +511,7 @@
                     " --mgr LF_MGR_IP --sanitize --sleep 5"
             ]},
             "test_l4":{
-                "enabled":"FALSE",
+                "enabled":"TRUE",
                 "command":"test_l4.py",
                 "args":"",
                 "args_list":[
