@@ -18,7 +18,7 @@ $ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --por
 
 
 NOTES:
-
+ip-address must be assigned to the wanlink endpoints in the LANforge gui for scenario to run.
 
 TO DO NOTES:
 
@@ -265,8 +265,11 @@ def main():
         prog=__file__,
         formatter_class=argparse.RawTextHelpFormatter,
         description='''\
-            tests creating wanlink
+NAME: lf_create_wanlink.py
 
+PURPOSE: creates a wanlink using the lanforge api.
+
+EXAMPLE:
 Both port_A and port_B have the same configuraiton
 $ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --port_B eth2\
     --speed 1024000 --wl_name wanlink --latency 24 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
@@ -277,6 +280,9 @@ $ ./lf_create_wanlink.py --mgr 192.168.0.104 --mgr_port 8080 --port_A eth1 --por
     --speed_A 1024000 --speed_B 2048000 --wl_name wanlink --latency_A 24 --latency_B 32 --max_jitter 50 --jitter_freq 6 --drop_freq 12\
     --log_level debug --debug
 
+
+NOTES:
+ip-address must be assigned to the wanlink endpoints in the LANforge gui for scenario to run.
 
             ''')
     # http://www.candelatech.com/lfcli_ug.php#add_wl_endp
