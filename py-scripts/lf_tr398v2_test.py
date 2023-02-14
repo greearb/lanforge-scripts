@@ -42,7 +42,7 @@ Note:
         command options.
     --set modifications will be applied after the other config has happened,
         so it can be used to override any other config.  Above, we are disabling many
-        of the subtests, and enablign just Maximum Connection and Maximum Throughput
+        of the subtests, and enabling just Maximum Connection and Maximum Throughput
         tests.
 
     The RSSI values are calibrated, so you will need to run the calibration step and
