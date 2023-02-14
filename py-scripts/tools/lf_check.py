@@ -576,8 +576,9 @@ QA Report Dashboard: lf_qa.py was not run as last script of test suite"""
 
 Summary: 
 ========
-Rig:{email} 
+Rig: {email} 
 Suite: {suite} 
+
 Server: {server}
 Server IP: {server_ip}
 
@@ -589,23 +590,23 @@ Stop: {stop}
 
 Results:
 ========
-Tests:{tests} 
+Tests: {tests} 
 Fail:{fail} 
 Timeout:{timeout} 
 Partial Fail:{partial}  
 
 Test Script Input Files:
 ========================
-json_dut:{dut_json}
-json_rig:{rig_json}
-json_test:{test_json}
+json_dut: {dut_json}
+json_rig: {rig_json}
+json_test: {test_json}
 
 
 Server / DB Infomation
 ======================
-Server Ver:{server_ver} 
-Server IP:{hostname}  
-DB:{db} 
+Server Ver: {server_ver} 
+Server IP: {hostname}  
+DB: {db} 
 Date: {date}""".format(
                 email=self.email_title_txt,    
                 suite=self.test_suite,
