@@ -582,18 +582,18 @@ Suite: {suite}
 Server: {server}
 Server IP: {server_ip}
 
-Duration:
-=========
-Duration: {duration}
-Start: {start}
-Stop: {stop}
-
 Results:
 ========
 Tests: {tests} 
 Fail:{fail} 
 Timeout:{timeout} 
 Partial Fail:{partial}  
+
+Duration:
+=========
+Duration: {duration}
+Start: {start}
+Stop: {stop}
 
 Test Script Input Files:
 ========================
