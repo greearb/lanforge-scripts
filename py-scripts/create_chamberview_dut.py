@@ -24,7 +24,7 @@ Note : If entered DUT name is already created in lanforge,
 
 How to Run this:
     ./create_chamberview_dut --lfmgr "localhost" --port "8080" --dut_name "dut_name"
-                --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP bssid=78:d2:94:bf:16:41"
+                --ssid "ssid_idx=0 ssid=NET1 security=WPA|WEP|11r|EAP-PEAP|open bssid=78:d2:94:bf:16:41"
                 --ssid "ssid_idx=1 ssid=NET1 security=WPA password=test bssid=78:d2:94:bf:16:40"
 
     The contents of '--ssid' argument are split with shlex, so you can do commands like this as well:
@@ -113,6 +113,7 @@ class DUT(dut):
         flags['11r'] = 0x200
         flags['eap-ttls'] = 0x400
         flags['eap-peap'] = 0x800
+        flags['open']=0x0
         if self.ssid:
             for j in range(len(self.ssid)):
                 self.ssid[j] = shlex.split(self.ssid[j][0])
