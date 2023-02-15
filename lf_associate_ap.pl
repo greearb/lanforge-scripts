@@ -95,7 +95,7 @@ my  $log_cli            = "unset"; # use ENV{'LOG_CLI'}
 # and we're assuming the port is on the same resource (1).
 our $upstream_port      = "eth1";      # Step 1 upstream port
 our $sta_wiphy          = "wiphy0";    # physical parent (radio) of virtual stations
-our $phy_channel        = ""; # channel number
+our $phy_channel        = "-1"; # channel number
 our $phy_antenna        = ""; # number of antennas, 0 means all
 our %wiphy_bssids       = ();
 our $admin_down_on_add  = 0;
@@ -215,7 +215,7 @@ our %wifi_modes = (
 );
 our $wifi_mode ="";
 our $bssid = "";
-my $mode_list = join("|", sort keys %wifi_modes);
+my $mode_list = join(" | ", map { "$_ = $wifi_modes{$_}" } sort keys %wifi_modes);
 
 ## ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 ##                   Usage                                     #
@@ -1589,7 +1589,10 @@ sub set_channel {
     die("set_channel: unset resource") unless ((defined $res) && ("" ne $res));
     die("set_channel: unset radio") unless ((defined $phy) && ("" ne $phy));
     die("set_channel: unset channel") unless ((defined $chan) && ("" ne $chan));
-
+    if (index($chan,"e") != -1) {
+        my $tmp_chan = int($chan =~ s/e//r);
+        $chan = $tmp_chan + 190;
+    }
     my $mode = 'NA';
     my $cmd = $::utils->fmt_cmd("set_wifi_radio", 1, $res,
                                  $phy,
@@ -1660,7 +1663,7 @@ GetOptions
   'resource2|r2=i'            => \$::resource2,
   'quiet|q=s'                 => \$::quiet,
   'radio|o=s'                 => \$::sta_wiphy,
-  'channel|chan=i'            => \$::phy_channel,
+  'channel|chan=s'            => \$::phy_channel,
   'antenna|ant=s'             => \$::phy_antenna,
   'ssid|s=s'                  => \$::ssid,
   'security=s'                => \$::security,
