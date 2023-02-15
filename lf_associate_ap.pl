@@ -228,7 +228,7 @@ my $usage = qq($0   [--mgr {host-name | IP}]
                                  # same effect when setting env var LOG_CLI=STDOUT
       ##       AP selection
       [--radio {name}]           # e.g. wiphy2
-      [--channel {channel}]      # e.g. 52, 161, 153
+      [--channel {channel}]      # e.g. 52, 161, 153  , 6E cannels end in an 'e' or add 190 to the 6e channel
                                  # please check the LANforge GUI to verify resulting selection
                                  # center channels might be selected differently than you intended
       [--antenna {1,2,3,4}]      # select number of antennas
