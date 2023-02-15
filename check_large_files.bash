@@ -30,6 +30,7 @@ USAGE="$0 # Check for large files and purge many of the most inconsequencial
  -k   # remove ath10k crash files
  -l   # remove old files from /var/log, truncate /var/log/messages
  -m   # remove orphaned fileio items in /mnt/lf
+ -p   # remove pcap data
  -q   # quiet
  -r   # compress /home/lanforge report data and pcap files
  -s   # empty the trash
@@ -122,7 +123,7 @@ function disk_space_below() {
 # ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- #
 
 #opts=""
-opts="abcdhklmqrtv"
+opts="abcdhklmpqrtv"
 while getopts $opts opt; do
   case "$opt" in
     a)
@@ -156,6 +157,9 @@ while getopts $opts opt; do
       selections+=($opt)
       ;;
     m)
+      selections+=($opt)
+      ;;
+    p)
       selections+=($opt)
       ;;
     r)
@@ -203,6 +207,7 @@ declare -A totals=(
     [k]=0
     [l]=0
     [m]=0
+    [p]=0
     [r]=0
     [s]=0
     [t]=0
@@ -216,6 +221,7 @@ declare -A desc=(
     [l]="/var/log"
     [m]="/mnt/lf files"
     [n]="dnf cache"
+    [p]="pcap data"
     [r]="report data"
     [s]="trash can"
     [t]="/var/tmp"
@@ -229,6 +235,7 @@ declare -A surveyors_map=(
     [l]="survey_var_log"
     [m]="survey_mnt_lf_files"
     [n]="survey_dnf_cache"
+    [p]="survey_pcap_files"
     [r]="survey_report_data"
     [s]="survey_trash_can"
     [t]="survey_var_tmp"
@@ -243,6 +250,7 @@ declare -A cleaners_map=(
     [l]="clean_var_log"
     [m]="clean_mnt_lf_files"
     [n]="clean_dnf_cache"
+    [p]="clean_pcap_files"
     [r]="compress_report_data"
     [s]="empty_trash_can"
     [t]="clean_var_tmp"
@@ -452,11 +460,18 @@ clean_var_log() {
     fi
     cd /var/log
     while read file; do
-        if [[ $file = /var/log/messages ]]; then
-            truncate -s0 /var/log/messages
-        else
-            rm -f $vee "$file"
-        fi
+        case $file in
+            /var/log/dnf.librepo.log)
+                truncate -s0 "$file" ;;
+            /var/log/messages.*)
+                rm -f $vee "$file" ;;
+            /var/log/messages)
+                truncate -s0 "$file" ;;
+            /var/log/sysmon.log)
+                truncate -s0 "$file" ;;
+            *)
+                rm -f $vee "$file";;
+        esac
     done <<< "${var_log_files[@]}"
     cd "$starting_dir"
 }
@@ -479,12 +494,40 @@ clean_mnt_lf_files() {
     totals[m]=0
 }
 
+clean_pcap_files() {
+    note "Purging pcap data..."
+    cd /home/lanforge
+    local vile_list=(`find tmp/ report-data/ local/tmp/ lf_reports/ html-reports/ Documents/ \
+        -type f -a \( \
+               -name '*.pcap'       \
+            -o -name '*.pcap.gz'    \
+            -o -name '*.pcap.xz'    \
+            -o -name '*.pcapng'     \
+            -o -name '*.pcapng.gz'  \
+            -o -name '*.pcapng.xz'  \
+        \) 2>/dev/null ||:`)
+    counter=1
+    for f in "${vile_list[@]}"; do
+        (( $verbose > 0 )) && echo "    removing $f" || echo -n " ${counter}/${#vile_list[@]}"
+        rm -f "$f"
+        (( counter+=1 ))
+    done
+    totals[p]=0
+    cd -
+    echo ""
+}
+
 compress_report_data() {
     note "compress report data..."
     cd /home/lanforge
     # local csvfiles=( $( find /home/lanforge -iname "*.csv"  -print0 ))
-    local vile_list=(`find html-reports/ lf_reports/ report-data/ tmp/ -type f \
-         -a \( -name '*.csv' -o -name '*.pdf' -o -name '*.pdf' -o -name '*.pcap'  -o -name '*.pcapng' \)`)
+    local vile_list=(`find html-reports/ lf_reports/ report-data/ tmp/ \
+        -type f -a \( \
+               -name '*.csv' \
+            -o -name '*.pdf' \
+            -o -name '*.html' \
+            -o -name '*.pcap' \
+            -o -name '*.pcapng' \)`)
     counter=1
     for f in "${vile_list[@]}"; do
         (( $verbose > 0 )) && echo "    compressing $f" || echo -n " ${counter}/${#vile_list[@]}"
@@ -780,7 +823,7 @@ survey_ath10_files() {
 var_log_files=()
 survey_var_log() {
     debug "Surveying var log"
-    mapfile -t var_log_files < <(find /var/log -type f -size +35M \
+    mapfile -t var_log_files < <(find /var/log -type f -size +1M \
         -not \( -path '*/journal/*' -o -path '*/sa/*' -o -path '*/lastlog' \) 2>/dev/null ||:)
     if [[ ${var_log_files+x} = x ]]; then
         totals[l]=$(du -hc "${var_log_files[@]}" 2>/dev/null | awk '/total/{print $1}' )
@@ -860,6 +903,32 @@ survey_compressed_files() {
 # mapfile -t boot_kernels < <(ls init*)
 # boot_usage=`du -sh .`
 
+survey_pcap_files() {
+    debug "Surveying for lanforge report data"
+    cd /home/lanforge
+
+    local fsiz=0
+    local fnum=0
+    local pcap_list=(`find tmp/ report-data/ local/tmp/ lf_reports/ html-reports/ Documents/ \
+        -type f -a \( \
+               -name '*.pcap'       \
+            -o -name '*.pcap.gz'    \
+            -o -name '*.pcap.xz'    \
+            -o -name '*.pcapng'     \
+            -o -name '*.pcapng.gz'  \
+            -o -name '*.pcapng.xz'  \
+        \) 2>/dev/null ||:`)
+    fnum=$(( 0 + ${#pcap_list[@]} ))
+
+    if (( $fnum > 0 )); then
+        fsiz=$(du -hc "${pcap_list[@]}" | awk '/total/{print $1}')
+    fi
+    totals[p]="$fnum files ($fsiz): ${#pcap_list[@]} pcap"
+    [[ x${totals[p]} = x ]] && totals[p]=0
+    cd "$starting_dir"
+}
+
+
 # report_files=()
 survey_report_data() {
     debug "Surveying for lanforge report data"
@@ -867,9 +936,12 @@ survey_report_data() {
 
     local fsiz=0
     local fnum=0
-    local csv_list=(`find report-data/ html-reports/ lf_reports/ -type f -a -name '*.csv' 2>/dev/null ||:`)
-    local pdf_list=(`find report-data/ html-reports/ lf_reports/ Documents/ -type f -a -name '*.pdf' 2>/dev/null ||:`)
-    local pcap_list=(`find tmp/ report-data/ local/tmp/ lf_reports/ Documents/ -type f -a \( -name '*.pcap' -o -name '*.pcapng' \) 2>/dev/null ||:`)
+    local csv_list=(`find report-data/ html-reports/ lf_reports/ \
+        -type f -a -name '*.csv' 2>/dev/null ||:`)
+    local pdf_list=(`find report-data/ html-reports/ lf_reports/ Documents/ \
+        -type f -a -name '*.pdf' 2>/dev/null ||:`)
+    local pcap_list=(`find tmp/ report-data/ local/tmp/ lf_reports/ Documents/ \
+        -type f -a \( -name '*.pcap' -o -name '*.pcapng' \) 2>/dev/null ||:`)
     fnum=$(( ${#csv_list[@]} + ${#pdf_list[@]} + ${#pcap_list[@]} ))
 
     if (( $fnum > 0 )); then
@@ -1010,6 +1082,7 @@ while [[ $choice != q ]]; do
     echo "  l) old /var/log files         : ${totals[l]}"
     echo "  m) orphaned /mnt/lf files     : ${totals[m]}"
     echo "  n) purge dnf/yum cache        : ${totals[n]}"
+    echo "  p) pcap files                 : ${totals[p]}"
     echo "  r) report data                : ${totals[r]}"
     echo "  s) trash cans                 : ${totals[s]}"
     echo "  t) clean /var/tmp             : ${totals[t]}"
@@ -1040,6 +1113,10 @@ while [[ $choice != q ]]; do
         ;;
     m )
         clean_mnt_lf_files
+        refresh=1
+        ;;
+    p )
+        clean_pcap_files
         refresh=1
         ;;
     r )
