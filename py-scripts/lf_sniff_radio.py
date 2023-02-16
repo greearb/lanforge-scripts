@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
     NAME:       lf_sniff_radio.py
-    PURPOSE:    THis script will sniff a Radio after changing the Radio settings.
+    PURPOSE:    This script will sniff a Radio after changing the Radio settings.
 
                 Radio settings: channel radio mode  AUTO, 802.11a, 802.11b, etc... refer
                                         py-json/LANforge/set_wifi_radio.py for different modes
@@ -196,7 +196,8 @@ def main():
             ''',
 
         description='''\
-        lf_sniff_radio.py will create a monitor and be able to capture wireshark pcap files:
+        This script will sniff a Radio following modifications to its settings.
+         lf_sniff_radio.py will create a monitor and be able to capture wireshark pcap files:
 
         The monitor also uses iw commands to set up the proper bw and frequency to be monitored
 
@@ -228,6 +229,11 @@ def main():
 
 
         Help: 5Ghz frequencies
+
+        Tested on 02/16/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
+         the script modified a radio and created a pcap file as expected when ran directly on a lanforge system (ct523c & ct521a).
 
         ''',
 
