@@ -53,9 +53,9 @@ class L3VariableTimeLongevity(Realm):
                 eap_list=None,
                 name_prefix=None,
                 resource=None,
-                side_a_min_rate=256000,
+                side_a_min_rate=1240000,
                 side_a_max_rate=0,
-                side_b_min_rate=256000,
+                side_b_min_rate=1240000,
                 side_b_max_rate=0,
                 number_template="00",
                 test_duration="125s",
@@ -253,32 +253,12 @@ class L3VariableTimeLongevity(Realm):
             count += 1
             time.sleep(5)
 
-    def cleanup(self,):
-        data = {
-            "name": "BLANK",
-            "action": "overwrite"
-        }
-        url = "cli-json/load"
-        self.json_post(url, data)
-
-        timeout = 20
-        done = False
-        while timeout > 0 and not done:
-            time.sleep(1)
-            port_r = self.json_get("/port/1/1/list?fields=alias")
-            if self.debug:
-                print("port interfaces {}".format(port_r["interfaces"]))
-            for interface in port_r["interfaces"]:
-                if "sta" in interface:
-                    if self.debug:
-                        print("interface {}".format(interface))
-                else:
-                    done = True
-                    break
-            timeout -= 1
-
-        if timeout <= 0:
-            print("not all station ports removed {}".format(port_r["interfaces"]))
+    # Remove traffic connections and stations.
+    def cleanup(self):
+        self.cx_profile.cleanup()
+        # self.multicast_profile.cleanup()
+        for station_profile in self.station_profiles:
+            station_profile.cleanup()
 
     def build(self):
         # refactor in LFUtils.port_zero_request()
