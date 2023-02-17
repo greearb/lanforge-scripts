@@ -10,15 +10,15 @@ These attributes can be tested over FTP using a --ftp flag.
 If the monitored value does not continually increase, this test will not pass.
 
 SETUP:
-    The test may be run with a single LF, the eth port that is connected to the lan or wan of the AP would be updated 
-    to host http, ftp.  The IP on the eth port would queried.
+    The test may be run with a single LF, the eth port that is connected to the lan or wan
+    of the AP will be updated to host http, ftp. The IP on the eth port will be queried.
     In the examples below LANforge eth2 had IP  http://192.168.50.217/
 
-    To enamble the host http and ftp on eth port:  
+    To enable the host http and ftp on eth port:  
         Port tab->Modify Port->Select FTP, Select HTTP for that eth port
         the ftp files just upload right to /home/lanforge
 
-LANforge does have large files for ftp test located in 
+LANforge does have large files for ftp tests located in
     /var/www/html/data*bin :  data_slug_128K.bin   data_slug_256K.bin  data_slug_4K.bin data_slug_2048K.bin  data_slug_48K.bin
     /usr/local/lanforge/nginx/html/*.bin : 10m.bin  1m.bin  2m.bin  3m.bin  500k.bin
 
@@ -86,6 +86,7 @@ COPYRIGHT:
     Copyright 2021 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 """
+
 import sys
 import os
 import csv
