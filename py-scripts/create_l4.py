@@ -14,6 +14,7 @@ COPYRIGHT:
     Copyright 2023 Candela Technologies Inc
     License: Free to distribute and modify. LANforge systems must be licensed.
 """
+
 import sys
 import os
 import importlib
@@ -111,9 +112,9 @@ class CreateL4(Realm):
         self.cx_profile.cleanup()
         self.station_profile.cleanup()
         if LFUtils.wait_until_ports_disappear(
-            base_url=self.lfclient_url,
-            port_list=self.station_profile.station_names,
-            debug=self.debug):
+                base_url=self.lfclient_url,
+                port_list=self.station_profile.station_names,
+                debug=self.debug):
             self._pass("Ports were properly deleted.")
         else:
             self._fail("Ports were NOT properly deleted.")
@@ -132,17 +133,17 @@ class CreateL4(Realm):
 
         timeout = len(self.sta_list) * 2 + 20
         if self.station_profile.create(
-            radio=self.radio,
-            timeout=timeout,
-            sta_names_=self.sta_list,
-            debug=self.debug):
+                radio=self.radio,
+                timeout=timeout,
+                sta_names_=self.sta_list,
+                debug=self.debug):
             self._pass("PASS: Station build finished")
 
             if self.cx_profile.create(
-                ports=self.station_profile.station_names,
-                sleep_time=0,
-                debug_=self.debug,
-                suppress_related_commands_=True):
+                    ports=self.station_profile.station_names,
+                    sleep_time=0,
+                    debug_=self.debug,
+                    suppress_related_commands_=True):
                 self._pass("CX creation succeeded.")
             else:
                 self._fail("CX creation did not succeed.")
@@ -207,24 +208,24 @@ Tested on 02/13/2023:
             ''')
 
     parser.add_argument(
-            '--a_min',
-            help='--a_min bps rate minimum for side_a',
-            default=256000)
+        '--a_min',
+        help='--a_min bps rate minimum for side_a',
+        default=256000)
     parser.add_argument(
-            '--b_min',
-            help='--b_min bps rate minimum for side_b',
-            default=256000)
+        '--b_min',
+        help='--b_min bps rate minimum for side_b',
+        default=256000)
 
     parser.add_argument(
-            '--mode',
-            help='Used to force mode of stations',
-            default=0)
+        '--mode',
+        help='Used to force mode of stations',
+        default=0)
     parser.add_argument(
-            '--ap', help='Used to force a connection to a particular AP')
+        '--ap', help='Used to force a connection to a particular AP')
     parser.add_argument("--lf_user", type=str, help="--lf_user lanforge user name ",
-                                   default="lanforge")
+                        default="lanforge")
     parser.add_argument("--lf_passwd", type=str, help="--lf_passwd lanforge password ",
-                                   default="lanforge")
+                        default="lanforge")
     args = parser.parse_args()
 
     # set up logger
@@ -256,7 +257,7 @@ Tested on 02/13/2023:
     except Exception as x:
         traceback.print_exception(Exception, x, x.__traceback__, chain=True)
         logger.error(
-                "json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
+            "json returned : {lanforge_json_formatted}".format(lanforge_json_formatted=lanforge_json_formatted))
 
     url = 'dl http://{upstream_port_ip} /dev/null'.format(upstream_port_ip=upstream_port_ip)
 
