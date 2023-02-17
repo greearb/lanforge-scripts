@@ -14,7 +14,7 @@ SETUP:
     of the AP will be updated to host http, ftp. The IP on the eth port will be queried.
     In the examples below LANforge eth2 had IP  http://192.168.50.217/
 
-    To enable the host http and ftp on eth port:  
+    To enable the host http and ftp on eth port:
         Port tab->Modify Port->Select FTP, Select HTTP for that eth port
         the ftp files just upload right to /home/lanforge
 
@@ -93,9 +93,7 @@ import csv
 import importlib
 import time
 import argparse
-import datetime
 import logging
-import traceback
 
 import requests
 from pandas import json_normalize
@@ -196,7 +194,6 @@ class IPV4L4(Realm):
         self.ftp = ftp
         self.http = False
 
-
         if self.ap is not None:
             self.station_profile.set_command_param("add_sta", "ap", self.ap)
 
@@ -262,7 +259,7 @@ class IPV4L4(Realm):
         logger.info("type endp_list['endpoint'] {endp}".format(endp=type(endp_list['endpoint'])))
         for endp_name in endp_list['endpoint']:
             logger.info("type endp_name {endp}".format(endp=type(endp_name)))
-            if (type(endp_name) is str):
+            if (isinstance(endp_name, str)):
                 # single endpoint
                 # create a disctionary
                 # 1 station types
@@ -363,8 +360,8 @@ class IPV4L4(Realm):
             # eg: l4_7_port = 'eth2'
             # checking l4_7_port is equal to any of the port name in lanforge port_mgr to get the right port_name for creating l4_5 traffic
             list(map(lambda prt: l4_7_port_lst.append(list(prt.keys())[0]) if (
-                    self.l4_7_port == list(prt.keys())[0].split(".")[-1]) else None,
-                     self.json_get("/port")['interfaces']))
+                self.l4_7_port == list(prt.keys())[0].split(".")[-1]) else None,
+                self.json_get("/port")['interfaces']))
 
         temp_url = self.url.split(" ")
         if temp_url[0] == 'ul' or temp_url[0] == 'dl':
@@ -622,12 +619,12 @@ def main():
 Layer-4 Test Script - test_l4.py
 ---------------------------
 Summary:
-This script will create stations and endpoints to generate and verify layer-4 traffic by monitoring the urls/s, 
+This script will create stations and endpoints to generate and verify layer-4 traffic by monitoring the urls/s,
  bytes-rd, or bytes-wr attribute of the endpoints.
 ---------------------------
 Generic command example:
-./test_l4.py --mgr <ip_address> --upstream_port eth1 --radio wiphy0 --num_stations 3 --security wpa2 
---ssid <ssid> --passwd <password> --test_duration 2m --url "ul http://upstream_port_ip /dev/null" 
+./test_l4.py --mgr <ip_address> --upstream_port eth1 --radio wiphy0 --num_stations 3 --security wpa2
+--ssid <ssid> --passwd <password> --test_duration 2m --url "ul http://upstream_port_ip /dev/null"
 --requests_per_ten 600 --test_type bytes-wr --debug
 ---------------------------
 
@@ -640,7 +637,7 @@ Generic command example:
                                 default=1)
     test_l4_parser.add_argument('--url', help='''
                         --url specifies upload/download, IP of upstream eth port connected to Access Point
-                        /dev/null to discard the data example: 
+                        /dev/null to discard the data example:
                         Example 'dl http://upstream_port_ip /dev/null'  if the upsteam_port_ip is the string
                         'upstream_port_ip' then the upstream port ip will be read at run time ''',
                                 default=None)
@@ -919,7 +916,7 @@ Generic command example:
     ip_test_json_data = ip_test.json_get('layer4')['endpoint']
     logger.info(pformat(ip_test_json_data))
 
-    if type(ip_test_json_data) is not list:
+    if not isinstance(ip_test_json_data, list):
         # if single cx data_type == dict, OR multi cx data_type == list
         layer4traffic = ip_test_json_data['name']
     else:
