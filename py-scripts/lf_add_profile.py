@@ -2,8 +2,8 @@
 """
 NAME: lf_add_profile.py
 
-PURPOSE:    Add a LANforge device profile. This can give a high level description of how the LANforge system should act. 
-            The profile can then be selected in higher-level test cases to auto-generate lower level configuration. 
+PURPOSE:    Add a LANforge device profile. This can give a high level description of how the LANforge system should act.
+            The profile can then be selected in higher-level test cases to auto-generate lower level configuration.
 
 EXAMPLE:
 
@@ -20,7 +20,7 @@ lf_add_profile.py , the --name refers to the profile name
             // see http://www.candelatech.com/lfcli_ug.php#add_profile for the profile flags
             //"--profile_flags","DHCP_SERVER,SKIP_DHCP_ROAM,NAT,ENABLE_POWERSAVE",
             "--profile_flags","4105",
-            "--name","Routed-AP-QA13",  
+            "--name","Routed-AP-QA13",
             "--profile_type","routed_ap",
             "--ssid","vap",
             "--passwd","hello123",
@@ -32,15 +32,15 @@ lf_add_profile.py , the --name refers to the profile name
     Command line:
     see http://www.candelatech.com/lfcli_ug.php#add_profile for the profile flags:
     ./lf_add_profile.py --mgr 192.168.0.104 --mgr_port 8080 --lf_user lanforge --lf_passwd lanforge --antenna 4
-        --instance_count 1 --profile_flags 4105 --name Routed-AP-QA13 --profile_type routed_ap 
-        --ssid vap --passwd hello123 --dut Routed-AP-13 --text 'Making a Routed-AP-13 profile' 
+        --instance_count 1 --profile_flags 4105 --name Routed-AP-QA13 --profile_type routed_ap
+        --ssid vap --passwd hello123 --dut Routed-AP-13 --text 'Making a Routed-AP-13 profile'
         --log_level debug --debug
 
     Once the profile is created a chamberview scenario needs to be created based off that profile:
-    ./create_chamberview.py --lfmgr 192.168.0.104 --port 8080 --create_scenario QA13-2 
+    ./create_chamberview.py --lfmgr 192.168.0.104 --port 8080 --create_scenario QA13-2
     --raw_line 'profile_link 1.1 Routed-AP-QA13 1 NA NA wiphy1,AUTO -1 NA' --raw_line 'resource 1.1.0 0'
 
-    The --raw_line are determined by applying the profile above 
+    The --raw_line are determined by applying the profile above
 
 
 NOTES:
@@ -52,6 +52,7 @@ Tested on 02/20/2023:
 TO DO NOTES:
 
 """
+
 import sys
 
 if sys.version_info[0] != 3:
@@ -67,9 +68,9 @@ import logging
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 lanforge_api = importlib.import_module("lanforge_client.lanforge_api")
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
-from lanforge_client.lanforge_api import LFJsonQuery
-from lanforge_client.lanforge_api import LFJsonCommand
 from lanforge_client.lanforge_api import LFSession
+from lanforge_client.lanforge_api import LFJsonCommand
+from lanforge_client.lanforge_api import LFJsonQuery
 
 
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
@@ -130,20 +131,20 @@ class lf_add_profile():
                     _errors_warnings: list = None,
                     _suppress_related_commands: bool = False):
 
-        flag_val =  0
+        flag_val = 0
         if _profile_flags is not None:
             if '0x' in _profile_flags:
-                _profile_flags = str(int(_profile_flags.replace('0x',''), 16))
+                _profile_flags = str(int(_profile_flags.replace('0x', ''), 16))
 
             flag_val = _profile_flags
             logger.debug("profile_flags used flag_val = {flag_val}".format(flag_val=flag_val))
         elif len(_profile_flags_list) != 0:
-            flag_val = self.command.set_flags(self.command.AddProfileProfileFlags,0, flag_names=_profile_flags_list)
+            flag_val = self.command.set_flags(self.command.AddProfileProfileFlags, 0, flag_names=_profile_flags_list)
             logger.debug("profile_flags_list used flag_val = {flag_val}".format(flag_val=flag_val))
         else:
             logger.error("_profile_flags is None and _profile_flags_list is empty")
 
-        # flag_val = self.command.set_flags(self.command.AddProfileProfileFlags,0, flag_names=_profile_flags)            
+        # flag_val = self.command.set_flags(self.command.AddProfileProfileFlags,0, flag_names=_profile_flags)
 
         self.command.post_add_profile(
             alias_prefix=_alias_prefix,             # Port alias prefix, aka hostname prefix.
@@ -166,25 +167,24 @@ class lf_add_profile():
             errors_warnings=_errors_warnings,
             suppress_related_commands=_suppress_related_commands)
 
-    # This text will be added to the end of the notes field for Profiles. 
-    # The text must be entered one line at a time, primarily due to CLI parsing limitations. 
+    # This text will be added to the end of the notes field for Profiles.
+    # The text must be entered one line at a time, primarily due to CLI parsing limitations.
 
     # http://www.candelatech.com/lfcli_ug.php#add_profile_notes
     def add_profile_notes(self,
-        _dut: str = None,                          # Profile Name. [R]
-        _text: str = None,                         # [BLANK] will erase all, any other text will be appended to existing text. 
-        _response_json_list: list = None,
-        _errors_warnings: list = None,
-        _suppress_related_commands: bool = False):
+                          _dut: str = None,                          # Profile Name. [R]
+                          _text: str = None,                         # [BLANK] will erase all, any other text will be appended to existing text.
+                          _response_json_list: list = None,
+                          _errors_warnings: list = None,
+                          _suppress_related_commands: bool = False):
 
         self.command.post_add_profile_notes(
-                               dut=_dut,                          # Profile Name. [R]
-                               text=_text,                        # [BLANK] will erase all, any other text will be appended to existing text. 
-                               response_json_list=_response_json_list,
-                               debug=self.debug,
-                               errors_warnings=_errors_warnings,
-                               suppress_related_commands=_suppress_related_commands)
-
+            dut=_dut,                          # Profile Name. [R]
+            text=_text,                        # [BLANK] will erase all, any other text will be appended to existing text.
+            response_json_list=_response_json_list,
+            debug=self.debug,
+            errors_warnings=_errors_warnings,
+            suppress_related_commands=_suppress_related_commands)
 
 
 # ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- ---- #
@@ -201,8 +201,8 @@ def main():
 
             add_profile Routed-AP-QA Routed-AP 0 4 1 0 vap hello123 4105
 
-            profile flags   
-            4105 = 0x1009          
+            profile flags
+            4105 = 0x1009
 
             DHCP_SERVER = 0x1           # This should provide DHCP server.
             WPA2        = 0x8
@@ -222,7 +222,7 @@ def main():
         ./create_chamberview.py --lfmgr 192.168.0.104 --port 8080 --delete_scenario --create_scenario QA13-2\
         --raw_line 'profile_link 1.1 Routed-AP-QA13 1 NA NA wiphy1,AUTO -1 NA' --raw_line 'resource 1.1.0 0'\
 
-        The --raw_line are determined by applying the profile above 
+        The --raw_line are determined by applying the profile above
 
     NOTES:
         Tested on 02/20/2023:
@@ -249,11 +249,11 @@ def main():
     parser.add_argument('--passwd', help='(add profile) WiFi SSID to be used, [BLANK] means any.')
     parser.add_argument('--profile_flags', help='pass in flags as a decimal value takes presidence over hex and --pf []')
     parser.add_argument('--profile_flags_hex', help='pass in flags as a hex value')
-    parser.add_argument('--pf', 
-            # nargs='+', # trying to pass in a list
-            action='append',
-            help=''' 
-    (add profile) 
+    parser.add_argument('--pf',
+                        # nargs='+', # trying to pass in a list
+                        action='append',
+                        help='''
+    (add profile)
     Profile flags entered as a list
     Flags for this profilelanforge_api AddProfileProfileFlags'
     enter the flags as a list 0x1009 is:
@@ -280,7 +280,7 @@ def main():
             WPA3 = 0x20                    # Use WPA3 encryption
     ''')
     parser.add_argument("--profile_type", help='''
-        (add profile) 
+        (add profile)
         Profile type: [W]
         Bridged_AP: briged-AP
         Monitor: monitor
@@ -336,9 +336,9 @@ def main():
     parser.add_argument('--dut', help='(add profile notes) Profile Name. [R]', required=True)
     parser.add_argument('--text', action='append',
                         nargs=1,
-                        help='''(add profile notes) list of lines of text  
-                                            [BLANK] will erase all, 
-                                            any other text will be appended to existing text. 
+                        help='''(add profile notes) list of lines of text
+                                            [BLANK] will erase all,
+                                            any other text will be appended to existing text.
                                             must be entered line by line
                                         ''')
 
@@ -362,12 +362,11 @@ def main():
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-
     profile = lf_add_profile(lf_mgr=args.mgr,
-                            lf_port=args.mgr_port,
-                            lf_user=args.lf_user,
-                            lf_passwd=args.lf_passwd,
-                            debug=args.debug)
+                             lf_port=args.mgr_port,
+                             lf_user=args.lf_user,
+                             lf_passwd=args.lf_passwd,
+                             debug=args.debug)
 
     logger.debug("profile_flags_list {pf}".format(pf=args.pf))
     if args.pf:
@@ -375,34 +374,33 @@ def main():
     else:
         profile_flags_list = []
 
-
     # parameters for add_profile
     # alias
     # create side A
     print("args.alias_prefix {}".format(args.alias_prefix))
     profile.add_profile(
-                    _alias_prefix=args.alias_prefix,                    # Port alias prefix, aka hostname prefix.
-                    _antenna=args.antenna,                              # Antenna count for this profile.
-                    _bandwidth=args.bandwidth,                          # 0 (auto), 20, 40, 80 or 160
-                    _eap_id=args.eap_id,                                # EAP Identifier
-                    _flags_mask=args.flags_mask,                        # Specify what flags to set.
-                    _freq=args.freq,                                    # WiFi frequency to be used, 0 means default.
-                    _instance_count=args.instance_count,                # Number of devices (stations, vdevs, etc)
-                    _mac_pattern=args.mac_pattern,                      # Optional MAC-Address pattern, for instance: xx:xx:xx:*:*:xx
-                    _name=args.name,                                    # Profile Name. [R]
-                    _passwd=args.passwd,                                # WiFi Password to be used (AP Mode), [BLANK] means no password.
-                    _profile_flags_list=profile_flags_list,             # Flags for the profile passed as list
-                    _profile_flags=args.profile_flags,                  # Flags for this profile, see above.
-                    _profile_type=args.profile_type,                    # Profile type: See above. [W]
-                    _ssid=args.ssid,                                    # WiFi SSID to be used, [BLANK] means any.
-                    _vid=args.vid,                                      # Vlan-ID (only valid for vlan profiles).
-                    _wifi_mode=args.wifi_mode                           # WiFi Mode for this profile.
-                    )
+        _alias_prefix=args.alias_prefix,                    # Port alias prefix, aka hostname prefix.
+        _antenna=args.antenna,                              # Antenna count for this profile.
+        _bandwidth=args.bandwidth,                          # 0 (auto), 20, 40, 80 or 160
+        _eap_id=args.eap_id,                                # EAP Identifier
+        _flags_mask=args.flags_mask,                        # Specify what flags to set.
+        _freq=args.freq,                                    # WiFi frequency to be used, 0 means default.
+        _instance_count=args.instance_count,                # Number of devices (stations, vdevs, etc)
+        _mac_pattern=args.mac_pattern,                      # Optional MAC-Address pattern, for instance: xx:xx:xx:*:*:xx
+        _name=args.name,                                    # Profile Name. [R]
+        _passwd=args.passwd,                                # WiFi Password to be used (AP Mode), [BLANK] means no password.
+        _profile_flags_list=profile_flags_list,             # Flags for the profile passed as list
+        _profile_flags=args.profile_flags,                  # Flags for this profile, see above.
+        _profile_type=args.profile_type,                    # Profile type: See above. [W]
+        _ssid=args.ssid,                                    # WiFi SSID to be used, [BLANK] means any.
+        _vid=args.vid,                                      # Vlan-ID (only valid for vlan profiles).
+        _wifi_mode=args.wifi_mode                           # WiFi Mode for this profile.
+    )
 
     if args.text is not None:
         for text in args.text:
             profile.add_profile_notes(_dut=args.name,
-                                    _text=text)
+                                      _text=text)
 
 
 if __name__ == "__main__":
