@@ -108,7 +108,8 @@ class MulticastPowersaveTraffic(Realm):
 
     def build_multi_cast_profile(self):
         print("Building multicast endps....")
-        self.multi_cast_profile.create_mc_tx("mc_udp", self.upstream, min_rate=self.min_rate, max_rate=self.max_rate)
+        # self.multi_cast_profile.create_mc_tx("mc_udp", self.upstream, min_rate=self.min_rate, max_rate=self.max_rate)
+        self.multi_cast_profile.create_mc_tx("mc_udp", self.upstream)
         self.multi_cast_profile.create_mc_rx("mc_udp", self.sta_list)
 
     def build_layer3_upload(self):
