@@ -2,12 +2,12 @@
 """
 NAME: lf_add_profile.py
 
-PURPOSE:    Add LANforge device profile. This can give a high level description of how the LANforge system should act. 
+PURPOSE:    Add a LANforge device profile. This can give a high level description of how the LANforge system should act. 
             The profile can then be selected in higher-level test cases to auto-generate lower level configuration. 
 
 EXAMPLE:
 
-lf_add_profile.py  , the --name refers to the profile name
+lf_add_profile.py , the --name refers to the profile name
 
     vscode sample:
             "args":[
@@ -30,21 +30,24 @@ lf_add_profile.py  , the --name refers to the profile name
             "--debug"]
 
     Command line:
-    see see http://www.candelatech.com/lfcli_ug.php#add_profile for the profile flags
+    see http://www.candelatech.com/lfcli_ug.php#add_profile for the profile flags:
     ./lf_add_profile.py --mgr 192.168.0.104 --mgr_port 8080 --lf_user lanforge --lf_passwd lanforge --antenna 4
         --instance_count 1 --profile_flags 4105 --name Routed-AP-QA13 --profile_type routed_ap 
         --ssid vap --passwd hello123 --dut Routed-AP-13 --text 'Making a Routed-AP-13 profile' 
         --log_level debug --debug
 
-    Once the profile is created a chamberview need to be created based off that profile
+    Once the profile is created a chamberview scenario needs to be created based off that profile:
     ./create_chamberview.py --lfmgr 192.168.0.104 --port 8080 --create_scenario QA13-2 
     --raw_line 'profile_link 1.1 Routed-AP-QA13 1 NA NA wiphy1,AUTO -1 NA' --raw_line 'resource 1.1.0 0'
 
-    The --raw_line are determined applying the profile above 
+    The --raw_line are determined by applying the profile above 
 
 
 NOTES:
 
+Tested on 02/20/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
 
 TO DO NOTES:
 
@@ -209,17 +212,22 @@ def main():
 
     Example:
         Command line:
-        see see http://www.candelatech.com/lfcli_ug.php#add_profile for the profile flags
+        see http://www.candelatech.com/lfcli_ug.php#add_profile for the profile flags:
         ./lf_add_profile.py --mgr 192.168.0.104 --mgr_port 8080 --lf_user lanforge --lf_passwd lanforge --antenna 4\
             --instance_count 1 --profile_flags 4105 --name Routed-AP-QA13 --profile_type routed_ap\
             --ssid vap --passwd hello123 --dut Routed-AP-13 --text 'Making a Routed-AP-13 profile'\
             --log_level debug --debug
 
-        Once the profile is created a chamberview need to be created based off that profile
+        Once the profile is created a chamberview scenario needs to be created based off that profile:
         ./create_chamberview.py --lfmgr 192.168.0.104 --port 8080 --delete_scenario --create_scenario QA13-2\
         --raw_line 'profile_link 1.1 Routed-AP-QA13 1 NA NA wiphy1,AUTO -1 NA' --raw_line 'resource 1.1.0 0'\
 
-        The --raw_line are determined applying the profile above 
+        The --raw_line are determined by applying the profile above 
+
+    NOTES:
+        Tested on 02/20/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
 
             ''')
     # http://www.candelatech.com/lfcli_ug.php#add_profile
@@ -388,7 +396,7 @@ def main():
                     _profile_type=args.profile_type,                    # Profile type: See above. [W]
                     _ssid=args.ssid,                                    # WiFi SSID to be used, [BLANK] means any.
                     _vid=args.vid,                                      # Vlan-ID (only valid for vlan profiles).
-                    _wifi_mode=args.wifi_mode                          # WiFi Mode for this profile.
+                    _wifi_mode=args.wifi_mode                           # WiFi Mode for this profile.
                     )
 
     if args.text is not None:
