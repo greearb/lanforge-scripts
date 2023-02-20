@@ -28,7 +28,7 @@
                 ]
             },
             "sta_connect2": {
-                "enabled": "TRUE",
+                "enabled": "FALSE",
                 "load_db": "skip",
                 "command": "sta_connect2.py",
                 "args": "",
