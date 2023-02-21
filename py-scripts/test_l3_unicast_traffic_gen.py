@@ -130,7 +130,7 @@ class L3VariableTimeLongevity(Realm):
                                                     network_auth_type="[BLANK]",
                                                     anqp_3gpp_cell_net="[BLANK]"
                                                 )
-
+                self.station_profile.set_command_param("add_sta","ieee80211w", 2)
                 self.station_profile.set_command_flag("add_sta","80211u_enable", 0)
                 self.station_profile.set_command_flag("add_sta","8021x_radius", 1)
 
