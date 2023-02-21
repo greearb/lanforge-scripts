@@ -3,7 +3,7 @@
 example: ./lf_create_vap_cv.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge
 
         --delete_old_scenario --scenario_name "Automation" --vap_radio "wiphy0"
-        --vap_freq "2437" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2"
+        --vap_freq "2437" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2" --vap_bw 20
 
 Note: This script will create a vap using chamberview
 
@@ -57,7 +57,8 @@ class create_vap_cv(cv_test):
                  lf_port=8080,
                  lf_user="lanforge",
                  lf_password="lanforge",
-                 vap_upstream_port="1.1.eth2"
+                 vap_upstream_port="1.1.eth2",
+                 vap_bw=None
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
@@ -74,6 +75,7 @@ class create_vap_cv(cv_test):
         self.vap_radio = None
         self.freq = None
         self.set_upstream = True
+        self.vap_bw = vap_bw
 
     def setup_vap(self, scenario_name="Automation", radio="wiphy0", frequency="-1", name=None, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
 
@@ -85,7 +87,7 @@ class create_vap_cv(cv_test):
 
         profile.add_profile(
             _antenna=None,  # Antenna count for this profile.
-            _bandwidth=None,  # 0 (auto), 20, 40, 80 or 160
+            _bandwidth=self.vap_bw,  # 0 (auto), 20, 40, 80 or 160
             _eap_id=None,  # EAP Identifier
             _flags_mask=None,  # Specify what flags to set.
             _freq=frequency,  # WiFi frequency to be used, 0 means default.
@@ -173,6 +175,7 @@ def main():
         ./create_vap_cv.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge
          --delete_old_scenario --scenario_name "Automation"
          --vap_radio "wiphy0" --vap_freq "5260" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2"
+         --vap_bw 20
 
          tested on 01/31/2023:
          kernel version: 5.19.17+
@@ -212,6 +215,8 @@ def main():
                         help="vap security (by default: wpa2")
     parser.add_argument("--vap_upstream_port", default="1.1.eth2",
                         help="vap upstream_port (by default: 1.1.eth2")
+    parser.add_argument("--vap_bw", type=str, default=None,
+                        help="vap bw like 20, 40, 80, 160(by default: None")
 
     args = parser.parse_args()
     cv_base_adjust_parser(args)
@@ -224,7 +229,9 @@ def main():
         logger_config.lf_logger_config_json = args.lf_logger_config_json
         logger_config.load_lf_logger_config()
 
-    lf_create_vap_cv = create_vap_cv(lfclient_host=args.mgr, lf_port=args.port, lf_user=args.lf_user, lf_password=args.lf_password, vap_upstream_port=args.vap_upstream_port)
+    lf_create_vap_cv = create_vap_cv(lfclient_host=args.mgr, lf_port=args.port, lf_user=args.lf_user,
+                                     lf_password=args.lf_password, vap_upstream_port=args.vap_upstream_port,
+                                     vap_bw=args.vap_bw)
 
     delete_old_scenario = args.delete_old_scenario
     vap_scenario_name = args.scenario_name
