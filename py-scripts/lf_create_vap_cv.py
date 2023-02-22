@@ -58,7 +58,8 @@ class create_vap_cv(cv_test):
                  lf_user="lanforge",
                  lf_password="lanforge",
                  vap_upstream_port="1.1.eth2",
-                 vap_bw=None
+                 vap_bw=None,
+                 vap_mode=None
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
@@ -76,9 +77,13 @@ class create_vap_cv(cv_test):
         self.freq = None
         self.set_upstream = True
         self.vap_bw = vap_bw
+        self.vap_mode = vap_mode
 
     def setup_vap(self, scenario_name="Automation", radio="wiphy0", frequency="-1", name=None, vap_ssid=None, vap_pawd="[BLANK]", vap_security=None):
 
+        profile_flag = {"wep": "2", "wpa": "4", "wpa2": "8", "wpa3": "32", "open": None}
+        mode = {"AUTO": "0", "a":"1", "aAX": "15", "abg": "4", "abgn": "5", "abgnAC":"8", "abgnAX":"12", "an":"10",
+                "anAC": "9", "anAX": "14", "b": "2", "bg": "7", "bgn": "6", "bgnAC": "11", "bgnAX": "13"}
         profile = lf_add_profile(lf_mgr=self.lfclient_host,
                                  lf_port=self.lf_port,
                                  lf_user=self.lf_user,
@@ -95,11 +100,11 @@ class create_vap_cv(cv_test):
             _mac_pattern=None,  # Optional MAC-Address pattern, for instance: xx:xx:xx:*:*:xx
             _name=scenario_name,  # Profile Name. [R]
             _passwd=vap_pawd,  # WiFi Password to be used (AP Mode), [BLANK] means no password.
-            _profile_flags="0x1009",  # Flags for this profile, see above.
+            _profile_flags=profile_flag[str(vap_security)],  # Flags for this profile, see above.
             _profile_type="routed_ap",  # Profile type: See above. [W]
             _ssid=vap_ssid,  # WiFi SSID to be used, [BLANK] means any.
             _vid=None,  # Vlan-ID (only valid for vlan profiles).
-            _wifi_mode=None  # WiFi Mode for this profile.
+            _wifi_mode=mode[str(self.vap_mode)] # WiFi Mode for this profile.
         )
 
     def setup_chamberview(self, delete_scenario=True,
@@ -212,11 +217,13 @@ def main():
     parser.add_argument("-vp", "--vap_passwd", default="something",
                         help="vap password (by default: something")
     parser.add_argument("-vse", "--vap_security", default="wpa2",
-                        help="vap security (by default: wpa2")
+                        help="vap security like wep ,wpa, wpa2, wpa3 (by default: wpa2")
     parser.add_argument("--vap_upstream_port", default="1.1.eth2",
                         help="vap upstream_port (by default: 1.1.eth2")
-    parser.add_argument("--vap_bw", type=str, default=None,
-                        help="vap bw like 20, 40, 80, 160(by default: None")
+    parser.add_argument("--vap_bw", type=str, default=None, help="vap bw like 20, 40, 80, 160(by default: None")
+    parser.add_argument("--vap_mode", type=str,  default="AUTO",
+                        help="vap mode can be selected from these"
+                             '"AUTO", "a", "aAX", "abg", "abgn", "abgnAC", "abgnAX", "an","anAC", "anAX", "b", "bg", "bgn", "bgnAC"", "bgnAX"')
 
     args = parser.parse_args()
     cv_base_adjust_parser(args)
@@ -231,7 +238,7 @@ def main():
 
     lf_create_vap_cv = create_vap_cv(lfclient_host=args.mgr, lf_port=args.port, lf_user=args.lf_user,
                                      lf_password=args.lf_password, vap_upstream_port=args.vap_upstream_port,
-                                     vap_bw=args.vap_bw)
+                                     vap_bw=args.vap_bw, vap_mode=args.vap_mode)
 
     delete_old_scenario = args.delete_old_scenario
     vap_scenario_name = args.scenario_name
