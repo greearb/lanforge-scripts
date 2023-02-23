@@ -8,23 +8,23 @@
     "DUT_spec":"11 AC 2x2",
     "Traffic Generator": "CT-522",
     "Lanforge-version": "5.4.6",
-    "Kernal-version": "5.19.11+",
+    "Kernal-version": "5.19.17+",
     "Android Version":"android 9"
   },
-  "test-scenario1": {
+  "Test-scenario-1": {
     "Test-duration": "15000",
     "TCP": false,
     "UDP": true,
     "Upload-rate": "0Mbps",
     "Download-rate": "100Mbps",
-    "AP_batch_location":"C:/Users/CTINDLAP43/Desktop/Temp.xlsx"
+    "AP_batch_location":"C:/Users/CTINDLAP43/Desktop/TEST_APs.xlsx"
   },
-  "test-scenario2": {
+  "Test-scenario-2": {
     "Test-duration": "15000",
     "TCP": true,
     "UDP": false,
     "Upload-rate": "0Mbps",
-    "Download-rate": "100Mbps",
-    "AP_batch_location":"C:/Users/CTINDLAP43/Desktop/TEST_APs.xlsx"
+    "Download-rate": "300Mbps",
+    "AP_batch_location":"C:/Users/CTINDLAP43/Desktop/Temp.xlsx"
   }
 }

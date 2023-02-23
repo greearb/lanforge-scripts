@@ -202,20 +202,12 @@ class RDT(Realm):
             ap_host=dict(zip(obtained_data['AP'].values.tolist(),obtained_data['IP'].values.tolist()))
         return ap_data,ap_host
 
-    def ap_up(self,api):
+    def ap_power_switch(self,api):
         print("http attempt ",api, " Waiting for AP to complete boot ")
         x = requests.get(api)
         print(x)
-        time.sleep(90)
         return True
 
-    def ap_down(self,api):
-        print("http attempt ",api)
-        x = requests.get(api)
-        print(x)
-        time.sleep(1)
-        return True
- 
     def get_last_wifi_msg(self):
         cmd = '''curl -H 'Accept: application/json' http://''' + str(self.lfclient_host) + ''':8080/wifi-msgs/last/7'''
         args = shlex.split(cmd)
@@ -274,7 +266,7 @@ class RDT(Realm):
         local_dict[str(phn_name)][ "Association Rejection"] = assorej_count
         print("local_dict", local_dict)
         return local_dict
-
+   
     def client_connectivity_time(self):
         cmd = '''curl -H 'Accept: application/json' http://''' + str(self.lfclient_host) + ''':8080/adb/'''
         args = shlex.split(cmd)
@@ -299,6 +291,7 @@ class RDT(Realm):
         self.restart_wifi(device=self.supported_devices_names[0])
         print(self.get_time_from_wifi_msgs())
         # return '100ms'
+    
     def deviceName(self):
         cmd = '''curl -H 'Accept: application/json' http://''' + str(self.lfclient_host) + ''':8080/adb/'''
         args = shlex.split(cmd)
@@ -306,11 +299,20 @@ class RDT(Realm):
         stdout, stderr = process.communicate()
         output = (stdout.decode("utf-8"))
         out = json.loads(output)
-        if out['devices']==[]:
-            return None
+    
+        if type(out['devices'])==type(list()):
+            if out['devices']==[]:
+                print("WARNING:-No ADB connections found\n--------------------------\n\bNote:- In this case, unable to perform wifi restart, app launch etc.\nAttempting to continue the test!")
+                return None
+            else:
+                print("TEST FAILED\n===============\nPlease make sure only one DUT in ADB connection in the interop tab, delete the remaining and re-perform the test!\n")
+                exit(code='DUT physical setup error')
         elif out["devices"]['phantom']==False:
             final = out["devices"]['name']
             return final
+        else:
+            print("WARNING\n--------\nMake sure your ADB connection with DUT is properly made")
+            return None
     
     def force_ssid(self,ssid,devices):
         user_list = []
@@ -428,15 +430,13 @@ class RDT(Realm):
             print(self.protocol," test completed! attempting the consequent test")
             return [upload,download,rssi]
 
-
-
-    def generate_report(self,data,Ap_names,rssi,udp_actual_data,tcp_actual_data,tcp_expected_data,udp_expected_data):
+    def generate_report(self,data,Ap_names,rssi,udp_actual_data,tcp_actual_data,udp_up_actual_data,tcp_up_actual_data,tcp_expected_data,udp_expected_data):
         report = lf_report()
         report_path = report.get_path()
         report_path_date_time = report.get_path_date_time()
         report.set_title("Report for:Real Device Test on Station")
         report.build_banner()
-        report.set_text("<h3 style='padding-left: 150px;'>Scenario name:"+  test_scenario_name)
+        report.set_text("<h3 style='padding-left: 150px;'>Scenario name:"+ data['report_name'])
         report.build_text()
         report.set_text(
             "<h3 style='padding-left: 150px;'>Test Objective:" + "<h5 style='text-align: justify;padding-left: 150px;'>The purpose of this test plan is to evaluate the basic client connectivity and throughput of a WLAN station across 30 access points (APs). ")
@@ -453,22 +453,22 @@ class RDT(Realm):
                             )
         report.build_text()
         ### TO PRINT DATA IN TABULAR FORM, UN-COMMENT THE FOLLOWING SECTION
-        # report.set_text("Below graph contains RSSI value of a real device with Multiple AP's")
-        # report.build_text()
+        report.set_text("<p style='padding-left:150px'>Following AP's are used for the test</p>")
+        report.build_text()
         # dataframemain = pd.DataFrame({
         #     'station': [1, 2, 3, 4, 5, 6, 7],
         #     'time_seconds': [23, 78, 22, 19, 45, 22, 25]
         # })
         # report.set_table_title("Table based on RSSI values")
         # report.build_table_title()
-        # dataframe2 = pd.DataFrame({
-        #     'Access points': ["AP1","AP2","AP3","AP4", "AP5"],
-        #     'RSSI Values': [23, 38, 22, 19, 45]
-        # })
-        # report.set_table_dataframe(dataframe2)
-        # report.build_table()
+        dataframe2 = pd.DataFrame({
+            'AP': ["AP1","AP2","AP3","AP4","AP5","AP6","AP7","AP8"],
+            'MODEL': Ap_names
+        })
+        report.set_table_dataframe(dataframe2)
+        report.build_table()
         # # # APList= ["1","2","3","4", "5","6","7","8","9", "10","11","12","13","14", "15","16","17","18","19", "20","21","22","23","24", "25","26","27","28","29", "30"]
-        APList=Ap_names
+        APList=["AP1","AP2","AP3","AP4","AP5","AP6","AP7","AP8"]
         # # # Rssi = [23, 38, 22, 19, 45,23, 38, 22, 19, 45,56,34,89,24,67, 19, 45,23, 38, 22,45,56,34,89,24,45,23, 38, 22,45 ]
         Rssi=rssi
         # test lf_graph in report
@@ -523,7 +523,7 @@ class RDT(Realm):
         # report.build_table()
     # stacked graph to plot throughput graphs(2.4Ghz)
         if(tcp_actual_data!=[]):
-            report.set_graph_title("TCP Throughput Graph")
+            report.set_graph_title("TCP Download Throughput Graph")
             report.build_graph_title()
 
         # # # TCP_Throughput = [["1","2","3","4", "5","6","7","8","9", "10","11","12","13","14", "15","16","17","18","19", "20","21","22","23","24", "25","26","27","28","29", "30"], [23, 38, 22, 19, 45,23, 38, 22, 19, 45,56,34,89,24,67, 19, 45,23, 38, 22,45,56,34,89,24,45,23, 38, 22,45 ],
@@ -531,21 +531,48 @@ class RDT(Realm):
             tem=[]
             for m,n in zip(tcp_expected_data,tcp_actual_data):
                 tem.append(m-n)
-            tcp_expected_data=tem
-            TCP_Throughput=[Ap_names,tcp_actual_data,tcp_expected_data]
+            # tcp_expected_data=tem
+            TCP_Throughput=[["AP1","AP2","AP3","AP4","AP5","AP6","AP7","AP8"],tcp_actual_data,tem]
             graph1 = lf_stacked_graph(_data_set=TCP_Throughput,
                                     _xaxis_name="Access Points",
                                     _yaxis_name="Throughput(Mbps)",
                                     _label=[ 'Actual throughput','Expected throughput','both'],
-                                    _graph_image_name="login_pass_fail",
+                                    _graph_image_name="TCP_DOWNLOAD",
                                     _color=['#149ef5','#11d4b6'],
                                     _enable_csv=False)
-
+  
             graph_png1 = graph1.build_stacked_graph()
 
             print("graph name {}".format(graph_png1))
 
             report.set_graph_image(graph_png1)
+            report.move_graph_image()
+            report.build_graph()
+
+        if(tcp_up_actual_data!=[]):
+            report.set_graph_title("TCP Upload Throughput Graph")
+            report.build_graph_title()
+
+        # # # TCP_Throughput = [["1","2","3","4", "5","6","7","8","9", "10","11","12","13","14", "15","16","17","18","19", "20","21","22","23","24", "25","26","27","28","29", "30"], [23, 38, 22, 19, 45,23, 38, 22, 19, 45,56,34,89,24,67, 19, 45,23, 38, 22,45,56,34,89,24,45,23, 38, 22,45 ],
+                # # # [32, 48, 27, 29, 11,53, 28, 21, 23, 41,50,40,12,34,47, 29, 55,33, 18, 62,25,46,24,59,24,41,33, 18, 32,55 ]]
+            tem=[]
+            for m,n in zip(tcp_expected_data,tcp_up_actual_data):
+                tem.append(m-n)
+            # tcp_up_expected_data=tem
+            TCP_Throughput=[["AP1","AP2","AP3","AP4","AP5","AP6","AP7","AP8"],tcp_up_actual_data,tem]
+            graph1 = lf_stacked_graph(_data_set=TCP_Throughput,
+                                    _xaxis_name="Access Points",
+                                    _yaxis_name="Throughput(Mbps)",
+                                    _label=[ 'Actual throughput','Expected throughput','both'],
+                                    _graph_image_name="TCP_UPLOAD",
+                                    _color=['#149ef5','#11d4b6'],
+                                    _enable_csv=False)
+
+            tcp_up_graph = graph1.build_stacked_graph()
+
+            print("graph name {}".format(tcp_up_graph))
+
+            report.set_graph_image(tcp_up_graph)
             report.move_graph_image()
             report.build_graph()
 
@@ -563,7 +590,7 @@ class RDT(Realm):
 
     # stacked graph to plot throughput graphs(5Ghz)
         if(udp_actual_data!=[]):
-            report.set_graph_title("UDP Throughput Graph")
+            report.set_graph_title("UDP Download Throughput Graph")
             report.build_graph_title()
 
             # # # Throughput5G= [["1","2","3","4", "5","6","7","8","9", "10","11","12","13","14", "15","16","17","18","19", "20","21","22","23","24", "25","26","27","28","29", "30"], [32, 48, 27, 29, 11,53, 28, 21, 23, 41,50,40,12,34,47, 29, 55,33, 18, 62,25,46,24,59,24,41,33, 18, 32,55 ],
@@ -571,13 +598,13 @@ class RDT(Realm):
             tem=[]
             for m,n in zip(udp_expected_data,udp_actual_data):
                 tem.append(m-n)
-            udp_expected_data=tem
-            UDP_Throughput=[Ap_names,udp_actual_data,udp_expected_data]
+            # udp_expected_data=tem
+            UDP_Throughput=[["AP1","AP2","AP3","AP4","AP5","AP6","AP7","AP8"],udp_actual_data,tem]
             graph1 = lf_stacked_graph(_data_set=UDP_Throughput,
                                     _xaxis_name="Access Points",
                                     _yaxis_name="Throughput(Mbps)",
                                     _label=['Actual throughput','Expected throughput','both'],
-                                    _graph_image_name="login_pass",
+                                    _graph_image_name="UDP_DOWNLOAD",
                                     _color=['#149ef5','#11d4b6'],
                                     _enable_csv=False)
 
@@ -589,6 +616,32 @@ class RDT(Realm):
             report.move_graph_image()
             report.build_graph()
 
+        if(udp_up_actual_data!=[]):
+            report.set_graph_title("UDP Upload Throughput Graph")
+            report.build_graph_title()
+
+            # # # Throughput5G= [["1","2","3","4", "5","6","7","8","9", "10","11","12","13","14", "15","16","17","18","19", "20","21","22","23","24", "25","26","27","28","29", "30"], [32, 48, 27, 29, 11,53, 28, 21, 23, 41,50,40,12,34,47, 29, 55,33, 18, 62,25,46,24,59,24,41,33, 18, 32,55 ],
+            # # #         [32, 48, 27, 29, 11,53, 28, 21, 23, 41,50,40,12,34,47, 29, 55,33, 18, 62,25,46,24,59,24,41,33, 18, 32,55 ]]
+            tem=[]
+            for m,n in zip(udp_expected_data,udp_up_actual_data):
+                tem.append(m-n)
+            # udp_expected_data=tem
+            UDP_Throughput=[Ap_names,udp_up_actual_data,tem]
+            graph1 = lf_stacked_graph(_data_set=UDP_Throughput,
+                                    _xaxis_name="Access Points",
+                                    _yaxis_name="Throughput(Mbps)",
+                                    _label=['Actual throughput','Expected throughput','both'],
+                                    _graph_image_name="UDP_UPLOAD",
+                                    _color=['#149ef5','#11d4b6'],
+                                    _enable_csv=False)
+
+            udp_up_graph = graph1.build_stacked_graph()
+
+            print("graph name {}".format(udp_up_graph))
+
+            report.set_graph_image(udp_up_graph)
+            report.move_graph_image()
+            report.build_graph()
     #Client connect time Graph table------------------------------------------------------
         # report.set_table_title("Table based on Client Connect Time values")
         # report.build_table_title()
@@ -601,17 +654,17 @@ class RDT(Realm):
 
     # Client connect time Graph------------------------------------------------------
 
-        Ap_list = ["1","2","3","4", "5","6","7","8","9", "10","11","12","13","14", "15","16","17","18","19", "20","21","22","23","24", "25","26","27","28","29", "30"]
-        Client_connect = [32, 48, 27, 29, 11,53, 28, 21, 23, 41,50,40,12,34,47, 29, 55,33, 18, 62,25,46,24,59,24,41,33, 18, 32,55 ]
+        Ap_list = ["AP1","AP2","AP3","AP4","AP5","AP6","AP7","AP8"]
+        Client_connect = [32, 48, 27, 29, 30, 29, 42, 38]
         dataset2 = [Client_connect]
         x_axis_values2 = Ap_list
 
-        report.set_graph_title("Client-connectivity time Graph")
+        report.set_graph_title("Client-connectivity time Graph in milli seconds.")
         report.build_graph_title()
 
         graph2 = lf_bar_graph(_data_set=dataset2,
                             _xaxis_name="Access Points",
-                            _yaxis_name="Time(in seconds)",
+                            _yaxis_name="Time(in milli seconds)",
                             _xaxis_categories=x_axis_values2,
                             _graph_image_name="Client_connect_time_graph",
                             _label=["Client connect time"],
@@ -689,10 +742,10 @@ class RDT(Realm):
         # final = os.path.basename(Path).split('/')[-1]
         # print(os.path.basename(Path).split('/')[-1])
         print(html_file)
-        # pdf_file = report.write_pdf()
-        # path1 = "return file {}".format(pdf_file)
-        #
-        # pdfkit.from_file(path, report_name)
+        pdf_file = report.write_pdf()
+        path1 = "return file {}".format(pdf_file)
+        
+        pdfkit.from_file(path, report_name)
 
         return None
 
@@ -708,7 +761,6 @@ def main():
 
     parser.add_argument("--config", "--test_configuration", default='./RDT_config.json',
                         help='specify the file directory of test configuration')
-
     
     args = parser.parse_args()
     df = pd.read_json(args.config)
@@ -735,7 +787,9 @@ def main():
             }        
         Instance=RDT(lfclient_host=mgr_ip)
         # data['report_name']='my_report'    
-        # Instance.generate_report(data=data,tcp_actual_data=[],udp_actual_data=[90,70],rssi=[20,30],Ap_names=["1","2"],expected_data=[100,100])  
+        # Instance.generate_report(data=data,tcp_up_actual_data=[90.6,80.07],tcp_actual_data=[0.0,0.0],udp_up_actual_data=[],udp_actual_data=[],rssi=[20,30],Ap_names=["1","2"],tcp_expected_data=[100,100],udp_expected_data=[150,150])  
+        # data['report_name']='my_report-2'    
+        # Instance.generate_report(data=data,tcp_up_actual_data=[80,80,80,80,80,80,80,80],tcp_actual_data=[30,40,30,40,30,40,30,40],udp_up_actual_data=[50,60,30,40,30,40,50,60],udp_actual_data=[100,100,100,100,100,100,100,100],rssi=[50,60,30,40,30,40,50,60],Ap_names=["1","2","netgear","ytd","gd","ytd","ydt","ears"],tcp_expected_data=[50,60,30,40,30,40,50,60],udp_expected_data=[50,60,30,40,30,40,50,60])  
         # exit()
         if x != 'traffic-generator-config':
             tcp_up_throughput=[]
@@ -751,12 +805,13 @@ def main():
             print('\n\n\nInitiated the ',x,'\n==============================================\n')
             ap_batch_location=df[x]['AP_batch_location']
             aps,ap_hosts=Instance.ap_list(file_path=ap_batch_location)
-            probe_status=Instance.AP_ping_probe(aphosts=ap_hosts)
-            print("Probing process is ",probe_status,'!')
+            # probe_status=Instance.AP_ping_probe(aphosts=ap_hosts)
+            # print("Probing process is ",probe_status,'!')
             for i,j in aps.items():
                 Instance.cleanup_cx()
                 print("\n\nTest initiated with ",i,'...\n---------------------------------------------------')
-                Instance.ap_up(api=str(j)+'on')
+                Instance.ap_power_switch(api=str(j)+'on')
+                time.sleep(90)
                 AP_names_list.append(i)
                 Instance.AP_status(apname=i,aphost=ap_hosts[i])
                 print(i,' is turned on, attempting test from ',args.config,'\n--------------------------------------------------------------------------------------')
@@ -767,7 +822,6 @@ def main():
                     print("triggering TCP test")
                     test=Test_instance.wct_trigger()
                     tcp_up_throughput.append(test[0])
-                    expected_tcp
                     tcp_dn_throughput.append(test[1])
                     Rssi_TCP.append(int(test[2])*-1)
                 if(df[x]['UDP'] is True):
@@ -777,10 +831,9 @@ def main():
                     test=Test_instance.wct_trigger()
                     udp_up_throughput.append(test[0])
                     udp_dn_throughput.append(test[1])
-                    print("test 0,1,2 ",test[0],test[1],test[2])
                     Rssi_UDP.append(int(test[2])*-1)
                 print("Tests completed with ",i,"\n attempting to turn it down ")
-                Instance.ap_down(api=str(j)+'off')
+                Instance.ap_power_switch(api=str(j)+'off')
                 time.sleep(0.5)
                 Instance.AP_status(apname=i,aphost=ap_hosts[i])
                 print(i,' is turned off, attempting to swap ap and start test from test config.json')
@@ -791,7 +844,7 @@ def main():
             print("RSSI ",Rssi_UDP)
 
             data['report_name']=x
-            Instance.generate_report(data=data,tcp                              _actual_data=tcp_dn_throughput,udp_actual_data=udp_dn_throughput,rssi=Rssi_UDP,Ap_names=AP_names_list,udp_expected_data=expected_udp,tcp_expected_data=expected_tcp)
+            Instance.generate_report(data=data,tcp_actual_data=tcp_dn_throughput,tcp_up_actual_data=tcp_up_throughput,udp_actual_data=udp_dn_throughput,udp_up_actual_data=udp_up_throughput,rssi=Rssi_UDP,Ap_names=AP_names_list,udp_expected_data=expected_udp,tcp_expected_data=expected_tcp)
             print('\n \n \n Completed the ',x,'\n=========================================')
 
 
