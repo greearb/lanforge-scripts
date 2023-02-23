@@ -13,8 +13,9 @@
         "USE_DUT_NAME": "Netgear-AX12",
         "DUT_SW": "3.0.0.4.386_44266",
         "wireless_network_dict":{
-            "ssid_idx=0":{"ssid_idx":"0","SSID_USED":"NETGEAR59","SSID_PW_USED":"crispynest798","BSSID_TO_USE":"94:a6:7e:54:d4:31","SECURITY_USED":"wpa2"},
-            "ssid_idx=1":{"ssid_idx":"1","SSID_USED":"NETGEAR59-5G","SSID_PW_USED":"crispynest798","BSSID_TO_USE":"94:a6:7e:54:d4:33","SECURITY_USED":"wpa2"}
+            "ssid_idx=0":{"ssid_idx":"0","SSID_USED":"axe11000_2g","SSID_PW_USED":"lf_axe11000_2g","BSSID_TO_USE":"04:42:1a:51:49:90","SECURITY_USED":"wpa2"},
+            "ssid_idx=1":{"ssid_idx":"1","SSID_USED":"axe11000_5g","SSID_PW_USED":"lf_axe11000_5g","BSSID_TO_USE":"04:42:1a:51:49:94","SECURITY_USED":"wpa2"},
+            "ssid_idx=2":{"ssid_idx":"2","SSID_USED":"axe11000_6g","SSID_PW_USED":"lf_axe11000_6g","BSSID_TO_USE":"04:42:1a:51:49:98","SECURITY_USED":"wpa2"}
         }    
 
     }
