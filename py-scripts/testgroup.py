@@ -1,4 +1,46 @@
 #!/usr/bin/env python3
+'''
+NAME: testgroup.py
+
+PURPOSE:
+    This script will create a test connection group in the LANforge GUI (Connection Group GUI tab).
+     The script can preform the following tasks:
+     - create a test group
+     - remove a test group
+     - add layer-3 cx's to a test group
+     - start and stop a test connection group
+
+
+EXAMPLE:
+    For an eth-to-eth test connection group (eth-to-eth Layer-3 connection must be manually created first):
+        ./testgroup.py --mgr localhost --group_name eth_group --add_group --add_cx l3_eth_test --list_groups
+
+    eth-to-eth JSON command example:
+        "args":["--mgr","192.168.30.12",
+                    "--group_name","eth_group",
+                    "--add_group",
+                    "--add_cx","l3_eth_test",
+                    "--list_groups"
+                    ]
+    
+    For adding multiplt layer-3 cross-connections to a single test connection group:
+        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test1,l3_test2 --remove_cx l3_test3 --list_groups
+        ./testgroup.py --mgr localhost --group_name group1 --add_group --list_groups --add_cx l3_test1,l3_test2
+
+    Generic command to add a single layer-3 cross connection to a test connection group:
+        ./testgroup.py --mgr localhost --group_name group1 --add_group --list_groups
+
+NOTES:
+
+    Tested on 02/24/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
+
+COPYRIGHT:
+    Copyright 2023 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
+'''
+
 import sys
 import os
 import importlib
@@ -50,6 +92,7 @@ class TestGroup(Realm):
         else:
             self.add_cx_list = add_cx_list
 
+        self.add_cx_list = add_cx_list
         if rm_cx_list:
             if len(rm_cx_list) == 1 and ',' in rm_cx_list[0]:
                 self.rm_cx_list = rm_cx_list[0].split(',')
@@ -119,11 +162,43 @@ def main():
         prog='testgroup.py',
         formatter_class=argparse.RawTextHelpFormatter,
         epilog='''Control and query test groups\n''',
-        description='''testgroup.py
-    --------------------
-    Generic command example:
-    ./testgroup.py --group_name group1 --add_group --add_cx l3_test1,l3_test2 --remove_cx l3_test3 --list_groups
-    ./testgroup.py --group_name group1 --add_group --list_groups
+        description='''
+
+NAME: testgroup.py
+
+PURPOSE:
+    This script will create a test connection group in the LANforge GUI (Connection Group GUI tab).
+     The script can preform the following tasks:
+     - create a test group
+     - remove a test group
+     - add layer-3 cx's to a test group
+     - start and stop a test connection group
+
+
+EXAMPLE:
+    For an eth-to-eth test connection group (eth-to-eth Layer-3 connection must be manually created first):
+        ./testgroup.py --mgr localhost --group_name eth_group --add_group --add_cx l3_eth_test --list_groups
+
+    eth-to-eth JSON command example:
+        "args":["--mgr","192.168.30.12",
+                    "--group_name","eth_group",
+                    "--add_group",
+                    "--add_cx","l3_eth_test",
+                    "--list_groups"
+                    ]
+    
+    For adding multiplt layer-3 cross-connections to a single test connection group:
+        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test1,l3_test2 --remove_cx l3_test3 --list_groups
+        ./testgroup.py --mgr localhost --group_name group1 --add_group --list_groups --add_cx l3_test1,l3_test2
+
+    Generic command to add a single layer-3 cross connection to a test connection group:
+        ./testgroup.py --mgr localhost --group_name group1 --add_group --list_groups
+
+NOTES:
+
+    Tested on 02/24/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
     ''')
 
     parser.add_argument(
@@ -171,8 +246,12 @@ def main():
 
     tg = TestGroup(host=args.mgr, port=args.mgr_port,
                    group_name=args.group_name,
-                   add_cx_list=args.add_cx, rm_cx_list=args.remove_cx, cx_action=cx_action,
-                   tg_action=tg_action, list_groups=args.list_groups, show_group=args.show_group)
+                   add_cx_list=args.add_cx,
+                   rm_cx_list=args.remove_cx,
+                   cx_action=cx_action,
+                   tg_action=tg_action,
+                   list_groups=args.list_groups,
+                   show_group=args.show_group)
 
     tg.do_tg_action()
     tg.update_cxs()
