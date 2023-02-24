@@ -134,6 +134,7 @@ import traceback
 from pprint import pformat
 import copy
 
+
 if sys.version_info[0] != 3:
     print("This script requires Python3")
     exit()
@@ -957,7 +958,8 @@ Tests Timed Out:
     def load_custom_database(self, custom_db):
         try:
             os.chdir(self.scripts_wd)
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             self.logger.info("failed to change to {}".format(self.scripts_wd))
 
         # WARNING do not simplify the following constructed command
@@ -1133,14 +1135,16 @@ Tests Timed Out:
                 try:
                     self.load_custom_database(
                         self.test_dict[self.test]['load_db'])
-                except BaseException:
+                except Exception as x:
+                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
                     self.logger.info("custom database failed to load check existance and location: {}".format(
                         self.test_dict[self.test]['load_db']))
         try:
             os.chdir(self.scripts_wd)
             self.logger.info("Current Working Directory {}".format(os.getcwd()))
 
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             self.logger.info(
                 "failed to change to {}".format(
                     self.scripts_wd))
@@ -1958,7 +1962,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         lanforge_system_node_version = check.get_lanforge_system_node_version()
         logger.info("lanforge_system_node_version {system_node_ver}".format(
             system_node_ver=lanforge_system_node_version))
-    except BaseException:
+    except Exception as x:
+        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
         logger.warning("WARNING: lanforge_system_node_version exception")
 
     lanforge_system_ip = check.get_lanforge_system_ip()
@@ -1967,7 +1972,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         lanforge_fedora_version = check.get_lanforge_fedora_version()
         logger.info("lanforge_fedora_version {fedora_ver}".format(
             fedora_ver=lanforge_fedora_version))
-    except BaseException:
+    except Exception as x:
+        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
         logger.error("ERROR: lanforge_fedora_version exception, tests aborted check lanforge ip")
         exit(1)
 
@@ -1975,7 +1981,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         lanforge_kernel_version = check.get_lanforge_kernel_version()
         logger.info("lanforge_kernel_version {kernel_ver}".format(
             kernel_ver=lanforge_kernel_version))
-    except BaseException:
+    except Exception as x:
+        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
         logger.error("ERROR: lanforge_kernel_version exception, tests aborted check lanforge ip")
         exit(1)
 
@@ -1983,7 +1990,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         lanforge_server_version_full = check.get_lanforge_server_version()
         logger.info("lanforge_server_version_full {lanforge_server_version_full}".format(
             lanforge_server_version_full=lanforge_server_version_full))
-    except BaseException:
+    except Exception as x:
+        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
         logger.error("ERROR: lanforge_server_version exception, tests aborted check lanforge ip")
         exit(1)
 
@@ -1991,7 +1999,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         lanforge_gui_version_full, lanforge_gui_version, lanforge_gui_build_date, lanforge_gui_git_sha = check.get_lanforge_gui_version()
         logger.info("lanforge_gui_version_full {lanforge_gui_version_full}".format(
             lanforge_gui_version_full=lanforge_gui_version_full))
-    except BaseException:
+    except Exception as x:
+        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
         logger.error("ERROR: lanforge_gui_version exception, tests aborted check lanforge ip")
         exit(1)
 
@@ -2026,7 +2035,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
                     firmware_version = firmware_version.replace('release/','')
                     radio_firmware_list.append(firmware_version)
                     radio_fw_dict[key] = firmware_version.replace('release/','')
-                except BaseException:
+                except Exception as x:
+                    traceback.print_exception(Exception, x, x.__traceback__, chain=True)
                     logger.info("5.4.3 radio fw version not in /radiostatus/all ")
                     firmware_version = "5.4.3 N/A"
                     #radio_firmware_list = radio_firmware_list.append("NA")
@@ -2168,7 +2178,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     logger.info("html report: {}".format(html_report))
     try:
         report.write_pdf_with_timestamp()
-    except BaseException:
+    except Exception as x:
+        traceback.print_exception(Exception, x, x.__traceback__, chain=True)
         logger.info("exception write_pdf_with_timestamp()")
 
     logger.info("lf_check_html_report: " + html_report)
@@ -2216,7 +2227,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         # copy one directory above
         try:
             shutil.copyfile(html_report, html_report_latest)
-        except BaseException:
+        except Exception as x:
+            traceback.print_exception(Exception, x, x.__traceback__, chain=True)
             logger.info("unable to copy results from {html} to {html_latest}".format(html=html_report, html_latest=html_report_latest))
             logger.info("check permissions on {html_report_latest}".format(html_report_latest=html_report_latest))
 
