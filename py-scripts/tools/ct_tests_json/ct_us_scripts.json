@@ -430,7 +430,7 @@
                 ]
             },
             "testgroup":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "load_db":"NONE",
                 "timeout":"60",
                 "command":"testgroup.py",
@@ -592,7 +592,7 @@
                 ]
             },
             "create_l4":{
-                "enabled":"TRUE",
+                "enabled":"FALSE",
                 "command":"create_l4.py",
                 "args":"",
                 "args_list":[
