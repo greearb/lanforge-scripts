@@ -131,10 +131,11 @@ class create_vap_cv(cv_test):
         vap_shelf, vap_resource, vap_radio_name, *nil = LFUtils.name_to_eid(vap_radio)
         upstream_shelf, upstream_resource, upstream_name, *nil = LFUtils.name_to_eid(vap_upstream_port)
         if self.set_upstream:
-            self.raw_line_l1 = [# [f'profile_link {vap_shelf}.{vap_resource} {self.profile_name} 1 NA NA {vap_radio_name},AUTO {self.freq} NA'],
-                                [f'profile_link {vap_shelf}.{vap_resource} {self.profile_name} 1 NA NA {vap_radio_name},{upstream_name},AUTO {self.freq} NA'],
-                                [f'resource {vap_shelf}.{vap_resource}.0 0']
-                                # [f'profile_link {upstream_shelf}.{upstream_resource} upstream-dhcp 1 NA NA {upstream_name},AUTO -1 NA'],
+            # TODO VAP needs to have ability to enable dhcp on the vap as compared to the upstream port. 
+            self.raw_line_l1 = [[f'profile_link {vap_shelf}.{vap_resource} {self.profile_name} 1 NA NA {vap_radio_name},AUTO {self.freq} NA'],
+                                #[f'profile_link {vap_shelf}.{vap_resource} {self.profile_name} 1 NA NA {vap_radio_name},{upstream_name},AUTO {self.freq} NA'],
+                                [f'resource {vap_shelf}.{vap_resource}.0 0'],
+                                [f'profile_link {upstream_shelf}.{upstream_resource} upstream-dhcp 1 NA NA {upstream_name},AUTO -1 NA']
                                 ]
         else:
             self.raw_line_l1 = [[f'profile_link 1.1 {self.profile_name} 1 NA NA {self.vap_radio},AUTO {self.freq} NA'],
