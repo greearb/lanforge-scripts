@@ -23,12 +23,15 @@ EXAMPLE:
                     "--list_groups"
                     ]
     
-    For adding multiplt layer-3 cross-connections to a single test connection group:
+    For adding multiple layer-3 cross-connections to a single test connection group:
         ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test1,l3_test2 --remove_cx l3_test3 --list_groups
         ./testgroup.py --mgr localhost --group_name group1 --add_group --list_groups --add_cx l3_test1,l3_test2
 
-    Generic command to add a single layer-3 cross connection to a test connection group:
+    Generic command for adding a single layer-3 cross connection to a test connection group:
         ./testgroup.py --mgr localhost --group_name group1 --add_group --list_groups
+
+    Command for removing a layer-3 cx from a specified connection group:
+        ./testgroup.py --mgr localhost --group_name group1 --remove_cx l3_test1 --list_groups
 
 NOTES:
 
@@ -72,6 +75,7 @@ class TestGroup(Realm):
 
         if add_cx_list is None:
             add_cx_list = []
+        self.rm_cx_list = rm_cx_list
         if rm_cx_list is None:
             rm_cx_list = []
         self.tg_profile = self.new_test_group_profile()
