@@ -1,0 +1,21 @@
+{
+    "id_GT_AXE11000_dut":{
+        "Notes":[
+            "This json file describes the device undertest as input to ./lf_check.py",
+            "The variables that are capitalize are used for configuration",
+            "The dut related configuration is contained in this file"
+        ]  
+    },
+    "test_dut":{
+        "DUT_SET_NAME": "DUT_NAME GT-AXE11000",
+        "USE_DUT_NAME": "GT-AXE11000",
+        "DUT_HW": "A1.1",
+        "DUT_SW": "3.0.0.4.386",
+        "DUT_MODEL": "GT-AXE11000",
+        "DUT_SERIAL": "12345678",
+        "wireless_network_dict":{
+            "ssid_idx=0":{"ssid_idx":"0","SSID_USED":"axe11000_2g","SSID_PW_USED":"lf_axe11000_2g","BSSID_TO_USE":"fc:34:97:2b:38:90","SECURITY_USED":"wpa2"},
+            "ssid_idx=1":{"ssid_idx":"1","SSID_USED":"axe11000_5g","SSID_PW_USED":"lf_axe11000_5g","BSSID_TO_USE":"fc:34:97:2b:38:94","SECURITY_USED":"wpa2"}
+        }
+    }
+}
