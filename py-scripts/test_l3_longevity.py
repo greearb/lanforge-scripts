@@ -2452,10 +2452,29 @@ class L3VariableTime(Realm):
 
     # Remove traffic connections and stations.
     def cleanup(self):
+        cleanup = lf_cleanup.lf_clean(host=self.lfclient_host, port=self.lfclient_port, resource='all')
+        cleanup.sanitize_all()
+
+        # Make sure they are gone
+        count = 0
+        while count < 10:
+            more = False
+            for station_list in self.station_lists:
+                for sta in station_list:
+                    rv = self.rm_port(sta, check_exists=True)
+                    if rv:
+                        more = True
+            if not more:
+                break
+            count += 1
+            time.sleep(5)
+        '''            
         self.cx_profile.cleanup()
         self.multicast_profile.cleanup()
         for station_profile in self.station_profiles:
             station_profile.cleanup()
+        '''
+
 
     @staticmethod
     def csv_generate_column_headers():
