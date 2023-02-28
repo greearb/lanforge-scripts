@@ -131,6 +131,9 @@ lf_attenuator = importlib.import_module("py-scripts.lf_atten_mod_test")
 modify_vap = importlib.import_module("py-scripts.modify_vap")
 lf_modify_radio = importlib.import_module("py-scripts.lf_modify_radio")
 
+# cleanup library
+lf_cleanup = importlib.import_module("py-scripts.lf_cleanup")
+
 
 Realm = realm.Realm
 
@@ -631,6 +634,7 @@ class L3VariableTime(Realm):
     # Cleanup any older config that a previous run of this test may have
     # created.
     def pre_cleanup(self):
+        '''
         self.cx_profile.cleanup_prefix()
         self.multicast_profile.cleanup_prefix()
         self.total_stas = 0
@@ -638,7 +642,9 @@ class L3VariableTime(Realm):
             for sta in station_list:
                 self.rm_port(sta, check_exists=True)
                 self.total_stas += 1
-
+        '''
+        cleanup = lf_cleanup.lf_clean(host=self.lfclient_host, port=self.lfclient_port, resource='all')
+        cleanup.sanitize_all()
         # Make sure they are gone
         count = 0
         while count < 10:
