@@ -10,6 +10,8 @@ This script is used to automate running TR398v2 tests.  You
 may need to view a TR398v2 test configured through the GUI to understand
 the options and how best to input data.
 
+    Example 1 :
+    
     ./lf_tr398v2_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
       --instance_name tr398-instance --config_name test_con \
       --upstream 1.2.eth2 \
@@ -24,7 +26,6 @@ the options and how best to input data.
       --set '6.2.1 Maximum Connection' 0 \
       --set '6.2.2 Maximum Throughput' 1 \
       --set '6.2.3 Airtime Fairness' 0 \
-      --set '6.2.3 Airtime Fairness' 0 \
       --set '6.2.4 Dual-Band Throughput' 0 \
       --set '6.2.5 Bi-Directional Throughput' 0 \
       --set '6.3.1 Range Versus Rate' 0 \
@@ -36,8 +37,15 @@ the options and how best to input data.
       --set '6.5.2 AP Coexistence' 0 \
       --set '6.5.1 Long Term Stability' 0
 
+    Example 2:
+
+    ./lf_tr398v2_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge  \
+     --instance_name tr398-max-throughput  --upstream 1.1.eth2  --local_lf_report_dir /home/lanforge/Desktop \
+     --pull_report --config_name MAX_THROUGHPUT
+    
+
 Note:
-    --raw_line 'line contents' will add any setting to the test config.  This is
+    --raw_line 'line contents' will add any setting to the test config. It is not required. This is
         useful way to support any options not specifically enabled by the
         command options.
     --set modifications will be applied after the other config has happened,
