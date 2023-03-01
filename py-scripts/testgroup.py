@@ -6,9 +6,9 @@ PURPOSE:
     This script will create a test connection group in the LANforge GUI (Connection Group GUI tab).
      The script can preform the following tasks:
      - create a test group
-     - remove a test group
      - add layer-3 cx's to a test group
-     - start and stop a test connection group
+     - remove layer-3 cx's from a test group
+     - start and stop a connection test group
 
 
 EXAMPLE:
@@ -174,8 +174,8 @@ PURPOSE:
     This script will create a test connection group in the LANforge GUI (Connection Group GUI tab).
      The script can preform the following tasks:
      - create a test group
-     - remove a test group
      - add layer-3 cx's to a test group
+     - remove layer-3 cx's from a test group
      - start and stop a test connection group
 
 
