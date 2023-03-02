@@ -16,7 +16,7 @@ EXAMPLE:
         ./testgroup.py --mgr localhost --group_name eth_group --add_group --add_cx l3_eth_test --list_groups
 
     eth-to-eth JSON command example:
-        "args":["--mgr","192.168.30.12",
+        "args":["--mgr","localhost",
                     "--group_name","eth_group",
                     "--add_group",
                     "--add_cx","l3_eth_test",
@@ -184,7 +184,7 @@ EXAMPLE:
         ./testgroup.py --mgr localhost --group_name eth_group --add_group --add_cx l3_eth_test --list_groups
 
     eth-to-eth JSON command example:
-        "args":["--mgr","192.168.30.12",
+        "args":["--mgr","localhost",
                     "--group_name","eth_group",
                     "--add_group",
                     "--add_cx","l3_eth_test",
