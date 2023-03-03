@@ -285,10 +285,18 @@ def main():
     parser.add_argument('--ht160_enable', type=str, help='Enable/Disable \"ht160_enable\\ [0-disable,1-enable]" ',
                         default=0)
 
+    parser.add_argument('--ax210', type=str, help='ax210 needs to have a station created so the sniff will work on 6g', action='store_true')
+
+
     args = parser.parse_args()
 
     # if args.channel is None and args.channel_freq is None:
     #    print('--channel or --channel_freq most be entered')
+
+    if args.ax210:
+        pass
+        
+
 
     obj = SniffRadio(lfclient_host=args.mgr,
                      lfclient_port=args.mgr_port,
