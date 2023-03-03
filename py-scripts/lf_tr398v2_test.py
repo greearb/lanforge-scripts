@@ -395,7 +395,6 @@ def main():
       --set '6.2.1 Maximum Connection' 0 \\
       --set '6.2.2 Maximum Throughput' 1 \\
       --set '6.2.3 Airtime Fairness' 0 \\
-      --set '6.2.3 Airtime Fairness' 0 \\
       --set '6.2.4 Dual-Band Throughput' 0 \\
       --set '6.2.5 Bi-Directional Throughput' 0 \\
       --set '6.3.1 Range Versus Rate' 0 \\

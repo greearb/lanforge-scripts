@@ -19,7 +19,7 @@ echo "Make DUT"
 # Create/update chamber view scenario and apply and build it.
 echo "Build Chamber View Scenario"
 #change the lfmgr to your system, set the radio to a working radio on your LANforge system, same with the ethernet port.
-./create_chamberview.py --mgr ${MGR} --mgr_port ${PORT} --delete_scenario --create_scenario "TEST_SCENARIO" \
+./create_chamberview.py --mgr ${MGR} --mgr_port ${PORT} --delete_scenario --create_scenario TEST_SCENARIO \
 --line "Resource=1.1 Profile=STA-AX Amount=1 Uses-1=wiphy0 DUT="${DUT_NAME}" DUT_Radio=Radio-1 Traffic=http Freq=-1" \
 --line "Resource=1.1 Profile=upstream-dhcp Amount=1 Uses-1=eth2 Traffic=NA Freq=-1 " \
 --line "Resource=1.1 Profile=uplink-nat Amount=1 Uses-1=eth3 Uses-2=eth2 Traffic=voip DUT=upstream DUT_Radio=LAN Freq=-1"
