@@ -410,6 +410,56 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
                                     group_cipher = 'GCMP-256'
                                     eap_methods = EAP-PEAP
 
+                                (WPA2 TLS)
+                                if radio list is 
+                                    Key_management = WPA-EAP
+                                    EAP Methods = EAP-TLS
+                                    EAP Identity = testuser
+                                    EAP Password = testpasswd
+                                    Pirvate Key = /home/lanforge/client.p12
+                                    CA Cert File = /home/lanforge/ca.pem
+                                    PK Passwrod = lanforge
+                                    Ieee80211w  = Disabled (0)
+                                    Advanced/8021x = checked
+                                    Enabled PKC = checked
+
+                                (WPA2 TTLS)
+                                if radio list is 
+                                    Key_management = WPA-EAP
+                                    EAP Methods = EAP-TTLS
+                                    EAP Identity = testuser
+                                    EAP Password = testpasswd
+                                    PK Passwrod = lanforge
+                                    Advanced/8021x = checked
+
+
+                                (WPA3 TLS)
+                                if radio list is 
+                                    Key_management = WPA-EAP-SUITE-B-192
+                                    Pairwise Ciphers = GCMP-256 (wpa3)
+                                    Group Ciphers = GCMP - 256 (wpa3)
+                                    EAP Methods = EAP-TLS
+                                    EAP Identity = testuser
+                                    EAP Password = testpasswd
+                                    Pirvate Key = /home/lanforge/client.p12
+                                    CA Cert File = /home/lanforge/ca.pem
+                                    PK Passwrod = lanforge
+                                    Ieee80211w  = Required (2)
+                                    Advanced/8021x = checked
+                                    Enabled PKC = checked
+
+
+                                (WPA3 TTLS)
+                                if radio list is 
+                                    Key_management = WPA-EAP
+                                    Pairwise Ciphers = GCMP-256 (wpa3)
+                                    Group Ciphers = GCMP-256 (wpa3)
+                                    EAP Methods = EAP-TLS
+                                    EAP Identity = testuser
+                                    EAP Password = testpasswd
+                                    Ieee80211w  = Required (2)
+                                    Advanced/8021x = checked
+
                                     example:
                                 --radio_list wiphy0 1 axe11000_6g lf_axe11000_6g wpa3 WPA-EAP-SHA256 CCMP-256 GCMP-256 PEAP
 
