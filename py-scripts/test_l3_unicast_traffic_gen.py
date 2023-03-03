@@ -504,7 +504,6 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
     wpa2_ttls_eap_identity = 7
     wpa2_ttls_eap_password = 8
     wpa2_ttls_pk_password = 9
-    advanced8021 = 
 
 
     # support for TLS
