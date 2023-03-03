@@ -394,6 +394,7 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
 
 
     requiredNamed = parser.add_argument_group('required arguments')
+
     requiredNamed.add_argument('--radio_list', action='append', nargs='*',
                                 help='''
                                 --radio_list  <number_of_wiphy> <number of last station> <ssid> <ssid password> <security> <key_management> <pairwise_ciphers>  <group_ciphers> <eap_methods>
@@ -410,7 +411,7 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
                                     group_cipher = 'GCMP-256'
                                     eap_methods = EAP-PEAP
 
-                                (WPA2 TLS)
+                                (WPA2 TLS) [14]
                                 if radio list is 
                                     Key_management = WPA-EAP
                                     EAP Methods = EAP-TLS
@@ -423,17 +424,17 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
                                     Advanced/8021x = checked
                                     Enabled PKC = checked
 
-                                (WPA2 TTLS)
+                                (WPA2 TTLS) [10]
                                 if radio list is 
                                     Key_management = WPA-EAP
                                     EAP Methods = EAP-TTLS
                                     EAP Identity = testuser
                                     EAP Password = testpasswd
-                                    PK Passwrod = lanforge
+                                    PK Password = lanforge
                                     Advanced/8021x = checked
 
 
-                                (WPA3 TLS)
+                                (WPA3 TLS) [16]
                                 if radio list is 
                                     Key_management = WPA-EAP-SUITE-B-192
                                     Pairwise Ciphers = GCMP-256 (wpa3)
@@ -449,7 +450,7 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
                                     Enabled PKC = checked
 
 
-                                (WPA3 TTLS)
+                                (WPA3 TTLS) [12]
                                 if radio list is 
                                     Key_management = WPA-EAP
                                     Pairwise Ciphers = GCMP-256 (wpa3)
@@ -464,7 +465,7 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
                                 --radio_list wiphy0 1 axe11000_6g lf_axe11000_6g wpa3 WPA-EAP-SHA256 CCMP-256 GCMP-256 PEAP
 
 
-                                Acceptable lengths are 4,5,6,9
+                                Acceptable lengths are 4,5,6,9, 10 (wpa2 TTLS), 12 (wpa3 TTLS), 14 (wpa2 TLS), 16 (wpa3 TLS)
                                 ''',
                                required=True)
 
@@ -490,10 +491,24 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
     ssid_offset = 2
     ssid_password_offset = 3
     security_offset = 4
+
+    # Original offsets
     key_mgt_offset = 5
     pairwise_offset = 6
     group_offset = 7
     eap_offset = 8
+
+    # WPA2_TTLS
+    wpa2_ttls_key_mgt_offset = 5
+    wpa2_ttls_eap_methods = 6
+    wpa2_ttls_eap_identity = 7
+    wpa2_ttls_eap_password = 8
+    wpa2_ttls_pk_password = 9
+    advanced8021 = 
+
+
+    # support for TLS
+    
 
     MAX_NUMBER_OF_STATIONS = 64
 
@@ -540,6 +555,7 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
             pairwise = radio[pairwise_offset]
             group = radio[group_offset]
             eap = radio[eap_offset]
+        elif radio_args_len == 10:
         else:
             logger.info('''
             if radio list is 4 in length the security defaults to wpa2,  all other parameters are 'DEFAULT'
