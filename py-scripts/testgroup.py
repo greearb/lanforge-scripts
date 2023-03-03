@@ -4,6 +4,7 @@ NAME: testgroup.py
 
 PURPOSE:
     This script will create a test connection group in the LANforge GUI (Connection Group GUI tab).
+     Test Groups are also referred to as Connection Groups.
      The script can preform the following tasks:
      - create a test group
      - add layer-3 cx's to a test group
@@ -172,6 +173,7 @@ NAME: testgroup.py
 
 PURPOSE:
     This script will create a test connection group in the LANforge GUI (Connection Group GUI tab).
+     Test Groups are also referred to as Connection Groups.
      The script can preform the following tasks:
      - create a test group
      - add layer-3 cx's to a test group
