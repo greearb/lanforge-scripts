@@ -257,16 +257,16 @@ def main():
       --raw_line 'pkts: MTU' \\
       --raw_line 'directions: DUT Transmit' \\
       --raw_line 'traffic_types: TCP' \\
-      --test_rig Ferndale-Mesh-01 --pull_report \\
+      --test_rig Ferndale-Mesh-01 \\
       --raw_line 'attenuator: 1.1.1040' \\
       --raw_line 'attenuations: 0..+50..950' \\
       --raw_line 'attenuator_mod: 3' \\
-      --pull_report \\
       --local_lf_report_dir /tmp/rvr-report \\
       --raw_line 'notes0: my rvr notes' \\
       --raw_line 'notes1: are here.' \\
       --raw_line 'rvr_bringup_wait: 30000' \\
-      --raw_line 'first_byte_wait: 30000'
+      --raw_line 'first_byte_wait: 30000' \\
+      --pull_report \\
 
     To create a station 
         --create_station

@@ -21,7 +21,7 @@ the options and how best to input data.
       --dut2 'TR398-DUT ruckus750-2 4c:b1:cd:18:e8:e8 (2)' \
       --raw_lines_file example-configs/tr398v2-ferndale-ac-cfg.txt \
       --set 'Calibrate 802.11AX Attenuators' 0 \
-      --set 'Calibrate 802.11AC Attenuators' 0 \
+      --set 'Calibrate Virt-Sta Attenuators' 0 \
       --set '6.1.1 Receiver Sensitivity' 0 \
       --set '6.2.1 Maximum Connection' 0 \
       --set '6.2.2 Maximum Throughput' 1 \
