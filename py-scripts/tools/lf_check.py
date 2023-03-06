@@ -2193,6 +2193,8 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     report.set_junit_results(junit_results)
     junit_xml = report.write_junit_results()
     logger.info("junit.xml: allure serve {}".format(junit_xml))
+    junit_path_only = junit_xml.replace('junit.xml','')
+    logger.info("junit.xml path: allure serve {}".format(junit_path_only))
 
     if args.update_latest:
         report_path = os.path.dirname(html_report)
