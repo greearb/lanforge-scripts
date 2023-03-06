@@ -554,7 +554,6 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
             pairwise = radio[pairwise_offset]
             group = radio[group_offset]
             eap = radio[eap_offset]
-        elif radio_args_len == 10:
         else:
             logger.info('''
             if radio list is 4 in length the security defaults to wpa2,  all other parameters are 'DEFAULT'
