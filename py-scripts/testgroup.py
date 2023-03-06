@@ -50,9 +50,12 @@ import os
 import importlib
 import argparse
 import time
+import logging
+
+logger = logging.getLogger(__name__)
 
 if sys.version_info[0] != 3:
-    print("This script requires Python 3")
+    logger.critical("This script requires Python 3")
     exit(1)
 
 
@@ -61,6 +64,7 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 
 class TestGroup(Realm):
@@ -106,25 +110,25 @@ class TestGroup(Realm):
 
     def do_cx_action(self):
         if self.cx_action == 'start':
-            print("Starting %s" % self.tg_profile.group_name)
+            logger.info("Starting %s" % self.tg_profile.group_name)
             self.tg_profile.start_group()
         elif self.cx_action == 'stop':
-            print("Stopping %s" % self.tg_profile.group_name)
+            logger.info("Stopping %s" % self.tg_profile.group_name)
             self.tg_profile.stop_group()
         elif self.cx_action == 'quiesce':
-            print("Quiescing %s" % self.tg_profile.group_name)
+            logger.info("Quiescing %s" % self.tg_profile.group_name)
             self.tg_profile.quiesce_group()
 
     def do_tg_action(self):
         if self.tg_action == 'add':
-            print("Creating %s" % self.tg_profile.group_name)
+            logger.info("Creating %s" % self.tg_profile.group_name)
             self.tg_profile.create_group()
         if self.tg_action == 'del':
-            print("Removing %s" % self.tg_profile.group_name)
+            logger.info("Removing %s" % self.tg_profile.group_name)
             if self.tg_profile.check_group_exists():
                 self.tg_profile.rm_group()
             else:
-                print("%s not found, no action taken" %
+                logger.info("%s not found, no action taken" %
                       self.tg_profile.group_name)
 
     def show_info(self):
@@ -132,29 +136,29 @@ class TestGroup(Realm):
         if self.list_groups:
             tg_list = self.tg_profile.list_groups()
             if len(tg_list) > 0:
-                print("Current Test Groups: ")
+                logger.info("Current Test Groups: ")
                 for group in tg_list:
-                    print(group)
+                    logger.info(group)
             else:
-                print("No test groups found")
+                logger.info("No test groups found")
         if self.show_group:
             cx_list = self.tg_profile.list_cxs()
             if len(cx_list) > 0:
-                print("Showing cxs in %s" % self.tg_profile.group_name)
+                logger.info("Showing cxs in %s" % self.tg_profile.group_name)
                 for cx in cx_list:
-                    print(cx)
+                    logger.info(cx)
             else:
-                print("No cxs found in %s" % self.tg_profile.group_name)
+                logger.info("No cxs found in %s" % self.tg_profile.group_name)
 
     def update_cxs(self):
         if len(self.add_cx_list) > 0:
-            print("Adding cxs %s to %s" %
+            logger.info("Adding cxs %s to %s" %
                   (', '.join(self.add_cx_list), self.tg_profile.group_name))
             for cx in self.add_cx_list:
                 self.tg_profile.add_cx(cx)
                 self.tg_profile.cx_list.append(cx)
         if len(self.rm_cx_list) > 0:
-            print("Removing cxs %s from %s" %
+            logger.info("Removing cxs %s from %s" %
                   (', '.join(self.rm_cx_list), self.tg_profile.group_name))
             for cx in self.rm_cx_list:
                 self.tg_profile.rm_cx(cx)
@@ -234,6 +238,11 @@ NOTES:
         '--remove_cx', help='remove cx from chosen test group', nargs='*', default=[])
 
     args = parser.parse_args()
+
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
 
     tg_action = None
     cx_action = None
