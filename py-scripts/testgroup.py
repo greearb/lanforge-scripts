@@ -154,7 +154,10 @@ class TestGroup(Realm):
         if len(self.add_cx_list) > 0:
             logger.info("Adding cxs %s to %s" %
                   (', '.join(self.add_cx_list), self.tg_profile.group_name))
-            for cx in self.add_cx_list:
+            cx_list = self.add_cx_list[0]
+            split_cx_list = cx_list.split(',')
+            # for cx in self.add_cx_list:
+            for cx in split_cx_list:
                 self.tg_profile.add_cx(cx)
                 self.tg_profile.cx_list.append(cx)
         if len(self.rm_cx_list) > 0:
