@@ -24,19 +24,21 @@ EXAMPLE:
                     "--list_groups"
                     ]
     
-    For adding multiple layer-3 cross-connections to a single test connection group:
-        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test1,l3_test2 --remove_cx l3_test3 --list_groups
-        ./testgroup.py --mgr localhost --group_name group1 --add_group --list_groups --add_cx l3_test1,l3_test2
+    Add multiple layer-3 cross-connections to a single connection group:
+        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test1,l3_test2 --list_groups
 
-    Generic command for adding a single layer-3 cross connection to a test connection group:
+    Remove multiple layer-3 cx's from a connection group:
+        ./testgroup.py --mgr 192.168.30.12 --group_name group1 --remove_cx l3_test1,l3_test2 --list_groups
+
+    Add a single layer-3 cross connection to a connection group:
         ./testgroup.py --mgr localhost --group_name group1 --add_group --list_groups
 
-    Command for removing a layer-3 cx from a specified connection group:
+    Remove a layer-3 cx from a specified connection group:
         ./testgroup.py --mgr localhost --group_name group1 --remove_cx l3_test1 --list_groups
 
 NOTES:
 
-    Tested on 02/24/2023:
+    Tested on 03/07/2023:
          kernel version: 5.19.17+
          gui version: 5.4.6
 
@@ -200,16 +202,21 @@ EXAMPLE:
                     "--list_groups"
                     ]
     
-    For adding multiplt layer-3 cross-connections to a single test connection group:
-        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test1,l3_test2 --remove_cx l3_test3 --list_groups
-        ./testgroup.py --mgr localhost --group_name group1 --add_group --list_groups --add_cx l3_test1,l3_test2
+    Add multiple layer-3 cross-connections to a single connection group:
+        ./testgroup.py --mgr localhost --group_name group1 --add_group --add_cx l3_test1,l3_test2 --list_groups
 
-    Generic command to add a single layer-3 cross connection to a test connection group:
+    Remove multiple layer-3 cx's from a connection group:
+        ./testgroup.py --mgr 192.168.30.12 --group_name group1 --remove_cx l3_test1,l3_test2 --list_groups
+
+    Add a single layer-3 cross connection to a connection group:
         ./testgroup.py --mgr localhost --group_name group1 --add_group --list_groups
+
+    Remove a layer-3 cx from a specified connection group:
+        ./testgroup.py --mgr localhost --group_name group1 --remove_cx l3_test1 --list_groups
 
 NOTES:
 
-    Tested on 02/24/2023:
+    Tested on 03/07/2023:
          kernel version: 5.19.17+
          gui version: 5.4.6
     ''')
