@@ -2183,10 +2183,6 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         logger.info("exception write_pdf_with_timestamp()")
 
     logger.info("lf_check_html_report: " + html_report)
-    if args.no_send_email or check.email_list_test == "":
-        logger.info("send email not set or email_list_test not set")
-    else:
-        check.send_results_email(report_file=html_report)
 
     # save the juni.xml file
     junit_results = check.get_junit_results()
@@ -2195,6 +2191,12 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
     logger.info("junit.xml: allure serve {}".format(junit_xml))
     junit_path_only = junit_xml.replace('junit.xml','')
     logger.info("junit.xml path: allure serve {}".format(junit_path_only))
+
+    # Send email
+    if args.no_send_email or check.email_list_test == "":
+        logger.info("send email not set or email_list_test not set")
+    else:
+        check.send_results_email(report_file=html_report)
 
     if args.update_latest:
         report_path = os.path.dirname(html_report)
