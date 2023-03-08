@@ -95,8 +95,7 @@ class CreateL3(Realm):
         self.cx_profile.side_b_max_bps = side_b_max_rate
 
     def pre_cleanup(self):
-        if self.debug:
-            print('pre_cleanup')
+        logger.info('pre_cleanup')
         self.cx_profile.cleanup_prefix()
         for sta in self.sta_list:
             self.rm_port(sta, check_exists=True, debug_=False)
@@ -108,8 +107,7 @@ class CreateL3(Realm):
                                           passwd=self.password)
         self.station_profile.set_number_template(self.number_template)
         logger.info("Creating stations")
-        self.station_profile.set_command_flag(
-            "add_sta", "create_admin_down", 1)
+        self.station_profile.set_command_flag("add_sta", "create_admin_down", 1)
         self.station_profile.set_command_param(
             "set_port", "report_timer", 1500)
         self.station_profile.set_command_flag("set_port", "rpt_timer", 1)
@@ -136,6 +134,26 @@ class CreateL3(Realm):
                 self._pass("CX creation finished")
             else:
                 self._fail("create_l3_stations: could not create all cx/endpoints.")
+
+    def start(self):
+        logger.info("Bringing up stations")
+        self.admin_up(self.upstream)
+        for sta in self.station_profile.station_names:
+            logger.info("Bringing up station %s" % sta)
+            self.admin_up(sta)
+
+    def stop(self):
+        logger.info("Bringing down stations")
+        # self.admin_up(self.upstream)
+        for sta in self.station_profile.station_names:
+            logger.info("Bringing down station %s" % sta)
+            self.admin_down(sta)
+
+    def cleanup(self):
+        logger.info("Clean up stations")
+        self.cx_profile.cleanup_prefix()
+        for sta in self.sta_list:
+            self.rm_port(sta, check_exists=True, debug_=False)
 
 
 def main():
