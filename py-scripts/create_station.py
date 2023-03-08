@@ -3,14 +3,18 @@
 NAME: create_station.py
 
 PURPOSE:
-    create_station.py will create a variable number of stations.
+    create_station.py will create a variable number of stations, and connect them to a specified wireless network.
 
 EXAMPLE:
-    create_station.py --mrg <lanforge ip> --radio wipyh1 --start_id 2 --num_stations 1 --ssid asus_5g --passwd hello123 --security wpa2
+    create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2
 
 NOTES: 
     Does not create cross connects 
     Mainly used to determine how to create a station
+
+    Tested on 03/08/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
 
 COPYRIGHT: 
 Copyright 2022 Candela Technologies Inc
@@ -143,9 +147,18 @@ def main():
             ''',
 
         description='''\
-        create_station.py
-        --------------------
-        Command example:
+
+NAME: create_station.py
+
+PURPOSE:
+    create_station.py will create a variable number of stations, and connect them to a specified wireless network.
+
+EXAMPLE:
+
+    Add a single station:
+        create_station.py --mgr <lanforge ip> --radio wiphy1 --start_id 2 --num_stations 1 --ssid <ssid> --passwd <password> --security wpa2
+
+    Add multiple stations:
         ./create_station.py
             --radio wiphy0
             --start_id 2
@@ -169,6 +182,15 @@ def main():
                 "abgnAX" : "12",
                 "bgnAX"  : "13"}
             --debug
+
+NOTES:
+    Does not create cross connects
+    Mainly used to determine how to create a station
+
+    Tested on 03/08/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
+
             ''')
     required = parser.add_argument_group('required arguments')
     required.add_argument(
