@@ -54,6 +54,10 @@ sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
 realm = importlib.import_module("py-json.realm")
 Realm = realm.Realm
+lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
+
+
+createL3 = importlib.import_module("py-scripts.create_l3_stations")
 
 
 class SniffRadio(Realm):
@@ -285,17 +289,77 @@ def main():
     parser.add_argument('--ht160_enable', type=str, help='Enable/Disable \"ht160_enable\\ [0-disable,1-enable]" ',
                         default=0)
 
-    parser.add_argument('--ax210', type=str, help='ax210 needs to have a station created so the sniff will work on 6g', action='store_true')
+    parser.add_argument('--ax210', help='ax210 needs to have a station created so the sniff will work on 6g', action='store_true')
+    parser.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000', default=0000)
+    parser.add_argument('--station_list', help='Optional: User defined station names, can be a comma or space separated list', nargs='+', default=None)
+    parser.add_argument('--upstream_port',help='--upstream_port upstream port default: eth2',default='eth2')
+    parser.add_argument('--side_a_min_rate', help='--side_a_min_rate bps rate minimum for side_a default: 1024000', default=1024000)
+    parser.add_argument('--side_b_min_rate', help='--side_b_min_rate bps rate minimum for side_b default: 1024000', default=1024000)
 
+    parser.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', default='open')
+    parser.add_argument('--ssid', help='WiFi SSID for script objects to associate to', default='axe11000_5g')
+    parser.add_argument('--password',  help='WiFi passphrase/password/key', default='[BLANK]')
+    parser.add_argument('--mode', help='Used to force mode of stations default: 0 (auto)', default=0)
+    parser.add_argument('--num_stations', type=int, default=0, help='Number of stations to create')
+    parser.add_argument('--ax210_5g_scan_time', default='20', help='Time to wait for 5g scan')
+    parser.add_argument('--ap', help='Used to force a connection to a particular AP')
+
+    # Logging information
+    # logging configuration
+    parser.add_argument('--log_level', default=None, help='Set logging level: debug | info | warning | error | critical')
+    parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
 
     args = parser.parse_args()
+
+    logger_config = lf_logger_config.lf_logger_config()
+    # set the logger level to requested value
+    logger_config.set_level(level=args.log_level)
+    logger_config.set_json(json_file=args.lf_logger_config_json)
+
 
     # if args.channel is None and args.channel_freq is None:
     #    print('--channel or --channel_freq most be entered')
 
     if args.ax210:
-        pass
-        
+        if args.num_stations:
+            num_sta = int(args.num_stations)
+        elif args.station_list:
+            num_sta = len(args.station_list)
+
+        if not args.station_list:
+            station_list = LFUtils.portNameSeries(
+                prefix_="sta", start_id_=int(
+                    args.number_template), end_id_=num_sta + int(
+                    args.number_template) - 1, padding_number_=10000, radio=args.radio)
+        else:
+            if ',' in args.station_list[0]:
+                station_list = args.station_list[0].split(',')
+            elif ' ' in args.station_list[0]:
+                station_list = args.station_list[0].split()
+            else:
+                station_list = args.station_list
+
+        create_l3 = createL3.CreateL3(host=args.mgr, 
+                        port=args.mgr_port, 
+                        number_template=str(args.number_template),
+                        sta_list=station_list, 
+                        name_prefix="VT", 
+                        upstream=args.upstream_port, 
+                        ssid=args.ssid,
+                        password=args.password, 
+                        radio=args.radio, 
+                        security=args.security, 
+                        side_a_min_rate=args.side_a_min_rate,
+                        side_b_min_rate=args.side_b_min_rate, 
+                        mode=args.mode, 
+                        ap=args.ap, 
+                        _debug_on=True)
+
+        create_l3.build()
+
+        create_l3.start()
+        # allow 10 seconds for a scan
+        time.sleep(int(args.ax210_5g_scan_time))
 
 
     obj = SniffRadio(lfclient_host=args.mgr,
@@ -310,10 +374,17 @@ def main():
                      radio_mode=args.radio_mode,
                      monitor_name=args.monitor_name)
     obj.setup(int(args.disable_ht40), int(args.disable_ht80), int(args.ht160_enable))
+
+    if args.ax210:
+        create_l3.stop()
+
     # TODO: Add wait-for logic instead of a sleep
     time.sleep(5)
     obj.start()
     obj.cleanup()
+
+    if args.ax210:
+        create_l3.cleanup()
 
     # TODO:  Check if passed or not.
 
