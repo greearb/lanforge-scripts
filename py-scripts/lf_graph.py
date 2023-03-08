@@ -82,7 +82,10 @@ class lf_bar_graph:
                  _legend_ncol=1,
                  _legend_fontsize=None,
                  _dpi=96,
-                 _enable_csv=False):
+                 _enable_csv=False,
+                 _remove_border=None,
+                 _alignment=None,
+                 ):
 
         if _data_set is None:
             _data_set = [[30.4, 55.3, 69.2, 37.1], [45.1, 67.2, 34.3, 22.4], [22.5, 45.6, 12.7, 34.8]]
@@ -123,6 +126,8 @@ class lf_bar_graph:
         self.legend_box = _legend_box
         self.legend_ncol = _legend_ncol
         self.legend_fontsize = _legend_fontsize
+        self.remove_border = _remove_border
+        self.alignment = _alignment
 
     def build_bar_graph(self):
         if self.color is None:
@@ -132,8 +137,17 @@ class lf_bar_graph:
                 self.color.append(self.color_name[i])
                 i = i + 1
 
-        plt.subplots(figsize=self.figsize)
+        fig_size, ax = plt.subplots(figsize=self.figsize, gridspec_kw=self.alignment)
         i = 0
+        # to remove the borders
+        if self.remove_border is not None:
+            for border in self.remove_border:
+                ax.spines[border].set_color(None)
+                if 'left' in self.remove_border:    # to remove the y-axis labeling
+                    yaxis_visable =False
+                else:
+                    yaxis_visable=True
+                ax.yaxis.set_visible(yaxis_visable)
 
         def show_value(rectangles):
             for rect in rectangles:
@@ -640,7 +654,7 @@ class lf_stacked_graph:
 
         # to remove the borders
         if self.remove_border:
-            for border in ['top', 'right', 'left', 'right', 'bottom']:
+            for border in ['top', 'right', 'left', 'bottom']:
                 axes_subplot.spines[border].set_visible(False)
                 axes_subplot.yaxis.set_visible(False)
 
