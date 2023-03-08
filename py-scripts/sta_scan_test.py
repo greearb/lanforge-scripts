@@ -128,24 +128,22 @@ class StaScan(Realm):
                 "port": port[2]
             }
             scan_results = self.json_get("scanresults/%s/%s/%s" % (port[0], port[1], port[2]))
+            results = scan_results['scan-results']
+            df = pd.DataFrame([list(result.values())[0] for result in results])
             if self.debug:
                 print("Scan results for port: %s\n%s"%(port, scan_results))
             if self.csv_output:
                 # TODO:  This clobbers output of previous station, need a way to
                 # append (and add resource and wlan to the csv output so that
                 # multiple stations can be reported.
-                results = scan_results['scan-results']
-                df = pd.DataFrame([list(result.values())[0] for result in results])
                 df.to_csv(self.csv_output)
                 print('CSV output saved at %s' % self.csv_output)
-                return df
             else:
-                for result in scan_results['scan-results']:
+                for result in results:
                     for name, info in result.items():
                         print(fmt % (port[1], port[2], info['bss'], info['signal'], info['ssid'],
                                      info['channel'], info['frequency'], info['age'], info['country']))
-                return None                     
-            
+            return df
 
     def pre_cleanup(self):
         self.station_profile.cleanup(self.sta_list)
@@ -221,7 +219,7 @@ def main():
             print(sta_scan_test.get_fail_message())
             sta_scan_test.exit_fail()
 
-    dataframe = sta_scan_test.start()
+    sta_scan_test.start()
 
     if (not args.use_existing_station):
         sta_scan_test.cleanup()
