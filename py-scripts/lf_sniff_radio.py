@@ -252,6 +252,31 @@ def main():
         --center_freq 5190
         --radio_mode AUTO
         --monitor_name Sniffer0
+
+        AX210 sniff command 
+        ./lf_nsiff_radio.py 
+        --mgr 192.168.0.104
+        --mgr_port 8080
+        --radio wiphy7
+        --outfile /home/lanforge/sniff_6G_80.pcap
+        --duration 20
+        //--channel 1e
+        --channel_bw 80
+        --channel_freq 5955
+        --center_freq 5985
+        --radio_mode AUTO
+        --monitor_name SNIFF_6G_80
+        --disable_ht40 0
+        --disable_ht80 0
+        --ht160_enable 0
+        --ax210
+        --num_stations 1
+        --security wpa2
+        --ssid axe11000_5g
+        --password lf_axe11000_5g
+            
+            
+
         """)
 
     parser.add_argument('--mgr', type=str, help='--mgr: IP Address of LANforge', default="localhost")
