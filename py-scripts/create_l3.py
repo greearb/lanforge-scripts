@@ -146,10 +146,6 @@ Tested on 02/03/2023:
         default="eth2",
         required=True)
     parser.add_argument(
-        '--mode',
-        help='Used to force mode of stations',
-        default=0)
-    parser.add_argument(
         '--ap',
         help='Used to force a connection to a particular AP')
     parser.add_argument(
