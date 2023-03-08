@@ -3,11 +3,12 @@
 NAME: lf_roam_test.py
 
 PURPOSE: lf_hard_rome_test.py works on both roaming methods i.e. hard/forced roaming and also attenuation based roaming
-        (soft roam)  specific to 11r.
+        (soft roam)  specific or purely based  to 11r.
        - By default, this script executes a hard roaming process and provides the results of the 11r roam test pdf,
          as well as all the packet captures generated after the roam test. However, to perform a soft roam, the soft_roam
          parameter must be set to true.
 
+Hard Roam
 EXAMPLE: For a single station and a single iteration
     python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "68:7d:b4:5f:5c:3b" --ap2_bssid "14:16:9d:53:58:cb"
      --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 1 --ssid_name "RoamAP5g" --security "wpa2"
@@ -31,6 +32,31 @@ EXAMPLE: For multiple station and multiple iteration
      --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 10 --ssid_name "RoamAP5g" --security "wpa2"
       --security_key "something" --duration None --upstream "eth2" --iteration 10 --channel "40" --option "ota"
       --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based
+
+Soft Roam
+EXAMPLE: For a single station and a single iteration
+    python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "68:7d:b4:5f:5c:3b" --ap2_bssid "14:16:9d:53:58:cb"
+     --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 1 --ssid_name "RoamAP5g" --security "wpa2"
+      --security_key "something" --duration None --upstream "eth2" --iteration 1 --channel "40" --option "ota"
+      --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --soft_roam True
+
+EXAMPLE: For a single station and multiple iteration
+    python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "68:7d:b4:5f:5c:3b" --ap2_bssid "14:16:9d:53:58:cb"
+     --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 1 --ssid_name "RoamAP5g" --security "wpa2"
+      --security_key "something" --duration None --upstream "eth2" --iteration 10 --channel "40" --option "ota"
+      --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --soft_roam True
+
+EXAMPLE: For multiple station and a single iteration
+    python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "68:7d:b4:5f:5c:3b" --ap2_bssid "14:16:9d:53:58:cb"
+     --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 10 --ssid_name "RoamAP5g" --security "wpa2"
+      --security_key "something" --duration None --upstream "eth2" --iteration 1 --channel "40" --option "ota"
+      --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --soft_roam True
+
+EXAMPLE: For multiple station and multiple iteration
+    python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "68:7d:b4:5f:5c:3b" --ap2_bssid "14:16:9d:53:58:cb"
+     --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 10 --ssid_name "RoamAP5g" --security "wpa2"
+      --security_key "something" --duration None --upstream "eth2" --iteration 10 --channel "40" --option "ota"
+      --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --soft_roam True
 
 NOTES:
 
@@ -150,7 +176,8 @@ class HardRoam(Realm):
                  ttls_pass=None,
                  log_file=False,
                  debug=False,
-                 soft_roam=False
+                 soft_roam=False,
+                 sta_type=None
                  ):
         super().__init__(lanforge_ip,
                          lanforge_port)
@@ -188,6 +215,7 @@ class HardRoam(Realm):
         self.lf_csv_obj = lf_csv.lf_csv()
         self.traffic_type = traffic_type
         self.roam_delay = roaming_delay
+        self.sta_type = sta_type
         self.cx_profile = self.local_realm.new_l3_cx_profile()
         self.cc = None
         self.cc = series.create_controller_series_object(
@@ -302,7 +330,7 @@ class HardRoam(Realm):
 
     # Create N - number of clients of advanced configuration on lf
     def create_n_clients(self, start_id=0, sta_prefix=None, num_sta=None, dut_ssid=None,
-                         dut_security=None, dut_passwd=None, radio=None, sta_type=None):
+                         dut_security=None, dut_passwd=None, radio=None):
 
         local_realm = realm.Realm(lfclient_host=self.lanforge_ip, lfclient_port=self.lanforge_port)
         station_profile = local_realm.new_station_profile()
@@ -328,7 +356,7 @@ class HardRoam(Realm):
         station_list = LFUtils.portNameSeries(prefix_=sta_prefix, start_id_=start_id,
                                               end_id_=num_sta - 1, padding_number_=10000,
                                               radio=radio)
-        if sta_type == "11r-sae-802.1x":
+        if self.sta_type == "11r-sae-802.1x":
             dut_passwd = "[BLANK]"
         station_profile.use_security(dut_security, dut_ssid, dut_passwd)
         station_profile.set_number_template("00")
@@ -341,7 +369,7 @@ class HardRoam(Realm):
         # self.station_profile.set_command_param("add_sta", "ap", self.bssid[0])
 
         station_profile.set_command_flag("set_port", "rpt_timer", 1)
-        if sta_type == "11r":
+        if self.sta_type == "11r":
             station_profile.set_command_flag("add_sta", "80211u_enable", 0)
             station_profile.set_command_flag("add_sta", "8021x_radius", 1)
             if not self.soft_roam:
@@ -379,7 +407,7 @@ class HardRoam(Realm):
                                            ipaddr_type_avail="NA",
                                            network_auth_type="NA",
                                            anqp_3gpp_cell_net="NA")
-        if sta_type == "11r-sae":
+        if self.sta_type == "11r-sae":
             station_profile.set_command_flag("add_sta", "ieee80211w", 2)
             station_profile.set_command_flag("add_sta", "80211u_enable", 0)
             station_profile.set_command_flag("add_sta", "8021x_radius", 1)
@@ -415,7 +443,7 @@ class HardRoam(Realm):
                                            ipaddr_type_avail="NA",
                                            network_auth_type="NA",
                                            anqp_3gpp_cell_net="NA")
-        if sta_type == "11r-sae-802.1x":
+        if self.sta_type == "11r-sae-802.1x":
             station_profile.set_command_flag("set_port", "rpt_timer", 1)
             station_profile.set_command_flag("add_sta", "ieee80211w", 2)
             station_profile.set_command_flag("add_sta", "80211u_enable", 0)
@@ -694,18 +722,15 @@ class HardRoam(Realm):
         if self.band == "twog":
             self.local_realm.reset_port(self.twog_radios)
             self.create_n_clients(sta_prefix="wlan1", num_sta=self.num_sta, dut_ssid=self.ssid_name,
-                                  dut_security=self.security, dut_passwd=self.security_key, radio=self.twog_radios,
-                                  sta_type="11r")
+                                  dut_security=self.security, dut_passwd=self.security_key, radio=self.twog_radios)
         if self.band == "fiveg":
             self.local_realm.reset_port(self.fiveg_radios)
             self.create_n_clients(sta_prefix="wlan", num_sta=self.num_sta, dut_ssid=self.ssid_name,
-                                  dut_security=self.security, dut_passwd=self.security_key, radio=self.fiveg_radios,
-                                  sta_type="11r")
+                                  dut_security=self.security, dut_passwd=self.security_key, radio=self.fiveg_radios)
         if self.band == "sixg":
             self.local_realm.reset_port(self.sixg_radios)
             self.create_n_clients(sta_prefix="wlan", num_sta=self.num_sta, dut_ssid=self.ssid_name,
-                                  dut_security=self.security, dut_passwd=self.security_key, radio=self.sixg_radios,
-                                  sta_type="11r-sae-802.1x")
+                                  dut_security=self.security, dut_passwd=self.security_key, radio=self.sixg_radios)
 
         # Check if all stations have ip or not
         sta_list = self.get_station_list()
@@ -1828,6 +1853,8 @@ stability of the network when clients move between APs.
 # Examples Commands for different scenarios 
 ############################################
 
+Hard Roam
+
 EXAMPLE: For a single station and a single iteration
     python3 lf__roam_test.py --mgr 192.168.100.221 --ap1_bssid "68:7d:b4:5f:5c:3b" --ap2_bssid "14:16:9d:53:58:cb"
      --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 1 --ssid_name "RoamAP5g" --security "wpa2"
@@ -1851,6 +1878,31 @@ EXAMPLE: For multiple station and multiple iteration
      --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 10 --ssid_name "RoamAP5g" --security "wpa2"
       --security_key "something" --duration None --upstream "eth2" --iteration 10 --channel "40" --option "ota"
       --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based
+      
+Soft Roam
+EXAMPLE: For a single station and a single iteration
+    python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "68:7d:b4:5f:5c:3b" --ap2_bssid "14:16:9d:53:58:cb"
+     --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 1 --ssid_name "RoamAP5g" --security "wpa2"
+      --security_key "something" --duration None --upstream "eth2" --iteration 1 --channel "40" --option "ota"
+      --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --soft_roam True
+
+EXAMPLE: For a single station and multiple iteration
+    python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "68:7d:b4:5f:5c:3b" --ap2_bssid "14:16:9d:53:58:cb"
+     --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 1 --ssid_name "RoamAP5g" --security "wpa2"
+      --security_key "something" --duration None --upstream "eth2" --iteration 10 --channel "40" --option "ota"
+      --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --soft_roam True
+
+EXAMPLE: For multiple station and a single iteration
+    python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "68:7d:b4:5f:5c:3b" --ap2_bssid "14:16:9d:53:58:cb"
+     --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 10 --ssid_name "RoamAP5g" --security "wpa2"
+      --security_key "something" --duration None --upstream "eth2" --iteration 1 --channel "40" --option "ota"
+      --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --soft_roam True
+
+EXAMPLE: For multiple station and multiple iteration
+    python3 lf_roam_test.py --mgr 192.168.100.221 --ap1_bssid "68:7d:b4:5f:5c:3b" --ap2_bssid "14:16:9d:53:58:cb"
+     --fiveg_radios "1.1.wiphy1" --band "fiveg" --sniff_radio "wiphy2" --num_sta 10 --ssid_name "RoamAP5g" --security "wpa2"
+      --security_key "something" --duration None --upstream "eth2" --iteration 10 --channel "40" --option "ota"
+      --dut_name ["AP1","AP2"] --traffic_type "lf_udp" --log_file False --debug False --iteration_based --soft_roam True
 
 
 ===============================================================================
@@ -1866,7 +1918,7 @@ EXAMPLE: For multiple station and multiple iteration
     required.add_argument('--twog_radios', help='Twog radio', default=None)
     required.add_argument('--fiveg_radios', help='Fiveg radio', default="1.1.wiphy1")
     required.add_argument('--sixg_radios', help='Sixg radio', default=None)
-    required.add_argument('--band', help='eg. --band "twog', default="fiveg")
+    required.add_argument('--band', help='eg. --band "twog" or sixg', default="fiveg")
     required.add_argument('--sniff_radio', help='eg. --sniff_radio "wiphy2', default="wiphy2")
     required.add_argument('--num_sta', help='eg. --num_sta 1', type=int, default=1)
     required.add_argument('--ssid_name', help='eg. --ssid_name "ssid_5g"', default="RoamAP5g")
@@ -1886,6 +1938,9 @@ EXAMPLE: For multiple station and multiple iteration
     required.add_argument('--log_file', help='To get the log file, need to pass the True', default=False)
     required.add_argument('--debug', help='To enable/disable debugger, need to pass the True/False', default=False)
     required.add_argument('--soft_roam', help='To enable soft rome eg. --soft_rome True', default=False)
+    required.add_argument('--sta_type', type=str, help="provide the type of"
+                                                       " client you want to creatE i.e 11r,11r-sae,"
+                                                       " 11r-sae-802.1x or simple as none", default="11r")
 
     optional = parser.add_argument_group('Optional arguments')
 
@@ -1937,7 +1992,8 @@ EXAMPLE: For multiple station and multiple iteration
                    timeout="10",
                    identity=args.identity,
                    ttls_pass=args.ttls_pass,
-                   soft_roam=args.soft_roam
+                   soft_roam=args.soft_roam,
+                   sta_type=args.sta_type
                    )
     x = os.getcwd()
     print("Current Working Directory :", x)
