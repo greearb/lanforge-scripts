@@ -305,7 +305,7 @@ def main():
         --security wpa2
         --ssid axe11000_5g
         --password lf_axe11000_5g
-
+        --ax210_5g_scan_time 10
 
 
         """)
