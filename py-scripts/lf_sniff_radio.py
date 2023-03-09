@@ -48,6 +48,8 @@ import time
 import paramiko
 import logging
 
+logger = logging.getLogger(__name__)
+
 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
@@ -91,6 +93,7 @@ class SniffRadio(Realm):
         self.duration = duration
         self.mode = radio_mode
         self.monitor_name = monitor_name
+        self.monitor_info = ''
         # TODO allow the channel_frequency to be entered
         # if self.channel is None and self.channel_freq is None:
         #    print("either --channel or --channel_freq needs to be set")
@@ -99,7 +102,7 @@ class SniffRadio(Realm):
         #    self.freq = self.channel_freq
         if self.channel_freq is not None:
             self.freq = self.channel_freq
-            print("channel frequency {freq}".format(freq=self.channel_freq))
+            logger.info("channel frequency {freq}".format(freq=self.channel_freq))
         # conversion of 6e channel to frequency
         # ch_6e = (f - 5000 )  / 5
         # f = (ch_6e * 5) + 5000
@@ -109,7 +112,7 @@ class SniffRadio(Realm):
                     channel_6e = self.channel.replace('e', '')
                     self.freq = ((int(channel_6e) + 190) * 5) + 5000
                     lf_6e_chan = int(channel_6e) + 190
-                    print("6e_chan: {chan} lf_6e_chan: {lf_chan} frequency: {freq}".format(chan=self.channel, lf_chan=lf_6e_chan, freq=self.freq))
+                    logger.info("6e_chan: {chan} lf_6e_chan: {lf_chan} frequency: {freq}".format(chan=self.channel, lf_chan=lf_6e_chan, freq=self.freq))
                     self.channel = lf_6e_chan
                 else:
                     if int(self.channel) <= 13:
@@ -120,11 +123,11 @@ class SniffRadio(Realm):
                     # 5g or 6g Candela numbering
                     else:
                         self.freq = int(self.channel) * 5 + 5000
-                    print("channel: {chan}  frequency: {freq}".format(chan=self.channel, freq=self.freq))
+                    logger.info("channel: {chan}  frequency: {freq}".format(chan=self.channel, freq=self.freq))
 
         if self.channel_bw != '20':
             if self.center_freq is None:
-                print("--center_freq need to be set for bw greater the 20")
+                logger.info("--center_freq need to be set for bw greater the 20")
                 exit(1)
 
     def setup(self, ht40_value, ht80_value, ht160_value):
@@ -142,11 +145,36 @@ class SniffRadio(Realm):
         self.set_freq(ssh_root=self.lfclient_host, ssh_passwd='lanforge', freq=self.freq)
         self.monitor.start_sniff(capname=self.outfile, duration_sec=self.duration)
         for i in range(0, self.duration):
-            print("started sniffer, PLease wait,", self.duration - i)
+            logger.info("started sniffer, PLease wait,{duration}".format(duration=(self.duration - i)))
             time.sleep(1)
-        print("Sniffing Completed Success", "Check ", self.outfile)
+        logger.info("Sniffing Completed Success Check {outfile}".format(outfile=self.outfile))
         self.monitor.admin_down()
         time.sleep(2)
+
+    def get_sniff_info(self):
+        try:
+            # creating shh client object we use this object to connect to router
+            ssh = paramiko.SSHClient()
+            # automatically adds the missing host key
+            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            ssh.connect(hostname=self.lfclient_host, port=22, username='lanforge', password='lanforge',
+                        allow_agent=False, look_for_keys=False, banner_timeout=600)
+            command= "sudo iw dev {sniffer} info".format(sniffer=self.monitor_name)
+            stdin, stdout, stderr = ssh.exec_command(command)
+            self.monitor_info = stdout.readlines()
+            logger.info("sudo iw dev {sniffer} info: \n {monitor_info}".format(sniffer=self.monitor_name,monitor_info=self.monitor_info))
+            # self.monitor_info = [line.replace(
+            #    '\n', '') for line in self.monitor_info]
+            ssh.close()
+            time.sleep(1)
+        except paramiko.ssh_exception.NoValidConnectionsError as e:
+            print("####", e, "####")
+            exit(1)
+        except TimeoutError as e:
+            print("####", e, "####")
+            exit(1)
+
+        return self.monitor_info
 
     # for 6E
     # For example for channel 7 with 80Mhz bw , here are the monitor commands possible
@@ -183,6 +211,8 @@ class SniffRadio(Realm):
         except TimeoutError as e:
             print("####", e, "####")
             exit(1)
+
+        ssh.close()
 
     def cleanup(self):
         # TODO:  Add error checking to make sure monitor port really went away.
@@ -384,8 +414,10 @@ def main():
 
         create_l3.start()
         # allow 10 seconds for a scan
-        time.sleep(int(args.ax210_5g_scan_time))
-
+        logger.info("wait {scan_time} for 5g scan on AX210".format(scan_time=args.ax210_5g_scan_time))
+        for i in range(0, int(args.ax210_5g_scan_time)):
+            logger.info("AX210 scan 5g network, PLease wait: {scan_time}".format(scan_time=(int(args.ax210_5g_scan_time) - i)))
+            time.sleep(1)
 
     obj = SniffRadio(lfclient_host=args.mgr,
                      lfclient_port=args.mgr_port,
@@ -405,7 +437,14 @@ def main():
 
     # TODO: Add wait-for logic instead of a sleep
     time.sleep(5)
+
+
+    # check 
     obj.start()
+
+    # the informaiton is gotten during start
+    # obj.get_sniff_info()
+
     obj.cleanup()
 
     if args.ax210:
