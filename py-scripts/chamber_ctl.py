@@ -9,15 +9,15 @@ EXAMPLES:
     Examine a chamber with a turntable using --info:
         ./chamber_ctl.py --host 127.0.0.1 --chamber TR-398 --info
 
-    Rotate a turntable to a specific angle using --angle:
-        ./chamber_ctl.py --host 127.0.0.1 --chamber TR-398 --speed 4 --angle 90
-        Angles should be positive values between 0.0 and 359.9.
+    Rotate a turntable to a specific position using --position:
+        ./chamber_ctl.py --host 127.0.0.1 --chamber TR-398 --speed 4 --position 90
+        Positions should be positive values between 0.0 and 359.9.
         Speed is RPM between 0.1 - 7.0
-    Rotate a turntable relative to its present angle using --adjust:
+    Rotate a turntable relative to its present position using --adjust:
         ./chamber_ctl.py --host 127.0.0.1 --chamber TR-398 --speed 4 --adjust -90
         Adjustments can be positive or negative.
 
-    By default, this script will poll the position of the turntable once an angle
+    By default, this script will poll the position of the turntable once an position
     has been submitted. Option --no_settle sends the rotation command to the LANforge host
     without waiting for the turntable to reach its destination position.
 
@@ -58,7 +58,7 @@ logger = logging.getLogger(__name__)
 
 class Turntable(Realm):
     UNKNOWN_POSITION : int = -999
-    CURRENT_ANGLE : str = "reported rotation (deg)"
+    CURRENT_POSITION : str = "reported rotation (deg)"
 
     def __init__(self,
                  api_session: lanforge_api.LFSession = None,
@@ -77,7 +77,7 @@ class Turntable(Realm):
         self.errors_warnings = []
         self.located_chamber: dict = None
         self.speed: float = self.UNKNOWN_POSITION
-        self.angle: float = self.UNKNOWN_POSITION
+        self.position: float = self.UNKNOWN_POSITION
         self.adjust: float = self.UNKNOWN_POSITION
         self.found_chamber: bool = None
         self.no_settle: bool = False
@@ -97,46 +97,46 @@ class Turntable(Realm):
         if self.adjust is None or self.adjust == Turntable.UNKNOWN_POSITION:
             self.adjust = 0
 
-        if self.angle is None or self.angle == Turntable.UNKNOWN_POSITION:
-            print("self.angle[%s] assigning angle to [%s][%s]" %
-                (self.angle,
-                 self.found_chamber[Turntable.CURRENT_ANGLE],
-                 float(self.found_chamber[Turntable.CURRENT_ANGLE])))
-            self.angle = float(self.found_chamber[Turntable.CURRENT_ANGLE])
+        if self.position is None or self.position == Turntable.UNKNOWN_POSITION:
+            print("self.position[%s] assigning position to [%s][%s]" %
+                (self.position,
+                 self.found_chamber[Turntable.CURRENT_POSITION],
+                 float(self.found_chamber[Turntable.CURRENT_POSITION])))
+            self.position = float(self.found_chamber[Turntable.CURRENT_POSITION])
 
         if self.adjust != 0:
-            if (self.angle + self.adjust) < 0:
-                self.angle = 360 + (self.angle + self.adjust)
-            elif (self.angle + self.adjust) > 359.9:
-                if (self.angle + self.adjust) == 360:
-                    self.angle = 0
+            if (self.position + self.adjust) < 0:
+                self.position = 360 + (self.position + self.adjust)
+            elif (self.position + self.adjust) > 359.9:
+                if (self.position + self.adjust) == 360:
+                    self.position = 0
                 else:
-                    self.angle = (self.angle + self.adjust) - 360
+                    self.position = (self.position + self.adjust) - 360
             else:
-                self.angle += self.adjust
+                self.position += self.adjust
         else:
-            if self.angle < 0:
-                self.angle = 360 + self.angle
-            elif self.angle > 359.9:
-                if self.angle == 360:
-                    self.angle = 0
+            if self.position < 0:
+                self.position = 360 + self.position
+            elif self.position > 359.9:
+                if self.position == 360:
+                    self.position = 0
                 else:
-                    self.angle = self.angle - 360
+                    self.position = self.position - 360
         logger.info("Setting new chamber position")
         self.api_command.post_set_chamber(chamber=self.chamber_name,
                                           speed_rpm=self.speed,
-                                          position=self.angle)
+                                          position=self.position)
         time.sleep(0.125)
         if no_settle is False:
             logging.warning("not waiting for chamber settings to take effect")
             return
-        if float(self.found_chamber[Turntable.CURRENT_ANGLE]) == float(self.angle):
-            logging.warning("requested angle %s, current reported angle is %s" % (self.angle, self.found_chamber[Turntable.CURRENT_ANGLE]))
+        if float(self.found_chamber[Turntable.CURRENT_POSITION]) == float(self.position):
+            logging.warning("requested position %s, current reported position is %s" % (self.position, self.found_chamber[Turntable.CURRENT_POSITION]))
             return
 
         max_wait_ms: int = 20000
         check_ms: int = 250
-        last_angle: float = float(self.found_chamber[Turntable.CURRENT_ANGLE])
+        last_position: float = float(self.found_chamber[Turntable.CURRENT_POSITION])
         start_ms: int = lanforge_api._now_ms()
         until_ms: int = start_ms + max_wait_ms
         now_ms: int = start_ms
@@ -145,13 +145,13 @@ class Turntable(Realm):
                 print("chamber %s disappeared" % self.chamber_name)
                 sys.exit(1)
             logger.info("Position %s dT %s" %
-                         (float(self.found_chamber[Turntable.CURRENT_ANGLE]),
+                         (float(self.found_chamber[Turntable.CURRENT_POSITION]),
                           until_ms - now_ms))
-            if last_angle != float(self.found_chamber[Turntable.CURRENT_ANGLE]):
-                last_angle = float(self.found_chamber[Turntable.CURRENT_ANGLE])
-            if last_angle == self.angle:
-                self.api_session.logger.warning("target angle %s reached in %s ms" %
-                                (self.angle, (now_ms - start_ms)))
+            if last_position != float(self.found_chamber[Turntable.CURRENT_POSITION]):
+                last_position = float(self.found_chamber[Turntable.CURRENT_POSITION])
+            if last_position == self.position:
+                self.api_session.logger.warning("target position %s reached in %s ms" %
+                                (self.position, (now_ms - start_ms)))
                 break
             time.sleep(check_ms / 1000)
             now_ms = lanforge_api._now_ms()
@@ -163,18 +163,18 @@ class Turntable(Realm):
         Set speed in RPM
         """
         self.speed = speed
-    def set_angle(self, angle:float=None):
+    def set_position(self, position:float=None):
         """
-        Sets the absolute rotation angle of the table
+        Sets the absolute rotation position of the table
         """
-        logger.warning("setting angle to %s" % angle)
-        self.angle = angle
+        logger.warning("setting position to %s" % position)
+        self.position = position
 
-    def adjust_angle(self, angle:float=None):
+    def adjust_position(self, position:float=None):
         """
-        Add or subtract from the current angle of the table
+        Add or subtract from the current position of the table
         """
-        self.adjust = angle
+        self.adjust = position
 
     def locate_chamber(self, chamber_name: str = None) -> bool:
         """
@@ -219,14 +219,14 @@ def main():
     of the turntable or chamber from the Modify Chamber window (Chamber-0).""")
     parser.add_argument("--info", default=False, action="store_true",
                         help="Display chamber turntable information")
-    parser.add_argument("--angle", type=float,
-                        help="""Set the turn table angle to an absolute position (between 0.0 and 359.9).
-     Angle resolution is 1/10th of a degree.""")
+    parser.add_argument("--position", type=float,
+                        help="""Set the turn table position to an absolute position (between 0.0 and 359.9).
+     Position resolution is 1/10th of a degree.""")
     parser.add_argument("--adjust", type=float,
-                        help="""Adjust the turn table angle a few degrees relative to current position.
+                        help="""Adjust the turn table position a few degrees relative to current position.
     Negative degrees turn the table clockwise. Positive degrees turn the table anti-clockwise.
     If the table is at 270deg, '--adjust -5' will set the position of the table to 265deg.
-     Angle resolution is 1/10th of a degree.""")
+     Position resolution is 1/10th of a degree.""")
     parser.add_argument("--speed", "--rpm", type=float,
                         help="Turn table rotation speed, in RPM. Minimum is 0.1 RPM, maximum is 7 RPM")
     parser.add_argument("--log_level", help="Set log level")
@@ -264,10 +264,10 @@ def main():
 
     if args.speed is not None:
         this_turntable.set_speed(args.speed)
-    if args.angle is not None:
-        this_turntable.set_angle(args.angle)
+    if args.position is not None:
+        this_turntable.set_position(args.position)
     elif args.adjust is not None:
-        this_turntable.adjust_angle(args.adjust)
+        this_turntable.adjust_position(args.adjust)
     this_turntable.start(no_settle=wait_to_settle)
 
 
