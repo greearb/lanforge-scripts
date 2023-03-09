@@ -159,10 +159,10 @@ class SniffRadio(Realm):
             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             ssh.connect(hostname=self.lfclient_host, port=22, username='lanforge', password='lanforge',
                         allow_agent=False, look_for_keys=False, banner_timeout=600)
-            command= "sudo iw dev {sniffer} info".format(sniffer=self.monitor_name)
+            command = "sudo iw dev {sniffer} info".format(sniffer=self.monitor_name)
             stdin, stdout, stderr = ssh.exec_command(command)
             self.monitor_info = stdout.readlines()
-            logger.info("sudo iw dev {sniffer} info: \n {monitor_info}".format(sniffer=self.monitor_name,monitor_info=self.monitor_info))
+            logger.info("sudo iw dev {sniffer} info: \n {monitor_info}".format(sniffer=self.monitor_name, monitor_info=self.monitor_info))
             # self.monitor_info = [line.replace(
             #    '\n', '') for line in self.monitor_info]
             ssh.close()
@@ -283,8 +283,8 @@ def main():
         --radio_mode AUTO
         --monitor_name Sniffer0
 
-        AX210 sniff command 
-        ./lf_nsiff_radio.py 
+        AX210 sniff command
+        ./lf_nsiff_radio.py
         --mgr 192.168.0.104
         --mgr_port 8080
         --radio wiphy7
@@ -304,8 +304,8 @@ def main():
         --security wpa2
         --ssid axe11000_5g
         --password lf_axe11000_5g
-            
-            
+
+
 
         """)
 
@@ -347,13 +347,13 @@ def main():
     parser.add_argument('--ax210', help='ax210 needs to have a station created so the sniff will work on 6g', action='store_true')
     parser.add_argument('--number_template', help='Start the station numbering with a particular number. Default is 0000', default=0000)
     parser.add_argument('--station_list', help='Optional: User defined station names, can be a comma or space separated list', nargs='+', default=None)
-    parser.add_argument('--upstream_port',help='--upstream_port upstream port default: eth2',default='eth2')
+    parser.add_argument('--upstream_port', help='--upstream_port upstream port default: eth2', default='eth2')
     parser.add_argument('--side_a_min_rate', help='--side_a_min_rate bps rate minimum for side_a default: 1024000', default=1024000)
     parser.add_argument('--side_b_min_rate', help='--side_b_min_rate bps rate minimum for side_b default: 1024000', default=1024000)
 
     parser.add_argument('--security', help='WiFi Security protocol: < open | wep | wpa | wpa2 | wpa3 >', default='open')
     parser.add_argument('--ssid', help='WiFi SSID for script objects to associate to', default='axe11000_5g')
-    parser.add_argument('--password',  help='WiFi passphrase/password/key', default='[BLANK]')
+    parser.add_argument('--password', help='WiFi passphrase/password/key', default='[BLANK]')
     parser.add_argument('--mode', help='Used to force mode of stations default: 0 (auto)', default=0)
     parser.add_argument('--num_stations', type=int, default=0, help='Number of stations to create')
     parser.add_argument('--ax210_5g_scan_time', default='20', help='Time to wait for 5g scan')
@@ -370,7 +370,6 @@ def main():
     # set the logger level to requested value
     logger_config.set_level(level=args.log_level)
     logger_config.set_json(json_file=args.lf_logger_config_json)
-
 
     # if args.channel is None and args.channel_freq is None:
     #    print('--channel or --channel_freq most be entered')
@@ -394,21 +393,21 @@ def main():
             else:
                 station_list = args.station_list
 
-        create_l3 = createL3.CreateL3(host=args.mgr, 
-                        port=args.mgr_port, 
-                        number_template=str(args.number_template),
-                        sta_list=station_list, 
-                        name_prefix="VT", 
-                        upstream=args.upstream_port, 
-                        ssid=args.ssid,
-                        password=args.password, 
-                        radio=args.radio, 
-                        security=args.security, 
-                        side_a_min_rate=args.side_a_min_rate,
-                        side_b_min_rate=args.side_b_min_rate, 
-                        mode=args.mode, 
-                        ap=args.ap, 
-                        _debug_on=True)
+        create_l3 = createL3.CreateL3(host=args.mgr,
+                                      port=args.mgr_port,
+                                      number_template=str(args.number_template),
+                                      sta_list=station_list,
+                                      name_prefix="VT",
+                                      upstream=args.upstream_port,
+                                      ssid=args.ssid,
+                                      password=args.password,
+                                      radio=args.radio,
+                                      security=args.security,
+                                      side_a_min_rate=args.side_a_min_rate,
+                                      side_b_min_rate=args.side_b_min_rate,
+                                      mode=args.mode,
+                                      ap=args.ap,
+                                      _debug_on=True)
 
         create_l3.build()
 
@@ -438,8 +437,7 @@ def main():
     # TODO: Add wait-for logic instead of a sleep
     time.sleep(5)
 
-
-    # check 
+    # check
     obj.start()
 
     # the informaiton is gotten during start
