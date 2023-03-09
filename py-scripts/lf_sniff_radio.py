@@ -284,6 +284,7 @@ def main():
         --monitor_name Sniffer0
 
         AX210 sniff command
+        ===================
         ./lf_nsiff_radio.py
         --mgr 192.168.0.104
         --mgr_port 8080
