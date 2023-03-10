@@ -589,7 +589,8 @@ class csv_sql:
             df_kpi_tmp['gui_ver'], df_kpi_tmp['gui_build_date'] = self.get_gui_info_from_meta(_kpi_path)
             df_kpi_tmp['server_ver'], df_kpi_tmp['server_build_date'] = self.get_server_info_from_meta(_kpi_path)
 
-            df_kpi_tmp = df_kpi_tmp.append(df_kpi_tmp, ignore_index=True)
+            # this next line creats duplicate entries
+            # df_kpi_tmp = df_kpi_tmp.append(df_kpi_tmp, ignore_index=True)
             self.df = self.df.append(df_kpi_tmp, ignore_index=True)
 
         self.conn = sqlite3.connect(self.database)
@@ -643,8 +644,9 @@ class csv_sql:
             df_kpi_tmp['radio_fw'] = self.get_radio_firmware_from_meta(_kpi_path)
             df_kpi_tmp['gui_ver'], df_kpi_tmp['gui_build_date'] = self.get_gui_info_from_meta(_kpi_path)
             df_kpi_tmp['server_ver'], df_kpi_tmp['server_build_date'] = self.get_server_info_from_meta(_kpi_path)
-
-            df_kpi_tmp = df_kpi_tmp.append(df_kpi_tmp, ignore_index=True)
+            
+            # this next line creates duplicate entries
+            # df_kpi_tmp = df_kpi_tmp.append(df_kpi_tmp, ignore_index=True)
             self.df = self.df.append(df_kpi_tmp, ignore_index=True)
 
         self.conn = sqlite3.connect(self.database)
