@@ -25,22 +25,13 @@ Note: This is a test file which will run a wifi capacity test.
              --protocol UDP-IPv4 --duration 6000 --pull_report --stations 1.1.sta0000,1.1.sta0001 \
              --create_stations --radio wiphy0 --ssid test-ssid --security open --paswd [BLANK] \
              --test_rig Testbed-01 --set DUT_NAME linksys-8450
-                                                OR
-    ./lf_wifi_capacity_test.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge \
-             --instance_name wct_instance --config_name wifi_config --upstream 1.1.eth1 --batch_size 1,5 --loop_iter 1 \
-             --protocol UDP-IPv4 --duration 6000 --pull_report --stations 5 --create_stations --radio wiphy0 \
-             --ssid test-ssid --security open --paswd [BLANK] --test_rig Testbed-01 --set DUT_NAME linksys-8450
 
 
 Note:
     --pull_report == If specified, this will pull reports from lanforge to your code directory,
                     from where you are running this code
 
-    --stations == Enter stations to use for wifi capacity (or) Enter number of stations to use for wifi capacity
-
-    --select_stations == Enter specific station names to perform a WiFi capacity test on.
-
-    --pre_cleanup == To clear all existing stations on lanforge.
+    --stations == Enter stations to use for wifi capacity
 
     --set DUT_NAME XXXX == Determines which DUT the wifi capacity test should use to get details on
 
@@ -323,7 +314,7 @@ if sys.version_info[0] != 3:
     print("This script requires Python 3")
     exit(1)
 
-
+ 
 sys.path.append(os.path.join(os.path.abspath(__file__ + "../../../")))
 
 LFUtils = importlib.import_module("py-json.LANforge.LFUtils")
@@ -355,7 +346,7 @@ class WiFiCapacityTest(cv_test):
                  upload_rate="10Mbps",
                  download_rate="1Gbps",
                  sort="interleave",
-                 stations=None,
+                 stations="",
                  create_stations=False,
                  radio="wiphy0",
                  security="open",
@@ -372,9 +363,7 @@ class WiFiCapacityTest(cv_test):
                  graph_groups=None,
                  test_rig="",
                  test_tag="",
-                 local_lf_report_dir="",
-                 pre_cleanup=False,
-                 particular_stations=""
+                 local_lf_report_dir=""
                  ):
         super().__init__(lfclient_host=lfclient_host, lfclient_port=lf_port)
 
@@ -386,8 +375,6 @@ class WiFiCapacityTest(cv_test):
             raw_lines = []
         if sets is None:
             sets = []
-        if particular_stations is None:
-            particular_stations = []
         self.lfclient_host = lfclient_host
         self.lf_port = lf_port
         self.lf_user = lf_user
@@ -425,39 +412,16 @@ class WiFiCapacityTest(cv_test):
         self.test_rig = test_rig
         self.test_tag = test_tag
         self.local_lf_report_dir = local_lf_report_dir
-        self.pre_cleanup = pre_cleanup
-        self.particular_stations = particular_stations
-        self.stations_list = None
-        station_data = self.station_list()
-        station_list = [d.keys() for d in station_data]
-        self.stations_list = [key for key_view in station_list for key in key_view]
-        print("Selected stations list :", self.particular_stations)
-        print("Available stations list :", self.stations_list)
-        if self.pre_cleanup:
-            logger.info("Pre-cleanup enabled. All existing stations will be removed.")
-            self.station_profile.cleanup(self.stations_list)
-        else:
-            logger.info("Pre-cleanup disabled!!! Existing stations with the same name will be updated or removed "
-                        "to accommodate new stations.")
 
     def setup(self):
         if self.create_stations and self.stations != "":
-            if type(self.stations) is int:
-                new_list = [elem for elem in self.stations_list if elem.startswith('1.1.sta000')]
-                self.station_profile.cleanup(new_list)
-                self.station_profile.use_security(self.security, self.ssid, self.paswd)
-                self.station_profile.create(radio=self.radio, num_stations=self.stations, debug=self.debug)
-                self.station_profile.admin_up()
-                self.wait_for_ip(station_list=self.stations_list)
-                logger.info("stations created")
-            elif type(self.stations) is str:
-                sta = self.stations.split(",")
-                self.station_profile.cleanup(sta)
-                self.station_profile.use_security(self.security, self.ssid, self.paswd)
-                self.station_profile.create(radio=self.radio, sta_names_=sta, debug=self.debug)
-                self.station_profile.admin_up()
-                self.wait_for_ip(station_list=sta)
-                logger.info("stations created")
+            sta = self.stations.split(",")
+            self.station_profile.cleanup(sta)
+            self.station_profile.use_security(self.security, self.ssid, self.paswd)
+            self.station_profile.create(radio=self.radio, sta_names_=sta, debug=self.debug)
+            self.station_profile.admin_up()
+            self.wait_for_ip(station_list=sta)
+            logger.info("stations created")
 
     def run(self):
         self.sync_cv()
@@ -474,28 +438,13 @@ class WiFiCapacityTest(cv_test):
         port = "%i.%i.%s" % (eid[0], eid[1], eid[2])
 
         port_list = [port]
-        if self.stations == "" or self.stations == 0:
+        if self.stations == "":
             stas = self.station_map()  # See realm
             for eid in stas.keys():
                 port_list.append(eid)
-        elif type(self.stations) is int:
-            if self.particular_stations != ['']:
-                for s in self.particular_stations:
-                    port_list.append(s)
-            else:           # will consider the number of stations created for the Wi-Fi capacity test
-                num_sta = [elem for elem in self.stations_list if elem.startswith('1.1.sta000')]
-                for s in num_sta:
-                    port_list.append(s)
-        elif type(self.stations) is str:
-            if self.particular_stations != ['']:
-                for s in self.particular_stations:
-                    port_list.append(s)
-            else:
-                stas = self.stations.split(",")
-                for s in stas:
-                    port_list.append(s)
-        elif self.particular_stations is not None:
-            for s in self.particular_stations:
+        else:
+            stas = self.stations.split(",")
+            for s in stas:
                 port_list.append(s)
 
         idx = 0
@@ -583,10 +532,8 @@ def main():
                         help="Select requested upload rate.  Kbps, Mbps, Gbps units supported.  Default is 10Mbps")
     parser.add_argument("--sort", type=str, default="interleave",
                         help="Select station sorting behaviour:  none | interleave | linear  Default is interleave.")
-    parser.add_argument("-s", "--stations", type=lambda x: int(x) if x.isdigit() else x,
-                        help="If specified, these stations will be used.  If not specified, all available stations will be selected.  "
-                             "To create new stations we can give the number of stations in --stations argument instead giving the station names."
-                             "Example: --stations 1.1.sta001,1.1.wlan0,...   OR  --stations 20")
+    parser.add_argument("-s", "--stations", type=str, default="",
+                        help="If specified, these stations will be used.  If not specified, all available stations will be selected.  Example: 1.1.sta001,1.1.wlan0,...")
     parser.add_argument("-cs", "--create_stations", default=False, action='store_true',
                         help="create stations in lanforge (by default: False)")
     parser.add_argument("-radio", "--radio", default="wiphy0",
@@ -602,9 +549,6 @@ def main():
     parser.add_argument("--graph_groups", help="File to save graph groups to", default=None)
     parser.add_argument("--local_lf_report_dir", help="--local_lf_report_dir <where to pull reports to>  default '' put where dataplane script run from", default="")
     parser.add_argument("--lf_logger_config_json", help="--lf_logger_config_json <json file> , json configuration of logger")
-    parser.add_argument("--pre_cleanup", help="Cleanup the stations in lanforge (by default:False)", default=False,
-                        action='store_true')
-    parser.add_argument("--select_stations", help="Enter specific station names to perform a WiFi capacity test on.",default="")
 
 
     args = parser.parse_args()
@@ -649,9 +593,7 @@ def main():
                                 graph_groups=args.graph_groups,
                                 test_rig=args.test_rig,
                                 test_tag=args.test_tag,
-                                local_lf_report_dir=args.local_lf_report_dir,
-                                pre_cleanup=args.pre_cleanup,
-                                particular_stations=args.select_stations.split(",")
+                                local_lf_report_dir=args.local_lf_report_dir
                                 )
     WFC_Test.setup()
     WFC_Test.run()
