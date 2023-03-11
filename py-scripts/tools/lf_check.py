@@ -332,6 +332,16 @@ class lf_check():
         self.test_run = ""
         self.hostname = ""
 
+        # Allure information
+        self.junit_results = ""
+        self.junit_path_only = ""        
+
+    def set_junit_results(self, junit_results):
+        self.junit_results = junit_results
+
+    def set_junit_path_only(self, junit_path_only):
+        self.junit_path_only = junit_path_only
+
     def set_radio_firmware_list(self, radio_firmware_list):
         self.radio_firmware_list = radio_firmware_list.copy()
 
@@ -669,6 +679,8 @@ Tests Failed:
 
 Tests Timed Out:
 ===============
+
+
 """
         if self.test_timeout_list:
             for timeout_cmd in self.test_timeout_list:
@@ -676,7 +688,18 @@ Tests Timed Out:
 {test}
 
                 """.format(test=timeout_cmd)
-        
+
+        self.message_txt += """
+
+Allure Report:
+=============
+"""
+        self.message_txt += """
+
+junit.xml: allure serve {junit}
+junit.xml path: allure serve {junit_path}
+""".format(junit=self.junit_results,junit_path=self.junit_path_only)        
+
         try:
             if self.production_run:
                 self.msg = self.message_txt.format(ip=ip)
@@ -2065,6 +2088,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         traceback.print_exc(file=sys.stdout)
         lf_radio_df = pd.DataFrame()
         logger.info("get_lanforge_radio_json exception, no radio data, is radio admin down, a windows radio, or check for LANforge GUI running")
+        # TODO should we exit or should it be a work around 
         exit(1)
 
     # LANforge and scripts config for results
@@ -2184,19 +2208,28 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
 
     logger.info("lf_check_html_report: " + html_report)
 
+
     # save the juni.xml file
     junit_results = check.get_junit_results()
     report.set_junit_results(junit_results)
     junit_xml = report.write_junit_results()
-    logger.info("junit.xml: allure serve {}".format(junit_xml))
     junit_path_only = junit_xml.replace('junit.xml','')
-    logger.info("junit.xml path: allure serve {}".format(junit_path_only))
+
+    check.set_junit_results(junit_xml)
+    check.set_junit_path_only(junit_path_only)
+
 
     # Send email
     if args.no_send_email or check.email_list_test == "":
         logger.info("send email not set or email_list_test not set")
     else:
         check.send_results_email(report_file=html_report)
+
+    # print later so shows up last
+    logger.info("junit.xml: allure serve {}".format(junit_xml))
+    logger.info("junit.xml path: allure serve {}".format(junit_path_only))
+
+
 
     if args.update_latest:
         report_path = os.path.dirname(html_report)
