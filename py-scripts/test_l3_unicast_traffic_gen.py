@@ -498,6 +498,9 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
     group_offset = 7
     eap_offset = 8
 
+    # WPA2_TLS
+    
+    
     # WPA2_TTLS
     wpa2_ttls_key_mgt_offset = 5
     wpa2_ttls_eap_methods = 6
@@ -506,7 +509,16 @@ python3 .\\test_l3_unicast_traffic_gen.py --lfmgr --test_duration 4m --endp_type
     wpa2_ttls_pk_password = 9
 
 
-    # support for TLS
+    # WPA3_TTLS
+    wpa3_ttls_key_mgt_offset = 5
+    wpa3_ttls_pairwise_offset = 6
+    wpa3_ttls_group_offset = 7
+    wpa3_ttls_eap_methods = 8
+    wpa3_ttls_eap_identity = 9
+    wpa3_ttls_eap_password = 10
+    # Ieee80211w = Required
+    # Advanced/8021x = checked
+
     
 
     MAX_NUMBER_OF_STATIONS = 64
