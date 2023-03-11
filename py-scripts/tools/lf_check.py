@@ -2089,7 +2089,7 @@ note if all json data (rig,dut,tests)  in same json file pass same json in for a
         lf_radio_df = pd.DataFrame()
         logger.info("get_lanforge_radio_json exception, no radio data, is radio admin down, a windows radio, or check for LANforge GUI running")
         # TODO should we exit or should it be a work around 
-        exit(1)
+        # exit(1)
 
     # LANforge and scripts config for results
     lf_test_setup = pd.DataFrame()
