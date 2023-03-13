@@ -285,7 +285,7 @@ def main():
 
         AX210 sniff command
         ===================
-        ./lf_nsiff_radio.py
+        ./lf_sniff_radio.py
         --mgr 192.168.0.104
         --mgr_port 8080
         --radio wiphy7
