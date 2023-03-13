@@ -24,13 +24,16 @@ def main():
         Used to scan for ssids after creating a station
             ''',
         description='''\
-        Optionally creates a station with specified ssid info (can be real or fake ssid, if fake use open for security).
-        If not creating a station, it can use existing station.
-        Then starts a scan and waits 15 seconds, finally scan results are printed to console.
+        Creates a temporary station with specified ssid info (ssid, security, password)
+        Then starts a scan, waits 15 seconds, and prints scan results to console.
+        Takes 2 BSSIDs of ssids (given to temp station) and creates DUT (named what is given in dut_name argument).
+        
+        TODO: take scan results and calculate how many unique BSSIDs are there from the scan results, and add that many ssids to the DUT (remove hardcoded 2 ssids.)
+        TODO: parse scan results for more than 1 SSID name (ssid-2G, ssid-5G). Add both ssids to the dut_name.
+
         
         Example:
-        ./sta_scan_test.py --ssid test_name --security open --radio wiphy0
-        ./sta_scan_test.py --sta_name 1.14.wlan0 1.1.wlan0 --use_existing_station --scan_time 5
+        ./bssid_to_dut.py --ssid test_name --security open --radio wiphy0 --dut_name lanforge-AP
         ''')
 
     parser.add_argument('--use_existing_station', action='store_true', help='Use existing station instead of trying to create stations.')
