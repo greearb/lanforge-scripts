@@ -152,6 +152,7 @@ Tested on 02/10/2023:
         '--number_template',
         help='Start the station numbering with a particular number. Default is 0000',
         default=0000)
+    parser.add_argument('--mode', help='Used to force mode of stations')
     args = parser.parse_args()
 
     logger_config = lf_logger_config.lf_logger_config()
@@ -170,7 +171,7 @@ Tested on 02/10/2023:
                            endp_b=args.endp_b,
                            min_rate_a=args.min_rate_a,
                            min_rate_b=args.min_rate_b,
-                           # mode=args.mode,
+                           mode=args.mode,
                            _debug_on=args.debug)
 
     ip_var_test.pre_cleanup()
