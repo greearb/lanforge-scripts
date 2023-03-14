@@ -130,7 +130,7 @@ class Turntable(Realm):
         self.tilt = Turntable.__validate_angle(self.tilt, self._adjust_tilt)
 
         # Warn if setting tilt for non 3D turntable
-        if self.tilt is not None and self.tilt != 0 and self.found_chamber[Turntable.TURNTABLE_TYPE] != 4:
+        if self.tilt is not None and self.tilt != 0 and self.found_chamber[Turntable.TURNTABLE_TYPE] != "4":
             logging.warning("attempting to set tilt for chamber %s with non 3D turntable type"
                             % self.found_chamber[Turntable.CHAMBER_NAME])
 
