@@ -1391,7 +1391,7 @@ class LFJsonCommand(JsonCommand):
                  # used/specified. [W]
                  key: str = None,                          # Key to be used in response messages, NA for generic keyed
                  # message. Key should not have - or spaces or other
-                 # non-alphanumeric characters in it. [W]
+                 # non-alphanumeric characters in it.
                  resource: int = None,                     # Resource number. [W]
                  shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
                  response_json_list: list = None,
@@ -1673,13 +1673,13 @@ class LFJsonCommand(JsonCommand):
                           cpu_id: str = None,                       # Preferred CPU ID on which this endpoint should run.
                           mx_pkt_sz: str = None,                    # Maximum packet size, including all Ethernet headers.
                           pkt_sz: str = None,                       # Minimum packet size, including all Ethernet headers.
-                          port: str = None,                         # Port number. [W]
+                          port: str = None,                         # Port number or name.
                           pps: str = None,                          # Packets per second to generate.
-                          resource: int = None,                     # Resource number. [W]
-                          shelf: int = 1,                           # Shelf name/id. Required. [R][D:1]
+                          resource: int = None,                     # Resource number.
+                          shelf: int = 1,                           # Shelf name/id. Required.[D:1]
                           tos: str = None,                          # The Type of Service, can be HEX. See set_endp_tos for
                           # details.
-                          p_type: str = None,                       # Endpoint Type : arm_udp. [W]
+                          p_type: str = None,                       # Endpoint Type : arm_udp.
                           response_json_list: list = None,
                           debug: bool = False,
                           errors_warnings: list = None,
@@ -2244,12 +2244,11 @@ class LFJsonCommand(JsonCommand):
 
     def post_add_chamber(self, 
                          chamber_type: str = None,                 # Chamber type, see above. Use 1 for Medium if uncertain.
-                         # [W]
                          dut_name1: str = None,                    # Name of first DUT in this chamber or NA
                          dut_name2: str = None,                    # Name of second DUT in this chamber or NA
                          dut_name3: str = None,                    # Name of third DUT in this chamber or NA
                          dut_name4: str = None,                    # Name of fourth DUT in this chamber or NA
-                         flags: str = None,                        # Flag field for Chamber, see above. [W]
+                         flags: str = None,                        # Flag field for Chamber, see above.
                          flags_mask: str = None,                   # Mask of what flags to pay attention to, or NA for all.
                          height: str = None,                       # Height to be used when drawn in the LANforge-GUI.
                          isolation: str = None,                    # Estimated isolation in db for this chamber.
@@ -2723,7 +2722,7 @@ class LFJsonCommand(JsonCommand):
                      bssid2: str = None,                       # BSSID for second radio.
                      bssid3: str = None,                       # BSSID for third radio.
                      eap_id: str = None,                       # EAP Identifier, for EAP-PEAP.
-                     flags: str = None,                        # Flag field for DUT, see above. [W]
+                     flags: str = None,                        # Flag field for DUT, see above.
                      flags_mask: str = None,                   # Optional mask to specify what DUT flags are being set.
                      hw_version: str = None,                   # DUT Hardware Version information
                      img_file: str = None,                     # File-Name for image to represent DUT.
@@ -3065,19 +3064,18 @@ class LFJsonCommand(JsonCommand):
                       # 'same', -1 means AUTO (5.3.2+) [D:0]
                       max_rate: str = None,                     # Maximum transmit rate (bps), used if in bursty mode.
                       min_pkt: str = None,                      # Minimum packet size, including all headers. -1 means AUTO
-                      # (5.3.2+) [W][D:-1]
+                      # (5.3.2+) [D:-1]
                       min_rate: str = None,                     # Minimum transmit rate (bps), or only rate if not bursty.
-                      # [W]
                       multi_conn: str = None,                   # If > 0, will create separate process with this many
                       # connections per endpoint. See AUTO_HELPER flag
                       payload_pattern: str = None,              # Payload pattern, see above.
-                      port: str = None,                         # Port/Interface name or number. [R]
-                      resource: int = None,                     # Resource number. [W]
+                      port: str = None,                         # Port/Interface name or number.
+                      resource: int = None,                     # Resource number.
                       send_bad_crc_per_million: str = None,     # If NIC supports it, will randomly send X per million
                       # packets with bad ethernet Frame Check Sum.
-                      shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                      shelf: int = 1,                           # Shelf name/id. [D:1]
                       ttl: str = None,                          # Time-to-live, used by UDP Multicast Endpoints only.
-                      p_type: str = None,                       # Endpoint Type: See above. [W]
+                      p_type: str = None,                       # Endpoint Type: See above.
                       use_checksum: str = None,                 # Yes means checksum the payload, anything else means NO.
                       response_json_list: list = None,
                       debug: bool = False,
@@ -3173,7 +3171,7 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_event(self, 
                        details: str = None,                      # Event text description. Cannot include double-quote
-                       # characters. [R]
+                       # characters.
                        event_id: str = None,                     # Numeric ID for the event to modify, or 'new' if creating
                        # a new one. [W][D:new]
                        name: str = None,                         # Event entity name.
@@ -3306,7 +3304,7 @@ class LFJsonCommand(JsonCommand):
     def post_add_file_endp(self, 
                            alias: str = None,                        # Name of endpoint. [R]
                            directory: str = None,                    # The directory to read/write in. Absolute path
-                           # suggested. [W]
+                           # suggested.
                            fio_flags: str = None,                    # File-IO flags, see above for details.
                            max_read_rate: str = None,                # Maximum read rate, bits-per-second.
                            max_write_rate: str = None,               # Maximum write rate, bits-per-second.
@@ -3317,15 +3315,15 @@ class LFJsonCommand(JsonCommand):
                            mount_options: str = None,                # Optional mount options, passed to the mount command.
                            # 'NONE' clears.
                            payload_pattern: str = None,              # Payload pattern, see above.
-                           port: str = None,                         # Port number. [W]
+                           port: str = None,                         # Port number or name.
                            prefix: str = None,                       # The prefix of the file(s) to read/write.
-                           resource: int = None,                     # Resource number. [W]
+                           resource: int = None,                     # Resource number.
                            retry_timer: str = None,                  # Number of miliseconds to retry errored IO calls
                            # before giving up.
                            server_mount: str = None,                 # The server to mount, ex:
-                           # <tt>192.168.100.5/exports/test1</tt> [W]
-                           shelf: int = 1,                           # Shelf name/id. [R][D:1]
-                           p_type: str = None,                       # Endpoint Type (like <tt>fe_nfs</tt>) [W]
+                           # <tt>192.168.100.5/exports/test1</tt>
+                           shelf: int = 1,                           # Shelf name/id. [D:1]
+                           p_type: str = None,                       # Endpoint Type (like <tt>fe_nfs</tt>)
                            volume: str = None,                       # iSCSI volume to mount
                            response_json_list: list = None,
                            debug: bool = False,
@@ -3424,10 +3422,10 @@ class LFJsonCommand(JsonCommand):
     ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
     def post_add_gen_endp(self, 
                           alias: str = None,                        # Name of endpoint. [R]
-                          port: str = None,                         # Port number. [W]
-                          resource: int = None,                     # Resource number. [W]
-                          shelf: int = 1,                           # Shelf name/id. [R][D:1]
-                          p_type: str = None,                       # Endpoint Type : gen_generic [W][D:gen_generic]
+                          port: str = None,                         # Port number or name.
+                          resource: int = None,                     # Resource number.
+                          shelf: int = 1,                           # Shelf name/id. [D:1]
+                          p_type: str = None,                       # Endpoint Type : gen_generic [D:gen_generic]
                           response_json_list: list = None,
                           debug: bool = False,
                           errors_warnings: list = None,
@@ -3713,19 +3711,19 @@ class LFJsonCommand(JsonCommand):
                          ip_addr: str = None,                      # Local IP address, for binding to specific secondary IP.
                          max_speed: str = None,                    # In bits-per-second, can rate limit upload or download
                          # speed of the URL contents. 0 means infinite.
-                         port: str = None,                         # Port number. [W]
+                         port: str = None,                         # Port number or name.
                          proxy_auth_type: str = None,              # Bit-field for allowable proxy-authenticate methods.
                          proxy_port: str = None,                   # HTTP Proxy port if you are using a proxy.
                          proxy_server: str = None,                 # The name of our proxy server if using one.
                          proxy_userpwd: str = None,                # The user-name and password for proxy authentication,
                          # format: <tt>user:passwd</tt>.
                          quiesce_after: str = None,                # Quiesce test after this many URLs have been processed.
-                         resource: int = None,                     # Resource number. [W]
-                         shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                         resource: int = None,                     # Resource number.
+                         shelf: int = 1,                           # Shelf name/id. [D:1]
                          smtp_from: str = None,                    # SMTP From address.
                          ssl_cert_fname: str = None,               # Name of SSL Certs file.
                          timeout: str = None,                      # How long to wait for a connection, in milliseconds
-                         p_type: str = None,                       # Endpoint Type : <tt>l4_generic</tt> [W]
+                         p_type: str = None,                       # Endpoint Type : <tt>l4_generic</tt>
                          url: str = None,                          # The URL, see syntax above. Can also be a local file.
                          url_rate: str = None,                     # How often should we process the URL(s), per 10
                          # minutes.<ul><li>600: 1/s<li>1200: 2/s<li>1800:
@@ -3866,7 +3864,7 @@ class LFJsonCommand(JsonCommand):
                          flags: str = None,                        # Flags for this monitor interface.
                          flags_mask: str = None,                   # Flags mask for this monitor interface.
                          radio: str = None,                        # Name of the physical radio interface, for example:
-                         # wiphy0 [W]
+                         # wiphy0
                          resource: int = None,                     # Resource number. [W]
                          shelf: int = 1,                           # Shelf number. [R][D:1]
                          response_json_list: list = None,
@@ -3939,7 +3937,7 @@ class LFJsonCommand(JsonCommand):
                        index: str = None,                        # Optional: The index of the VLAN, (the <b>4</b> in
                        # <tt>eth0#4</tt>)
                        mac: str = None,                          # The MAC address, can also use parent-pattern in 5.3.8 and
-                       # higher: <tt>xx:xx:xx:*:*:xx</tt> [W]
+                       # higher: <tt>xx:xx:xx:*:*:xx</tt>
                        old_name: str = None,                     # The temporary name, used for configuring un-discovered
                        # hardware.
                        port: str = None,                         # Port number of an existing Ethernet interface. [W]
@@ -4231,7 +4229,7 @@ class LFJsonCommand(JsonCommand):
                          passwd: str = None,                       # WiFi Password to be used (AP Mode), [BLANK] means no
                          # password.
                          profile_flags: str = None,                # Flags for this profile, see above.
-                         profile_type: str = None,                 # Profile type: See above. [W]
+                         profile_type: str = None,                 # Profile type: See above.
                          ssid: str = None,                         # WiFi SSID to be used, [BLANK] means any.
                          vid: str = None,                          # Vlan-ID (only valid for vlan profiles).
                          wifi_mode: str = None,                    # WiFi Mode for this profile.
@@ -4601,14 +4599,14 @@ class LFJsonCommand(JsonCommand):
                      ap: str = None,                           # The Access Point BSSID this Virtual STA should be
                      # associated with (example: <tt>00:11:22:33:4:55</tt>, or
                      # <tt>DEFAULT</tt> for any).
-                     flags: str = None,                        # Flags for this interface (see above.) [W]
+                     flags: str = None,                        # Flags for this interface (see above.)
                      flags_mask: str = None,                   # If set, only these flags will be considered.
                      ieee80211w: str = None,                   # Management Frame Protection: 0: disabled, 1: optional, 2:
                      # Required.
                      key: str = None,                          # Encryption key (WEP, WPA, WPA2, WPA3, etc) for this Virtual
                      # STA. Prepend with 0x for ascii-hex input.
                      mac: str = None,                          # The MAC address, can also use parent-pattern in 5.3.8 and
-                     # higher: <tt>xx:xx:xx:*:*:xx</tt> [W]
+                     # higher: <tt>xx:xx:xx:*:*:xx</tt>
                      max_amsdu: str = None,                    # 1 == enabled, 0 == disabled, 0xFF == do not set.
                      mode: str = None,                         # WiFi mode: <ul><li>0: AUTO, <li>1: 802.11a</li> <li>2:
                      # b</li> <li>3: g</li> <li>4: abg</li> <li>5: abgn</li>
@@ -4618,12 +4616,11 @@ class LFJsonCommand(JsonCommand):
                      # aAX</li></ul> [D:0]
                      nickname: str = None,                     # Nickname for this Virtual STA. (No longer used)
                      radio: str = None,                        # Name of the physical radio interface, for example: wiphy0
-                     # [W]
                      rate: str = None,                         # Max rate, see help above.
                      resource: int = None,                     # Resource number. [W]
                      shelf: int = 1,                           # Shelf number. [R][D:1]
                      ssid: str = None,                         # SSID for this Virtual STA. Use [BLANK] for empty SSID.
-                     # Start with <tt>0x</tt> for HEX interpretation. [W]
+                     # Start with <tt>0x</tt> for HEX interpretation.
                      sta_br_ip: str = None,                    # IP Address for station bridging. Set to 0.0.0.0 to use MAC
                      # bridging.
                      sta_name: str = None,                     # Name for this Virtual STA, for example: sta0 [W]
@@ -5141,7 +5138,7 @@ class LFJsonCommand(JsonCommand):
                                  traffic_profile_flags: str = None,        # Flags for this profile, none defined at this
                                  # point.
                                  traffic_profile_flags_mask: str = None,   # Specify what flags to set.
-                                 p_type: str = None,                       # Profile type: See above. [W]
+                                 p_type: str = None,                       # Profile type: See above.
                                  response_json_list: list = None,
                                  debug: bool = False,
                                  errors_warnings: list = None,
@@ -5342,16 +5339,16 @@ class LFJsonCommand(JsonCommand):
         g = 3              # 802.11g
 
     def post_add_vap(self, 
-                     ap_name: str = None,                      # Name for this Virtual AP, for example: vap0 [W]
+                     ap_name: str = None,                      # Name for this Virtual AP, for example: vap0
                      beacon: str = None,                       # The beacon interval, in 1kus (1.024 ms), default 100,
                      # range: 15..65535
                      custom_cfg: str = None,                   # Custom hostapd config file, if you want to craft your own
                      # config.
                      dtim_period: str = None,                  # DTIM period, range 1..255. Default 2.
-                     flags: str = None,                        # Flags for this interface (see above.) [W]
+                     flags: str = None,                        # Flags for this interface (see above.)
                      flags_mask: str = None,                   # If set, only these flags will be considered.
                      frag_thresh: str = None,                  # UN-USED, Was Fragmentation threshold, which is now set with
-                     # set_wifi_radio, use NA [W]
+                     # set_wifi_radio, use NA
                      ieee80211w: str = None,                   # Management Frame Protection: 0: disabled, 1: optional, 2:
                      # Required.
                      key: str = None,                          # Encryption key for this Virtual AP. Prepend with 0x for
@@ -5360,13 +5357,13 @@ class LFJsonCommand(JsonCommand):
                      # higher: <tt>xx:xx:xx:*:*:xx</tt>
                      max_sta: str = None,                      # Maximum number of Stations allowed to join this AP
                      # (1..2007)
-                     mode: str = None,                         # WiFi mode: see table [W]
+                     mode: str = None,                         # WiFi mode: see table
                      radio: str = None,                        # Name of the physical radio interface, for example: wiphy0
                      # [W]
                      rate: str = None,                         # Max rate, see help for add_vsta
                      resource: int = None,                     # Resource number. [W]
                      shelf: int = 1,                           # Shelf number. [R][D:1]
-                     ssid: str = None,                         # SSID for this Virtual AP. [W]
+                     ssid: str = None,                         # SSID for this Virtual AP.
                      x_coord: str = None,                      # Floating point number.
                      y_coord: str = None,                      # Floating point number.
                      z_coord: str = None,                      # Floating point number.
@@ -5702,15 +5699,15 @@ class LFJsonCommand(JsonCommand):
                            # are multiple IPs on a port.
                            peer_phone_num: str = None,               # Use AUTO to use phone number of peer endpoint,
                            # otherwise specify a number: user[@host[:port]]
-                           phone_num: str = None,                    # Phone number for Endpoint [W]
-                           port: str = None,                         # Port number or name. [W]
+                           phone_num: str = None,                    # Phone number for Endpoint
+                           port: str = None,                         # Port number or name.
                            proxy_passwd: str = None,                 # Password to be used when registering with
                            # proxy/gateway.
-                           resource: int = None,                     # Resource number. [W]
+                           resource: int = None,                     # Resource number.
                            rtp_port: str = None,                     # RTP port to use for send and receive.
                            rx_sound_file: str = None,                # File name to save received PCM data to. Will be in
                            # WAV format, or AUTO
-                           shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                           shelf: int = 1,                           # Shelf name/id. [D:1]
                            sip_gateway: str = None,                  # SIP Gateway/Proxy Name, this is who to register with,
                            # or AUTO
                            tx_sound_file: str = None,                # File name containing the sound sample we will be
@@ -5952,7 +5949,7 @@ class LFJsonCommand(JsonCommand):
             return (cls[member].value for member in cls.__members__ if member == name)
 
     def post_add_vr_bgp(self, 
-                        bgp_id: str = None,                       # BGP Identifier: IPv4 Address [W]
+                        bgp_id: str = None,                       # BGP Identifier: IPv4 Address
                         cluster_id: str = None,                   # Cluster ID, IPv4 Address. Use NA if not clustering.
                         confed_id: str = None,                    # Confederation ID 1-65535. Use NA if not in a
                         # confederation.
@@ -6089,14 +6086,14 @@ class LFJsonCommand(JsonCommand):
                       # others.
                       height: str = None,                       # Height to be used when drawn in the LANforge-GUI.
                       interface_cost: str = None,               # If using OSPF, this sets the cost for this link (1-65535).
-                      local_dev: str = None,                    # Name of port A, the local network device pair. [W]
-                      local_dev_b: str = None,                  # Name of port B for the local redirect device pair. [W]
+                      local_dev: str = None,                    # Name of port A, the local network device pair.
+                      local_dev_b: str = None,                  # Name of port B for the local redirect device pair.
                       nexthop: str = None,                      # The next-hop to use when routing packets out this
                       # interface.
                       ospf_area: str = None,                    # If using OSPF, this sets the OSPF area for this interface.
                       # Default is 0.0.0.0.
-                      remote_dev: str = None,                   # Name the remote network device. [W]
-                      remote_dev_b: str = None,                 # Name of port B for the remote network device. [W]
+                      remote_dev: str = None,                   # Name the remote network device.
+                      remote_dev_b: str = None,                 # Name of port B for the remote network device.
                       resource: int = None,                     # Resource number. [W]
                       rip_metric: str = None,                   # If using RIP, this determines the RIP metric (cost),
                       # (1-15, 15 is infinite).
@@ -6110,7 +6107,7 @@ class LFJsonCommand(JsonCommand):
                       vrrp_ip: str = None,                      # VRRP IPv4 address..ignored if not flagged for VRRP.
                       vrrp_ip_prefix: str = None,               # Number of bits in subnet mask, ie 24 for 255.255.255.0
                       vrrp_priority: str = None,                # VRRP Priority (1-255, higher is more priority.)
-                      wanlink: str = None,                      # The name of the WanLink that connects the two B ports. [W]
+                      wanlink: str = None,                      # The name of the WanLink that connects the two B ports.
                       width: str = None,                        # Width to be used when drawn in the LANforge-GUI.
                       x: str = None,                            # X coordinate to be used when drawn in the LANforge-GUI.
                       y: str = None,                            # Y coordinate to be used when drawn in the LANforge-GUI.
@@ -6261,7 +6258,7 @@ class LFJsonCommand(JsonCommand):
                        dhcp_ignore4: str = None,                 # MAC address and per 65535 chance MAC should be ignored by
                        # DHCPd, format: MAC-prcnt, example:
                        # 00:11:22:33:44:55-65535
-                       local_dev: str = None,                    # Name of port A for the connection. [W]
+                       local_dev: str = None,                    # Name of port A for the connection.
                        nexthop6: str = None,                     # The IPv6 next-hop to use when routing packets out this
                        # interface.
                        resource: int = None,                     # Resource number. [W]
@@ -6348,11 +6345,11 @@ class LFJsonCommand(JsonCommand):
                          drop_every_xth_pkt: str = None,           # YES to periodically drop every Xth pkt, NO to drop
                          # packets randomly.
                          drop_freq: str = None,                    # How often, out of 1,000,000 packets, should we
-                         # purposefully drop a packet. [W]
+                         # purposefully drop a packet.
                          dup_every_xth_pkt: str = None,            # YES to periodically duplicate every Xth pkt, NO to
                          # duplicate packets randomly.
                          dup_freq: str = None,                     # How often, out of 1,000,000 packets, should we
-                         # purposefully duplicate a packet. [W]
+                         # purposefully duplicate a packet.
                          extra_buffer: str = None,                 # The extra amount of bytes to buffer before dropping
                          # pkts, in units of 1024, use -1 for AUTO. [D:-1]
                          ignore_bandwidth: str = None,             # Should we ignore the bandwidth settings from the
@@ -6366,11 +6363,11 @@ class LFJsonCommand(JsonCommand):
                          jitter_freq: str = None,                  # How often, out of 1,000,000 packets, should we apply
                          # random jitter.
                          latency: str = None,                      # The base latency added to all packets, in milliseconds
-                         # (or add 'us' suffix for microseconds) [W]
+                         # (or add 'us' suffix for microseconds)
                          max_drop_amt: str = None,                 # Maximum amount of packets to drop in a row. Default is
                          # 1. [D:1]
                          max_jitter: str = None,                   # The maximum jitter, in milliseconds (or add 'us' suffix
-                         # for microseconds) [W]
+                         # for microseconds)
                          max_lateness: str = None,                 # Maximum amount of un-intentional delay before pkt is
                          # dropped. Default is AUTO
                          max_reorder_amt: str = None,              # Maximum amount of packets by which to reorder, Default
@@ -6385,10 +6382,10 @@ class LFJsonCommand(JsonCommand):
                          reorder_every_xth_pkt: str = None,        # YES to periodically reorder every Xth pkt, NO to
                          # reorder packets randomly.
                          reorder_freq: str = None,                 # How often, out of 1,000,000 packets, should we make a
-                         # packet out of order. [W]
+                         # packet out of order.
                          source_ip: str = None,                    # Selection filter: Source IP.
                          source_ip_mask: str = None,               # Selection filter: Source IP MASK.
-                         speed: str = None,                        # The maximum speed this WanLink will accept (bps). [W]
+                         speed: str = None,                        # The maximum speed this WanLink will accept (bps).
                          test_mgr: str = None,                     # The name of the Test-Manager this WanPath is to use.
                          # Leave blank for no restrictions.
                          wanlink: str = None,                      # Name of WanLink to which we are adding this WanPath.
@@ -6540,9 +6537,9 @@ class LFJsonCommand(JsonCommand):
                          latency: str = None,                      # The latency (ms) that will be added to each packet
                          # entering this WanLink.
                          max_rate: str = None,                     # Maximum transmit rate (bps) for this WanLink.
-                         port: str = None,                         # Port number. [W]
-                         resource: int = None,                     # Resource number. [W]
-                         shelf: int = 1,                           # Shelf name/id. [R][D:1]
+                         port: str = None,                         # Port number or name.
+                         resource: int = None,                     # Resource number.
+                         shelf: int = 1,                           # Shelf name/id. [D:1]
                          wle_flags: str = None,                    # WanLink Endpoint specific flags, see above.
                          response_json_list: list = None,
                          debug: bool = False,
@@ -7233,6 +7230,69 @@ class LFJsonCommand(JsonCommand):
         self.post_clear_resource_counters(resource=param_map.get("resource"),
                                           shelf=param_map.get("shelf"),
                                           )
+        """
+
+    """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Notes for <CLI-JSON/CLEAR_WIFI_PROFILES> type requests
+
+        https://www.candelatech.com/lfcli_ug.php#clear_wifi_profiles
+    ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+    def post_clear_wifi_profiles(self, 
+                                 except_ssid: str = None,                  # Do not delete profiles that reference this
+                                 # SSID, NA deletes all.
+                                 p_id: str = None,                         # Object identifier: adb-id, or ALL.
+                                 resource: int = None,                     # Resource number, or ALL. [W]
+                                 shelf: int = 1,                           # Shelf number, or ALL. [R][D:1]
+                                 p_type: str = None,                       # Object type: adb, or ALL.
+                                 response_json_list: list = None,
+                                 debug: bool = False,
+                                 errors_warnings: list = None,
+                                 suppress_related_commands: bool = False):
+        """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
+            Example Usage: 
+                response_json = []
+                result = post_clear_wifi_profiles(response_json_list=response_json, param=value ...)
+                pprint.pprint( response_json )
+        ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----"""
+        debug |= self.debug_on
+        data = {}
+        if except_ssid is not None:
+            data["except_ssid"] = except_ssid
+        if p_id is not None:
+            data["id"] = p_id
+        if resource is not None:
+            data["resource"] = resource
+        if shelf is not None:
+            data["shelf"] = shelf
+        if p_type is not None:
+            data["type"] = p_type
+        if len(data) < 1:
+            raise ValueError(__name__+": no parameters to submit")
+        response = self.json_post(url="/cli-json/clear_wifi_profiles",
+                                  post_data=data,
+                                  response_json_list=response_json_list,
+                                  errors_warnings=errors_warnings,
+                                  die_on_error=self.die_on_error,
+                                  suppress_related_commands=suppress_related_commands,
+                                  debug=debug)
+        return response
+    #
+
+    def post_clear_wifi_profiles_map(self, cli_cmd: str = None, param_map: dict = None):
+        if not cli_cmd:
+            raise ValueError('cli_cmd may not be blank')
+        if (not param_map) or (len(param_map) < 1):
+            raise ValueError('param_map may not be empty')
+        
+        """
+        TODO: check for default argument values
+        TODO: fix comma counting
+        self.post_clear_wifi_profiles(except_ssid=param_map.get("except_ssid"),
+                                      id=param_map.get("id"),
+                                      resource=param_map.get("resource"),
+                                      shelf=param_map.get("shelf"),
+                                      type=param_map.get("type"),
+                                      )
         """
 
     """----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- ----- -----
@@ -11840,7 +11900,7 @@ class LFJsonCommand(JsonCommand):
                             serno: str = None,                        # Serial number for requested Attenuator, or 'all'.
                             # [W]
                             shelf: int = 1,                           # Shelf number, usually 1. [R][D:1]
-                            val: str = None,                          # Requested attenution in 1/10ths of dB (ddB). [W]
+                            val: str = None,                          # Requested attenution in 1/10ths of dB (ddB).
                             response_json_list: list = None,
                             debug: bool = False,
                             errors_warnings: list = None,
@@ -19904,7 +19964,7 @@ class LFJsonQuery(JsonQuery):
         'marked':                  # -
         'open':                    # -
         'reported rotation (deg)': # -
-        'reported rpm ':           # -
+        'reported rpm':            # -
         'reported tilt (deg)':     # -
         'resource':                # -
         'rotation (deg)':          # -
@@ -22612,7 +22672,7 @@ class LFJsonQuery(JsonQuery):
         'router connections':   # -
         'router id':            # -
         'router id':            # -
-        'use confederation ':   # -
+        'use confederation':    # -
         'use existing cfg':     # -
         'use ospf':             # -
         'use rip dft route':    # -
