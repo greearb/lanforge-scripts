@@ -1,13 +1,25 @@
 #!/usr/bin/env python3
 
 """
-    This script will create a variable number of layer3 stations each with their own set of cross-connects and endpoints.
-    The connections are not started, nor are stations set admin up in this script.
+NAME: create_l4.py
 
-    Example script:
-    './create_l3_stations.py --radio wiphy0 --ssid lanforge --password password --security wpa2'
-    './create_l3_stations.py --station_list sta00,sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2'
-    './create_l3_stations.py --station_list sta00 sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2'
+PURPOSE:
+    This script will create a variable number of layer3 stations each with their own set of cross-connects and endpoints.
+     The connections are not started, nor are stations set admin up in this script.
+
+EXAMPLE:
+    ./create_l3_stations.py --radio wiphy0 --ssid lanforge --password password --security wpa2
+    ./create_l3_stations.py --station_list sta00,sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2
+    ./create_l3_stations.py --station_list sta00 sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2
+
+Tested on 03/16/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
+
+COPYRIGHT:
+    Copyright 2023 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
+
 """
 
 import sys
@@ -165,9 +177,18 @@ def main():
             ''',
 
         description='''\
-        create_l3_stations.py:
-        --------------------
-        Generic command layout:
+NAME: create_l4.py
+
+PURPOSE:
+    This script will create a variable number of layer3 stations each with their own set of cross-connects and endpoints.
+     The connections are not started, nor are stations set admin up in this script.
+
+EXAMPLE:
+    ./create_l3_stations.py --radio wiphy0 --ssid lanforge --password password --security wpa2
+    ./create_l3_stations.py --station_list sta00,sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2
+    ./create_l3_stations.py --station_list sta00 sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2
+
+    Generic command layout:
 
         python3 ./create_l3_stations.py
             --upstream_port eth1
@@ -224,6 +245,15 @@ def main():
             --ap "00:0e:8e:78:e1:76"
             --number_template 0000
             --debug
+
+Tested on 03/16/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
+
+COPYRIGHT:
+    Copyright 2023 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
+
             ''')
 
     parser.add_argument(
