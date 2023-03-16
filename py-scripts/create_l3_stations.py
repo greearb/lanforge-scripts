@@ -12,9 +12,11 @@ EXAMPLE:
     ./create_l3_stations.py --station_list sta00,sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2
     ./create_l3_stations.py --station_list sta00 sta01 --radio wiphy0 --ssid lanforge --password password --security wpa2
 
-Tested on 03/16/2023:
-         kernel version: 5.19.17+
-         gui version: 5.4.6
+NOTES:
+
+    Tested on 03/16/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
 
 COPYRIGHT:
     Copyright 2023 Candela Technologies Inc
@@ -246,9 +248,11 @@ EXAMPLE:
             --number_template 0000
             --debug
 
-Tested on 03/16/2023:
-         kernel version: 5.19.17+
-         gui version: 5.4.6
+NOTES:
+
+    Tested on 03/16/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
 
 COPYRIGHT:
     Copyright 2023 Candela Technologies Inc
