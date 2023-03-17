@@ -1,4 +1,40 @@
 #!/usr/bin/env python3
+"""
+NAME: create_macvlan.py
+
+PURPOSE:
+    This script will create a variable number of macvlans on a specified ethernet port.
+
+EXAMPLE:
+    ./create_macvlan.py --macvlan_parent <port> --num_ports <num ports>
+      --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
+
+    ./create_macvlan.py --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
+      --netmask 255.255.255.0 --gateway 192.168.92.1
+
+    ./create_macvlan.py --macvlan_parent eth1 --num_ports 3
+      --use_ports eth1#0,eth1#1,eth1#2 --connections_per_port 2
+
+    ./create_macvlan.py --macvlan_parent eth1 --num_ports 3 --first_mvlan_ip 10.40.3.100
+      --netmask 255.255.240.0 --gateway 10.40.0.1 --add_to_group test_two
+
+    ./create_macvlan.py --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2
+      --connections_per_port 2 --netmask 255.255.240.0 --gateway 10.40.0.1
+
+NOTES:
+
+    You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
+
+    Tested on 03/17/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
+
+COPYRIGHT:
+    Copyright 2023 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
+
+"""
+
 import sys
 import os
 import importlib
@@ -87,27 +123,34 @@ def main():
         epilog='''Creates MACVLAN endpoints.''',
 
         description='''\
-create_macvlan.py:
---------------------
-Generic command layout:
-./create_macvlan.py --macvlan_parent <port> --num_ports <num ports>
-                 --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
+NAME: create_macvlan.py
 
-./create_macvlan.py --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
-                 --netmask 255.255.255.0 --gateway 192.168.92.1
+PURPOSE:
+    This script will create a variable number of macvlans on a specified ethernet port.
 
-./create_macvlan.py --macvlan_parent eth1 --num_ports 3
-                 --use_ports eth1#0,eth1#1,eth1#2 --connections_per_port 2
+EXAMPLE:
+    ./create_macvlan.py --macvlan_parent <port> --num_ports <num ports>
+      --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
 
-./create_macvlan.py --macvlan_parent eth1 --num_ports 3
-                 --first_mvlan_ip 10.40.3.100 --netmask 255.255.240.0 --gateway 10.40.0.1
-                 --add_to_group test_wo
+    ./create_macvlan.py --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
+      --netmask 255.255.255.0 --gateway 192.168.92.1
 
-./create_macvlan.py --macvlan_parent eth1 --num_ports 3
-                 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2 --connections_per_port 2
-                 --netmask 255.255.240.0 --gateway 10.40.0.1
+    ./create_macvlan.py --macvlan_parent eth1 --num_ports 3
+      --use_ports eth1#0,eth1#1,eth1#2 --connections_per_port 2
 
-                 You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
+    ./create_macvlan.py --macvlan_parent eth1 --num_ports 3 --first_mvlan_ip 10.40.3.100
+      --netmask 255.255.240.0 --gateway 10.40.0.1 --add_to_group test_two
+
+    ./create_macvlan.py --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2
+      --connections_per_port 2 --netmask 255.255.240.0 --gateway 10.40.0.1
+
+NOTES:
+
+    You can only add MAC-VLANs to Ethernet, Bonding, Redir, and 802.1Q VLAN devices.
+
+    Tested on 03/17/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
 
 ''')
     parser.add_argument(
