@@ -2,9 +2,53 @@
 """
 NAME: lf_cleanup.py
 
-PURPOSE: clean up stations, cross connects and endpoints
+PURPOSE:
+    clean up stations, cross connects and endpoints
 
-EXAMPLE:  ./lf_cleanup.py --mgr <lanforge ip>
+EXAMPLE:
+    clear all stations:
+        ./lf_cleanup.py --mgr localhost --resource 1 --sta
+
+    clear all Port Mgr objects:
+        ./lf_cleanup.py --mgr localhost --resource 1 --sanitize
+
+    clear all cxs and enps:
+        ./lf_cleanup.py --mgr localhost --resource 1 --cxs
+
+    clear all endps:
+        ./lf_cleanup.py --mgr localhost --resource 1 --endp
+
+    clear all bridges:
+        ./lf_cleanup.py --mgr localhost --resource 1 --br
+
+    clear sta with names phy (not wiphy) and 1.1.eth stations:
+        ./lf_cleanup.py --mgr localhost --resource 1 --misc
+
+JSON EXAMPLE:
+    clear all stations:
+        "args": ["--mgr","192.168.30.12","--resource","1","--sta"]
+
+    clear all Port Mgr objects:
+        "args": ["--mgr","192.168.30.12","--resource","1","--sanitize"]
+
+    clear all cxs and enps:
+        "args": ["--mgr","192.168.30.12","--resource","1","--cxs"]
+
+    clear all endps:
+        "args": ["--mgr","192.168.30.12","--resource","1","--endp"]
+
+    clear all bridges:
+        "args": ["--mgr","192.168.30.12","--resource","1","--br"]
+
+    clear sta with names phy (not wiphy) and 1.1.eth stations:
+        "args": ["--mgr","192.168.30.12","--resource","1","--misc"]
+
+NOTES:
+
+    Tested on 03/17/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
+
 
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
@@ -563,19 +607,59 @@ def main():
             Clean up cxs and endpoints
             ''',
         description='''\
-lf_cleanup.py:
---------------------
-Generic command layout:
+NAME: lf_cleanup.py
 
-Example:
-This example will clean the Port Mgr, Layer-3, L3 Endps, and Layer 4-7 LF GUI tabs:
-./lf_clean.py --mgr MGR --sanitize
+PURPOSE:
+    clean up stations, cross connects and endpoints
 
-    default port is 8080
+EXAMPLE:
+    clear all stations:
+        ./lf_cleanup.py --mgr localhost --resource 1 --sta
 
-    clean up stations, cxs and endpoints.
-    NOTE: will only cleanup what is present in the GUI
-            So will need to iterate multiple times with script
+    This example will clean the Port Mgr, Layer-3, L3 Endps, and Layer 4-7 LF GUI tabs:
+        ./lf_cleanup.py --mgr localhost --resource 1 --sanitize
+
+    clear all cxs and enps:
+        ./lf_cleanup.py --mgr localhost --resource 1 --cxs
+
+    clear all endps:
+        ./lf_cleanup.py --mgr localhost --resource 1 --endp
+
+    clear all bridges:
+        ./lf_cleanup.py --mgr localhost --resource 1 --br
+
+    clear sta with names phy (not wiphy) and 1.1.eth stations:
+        ./lf_cleanup.py --mgr localhost --resource 1 --misc
+
+JSON EXAMPLE:
+    clear all stations:
+        "args": ["--mgr","192.168.30.12","--resource","1","--sta"]
+
+    This example will clean the Port Mgr, Layer-3, L3 Endps, and Layer 4-7 LF GUI tabs:
+        "args": ["--mgr","192.168.30.12","--resource","1","--sanitize"]
+
+    clear all cxs and enps:
+        "args": ["--mgr","192.168.30.12","--resource","1","--cxs"]
+
+    clear all endps:
+        "args": ["--mgr","192.168.30.12","--resource","1","--endp"]
+
+    clear all bridges:
+        "args": ["--mgr","192.168.30.12","--resource","1","--br"]
+
+    clear sta with names phy (not wiphy) and 1.1.eth stations:
+        "args": ["--mgr","192.168.30.12","--resource","1","--misc"]
+
+NOTES:
+
+    The default port is 8080
+    The script will only cleanup what is present in the GUI,
+     so it will need to iterate multiple times with script
+
+    Tested on 03/17/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
+
             ''')
     parser.add_argument(
         '--mgr',
