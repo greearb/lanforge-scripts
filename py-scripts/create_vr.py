@@ -1,6 +1,54 @@
 #!/usr/bin/env python3
 """
-    Script for creating a variable number of virtual routers.
+NAME: create_vr.py
+
+PURPOSE:
+    create_vr.py will create a variable number of virtual routers.
+
+EXAMPLE:
+    ./create_vr.py --mgr localhost --vr_name 1.vr0 --ports 1.br0,1.rdd0a --services 1.br0=dhcp,nat --services 1.vr0=radvd
+    ./create_vr.py --mgr localhost --vr_name 2.vr0 --ports 2.br0,2.vap2 --services
+
+NOTES:
+
+    Tested on 03/21/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
+
+    start with crafting the flags for the virtual router using AddVrFlags,
+     my_vr_flags = LFPost.set_flags(AddVrFlags, 0, [ "USE_IPV6", "USE_IPV6_RADVD" ])
+     post_request = new LFPost()
+     post_request.post_add_vr(alias=myalias, flags=my_vr_flags, height=100, width=100, resource=1, x=100, y=100)
+
+     but don't use xorp unless you know you want to ("USE_XORP_MULTICAST")
+
+     so adding the vAP and eth port to the virt router is that an virt router command or need to look for something else?
+
+     add_vrcx will add a virtual-router-connection, which is effectively a port in a vr
+
+     you can build it manually, look at what is saved in DB/DFLT/*
+
+     FREE_LIST means it is out in the wild and not inside a virtual router, btw
+     note grep for the router name
+
+     cli commands
+     add_vr
+     add_vr_bgp
+     add_bgp_peer
+     add_vrcx
+     add_vrcx2
+
+     Adding vap to virtual router
+     ./ports.db.1.1:122:add_vrcx 1 1 vr_router_0 vap4 NA NA NA NA 737 188 10 10 0 NA 0.0.0.0 43200 0.0.0.0 0.0.0.0 0.0.0.0 NA 1 0.0.0.0 1 0.0.0.0 24 1 100 1 'NA' 'NA' 'NA'
+     ./ports.db.1.1:123:add_vrcx2 1 1 vr_router_0 vap4 NA NA 00:00:00:00:00:00-0 00:00:00:00:00:00-0 00:00:00:00:00:00-0 00:00:00:00:00:00-0
+
+     Adding dhcp
+
+
+COPYRIGHT:
+Copyright 2023 Candela Technologies Inc
+License: Free to distribute and modify. LANforge systems must be licensed.
+
 """
 import sys
 import os
@@ -27,40 +75,6 @@ Realm = realm.Realm
 lf_logger_config = importlib.import_module("py-scripts.lf_logger_config")
 
 # TODO - script under development
-'''
-
-Notes:
-start with crafting the flags for the virtual router using AddVrFlags,
-my_vr_flags = LFPost.set_flags(AddVrFlags, 0, [ "USE_IPV6", "USE_IPV6_RADVD" ])
-post_request = new LFPost()
-post_request.post_add_vr(alias=myalias, flags=my_vr_flags, height=100, width=100, resource=1, x=100, y=100)
-
-but don't use xorp unless you know you want to ("USE_XORP_MULTICAST")
-
-so adding the vAP and eth port to the virt router is that an virt router command or need to look for something else?
-
-add_vrcx will add a virtual-router-connection, which is effectively a port in a vr
-
-you can build it manually, look at what is saved in DB/DFLT/*
-
-FREE_LIST means it is out in the wild and not inside a virtual router, btw
-note grep for the router name
-
-cli commands
-add_vr
-add_vr_bgp
-add_bgp_peer
-add_vrcx
-add_vrcx2
- 
-Adding vap to virtual router
-./ports.db.1.1:122:add_vrcx 1 1 vr_router_0 vap4 NA NA NA NA 737 188 10 10 0 NA 0.0.0.0 43200 0.0.0.0 0.0.0.0 0.0.0.0 NA 1 0.0.0.0 1 0.0.0.0 24 1 100 1 'NA' 'NA' 'NA'
-./ports.db.1.1:123:add_vrcx2 1 1 vr_router_0 vap4 NA NA 00:00:00:00:00:00-0 00:00:00:00:00:00-0 00:00:00:00:00:00-0 00:00:00:00:00:00-0
-
-Adding dhcp
-
-
-'''
 
 class CreateVR(Realm):
     def __init__(self,
@@ -204,13 +218,22 @@ def main():
     parser = LFCliBase.create_bare_argparse(
         prog=__file__,
         description="""\
-{f}
 --------------------
-Command example:
-{f} --vr_name 1.vr0 --ports 1.br0,1.rdd0a --services 1.br0=dhcp,nat --services 1.vr0=radvd
-{f} --vr_name 2.vr0 --ports 2.br0,2.vap2 --services 
+NAME: create_vr.py
 
-    --debug
+PURPOSE:
+    create_vr.py will create a variable number of virtual routers.
+
+EXAMPLE:
+    ./create_vr.py --vr_name 1.vr0 --ports 1.br0,1.rdd0a --services 1.br0=dhcp,nat --services 1.vr0=radvd
+    ./create_vr.py --vr_name 2.vr0 --ports 2.br0,2.vap2 --services
+
+NOTES:
+
+    Tested on 03/21/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
+
 """.format(f=__file__))
     required = parser.add_argument_group('required arguments')
     required.add_argument('--vr_name', '--vr_names', required=True,
@@ -244,7 +267,7 @@ Command example:
     # create_vr.clean()
     create_vr.build()
     create_vr.start()
-    create_vr.monitor()
+    # create_vr.monitor()
     # create_vr.stop()
     # create_vr.clean()
     print('Created Virtual Router')
