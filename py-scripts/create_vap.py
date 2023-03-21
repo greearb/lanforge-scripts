@@ -1,6 +1,32 @@
 #!/usr/bin/env python3
 """
-    Script for creating a variable number of VAPs.
+NAME: create_vap.py
+
+PURPOSE:
+    create_vap.py will create a variable number of VAPs.
+
+EXAMPLE:
+    ./create_vap.py
+    --lfmgr <lanforge ip>
+    --port <lanforge port 8080>
+    --upstream_port eth1
+    --radio wiphy0
+    --num_vaps 3
+    --security open
+    --ssid netgear
+    --passwd BLANK
+    --debug
+
+NOTES:
+
+    Tested on 03/21/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
+
+COPYRIGHT:
+Copyright 2023 Candela Technologies Inc
+License: Free to distribute and modify. LANforge systems must be licensed.
+
 """
 import sys
 import os
@@ -120,10 +146,14 @@ def main():
             ''',
 
         description='''\
-        create_vap.py
 --------------------
-Command example:
-./create_vap.py
+NAME: create_vap.py
+
+PURPOSE:
+    create_vap.py will create a variable number of VAPs.
+
+EXAMPLE:
+    ./create_vap.py
     --lfmgr <lanforge ip>
     --port <lanforge port 8080>
     --upstream_port eth1
@@ -133,6 +163,13 @@ Command example:
     --ssid netgear
     --passwd BLANK
     --debug
+
+NOTES:
+
+    Tested on 03/21/2023:
+         kernel version: 5.19.17+
+         gui version: 5.4.6
+
             ''')
 
     optional = parser.add_argument_group('optional arguments')
