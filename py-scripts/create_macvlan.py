@@ -6,19 +6,19 @@ PURPOSE:
     This script will create a variable number of macvlans on a specified ethernet port.
 
 EXAMPLE:
-    ./create_macvlan.py --macvlan_parent <port> --num_ports <num ports>
+    ./create_macvlan.py --mgr localhost --macvlan_parent <port> --num_ports <num ports>
       --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
 
-    ./create_macvlan.py --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
+    ./create_macvlan.py --mgr localhost --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
       --netmask 255.255.255.0 --gateway 192.168.92.1
 
-    ./create_macvlan.py --macvlan_parent eth1 --num_ports 3
+    ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3
       --use_ports eth1#0,eth1#1,eth1#2 --connections_per_port 2
 
-    ./create_macvlan.py --macvlan_parent eth1 --num_ports 3 --first_mvlan_ip 10.40.3.100
+    ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --first_mvlan_ip 10.40.3.100
       --netmask 255.255.240.0 --gateway 10.40.0.1 --add_to_group test_two
 
-    ./create_macvlan.py --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2
+    ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2
       --connections_per_port 2 --netmask 255.255.240.0 --gateway 10.40.0.1
 
 NOTES:
@@ -129,19 +129,19 @@ PURPOSE:
     This script will create a variable number of macvlans on a specified ethernet port.
 
 EXAMPLE:
-    ./create_macvlan.py --macvlan_parent <port> --num_ports <num ports>
+    ./create_macvlan.py --mgr localhost --macvlan_parent <port> --num_ports <num ports>
       --first_mvlan_ip <first ip in series> --netmask <netmask to use> --gateway <gateway ip addr>
 
-    ./create_macvlan.py --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
+    ./create_macvlan.py --mgr localhost --macvlan_parent eth2 --num_ports 3 --first_mvlan_ip 192.168.92.13
       --netmask 255.255.255.0 --gateway 192.168.92.1
 
-    ./create_macvlan.py --macvlan_parent eth1 --num_ports 3
+    ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3
       --use_ports eth1#0,eth1#1,eth1#2 --connections_per_port 2
 
-    ./create_macvlan.py --macvlan_parent eth1 --num_ports 3 --first_mvlan_ip 10.40.3.100
+    ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --first_mvlan_ip 10.40.3.100
       --netmask 255.255.240.0 --gateway 10.40.0.1 --add_to_group test_two
 
-    ./create_macvlan.py --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2
+    ./create_macvlan.py --mgr localhost --macvlan_parent eth1 --num_ports 3 --use_ports eth1#0=10.40.3.103,eth1#1,eth1#2
       --connections_per_port 2 --netmask 255.255.240.0 --gateway 10.40.0.1
 
 NOTES:
