@@ -1,13 +1,28 @@
 #!/usr/bin/env python3
 
-"""create_bond.py Script to create a bond
+"""
+NAME: create_bond.py
 
-This script can be used to create a bond, only one can be created at a time. Network devices must be specified
-as a list of comma-separated items with no spaces.
+PURPOSE:
+    Script to create a bond.
+    This script can be used to create a bond, only one can be created at a time. Network devices must be specified
+     as a list of comma-separated items with no spaces.
 
-Use './create_bond.py --help' to see command line usage and options
-Copyright 2021 Candela Technologies Inc
-License: Free to distribute and modify. LANforge systems must be licensed.
+EXAMPLE:
+    Use './create_bond.py --help' to see command line usage and options
+
+    ./create_bond.py --mgr localhost --bond_name bond0 --network_dev_list eth1,eth2 --no_cleanup --debug
+
+NOTES:
+
+    Tested on 03/22/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
+
+COPYRIGHT:
+    Copyright 2021 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
+
 """
 import sys
 import os
@@ -103,14 +118,29 @@ def main():
             ''',
 
         description='''\
-        create_bond.py
 --------------------
-Command example:
-./create_bond.py
-    --bond_name bond0
-    --network_dev_list eth0,eth1
-    --no_cleanup
-    --debug
+NAME: create_bond.py
+
+PURPOSE:
+    Script to create a bond.
+    This script can be used to create a bond, only one can be created at a time. Network devices must be specified
+     as a list of comma-separated items with no spaces.
+
+EXAMPLE:
+    Use './create_bond.py --help' to see command line usage and options
+
+    ./create_bond.py --mgr localhost --bond_name bond0 --network_dev_list eth1,eth2 --no_cleanup --debug
+
+NOTES:
+
+    Tested on 03/22/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
+
+COPYRIGHT:
+    Copyright 2021 Candela Technologies Inc
+    License: Free to distribute and modify. LANforge systems must be licensed.
+
             ''')
 
     required = parser.add_argument_group('required arguments')
