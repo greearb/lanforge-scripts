@@ -10,10 +10,10 @@ PURPOSE:
 
 EXAMPLE:
     Create station and run udp/tcp traffic:
-    ./sta_connect.py --ssid <ssid> --passwd <password> --security wpa2 --radio 1.1.wiphy1 --upstream_port eth2
+    ./sta_connect.py --mgr localhost --ssid <ssid> --passwd <password> --security wpa2 --radio 1.1.wiphy1 --upstream_port eth2
 
     Include AP BSSID to have station connection verified:
-    ./sta_connect.py --ssid <ssid> --passwd <password> --security wpa2 --radio 1.2.wiphy1 --upstream_port eth2 --dut_bssid 08:36:C9:E3:D4:DC
+    ./sta_connect.py --mgr localhost --ssid <ssid> --passwd <password> --security wpa2 --radio 1.2.wiphy1 --upstream_port eth2 --dut_bssid 08:36:C9:E3:D4:DC
 
     Use './sta_connect.py --help' to see command line usage and options
 
@@ -544,10 +544,10 @@ PURPOSE:
 
 EXAMPLE:
     Create station and run udp/tcp traffic:
-    ./sta_connect.py --ssid <ssid> --passwd <password> --security wpa2 --radio 1.1.wiphy1 --upstream_port eth2
+    ./sta_connect.py --mgr localhost --ssid <ssid> --passwd <password> --security wpa2 --radio 1.1.wiphy1 --upstream_port eth2
 
     Include AP BSSID to have station connection verified:
-    ./sta_connect.py --ssid <ssid> --passwd <password> --security wpa2 --radio 1.2.wiphy1 --upstream_port eth2 --dut_bssid 08:36:C9:E3:D4:DC
+    ./sta_connect.py --mgr localhost --ssid <ssid> --passwd <password> --security wpa2 --radio 1.2.wiphy1 --upstream_port eth2 --dut_bssid 08:36:C9:E3:D4:DC
 
     Use './sta_connect.py --help' to see command line usage and options
 
