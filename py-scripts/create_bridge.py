@@ -1,7 +1,25 @@
 #!/usr/bin/env python3
 
 """
-    Script for creating a variable number of bridges.
+NAME: create_bridge.py
+
+PURPOSE:
+    This script will create a variable number of bridges.
+
+EXAMPLE:
+    Use './create_bridge.py --help' to see command line usage and options
+
+    ./create_bridge.py --lfmgr <lanforge ip> --port <lanforge port 8080> --bridge_name br0 --target_device eth1,eth2 --no_cleanup --debug
+
+NOTES:
+
+    Tested on 03/23/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
+
+Copyright 2021 Candela Technologies Inc
+License: Free to distribute and modify. LANforge systems must be licensed.
+
 """
 import sys
 import os
@@ -100,15 +118,23 @@ def main():
             ''',
 
         description='''\
-        create_bridge.py
 --------------------
-Command example:
-./create_bridge.py
-    --lfmgr <lanforge ip>
-    --port <lanforge port 8080>
-    --bridge_name br0
-    --target_device eth1,eth2
-    --debug
+NAME: create_bridge.py
+
+PURPOSE:
+    This script will create a variable number of bridges.
+
+EXAMPLE:
+    Use './create_bridge.py --help' to see command line usage and options
+
+    ./create_bridge.py --lfmgr <lanforge ip> --port <lanforge port 8080> --bridge_name br0 --target_device eth1,eth2 --no_cleanup --debug
+
+NOTES:
+
+    Tested on 03/23/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
+
             ''')
     required = parser.add_argument_group('required arguments')
 
