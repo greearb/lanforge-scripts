@@ -9,15 +9,25 @@ PURPOSE:
     The script will clean up the station and connections at the end of the test.
 
 EXAMPLE:
-    ./sta_connect.py --ssid Logan-Test-Net --passwd Logan-Test-Net --security wpa2 --radio 1.1.wiphy1
-                     --upstream_port eth2 --dut_bssid 08:36:C9:E3:D4:DC
+    Create station and run udp/tcp traffic:
+    ./sta_connect.py --ssid <ssid> --passwd <password> --security wpa2 --radio 1.1.wiphy1 --upstream_port eth2
 
-    ./sta_connect.py --ssid Logan-Test-Net --passwd Logan-Test-Net --security wpa2 --radio 1.2.wiphy1
-                     --upstream_port eth2 --dut_bssid 08:36:C9:E3:D4:DC --resource 2
+    Include AP BSSID to have station connection verified:
+    ./sta_connect.py --ssid <ssid> --passwd <password> --security wpa2 --radio 1.2.wiphy1 --upstream_port eth2 --dut_bssid 08:36:C9:E3:D4:DC
 
-Use './sta_connect.py --help' to see command line usage and options
+    Use './sta_connect.py --help' to see command line usage and options
+
+NOTES:
+
+    The test currently only works with resource-1 LANforge systems.
+
+    Tested on 03/23/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
+
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
+
 """
 
 import sys
@@ -524,9 +534,31 @@ def main():
         prog="sta_connect.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description="""\
-        LANforge Unit Test:  Connect Station to AP
-Example:
-./sta_connect.py --mgr 192.168.100.209 --ssid OpenWrt-2 --dut_bssid 24:F5:A2:08:21:6C
+NAME: sta_connect.py
+
+PURPOSE:
+    This will create a station, create TCP and UDP traffic, run it a short amount of time,
+    and verify whether traffic was sent and received.  It also verifies the station connected
+    to the requested BSSID if bssid is specified as an argument.
+    The script will clean up the station and connections at the end of the test.
+
+EXAMPLE:
+    Create station and run udp/tcp traffic:
+    ./sta_connect.py --ssid <ssid> --passwd <password> --security wpa2 --radio 1.1.wiphy1 --upstream_port eth2
+
+    Include AP BSSID to have station connection verified:
+    ./sta_connect.py --ssid <ssid> --passwd <password> --security wpa2 --radio 1.2.wiphy1 --upstream_port eth2 --dut_bssid 08:36:C9:E3:D4:DC
+
+    Use './sta_connect.py --help' to see command line usage and options
+
+NOTES:
+
+    The test currently only works with resource-1 LANforge systems.
+
+    Tested on 03/23/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
+
 """)
     parser.add_argument("--resource", type=str, help="LANforge Station resource ID to use, default is 1", default=1)
     parser.add_argument("--upstream_resource", type=str, help="LANforge Ethernet port resource ID to use, default is 1", default=1)
