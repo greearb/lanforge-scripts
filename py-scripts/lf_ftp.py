@@ -1,21 +1,34 @@
 #!/usr/bin/env python3
 """
-lf_ftp.py will verify that N clients are connected on a specified band and can simultaneously download/upload
- some amount of file data from the FTP server while measuring the time taken by clients to download/upload the file.
+NAME: lf_ftp.py
 
-cli- ./lf_ftp.py --ssid <SSID> --passwd <PASSWORD>  --file_sizes 2MB --fiveg_duration 4 --mgr 192.168.1.101
---traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
+PURPOSE:
+    lf_ftp.py will verify that N clients are connected on a specified band and can simultaneously download/upload
+     some amount of file data from the FTP server while measuring the time taken by clients to download/upload the file.
+
+EXAMPLE:
+    Use './lf_ftp.py --help' to see command line usage and options
+
+    ./lf_ftp.py --ssid <SSID> --passwd <PASSWORD>  --file_sizes 2MB --fiveg_duration 4 --mgr 192.168.1.101
+        --traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
+
+    test command that includes kpi.csv features on resource-1:
+    ./lf_ftp.py --ssid SSID --passwd PASSWRD  --file_sizes 2MB --fiveg_duration 1 --mgr 192.168.1.101
+     --upstream_port eth2 --traffic_duration 1 --security wpa2  --bands 5G --fiveg_radio wiphy0 --directions Download Upload
+     --csv_outfile FTP_CSV.csv --test_rig LF-LAB --test_tag LF_FTP --dut_hw_version Linux --dut_model_num 1
+     --dut_sw_version 5.4.4 --dut_serial_num 1234
+
+NOTES:
+
+    Currently, the test must run with both directions enabled for kpi.csv results: '--directions Download Upload'
+
+    Tested on 03/23/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
 
 Copyright 2021 Candela Technologies Inc
 License: Free to distribute and modify. LANforge systems must be licensed.
 
-
-* Currently, the test must run with both directions enabled for kpi.csv results: '--directions Download Upload'
-* test command that includes kpi.csv features on resource-1:
-./lf_ftp.py --ssid SSID --passwd PASSWRD  --file_sizes 2MB --fiveg_duration 1 --mgr 192.168.1.101
- --upstream_port eth2 --traffic_duration 1 --security wpa2  --bands 5G --fiveg_radio wiphy0 --directions Download Upload
- --csv_outfile FTP_CSV.csv --test_rig LF-LAB --test_tag LF_FTP --dut_hw_version Linux --dut_model_num 1
- --dut_sw_version 5.4.4 --dut_serial_num 1234
 """
 import sys
 import importlib
@@ -965,16 +978,32 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description='''\
 ---------------------------
-FTP Test Script - lf_ftp.py
----------------------------
-Summary:
-lf_ftp.py will verify that N clients are connected on a specified band and can simultaneously download/upload
- some amount of file data from the FTP server while measuring the time taken by clients to download/upload the file.
----------------------------
-CLI Example:
-./lf_ftp.py --ssid <SSID> --passwd <PASSWORD> --file_sizes 2MB --fiveg_duration <MIN> --mgr 192.168.1.101
---traffic_duration <MIN> --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
----------------------------
+NAME: lf_ftp.py
+
+PURPOSE:
+    lf_ftp.py will verify that N clients are connected on a specified band and can simultaneously download/upload
+     some amount of file data from the FTP server while measuring the time taken by clients to download/upload the file.
+
+EXAMPLE:
+    Use './lf_ftp.py --help' to see command line usage and options
+
+    ./lf_ftp.py --ssid <SSID> --passwd <PASSWORD>  --file_sizes 2MB --fiveg_duration 4 --mgr 192.168.1.101
+        --traffic_duration 2 --security wpa2  --bands 5G --fiveg_radio wiphy1 --directions Download Upload
+
+    test command that includes kpi.csv features on resource-1:
+    ./lf_ftp.py --ssid SSID --passwd PASSWRD  --file_sizes 2MB --fiveg_duration 1 --mgr 192.168.1.101
+     --upstream_port eth2 --traffic_duration 1 --security wpa2  --bands 5G --fiveg_radio wiphy0 --directions Download Upload
+     --csv_outfile FTP_CSV.csv --test_rig LF-LAB --test_tag LF_FTP --dut_hw_version Linux --dut_model_num 1
+     --dut_sw_version 5.4.4 --dut_serial_num 1234
+
+NOTES:
+
+    Currently, the test must run with both directions enabled for kpi.csv results: '--directions Download Upload'
+
+    Tested on 03/23/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
+
                     ''')
     parser.add_argument('--mgr', help='hostname for where LANforge GUI is running [default = localhost]', default='localhost')
     parser.add_argument('--mgr_port', help='port LANforge GUI HTTP service is running on [default = 8080]', default=8080)
