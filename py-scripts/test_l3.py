@@ -1815,6 +1815,34 @@ Example : Have script use existing stations from previous run where traffic was 
         --no_stop_traffic
 
 
+Example : Have script use wifi_settings enable flages  ::  wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)
+            // test_l3.py - ID - cookbook
+            ./test_l3.py 
+            --lfmgr 192.168.0.103 
+            --test_duration 20s
+            --polling_interval 5s
+            --upstream_port 1.1.eth2
+            --radio 'radio==1.1.wiphy1,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==1,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
+            --radio 'radio==1.1.wiphy2,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==1,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
+            --radio 'radio==1.1.wiphy3,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==1,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
+            --radio 'radio==1.1.wiphy4,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==1,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
+            --radio 'radio==1.1.wiphy5,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==1,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
+            --radio 'radio==1.1.wiphy6,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==1,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
+            --radio 'radio==1.1.wiphy7,stations==1,ssid==axe11000_5g,ssid_pw==lf_axe11000_5g,security==wpa2,wifi_mode==1,wifi_settings==wifi_settings,enable_flags==(ht160_enable&&wpa2_enable&&80211u_enable&&create_admin_down)'
+            --endp_type lf_udp 
+            --rates_are_totals
+            --side_a_min_bps=20000 
+            --side_b_min_bps=300000000 
+            --test_rig ID_003
+            --test_tag 'l3_longevity'
+            --dut_model_num GT-AXE11000
+            --dut_sw_version 3.0.0.4.386_44266
+            --dut_hw_version 1.0
+            --dut_serial_num 12345678
+            --log_level debug 
+
+
+
 
 Setting wifi_settings per radio
 ./test_l3.py --lfmgr 192.168.100.116 --local_lf_report_dir /home/lanforge/html-reports/ --test_duration 15s
@@ -2368,6 +2396,34 @@ Setting wifi_settings per radio
     reset_port_time_min_list = []
     reset_port_time_max_list = []
 
+    # wifi extra configuration 
+    key_mgmt_list=[]
+    pairwise_list=[]
+    group_list = []
+    psk_list = []
+    eap_list = []
+    identity_list =[]
+    anonymous_identity_list=[]
+    phase1_list=[]
+    phase2_list=[]
+    passwd_list = []
+    pin_list= []
+    pac_file_list=[]
+    private_key_list = []
+    pk_password_list = []
+    hessid_list = []
+    realm_list = []
+    client_cert_list = []
+    imsi_list = []
+    milenage_list = []
+    domain_list = []
+    roaming_consortium_list = []
+    venue_group_list = []
+    network_type_list = []
+    ipaddr_type_avail_list = []
+    network_auth_type_list = []
+    anqp_3gpp_cell_net_list = []
+
     #
     logger.info("parse radio arguments used for station configuration")
     if radios is not None:
@@ -2407,6 +2463,110 @@ Setting wifi_settings per radio
             ssid_password_list.append(radio_info_dict['ssid_pw'])
             ssid_security_list.append(radio_info_dict['security'])
 
+            # check for set_wifi_extra
+            # check for wifi_settings
+            wifi_extra_keys = ['wifi_extra']
+            wifi_extra_found = True
+            for wifi_extra_key in wifi_extra_keys:
+                if wifi_extra_key not in radio_info_dict:
+                    logger.info("wifi_extra_keys not found")
+                    wifi_extra_found = False
+                    break
+            
+
+            if wifi_extra_found:
+
+                key_mgmt='[BLANK]'
+                pairwise='[BLANK]'
+                group='[BLANK]'
+                psk='[BLANK]'
+                eap='[BLANK]'
+                identity='[BLANK]'
+                anonymous_identity="[BLANK]"
+                phase1="[BLANK]"
+                phase2="[BLANK]"
+                passwd='[BLANK]'
+                pin='[BLANK]'
+                pac_file='[BLANK]'
+                private_key='[BLANK]'
+                pk_password='[BLANK]'
+                hessid="00:00:00:00:00:00"
+                realm="[BLANK]"
+                client_cert="[BLANK]"
+                imsi="[BLANK]"
+                milenage="[BLANK]"
+                domain="[BLANK]"
+                roaming_consortium="[BLANK]"
+                venue_group="[BLANK]"
+                network_type="[BLANK]"
+                ipaddr_type_avail="[BLANK]"
+                network_auth_type="[BLANK]"
+                anqp_3gpp_cell_net="[BLANK]"
+
+
+                wifi_extra_dict= dict(
+                map(
+                    lambda x: x.split('&&'),
+                    str(radio_).replace(
+                        '"',
+                        '').replace(
+                        '[',
+                        '').replace(
+                        ']',
+                        '').replace(
+                        "'",
+                        "").replace(
+                            ",",
+                        " ").split()))
+
+                if 'key_mgmt' in wifi_extra_dict:
+                    key_mgmt_list.append(wifi_extra_dict['key_mgmt'])
+                else:
+                    key_mgmt_list.append('[BLANK]')
+
+                if 'pariwise' in wifi_extra_dict:
+                    pairwise_list.append(wifi_extra_dict['pariwise'])
+                else:
+                    pairwise_list.append('[BLANK]')        
+                
+                if 'group' in wifi_extra_dict:
+                    group_list.append(wifi_extra_dict['group'])
+                else:
+                    group_list.append('[BLANK]') 
+
+                '''            
+                # wifi extra configuration 
+                key_mgmt_list.append(key_mgmt)
+                pairwise_list.append(pairwise)
+                group_list.append(group)
+                psk_list.append(psk)
+                eap_list.append(eap)
+                identity_list.append(identity)
+                anonymous_identity_list.append(anonymous_identity)
+                phase1_list.append(phase1)
+                phase2_list.append(phase2)
+                passwd_list.append(passwd)
+                pin_list.append(pin)
+                pac_file_list.append(pac_file)
+                private_key_list.append(private)
+                pk_password_list.append(pk_password)
+                hessid_list.append(hssid)
+                realm_list.append(realm)
+                client_cert_list.append(client_cert)
+                imsi_list.append(imsi)
+                milenage_list.append(milenage)
+                domain_list.append(domain)
+                roaming_consortium_list.append(roaming_consortium)
+                venue_group_list.append(venue_group)
+                network_type_list.append(network_type)
+                ipaddr_type_avail_list.append(ipaddr_type_avail)
+                network_auth_type_list.append(network_ath_type)
+                anqp_3gpp_cell_net_list.append(anqp_3gpp_cell_net)
+
+                '''
+
+
+
             # check for wifi_settings
             wifi_settings_keys = ['wifi_settings']
             wifi_settings_found = True
@@ -2436,6 +2596,7 @@ Setting wifi_settings per radio
                 wifi_mode_list.append(0)
                 wifi_enable_flags_list.append(
                     ["wpa2_enable", "80211u_enable", "create_admin_down"])
+
 
             # check for optional radio key , currently only reset is enabled
             # update for checking for reset_port_time_min, reset_port_time_max
