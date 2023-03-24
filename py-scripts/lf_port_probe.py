@@ -1,4 +1,27 @@
 #!/usr/bin/env python3
+"""
+NAME: lf_port_probe.py
+
+PURPOSE:
+    This script will query and display information associated with a specified port.
+
+EXAMPLE:
+    Use './lf_port_probe.py --help' to see command line usage and options
+
+    ./lf_port_probe.py --mgr localhost --port 1.1.eth0
+
+NOTES:
+
+    Tested on 03/24/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
+
+Copyright 2021 Candela Technologies Inc
+License: Free to distribute and modify. LANforge systems must be licensed.
+
+"""
+
+
 import json
 import os
 import pprint
@@ -57,8 +80,22 @@ def main():
     parser = LFCliBase.create_bare_argparse(
         prog=__name__,
         description='''\
-    Example:
-    ./port_probe.py --port 1.1.eth0
+NAME: lf_port_probe.py
+
+PURPOSE:
+    This script will query and display information associated with a specified port.
+
+EXAMPLE:
+    Use './lf_port_probe.py --help' to see command line usage and options
+
+    ./lf_port_probe.py --mgr localhost --port 1.1.eth0
+
+NOTES:
+
+    Tested on 03/24/2023:
+        kernel version: 5.19.17+
+        gui version: 5.4.6
+
         ''')
 
     parser.add_argument('--mode', help='Used to force mode of stations')
