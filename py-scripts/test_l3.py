@@ -2683,7 +2683,34 @@ Setting wifi_settings per radio
                 anqp_3gpp_cell_net_list.append(anqp_3gpp_cell_net)
 
                 '''
-
+            # no wifi extra for this station
+            else:
+                key_mgmt_list.append('[BLANK]')
+                pairwise_list.append('[BLANK]')        
+                group_list.append('[BLANK]') 
+                psk_list.append('[BLANK]') 
+                eap_list.append('[BLANK]') 
+                identity_list.append('[BLANK]') 
+                anonymous_list.append('[BLANK]') 
+                phase1_list.append('[BLANK]') 
+                phase2_list.append('[BLANK]') 
+                passwd_list.append('[BLANK]') 
+                pin_list.append('[BLANK]') 
+                pac_file_list.append('[BLANK]') 
+                private_key_list.append('[BLANK]') 
+                pk_password_list.append('[BLANK]') 
+                hessid_list.append("00:00:00:00:00:00") 
+                realm_list.append('[BLANK]') 
+                client_cert_list.append('[BLANK]') 
+                imsi_list.append('[BLANK]') 
+                milenage_list.append('[BLANK]') 
+                domain_list.append('[BLANK]') 
+                roaming_consortium_list.append('[BLANK]') 
+                venue_group_list.append('[BLANK]') 
+                network_type_list.append('[BLANK]') 
+                ipaddr_type_avail_list.append('[BLANK]') 
+                network_auth_type_list.append('[BLANK]') 
+                anqp_3gpp_cell_net_list.append('[BLANK]') 
 
 
             # check for wifi_settings
