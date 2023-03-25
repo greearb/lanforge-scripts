@@ -2403,7 +2403,7 @@ Setting wifi_settings per radio
     psk_list = []
     eap_list = []
     identity_list =[]
-    anonymous_identity_list=[]
+    anonymous_list=[]
     phase1_list=[]
     phase2_list=[]
     passwd_list = []
@@ -2466,15 +2466,18 @@ Setting wifi_settings per radio
             # check for set_wifi_extra
             # check for wifi_settings
             wifi_extra_keys = ['wifi_extra']
-            wifi_extra_found = True
+            wifi_extra_found = False
             for wifi_extra_key in wifi_extra_keys:
-                if wifi_extra_key not in radio_info_dict:
-                    logger.info("wifi_extra_keys not found")
-                    wifi_extra_found = False
+                if wifi_extra_key in radio_info_dict:
+                    logger.info("wifi_extra_keys found")
+                    wifi_extra_found = True
                     break
             
 
             if wifi_extra_found:
+
+                logger.debug("wifi_extra: {extra}".format(extra=radio_info_dict['wifi_extra']))
+
 
                 key_mgmt='[BLANK]'
                 pairwise='[BLANK]'
@@ -2507,7 +2510,7 @@ Setting wifi_settings per radio
                 wifi_extra_dict= dict(
                 map(
                     lambda x: x.split('&&'),
-                    str(radio_).replace(
+                    str(radio_info_dict['wifi_extra']).replace(
                         '"',
                         '').replace(
                         '[',
@@ -2524,8 +2527,8 @@ Setting wifi_settings per radio
                 else:
                     key_mgmt_list.append('[BLANK]')
 
-                if 'pariwise' in wifi_extra_dict:
-                    pairwise_list.append(wifi_extra_dict['pariwise'])
+                if 'pairwise' in wifi_extra_dict:
+                    pairwise_list.append(wifi_extra_dict['pairwise'])
                 else:
                     pairwise_list.append('[BLANK]')        
                 
@@ -2533,6 +2536,122 @@ Setting wifi_settings per radio
                     group_list.append(wifi_extra_dict['group'])
                 else:
                     group_list.append('[BLANK]') 
+
+                if 'psk' in wifi_extra_dict:
+                    psk_list.append(wifi_extra_dict['psk'])
+                else:
+                    psk_list.append('[BLANK]') 
+
+                if 'eap' in wifi_extra_dict:
+                    eap_list.append(wifi_extra_dict['eap'])
+                else:
+                    eap_list.append('[BLANK]') 
+
+                if 'identity' in wifi_extra_dict:
+                    identity_list.append(wifi_extra_dict['identity'])
+                else:
+                    identity_list.append('[BLANK]') 
+
+                if 'anonymous' in wifi_extra_dict:
+                    anonymous_list.append(wifi_extra_dict['anonymous'])
+                else:
+                    anonymous_list.append('[BLANK]') 
+
+                if 'phase1' in wifi_extra_dict:
+                    phase1_list.append(wifi_extra_dict['phase1'])
+                else:
+                    phase1_list.append('[BLANK]') 
+
+                if 'phase2' in wifi_extra_dict:
+                    phase2_list.append(wifi_extra_dict['phase2'])
+                else:
+                    phase2_list.append('[BLANK]') 
+
+                if 'passwd' in wifi_extra_dict:
+                    passwd_list.append(wifi_extra_dict['passwd'])
+                else:
+                    passwd_list.append('[BLANK]') 
+
+                if 'pin' in wifi_extra_dict:
+                    pin_list.append(wifi_extra_dict['pin'])
+                else:
+                    pin_list.append('[BLANK]') 
+
+                if 'pac_file' in wifi_extra_dict:
+                    pac_file_list.append(wifi_extra_dict['pac_file'])
+                else:
+                    pac_file_list.append('[BLANK]') 
+
+                if 'private_key' in wifi_extra_dict:
+                    private_key_list.append(wifi_extra_dict['private_key'])
+                else:
+                    private_key_list.append('[BLANK]') 
+
+                if 'pk_password' in wifi_extra_dict:
+                    pk_password_list.append(wifi_extra_dict['pk_password'])
+                else:
+                    pk_password_list.append('[BLANK]') 
+
+                if 'hessid' in wifi_extra_dict:
+                    hessid_list.append(wifi_extra_dict['hessid'])
+                else:
+                    hessid_list.append("00:00:00:00:00:00") 
+
+                if 'realm' in wifi_extra_dict:
+                    realm_list.append(wifi_extra_dict['realm'])
+                else:
+                    realm_list.append('[BLANK]') 
+
+                if 'client_cert' in wifi_extra_dict:
+                    client_cert_list.append(wifi_extra_dict['client_cert'])
+                else:
+                    client_cert_list.append('[BLANK]') 
+
+                if 'imsi' in wifi_extra_dict:
+                    imsi_list.append(wifi_extra_dict['imsi'])
+                else:
+                    imsi_list.append('[BLANK]') 
+
+                if 'milenage' in wifi_extra_dict:
+                    milenage_list.append(wifi_extra_dict['milenage'])
+                else:
+                    milenage_list.append('[BLANK]') 
+
+                if 'domain' in wifi_extra_dict:
+                    domain_list.append(wifi_extra_dict['domain'])
+                else:
+                    domain_list.append('[BLANK]') 
+
+                if 'roaming_consortium' in wifi_extra_dict:
+                    roaming_consortium_list.append(wifi_extra_dict['roaming_consortium'])
+                else:
+                    roaming_consortium_list.append('[BLANK]') 
+
+                if 'venue_group' in wifi_extra_dict:
+                    venue_group_list.append(wifi_extra_dict['venue_group'])
+                else:
+                    venue_group_list.append('[BLANK]') 
+
+                if 'network_type' in wifi_extra_dict:
+                    network_type_list.append(wifi_extra_dict['network_type'])
+                else:
+                    network_type_list.append('[BLANK]') 
+
+                if 'ipaddr_type_avail' in wifi_extra_dict:
+                    ipaddr_type_avail_list.append(wifi_extra_dict['ipaddr_type_avail'])
+                else:
+                    ipaddr_type_avail_list.append('[BLANK]') 
+
+                if 'network_auth_type' in wifi_extra_dict:
+                    network_auth_type_list.append(wifi_extra_dict['network_auth_type'])
+                else:
+                    network_auth_type_list.append('[BLANK]') 
+
+                if 'anqp_3gpp_cell_net' in wifi_extra_dict:
+                    anqp_3gpp_cell_net_list.append(wifi_extra_dict['anqp_3gpp_cell_net'])
+                else:
+                    anqp_3gpp_cell_net_list.append('[BLANK]') 
+
 
                 '''            
                 # wifi extra configuration 
