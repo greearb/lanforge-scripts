@@ -530,6 +530,7 @@ class L3VariableTime(Realm):
                 self.station_profile.desired_add_sta_flags_mask = enable_flags_.copy()
 
                 # set_wifi_extra
+                """
                 self.station_profile.set_wifi_extra(key_mgmt=key_mgmt_,
                                                     pairwise=pairwise_,
                                                     group=group_,
@@ -557,7 +558,7 @@ class L3VariableTime(Realm):
                                                     network_auth_type=network_auth_type_,
                                                     anqp_3gpp_cell_net=anqp_3gpp_cell_net_
                                                 )
-
+                """
 
 
                 # place the enable and disable flags
