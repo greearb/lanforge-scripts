@@ -209,7 +209,8 @@ class L3VariableTime(Realm):
                 ap_report_dir="",
                 ap_file="",
                 ap_band_list=['2g', '5g', '6g'],
-                # wifi extra configuratoin
+
+                # wifi extra configuration
                 key_mgmt_list=[],
                 pairwise_list=[],
                 group_list=[],
@@ -374,6 +375,35 @@ class L3VariableTime(Realm):
         self.ap_report_dir = ap_report_dir
         self.ap_file = ap_file
         self.ap_band_list = ap_band_list
+
+        # wifi extra configuration
+        self.key_mgmt_list=key_mgmt_list
+        self.pairwise_list=pairwise_list
+        self.group_list=group_list
+        self.psk_list=psk_list
+        self.eap_list=eap_list
+        self.identity_list=identity_list
+        self.anonymous_list=anonymous_list
+        self.phase1_list=phase1_list
+        self.phase2_list=phase2_list
+        self.passwd_list=passwd_list
+        self.pin_list=pin_list
+        self.pac_file_list=pac_file_list
+        self.private_key_list=private_key_list
+        self.pk_password_list=pk_password_list
+        self.hessid_list=hessid_list
+        self.realm_list=realm_list
+        self.client_cert_list=client_cert_list
+        self.imsi_list=imsi_list
+        self.milenage_list=milenage_list
+        self.domain_list=domain_list
+        self.roaming_consortium_list=roaming_consortium_list
+        self.venue_group_list=venue_group_list
+        self.network_type_list=network_type_list
+        self.ipaddr_type_avail_list=ipaddr_type_avail_list
+        self.network_auth_type_list=network_auth_type_list
+        self.anqp_3gpp_cell_net_list=anqp_3gpp_cell_net_list
+
 
         # AP information import the module
         if self.ap_read and self.ap_module is not None:
@@ -2920,7 +2950,7 @@ Setting wifi_settings per radio
         ap_file=args.ap_file,
         ap_band_list=args.ap_band_list.split(','),
 
-        # wifi extra configuratoin
+        # wifi extra configuration
         key_mgmt_list=[],
         pairwise_list=[],
         group_list=[],
