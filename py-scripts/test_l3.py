@@ -217,7 +217,7 @@ class L3VariableTime(Realm):
                 psk_list=[], 
                 eap_list=[], 
                 identity_list=[],
-                anonymous_list=[], 
+                anonymous_identity_list=[], 
                 phase1_list=[], 
                 phase2_list=[], 
                 passwd_list=[], 
@@ -383,7 +383,7 @@ class L3VariableTime(Realm):
         self.psk_list=psk_list
         self.eap_list=eap_list
         self.identity_list=identity_list
-        self.anonymous_list=anonymous_list
+        self.anonymous_identity_list=anonymous_identity_list
         self.phase1_list=phase1_list
         self.phase2_list=phase2_list
         self.passwd_list=passwd_list
@@ -457,32 +457,32 @@ class L3VariableTime(Realm):
                     reset_port_enable_,
                     reset_port_time_min_,
                     reset_port_time_max_,
-                    key_mgmt_list_,
-                    pairwise_list_,
-                    group_list_,
-                    psk_list_,
-                    eap_list_,
-                    identity_list_,
-                    anonymous_list_,
-                    phase1_list_,
-                    phase2_list_,
-                    passwd_list_,
-                    pin_list_,
-                    pac_file_list_,
-                    private_key_list_,
-                    pk_password_list_,
-                    hessid_list_,
-                    realm_list_,
-                    client_cert_list_,
-                    imsi_list_,
-                    milenage_list_,
-                    domain_list_,
-                    roaming_consortium_list_,
-                    venue_group_list_,
-                    network_type_list_,
-                    ipaddr_type_avail_list_,
-                    network_auth_type_list_,
-                    anqp_3gpp_cell_net_list_) in zip(
+                    key_mgmt_,
+                    pairwise_,
+                    group_,
+                    psk_,
+                    eap_,
+                    identity_,
+                    anonymous_identity_,
+                    phase1_,
+                    phase2_,
+                    passwd_,
+                    pin_,
+                    pac_file_,
+                    private_key_,
+                    pk_password_,
+                    hessid_,
+                    realm_,
+                    client_cert_,
+                    imsi_,
+                    milenage_,
+                    domain_,
+                    roaming_consortium_,
+                    venue_group_,
+                    network_type_,
+                    ipaddr_type_avail_,
+                    network_auth_type_,
+                    anqp_3gpp_cell_net_) in zip(
                     self.radio_name_list,
                     self.ssid_list,
                     self.ssid_password_list,
@@ -498,7 +498,7 @@ class L3VariableTime(Realm):
                     self.psk_list,
                     self.eap_list,
                     self.identity_list,
-                    self.anonymous_list,
+                    self.anonymous_identity_list,
                     self.phase1_list,
                     self.phase2_list,
                     self.passwd_list,
@@ -528,6 +528,37 @@ class L3VariableTime(Realm):
                 self.station_profile.mode = mode_
                 self.station_profile.desired_add_sta_flags = enable_flags_.copy()
                 self.station_profile.desired_add_sta_flags_mask = enable_flags_.copy()
+
+                # set_wifi_extra
+                self.station_profile.set_wifi_extra(key_mgmt=key_mgmt_,
+                                                    pairwise=pairwise_,
+                                                    group=group_,
+                                                    psk=psk_,
+                                                    eap=group_,
+                                                    identity=identity_,
+                                                    anonymous_identity=anonymous_identity_,
+                                                    phase1=phase1_,
+                                                    phase2=phase2_,
+                                                    passwd=passwd_,
+                                                    pin=pin_,
+                                                    pac_file=pac_file_,
+                                                    private_key=private_key_,
+                                                    pk_password=pk_password_,
+                                                    hessid=hessid_,
+                                                    realm=realm_,
+                                                    client_cert=client_cert_,
+                                                    imsi=imsi_,
+                                                    milenage=milenage_,
+                                                    domain=domain_,
+                                                    roaming_consortium=roaming_consortium_,
+                                                    venue_group=venue_group_,
+                                                    network_type=network_type_,
+                                                    ipaddr_type_avail=ipaddr_type_avail_,
+                                                    network_auth_type=network_auth_type_,
+                                                    anqp_3gpp_cell_net=anqp_3gpp_cell_net_
+                                                )
+
+
 
                 # place the enable and disable flags
                 # self.station_profile.desired_add_sta_flags = self.enable_flags
@@ -2517,7 +2548,7 @@ Setting wifi_settings per radio
     psk_list = []
     eap_list = []
     identity_list =[]
-    anonymous_list=[]
+    anonymous_identity_list=[]
     phase1_list=[]
     phase2_list=[]
     passwd_list = []
@@ -2634,7 +2665,13 @@ Setting wifi_settings per radio
                         "'",
                         "").replace(
                             ",",
-                        " ").split()))
+                        " ").replace(
+                            "!!",
+                        " "
+                        )
+                        .split()))
+
+                logger.info("wifi_extra_dict: {wifi_extra}".format(wifi_extra=wifi_extra_dict))
 
                 if 'key_mgmt' in wifi_extra_dict:
                     key_mgmt_list.append(wifi_extra_dict['key_mgmt'])
@@ -2667,9 +2704,9 @@ Setting wifi_settings per radio
                     identity_list.append('[BLANK]') 
 
                 if 'anonymous' in wifi_extra_dict:
-                    anonymous_list.append(wifi_extra_dict['anonymous'])
+                    anonymous_identity_list.append(wifi_extra_dict['anonymous'])
                 else:
-                    anonymous_list.append('[BLANK]') 
+                    anonymous_identity_list.append('[BLANK]') 
 
                 if 'phase1' in wifi_extra_dict:
                     phase1_list.append(wifi_extra_dict['phase1'])
@@ -2805,7 +2842,7 @@ Setting wifi_settings per radio
                 psk_list.append('[BLANK]') 
                 eap_list.append('[BLANK]') 
                 identity_list.append('[BLANK]') 
-                anonymous_list.append('[BLANK]') 
+                anonymous_identity_list.append('[BLANK]') 
                 phase1_list.append('[BLANK]') 
                 phase2_list.append('[BLANK]') 
                 passwd_list.append('[BLANK]') 
@@ -3010,7 +3047,7 @@ Setting wifi_settings per radio
         psk_list=psk_list,
         eap_list=eap_list,
         identity_list=identity_list,
-        anonymous_list=anonymous_list,
+        anonymous_identity_list=anonymous_identity_list,
         phase1_list=phase1_list,
         phase2_list=phase2_list,
         passwd_list=passwd_list,
