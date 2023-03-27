@@ -2005,6 +2005,8 @@ wifi_extra keys:
                 pairwise  (Pairwise Ciphers)
                 group   (Group Ciphers) 
                 psk     (WPA PSK)
+                wep_key
+                ca_cert (CA Cert File)
                 eap     (EAP Methods)
                 identity    (EAP Identity)
                 anonymous_identity  (EAP Anon Identity)
