@@ -3104,6 +3104,8 @@ Setting wifi_settings per radio
         pairwise_list=pairwise_list,
         group_list=group_list,
         psk_list=psk_list,
+        wep_key_list=wep_key_list,
+        ca_cert_list=ca_cert_list,
         eap_list=eap_list,
         identity_list=identity_list,
         anonymous_identity_list=anonymous_identity_list,
