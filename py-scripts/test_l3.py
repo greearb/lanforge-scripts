@@ -214,7 +214,9 @@ class L3VariableTime(Realm):
                 key_mgmt_list=[],
                 pairwise_list=[],
                 group_list=[],
-                psk_list=[], 
+                psk_list=[],
+                wep_key_list=[],
+                ca_cert_list=[],
                 eap_list=[], 
                 identity_list=[],
                 anonymous_identity_list=[], 
@@ -381,6 +383,8 @@ class L3VariableTime(Realm):
         self.pairwise_list=pairwise_list
         self.group_list=group_list
         self.psk_list=psk_list
+        self.wep_key_list=wep_key_list
+        self.ca_cert_list=ca_cert_list
         self.eap_list=eap_list
         self.identity_list=identity_list
         self.anonymous_identity_list=anonymous_identity_list
@@ -461,6 +465,8 @@ class L3VariableTime(Realm):
                     pairwise_,
                     group_,
                     psk_,
+                    wep_key_,
+                    ca_cert_,
                     eap_,
                     identity_,
                     anonymous_identity_,
@@ -496,6 +502,8 @@ class L3VariableTime(Realm):
                     self.pairwise_list,
                     self.group_list,
                     self.psk_list,
+                    self.wep_key_list,
+                    self.ca_cert_list,
                     self.eap_list,
                     self.identity_list,
                     self.anonymous_identity_list,
@@ -531,10 +539,14 @@ class L3VariableTime(Realm):
 
                 # set_wifi_extra
                 if key_mgmt_ != '[BLANK]':                
+                # for teesting
+                # if key_mgmt_ == '[BLANK]':                
                     self.station_profile.set_wifi_extra(key_mgmt=key_mgmt_,
                                                         pairwise=pairwise_,
                                                         group=group_,
                                                         psk=psk_,
+                                                        wep_key=wep_key_,
+                                                        ca_cert=ca_cert_,
                                                         eap=group_,
                                                         identity=identity_,
                                                         anonymous_identity=anonymous_identity_,
@@ -558,7 +570,6 @@ class L3VariableTime(Realm):
                                                         network_auth_type=network_auth_type_,
                                                         anqp_3gpp_cell_net=anqp_3gpp_cell_net_
                                                     )
-                
 
 
                 # place the enable and disable flags
@@ -1987,6 +1998,36 @@ Example : Have script use wifi_settings enable flages  ::  wifi_settings==wifi_s
             --dut_serial_num 12345678
             --log_level debug 
 
+Example : for setting the wifi_extra  ,  wifi_extra==key_mgmt&&WPA-EAP-SHA256!!passwd&&lf_ax88u_5g
+
+wifi_extra keys:
+                key_mgmt  (Key Mangement)
+                pairwise  (Pairwise Ciphers)
+                group   (Group Ciphers) 
+                psk     (WPA PSK)
+                eap     (EAP Methods)
+                identity    (EAP Identity)
+                anonymous_identity  (EAP Anon Identity)
+                phase1  (Phase-1)
+                phase2  (Phase-2)
+                passwd  (EAP Password)
+                pin (EAP Pin)
+                pac_file    (PAC file)
+                private_key (Private Key)
+                pk_password (PK Password)
+                hessid="00:00:00:00:00:00"
+                realm   (Realm)
+                client_cert (Client Cert)
+                imsi    (IMSI)
+                milenage    (Milenage)
+                domain  (Domain)
+                roaming_consortium  (Consortium)
+                venue_group ()
+                network_type    (Network Auth)
+                ipaddr_type_avail   ()
+                network_auth_type ()
+                anqp_3gpp_cell_net ()
+
 
 
 
@@ -2547,6 +2588,8 @@ Setting wifi_settings per radio
     pairwise_list=[]
     group_list = []
     psk_list = []
+    wep_key_list = []
+    ca_cert_list = []
     eap_list = []
     identity_list =[]
     anonymous_identity_list=[]
@@ -2693,6 +2736,16 @@ Setting wifi_settings per radio
                     psk_list.append(wifi_extra_dict['psk'])
                 else:
                     psk_list.append('[BLANK]') 
+
+                if 'wep_key' in wifi_extra_dict:
+                    wep_key_list.append(wifi_extra_dict['wep_key'])
+                else:
+                    wep_key_list.append('[BLANK]') 
+
+                if 'ca_cert' in wifi_extra_dict:
+                    ca_cert_list.append(wifi_extra_dict['ca_cert'])
+                else:
+                    ca_cert_list.append('[BLANK]') 
 
                 if 'eap' in wifi_extra_dict:
                     eap_list.append(wifi_extra_dict['eap'])
@@ -2841,6 +2894,10 @@ Setting wifi_settings per radio
                 pairwise_list.append('[BLANK]')        
                 group_list.append('[BLANK]') 
                 psk_list.append('[BLANK]') 
+                # for testing
+                # psk_list.append(radio_info_dict['ssid_pw']) 
+                wep_key_list.append('[BLANK]') 
+                ca_cert_list.append('[BLANK]') 
                 eap_list.append('[BLANK]') 
                 identity_list.append('[BLANK]') 
                 anonymous_identity_list.append('[BLANK]') 
@@ -2894,6 +2951,7 @@ Setting wifi_settings per radio
                 wifi_mode_list.append(0)
                 wifi_enable_flags_list.append(
                     ["wpa2_enable", "80211u_enable", "create_admin_down"])
+                    # 8021x_radius is the same as Advanced/8021x on the gui
 
 
             # check for optional radio key , currently only reset is enabled
