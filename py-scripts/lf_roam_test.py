@@ -356,6 +356,17 @@ class HardRoam(Realm):
         station_list = LFUtils.portNameSeries(prefix_=sta_prefix, start_id_=start_id,
                                               end_id_=num_sta - 1, padding_number_=10000,
                                               radio=radio)
+        if self.sta_type == "normal":
+            station_profile.set_command_flag("add_sta", "power_save_enable", 1)
+            if not self.soft_roam:
+                station_profile.set_command_flag("add_sta", "disable_roam", 1)
+            if self.soft_roam:
+                print("Soft roam true")
+                logging.info("Soft roam true")
+                if self.option == "otds":
+                    print("OTDS present")
+                    station_profile.set_command_flag("add_sta", "ft-roam-over-ds", 1)
+
         if self.sta_type == "11r-sae-802.1x":
             dut_passwd = "[BLANK]"
         station_profile.use_security(dut_security, dut_ssid, dut_passwd)
@@ -571,8 +582,8 @@ class HardRoam(Realm):
     def precleanup(self):
         obj = lf_clean.lf_clean(host=self.lanforge_ip, port=self.lanforge_port, clean_cxs=True, clean_endp=True)
         obj.resource = "all"
-        obj.cxs_clean()
         obj.sta_clean()
+        obj.cxs_clean()
         obj.layer3_endp_clean()
 
     # Get client data from lf
@@ -660,7 +671,7 @@ class HardRoam(Realm):
     def get_wlan_mgt_status(self, file_name,
                             pyshark_filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55)"):
         query_reasso_response = self.pcap_obj.get_wlan_mgt_status_code(pcap_file=str(file_name), filter=pyshark_filter)
-        print("query", query_reasso_response)
+        print("Query", query_reasso_response)
         return query_reasso_response
 
     # Get attenuator serial number
@@ -721,7 +732,7 @@ class HardRoam(Realm):
             print("Begin sniffing to establish the initial connection.")
             logging.info("Begin sniffing to establish the initial connection.")
             self.start_sniffer(radio_channel=self.channel, radio=self.sniff_radio,
-                               test_name="roam_11r_" + str(self.option) + "start" + "_", duration=3600)
+                               test_name="roam_" + str(self.sta_type) + "_" + str(self.option) + "start" + "_", duration=3600)
             if self.band == "twog":
                 self.local_realm.reset_port(self.twog_radios)
                 self.create_n_clients(sta_prefix="wlan1", num_sta=self.num_sta, dut_ssid=self.ssid_name,
@@ -1042,7 +1053,7 @@ class HardRoam(Realm):
                                         print("Starting sniffer")
                                         logging.info("Starting sniffer")
                                         self.start_sniffer(radio_channel=self.channel, radio=self.sniff_radio,
-                                                           test_name="roam_11r_" + str(self.option) + "_iteration_" + str(
+                                                           test_name="roam_" + str(self.sta_type) + "_" + str(self.option) + "_iteration_" + str(
                                                                iterations) + "_", duration=3600)
                                         if self.soft_roam:
                                             ser_num = None
@@ -1261,18 +1272,26 @@ class HardRoam(Realm):
                                             if res == "FAIL":
                                                 res = "FAIL"
                                             if res == "PASS":
-                                                query_reasso_response = self.get_wlan_mgt_status(file_name=file_name,
-                                                                                                 pyshark_filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
-                                                                                                     str(i)))
+                                                if self.sta_type == "normal":
+                                                    query_reasso_response = self.get_wlan_mgt_status(file_name=file_name,
+                                                        pyshark_filter="wlan.da eq %s and wlan.fc.type_subtype eq 3" % (str(i)))
+                                                else:
+                                                    query_reasso_response = self.get_wlan_mgt_status(file_name=file_name,
+                                                        pyshark_filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
+                                                            str(i)))
                                                 print(query_reasso_response)
                                                 logging.info(str(query_reasso_response))
                                                 if len(query_reasso_response) != 0 and query_reasso_response != "empty":
                                                     if query_reasso_response == "Successful":
                                                         print("Re-association status is successful")
                                                         logging.info("Re-association status is successful")
-                                                        reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
-                                                                                           filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
-                                                                                               str(i)))
+                                                        if self.sta_type == "normal":
+                                                            reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
+                                                                                               filter="wlan.da eq %s and wlan.fc.type_subtype eq 3" % (str(i)))
+                                                        else:
+                                                            reasso_t = self.pcap_obj.read_time(pcap_file=str(file_name),
+                                                                                               filter="(wlan.fc.type_subtype eq 3 && wlan.fixed.status_code == 0x0000 && wlan.tag.number == 55) && (wlan.da == %s)" % (
+                                                                                                   str(i)))
                                                         print("Re-association time is", reasso_t)
                                                         logging.info("Re-association time is " + str(reasso_t))
                                                         if self.option == "otds":
@@ -1304,23 +1323,30 @@ class HardRoam(Realm):
                                                         else:
                                                             print("Checking for Authentication Frame")
                                                             logging.info("Checking for Authentication Frame")
-                                                            query_auth_response = self.pcap_obj.get_wlan_mgt_status_code(
-                                                                pcap_file=str(file_name),
-                                                                filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001) && (wlan.sa == %s)" % (
-                                                                    str(i)))
-                                                            print("Authentication response is", query_auth_response)
+                                                            if self.sta_type == "normal":
+                                                                query_auth_response = self.pcap_obj.get_wlan_mgt_status_code(
+                                                                    pcap_file=str(file_name),
+                                                                    filter="(wlan.fixed.auth.alg == 0 &&  wlan.sa == %s)" % (str(i)))
+                                                            else:
+                                                                query_auth_response = self.pcap_obj.get_wlan_mgt_status_code(
+                                                                    pcap_file=str(file_name),
+                                                                    filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001) && (wlan.sa == %s)" % (
+                                                                        str(i)))
+                                                            print("Authentication Frames response is", query_auth_response)
                                                             if len(query_auth_response) != 0 and query_auth_response != "empty":
                                                                 if query_auth_response == "Successful":
                                                                     print("Authentication Request Frame is present")
                                                                     logging.info("Authentication Request Frame is present")
-                                                                    auth_time = self.pcap_obj.read_time(
-                                                                        pcap_file=str(file_name),
-                                                                        filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)  && (wlan.sa == %s)" % (
-                                                                            str(i)))
+                                                                    if self.sta_type == "normal":
+                                                                        auth_time = self.pcap_obj.read_time(pcap_file=str(file_name),
+                                                                                                            filter="(wlan.fixed.auth.alg == 0 &&  wlan.sa == %s)" % (str(i)))
+                                                                    else:
+                                                                        auth_time = self.pcap_obj.read_time(
+                                                                            pcap_file=str(file_name),
+                                                                            filter="(wlan.fixed.auth.alg == 2 && wlan.fixed.status_code == 0x0000 && wlan.fixed.auth_seq == 0x0001)  && (wlan.sa == %s)" % (
+                                                                                str(i)))
                                                                     print("Authentication Request Frame time is", auth_time)
-                                                                    logging.info(
-                                                                        "Authentication Request Frame time is" + str(
-                                                                            auth_time))
+                                                                    logging.info("Authentication Request Frame time is" + str(auth_time))
                                                                 else:
                                                                     roam_time1.append('Auth Fail')
                                                                     pass_fail_list.append("FAIL")
@@ -1506,7 +1532,7 @@ class HardRoam(Realm):
                                         print("Starting Sniffer")
                                         logging.info("Starting Sniffer")
                                         self.start_sniffer(radio_channel=self.channel, radio=self.sniff_radio,
-                                                           test_name="roam_11r_" + str(self.option) + "_iteration_" + str(
+                                                           test_name="roam_" + str(self.sta_type) + "_" + str(self.option) + "_iteration_" + str(
                                                                iterations) + "_", duration=3600)
                                         print("Stop Sniffer")
                                         logging.info("Stop Sniffer")
@@ -1705,15 +1731,32 @@ class HardRoam(Realm):
             if self.soft_roam:
                 report.set_title("SOFT ROAM (11r) TEST")
             else:
-                report.set_title("HARD ROAM (11r) TEST")
+                if self.sta_type == "normal":
+                    report.set_title("HARD ROAM TEST")
+                else:
+                    report.set_title("HARD ROAM (11r) TEST")
             report.set_date(date)
             report.build_banner_cover()
             report.set_table_title("Test Setup Information")
             report.build_table_title()
             report.test_setup_table(value="Device under test", test_setup_data=test_setup_info)
-            report.set_obj_html("Objective", "Roaming (11r) Test is designed to test the performance of the "
-                                             "Access Point. The goal is to check whether the 11r configuration of AP for  all the "
-                                + str(self.num_sta) + " clients are working as expected or not")
+            report.set_obj_html("Objective",
+                                "The Roaming test is a type of performance test that is performed on wireless Access Points (APs)"
+                                " to evaluate their ability to support 802.11r (Fast BSS Transition) standard for fast and seamless"
+                                " roaming of wireless clients between APs within the same network. This standard helps minimize the"
+                                " handoff time when a client moves from one AP to another, resulting in a more stable and consistent wireless experience.<br>"
+                                "<br>"
+                                "<b>Hard Roaming:</b><br>"
+                                "This happens when a wireless device completely disconnects from the current Access Point before "
+                                "connecting to a new one. However, with the 802.11r standard, the authentication and key negotiation"
+                                " process can be expedited, reducing the time it takes to connect to the new Access Point. This results"
+                                " in a faster and more seamless handoff between Access Points.<br>"
+                                "<br>"
+                                "<b>Soft Roaming:</b><br>" 
+                                "This happens when a wireless device maintains a connection with both the current and new Access Points"
+                                " during the transition. With 802.11r, the device can maintain its security context during the handoff,"
+                                " allowing for a faster and more secure transition. Soft roaming with 11r is designed to be seamless,"
+                                " allowing the device to move from one Access Point to another without any interruption in connectivity.")
             report.build_objective()
             report.set_obj_html("Client per iteration Graph",
                                 "The below graph provides information about out of total iterations how many times each client got Pass or Fail")
