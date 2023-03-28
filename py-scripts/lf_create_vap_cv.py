@@ -1,15 +1,35 @@
 #!/usr/bin/env python3
 """
-example: ./lf_create_vap_cv.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge
+NAME: lf_create_vap_cv.py.py
 
+PURPOSE:
+    This script will create a vap using chamberview based upon a user defined frequency.
+
+EXAMPLE:
+    Use './lf_create_vap_cv.py --help' to see command line usage and options
+
+    ./lf_create_vap_cv.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
         --delete_old_scenario --scenario_name "Automation" --vap_radio "wiphy0"
         --vap_freq "2437" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2" --vap_bw 20
 
-Note: This script will create a vap using chamberview
+    JSON example:
+    "args": ["--mgr","localhost",
+             "--port","8080",
+             "--lf_user","lanforge",
+             "--lf_password","lanforge",
+             "--vap_radio","wiphy0",
+             "--vap_freq","36",
+             "--vap_ssid","test_vap",
+             "--vap_passwd","password",
+             "--vap_security","wpa2",
+             "--vap_upstream_port","1.1.eth1"
+            ]
+
+NOTES:
 
 
-How does it work?
-1. It creates a vap on user defined frequency
+Copyright 2021 Candela Technologies Inc
+License: Free to distribute and modify. LANforge systems must be licensed.
 
 """
 import subprocess
@@ -178,10 +198,32 @@ def main():
         prog="lf_create_vap_cv.py",
         formatter_class=argparse.RawTextHelpFormatter,
         description="""
-        ./create_vap_cv.py --mgr 192.168.200.38 --port 8080 --lf_user lanforge --lf_password lanforge
-         --delete_old_scenario --scenario_name "Automation"
-         --vap_radio "wiphy0" --vap_freq "5260" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2"
-         --vap_bw 20
+NAME: lf_create_vap_cv.py.py
+
+PURPOSE:
+    This script will create a vap using chamberview based upon a user defined frequency.
+
+EXAMPLE:
+    Use './lf_create_vap_cv.py --help' to see command line usage and options
+
+    ./lf_create_vap_cv.py --mgr localhost --port 8080 --lf_user lanforge --lf_password lanforge
+        --delete_old_scenario --scenario_name "Automation" --vap_radio "wiphy0"
+        --vap_freq "2437" --vap_ssid "routed-AP" --vap_passwd "something" --vap_security "wpa2" --vap_bw 20
+
+    JSON example:
+    "args": ["--mgr","localhost",
+             "--port","8080",
+             "--lf_user","lanforge",
+             "--lf_password","lanforge",
+             "--vap_radio","wiphy0",
+             "--vap_freq","36",
+             "--vap_ssid","test_vap",
+             "--vap_passwd","password",
+             "--vap_security","wpa2",
+             "--vap_upstream_port","1.1.eth1"
+            ]
+
+NOTES:
 
          tested on 01/31/2023:
          kernel version: 5.19.17+
