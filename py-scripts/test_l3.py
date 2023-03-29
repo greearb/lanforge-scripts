@@ -238,8 +238,8 @@ class L3VariableTime(Realm):
                 network_type_list=[], 
                 ipaddr_type_avail_list=[], 
                 network_auth_type_list=[], 
-                anqp_3gpp_cell_net_list=[] 
-                 
+                anqp_3gpp_cell_net_list=[] ,
+                ieee80211w_list=[] 
                 ):
 
         self.eth_endps = []
@@ -407,6 +407,7 @@ class L3VariableTime(Realm):
         self.ipaddr_type_avail_list=ipaddr_type_avail_list
         self.network_auth_type_list=network_auth_type_list
         self.anqp_3gpp_cell_net_list=anqp_3gpp_cell_net_list
+        self.ieee80211w_list=ieee80211w_list
 
 
         # AP information import the module
@@ -488,7 +489,8 @@ class L3VariableTime(Realm):
                     network_type_,
                     ipaddr_type_avail_,
                     network_auth_type_,
-                    anqp_3gpp_cell_net_) in zip(
+                    anqp_3gpp_cell_net_,
+                    ieee80211w_) in zip(
                     self.radio_name_list,
                     self.ssid_list,
                     self.ssid_password_list,
@@ -525,7 +527,8 @@ class L3VariableTime(Realm):
                     self.network_type_list,
                     self.ipaddr_type_avail_list,
                     self.network_auth_type_list,
-                    self.anqp_3gpp_cell_net_list
+                    self.anqp_3gpp_cell_net_list,
+                    self.ieee80211w_list
                     ):
                 self.station_profile = self.new_station_profile()
                 self.station_profile.lfclient_url = self.lfclient_url
@@ -570,6 +573,14 @@ class L3VariableTime(Realm):
                                                         network_auth_type=network_auth_type_,
                                                         anqp_3gpp_cell_net=anqp_3gpp_cell_net_
                                                     )
+                    if ieee80211w_.lower() == 'disabled':
+                        self.station_profile.set_command_param("add_sta", "ieee80211w", 0)
+                    elif ieee80211w_.lower() == 'required':
+                        self.station_profile.set_command_param("add_sta", "ieee80211w", 2)
+                    # may want to set an error if not optional yet for now default to optional
+                    else:
+                        self.station_profile.set_command_param("add_sta", "ieee80211w", 1)
+
 
 
                 # place the enable and disable flags
@@ -2030,6 +2041,9 @@ wifi_extra keys:
                 network_auth_type ()
                 anqp_3gpp_cell_net ()
 
+                ieee80211w :   0,1,2
+        
+
 
 
 
@@ -2614,6 +2628,7 @@ Setting wifi_settings per radio
     ipaddr_type_avail_list = []
     network_auth_type_list = []
     anqp_3gpp_cell_net_list = []
+    ieee80211w_list = []
 
     #
     logger.info("parse radio arguments used for station configuration")
@@ -2696,6 +2711,8 @@ Setting wifi_settings per radio
                 ipaddr_type_avail="[BLANK]"
                 network_auth_type="[BLANK]"
                 anqp_3gpp_cell_net="[BLANK]"
+
+                ieee80211w='Optional'
 
 
                 wifi_extra_dict= dict(
@@ -2859,6 +2876,11 @@ Setting wifi_settings per radio
                 else:
                     anqp_3gpp_cell_net_list.append('[BLANK]') 
 
+                if 'ieee80211w' in wifi_extra_dict:
+                    ieee80211w_list.append(wifi_extra_dict['ieee80211w'])
+                else:
+                    ieee80211w_list.append('Optional') 
+
 
                 '''            
                 # wifi extra configuration 
@@ -2922,6 +2944,7 @@ Setting wifi_settings per radio
                 ipaddr_type_avail_list.append('[BLANK]') 
                 network_auth_type_list.append('[BLANK]') 
                 anqp_3gpp_cell_net_list.append('[BLANK]') 
+                ieee80211w_list.append('Optional') 
 
 
             # check for wifi_settings
@@ -3129,7 +3152,8 @@ Setting wifi_settings per radio
         network_type_list=network_type_list,
         ipaddr_type_avail_list=ipaddr_type_avail_list,
         network_auth_type_list=network_auth_type_list,
-        anqp_3gpp_cell_net_list=anqp_3gpp_cell_net_list
+        anqp_3gpp_cell_net_list=anqp_3gpp_cell_net_list,
+        ieee80211w_list=ieee80211w_list
     )
 
     if args.no_pre_cleanup or args.use_existing_station_list:
