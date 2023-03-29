@@ -2397,6 +2397,12 @@ Setting wifi_settings per radio
     Can't decide what columns to use? You can just use 'all' to select all available columns from both tables.
 
 
+    Multicast traffic :
+
+    Multicast traffic default IGMP Address in the range of 224.0.0.0 to 239.255.255.255, 
+        so I have provided 224.9.9.9 as IGMP address and IGMP Dest port as 9999 and MIN-IP PORT as 9999. 
+        these values must be same on the eth1(server side) and client side, then the traffic will run.    
+
         ''')
     test_l3_parser = parser.add_argument_group(
         'arguments defined in test_l3.py file')
