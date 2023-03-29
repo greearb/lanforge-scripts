@@ -550,7 +550,7 @@ class L3VariableTime(Realm):
                                                         psk=psk_,
                                                         wep_key=wep_key_,
                                                         ca_cert=ca_cert_,
-                                                        eap=group_,
+                                                        eap=eap_,
                                                         identity=identity_,
                                                         anonymous_identity=anonymous_identity_,
                                                         phase1=phase1_,
@@ -2086,6 +2086,28 @@ Example : LAN-1927  WPA2-TLS-Configuration
  --dut_hw_version 1.0\
  --dut_serial_num 12345678\
  --log_level debug
+
+
+Example : LAN-1927  WPA2-TTLS-Configuration
+
+./test_l3.py\
+ --lfmgr 192.168.0.103\
+ --test_duration 20s\
+ --polling_interval 5s\
+ --upstream_port 1.1.eth2\
+ --radio 'radio==wiphy1,stations==1,ssid==ax88u_5g,ssid_pw==[BLANK],security==wpa2,wifi_settings==wifi_settings,wifi_mode==0,enable_flags==8021x_radius,wifi_extra==key_mgmt&&WPA-EAP!!eap&&EAP-TTLS!!identity&&testuser!!passwd&&testpasswd!!ieee80211w&&Disabled' \
+ --endp_type lf_udp\
+ --rates_are_totals\
+ --side_a_min_bps=256000\
+ --side_b_min_bps=300000000\
+ --test_rig ID_003\
+ --test_tag 'test_l3'\
+ --dut_model_num GT-AXE11000\
+ --dut_sw_version 3.0.0.4.386_44266\
+ --dut_hw_version 1.0\
+ --dut_serial_num 12345678\
+ --log_level debug
+
 
 
 wifi_extra keys:
